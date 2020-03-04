@@ -1,0 +1,33 @@
+function [map] = createCampbellMap(fnroot,numSnapshots,numModes)
+
+map =[1:numModes];
+
+
+for i=1:(numSnapshots-1)
+    fn1 = [fnroot,num2str(i)];
+    fn2 = [fnroot,num2str(i+1)];
+    
+    [mactable] = calculateMacTable(fn1,fn2,numModes);
+    
+    for j=1:numModes
+       [val,tempindex] = max(mactable(:,j));
+       if(val<0.4)
+            map(i+1,j) =  map(i,tempindex); 
+       else
+           map(i+1,j) =  map(i,j); 
+       end
+
+    end
+    
+    tempcheck = unique(map(i+1,:));
+    sizecheck= length(tempcheck);
+    sizeactual= length(map(i+1,:));
+    if(sizecheck~=sizeactual)
+        i
+        disp('somethings wrong here');
+    end
+    
+end
+
+
+end

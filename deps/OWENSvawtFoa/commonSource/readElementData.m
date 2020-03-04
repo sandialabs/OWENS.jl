@@ -1,0 +1,134 @@
+function [el] = readElementData(numElements,elfile,ortfile,bldfile)
+%readElementData  reads element data
+% **********************************************************************
+% *                   Part of the SNL OWENS Toolkit                    *
+% * Developed by Sandia National Laboratories Wind Energy Technologies *
+% *             See license.txt for disclaimer information             *
+% **********************************************************************
+%   [el] = readElementData(numElements,elfile,ortfile,bldfile
+%                    
+%   This function reads element data and stores data in the element data
+%   object.
+%
+%      input:
+%      numElements   = number of elements in structural mesh
+%      elfile        = element data filename
+%      ortfile       = element orientation filename
+%      bldfile       = blade data filename
+ 
+%      output:
+%      el            = element data object
+
+fid = fopen(elfile,'r'); %open element data file
+for i=1:numElements
+   data1=fscanf(fid,'%e',17); %read element data
+   data2=fscanf(fid,'%e',17);
+   
+   %structural properties
+   sectionPropsArray{i}.ac = -([data1(2) data2(2)]-0.5);
+   sectionPropsArray{i}.twist=[data1(3) data2(3)];
+   sectionPropsArray{i}.rhoA = [data1(4) data2(4)];
+   sectionPropsArray{i}.EIyy = [data1(5) data2(5)];
+   sectionPropsArray{i}.EIzz = [data1(6) data2(6)];
+   if(abs(sectionPropsArray{i}.EIyy - sectionPropsArray{i}.EIzz) < 1.0e-3)
+	sectionPropsArray{i}.EIzz = sectionPropsArray{i}.EIzz*1.0001;
+   end
+   sectionPropsArray{i}.GJ = [data1(7) data2(7)];
+   sectionPropsArray{i}.EA = [data1(8) data2(8)];
+   sectionPropsArray{i}.alpha1 = [data1(9) data2(9)];
+   
+   sectionPropsArray{i}.rhoIyy = [data1(10) data2(10)];
+   sectionPropsArray{i}.rhoIzz = [data1(11) data2(11)];
+   sectionPropsArray{i}.rhoJ = [(data1(10)+data1(11)), (data2(10)+data2(11))];
+   sectionPropsArray{i}.zcm = [data1(14) data2(14)];
+   sectionPropsArray{i}.ycm = [data1(15) data2(15)];
+   sectionPropsArray{i}.a = [data1(17) data2(17)];
+   
+   %coupling factors
+   sectionPropsArray{i}.EIyz = [0 0];
+   sectionPropsArray{i}.alpha1 = [0 0];
+   sectionPropsArray{i}.alpha2 = [0 0];
+   sectionPropsArray{i}.alpha3 = [0 0];
+   sectionPropsArray{i}.alpha4 = [0 0];
+   sectionPropsArray{i}.alpha5 = [0 0];
+   sectionPropsArray{i}.alpha6 = [0 0];
+   sectionPropsArray{i}.rhoIyz = [0 0];
+   sectionPropsArray{i}.b = [0 0];
+   sectionPropsArray{i}.a0 = [2*pi 2*pi];
+   
+end
+
+% %read in element aerodynamic properties
+ fid2 = fopen(bldfile,'r'); %open blade file
+ emptyBladeFile = true;
+if(fid2 ~= -1)
+ index = 1;
+ while(~feof(fid2))
+     tempvar = fscanf(fid2,'%i',1);
+     if(isempty(tempvar))
+         break;
+     end
+     bladeNum(index) = fscanf(fid2,'%i',1);
+    
+     if(tempvar==-1)
+         break;
+     end
+     bladeNum(index) = tempvar;             %blade number
+     rPos(index) = fscanf(fid2,'%e',1);     %spanwise position
+     nodeNum(index) = fscanf(fid2,'%i',1);  %node number associated with blade section
+     elNum(index) = fscanf(fid2,'%i',1);    %element number associated with blade sectino
+     bladeData(index,1:12) = (fscanf(fid2,'%e',12))';  %blade data
+     index = index + 1;
+	 
+	 emptyBladeFile = false;
+ end
+ if(emptyBladeFile == false)
+ for i=1:length(elNum)
+     chord(nodeNum(i)) = bladeData(i,10);  %store chord of blade sections
+ end
+ for i=1:length(elNum)
+     if (elNum(i)~=-1)
+         
+         sectionPropsArray{elNum(i)}.b = 0.5.*[chord(nodeNum(i)) chord(nodeNum(i+1))]; %element semi chord
+         sectionPropsArray{elNum(i)}.a0 = [bladeData(i,12) bladeData(i+1,12)];         %element lift curve slope (needed for flutter analysis)
+         
+         %convert "a" to semichord fraction aft of halfchord
+         sectionPropsArray{elNum(i)}.a = (sectionPropsArray{elNum(i)}.a + 0.25*(2*sectionPropsArray{elNum(i)}.b) - sectionPropsArray{elNum(i)}.b)./sectionPropsArray{elNum(i)}.b;
+
+         %convert "ac" to semichord fraction foreward of halfchord
+         sectionPropsArray{elNum(i)}.ac = (sectionPropsArray{elNum(i)}.ac).*2;
+         
+         %physical aero center offset from elastic axis
+         sectionPropsArray{elNum(i)}.aeroCenterOffset = (sectionPropsArray{elNum(i)}.ac).*sectionPropsArray{elNum(i)}.b - sectionPropsArray{elNum(i)}.a;
+     end
+ end
+ end
+ fclose(fid2);  %close blade file
+ end
+ 
+ disp('EIyz, rhoIyz deactivated');
+ fclose(fid); %close element file
+
+%read element orientation data
+fid = fopen(ortfile,'r');
+for i=1:numElements
+    dum=fscanf(fid,'%i',1);
+    temp=fscanf(fid,'%e',7);
+    elLen(i)=temp(4);
+    psi(i)=temp(1);
+    theta(i)=temp(2);
+    roll(i)=temp(3);
+end
+
+%store data in element object
+el.props = sectionPropsArray;
+el.elLen=elLen;
+el.psi=psi;
+el.theta=theta;
+el.roll=roll;
+
+el.rotationalEffects(1:numElements) = true;
+
+fclose(fid); %close ort file
+end
+

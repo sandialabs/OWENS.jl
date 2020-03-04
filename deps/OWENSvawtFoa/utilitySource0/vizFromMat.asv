@@ -1,0 +1,84 @@
+function vizFromMat(meshFile,resultsFile,selectedMode,sf,meshSeg)
+close all;
+[mesh] = readMesh(meshFile);
+
+
+%read in output file
+numModes = 20;
+
+load(resultsFile);
+singleEigVec = eigVec(:,selectedMode);
+
+    for i=1:length(singleEigVec)/6
+       for j=1:6
+            modeShape(i,1) =  
+            modeShapeOutPhase(i
+       end
+    end
+
+% [modeShape,modeShapeOutPhase] = readResults(resultsFile,selectedMode,mesh.numNodes);
+
+% [modeShape,modeShapeOutPhase] = processForPhase(modalData(:,:,selectedMode),modalPhase(:,:,selectedMode));
+
+% modeShape = modeShapeList(:,:,selectedMode);
+% modeShapeOutPhase = modeShapeOutPhaseList(:,:,selectedMode);
+
+%set scale factor
+modeShape = modeShape .* sf;
+modeShapeOutPhase = modeShapeOutPhase.* sf;
+
+%add mode shape*scale factor + original components??
+deformedMesh = mesh;
+deformedMesh.x = deformedMesh.x + modeShape(:,1)';
+deformedMesh.y = deformedMesh.y + modeShape(:,2)';
+deformedMesh.z = deformedMesh.z + modeShape(:,3)';
+
+deformedMesh2 = mesh;
+deformedMesh2.x = deformedMesh2.x + modeShapeOutPhase(:,1)';
+deformedMesh2.y = deformedMesh2.y + modeShapeOutPhase(:,2)';
+deformedMesh2.z = deformedMesh2.z + modeShapeOutPhase(:,3)';
+
+%plot meshes
+
+plotMesh(deformedMesh,'-r',meshSeg);
+plotMesh(deformedMesh2,'--b',meshSeg);
+plotMesh(mesh,'-k',meshSeg);
+
+
+grid on;
+
+
+
+end
+
+function [modeShape,modeShapeOutPhase] = processForPhase(amp,phase)
+
+[len,dum]=size(amp);
+%initialize
+modeShape = zeros(len,6);
+modeShapeOutPhase = modeShape;
+
+ xi=[-360 -270 -180 -90 0 90 180 270 360];
+ for m=1:6
+     phase(:,m) = interp1(xi,xi,phase(:,m),'nearest');
+ end
+
+for i=1:len
+   for j=1:6
+       cfac=cos(phase(i,j)*pi/180.0);
+       if(abs(cfac)>1.0e-4)
+           cfac=cfac/abs(cfac);
+       end
+       
+       sfac=sin(phase(i,j)*pi/180.0);
+       if(abs(sfac)>1.0e-4)
+           sfac=sfac/abs(sfac);
+       end
+       
+       modeShape(i,j) = amp(i,j)*cfac;
+       modeShapeOutPhase(i,j) = amp(i,j)*sfac;
+   end
+end
+
+end
+
