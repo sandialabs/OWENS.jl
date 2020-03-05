@@ -217,7 +217,7 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
 
     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
 
-    if(str2num(generatorfilename)==1.0)
+    if(str2double(generatorfilename)==1.0)
         model.useGeneratorFunction = true;
     else
         model.useGeneratorFunction = false;
