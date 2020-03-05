@@ -5,6 +5,29 @@ clear all
 
 % cd('C:\data\OffshoreVAWT\SESPhaseI_OWENS\dvawt\carbon\dvawt_c_2_lcdt\transientAnalysis')
 
+if (~isdeployed)
+    VAWT_Toolbox_path_main = '../deps/OWENSvawtFoa/';
+    addpath(VAWT_Toolbox_path_main)
+    % add sub folders of the OWENS directory
+    VAWT_Toolbox_path_1 = [VAWT_Toolbox_path_main 'commonSource'];
+    addpath(VAWT_Toolbox_path_1)
+    VAWT_Toolbox_path_2 = [VAWT_Toolbox_path_main 'modalSource'];
+    addpath(VAWT_Toolbox_path_2)
+    VAWT_Toolbox_path_3 = [VAWT_Toolbox_path_main 'transientSource'];
+    addpath(VAWT_Toolbox_path_3)
+    VAWT_Toolbox_path_4 = [VAWT_Toolbox_path_main 'utilitySource'];
+    addpath(VAWT_Toolbox_path_4)
+    VAWT_Toolbox_path_5 = [VAWT_Toolbox_path_main 'serverFiles'];
+    addpath(VAWT_Toolbox_path_5)
+    VAWT_Toolbox_path_6 = [VAWT_Toolbox_path_main 'processingScripts'];
+    addpath(VAWT_Toolbox_path_6)
+
+    % add the main directory of VAWTgen
+    % add sub folders of the OWENS directory
+    VAWT_Toolbox_path_1 = [VAWT_Toolbox_path_main '../vizFiles'];
+    addpath(VAWT_Toolbox_path_1)
+end
+
 %% ****************** COORDINATE SYSTEM DEFINITION *********************** %
 % 1 - x -  surge (pointed downstream)
 % 2 - y -  sway  (right hand rule)
@@ -67,16 +90,16 @@ end
 % perform the transient simulations using OWENS
 % *************************************************************************
 for rr = 1%:length(platformProp)
-    
+
     % define the filename saving convention
     fname = [platformProp{rr}.fileRoot outFileExt];
-    
+
     % *********************************************************************
     % perform operations for the nodal file generation
     % *********************************************************************
     MassVal = platformProp{rr}.MassDiag;
     StiffVal = platformProp{rr}.StiffDiag;
-        
+
     nodes = [1 1];
     cmkType = {'M6' 'K6'};
     for dd = 1:6
@@ -86,17 +109,17 @@ for rr = 1%:length(platformProp)
         cmkValues{2}(dd,dd) = StiffVal(dd);
     end
     writeOwensNDL(fname, nodes, cmkType, cmkValues)
-    
+
     % *********************************************************************
     % perform operations for the aerodynamic forces file generation
     % *********************************************************************
     CACTUSfileRoot = './input_files/DVAWT_2B_LCDT';
     OWENSfileRoot = bmOwens;
     outputAeroFileName = './output_files/aa_TESTaero';
-    
+
     processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot, outputAeroFileName)
 
-    
+
     % *********************************************************************
     % read in the main owens file
     % *********************************************************************
@@ -105,23 +128,23 @@ for rr = 1%:length(platformProp)
     fclose(fid);
 %     % change the reference for the nodal input file
 %     owensMain{1}{5} = [fname '.ndl'];
-    
+
     if 0 % preferred method for aero loads - NOT WORKING IN OWENS.
         % change the reference for the aerodynamic loads input file
         owensMain{1}{9} = strrep(owensMain{1}{9}, '[aero_loads_file]', [outputAeroFileName '.mat']);
     end
-    
+
     if 0 % Use WavEC coupling?
         % change the reference for the platform file loads input file
         % NOTE: the actual platform inputs need to be changed within WavEC
         owensMain{1}{7} = sprintf('1 dvawt_c_2_lcdt.plat');
     end
-    
+
     % save the owens input file
     fid = fopen([fname '.owens'],'w');
     fprintf(fid,'%s\n',owensMain{1}{:});
     fclose(fid);
-        
+
     % *********************************************************************
     % run a modal analysis of the platform design
     % *********************************************************************
@@ -129,12 +152,12 @@ for rr = 1%:length(platformProp)
     Nrpm = 10;    % number of rpm stations
     Nmodes = 40;  % number of modes to calculate
     timeStep = 2e-3;
-    timeSim = 10;       % [sec]
+    timeSim = 1;       % [sec]
     timeArray = [0 timeSim+1];
     rpmArray  = [operatingRPM operatingRPM];
     omegaArrayHz = rpmArray ./ 60;
-    % EXAMPLE: owens(inputFile,'TNB',timeStep, nlBool, 0)    
-    owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)   
+    % EXAMPLE: owens(inputFile,'TNB',timeStep, nlBool, 0)
+    owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
 end
 
 
@@ -158,10 +181,10 @@ end
 
 
 for rr=1%:length(platformProp)
-    
+
     outname = [platformProp{rr}.fileRoot outFileExt '.out'];
     out = load([outname(1:end-4) '.mat'])
-    
+
     vizAnimateTransient([bmOwens '.mesh'], out.uHist, 5, outname(1:end-4))
     %             if savePlot % save the plot
     %                 export_fig([saveFolder outname(1:end-4) '_MODE' num2str(df) '.pdf'],'-p5')
@@ -169,7 +192,7 @@ for rr=1%:length(platformProp)
     %             else % flip through the plots visually
     %                 pause
     %             end
-    
+
 
 end
 
@@ -193,14 +216,3 @@ figure
 xVar = 't';
 yVar = 'genPower';
 plot(out.(xVar)(i1:i2), out.(yVar)(i1:i2))
-
-
-
-
-
-
-
-
-
-
-

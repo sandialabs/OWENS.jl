@@ -1,12 +1,12 @@
 function processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot, outputAeroFileName)
 
 if 1
-    d1 = dir([CACTUSfileRoot '.geom']);
-    d2 = dir([CACTUSfileRoot '_ElementData.csv']);
-    d3 = dir([OWENSfileRoot '.bld']);
-    d4 = dir([OWENSfileRoot '.el']);
-    d5 = dir([OWENSfileRoot '.ort']);
-    d6 = dir([OWENSfileRoot '.mesh']);
+    d1 = [CACTUSfileRoot '.geom'];
+    d2 = [CACTUSfileRoot '_ElementData.csv'];
+    d3 = [OWENSfileRoot '.bld'];
+    d4 = [OWENSfileRoot '.el'];
+    d5 = [OWENSfileRoot '.ort'];
+    d6 = [OWENSfileRoot '.mesh'];
 else
     d1 = dir('*.geom');
     d2 = dir('*_ElementData.csv');
@@ -16,10 +16,10 @@ else
     d6 = dir('*.mesh');
 end
 
-[timeArray,ForceValHist,ForceDof] = mapCactusLoadsFile(d1.name,d2.name,d3.name,d4.name,d5.name,d6.name);
+[timeArray,ForceValHist,ForceDof] = mapCactusLoadsFile(d1,d2,d3,d4,d5,d6);
 
-clear d1 d2 d3 d4 d5 d6
-clear CACTUSfileRoot OWENSfileRoot
+%clear d1 d2 d3 d4 d5 d6
+%clear CACTUSfileRoot OWENSfileRoot
 
 
 if 0 % preferred method
