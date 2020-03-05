@@ -30,18 +30,6 @@ model.aeroOn                 = false;
 moduleIteration = true;
 
 
-if(model.hydroOn)
-    warning('Change the WavEC inputs in the transientExec.m function')
-    pause(10)
-    hydroSendPort = 3000;
-    hydroReceivePort = 4000;
-	model.activePlatformDofs = [1 0 0 0 0 0];
-	model.initialCondPlatformDofs = [1 0 0 0 0 0];
-    
-    [Ywec,rigidDof,Accel,s_stsp,d_output_streamPlatform,d_input_streamPlatform,server_socketPlatform,input_socketPlatform,output_socketPlatform] = ...
-        waveECStartUp('localhost',hydroReceivePort,hydroSendPort,model);
-end
-
 if(model.aeroOn)
     aeroSendPort = 3200;
     aeroReceivePort = 4200;
