@@ -1,5 +1,5 @@
 clear all
-% clc
+clc
 
 % snl_vawt
 
@@ -18,7 +18,7 @@ if 1
     % use this benchmark file
     bmOwens = './input_files/_15mTower_transient_dvawt_c_2_lcdt';
     % append this name to the end of the saved files
-    outFileExt = '_15mTowerExt_NOcentStiff';
+    outFileExt = './output_files/_15mTowerExt_NOcentStiff';
 else
     % use this benchmark file
     bmOwens = '_10mTower_transient_dvawt_c_2_lcdt';
@@ -32,27 +32,27 @@ platformProp = {};
 % % platformProp{end}.MassDiag = [9.1883e6 9.1883e6 1.3305e7 2.946e9 2.979e9 1.9471e9]';
 % % platformProp{end}.StiffDiag = [1.329e5 1.329e5 2.585e6 4.132e6 4.132e6 1.076e6]';
 % filename root to save the created nodal file
-platformProp{end+1}.fileRoot = './input_files/1_FourColumnSemi_2ndPass';
+platformProp{end+1}.fileRoot = './output_files/1_FourColumnSemi_2ndPass';
 platformProp{end}.MassDiag = [9.8088e6 9.7811e6 1.8914e7 3.6351e9 3.6509e9 2.4362e9];
 platformProp{end}.StiffDiag_Nm_deg = [1.329e5 1.329e5 1.985e6 3.993e6 3.995e6 1.076e6];
 % filename root to save the created nodal file
-platformProp{end+1}.fileRoot = './input_files/2_ClassicSpar';
+platformProp{end+1}.fileRoot = '2_ClassicSpar';
 platformProp{end}.MassDiag = [3.0605e7 3.0605e7 1.7914e7 5.2104e10 5.2137e10 6.5356e8];
 platformProp{end}.StiffDiag_Nm_deg = [1.348e5 1.348e5 2.327e6 1.181e7 1.181e7 8.189e5];
 % filename root to save the created nodal file
-platformProp{end+1}.fileRoot = './input_files/3_RingPontoon';
+platformProp{end+1}.fileRoot = '3_RingPontoon';
 platformProp{end}.MassDiag = [8.73e6 8.73e6 3.3648e7 5.6784e9 5.7114e9 9.2874e8];
 platformProp{end}.StiffDiag_Nm_deg = [1.329e5 1.329e5 6.599e6 3.977e6 3.977e6 1.076e6];
 % filename root to save the created nodal file
-platformProp{end+1}.fileRoot = './input_files/4_CompactSemi';
+platformProp{end+1}.fileRoot = '4_CompactSemi';
 platformProp{end}.MassDiag = [8.5581e6 8.5582e6 7.9592e6 1.7936e9 1.8266e9 1.3048e9];
 platformProp{end}.StiffDiag_Nm_deg = [1.592e5 1.592e5 3.826e6 3.485e6 3.485e6 1.654e6];
 % filename root to save the created nodal file
-platformProp{end+1}.fileRoot = './input_files/5_AdvancedSpar';
+platformProp{end+1}.fileRoot = '5_AdvancedSpar';
 platformProp{end}.MassDiag = [3.2512e7 3.2512e7 2.6111e7 5.275e10 5.2783e10 6.1514e8];
 platformProp{end}.StiffDiag_Nm_deg = [1.38e5 1.38e5 2.362e6 9.115e6 9.115e6 1.384e6];
 % filename root to save the created nodal file
-platformProp{end+1}.fileRoot = './input_files/6_MultiCellularTLP';
+platformProp{end+1}.fileRoot = '6_MultiCellularTLP';
 platformProp{end}.MassDiag = [7.3879e6 7.3879e6 1.3414e7 2.3365e9 2.3695e9 1.374e9];
 platformProp{end}.StiffDiag_Nm_deg = [1.623e5 1.623e5 7.135e7 2.34e8 2.34e8 1.118e6];
 
@@ -102,7 +102,7 @@ for rr = 1%:length(platformProp)
     % *********************************************************************
     fid = fopen([bmOwens '.owens']);
     owensMain = textscan(fid, '%s','whitespace','\r');
-    fclose(fid);
+    fclose(fid)
 %     % change the reference for the nodal input file
 %     owensMain{1}{5} = [fname '.ndl'];
     
