@@ -32,7 +32,7 @@ function [bcMap] = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
     bcMap = zeros(reducedDOFCount,1);
     index = 1;
     for i=1:reducedDOFCount
-       if(ismembc(reducedDofList(i),constrainedDof))  %searches reduced DOF for constrained DOFs
+       if(ismember(reducedDofList(i),constrainedDof))  %searches reduced DOF for constrained DOFs
            bcMap(i) = -1;
        else
            bcMap(i) = index;

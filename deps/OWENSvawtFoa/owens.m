@@ -303,7 +303,7 @@ function [redVectorMap] = constructReducedDispVectorMap(numNodes,numDofPerNode,n
 
     for i=1:numReducedDof
 
-        if(ismembc(i,bcdoflist))              %creates a map of unconstrained reduced DOFs
+        if(ismember(i,bcdoflist))              %creates a map of unconstrained reduced DOFs
              redVectorMap(i) = -1.0;
         else
             index = find(ismembc(dofList,i));
