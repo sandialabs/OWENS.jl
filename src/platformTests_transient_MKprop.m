@@ -126,19 +126,6 @@ for rr = 1%:length(platformProp)
     fid = fopen([bmOwens '.owens']);
     owensMain = textscan(fid, '%s','whitespace','\r');
     fclose(fid);
-%     % change the reference for the nodal input file
-%     owensMain{1}{5} = [fname '.ndl'];
-
-    if 0 % preferred method for aero loads - NOT WORKING IN OWENS.
-        % change the reference for the aerodynamic loads input file
-        owensMain{1}{9} = strrep(owensMain{1}{9}, '[aero_loads_file]', [outputAeroFileName '.mat']);
-    end
-
-    if 0 % Use WavEC coupling?
-        % change the reference for the platform file loads input file
-        % NOTE: the actual platform inputs need to be changed within WavEC
-        owensMain{1}{7} = sprintf('1 dvawt_c_2_lcdt.plat');
-    end
 
     % save the owens input file
     fid = fopen([fname '.owens'],'w');
