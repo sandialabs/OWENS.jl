@@ -144,4 +144,10 @@ end
 OLD = ('1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_OLD.mat');
 NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.mat');
 
+FileInfo = dir(NEW);
+
+if (datetime - FileInfo.date) > duration(0,1,0)
+    error('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
+end
+
 matc(OLD,NEW);
