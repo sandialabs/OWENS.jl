@@ -98,7 +98,7 @@ if(strcmp(analysisType,'TNB'));
     displ_im1 = disp_s;
 end
 
-if(strcmp(analysisType,'TD'));
+if(strcmp(analysisType,'TD'))
 %------ dean integration parameters -------------
     alpha = 0.25;
     

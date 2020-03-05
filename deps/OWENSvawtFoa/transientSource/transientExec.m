@@ -167,7 +167,7 @@ end
 %% Main Loop - iterate for a solution at each time step, i
 for i=1:numTS
 
-    i
+%     i %TODO add verbose printing
 if(mod(i,100)==0) %print command that displays progress of time stepping
     i
 end

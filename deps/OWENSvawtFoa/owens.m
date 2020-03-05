@@ -226,7 +226,7 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
 
 end
 
-[model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results
+[model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results %TODO: map to the output location instead of input
 
 [model.jointTransform,model.reducedDOFList] = createJointTransform(model.joint,mesh.numNodes,6); %creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 [model.BC.map] = calculateBCMap(model.BC.numpBC,model.BC.pBC,numDofPerNode,model.reducedDOFList); %create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
@@ -270,14 +270,9 @@ end
 function [outputfilename] = generateOutputFilename(inputfilename,analysisType)
     %This function generates an output file name depending on the analysis type
 
-    %find '.' in inputfilename - helps to extract the prefix in the .owens
-    %filename
-    for i=1:length(inputfilename)
-       if(strcmp(inputfilename(i),'.'))
-           index =i;
-           break;
-       end
-    end
+    %find the last '.' in inputfilename - helps to extract the prefix in the .owens
+    index_all = find(inputfilename == '.');
+    index = index_all(end);
 
     if(strcmp(analysisType,'M')||strcmp(analysisType,'F')||strcmp(analysisType,'FA')) %output filename (*.out) for modal/flutter analysis
         outputfilename = [inputfilename(1:index-1),'.out'];
