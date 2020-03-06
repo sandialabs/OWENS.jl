@@ -119,19 +119,6 @@ for rr = 1%:length(platformProp)
 
     processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot, outputAeroFileName)
 
-
-    % *********************************************************************
-    % read in the main owens file
-    % *********************************************************************
-    fid = fopen([bmOwens '.owens']);
-    owensMain = textscan(fid, '%s','whitespace','\r');
-    fclose(fid);
-
-    % save the owens input file
-    fid = fopen([fname '.owens'],'w');
-    fprintf(fid,'%s\n',owensMain{1}{:});
-    fclose(fid);
-
     % *********************************************************************
     % run a modal analysis of the platform design
     % *********************************************************************
