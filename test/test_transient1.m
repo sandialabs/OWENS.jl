@@ -17,8 +17,8 @@ if (~isdeployed)
     addpath(VAWT_Toolbox_path_3)
     VAWT_Toolbox_path_4 = [VAWT_Toolbox_path_main 'utilitySource'];
     addpath(VAWT_Toolbox_path_4)
-    VAWT_Toolbox_path_5 = [VAWT_Toolbox_path_main 'serverFiles'];
-    addpath(VAWT_Toolbox_path_5)
+%     VAWT_Toolbox_path_5 = [VAWT_Toolbox_path_main 'serverFiles'];
+%     addpath(VAWT_Toolbox_path_5)
     VAWT_Toolbox_path_6 = [VAWT_Toolbox_path_main 'processingScripts'];
     addpath(VAWT_Toolbox_path_6)
 
