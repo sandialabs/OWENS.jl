@@ -49,8 +49,11 @@ function [eigVec,eigVal] = eigSolve(M,C,K,numModes,flag)
         if(flag==1)
             [eigVec,eigVal] = eig(sysMat);		  %full eigenvalue solve
         end
-        if(flag==2)
+        if(flag==2) && (~isdeployed)
             [eigVec,eigVal] = eigs(sysMat,MMat,numModes,'SM');  %subest of modes for eigenvalue solve
+        end
+        if(flag==2) && (isdeployed)
+            error('Cannot compute subset of modes for eiganvalue solve when deployed, eigs not supported for compilition! Run with full set of modes.')
         end
         if(flag==3)
              sysMat=inv(M)*K;                      %eigenvalue solve on spring mass system only
