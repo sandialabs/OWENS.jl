@@ -1,21 +1,20 @@
 function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
-% function [time,aeroDistLoadsArrayTime,aeroDistLoadsNodeMap,aeroDistLoadsElMap] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
+    % function [time,aeroDistLoadsArrayTime,aeroDistLoadsNodeMap,aeroDistLoadsElMap] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     
     [cactusGeom] = readCactusGeom(geomFn);
     blade = cactusGeom.blade;
     
-    a = importdata(loadsFn);
-    data = a.data;
+    data = importCactusData(loadsFn,1);
     
     %define these from params file
-    ft2m = 1 / 3.281; 
+    ft2m = 1 / 3.281;
     rho = 1.225;
     RefAR = cactusGeom.RefAR*ft2m*ft2m;
     RefR = cactusGeom.RefR*ft2m;
     V = 25; %m/s
     
     normTime = data(:,1);
-        
+    
     numAeroEl = 0;
     for i=1:cactusGeom.NBlade;
         numAeroEl = numAeroEl + cactusGeom.blade(i).NElem;
@@ -54,23 +53,23 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
         momentArm = 0.0;
         Mecc(i) = NperSpan(i) * momentArm;
     end
-   
+    
     index = 1;
     for i=1:numAeroTS
         for j=1:cactusGeom.NBlade
             for k=1:blade(j).NElem
                 %%
-%                 bladeForce(j).Fx(i,k) = Fx(index);
-%                 bladeForce(j).Fy(i,k) = Fy(index);
-%                 bladeForce(j).Fz(i,k) = Fz(index);
-%                 bladeForce(j).M25(i,k) = M25perSpan(index);
+                %                 bladeForce(j).Fx(i,k) = Fx(index);
+                %                 bladeForce(j).Fy(i,k) = Fy(index);
+                %                 bladeForce(j).Fz(i,k) = Fz(index);
+                %                 bladeForce(j).M25(i,k) = M25perSpan(index);
                 
-%                 spanVec = [blade(j).sEx(k);blade(j).sEy(k);blade(j).sEz(k)];
-%                 tanVec = [blade(j).tEx(k);blade(j).tEy(k);blade(j).tEz(k)];
-%                 normVec = [blade(j).nEx(k);blade(j).nEy(k);blade(j).nEz(k)];
-% %                 dcm = [spanVec, tanVec, normVec];
-%                 dcm = [tanVec, spanVec, -normVec];
-%%                                                
+                %                 spanVec = [blade(j).sEx(k);blade(j).sEy(k);blade(j).sEz(k)];
+                %                 tanVec = [blade(j).tEx(k);blade(j).tEy(k);blade(j).tEz(k)];
+                %                 normVec = [blade(j).nEx(k);blade(j).nEy(k);blade(j).nEz(k)];
+                % %                 dcm = [spanVec, tanVec, normVec];
+                %                 dcm = [tanVec, spanVec, -normVec];
+                %%
                 bladeForce(j).N(i,k) = NperSpan(index);
                 bladeForce(j).T(i,k) = TperSpan(index);
                 bladeForce(j).M25(i,k) = M25perSpan(index);
@@ -80,17 +79,17 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
     end
     
     for i=1:cactusGeom.NBlade
-       spanLocNorm(i,:) = blade(i).PEy.*RefR/(blade(i).QCy(end)*RefR);        
+        spanLocNorm(i,:) = blade(i).PEy.*RefR/(blade(i).QCy(end)*RefR);
     end
-
+    
     [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn);
     
     for i=1:cactusGeom.NBlade
-       for j=1:numAeroTS
+        for j=1:numAeroTS
             structuralLoad(i).N(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).N(j,:),structuralSpanLocNorm(i,:),'linear','extrap');
             structuralLoad(i).T(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).T(j,:),structuralSpanLocNorm(i,:),'linear','extrap');
             structuralLoad(i).M25(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).M25(j,:),structuralSpanLocNorm(i,:),'linear','extrap');
-       end
+        end
     end
     
     [~,numNodesPerBlade] = size(structuralNodeNumbers);
@@ -101,15 +100,15 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
     [mesh] = readMesh(meshFn);
     [el] = readElementData(mesh.numEl,elFn,ortFn,bldFn);
     numDofPerNode = 6;
-%     [~,~,timeLen] = size(aeroDistLoadsArrayTime);
-    Fg = zeros(max(max(structuralNodeNumbers))*6,numAeroTS);   
+    %     [~,~,timeLen] = size(aeroDistLoadsArrayTime);
+    Fg = zeros(max(max(structuralNodeNumbers))*6,numAeroTS);
     for i=1:numAeroTS
         for j = 1:cactusGeom.NBlade
             for k = 1:numNodesPerBlade-1
                 %get element data
                 % orientation angle,xloc,sectionProps,element order]
                 elNum = structuralElNumbers(j,k);
-                 %get dof map
+                %get dof map
                 node1 = structuralNodeNumbers(j,k);
                 node2 = structuralNodeNumbers(j,k+1);
                 dofList = [(node1-1)*numDofPerNode+[1:6], (node2-1)*numDofPerNode+[1:6]];
@@ -122,19 +121,19 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
                 elInput.sweepAngle = el.psi(elNum);
                 elInput.coneAngle = el.theta(elNum);
                 elInput.rollAngle = el.roll(elNum);
-
+                
                 elInput.extDistF2Node =  [structuralLoad(j).T(i,k),   structuralLoad(j).T(i,k+1)];
                 elInput.extDistF3Node = -[structuralLoad(j).N(i,k),   structuralLoad(j).N(i,k+1)];
                 elInput.extDistF4Node = -[structuralLoad(j).M25(i,k), structuralLoad(j).M25(i,k+1)];
-
+                
                 [output] = calculateLoadVecFromDistForce(elInput);
                 Fe = output.Fe;
-
+                
                 %asssembly
                 for m = 1:length(dofList)
-                   Fg(dofList(m),i) =  Fg(dofList(m),i)+Fe(m);
+                    Fg(dofList(m),i) =  Fg(dofList(m),i)+Fe(m);
                 end
-            
+                
             end
         end
     end
@@ -151,54 +150,86 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
         end
     end
     
+    
+end
 
+function data = importCactusData(loadsFn,skiplines)
+    fid = fopen(loadsFn);
+    data = zeros(4000,22); %TODO: don't make this hard coded
+    % skip header
+    for i = 1:skiplines
+        myfgetl(fid);
+    end
+    j = 0;
+    while true
+        j = j+1;
+        line = myfgetl(fid);
+        
+        if contains(line, "EOT")
+            break
+        end
+                
+        % Find where all of the delimiters are
+        delimiter_idx = find(line == ',');
+        delimiter_idx = [delimiter_idx,length(delimiter_idx)+1];
+        % Extract the data from the beginning to the last delimiter
+        data_line = zeros(size(delimiter_idx));
+        for k = 1:length(delimiter_idx)
+             data_line(j,k) = str2double(line(delimiter_idx(k)-delimiter_idx(1)+1:delimiter_idx(k)-1));
+        end        
+    end
+    fclose(fid);
+    
+    data = data(1:j,:); %trim the excess off
+    
+    
 end
 
 function [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn)
     %% READ IN BLD FILE
     a = importdata(bldFn);
-
-bladeNum = a(:,1);
-
-numBlades = max(bladeNum);
-numStruts = min(bladeNum);
-if(numStruts>0)
-    numStruts = 0;
-else 
-    numStruts = abs(numStruts);
-end
-
-strutStartIndex = 0;
-for i=1:length(bladeNum)
-    if(isnan(a(i,end)))
-        strutStartIndex = i;
-        break;
+    
+    bladeNum = a(:,1);
+    
+    numBlades = max(bladeNum);
+    numStruts = min(bladeNum);
+    if(numStruts>0)
+        numStruts = 0;
+    else
+        numStruts = abs(numStruts);
     end
-end
-
-
-
-if(strutStartIndex~=0)
-    strutDataBlock = a(strutStartIndex:end,:);
-    [strutEntries, ~] = size(strutDataBlock);
-    numNodesPerStrut = strutEntries/numStruts;
-    numElPerStrut = numNodesPerStrut - 1;
-else
-    [temp,~]=size(a);
-    strutStartIndex = temp + 1;
-end
-
-bladeDataBlock = a(1:strutStartIndex-1,:);
-[bladeEntries, ~] = size(bladeDataBlock);
-numNodesPerBlade = bladeEntries/numBlades;
-numElPerBlade = numNodesPerBlade - 1;
-
-[len,~]=size(bladeDataBlock);
-
-for i=1:numBlades
-    structuralSpanLocNorm(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,2)./bladeDataBlock(i*numNodesPerBlade,2);
-    structuralNodeNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3);
-    structuralElNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4);
-end
-%%
+    
+    strutStartIndex = 0;
+    for i=1:length(bladeNum)
+        if(isnan(a(i,end)))
+            strutStartIndex = i;
+            break;
+        end
+    end
+    
+    
+    
+    if(strutStartIndex~=0)
+        strutDataBlock = a(strutStartIndex:end,:);
+        [strutEntries, ~] = size(strutDataBlock);
+        numNodesPerStrut = strutEntries/numStruts;
+        numElPerStrut = numNodesPerStrut - 1;
+    else
+        [temp,~]=size(a);
+        strutStartIndex = temp + 1;
+    end
+    
+    bladeDataBlock = a(1:strutStartIndex-1,:);
+    [bladeEntries, ~] = size(bladeDataBlock);
+    numNodesPerBlade = bladeEntries/numBlades;
+    numElPerBlade = numNodesPerBlade - 1;
+    
+    [len,~]=size(bladeDataBlock);
+    
+    for i=1:numBlades
+        structuralSpanLocNorm(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,2)./bladeDataBlock(i*numNodesPerBlade,2);
+        structuralNodeNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3);
+        structuralElNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4);
+    end
+    %%
 end
