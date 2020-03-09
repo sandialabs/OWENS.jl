@@ -1,4 +1,5 @@
 clear all
+tic
 % clc
 
 % snl_vawt
@@ -138,3 +139,4 @@ if (datetime - FileInfo.date) > duration(0,1,0)
 end
 
 matc(OLD,NEW);
+toc
