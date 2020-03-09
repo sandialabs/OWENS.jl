@@ -181,9 +181,9 @@ for i = 1:length(varnames)
     end
     
     if num_mismatch == 0
-        fprintf('%s\n',['| PASSED' , varnames{i}])
+        fprintf('%s\n',['PASSED |' , varnames{i}])
     else
-        fprintf('%s\n',['| FAILED', varnames{i}])
+        fprintf('%s\n',['FAILED |', varnames{i}])
     end
     
     total_mismatch = total_mismatch + num_mismatch;
