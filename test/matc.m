@@ -1,4 +1,4 @@
-function result = matc(sf,tf)
+function result = matc(sf,tf,tol1,showdiff)
     % Compare two mat files
     % matc matfile1.mat matfile2.mat
     
@@ -6,24 +6,23 @@ function result = matc(sf,tf)
     % Last Modified by Xianyao Chen, 08-June-2004
     % From https://www.mathworks.com/matlabcentral/fileexchange/5160-compare-two-mat-files
     
-    tol1 = 1e-16;
     N_not_equal = 0;
     
-    if (nargin ~= 2)
-        return
-    end
-    if exist(sf) ~=2
-        msg = sprintf('%s%s','Not valid mat file: ',sf);
-        %     fprintf( [ repmat( '\b', 1, nPos ), '%s' ], msg),
-        fprintf('%s',msg)
-        return
-    end
-    if exist(tf) ~=2
-        msg = sprintf('%s%s','Not valid mat file: ',tf);
-        %     fprintf( [ repmat( '\b', 1, nPos ), '%s' ], msg),
-        fprintf('%s',msg)
-        return
-    end
+%     if (nargin ~= 2)
+%         return
+%     end
+%     if exist(sf) ~=2
+%         msg = sprintf('%s%s','Not valid mat file: ',sf);
+%         %     fprintf( [ repmat( '\b', 1, nPos ), '%s' ], msg),
+%         fprintf('%s',msg)
+%         return
+%     end
+%     if exist(tf) ~=2
+%         msg = sprintf('%s%s','Not valid mat file: ',tf);
+%         %     fprintf( [ repmat( '\b', 1, nPos ), '%s' ], msg),
+%         fprintf('%s',msg)
+%         return
+%     end
     save #~tmp1.mat -mat
     clear
     load #~tmp1 sf
@@ -83,6 +82,22 @@ function result = matc(sf,tf)
             %         msg = sprintf('%12s%12s%20s%20s%20s%20s%s','Variable :: ',var,'    |  Source File: ',sf,' ---  Target File: ',tf,' :: not equal');
             %         fprintf( [ repmat( '\b', 1, nPos ), '%s' ], msg),
             %         fprintf('\n')
+            
+            if showdiff
+                
+                content1 = aas{1};
+                content2 = aat{1};
+                
+                for ii = 1:length(content1(:,1))
+                    for jj = 1:length(content1(1,:))
+                        if ~isequal(content1,content2) && (isnumeric(content1) && isnumeric (content2))
+                            msg = sprintf('%12s%i%2s%i%6s%8e%6s%8e','     Element ' , ii , ':' , jj ,' SRC: ' , content1(ii,jj) , ' TRG: ' , content2(ii,jj));
+                            fprintf('%s\n',msg)
+                        end
+                    end
+                end
+            end
+            
             continue
         else
             msg = sprintf('%12s%12s%6s%s','Variable :: ',var,'  ||  ',' equal');
@@ -156,6 +171,21 @@ function result = matc(sf,tf)
             %         msg = sprintf('%12s%12s%20s%20s%20s%20s%s','Variable :: ',var,'    |  Source File: ',tf,' ---  Target File: ',sf,' :: not equal');
             %         fprintf( [ repmat( '\b', 1, nPos ), '%s' ], msg),
             %         fprintf('\n')
+            
+            if showdiff
+                content1 = aat{1};
+                content2 = aas{1};
+                
+                for ii = 1:length(content1(:,1))
+                    for jj = 1:length(content1(1,:))
+                        if ~isequal(content1,content2) && (isnumeric(content1) && isnumeric (content2))
+                            msg = sprintf('%12s%i%2s%i%6s%8e%6s%8e','     Element ' , ii , ':' , jj ,' SRC: ' , content1(ii,jj) , ' TRG: ' , content2(ii,jj));
+                            fprintf('%s\n',msg)
+                        end
+                    end
+                end
+            end
+            
             continue
         else
             msg = sprintf('%12s%12s%6s%s','Variable :: ',var,'  ||  ',' equal');

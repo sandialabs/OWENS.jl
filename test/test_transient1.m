@@ -120,7 +120,7 @@ for rr = 1%:length(platformProp)
     operatingRPM = 7.2; % rpm
     Nrpm = 10;    % number of rpm stations
     Nmodes = 40;  % number of modes to calculate
-    timeStep = 2e-3;
+    timeStep = 1e-3;
     timeSim = 0.1;       % [sec]
     timeArray = [0 timeSim+1];
     rpmArray  = [operatingRPM operatingRPM];
@@ -138,5 +138,5 @@ if (datetime - FileInfo.date) > duration(0,1,0)
     error('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
 end
 
-matc(OLD,NEW);
+matc(OLD,NEW,1e-16,false);
 toc
