@@ -3,8 +3,8 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
 
     [cactusGeom] = readCactusGeom(geomFn);
     blade = cactusGeom.blade;
-
-    data = importCactusLoads(loadsFn,1);
+    
+    data = importCactusFile(loadsFn,1,2002,22,',');
     
     %define these from params file
     ft2m = 1 / 3.281;
@@ -16,7 +16,7 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
     normTime = data(:,1);
 
     numAeroEl = 0;
-    for i=1:cactusGeom.NBlade;
+    for i=1:cactusGeom.NBlade
         numAeroEl = numAeroEl + cactusGeom.blade(i).NElem;
     end
 
@@ -153,10 +153,11 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
 
 end
 
-function data = importCactusLoads(loadsFn,skiplines)
+function data = importCactusFile(loadsFn,skiplines,row_len,col_len,delim)
     fid = fopen(loadsFn);
-    data = zeros(4000,22); %TODO: dont make this hard coded
+    data = NaN(row_len,col_len); %TODO: dont make this hard coded
     % skip header
+    line = 'abc'; %get variable in scope
     for i = 1:skiplines
         line = myfgetl(fid);
     end
@@ -166,7 +167,7 @@ function data = importCactusLoads(loadsFn,skiplines)
         line = myfgetl(fid);
 
         % Find where all of the delimiters are
-        delimiter_idx = find(line == ',');
+        delimiter_idx = find(line == delim);
         delimiter_idx = [0.0,delimiter_idx,length(line)+1];
         % Extract the data from the beginning to the last delimiter
         for k = 2:length(delimiter_idx)
@@ -181,7 +182,7 @@ end
 
 function [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn)
     %% READ IN BLD FILE
-    a = importdata(bldFn);
+    a = importCactusFile(bldFn,0,60,16,'	');
 
     bladeNum = a(:,1);
 
