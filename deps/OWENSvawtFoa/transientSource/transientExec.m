@@ -44,17 +44,17 @@ OmegaInitial = model.OmegaInit; %Initial rotor speed (Hz)
 if(model.turbineStartup == 1) %forced start-up using generator as motor
     disp('Running in forced starting mode.');
     model.generatorOn = true;
-    Omega = OmegaInitial;
+%     Omega = OmegaInitial;
     rotorSpeedForGenStart = 0.0;
 elseif(model.turbineStartup == 2) %self-starting mode
     disp('Running in self-starting mode.');
     model.generatorOn = false;
-    Omega = OmegaInitial;
+%     Omega = OmegaInitial;
     rotorSpeedForGenStart = model.OmegaGenStart; %Spec rotor speed for generator startup Hz
 else
     disp('Running in specified rotor speed mode');
     model.generatorOn = false;
-    Omega = OmegaInitial;
+%     Omega = OmegaInitial;
     rotorSpeedForGenStart = 1e6; %ensures generator always off for practical purposes
 end
 %..........................................................................
@@ -79,9 +79,9 @@ delta_t = model.delta_t;   %define time step size
 uHist(:,1) = u_s;          %store initial condition
 
 %initialize omega_platform, omega_platform_dot, omegaPlatHist
-omega_platform = zeros(3,1);
-omega_platform_dot = zeros(3,1);
-omegaPlatHist(:,1) = omega_platform;
+% omega_platform = zeros(3,1);
+% omega_platform_dot = zeros(3,1);
+% omegaPlatHist(:,1) = omega_platform;
 
 t(1) = 0.0; %initialize various states and variables
 gb_s = 0;
@@ -92,7 +92,7 @@ Omega_s = OmegaInitial;
 OmegaDot_s = 0;
 genTorque_s = 0;
 torqueDriveShaft_s = 0;
-azi_sm1 = -Omega*delta_t*2*pi;
+% azi_sm1 = -Omega*delta_t*2*pi;
 aziHist(1) = azi_s;
 OmegaHist(1) = Omega_s;
 OmegaDotHist(1) = OmegaDot_s;
@@ -149,7 +149,7 @@ else
 end
 
 %calculate structural/platform moi
-[structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage);
+[~,structureMOI,~]=calculateStructureMassProps(elStorage);
 %..........................................................................
 
 %% Main Loop - iterate for a solution at each time step, i
@@ -157,7 +157,7 @@ for i=1:numTS
 
 %     i %TODO add verbose printing
 if(mod(i,100)==0) %print command that displays progress of time stepping
-    i
+    fprintf('%s\n',['Iteration: ' i])
 end
 
 %% check for specified rotor speed at t(i) + delta_t
@@ -193,8 +193,8 @@ needsAeroCalcAtThisTimestep = true;
 	if(model.hydroOn)  %initialize  platform module related variables
 		Ywec_j = Ywec(i,:);
 		Ywec_jLast = Ywec_j;
-		Accel_j = Accel;
-		Accel_jLast = Accel;
+% 		Accel_j = Accel;
+% 		Accel_jLast = Accel;
 	end
 	
 TOL = 1e-8;  %gauss-seidel iteration tolerance for various modules
@@ -221,7 +221,7 @@ CN2H = CP2H*CN2P;
 %% evaluate platform module
 %%====================================================
 if(model.hydroOn)
-	Accel_jLast= Accel_j;
+% 	Accel_jLast= Accel_j;
 	Ywec_jLast = Ywec_j;
     if(model.platformTurbineYawInteraction == 0)
         FReaction0 = [-FReactionHist(i,1:5)'; 0.0];
@@ -235,7 +235,7 @@ if(model.hydroOn)
     else
         error('PlatformTurbineYawInteraction flag not recognized.');
     end
-	[rbData,Ywec_j,Accel_j] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
+	[rbData,Ywec_j,~] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
 end
 %====================================================
 %%

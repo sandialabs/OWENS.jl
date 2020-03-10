@@ -6,10 +6,10 @@ function [N,p_N_x,Jac] = calculateShapeFunctions(elementOrder,xi,x)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [N,p_N_x,Jac] = calculateShapeFunctions(elementOrder,xi,x)
-%                    
-%   This function calculates the Lagrange shape function, shape 
-%   function derivative, and Jacobian to map between the local element 
-%   domain and physical length of the element. The shape function 
+%
+%   This function calculates the Lagrange shape function, shape
+%   function derivative, and Jacobian to map between the local element
+%   domain and physical length of the element. The shape function
 %   derivative is defined with respect to the physical length domain. The
 %   shape functions may be linear or quadratic in order.
 %
@@ -30,7 +30,7 @@ function [N,p_N_x,Jac] = calculateShapeFunctions(elementOrder,xi,x)
 
 %Linear interpolation functions
 if(elementOrder == 1)
-   
+    
     N(1) = 0.5*(1.0 - xi);
     N(2) = 0.5*(1.0 + xi);
     
@@ -41,22 +41,23 @@ end
 
 %Quadratic interpolation functions
 if(elementOrder == 2)
-   N(1) = 0.5*(xi-1.0)*xi;
-   N(2) = 1.0-xi^2;
-   N(3) = 0.5*(xi+1.0)*xi;
-   
-   p_N_xi(1) = xi - 0.5;
-   p_N_xi(2) = -2.0*xi;
-   p_N_xi(3) = xi + 0.5;
+    N(1) = 0.5*(xi-1.0)*xi;
+    N(2) = 1.0-xi^2;
+    N(3) = 0.5*(xi+1.0)*xi;
+    
+    p_N_xi(1) = xi - 0.5;
+    p_N_xi(2) = -2.0*xi;
+    p_N_xi(3) = xi + 0.5;
 end
 
 numNodesPerEl = length(N);
 Jac=0.0;
 for i=1:numNodesPerEl
-   Jac = Jac + p_N_xi(i)*x(i);
+    Jac = Jac + p_N_xi(i)*x(i);
 end
 
+p_N_x = zeros(numNodesPerEl,1);
 for i=1:numNodesPerEl
-   p_N_x(i) = p_N_xi(i)/Jac; 
+    p_N_x(i) = p_N_xi(i)/Jac;
 end
 end

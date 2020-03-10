@@ -3,9 +3,9 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
 
     [cactusGeom] = readCactusGeom(geomFn);
     blade = cactusGeom.blade;
-    
+
     data = importCactusFile(loadsFn,1,2002,22,',');
-    
+
     %define these from params file
     ft2m = 1 / 3.281;
     rho = 1.225;
@@ -44,6 +44,10 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
     Fy = Fx;
     Fz = Fx;
 
+    NperSpan = zeros(len,1);
+    TperSpan = zeros(len,1);
+    M25perSpan = zeros(len,1);
+    Mecc = zeros(len,1);
 
     for i=1:len
 
@@ -199,7 +203,7 @@ function [bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumb
         structuralNodeNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3);
         structuralElNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4);
     end
-    
+
     bladeData.numBlades = numBlades;  %assign data to bladeData object
     bladeData.bladeNum = bladeDataBlock(:,1);
     bladeData.h = bladeDataBlock(:,2);
