@@ -1,7 +1,7 @@
 clear all
 tic
 % clc
-tol1 = 1e-12;
+tol1 = 1e-1;
 % snl_vawt
 
 % cd('C:\data\OffshoreVAWT\SESPhaseI_OWENS\dvawt\carbon\dvawt_c_2_lcdt\transientAnalysis')
@@ -158,7 +158,7 @@ for i = 1:length(varnames)
             sub_new_data = new_data.(subvarnames{j});
             for ii = 1:length(sub_old_data(:,1))
                 for jj = 1:length(sub_old_data(1,:))
-                    if ~(ismembertol(sub_old_data,sub_new_data,tol1))
+                    if (abs(sub_old_data(ii,jj)-sub_new_data(ii,jj))>tol1)
                         msg = sprintf('%20s%i%2s%i%6s%8e%6s%8e', subvarnames{j}  , ii , ':' , jj ,' OLD: ' , sub_old_data(ii,jj) , ' NEW: ' , sub_new_data(ii,jj));
                         fprintf('%s\n',msg)
                         num_mismatch = num_mismatch + 1;
@@ -170,7 +170,7 @@ for i = 1:length(varnames)
     elseif ~(min(min(ismembertol(old_data,new_data,tol1))))
         for ii = 1:length(old_data(:,1))
             for jj = 1:length(old_data(1,:))
-                if ~(ismembertol(old_data(ii,jj),new_data(ii,jj),tol1))
+                if (abs(old_data(ii,jj)-new_data(ii,jj))>tol1)
                     msg = sprintf('%20s%i%2s%i%6s%8e%6s%8e',varnames{i} , ii , ':' , jj ,' OLD: ' , old_data(ii,jj) , ' NEW: ' , new_data(ii,jj));
                     fprintf('%s\n',msg)
                     num_mismatch = num_mismatch + 1;

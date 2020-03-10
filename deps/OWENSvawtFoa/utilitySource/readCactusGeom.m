@@ -1,114 +1,130 @@
 function [cactusGeom] = readCactusGeom(geomfn)
 
-fid = fopen(geomfn,'r');
+    fid = fopen(geomfn,'r');
 
-[cactusGeom.NBlade,fid] = processLine(fid,'','%[NBlade:]','%i');
-[cactusGeom.NStrut,fid] = processLine(fid,'','%[NStrut:]','%i');
-[cactusGeom.RotN,fid] = processLine(fid,'','%[RotN:]','%f%f%f');
-[cactusGeom.RotP,fid] = processLine(fid,'','%[RotP:]','%f%f%f');
-[cactusGeom.RefAR,fid] = processLine(fid,'','%[RefAR:]','%f');
-[cactusGeom.RefR,fid] = processLine(fid,'','%[RefR:]','%f');
-fgetl(fid);
+    [cactusGeom.NBlade] = processLine(fid);
+    [cactusGeom.NStrut] = processLine(fid);
+    [cactusGeom.RotN] = processLine(fid);
+    [cactusGeom.RotP] = processLine(fid);
+    [cactusGeom.RefAR] = processLine(fid);
+    [cactusGeom.RefR] = processLine(fid);
+    myfgetl(fid);
 
-for i=1:cactusGeom.NBlade
-    [cactusGeom.blade(i),fid] = readBladeBlock(fid);
+    for i=1:cactusGeom.NBlade
+        [cactusGeom.blade(i)] = readBladeBlock(fid);
+    end
+
+    for i=1:cactusGeom.NStrut
+        [cactusGeom.strut(i)] = readStrutBlock(fid);
+    end
+
+    fclose(fid);
+
 end
 
-for i=1:cactusGeom.NStrut
-   [cactusGeom.strut(i),fid] = readStrutBlock(fid);
-end
+function [blade] = readBladeBlock(fid)
+    dum=myfgetl(fid);
+    [blade.NElem] =  processLine(fid);
+    [blade.FlipN] =  processLine(fid);
 
-fclose(fid);
-
-end
-
-function [blade,fid] = readBladeBlock(fid)
-    dum=fgetl(fid);
-    [blade.NElem,fid] =  processLine(fid,'\t','%[NElem:]','%i');
-    [blade.FlipN,fid] =  processLine(fid,'\t','%[FlipN:]','%i');
-    
     fsecstr = [];
     isecstr = [];
-    for j=1:blade.NElem+1;
+    for j=1:blade.NElem+1
         fsecstr = [fsecstr,'%f'];
         isecstr = [isecstr,'%i'];
     end
-        fsecel = fsecstr(1:end-2);
-        isecel = isecstr(1:end-2);
-    
-    [blade.QCx,fid] =  processLine(fid,'\t','%[QCx:]',fsecstr);
-    [blade.QCy,fid] =  processLine(fid,'\t','%[QCy:]',fsecstr);
-    [blade.QCz,fid] =  processLine(fid,'\t','%[QCz:]',fsecstr);
-    
-    [blade.tx,fid] =  processLine(fid,'\t','%[tx:]',fsecstr);
-    [blade.ty,fid] =  processLine(fid,'\t','%[ty:]',fsecstr);
-    [blade.tz,fid] =  processLine(fid,'\t','%[tz:]',fsecstr);
-    
-    [blade.CtoR,fid] =  processLine(fid,'\t','%[CtoR:]',fsecstr);
-    
-    [blade.PEx,fid] =  processLine(fid,'\t','%[PEx:]',fsecel);
-    [blade.PEy,fid] =  processLine(fid,'\t','%[PEy:]',fsecel);
-    [blade.PEz,fid] =  processLine(fid,'\t','%[PEz:]',fsecel);
-    
-    [blade.tEx,fid] =  processLine(fid,'\t','%[tEx:]',fsecel);
-    [blade.tEy,fid] =  processLine(fid,'\t','%[tEy:]',fsecel);
-    [blade.tEz,fid] =  processLine(fid,'\t','%[tEz:]',fsecel);
-    
-    [blade.nEx,fid] =  processLine(fid,'\t','%[nEx:]',fsecel);
-    [blade.nEy,fid] =  processLine(fid,'\t','%[nEy:]',fsecel);
-    [blade.nEz,fid] =  processLine(fid,'\t','%[nEz:]',fsecel);
-    
-    [blade.sEx,fid] =  processLine(fid,'\t','%[sEx:]',fsecel);
-    [blade.sEy,fid] =  processLine(fid,'\t','%[sEy:]',fsecel);
-    [blade.sEz,fid] =  processLine(fid,'\t','%[sEz:]',fsecel);
-    
-    [blade.ECtoR,fid] =  processLine(fid,'\t','%[ECtoR:]',fsecel);
-    [blade.EAreaR,fid] =  processLine(fid,'\t','%[EAreaR:]',fsecel);
-    [blade.iSect,fid] =  processLine(fid,'\t','%[iSect:]',isecel);
+    fsecel = fsecstr(1:end-2);
+    isecel = isecstr(1:end-2);
+
+    [blade.QCx] =  processLine(fid);
+    [blade.QCy] =  processLine(fid);
+    [blade.QCz] =  processLine(fid);
+
+    [blade.tx] =  processLine(fid);
+    [blade.ty] =  processLine(fid);
+    [blade.tz] =  processLine(fid);
+
+    [blade.CtoR] =  processLine(fid);
+
+    [blade.PEx] =  processLine(fid);
+    [blade.PEy] =  processLine(fid);
+    [blade.PEz] =  processLine(fid);
+
+    [blade.tEx] =  processLine(fid);
+    [blade.tEy] =  processLine(fid);
+    [blade.tEz] =  processLine(fid);
+
+    [blade.nEx] =  processLine(fid);
+    [blade.nEy] =  processLine(fid);
+    [blade.nEz] =  processLine(fid);
+
+    [blade.sEx] =  processLine(fid);
+    [blade.sEy] =  processLine(fid);
+    [blade.sEz] =  processLine(fid);
+
+    [blade.ECtoR] =  processLine(fid);
+    [blade.EAreaR] =  processLine(fid);
+    [blade.iSect] =  processLine(fid);
 end
 
-function [blade,fid] = readStrutBlock(fid)
-    dum=fgetl(fid);
-    [blade.NElem,fid] =  processLine(fid,'\t','%[NElem:]','%i');
-        
+function [blade] = readStrutBlock(fid)
+    dum=myfgetl(fid);
+    [blade.NElem] =  processLine(fid);
+
     fsecstr = [];
     isecstr = [];
-    for j=1:blade.NElem+1;
+    for j=1:blade.NElem+1
         fsecstr = [fsecstr,'%f'];
         isecstr = [isecstr,'%i'];
     end
-        fsecel = fsecstr(1:end-2);
-        isecel = isecstr(1:end-2);
-    
-    [blade.TtoC,fid] = processLine(fid,'\t','%[TtoC:]','%f');
-    
-    [blade.MCx,fid] =  processLine(fid,'\t','%[MCx:]',fsecstr);
-    [blade.MCy,fid] =  processLine(fid,'\t','%[MCy:]',fsecstr);
-    [blade.MCz,fid] =  processLine(fid,'\t','%[MCz:]',fsecstr);
-    
-    [blade.CtoR,fid] =  processLine(fid,'\t','%[CtoR:]',fsecstr);
-    
-    [blade.PEx,fid] =  processLine(fid,'\t','%[PEx:]',fsecel);
-    [blade.PEy,fid] =  processLine(fid,'\t','%[PEy:]',fsecel);
-    [blade.PEz,fid] =  processLine(fid,'\t','%[PEz:]',fsecel);
-    
-    [blade.sEx,fid] =  processLine(fid,'\t','%[sEx:]',fsecel);
-    [blade.sEy,fid] =  processLine(fid,'\t','%[sEy:]',fsecel);
-    [blade.sEz,fid] =  processLine(fid,'\t','%[sEz:]',fsecel);
-    
-    [blade.ECtoR,fid] =  processLine(fid,'\t','%[ECtoR:]',fsecel);
-    [blade.EAreaR,fid] =  processLine(fid,'\t','%[EAreaR:]',fsecel);
-    [blade.BIndS,fid] =  processLine(fid,'\t','%[BIndS:]','%i');
-    [blade.EIndS,fid] =  processLine(fid,'\t','%[EIndS:]','%i');
-    [blade.BIndE,fid] =  processLine(fid,'\t','%[BIndE:]','%i');
-    [blade.EIndE,fid] =  processLine(fid,'\t','%[EIndE:]','%i');
+    fsecel = fsecstr(1:end-2);
+    isecel = isecstr(1:end-2);
+
+    [blade.TtoC] = processLine(fid);
+
+    [blade.MCx] =  processLine(fid);
+    [blade.MCy] =  processLine(fid);
+    [blade.MCz] =  processLine(fid);
+
+    [blade.CtoR] =  processLine(fid);
+
+    [blade.PEx] =  processLine(fid);
+    [blade.PEy] =  processLine(fid);
+    [blade.PEz] =  processLine(fid);
+
+    [blade.sEx] =  processLine(fid);
+    [blade.sEy] =  processLine(fid);
+    [blade.sEz] =  processLine(fid);
+
+    [blade.ECtoR] =  processLine(fid);
+    [blade.EAreaR] =  processLine(fid);
+    [blade.BIndS] =  processLine(fid);
+    [blade.EIndS] =  processLine(fid);
+    [blade.BIndE] =  processLine(fid);
+    [blade.EIndE] =  processLine(fid);
 end
 
-function [data,fid] = processLine(fid,preFix,labelStr,numStr)
-    temp = fgetl(fid);
-    [data] = sscanf(temp,[preFix,labelStr,numStr]);
-    len = length(labelStr)-3;
+function [data] = processLine(fid)
 
-    data = data(len+1:end);
+    line = myfgetl(fid);
+
+    % Find where all of the delimiters are
+    delimiter_log_idx = line == ' ';
+    % Reduce delimiter index to just two consecutive spaces
+    delimiter_idx = length(delimiter_log_idx); %Initialize variable scope if there are no delimiters
+    j = 1;
+    for i = 2:length(delimiter_log_idx)-1
+        if (delimiter_log_idx(i-1) == 1) && (delimiter_log_idx(i) == 1) && (delimiter_log_idx(i+1) == 0)
+            delimiter_idx(j) = i;
+            j = j+1;
+        end
+    end
+
+    delimiter_idx = [delimiter_idx,length(line)+1]; %They all have a prefix in the .geom file, so don't include a 0 index and thus don't grab the prefix.  The logic above also skips the type and blade lines, so no need to parse for those either.
+    data = zeros(length(delimiter_idx)-1,1);
+    % Extract the data from the beginning to the last delimiter
+    for k = 2:length(delimiter_idx)
+        data(k-1) = str2double(line(delimiter_idx(k-1)+1:delimiter_idx(k)-1));
+    end
 
 end
