@@ -20,6 +20,7 @@ function [el] = readElementData(numElements,elfile,ortfile,bladeData_struct)
 %      el            = element data object
 
 fid = fopen(elfile,'r'); %open element data file
+sectionPropsArray = cell(numElements);
 for i=1:numElements
     data1=getSplitLine(fid); %read element data
     data2=getSplitLine(fid);
@@ -58,30 +59,6 @@ for i=1:numElements
 
 end
 
-% %read in element aerodynamic properties
-%  index = 1;
-%  while(~feof(fid2))
-%      tempvar = fscanf(fid2,'%i',1);
-%      if(isempty(tempvar))
-%          break;
-%      end
-%      bladeNum(index) = fscanf(fid2,'%i',1);
-%
-%      if(tempvar==-1)
-%          break;
-%      end
-%      bladeNum(index) = tempvar;             %blade number
-%      rPos(index) = fscanf(fid2,'%e',1);     %spanwise position
-%      nodeNum(index) = fscanf(fid2,'%i',1);  %node number associated with blade section
-%      elNum(index) = fscanf(fid2,'%i',1);    %element number associated with blade sectino
-%      bladeData(index,1:12) = (fscanf(fid2,'%e',12))';  %blade data'
-%      index = index + 1;
-%
-% 	 emptyBladeFile = false;
-%  end
-
-
-
 nodeNum = bladeData_struct.nodeNum;  %node number associated with blade section
 elNum = bladeData_struct.elementNum;    %element number associated with blade sectino
 bladeData = bladeData_struct.remaining;  %blade data
@@ -113,14 +90,17 @@ disp('EIyz, rhoIyz deactivated');
 fclose(fid); %close element file
 
 %read element orientation data
+elLen = zeros(numElements,1);
+psi = zeros(numElements,1);
+theta = zeros(numElements,1);
+roll = zeros(numElements,1);
 fid = fopen(ortfile,'r');
 for i=1:numElements
-    dum=fscanf(fid,'%i',1);
-    temp=fscanf(fid,'%e',7);
-    elLen(i)=temp(4);
-    psi(i)=temp(1);
-    theta(i)=temp(2);
-    roll(i)=temp(3);
+    temp = getSplitLine(fid);
+    elLen(i)=temp(5);
+    psi(i)=temp(2);
+    theta(i)=temp(3);
+    roll(i)=temp(4);
 end
 
 %store data in element object
