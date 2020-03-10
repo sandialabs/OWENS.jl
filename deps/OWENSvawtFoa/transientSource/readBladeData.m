@@ -50,11 +50,12 @@ try
     
     bladeDataBlock = a(1:strutStartIndex-1,:);
     
-    bladeData.numBlades = numBlades;  %assign data to bladeData object
+    bladeData.numBlades = numBlades;  %assign data to bladeData object %TODO: Should not be loading this file in multiple times
     bladeData.bladeNum = bladeDataBlock(:,1);
     bladeData.h = bladeDataBlock(:,2);
     bladeData.nodeNum = bladeDataBlock(:,3);
     bladeData.elementNum = bladeDataBlock(:,4);
+    bladeData.remaining = bladeDataBlock(:,5:end);
     
     
 catch

@@ -82,7 +82,7 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
         spanLocNorm(i,:) = blade(i).PEy.*RefR/(blade(i).QCy(end)*RefR);
     end
 
-    [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn);
+    [bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn);
 
     for i=1:cactusGeom.NBlade
         for j=1:numAeroTS
@@ -98,7 +98,7 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
 
     %read element data in
     [mesh] = readMesh(meshFn);
-    [el] = readElementData(mesh.numEl,elFn,ortFn,bldFn);
+    [el] = readElementData(mesh.numEl,elFn,ortFn,bladeData);
     numDofPerNode = 6;
     %     [~,~,timeLen] = size(aeroDistLoadsArrayTime);
     Fg = zeros(max(max(structuralNodeNumbers))*6,numAeroTS);
@@ -153,7 +153,7 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
 
 end
 
-function [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn)
+function [bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn)
     %% READ IN BLD FILE
     a = importCactusFile(bldFn,0,60,16,'	');
 
@@ -200,11 +200,11 @@ function [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = rea
         structuralElNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4);
     end
     
-%     bladeData.numBlades = numBlades;  %assign data to bladeData object
-%     TODO: should only load in blade file once.
-%     bladeData.bladeNum = bladeDataBlock(:,1);
-%     bladeData.h = bladeDataBlock(:,2);
-%     bladeData.nodeNum = bladeDataBlock(:,3);
-%     bladeData.elementNum = bladeDataBlock(:,4);
+    bladeData.numBlades = numBlades;  %assign data to bladeData object
+    bladeData.bladeNum = bladeDataBlock(:,1);
+    bladeData.h = bladeDataBlock(:,2);
+    bladeData.nodeNum = bladeDataBlock(:,3);
+    bladeData.elementNum = bladeDataBlock(:,4);
+    bladeData.remaining = bladeDataBlock(:,5:end);
     %%
 end
