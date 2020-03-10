@@ -30,7 +30,7 @@ if(driveShaftFlag) %if drive shaft active, open file and read properties
     %
     %     model.gearRatio = b(1);         %assign gear ratio
     %     model.gearBoxEfficiency = b(2); %assign gear box efficiency
-    error('DRIVESHAFT NOT FULLY ENABLED')
+    error(['DRIVESHAFT NOT FULLY ENABLED while loading: ' dsfilename])
     
 else   %if drive train is deactivated
     model.driveTrainOn = false;          %set drive shaft unactive

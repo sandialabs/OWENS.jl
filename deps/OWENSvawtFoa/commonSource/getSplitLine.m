@@ -1,8 +1,8 @@
-function [data] = getSplitLine(fid)
+function [data] = getSplitLine(fid,delim)
 
 line = myfgetl(fid);
 % Find where all of the delimiters are
-delimiter_idx = find(line == '	'); %Tab delimited
+delimiter_idx = find(line == delim);
 delimiter_idx = [0.0,delimiter_idx,length(line)+1];
 % Extract the data from the beginning to the last delimiter
 data = zeros(length(delimiter_idx)-1,1);

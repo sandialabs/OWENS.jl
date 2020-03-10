@@ -162,24 +162,31 @@ end
 fid = fopen(inputfile,'r'); %reads in model file names from .owens file
 last_delimiter   = find(or(inputfile == '/', inputfile == '\')); %'
 fdirectory       = inputfile(1:last_delimiter(end));
-meshfilename     = [fdirectory myfget1(fid)]; %mesh file name
-eldatafilename   = [fdirectory myfget1(fid)]; %element data file name
-ortdatafilename  = [fdirectory myfget1(fid)]; %element orientation file name
-jntdatafilename  = [fdirectory myfget1(fid)]; %joint data file name
-ndldatafilename  = [fdirectory myfget1(fid)]; %concentrated nodal data file name
-bcdatafilename   = [fdirectory myfget1(fid)]; %boundary condition file name
-[platformFlag,~] = getSplitLine(fid);
-platfilename     = [fdirectory myfget1(fid)];
-initcondfilename = [fdirectory myfget1(fid)]; %initial condition filename
-[aeroFlag,~]     = getSplitLine(fid); %flag for activating aerodynamic analysis
-blddatafilename  = [fdirectory myfget1(fid)]; %blade data file name
-model.aeroloadfile = [fdirectory myfget1(fid)]; %.mat file containing CACTUS aerodynamic loads
+meshfilename     = [fdirectory myfgetl(fid)]; %mesh file name
+eldatafilename   = [fdirectory myfgetl(fid)]; %element data file name
+ortdatafilename  = [fdirectory myfgetl(fid)]; %element orientation file name
+jntdatafilename  = [fdirectory myfgetl(fid)]; %joint data file name
+ndldatafilename  = [fdirectory myfgetl(fid)]; %concentrated nodal data file name
+bcdatafilename   = [fdirectory myfgetl(fid)]; %boundary condition file name
+line             = myfgetl(fid);
+platformFlag     = str2double(line(1:2));
+platfilename     = [fdirectory line(3:end)];
+initcondfilename = [fdirectory myfgetl(fid)]; %initial condition filename
 
-[driveShaftFlag,~] = getSplitLine(fid); %flag to include drive shaft effects
-driveshaftfilename = [fdirectory myfget1(fid)]; %drive shaft file name
+line             = myfgetl(fid);
+delimiter_idx    = find(line == ' ');
 
-generatorfilename = [fdirectory myfget1(fid)]; %generator file name
-rayleighDamping   = getSplitLine(fid); %read in alpha/beta for rayleigh damping
+aeroFlag         = str2double(line(1)); %flag for activating aerodynamic analysis
+blddatafilename  = [fdirectory line(delimiter_idx(1)+1:delimiter_idx(2)-1)]; %blade data file name
+model.aeroloadfile = [fdirectory line(delimiter_idx(2)+1:end)]; %.mat file containing CACTUS aerodynamic loads
+
+line             = myfgetl(fid); %flag to include drive shaft effects
+driveShaftFlag   = str2double(line(1:2));
+driveshaftfilename = [fdirectory line(3:end)]; %drive shaft file name
+
+generatorfilename = [fdirectory myfgetl(fid)]; %generator file name
+rayleighDamping   = getSplitLine((fid),'	'); %read in alpha/beta for rayleigh damping
+rayleighDamping = rayleighDamping(1:2);
 if(isempty(rayleighDamping))
     model.RayleighAlpha = 0.0;
     model.RayleighBeta = 0.0;
