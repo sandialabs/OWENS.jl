@@ -6,7 +6,7 @@ function [model] =  readDriveShaftProps(model,driveShaftFlag,dsfilename)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [model] =  readDriveShaftProps(model,driveShaftFlag,dsfilename)
-%                    
+%
 %   This function reads driveshaft properties from file.
 %
 %   input:
@@ -18,18 +18,19 @@ function [model] =  readDriveShaftProps(model,driveShaftFlag,dsfilename)
 %   model          = model object containing model information
 
 if(driveShaftFlag) %if drive shaft active, open file and read properties
-    fid = fopen(dsfilename);
-    a = fscanf(fid,'%f',3);     [dum] = fgetl(fid);
-    b = fscanf(fid,'%f',2);     [dum] = fgetl(fid);
-    
-    model.driveTrainOn = true;   %set drive shaft to active
-    
-    model.driveShaftProps.k = a(1); %assign drive shaft stiffness
-    model.driveShaftProps.c = a(2); %assign drive shaft damping
-    model.JgearBox =a(3);           %assign gearbox MOI
-    
-    model.gearRatio = b(1);         %assign gear ratio
-    model.gearBoxEfficiency = b(2); %assign gear box efficiency
+    %     fid = fopen(dsfilename);
+    %     a = fscanf(fid,'%f',3);     [dum] = fgetl(fid);
+    %     b = fscanf(fid,'%f',2);     [dum] = fgetl(fid);
+    %
+    %     model.driveTrainOn = true;   %set drive shaft to active
+    %
+    %     model.driveShaftProps.k = a(1); %assign drive shaft stiffness
+    %     model.driveShaftProps.c = a(2); %assign drive shaft damping
+    %     model.JgearBox =a(3);           %assign gearbox MOI
+    %
+    %     model.gearRatio = b(1);         %assign gear ratio
+    %     model.gearBoxEfficiency = b(2); %assign gear box efficiency
+    error('DRIVESHAFT NOT FULLY ENABLED')
     
 else   %if drive train is deactivated
     model.driveTrainOn = false;          %set drive shaft unactive

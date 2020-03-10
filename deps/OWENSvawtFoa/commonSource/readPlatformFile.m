@@ -1,4 +1,4 @@
- function [model] = readPlatformFile(model,platformFlag,platfilename)
+function [model] = readPlatformFile(model,platformFlag,platfilename)
 %readPlatformFile reads platform file
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -6,7 +6,7 @@
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [model] = readPlatformFile(model,platformFlag,platfilename)
-%                    
+%
 %   This function reads the platform input file and stores data in the
 %   model object.
 %
@@ -19,34 +19,35 @@
 %      output:
 %      model          = object containing model data
 
-    if(platformFlag == 1)
-        model.hydroOn = true;
-    elseif(platformFlag == 0)
-        model.hydroOn = false;
-    else
-        error('Platform translation flag not recognized.');
-    end
-    
-    model.platformTurbineConnectionNodeNumber = 1; %default to node number 1, update with platform file
-    if(platformFlag == 1)
-        
-        fid = fopen(platfilename);
-        
-        if(fid>0) %check if file was opened successfully
-            model.activePlatformDofs = fscanf(fid,'%i',6)';         [dum]=fgetl(fid);
-            model.initialCondPlatformDofs = fscanf(fid,'%f',6)';    [dum]=fgetl(fid);
-            model.Plat_Drag_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
-            model.Plat_Moor_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
-            model.Plat_Grav_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
-            model.Plat_Plot_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
-            model.Plat_RadDamp_Flag = fscanf(fid,'%i',1); [dum]=fgetl(fid);
-            model.platformTurbineConnectionNodeNumber = fscanf(fid,'%i',1); [dum]=fgetl(fid);
-            model.platformTurbineYawInteraction = fscanf(fid,'%i',1); [dum]=fgetl(fid);
-            model.platformServerPort = fscanf(fid,'%i',1); [dum]=fgetl(fid);            
-            model.platformClientPort = fscanf(fid,'%i',1); [dum]=fgetl(fid);
+if(platformFlag == 1)
+    model.hydroOn = true;
+elseif(platformFlag == 0)
+    model.hydroOn = false;
+else
+    error('Platform translation flag not recognized.');
+end
 
-        else
-            error('Platform file could not be opened.');
-        end
-    end    
+model.platformTurbineConnectionNodeNumber = 1; %default to node number 1, update with platform file
+if(platformFlag == 1)
+    
+    fid = fopen(platfilename);
+    
+    if(fid>0) %check if file was opened successfully
+        %             model.activePlatformDofs = fscanf(fid,'%i',6)';         [dum]=fgetl(fid);
+        %             model.initialCondPlatformDofs = fscanf(fid,'%f',6)';    [dum]=fgetl(fid);
+        %             model.Plat_Drag_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
+        %             model.Plat_Moor_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
+        %             model.Plat_Grav_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
+        %             model.Plat_Plot_Flag = fscanf(fid,'%i',1);    [dum]=fgetl(fid);
+        %             model.Plat_RadDamp_Flag = fscanf(fid,'%i',1); [dum]=fgetl(fid);
+        %             model.platformTurbineConnectionNodeNumber = fscanf(fid,'%i',1); [dum]=fgetl(fid);
+        %             model.platformTurbineYawInteraction = fscanf(fid,'%i',1); [dum]=fgetl(fid);
+        %             model.platformServerPort = fscanf(fid,'%i',1); [dum]=fgetl(fid);
+        %             model.platformClientPort = fscanf(fid,'%i',1); [dum]=fgetl(fid);
+        error('PLATFORM NOT FULLY ENABLED')
+        
+    else
+        error('Platform file could not be opened.');
+    end
+end
 end

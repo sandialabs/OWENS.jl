@@ -6,7 +6,7 @@ function [genprops] = readGeneratorProps(generatorfilename)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [genprops] = readGeneratorProps(generatorfilename)
-%                    
+%
 %   This function reads generator properties from file.
 %
 %   input:
@@ -15,19 +15,20 @@ function [genprops] = readGeneratorProps(generatorfilename)
 %   output:
 %   genprops          = model object containing generator properties
 
-    fid = fopen(generatorfilename); %open generator property file
-    if(fid~=-1) %if file can be opened
-        genprops.ratedTorque = fscanf(fid,'%f',1); %store rated torque
-        dum = fgetl(fid);
-        genprops.zeroTorqueGenSpeed = fscanf(fid,'%f',1); %store zero torque generator zpeed
-        dum = fgetl(fid);
-        genprops.pulloutRatio = fscanf(fid,'%f',1); %store pullout ratio
-        dum = fgetl(fid);
-        genprops.ratedGenSlipPerc= fscanf(fid,'%f',1); %store rated generator slip percentage
-        dum = fgetl(fid);
-        
-        fclose(fid); %close generator propery file
-    else
-        genprops = []; %if generator property file does not exist, set object to null
-    end
+fid = fopen(generatorfilename); %open generator property file
+if(fid~=-1) %if file can be opened
+    %         genprops.ratedTorque = fscanf(fid,'%f',1); %store rated torque
+    %         dum = fgetl(fid);
+    %         genprops.zeroTorqueGenSpeed = fscanf(fid,'%f',1); %store zero torque generator zpeed
+    %         dum = fgetl(fid);
+    %         genprops.pulloutRatio = fscanf(fid,'%f',1); %store pullout ratio
+    %         dum = fgetl(fid);
+    %         genprops.ratedGenSlipPerc= fscanf(fid,'%f',1); %store rated generator slip percentage
+    %         dum = fgetl(fid);
+    %
+    %         fclose(fid); %close generator propery file
+    error('GENERATOR NOT FULLY ENABLED')
+else
+    genprops = []; %if generator property file does not exist, set object to null
+end
 end
