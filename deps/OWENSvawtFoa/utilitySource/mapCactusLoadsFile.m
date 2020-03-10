@@ -153,32 +153,6 @@ function [time,ForceValHist,ForceDof] = mapCactusLoadsFile(geomFn,loadsFn,bldFn,
 
 end
 
-function data = importCactusFile(loadsFn,skiplines,row_len,col_len,delim)
-    fid = fopen(loadsFn);
-    data = NaN(row_len,col_len); %TODO: dont make this hard coded
-    % skip header
-    for i = 1:skiplines
-        line = myfgetl(fid);
-    end
-    j = 0;
-    while ~feof(fid)
-        j = j+1;
-        line = myfgetl(fid);
-
-        % Find where all of the delimiters are
-        delimiter_idx = find(line == delim);
-        delimiter_idx = [0.0,delimiter_idx,length(line)+1];
-        % Extract the data from the beginning to the last delimiter
-        for k = 2:length(delimiter_idx)
-             data(j,k-1) = str2double(line(delimiter_idx(k-1)+1:delimiter_idx(k)-1));
-        end
-    end
-    fclose(fid);
-
-    data = data(1:j-1,:); %trim the excess off
-
-end
-
 function [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn)
     %% READ IN BLD FILE
     a = importCactusFile(bldFn,0,60,16,'	');
@@ -225,5 +199,12 @@ function [structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = rea
         structuralNodeNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3);
         structuralElNumbers(i,:) = bladeDataBlock((i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4);
     end
+    
+%     bladeData.numBlades = numBlades;  %assign data to bladeData object
+%     TODO: should only load in blade file once.
+%     bladeData.bladeNum = bladeDataBlock(:,1);
+%     bladeData.h = bladeDataBlock(:,2);
+%     bladeData.nodeNum = bladeDataBlock(:,3);
+%     bladeData.elementNum = bladeDataBlock(:,4);
     %%
 end
