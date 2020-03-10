@@ -157,12 +157,11 @@ function data = importCactusFile(loadsFn,skiplines,row_len,col_len,delim)
     fid = fopen(loadsFn);
     data = NaN(row_len,col_len); %TODO: dont make this hard coded
     % skip header
-    line = 'abc'; %get variable in scope
     for i = 1:skiplines
         line = myfgetl(fid);
     end
     j = 0;
-    while ~isempty(line)
+    while ~feof(fid)
         j = j+1;
         line = myfgetl(fid);
 
