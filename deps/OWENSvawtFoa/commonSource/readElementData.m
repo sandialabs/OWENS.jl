@@ -22,8 +22,8 @@ function [el] = readElementData(numElements,elfile,ortfile,bladeData_struct)
 fid = fopen(elfile,'r'); %open element data file
 sectionPropsArray = cell(numElements);
 for i=1:numElements
-    data1=getSplitLine(fid); %read element data
-    data2=getSplitLine(fid);
+    data1=getSplitLine(fid,'	'); %read element data
+    data2=getSplitLine(fid,'	');
 
     %structural properties
     sectionPropsArray{i}.ac = -([data1(2) data2(2)]-0.5);
@@ -96,7 +96,7 @@ theta = zeros(numElements,1);
 roll = zeros(numElements,1);
 fid = fopen(ortfile,'r');
 for i=1:numElements
-    temp = getSplitLine(fid);
+    temp = getSplitLine(fid,'	');
     elLen(i)=temp(5);
     psi(i)=temp(2);
     theta(i)=temp(3);

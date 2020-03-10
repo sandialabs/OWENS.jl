@@ -18,7 +18,7 @@ function [mesh] = readMesh(filename)
 fid = fopen(filename,'r');   %open mesh file
 
 % temp = fscanf(fid,'%i',2);   %read in number of nodes and number of elements
-temp = getSplitLine(fid);
+temp = getSplitLine(fid,'	');
 numNodes = temp(1);
 numEl = temp(2);
 
@@ -31,7 +31,7 @@ conn = zeros(numEl,2);
 elNum = zeros(numEl,1);
 
 for i=1:numNodes            % read in node number and node coordinates
-    temp = getSplitLine(fid);
+    temp = getSplitLine(fid,'	');
     nodeNum(i) = temp(1);
     x(i) = temp(2);
     y(i) = temp(3);
@@ -39,7 +39,7 @@ for i=1:numNodes            % read in node number and node coordinates
 end
 
 for i=1:numEl               % read in element number and connectivity list
-    temp = getSplitLine(fid);
+    temp = getSplitLine(fid,'	');
     elNum(i) = temp(1);
 
     conn(i,:) = temp(3:4);
