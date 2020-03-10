@@ -1,4 +1,5 @@
 clear all
+fprintf('%s\n','Starting')
 tic
 % clc
 tol1 = 1e-1;

@@ -5,8 +5,9 @@ inputFileName = d.name;
 fnstring = inputFileName(1:end-6);
 [numModesForROM] = getNumModesForROM(6);
 
-load aeroLoads;
-timeDuration = timeArray(end)
+oad('aeroLoads.mat', 'timeArray');
+load('aeroLoads.mat', 'ForceValHist')
+timeDuration = timeArray(end);
 numTimesteps = timeDuration/timestep;
 numTimesteps = floor(numTimesteps);
 
