@@ -24,7 +24,7 @@ sectionPropsArray = cell(numElements);
 for i=1:numElements
     data1=getSplitLine(fid,'	'); %read element data
     data2=getSplitLine(fid,'	');
-
+    
     %structural properties
     sectionPropsArray{i}.ac = -([data1(2) data2(2)]-0.5);
     sectionPropsArray{i}.twist=[data1(3) data2(3)];
@@ -37,14 +37,14 @@ for i=1:numElements
     sectionPropsArray{i}.GJ = [data1(7) data2(7)];
     sectionPropsArray{i}.EA = [data1(8) data2(8)];
     sectionPropsArray{i}.alpha1 = [data1(9) data2(9)];
-
+    
     sectionPropsArray{i}.rhoIyy = [data1(10) data2(10)];
     sectionPropsArray{i}.rhoIzz = [data1(11) data2(11)];
     sectionPropsArray{i}.rhoJ = [(data1(10)+data1(11)), (data2(10)+data2(11))];
     sectionPropsArray{i}.zcm = [data1(14) data2(14)];
     sectionPropsArray{i}.ycm = [data1(15) data2(15)];
     sectionPropsArray{i}.a = [data1(17) data2(17)];
-
+    
     %coupling factors
     sectionPropsArray{i}.EIyz = [0 0];
     sectionPropsArray{i}.alpha1 = [0 0];
@@ -56,7 +56,7 @@ for i=1:numElements
     sectionPropsArray{i}.rhoIyz = [0 0];
     sectionPropsArray{i}.b = [0 0];
     sectionPropsArray{i}.a0 = [2*pi 2*pi];
-
+    
 end
 
 nodeNum = bladeData_struct.nodeNum;  %node number associated with blade section
@@ -64,22 +64,22 @@ elNum = bladeData_struct.elementNum;    %element number associated with blade se
 bladeData = bladeData_struct.remaining;  %blade data
 
 chord = zeros(length(elNum),1);
- for i=1:length(elNum)
-     chord(nodeNum(i)) = bladeData(i,10);  %store chord of blade sections
- end
+for i=1:length(elNum)
+    chord(nodeNum(i)) = bladeData(i,10);  %store chord of blade sections
+end
 
 for i=1:length(elNum)
     if (elNum(i)~=-1)
-
+        
         sectionPropsArray{elNum(i)}.b = 0.5.*[chord(nodeNum(i)) chord(nodeNum(i+1))]; %element semi chord
         sectionPropsArray{elNum(i)}.a0 = [bladeData(i,12) bladeData(i+1,12)];         %element lift curve slope (needed for flutter analysis)
-
+        
         %convert "a" to semichord fraction aft of halfchord
         sectionPropsArray{elNum(i)}.a = (sectionPropsArray{elNum(i)}.a + 0.25*(2*sectionPropsArray{elNum(i)}.b) - sectionPropsArray{elNum(i)}.b)./sectionPropsArray{elNum(i)}.b;
-
+        
         %convert "ac" to semichord fraction foreward of halfchord
         sectionPropsArray{elNum(i)}.ac = (sectionPropsArray{elNum(i)}.ac).*2;
-
+        
         %physical aero center offset from elastic axis
         sectionPropsArray{elNum(i)}.aeroCenterOffset = (sectionPropsArray{elNum(i)}.ac).*sectionPropsArray{elNum(i)}.b - sectionPropsArray{elNum(i)}.a;
     end

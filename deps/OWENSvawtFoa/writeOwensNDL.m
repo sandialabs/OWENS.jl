@@ -21,21 +21,21 @@ BCfile = [fileRoot '.ndl'];    %construct file name
 fid = fopen(BCfile,'w');     %open boundary condition file
 
 % % % first line should list the number of BCs to follow
-% % totalBCs = 0; 
+% % totalBCs = 0;
 % % for nn = 1:length(nodes)
 % %     totalBCs = totalBCs + numel(find(cmkValues{nn} ~=0));
-% % end 
+% % end
 % % fprintf(fid, '%i\n', totalBCs);
 
 % write out the boundary conditions into the file
 for nn = 1:length(nodes)
-    [row, col, val] = find(cmkValues{nn});    
+    [row, col, val] = find(cmkValues{nn});
     for ii = 1:length(row)
         fprintf(fid,'%i %s %i %i %.2f\n', nodes(nn),cmkType{nn},row(ii),col(ii),val(ii));
     end
 end
 
 % close boundary condition file
-fclose(fid); 
+fclose(fid);
 
 end

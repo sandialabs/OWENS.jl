@@ -41,7 +41,7 @@ end
 for i=1:numEl               % read in element number and connectivity list
     temp = getSplitLine(fid,'	');
     elNum(i) = temp(1);
-
+    
     conn(i,:) = temp(3:4);
 end
 

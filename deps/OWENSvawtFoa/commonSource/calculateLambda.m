@@ -6,7 +6,7 @@ function [lambda] = calculateLambda(theta1,theta2,theta3)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [lambda] = calculateLambda(theta1,theta2,theta3 )
-%                    
+%
 %   This function calculates a transformation matrix to transform the
 %   element degree of freedom vector (12 DOFs) from the hub frame to
 %   the element frame. The transformation matrix is constructed via the
@@ -25,14 +25,14 @@ function [lambda] = calculateLambda(theta1,theta2,theta3)
 
 % dcm that is created is [dcm] = [M1(theta3)][M2(theta2)][M3(theta1)]
 
-    [dcm] = calculateLambdaSlim(theta1,theta2,theta3);
+[dcm] = calculateLambdaSlim(theta1,theta2,theta3);
 
 
-     lambda = zeros(12);
-     lambda(1:3,1:3) = dcm;
-     lambda(4:6,4:6) = dcm;
-     lambda(7:9,7:9) = dcm;
-     lambda(10:12,10:12) = dcm;
+lambda = zeros(12);
+lambda(1:3,1:3) = dcm;
+lambda(4:6,4:6) = dcm;
+lambda(7:9,7:9) = dcm;
+lambda(10:12,10:12) = dcm;
 
 end
 
