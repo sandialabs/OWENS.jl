@@ -17,7 +17,16 @@ function [joint] = readJointData(inputfile)
 %      joint         = array containing joint data
 
 fid = fopen(inputfile); %open joint file
+file_length = 0;
+while (~feof(fid))
+    myfgetl(fid);
+    file_length = file_length+1;
+end
+fclose(fid);
 
+joint = zeros(file_length,8);
+
+fid = fopen(inputfile); %open joint file
 count =1;
 while(~feof(fid))
     %read in nodal info associated with joint [joint #, master node #, slave node #, joint type]
