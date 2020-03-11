@@ -351,10 +351,10 @@ for i=1:numTS
         %%======= aerodynamics module ======================
         if(model.aeroOn && needsAeroCalcAtThisTimestep)
             
-            [FAero,FAeroDof] = aeroModule(model,t(i) + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero);
-            
-            %set aero forces flag
-            needsAeroCalcAtThisTimestep = false;
+            %             [FAero,FAeroDof] = aeroModule(model,t(i) + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero);
+            %
+            %             %set aero forces flag
+            %             needsAeroCalcAtThisTimestep = false;
             
         end
         %==================================================

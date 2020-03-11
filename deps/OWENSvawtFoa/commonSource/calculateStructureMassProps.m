@@ -6,7 +6,7 @@ function [structureMass,structureMOI,structureMassCenter]=calculateStructureMass
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage)
-%                    
+%
 %   This function caclulates structural mass properties of the finite
 %   element mesh (mass, moment of inertia, mass center) about the origin of
 %   the mesh coordinate system.
@@ -38,14 +38,8 @@ x = structureMassCenter(1);
 y = structureMassCenter(2);
 z = structureMassCenter(3);
 
-    structureMOI = structureMOI - structureMass*[(y^2+z^2), -x*y, -x*z;
-                                                 -x*y, (x^2+z^2),-y*z;
-                                                 -x*z,-y*z,(x^2+y^2)];
-    
-
-
-structureMass %this prints mass properties to command window
-structureMOI
-structureMassCenter
+structureMOI = structureMOI - structureMass*[(y^2+z^2), -x*y, -x*z;
+    -x*y, (x^2+z^2),-y*z;
+    -x*z,-y*z,(x^2+y^2)];
 
 end
