@@ -258,11 +258,11 @@ if(strcmp(analysisType,'M') || strcmp(analysisType,'F')) %EXECUTE MODAL OR MANUA
     [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
 end
 
-if(strcmp(analysisType,'FA')) %EXECUTE AUTOMATED FLUTTER ANALYSIS
-    displ = zeros(mesh.numNodes*6,1);
-    OmegaStart = 0.0;
-    [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart);
-end
+% if(strcmp(analysisType,'FA')) %EXECUTE AUTOMATED FLUTTER ANALYSIS
+%     displ = zeros(mesh.numNodes*6,1);
+%     OmegaStart = 0.0;
+%     [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart);
+% end
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %EXECUTE TRANSIENT ANALYSIS
     [model.nlParams] = readNLParamsFile(inputfile);

@@ -21,12 +21,12 @@ try
     bladeNum = a(:,1);
     
     numBlades = max(bladeNum);
-    numStruts = min(bladeNum);
-    if(numStruts>0)
-        numStruts = 0;
-    else
-        numStruts = abs(numStruts);
-    end
+    %     numStruts = min(bladeNum);
+    %     if(numStruts>0)
+    %         numStruts = 0;
+    %     else
+    %         numStruts = abs(numStruts);
+    %     end
     
     strutStartIndex = 0;
     for i=1:length(bladeNum)
@@ -39,10 +39,10 @@ try
     
     
     if(strutStartIndex~=0)
-        strutDataBlock = a(strutStartIndex:end,:);
-        [strutEntries, ~] = size(strutDataBlock);
-        numNodesPerStrut = strutEntries/numStruts;
-        numElPerStrut = numNodesPerStrut - 1;
+        %         strutDataBlock = a(strutStartIndex:end,:);
+        %         [strutEntries, ~] = size(strutDataBlock);
+        %         numNodesPerStrut = strutEntries/numStruts;
+        %         numElPerStrut = numNodesPerStrut - 1;
     else
         [temp,~]=size(a);
         strutStartIndex = temp + 1;
