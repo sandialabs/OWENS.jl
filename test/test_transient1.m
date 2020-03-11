@@ -2,7 +2,7 @@ clear all
 fprintf('%s\n','Starting')
 tic
 % clc
-tol1 = 1e-1;
+tol1 = 1e-12;
 % snl_vawt
 
 % cd('C:\data\OffshoreVAWT\SESPhaseI_OWENS\dvawt\carbon\dvawt_c_2_lcdt\transientAnalysis')
@@ -111,9 +111,8 @@ for rr = 1%:length(platformProp)
     % *********************************************************************
     CACTUSfileRoot = './input_files_test/DVAWT_2B_LCDT';
     OWENSfileRoot = bmOwens;
-    outputAeroFileName = './output_files_test/aa_TESTaero';
 
-    processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot, outputAeroFileName)
+    processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot)
 
     % *********************************************************************
     % run a modal analysis of the platform design
@@ -182,9 +181,9 @@ for i = 1:length(varnames)
     end
 
     if num_mismatch == 0
-        fprintf('%s\n',['PASSED |' , varnames{i}])
+        fprintf('%s\n',['PASSED | ' , varnames{i}])
     else
-        fprintf('%s\n',['FAILED |', varnames{i}])
+        fprintf('%s\n',['FAILED | ', varnames{i}])
     end
 
     total_mismatch = total_mismatch + num_mismatch;

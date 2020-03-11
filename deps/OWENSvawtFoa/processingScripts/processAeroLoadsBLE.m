@@ -1,4 +1,4 @@
-function processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot, outputAeroFileName)
+function processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot)
 
     d1 = [CACTUSfileRoot '.geom'];
     d2 = [CACTUSfileRoot '_ElementData.csv'];
@@ -10,7 +10,7 @@ function processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot, outputAeroFileName)
     [timeArray,ForceValHist,ForceDof] = mapCactusLoadsFile(d1,d2,d3,d4,d5,d6);
 
     % method constrained by not passing the .mat filename
-    save aeroLoads
+    save('aeroLoads.mat','timeArray','ForceValHist','ForceDof');
     disp('New aeroLoads.mat file saved.')
 
 end
