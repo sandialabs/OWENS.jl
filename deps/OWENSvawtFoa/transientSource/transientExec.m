@@ -130,40 +130,40 @@ end
 %% structural dynamics initialization
 %..........................................................................
 if(strcmp(model.analysisType,'ROM')) %initialize reduced order model
-    %calculate constrained dof vector
-    numDofPerNode = 6;
-    isConstrained = zeros(model.totalNumDof,1);
-    constDof = (model.BC.pBC(:,1)-1)*numDofPerNode + model.BC.pBC(:,2);
-    index = 1;
-    for i=1:mesh.numNodes
-        for j=1:numDofPerNode
-            if(ismember((i-1)*numDofPerNode + j,constDof))
-                isConstrained(index) = 1;
-            end
-            index = index + 1;
-        end
-    end
-    model.BC.isConstrained = isConstrained;
-
-
-    [rom,elStorage]=reducedOrderModel(model,mesh,el,u_s); %construct reduced order model
-
-    %set up inital values in modal space
-    jointTransformTrans = model.jointTransform'; %'
-    u_sRed = jointTransformTrans*u_s(1:end);
-    udot_sRed = jointTransformTrans*udot_s(1:end);
-    uddot_sRed = jointTransformTrans*uddot_s(1:end);
-
-    BC = model.BC;
-    [u_s2] = applyBCModalVec(u_sRed,BC.numpBC,BC.map);
-    [udot_s2] = applyBCModalVec(udot_sRed,BC.numpBC,BC.map);
-    [uddot_s2] = applyBCModalVec(uddot_sRed,BC.numpBC,BC.map);
-
-    invPhi = rom.invPhi;
-
-    eta_s     = invPhi*u_s2;
-    etadot_s  = invPhi*udot_s2;
-    etaddot_s = invPhi*uddot_s2;
+    %     %calculate constrained dof vector
+    %     numDofPerNode = 6;
+    %     isConstrained = zeros(model.totalNumDof,1);
+    %     constDof = (model.BC.pBC(:,1)-1)*numDofPerNode + model.BC.pBC(:,2);
+    %     index = 1;
+    %     for i=1:mesh.numNodes
+    %         for j=1:numDofPerNode
+    %             if(ismember((i-1)*numDofPerNode + j,constDof))
+    %                 isConstrained(index) = 1;
+    %             end
+    %             index = index + 1;
+    %         end
+    %     end
+    %     model.BC.isConstrained = isConstrained;
+    %
+    %
+    %     [rom,elStorage]=reducedOrderModel(model,mesh,el,u_s); %construct reduced order model
+    %
+    %     %set up inital values in modal space
+    %     jointTransformTrans = model.jointTransform'; %'
+    %     u_sRed = jointTransformTrans*u_s(1:end);
+    %     udot_sRed = jointTransformTrans*udot_s(1:end);
+    %     uddot_sRed = jointTransformTrans*uddot_s(1:end);
+    %
+    %     BC = model.BC;
+    %     [u_s2] = applyBCModalVec(u_sRed,BC.numpBC,BC.map);
+    %     [udot_s2] = applyBCModalVec(udot_sRed,BC.numpBC,BC.map);
+    %     [uddot_s2] = applyBCModalVec(uddot_sRed,BC.numpBC,BC.map);
+    %
+    %     invPhi = rom.invPhi;
+    %
+    %     eta_s     = invPhi*u_s2;
+    %     etadot_s  = invPhi*udot_s2;
+    %     etaddot_s = invPhi*uddot_s2;
 else
     [elStorage] = initialElementCalculations(model,el,mesh); %perform initial element calculations for conventional structural dynamics analysis
 end
@@ -174,12 +174,12 @@ end
 
 %% Main Loop - iterate for a solution at each time step, i
 for i=1:numTS
-
+    
     %     i %TODO add verbose printing
     if(mod(i,100)==0) %print command that displays progress of time stepping
         fprintf('%s\n',['Iteration: ' i])
     end
-
+    
     %% check for specified rotor speed at t(i) + delta_t
     model.omegaControl = false;
     if(model.turbineStartup == 0)
@@ -197,7 +197,7 @@ for i=1:numTS
         end
     end
     %%
-
+    
     %% initialize "j" Gauss-Sidel iteration
     u_j=u_s;
     azi_j = azi_s;
@@ -207,27 +207,27 @@ for i=1:numTS
     gbDot_j = gbDot_s;
     gbDotDot_j = gbDotDot_s;
     genTorque_j = genTorque_s;
-
+    
     needsAeroCalcAtThisTimestep = true;
-
+    
     if(model.hydroOn)  %initialize  platform module related variables
         Ywec_j = Ywec(i,:);
         Ywec_jLast = Ywec_j;
         % 		Accel_j = Accel;
         % 		Accel_jLast = Accel;
     end
-
+    
     TOL = 1e-8;  %gauss-seidel iteration tolerance for various modules
     MAXITER = 50; %max iteration for various modules
     numIterations = 1; uNorm = 1e6; platNorm = 1e6; aziNorm = 1e6; gbNorm = 1e6; %initialize norms for various module states
     %%
-
+    
     while((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) %module gauss-seidel iteration loop
-
+        
         rbData = zeros(1,9);
         %calculate CP2H (platform frame to hub frame transformation matrix)
         CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1];
-
+        
         %.... inertial frame to platform transformation matrix ...........
         if(model.hydroOn)
             CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4));
@@ -235,31 +235,31 @@ for i=1:numTS
             CN2P=eye(3);
         end
         %.........................................
-
+        
         CN2H = CP2H*CN2P;
-
-%         %% evaluate platform module
-%         %%====================================================
-%         if(model.hydroOn)
-%             % 	Accel_jLast= Accel_j;
-%             Ywec_jLast = Ywec_j;
-%             if(model.platformTurbineYawInteraction == 0)
-%                 FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; %'
-%                 FReaction1 =  [-FReaction_j(1:5); 0.0];
-%             elseif(model.platformTurbineYawInteraction == 1)
-%                 FReaction0 = (-FReactionHist(i,1:6)');
-%                 FReaction1 =  (-FReaction_j(1:6));
-%             elseif(model.platformTurbineYawInteraction == 2)
-%                 FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
-%                 FReaction1 =  [-FReaction_j(1:5); genTorque_j];
-%             else
-%                 error('PlatformTurbineYawInteraction flag not recognized.');
-%             end
-%             [rbData,Ywec_j,~] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
-%         end
-%         %====================================================
+        
+        %         %% evaluate platform module
+        %         %%====================================================
+        %         if(model.hydroOn)
+        %             % 	Accel_jLast= Accel_j;
+        %             Ywec_jLast = Ywec_j;
+        %             if(model.platformTurbineYawInteraction == 0)
+        %                 FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; %'
+        %                 FReaction1 =  [-FReaction_j(1:5); 0.0];
+        %             elseif(model.platformTurbineYawInteraction == 1)
+        %                 FReaction0 = (-FReactionHist(i,1:6)');
+        %                 FReaction1 =  (-FReaction_j(1:6));
+        %             elseif(model.platformTurbineYawInteraction == 2)
+        %                 FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
+        %                 FReaction1 =  [-FReaction_j(1:5); genTorque_j];
+        %             else
+        %                 error('PlatformTurbineYawInteraction flag not recognized.');
+        %             end
+        %             [rbData,Ywec_j,~] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
+        %         end
+        %         %====================================================
         %%
-
+        
         %% evaluate generator module
         %===== generator module ===========================
         genTorque_j = 0;
@@ -284,7 +284,7 @@ for i=1:numTS
         end
         %==================================================
         %%
-
+        
         %% evaluate drivetrain module
         % %===== drivetrain module ==========================
         torqueDriveShaft_j = genTorque_j;
@@ -293,7 +293,7 @@ for i=1:numTS
             if(model.driveTrainOn)
                 [torqueDriveShaft_j] = calculateDriveShaftReactionTorque(model.driveShaftProps,...
                     azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi);
-
+                
                 [gb_j,gbDot_j,gbDotDot_j] = updateRotorRotation(model.JgearBox,0,0,...
                     -genTorque_j,torqueDriveShaft_j,...
                     gb_s,gbDot_s,gbDotDot_s,delta_t);
@@ -308,7 +308,7 @@ for i=1:numTS
             gbDotDot_j = 0;
         end
         % %==================================================
-
+        
         %% rotor speed update
         %===== update rotor speed =========================
         azi_jLast = azi_j;
@@ -330,18 +330,18 @@ for i=1:numTS
         end
         %===================================================
         %%
-
+        
         %% evaluate aerodynamic module (CACTUS ONE-WAY)
         %%======= aerodynamics module ======================
         if(model.aeroLoadsOn) % TODO: this is odd since we load in the aero loads elsewhere
-%             disp('using cactus aero loads...');
-%             %----- calculate aerodynamic loads --------------------------------
-%             % this is place holder
-%             [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t(i),el.props,model.totalNumDof);
-%             % these loads will need to account for a turbine with a
-%             % platform with different orientation than the inertial system.
-%             FAeroDof = (1:length(u_s));
-%             %------------------------------------------------------------------
+            %             disp('using cactus aero loads...');
+            %             %----- calculate aerodynamic loads --------------------------------
+            %             % this is place holder
+            %             [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t(i),el.props,model.totalNumDof);
+            %             % these loads will need to account for a turbine with a
+            %             % platform with different orientation than the inertial system.
+            %             FAeroDof = (1:length(u_s));
+            %             %------------------------------------------------------------------
         else
             FAero = [];
             FAeroDof = [];
@@ -350,46 +350,46 @@ for i=1:numTS
         %% evaluate aerodynamic module (TU DELFT)
         %%======= aerodynamics module ======================
         if(model.aeroOn && needsAeroCalcAtThisTimestep)
-
+            
             [FAero,FAeroDof] = aeroModule(model,t(i) + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero);
-
+            
             %set aero forces flag
             needsAeroCalcAtThisTimestep = false;
-
+            
         end
         %==================================================
         %%
-
+        
         %% compile external forcing on rotor
         %compile forces to supply to structural dynamics solver
         [Fexternal, Fdof] = externalForcing(t(i)+delta_t);
         Fexternal = [Fexternal; FAero];
         Fdof = [Fdof, FAeroDof];
-
-
+        
+        
         %% evaluate structural dynamics
         %call structural dynamics solver
         if(strcmp(model.analysisType,'TD'))  %initialization of structural dynamics displacements, velocities, accelerations, etc.
             dispData.displ_s = u_s;
             dispData.displ_sm1 = u_sm1;
         end
-
+        
         if(strcmp(model.analysisType,'TNB'))
             dispData.displ_s = u_s;
             dispData.displdot_s = udot_s;
             dispData.displddot_s = uddot_s;
         end
-
+        
         if(strcmp(model.analysisType,'ROM'))
             dispData.displ_s = u_s;
             dispData.displdot_s = udot_s;
             dispData.displddot_s = uddot_s;
-
+            
             dispData.eta_s     = eta_s;
             dispData.etadot_s  = etadot_s;
             dispData.etaddot_s = etaddot_s;
         end
-
+        
         if(strcmp(model.analysisType,'ROM'))
             % evalulate structural dynamics using reduced order model
             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t(i),delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData);
@@ -404,40 +404,40 @@ for i=1:numTS
             udot_j  = dispOut.displdot_sp1;
             uddot_j = dispOut.displddot_sp1;
         end
-
+        
         if(strcmp(model.analysisType,'ROM'))
             udot_j  = dispOut.displdot_sp1;
             uddot_j = dispOut.displddot_sp1;
-
+            
             eta_j = dispOut.eta_sp1;
             etadot_j = dispOut.etadot_sp1;
             etaddot_j = dispOut.etaddot_sp1;
         end
         %%
-
+        
         %% calculate norms
         uNorm = norm(u_j-u_jLast)/norm(u_j);            %structural dynamics displacement iteration norm
         aziNorm = norm(azi_j - azi_jLast)/norm(azi_j);  %rotor azimuth iteration norm
-
+        
         if(model.hydroOn)
             platNorm = norm(Ywec_j-Ywec_jLast)/norm(Ywec_j); %platform module states iteration norm
         else
             platNorm = 0.0;
         end
-
+        
         if(model.driveTrainOn)
             gbNorm = norm(gb_j - gb_jLast)/norm(gb_j); %gearbox states iteration norm
         else
             gbNorm = 0.0;
         end
-
+        
         if(moduleIteration == false)
             break;
         end
-
+        
         numIterations = numIterations + 1;
     end %end iteration while loop
-
+    
     %% calculate converged generator torque/power
     if(~isempty(model.generatorProps))
         if(model.generatorOn || (model.turbineStartup==0))
@@ -449,8 +449,8 @@ for i=1:numTS
         genTorquePlot = 0;
     end
     [genPowerPlot] = genTorquePlot*(gbDot_j*2*pi)*model.gearRatio;
-
-
+    
+    
     %% update timestepping variables and other states, store in history arrays
     if(strcmp(model.analysisType,'TD'))
         u_sm1 = u_s;
@@ -465,60 +465,60 @@ for i=1:numTS
         u_s = u_j;
         udot_s = udot_j;
         uddot_s = uddot_j;
-
+        
         eta_s = eta_j;
         etadot_s = etadot_j;
         etaddot_s = etaddot_j;
     end
-
+    
     uHist(:,i+1) = u_s;
     FReactionHist(i+1,:) = FReaction_j;
     strainHist(:,i) = dispOut.elStrain;
-%     strainHist(:,i).eps_xx_0 = temp.eps_xx_0;
-%     strainHist(:,i).eps_xx_z = temp.eps_xx_z;
-%     strainHist(:,i).eps_xx_y = temp.eps_xx_y;
-%     strainHist(:,i).gam_xz_0 = temp.gam_xz_0;
-%     strainHist(:,i).gam_xz_y = temp.gam_xz_y;
-%     strainHist(:,i).gam_xy_0 = temp.gam_xy_0;
-%     strainHist(:,i).gam_xy_z = temp.gam_xy_z;
+    %     strainHist(:,i).eps_xx_0 = temp.eps_xx_0;
+    %     strainHist(:,i).eps_xx_z = temp.eps_xx_z;
+    %     strainHist(:,i).eps_xx_y = temp.eps_xx_y;
+    %     strainHist(:,i).gam_xz_0 = temp.gam_xz_0;
+    %     strainHist(:,i).gam_xz_y = temp.gam_xz_y;
+    %     strainHist(:,i).gam_xy_0 = temp.gam_xy_0;
+    %     strainHist(:,i).gam_xy_z = temp.gam_xy_z;
     t(i+1) = t(i) + delta_t;
-
+    
     azi_s = azi_j;
     Omega_s = Omega_j;
     OmegaDot_s = OmegaDot_j;
-
+    
     genTorque_s = genTorque_j;
     torqueDriveShaft_s = torqueDriveShaft_j;
-
+    
     aziHist(i+1) = azi_s;
     OmegaHist(i+1) = Omega_s;
     OmegaDotHist(i+1) = OmegaDot_s;
-
+    
     gb_s = gb_j;
     gbDot_s = gbDot_j;
     gbDotDot_s = gbDotDot_j;
-
+    
     gbHist(i+1) = gb_s;
     gbDotHist(i+1) = gbDot_s;
     gbDotDotHist(i+1) = gbDotDot_s;
-
+    
     %genTorque(i+1) = genTorque_s;
     genTorque(i+1) = genTorquePlot;
     genPower(i+1) = genPowerPlot;
     torqueDriveShaft(i+1) = torqueDriveShaft_s;
-
+    
     if(model.hydroOn)
         error('Hydro Model not fully implemented');
         %         Ywec(i+1,:) = Ywec_j;
         %         rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6);
-
+        
     else
         rigidDof(i) = 0;
     end
-
+    
     FReactionHist(i+1,:) = FReaction_j;
     %%
-
+    
     %% check rotor speed for generator operation
     if(Omega_s>= rotorSpeedForGenStart)
         model.generatorOn = true;
@@ -526,7 +526,7 @@ for i=1:numTS
         model.generatorOn = false;
     end
     %%
-
+    
 end %end timestep loop
 
 %% kill platform module process
@@ -561,14 +561,14 @@ if(tocp(length(tocp))<tCurrent)
     OmegaDotCurrent = [];
 else
     OmegaCurrent = interp1(tocp,Omegaocp,tCurrent); %interpolated discreteized profile for current omega
-
+    
     %calculate current rotor acceleration
     dt = delta_t/2.0;
     omega_m1 = interp1(tocp,Omegaocp,tCurrent-dt);
     omega_p1 = interp1(tocp,Omegaocp,tCurrent+dt);
-
+    
     OmegaDotCurrent = diff([omega_m1,omega_p1])/(dt*2);
-
+    
     terminateSimulation = false;
     if(isnan(OmegaCurrent) || isnan(OmegaDotCurrent))
         error('Omega calcualted a NaN. Exiting.');
