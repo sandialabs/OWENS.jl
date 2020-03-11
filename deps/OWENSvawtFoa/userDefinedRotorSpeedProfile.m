@@ -1,4 +1,4 @@
-function [Omega] = userDefinedRotorSpeedProfile(time)
+function [Omega] = userDefinedRotorSpeedProfile(~)
 %userDefinedRotorSpeedProfile  returns specified rotor speed
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -6,7 +6,7 @@ function [Omega] = userDefinedRotorSpeedProfile(time)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [Omega] = userDefinedRotorSpeedProfile(time)
-%                    
+%
 %   This function returns an arbitrary time-varying rotor speed profile
 %   specified by the user. Rotor speed must be specified in Hz.
 %
@@ -16,6 +16,6 @@ function [Omega] = userDefinedRotorSpeedProfile(time)
 %   output:
 %   Omega          = rotor speed (Hz)
 
-    Omega = 0.5;
+Omega = 0.5;
 
 end

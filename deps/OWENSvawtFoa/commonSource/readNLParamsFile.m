@@ -68,9 +68,10 @@ if(adaptiveLoadSteppingFlag)
     nlParams.minLoadStepDelta = minLoadStepDelta;
     nlParams.minLoadStep = minLoadStep;
 else
-    nlParams.prescribedLoadStep = prescribedLoadStep;
-    nlParams.maxIterations = maxIterations ;
-    nlParams.maxNumLoadSteps = maxNumLoadSteps;
+    error('NLParams not fully implemented')
+    %     nlParams.prescribedLoadStep = prescribedLoadStep;
+    %     nlParams.maxIterations = maxIterations ;
+    %     nlParams.maxNumLoadSteps = maxNumLoadSteps;
 end
 
 

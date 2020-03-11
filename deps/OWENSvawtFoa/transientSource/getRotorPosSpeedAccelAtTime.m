@@ -6,7 +6,7 @@ function [rotorAzimuth,rotorSpeed,rotorAcceleration] = getRotorPosSpeedAccelAtTi
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [rotorAzimuth,rotorSpeed,rotorAcceleration] = getRotorPosSpeedAccelAtTime(t0,time,aziInit)
-%                    
+%
 %   This function uses the user defined function rotorSpeedProfile() to get
 %   the azimuth, speed, and acceleration of the rotor.
 %
@@ -26,7 +26,7 @@ rotorSpeed = userDefinedRotorSpeedProfile(time); %get rotgor speed at time
 
 dt = 0.01;%some small delta t used in estimating rotor acceleration
 if((time-dt) < 0)
-    dt = delta_t/2; 
+    dt = delta_t/2;
 end
 
 omega_p1 = userDefinedRotorSpeedProfile(time+dt); %get rotor speed slightly before and after time
@@ -43,5 +43,5 @@ end
 
 %simple trapezoidal rule integration
 function [aziEnd]= trapezoidalRule(aziInit,rotorSpeedStart,rotorSpeedEnd,dt)
-    aziEnd = aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi);
+aziEnd = aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi);
 end
