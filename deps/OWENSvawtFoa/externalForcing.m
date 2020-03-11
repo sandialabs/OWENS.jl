@@ -38,9 +38,10 @@ function [Fexternal, Fdof] = externalForcing(time)
 %         Fdof = [];
 %     end
 
-load('aeroLoads.mat', 'timeArray');
-load('aeroLoads.mat', 'ForceValHist')
-load('aeroLoads.mat', 'ForceDof')
+temp = load('aeroLoads.mat');
+timeArray = temp.timeArray;
+ForceValHist = temp.ForceValHist;
+ForceDof = temp.ForceDof;
 
 
 Fexternal = interp1(timeArray,ForceValHist',time,'linear');

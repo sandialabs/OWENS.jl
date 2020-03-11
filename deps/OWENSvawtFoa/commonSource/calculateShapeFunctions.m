@@ -29,6 +29,8 @@ function [N,p_N_x,Jac] = calculateShapeFunctions(elementOrder,xi,x)
 % p_N_xi partial derivative of shape function w.r.t. xi
 
 %Linear interpolation functions
+N = zeros(1,elementOrder+1);
+p_N_xi = zeros(1,elementOrder+1);
 if(elementOrder == 1)
     
     N(1) = 0.5*(1.0 - xi);

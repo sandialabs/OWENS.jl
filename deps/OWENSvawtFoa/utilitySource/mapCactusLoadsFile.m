@@ -50,7 +50,7 @@ M25perSpan = zeros(len,1);
 Mecc = zeros(len,1);
 
 for i=1:len
-    
+
     NperSpan(i) =  cn(i)  * 0.5*rho*uloc(i)^2*(blade(data(i,3)).ECtoR(data(i,4))*RefR);
     TperSpan(i) =  ct(i)  * 0.5*rho*uloc(i)^2*(blade(data(i,3)).ECtoR(data(i,4))*RefR);
     M25perSpan(i) = cm25(i) * 0.5*rho*uloc(i)^2*(blade(data(i,3)).ECtoR(data(i,4))*RefR)*blade(data(i,3)).ECtoR(data(i,4))*RefR;
@@ -59,8 +59,7 @@ for i=1:len
 end
 
 % Initialize bladeForce
-bladeForce(cactusGeom.NBlade) = struct();
-
+bladeForce = struct('N',cell(1,cactusGeom.NBlade),'T',cell(1,cactusGeom.NBlade),'M25',cell(1,cactusGeom.NBlade));
 for i = 1:cactusGeom.NBlade
     bladeForce(i).N = zeros(numAeroTS,blade(1).NElem);
     bladeForce(i).T = zeros(numAeroTS,blade(1).NElem);
@@ -76,7 +75,7 @@ for i=1:numAeroTS
             %                 bladeForce(j).Fy(i,k) = Fy(index);
             %                 bladeForce(j).Fz(i,k) = Fz(index);
             %                 bladeForce(j).M25(i,k) = M25perSpan(index);
-            
+
             %                 spanVec = [blade(j).sEx(k);blade(j).sEy(k);blade(j).sEz(k)];
             %                 tanVec = [blade(j).tEx(k);blade(j).tEy(k);blade(j).tEz(k)];
             %                 normVec = [blade(j).nEx(k);blade(j).nEy(k);blade(j).nEz(k)];
@@ -99,8 +98,7 @@ end
 [bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn);
 
 %Initialize structuralLoad
-structuralLoad(cactusGeom.NBlade) = struct();
-
+structuralLoad = struct('N',cell(1,cactusGeom.NBlade),'T',cell(1,cactusGeom.NBlade),'M25',cell(1,cactusGeom.NBlade));
 for i = 1:cactusGeom.NBlade
     structuralLoad(i).N = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
     structuralLoad(i).T = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
@@ -135,7 +133,7 @@ for i=1:numAeroTS
             node1 = structuralNodeNumbers(j,k);
             node2 = structuralNodeNumbers(j,k+1);
             dofList = [(node1-1)*numDofPerNode+(1:6), (node2-1)*numDofPerNode+(1:6)];
-            
+
             elInput.elementOrder = 1;
             elInput.x = [mesh.x(node1), mesh.x(node2)];
             elLength = sqrt((mesh.x(node2)-mesh.x(node1))^2 + (mesh.y(node2)-mesh.y(node1))^2 + (mesh.z(node2)-mesh.z(node1))^2);
@@ -144,19 +142,19 @@ for i=1:numAeroTS
             elInput.sweepAngle = el.psi(elNum);
             elInput.coneAngle = el.theta(elNum);
             elInput.rollAngle = el.roll(elNum);
-            
+
             elInput.extDistF2Node =  [structuralLoad(j).T(i,k),   structuralLoad(j).T(i,k+1)];
             elInput.extDistF3Node = -[structuralLoad(j).N(i,k),   structuralLoad(j).N(i,k+1)];
             elInput.extDistF4Node = -[structuralLoad(j).M25(i,k), structuralLoad(j).M25(i,k+1)];
-            
+
             [output] = calculateLoadVecFromDistForce(elInput);
             Fe = output.Fe;
-            
+
             %asssembly
             for m = 1:length(dofList)
                 Fg(dofList(m),i) =  Fg(dofList(m),i)+Fe(m);
             end
-            
+
         end
     end
 end

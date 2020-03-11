@@ -121,11 +121,9 @@ gbDotDotHist(1) = gbDotDot_s;
 genTorque(1) = genTorque_s;
 torqueDriveShaft(1) = torqueDriveShaft_s;
 %%
-try
-    toc
-catch
-    tic
-end
+
+tic
+
 
 %% structural dynamics initialization
 %..........................................................................

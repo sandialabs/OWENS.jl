@@ -19,6 +19,8 @@ function [xi,weight] = getGP(numGP)
 %      weight       = associated weights for quad point coordinate
 
 %define Gauss integration points
+xi = zeros(1,numGP);
+weight = zeros(1,numGP);
 if(numGP == 1)
     xi(1) = 0;
     weight(1) = 2.0;
