@@ -6,7 +6,7 @@ function [genTorque] =userDefinedGenerator(genSpeed)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [genTorque] =userDefinedGenerator(genSpeed)
-%                    
+%
 %   This function caclulates generator torque for simple induction
 %   generator
 %

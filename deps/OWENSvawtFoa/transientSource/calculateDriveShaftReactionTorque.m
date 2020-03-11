@@ -7,7 +7,7 @@ function [torque] = calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor
 % **********************************************************************
 %   [torque] = calculateDriveShaftReactionTorque(driveShaftProps,...
 %                thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
-%                    
+%
 %   This function calculates reaction torque of driveshaft
 %
 %   input:
@@ -17,13 +17,13 @@ function [torque] = calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor
 %   thetaDotRotor        = angular velocity of rotor/rotor shaft (rad/s)
 %   thetaDotGB           = angular velocity of gearbox shaft (rad/s)
 %
-%   output:     
+%   output:
 %   torque   = reaction torque of drive shaft
 
 
-    k = driveShaftProps.k;  %drive shaft stiffness
-    c = driveShaftProps.c;  %drive shaft damping
+k = driveShaftProps.k;  %drive shaft stiffness
+c = driveShaftProps.c;  %drive shaft damping
 
-    torque = k*(thetaRotor-thetaGB) + c*(thetaDotRotor-thetaDotGB);
+torque = k*(thetaRotor-thetaGB) + c*(thetaDotRotor-thetaDotGB);
 
 end

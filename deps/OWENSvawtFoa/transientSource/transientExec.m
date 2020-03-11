@@ -238,26 +238,26 @@ for i=1:numTS
 
         CN2H = CP2H*CN2P;
 
-        %% evaluate platform module
-        %%====================================================
-        if(model.hydroOn)
-            % 	Accel_jLast= Accel_j;
-            Ywec_jLast = Ywec_j;
-            if(model.platformTurbineYawInteraction == 0)
-                FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; %'
-                FReaction1 =  [-FReaction_j(1:5); 0.0];
-            elseif(model.platformTurbineYawInteraction == 1)
-                FReaction0 = (-FReactionHist(i,1:6)');
-                FReaction1 =  (-FReaction_j(1:6));
-            elseif(model.platformTurbineYawInteraction == 2)
-                FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
-                FReaction1 =  [-FReaction_j(1:5); genTorque_j];
-            else
-                error('PlatformTurbineYawInteraction flag not recognized.');
-            end
-            [rbData,Ywec_j,~] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
-        end
-        %====================================================
+%         %% evaluate platform module
+%         %%====================================================
+%         if(model.hydroOn)
+%             % 	Accel_jLast= Accel_j;
+%             Ywec_jLast = Ywec_j;
+%             if(model.platformTurbineYawInteraction == 0)
+%                 FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; %'
+%                 FReaction1 =  [-FReaction_j(1:5); 0.0];
+%             elseif(model.platformTurbineYawInteraction == 1)
+%                 FReaction0 = (-FReactionHist(i,1:6)');
+%                 FReaction1 =  (-FReaction_j(1:6));
+%             elseif(model.platformTurbineYawInteraction == 2)
+%                 FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
+%                 FReaction1 =  [-FReaction_j(1:5); genTorque_j];
+%             else
+%                 error('PlatformTurbineYawInteraction flag not recognized.');
+%             end
+%             [rbData,Ywec_j,~] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
+%         end
+%         %====================================================
         %%
 
         %% evaluate generator module

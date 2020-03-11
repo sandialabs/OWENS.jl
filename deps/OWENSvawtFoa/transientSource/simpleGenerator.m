@@ -6,7 +6,7 @@ function [genTorque] = simpleGenerator(generatorProps,genSpeed)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [genTorque] = simpleGenerator(generatorProps,genSpeed)
-%                    
+%
 %   This function caclulates generator torque for simple induction
 %   generator
 %
