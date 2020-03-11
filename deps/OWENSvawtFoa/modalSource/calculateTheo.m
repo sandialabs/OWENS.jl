@@ -6,7 +6,7 @@ function [Theo] = calculateTheo(k)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [Theo] = calculateTheo(k)
-%                    
+%
 %   This function accepts a reduced frequency value and calculates the
 %   complex Theodorsen function value.
 %
@@ -16,10 +16,10 @@ function [Theo] = calculateTheo(k)
 %   output:
 %   Theo  = Theodorsen  constant value
 
-    Theo = 1.0 - 0.165/(1-0.0455/k*1i) - 0.335/(1-0.3/k*1i);
+Theo = 1.0 - 0.165/(1-0.0455/k*1i) - 0.335/(1-0.3/k*1i);
 
-    if(isnan(k) || isinf(k))
-        Theo = 0.0;
-    end
+if(isnan(k) || isinf(k))
+    Theo = 0.0;
+end
 end
 
