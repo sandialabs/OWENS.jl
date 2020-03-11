@@ -6,7 +6,7 @@ function [Kg,Fg] = applyBC(Kg,Fg,BC,numDofPerNode)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [Kg,Fg] = applyBC(Kg,Fg,BC,u,iterationType,numDofPerNode)
-%                    
+%
 %   This function applies boundary conditions to the stiffness matrix and
 %   load vector for a static analysis.
 %
@@ -17,18 +17,18 @@ function [Kg,Fg] = applyBC(Kg,Fg,BC,numDofPerNode)
 %      u             = global displacement vector
 %      iterationType = for nonlinear analysis, not used in BLAST
 %      numDofPerNode = number of degrees of freedom per node
- 
+
 %      output:
 %      Kg            = global stiffness matrix with boundary conditions
 %      Fg            = global load vector with boundary condition
 
 
-[numEq,dum]=size(Kg);
+[numEq,~]=size(Kg);
 
 %APPLY BCs FOR PRIMARY VARIABLE
 if(BC.numpBC > 0)
     pBC = BC.pBC;
-    [numpBC,dum] = size(pBC);
+    [numpBC,~] = size(pBC);
     
     for i=1:numpBC
         nodeNumber = pBC(i,1);
@@ -50,16 +50,16 @@ end
 %APPLY BCs FOR SECONDARY VARIABLE
 if(BC.numsBC > 0)
     sBC = BC.sBC;
-    [numsBC,dum] = size(sBC);
+    [numsBC,~] = size(sBC);
     
     for i=1:numsBC
-       nodeNumber = sBC(i,1);
-       dofNumber = sBC(i,2);
-       specVal =  sBC(i,3);
-       
-       eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber;
-       
-       Fg(eqNumber) = Fg(eqNumber) + specVal;
+        nodeNumber = sBC(i,1);
+        dofNumber = sBC(i,2);
+        specVal =  sBC(i,3);
+        
+        eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber;
+        
+        Fg(eqNumber) = Fg(eqNumber) + specVal;
         
     end
 end
