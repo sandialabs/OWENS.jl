@@ -6,7 +6,7 @@ function [Knew] = applyBCModal(K,numpBC,bcMap)
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [K,dofVector] = applyBCModal(K,BC,numDofPerNode)
-%                    
+%
 %   This function applies boundary conditions to a system matrix for modal
 %   analysis
 %
@@ -14,7 +14,7 @@ function [Knew] = applyBCModal(K,numpBC,bcMap)
 %      K             = assembled global system matrix
 %      BC            = struct of boundary condition information
 %      numDofPerNode = number of degrees of freedom per node
- 
+
 %      output:
 %      K             = global system matrix with boundary conditions
 %      dofVector     = reduced DOF vector after imposing BCs
@@ -24,6 +24,7 @@ numEq=length(bcMap);
 % that causes problems when creating Knew
 
 index = 1;
+indVec = zeros(sum(bcMap ~= -1));
 for i=1:numEq
     if(bcMap(i) ~= -1)
         indVec(index) = i;

@@ -1,12 +1,12 @@
-function [Kg] = assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg) 
+function [Kg] = assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
 %assemblyMatrixOnly Assembles element matrices into global sys of equations
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
 % * Developed by Sandia National Laboratories Wind Energy Technologies *
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
-%   [Kg] = assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg) 
-%                    
+%   [Kg] = assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
+%
 %   This function assembles the element matrix into the
 %   global system of equations
 %
@@ -16,16 +16,17 @@ function [Kg] = assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
 %      numNodesPerEl  = number of nodes per element
 %      numDofPerNode  = number of degrees of freedom per node
 %      Kg             = global system matrix
- 
+
 %      output:
 %      Kg             = global system matrix with assembled element
 
 count = 1;
+dofList = zeros(numNodesPerEl*numDOFPerNode);
 for i=1:numNodesPerEl
-   for j=1:numDOFPerNode
-       dofList(count) = (conn(i)-1)*numDOFPerNode + j;
-       count = count +1;
-   end
+    for j=1:numDOFPerNode
+        dofList(count) = (conn(i)-1)*numDOFPerNode + j;
+        count = count +1;
+    end
 end
 
 Kg(dofList,dofList) = Kg(dofList,dofList) + Ke;
@@ -39,4 +40,3 @@ Kg(dofList,dofList) = Kg(dofList,dofList) + Ke;
 %             end
 %         end
 end
-        
