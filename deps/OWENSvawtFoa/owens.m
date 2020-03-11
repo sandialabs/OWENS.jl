@@ -250,19 +250,21 @@ if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS
 end
 
 if(strcmp(analysisType,'M') || strcmp(analysisType,'F')) %EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
-    [model.nlParams] = readNLParamsFile(inputfile);
-    if(length(varargin)<=5 || ~model.nlOn)
-        displInitGuess = zeros(mesh.numNodes*6,1);
-    end
-    OmegaStart = 0.0;
-    [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
+    %     [model.nlParams] = readNLParamsFile(inputfile);
+    %     if(length(varargin)<=5 || ~model.nlOn)
+    %         displInitGuess = zeros(mesh.numNodes*6,1);
+    %     end
+    %     OmegaStart = 0.0;
+    %     [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
+    error('Modal and Manual Flutter not fully implemented');
 end
 
-% if(strcmp(analysisType,'FA')) %EXECUTE AUTOMATED FLUTTER ANALYSIS
-%     displ = zeros(mesh.numNodes*6,1);
-%     OmegaStart = 0.0;
-%     [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart);
-% end
+if(strcmp(analysisType,'FA')) %EXECUTE AUTOMATED FLUTTER ANALYSIS
+    %     displ = zeros(mesh.numNodes*6,1);
+    %     OmegaStart = 0.0;
+    %     [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart);
+    error('Auto Flutter not fully implemented');
+end
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %EXECUTE TRANSIENT ANALYSIS
     [model.nlParams] = readNLParamsFile(inputfile);

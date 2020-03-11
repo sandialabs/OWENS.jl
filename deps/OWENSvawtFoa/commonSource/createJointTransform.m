@@ -7,7 +7,7 @@ function [jointTransform,reducedDOF] = createJointTransform(joint,numNodes,numDo
 % **********************************************************************
 %   [jointTransform,reducedDOF] = createJointTransform(joint,numNodes,
 %                                                      numDofPerNode)
-%                    
+%
 %   This function calculates the eigenvalues and vectors of a structural
 %   dynamic system.
 %
@@ -33,8 +33,8 @@ jointTransform = zeros(adNumDof,aNumDof);
 count = 1;
 for i=1:numNodes*numDofPerNode %loop over total number of DOFs in model
     if(sum(ismember(slaveDof,i))==0)
-    reducedDOF(count) = i; %if DOF is NOT a slave DOF include it in reducedDOF
-    count = count + 1;
+        reducedDOF(count) = i; %if DOF is NOT a slave DOF include it in reducedDOF
+        count = count + 1;
     end
 end
 
@@ -81,40 +81,40 @@ if(jointType == 4 && (abs(abs(theta)-90)<1.0e-3 || (abs(abs(theta)-270)<1.0e-3) 
 end
 
 %calculate transformation matrix from hub frame to joint frame
-Lambda = calculateLambda(psi*pi/180.0,theta*pi/180.0,0.0); 
+Lambda = calculateLambda(psi*pi/180.0,theta*pi/180.0,0.0);
 
 %Tda is a local mapping of dependent DOFs to active DOFs at a node
-% u_d = Tda * u_a 
+% u_d = Tda * u_a
 % such that u_d is a list of local dependent slave DOFs at a jont and
 % u_a is a list of local dependent slave DOFs at a joint.
 
 
 if(jointType == 0) %for weld/fixed joint type
-   activeDof = [1 2 3 4 5 6]; %active DOF list at joint
-   slaveDof = [1 2 3 4 5 6]; %slave DOF list at joint 
-   
-   %determine local active DOFs associated with slave node
-   [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-   
-   Rda = -eye(6); %from constraint equation for fixed joint
-   Rdd = eye(6);
+    activeDof = [1 2 3 4 5 6]; %active DOF list at joint
+    slaveDof = [1 2 3 4 5 6]; %slave DOF list at joint
+    
+    %determine local active DOFs associated with slave node
+    [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+    
+    Rda = -eye(6); %from constraint equation for fixed joint
+    Rdd = eye(6);
 end
 
 if(jointType == 1) %for pinned joint type
-   activeDof = [1 2 3 4 5 6]; %active DOF list at joint
-   slaveDof = [1 2 3]; %slave DOF list at joint
-   
-   %determine local active DOFs associated with slave node
-   [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-   
-   Rda = -[eye(3), zeros(3,6)]; %from constraint equation for pinned joint
-   Rdd = eye(3);
+    activeDof = [1 2 3 4 5 6]; %active DOF list at joint
+    slaveDof = [1 2 3]; %slave DOF list at joint
+    
+    %determine local active DOFs associated with slave node
+    [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+    
+    Rda = -[eye(3), zeros(3,6)]; %from constraint equation for pinned joint
+    Rdd = eye(3);
 end
 
 
 if(jointType == 2)     %hinge axis along localy "2" frame of joint
     
-    if((abs(abs(psi)-90))<1.0e-3 || (abs(abs(psi)-270))<1.0e-3)   
+    if((abs(abs(psi)-90))<1.0e-3 || (abs(abs(psi)-270))<1.0e-3)
         activeDof = [1 2 3 4 5 6];
         slaveDof  = [1 2 3 5 6];
         
@@ -122,79 +122,19 @@ if(jointType == 2)     %hinge axis along localy "2" frame of joint
         [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
         
         globalConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
-                                   zeros(2,3) -[0 1 0;0 0 1], zeros(2,3) ,[0 1 0;0 0 1]];
-                               
+            zeros(2,3) -[0 1 0;0 0 1], zeros(2,3) ,[0 1 0;0 0 1]];
+        
     else
         activeDof = [1 2 3 4 5 6];
         slaveDof = [1 2 3 4 6];
-
+        
         %determine local active DOFs associated with slave node
         [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-
+        
         localConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
-                                   zeros(2,3) -[1 0 0;0 0 1], zeros(2,3) ,[1 0 0;0 0 1]];
+            zeros(2,3) -[1 0 0;0 0 1], zeros(2,3) ,[1 0 0;0 0 1]];
         globalConstraintEqMatrix = localConstraintEqMatrix*Lambda;
     end
-        %extract Rda from globalConstraintEqMatrix
-        index = 1;
-        for i=1:length(activeDof)
-            ind = activeDof(i);
-            Rda(:,index) = globalConstraintEqMatrix(:,ind);
-            index = index + 1;
-        end
-
-        for i=1:length(slaveActiveDof)
-            ind = slaveActiveDof(i)+6;
-            Rda(:,index) = globalConstraintEqMatrix(:,ind);
-            index = index + 1;
-        end   
-
-        %extract Rdd from globalConstraintEqMatrix
-        index = 1;
-        for i=1:length(slaveDof)
-            ind = slaveDof(i)+6;
-            Rdd(:,index) = globalConstraintEqMatrix(:,ind);
-            index = index + 1;
-        end
-    
-end
-
-
-if(jointType == 3)     %hinge axis along local "1" frame of joint
-   
-    if((abs(abs(theta)-90))<1.0e-3 || (abs(abs(theta)-270))<1.0e-3)   
-        activeDof = [1 2 3 4 5 6];
-        slaveDof  = [1 2 3 4 5];
-        
-        %determine local active DOFs associated with slave node
-        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-        
-        globalConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
-                                   zeros(2,3) -[1 0 0;0 1 0], zeros(2,3) ,[1 0 0;0 1 0]];
-    elseif((abs(abs(psi)-90))<1.0e-3 || (abs(abs(psi)-270))<1.0e-3)   
-        
-        activeDof = [1 2 3 4 5 6];
-        slaveDof  = [1 2 3 4 6];
-        
-        %determine local active DOFs associated with slave node
-        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-        
-        globalConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
-                                   zeros(2,3) -[1 0 0;0 0 1], zeros(2,3) ,[1 0 0;0 0 1]];
-                               
-    else
-    
-        activeDof = [1 2 3 4 5 6];
-        slaveDof = [1 2 3 5 6];
-
-        %determine local active DOFs associated with slave node
-        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-
-        localConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
-                                   zeros(2,3) -[0 1 0;0 0 1], zeros(2,3) ,[0 1 0;0 0 1]];
-        globalConstraintEqMatrix = localConstraintEqMatrix*Lambda;
-    end
-   
     %extract Rda from globalConstraintEqMatrix
     index = 1;
     for i=1:length(activeDof)
@@ -207,7 +147,67 @@ if(jointType == 3)     %hinge axis along local "1" frame of joint
         ind = slaveActiveDof(i)+6;
         Rda(:,index) = globalConstraintEqMatrix(:,ind);
         index = index + 1;
-    end   
+    end
+    
+    %extract Rdd from globalConstraintEqMatrix
+    index = 1;
+    for i=1:length(slaveDof)
+        ind = slaveDof(i)+6;
+        Rdd(:,index) = globalConstraintEqMatrix(:,ind);
+        index = index + 1;
+    end
+    
+end
+
+
+if(jointType == 3)     %hinge axis along local "1" frame of joint
+    
+    if((abs(abs(theta)-90))<1.0e-3 || (abs(abs(theta)-270))<1.0e-3)
+        activeDof = [1 2 3 4 5 6];
+        slaveDof  = [1 2 3 4 5];
+        
+        %determine local active DOFs associated with slave node
+        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+        
+        globalConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
+            zeros(2,3) -[1 0 0;0 1 0], zeros(2,3) ,[1 0 0;0 1 0]];
+    elseif((abs(abs(psi)-90))<1.0e-3 || (abs(abs(psi)-270))<1.0e-3)
+        
+        activeDof = [1 2 3 4 5 6];
+        slaveDof  = [1 2 3 4 6];
+        
+        %determine local active DOFs associated with slave node
+        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+        
+        globalConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
+            zeros(2,3) -[1 0 0;0 0 1], zeros(2,3) ,[1 0 0;0 0 1]];
+        
+    else
+        
+        activeDof = [1 2 3 4 5 6];
+        slaveDof = [1 2 3 5 6];
+        
+        %determine local active DOFs associated with slave node
+        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+        
+        localConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
+            zeros(2,3) -[0 1 0;0 0 1], zeros(2,3) ,[0 1 0;0 0 1]];
+        globalConstraintEqMatrix = localConstraintEqMatrix*Lambda;
+    end
+    
+    %extract Rda from globalConstraintEqMatrix
+    index = 1;
+    for i=1:length(activeDof)
+        ind = activeDof(i);
+        Rda(:,index) = globalConstraintEqMatrix(:,ind);
+        index = index + 1;
+    end
+    
+    for i=1:length(slaveActiveDof)
+        ind = slaveActiveDof(i)+6;
+        Rda(:,index) = globalConstraintEqMatrix(:,ind);
+        index = index + 1;
+    end
     
     %extract Rdd from globalConstraintEqMatrix
     index = 1;
@@ -221,15 +221,15 @@ end
 
 if(jointType == 4)     %hinge axis along local "3" frame of joint
     
-        activeDof = [1 2 3 4 5 6];
-        slaveDof  = [1 2 3 4 5];
-
-        %determine local active DOFs associated with slave node
-        [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-
-        localConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
-                                   zeros(2,3) -[1 0 0;0 1 0], zeros(2,3) ,[1 0 0;0 1 0]];
-        globalConstraintEqMatrix = localConstraintEqMatrix*Lambda;
+    activeDof = [1 2 3 4 5 6];
+    slaveDof  = [1 2 3 4 5];
+    
+    %determine local active DOFs associated with slave node
+    [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+    
+    localConstraintEqMatrix = [-eye(3),   zeros(3), eye(3),    zeros(3);
+        zeros(2,3) -[1 0 0;0 1 0], zeros(2,3) ,[1 0 0;0 1 0]];
+    globalConstraintEqMatrix = localConstraintEqMatrix*Lambda;
     
     %extract Rda from globalConstraintEqMatrix
     index = 1;
@@ -243,7 +243,7 @@ if(jointType == 4)     %hinge axis along local "3" frame of joint
         ind = slaveActiveDof(i)+6;
         Rda(:,index) = globalConstraintEqMatrix(:,ind);
         index = index + 1;
-    end   
+    end
     
     %extract Rdd from globalConstraintEqMatrix
     index = 1;
@@ -255,11 +255,11 @@ if(jointType == 4)     %hinge axis along local "3" frame of joint
 end
 
 if(jointType == 5) %rigid bar constraint type
-   activeDof = [1 2 3 4 5 6]; %active DOF list at joint
-   slaveDof = [1 2 3 4 5 6]; %slave DOF list at joint 
-   %determine local active DOFs associated with slave node
-   [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
-   
+    activeDof = [1 2 3 4 5 6]; %active DOF list at joint
+    slaveDof = [1 2 3 4 5 6]; %slave DOF list at joint
+    %determine local active DOFs associated with slave node
+    [slaveActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,6);
+    
     Rdd = eye(6);  %need to define lx,ly,lz, from mesh level
     lx = joint(5); ly = joint(6); lz = joint(7);
     Rda = -eye(6); Rda(1:3,4:6) = [0 -lz ly;lz 0 -lx;-ly lx 0];
@@ -279,18 +279,18 @@ aMap = zeros(numActiveDOFsFromMasterNode,1);
 
 for i=1:numSlaveDOFs
     %get global DOF numbers of slave DOFs for this joint
-    dDOF(i,1) = (slaveNodeNum-1)*6 + slaveDof(i); 
+    dDOF(i,1) = (slaveNodeNum-1)*6 + slaveDof(i);
 end
 
 for i=1:numActiveDOFsFromMasterNode
     %get global DOF numbers of active DOFs for this joint from master nodes
-    aMap(i,1) = (masterNodeNum-1)*6 + activeDof(i); 
+    aMap(i,1) = (masterNodeNum-1)*6 + activeDof(i);
 end
 
 %determine global active DOFs associated with slave node
-aMap2 =[];
+aMap2 =zeros(length(slaveActiveDof),1);
 for i=1:length(slaveActiveDof)
-    aMap2(i,1) = (slaveNodeNum-1)*6 + slaveActiveDof(i);
+    aMap2(i) = (slaveNodeNum-1)*6 + slaveActiveDof(i);
 end
 
 if(~isempty(aMap2)) %create overall map of active DOFs associated with this joint
@@ -302,97 +302,97 @@ end
 end
 
 function [slaveNodeActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,numDofPerNode)
-    %This function determines the local master DOF associated with a local slave DOF.
-    count = 1;
-    slaveNodeActiveDof = [];
-    for i=1:numDofPerNode %loop over number of DOF per node
-        if(isempty(find(ismember(slaveDof,i)))) %if i is not in slaveDof list add it to a list of local active DOFs associated with a slave node
-            slaveNodeActiveDof(count) = i;
-            count = count + 1;
+%This function determines the local master DOF associated with a local slave DOF.
+count = 1;
+slaveNodeActiveDof = [];
+for i=1:numDofPerNode %loop over number of DOF per node
+    if(isempty(find(ismember(slaveDof,i), 1))) %if i is not in slaveDof list add it to a list of local active DOFs associated with a slave node
+        slaveNodeActiveDof(count) = i;
+        count = count + 1;
         
-        end
     end
+end
 
 end
 
 function [adNumDof,aNumDof,slaveDof] = extractdaInfo(joint,numNodes,numDofPerNode)
-    %This function gets the total number of DOFs in the model, active
-    %number of DOFs in the model, and a list of slave DOFs that will be
-    %eliminated by joint constraints.
-    
-    slaveDof = [];
-    adNumDof = numNodes*numDofPerNode; %total number of DOFs (active and dependent)
+%This function gets the total number of DOFs in the model, active
+%number of DOFs in the model, and a list of slave DOFs that will be
+%eliminated by joint constraints.
 
-    [numJoints,~]=size(joint); %get number of joints
-    
-    dependentCount = 0;  
-    count = 1;
-    for i=1:numJoints %loop over number of joints
-        if(joint(i,4)==0 ||joint(i,4)==5) %for a "fixed/weld" joint type or rigid bar constraint
-            con = [1 2 3 4 5 6]; %all DOFs of a slave node are constrained
-            dependentCount = dependentCount + 6; %increment number of dependent DOFs
-            for j=1:6
-               slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-               count = count + 1;
-            end
-           
-        end
-        
-        if(joint(i,4)==1) %for a "pinned" joint type
-            con = [1 2 3]; %only translational (first 3) DOFs of a slave node are  constrained
-            dependentCount = dependentCount + 3; %increment number of dependent DOFs
-            for j=1:3
-               slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-               count = count + 1;
-            end
-        end
-        
-        if(joint(i,4)==2) %for a single axis hinge joint along a local "2" axis of a joint
-            if((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)   
-                con=[1 2 3 5 6];
-            else
-                con=[1 2 3 4 6]; %all but 5th DOF of a  slave node are constrained
-            end
-                dependentCount = dependentCount + 5; %increment number of dependent DOFs
-            for j=1:5
-               slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-               count = count + 1;
-            end
-        end
-        
-        if(joint(i,4)==3) %for a single axis hinge =joint along a local "1" axis of a joint
-            if((abs(abs(joint(i,8))-90))<1.0e-3 || (abs(abs(joint(i,8))-270))<1.0e-3)   
-                con = [1 2 3 4 5];
-            elseif((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)   
-                con = [1 2 3 4 6];
-            else
-                con = [1 2 3 5 6]; %all but the 4th DOF of a slave node are constrained
-            end
-            dependentCount = dependentCount + 5; %increment number of dependent DOFs
-            for j=1:5
-               slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-               count = count + 1;
-            end
-        end
-        
-        if(joint(i,4)==4) %for a single axis hinge joint along a local "3" axis of a joint
-            if((abs(abs(joint(i,8))-90))<1.0e-3 || (abs(abs(joint(i,8))-270))<1.0e-3)   
-                con = [1 2 3 5 6];
-                if((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)
-                    con = [1 2 3 4 6];
-                end
-            else
-                con = [1 2 3 4 5];
-            end
-            dependentCount = dependentCount + 5; %all but the 6th DOF of a slave node are constrained
-            for j=1:5
-               slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
-               count = count + 1;
-            end
+slaveDof = [];
+adNumDof = numNodes*numDofPerNode; %total number of DOFs (active and dependent)
+
+[numJoints,~]=size(joint); %get number of joints
+
+dependentCount = 0;
+count = 1;
+for i=1:numJoints %loop over number of joints
+    if(joint(i,4)==0 ||joint(i,4)==5) %for a "fixed/weld" joint type or rigid bar constraint
+        con = [1 2 3 4 5 6]; %all DOFs of a slave node are constrained
+        dependentCount = dependentCount + 6; %increment number of dependent DOFs
+        for j=1:6
+            slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
+            count = count + 1;
         end
         
     end
     
-   aNumDof = adNumDof - dependentCount; %calculate number of active DOFs in the model
+    if(joint(i,4)==1) %for a "pinned" joint type
+        con = [1 2 3]; %only translational (first 3) DOFs of a slave node are  constrained
+        dependentCount = dependentCount + 3; %increment number of dependent DOFs
+        for j=1:3
+            slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
+            count = count + 1;
+        end
+    end
     
+    if(joint(i,4)==2) %for a single axis hinge joint along a local "2" axis of a joint
+        if((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)
+            con=[1 2 3 5 6];
+        else
+            con=[1 2 3 4 6]; %all but 5th DOF of a  slave node are constrained
+        end
+        dependentCount = dependentCount + 5; %increment number of dependent DOFs
+        for j=1:5
+            slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
+            count = count + 1;
+        end
+    end
+    
+    if(joint(i,4)==3) %for a single axis hinge =joint along a local "1" axis of a joint
+        if((abs(abs(joint(i,8))-90))<1.0e-3 || (abs(abs(joint(i,8))-270))<1.0e-3)
+            con = [1 2 3 4 5];
+        elseif((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)
+            con = [1 2 3 4 6];
+        else
+            con = [1 2 3 5 6]; %all but the 4th DOF of a slave node are constrained
+        end
+        dependentCount = dependentCount + 5; %increment number of dependent DOFs
+        for j=1:5
+            slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
+            count = count + 1;
+        end
+    end
+    
+    if(joint(i,4)==4) %for a single axis hinge joint along a local "3" axis of a joint
+        if((abs(abs(joint(i,8))-90))<1.0e-3 || (abs(abs(joint(i,8))-270))<1.0e-3)
+            con = [1 2 3 5 6];
+            if((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)
+                con = [1 2 3 4 6];
+            end
+        else
+            con = [1 2 3 4 5];
+        end
+        dependentCount = dependentCount + 5; %all but the 6th DOF of a slave node are constrained
+        for j=1:5
+            slaveDof(count) = numDofPerNode*(joint(i,3)-1) + con(j); %assign slave DOFs (joint(i,3) is the slave node number associated with this joint
+            count = count + 1;
+        end
+    end
+    
+end
+
+aNumDof = adNumDof - dependentCount; %calculate number of active DOFs in the model
+
 end
