@@ -333,15 +333,15 @@ for i=1:numTS
 
         %% evaluate aerodynamic module (CACTUS ONE-WAY)
         %%======= aerodynamics module ======================
-        if(model.aeroLoadsOn)
-            disp('using cactus aero loads...');
-            %----- calculate aerodynamic loads --------------------------------
-            % this is place holder
-            [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t(i),el.props,model.totalNumDof);
-            % these loads will need to account for a turbine with a
-            % platform with different orientation than the inertial system.
-            FAeroDof = (1:length(u_s));
-            %------------------------------------------------------------------
+        if(model.aeroLoadsOn) % TODO: this is odd since we load in the aero loads elsewhere
+%             disp('using cactus aero loads...');
+%             %----- calculate aerodynamic loads --------------------------------
+%             % this is place holder
+%             [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t(i),el.props,model.totalNumDof);
+%             % these loads will need to account for a turbine with a
+%             % platform with different orientation than the inertial system.
+%             FAeroDof = (1:length(u_s));
+%             %------------------------------------------------------------------
         else
             FAero = [];
             FAeroDof = [];
