@@ -1,4 +1,4 @@
-function [displ,elStrain,staticAnalysisSuccessful]=staticAnalysis(model,mesh,el,displ,Omega,OmegaStart,elStorage)
+function [displ,elStrain,staticAnalysisSuccessful]=staticAnalysis(model,mesh,el,displ,Omega,~,elStorage)
 %staticAnalysis performs static analysis
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
