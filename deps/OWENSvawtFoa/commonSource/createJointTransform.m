@@ -30,6 +30,17 @@ jointTransform = zeros(adNumDof,aNumDof);
 
 %form reduced DOF vector which maps original DOF numbering to reduced DOF
 %numbering
+
+%Get Count
+count = 1;
+for i=1:numNodes*numDofPerNode %loop over total number of DOFs in model
+    if(sum(ismember(slaveDof,i))==0)
+        %         reducedDOF(count) = i; %if DOF is NOT a slave DOF include it in reducedDOF
+        count = count + 1;
+    end
+end
+
+reducedDOF = zeros(1,count);
 count = 1;
 for i=1:numNodes*numDofPerNode %loop over total number of DOFs in model
     if(sum(ismember(slaveDof,i))==0)
@@ -303,16 +314,29 @@ end
 
 function [slaveNodeActiveDof] = determineActiveDofsFromSlaveNode(slaveDof,numDofPerNode)
 %This function determines the local master DOF associated with a local slave DOF.
+% Get size
 count = 1;
-slaveNodeActiveDof = [];
 for i=1:numDofPerNode %loop over number of DOF per node
     if(isempty(find(ismember(slaveDof,i), 1))) %if i is not in slaveDof list add it to a list of local active DOFs associated with a slave node
-        slaveNodeActiveDof(count) = i;
+        %         slaveNodeActiveDof(count) = i;
         count = count + 1;
         
     end
 end
 
+if count>1
+    count = 1;
+    slaveNodeActiveDof = zeros(1,count);
+    for i=1:numDofPerNode %loop over number of DOF per node
+        if(isempty(find(ismember(slaveDof,i), 1))) %if i is not in slaveDof list add it to a list of local active DOFs associated with a slave node
+            slaveNodeActiveDof(count) = i;
+            count = count + 1;
+            
+        end
+    end
+else
+    slaveNodeActiveDof = [];
+end
 end
 
 function [adNumDof,aNumDof,slaveDof] = extractdaInfo(joint,numNodes,numDofPerNode)
@@ -320,12 +344,48 @@ function [adNumDof,aNumDof,slaveDof] = extractdaInfo(joint,numNodes,numDofPerNod
 %number of DOFs in the model, and a list of slave DOFs that will be
 %eliminated by joint constraints.
 
-slaveDof = [];
 adNumDof = numNodes*numDofPerNode; %total number of DOFs (active and dependent)
 
 [numJoints,~]=size(joint); %get number of joints
 
+%Get Count
 dependentCount = 0;
+count = 1;
+for i=1:numJoints %loop over number of joints
+    if(joint(i,4)==0 ||joint(i,4)==5) %for a "fixed/weld" joint type or rigid bar constraint
+        for j=1:6
+            count = count + 1;
+        end
+        
+    end
+    
+    if(joint(i,4)==1) %for a "pinned" joint type
+        for j=1:3
+            count = count + 1;
+        end
+    end
+    
+    if(joint(i,4)==2) %for a single axis hinge joint along a local "2" axis of a joint
+        for j=1:5
+            count = count + 1;
+        end
+    end
+    
+    if(joint(i,4)==3) %for a single axis hinge =joint along a local "1" axis of a joint
+        for j=1:5
+            count = count + 1;
+        end
+    end
+    
+    if(joint(i,4)==4) %for a single axis hinge joint along a local "3" axis of a joint
+        for j=1:5
+            count = count + 1;
+        end
+    end
+    
+end
+
+slaveDof = zeros(1,count);
 count = 1;
 for i=1:numJoints %loop over number of joints
     if(joint(i,4)==0 ||joint(i,4)==5) %for a "fixed/weld" joint type or rigid bar constraint
