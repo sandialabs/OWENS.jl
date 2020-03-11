@@ -7,7 +7,7 @@ function [cummulativeForce] = calculateReactionForceAtNode(nodeNum,model,mesh,el
 % **********************************************************************
 %   [cummulativeForce] = calculateReactionForceAtNode(nodeNum,model,mesh,...
 %    el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
-%                    
+%
 %   This function calculates the reaction force at a node by post
 %   processing all element associated with a node through connectivity or
 %   joint constraints.
@@ -16,7 +16,7 @@ function [cummulativeForce] = calculateReactionForceAtNode(nodeNum,model,mesh,el
 %   nodeNum    = node number joint constraints are desired at
 %   model      = object containing model data
 %   mesh       = object containing mesh data
-%   elStorage  = object containing stored element data 
+%   elStorage  = object containing stored element data
 %   el         = object containing element data
 %   timeInt    = object containing time integration parameters
 %   dispData   = object containing displacement data
@@ -30,22 +30,22 @@ function [cummulativeForce] = calculateReactionForceAtNode(nodeNum,model,mesh,el
 %   output:
 %   cummulativeForce  = vector containing reaction force at nodeNum
 
-    conn = mesh.conn;  %get connectivity list
-    numDofPerNode = 6;
-    
-    cummulativeForce = zeros(numDofPerNode,1); %initialize force at node
-    
-    %find elements associated with nodeNum due to mesh connectivity or
-    %constraints
-    [elList,elListLocalNodeNumbers] = findElementsAssociatedWithNodeNumber(nodeNum,conn,model.joint);
+conn = mesh.conn;  %get connectivity list
+numDofPerNode = 6;
 
-    %process elements for nodal reaction forces and compile to find total
-    %reaction force at specified node
-    for i=1:length(elList)
-        [Fpp] = elementPostProcess(elList(i),model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H);
-        localNode = elListLocalNodeNumbers(i);
-        cummulativeForce = cummulativeForce + Fpp((localNode-1)*numDofPerNode+1:(localNode-1)*numDofPerNode+6);
-    end
+cummulativeForce = zeros(numDofPerNode,1); %initialize force at node
+
+%find elements associated with nodeNum due to mesh connectivity or
+%constraints
+[elList,elListLocalNodeNumbers] = findElementsAssociatedWithNodeNumber(nodeNum,conn,model.joint);
+
+%process elements for nodal reaction forces and compile to find total
+%reaction force at specified node
+for i=1:length(elList)
+    [Fpp] = elementPostProcess(elList(i),model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H);
+    localNode = elListLocalNodeNumbers(i);
+    cummulativeForce = cummulativeForce + Fpp((localNode-1)*numDofPerNode+1:(localNode-1)*numDofPerNode+6);
+end
 
 end
 

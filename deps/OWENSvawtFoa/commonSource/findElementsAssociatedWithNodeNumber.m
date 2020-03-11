@@ -7,7 +7,7 @@ function [elList,localNode] = findElementsAssociatedWithNodeNumber(nodeNum,conn,
 % **********************************************************************
 %   [elList,localNode] = findElementsAssociatedWithNodeNumber(nodeNum,...
 %                        conn,jointData)
-%                    
+%
 %   This function finds elements associated with a node number through
 %   mesh connectivity or joint constraints
 %
@@ -23,21 +23,23 @@ function [elList,localNode] = findElementsAssociatedWithNodeNumber(nodeNum,conn,
 %   localNode  = array containing the local node number that correspond to
 %                nodeNum in the list of associated elements
 
-    %search joint constraints
-    index = 1;
-    [numEl,~] = size(conn); %get number of elements in mesh
-        
-    if(~isempty(jointData))
-      %first see if specified node is a slave node in a joint constraint
-      res2 = find(ismember(jointData(:,3),nodeNum)); %search joint data slave nodes for node number
-      %if it is, change it to the corresponding master node
-      if(~isempty(res2))
+%search joint constraints
+index = 1;
+[numEl,~] = size(conn); %get number of elements in mesh
+
+if(~isempty(jointData))
+    %first see if specified node is a slave node in a joint constraint
+    res2 = find(ismember(jointData(:,3),nodeNum)); %search joint data slave nodes for node number
+    %if it is, change it to the corresponding master node
+    if(~isempty(res2))
         nodeNum = jointData(res2,2);
-      end
+    end
     
     res1 = find(ismember(jointData(:,2),nodeNum)); %search joint data master nodes for node number
     jointNodeNumbers = jointData(res1,3);
     
+    elList = zeros(length(jointNodeNumbers)*numEl);
+    localNode = zeros(length(jointNodeNumbers)*numEl);
     for j=1:length(jointNodeNumbers) %loop over joints
         for i=1:numEl
             res = ismember(conn(i,:),jointNodeNumbers(j)); %finds indices of nodeNum in connectivity of element i
@@ -49,18 +51,18 @@ function [elList,localNode] = findElementsAssociatedWithNodeNumber(nodeNum,conn,
             end
         end
     end
-    end
+end
 
-    
-   for i=1:numEl %loop over elements
-        res = ismember(conn(i,:),nodeNum); %finds indices of nodeNum in connectivity of element i
-        localNodeNumber = find(res); %finds the local node number of element i that corresponds to nodeNum
-        if(localNodeNumber~=0) %assigns to an elementList and localNode list
-            elList(index) = i;
-            localNode(index) = localNodeNumber;
-            index = index + 1;
-        end
-    end
 
-    
+for i=1:numEl %loop over elements
+    res = ismember(conn(i,:),nodeNum); %finds indices of nodeNum in connectivity of element i
+    localNodeNumber = find(res); %finds the local node number of element i that corresponds to nodeNum
+    if(localNodeNumber~=0) %assigns to an elementList and localNode list
+        elList(index) = i;
+        localNode(index) = localNodeNumber;
+        index = index + 1;
+    end
+end
+
+
 end
