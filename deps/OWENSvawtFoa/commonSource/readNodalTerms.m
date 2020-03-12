@@ -29,14 +29,14 @@ if(fid>0)  %if file is opened successfully
     %
     %             temp = strsplit(fgetl(fid));
     %
-    %             nodeNum(index,1) = str2double(temp{1});   %read in node number
+    %             nodeNum(index,1) = real(str2double(temp{1}));   %read in node number
     %             termType{index} = temp{2};  %read in concentrated term type (M=mass, K = stiffness, F = force)
     %             if(length(temp) == 4)
-    %                 localDof{index} = str2double(temp{3});
-    %                 val(index) = str2double(temp{4});
+    %                 localDof{index} = real(str2double(temp{3}));
+    %                 val(index) = real(str2double(temp{4});
     %             else
-    %                 localDof{index} = [str2double(temp{3}) str2double(temp{4})];
-    %                 val(index) = str2double(temp{5});
+    %                 localDof{index} = [real(str2double(temp{3})) real(str2double(temp{4}))];
+    %                 val(index) = real(str2double(temp{5}));
     %             end
     %             %         val(index,1) = fscanf(fid,'%f',1);       %read in value for concentrated nodal term
     %             index = index + 1;

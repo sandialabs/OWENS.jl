@@ -48,8 +48,8 @@ if(strcmp(analysisType,'S')) %STATIC ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-    
-    
+
+
 elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     Omega = varargin{3};              %initialization of rotor speed (Hz)
     model.spinUpOn = varargin{4};     %flag for pre-stressed modal analysis
@@ -67,7 +67,7 @@ elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-    
+
 elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
     model.delta_t = varargin{3};  % time step size
     model.numTS = varargin{4};    % number of time steps
@@ -93,7 +93,7 @@ elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSI
             model.OmegaInit = model.Omegaocp(1);
         end
     end
-    
+
 elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
     model.delta_t = varargin{3}; %time step size
     model.numTS = varargin{4};   %number of time steps
@@ -120,13 +120,13 @@ elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
             model.OmegaInit = model.Omegaocp(1);
         end
     end
-    
+
 elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     Omega = varargin{3};   %rotor speed (Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
     model.guessFreq = varargin{5}; %``guess'' modal frequency
     model.aeroElasticOn = true;
-    
+
     if(length(varargin)>5)   %air density initialization
         model.airDensity = varargin{6};
     else
@@ -137,12 +137,12 @@ elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     else
         model.numModesToExtract = 20;
     end
-    
+
 elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
     omegaArray = varargin{3};    %array of rotor speed values(Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
     model.aeroElasticOn = true;
-    
+
     if(length(varargin)>4)    %air density initializatio
         model.airDensity = varargin{5};
     else
@@ -153,7 +153,7 @@ elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
     else
         model.numModesToExtract = 20;
     end
-    
+
 else
     error('Analysis type not recognized.');
 end
@@ -169,19 +169,19 @@ jntdatafilename  = [fdirectory myfgetl(fid)]; %joint data file name
 ndldatafilename  = [fdirectory myfgetl(fid)]; %concentrated nodal data file name
 bcdatafilename   = [fdirectory myfgetl(fid)]; %boundary condition file name
 line             = myfgetl(fid);
-platformFlag     = str2double(line(1:2));
+platformFlag     = real(str2double(line(1:2)));
 platfilename     = [fdirectory line(3:end)];
 initcondfilename = [fdirectory myfgetl(fid)]; %initial condition filename
 
 line             = myfgetl(fid);
 delimiter_idx    = find(line == ' ');
 
-aeroFlag         = str2double(line(1)); %flag for activating aerodynamic analysis
+aeroFlag         = real(str2double(line(1))); %flag for activating aerodynamic analysis
 blddatafilename  = [fdirectory line(delimiter_idx(1)+1:delimiter_idx(2)-1)]; %blade data file name
 model.aeroloadfile = [fdirectory line(delimiter_idx(2)+1:end)]; %.mat file containing CACTUS aerodynamic loads
 
 line             = myfgetl(fid); %flag to include drive shaft effects
-driveShaftFlag   = str2double(line(1:2));
+driveShaftFlag   = real(str2double(line(1:2)));
 driveshaftfilename = [fdirectory line(3:end)]; %drive shaft file name
 
 generatorfilename = [fdirectory myfgetl(fid)]; %generator file name
@@ -212,24 +212,24 @@ rbarFileName = [inputfile(1:end-6),'.rbar']; %setrbarfile
 [model] = readPlatformFile(model,platformFlag,platfilename);
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %for transient analysis...
-    
+
     [model.initCond] = readInitCond(initcondfilename); %read initial conditions
-    
+
     if(aeroFlag)
         model.aeroLoadsOn = true;
     else
         model.aeroLoadsOn = false;
     end
-    
+
     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
-    
-    if(str2double(generatorfilename)==1.0)
+
+    if(real(str2double(generatorfilename))==1.0)
         model.useGeneratorFunction = true;
     else
         model.useGeneratorFunction = false;
         [model.generatorProps] = readGeneratorProps(generatorfilename); %reads generator properties
     end
-    
+
 end
 
 [model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results %TODO: map to the output location instead of input
@@ -244,7 +244,7 @@ if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS
     if(length(varargin)<=4 || ~model.nlOn)                %sets initial guess for nonlinear calculations
         displInitGuess = zeros(mesh.numNodes*6,1);
     end
-    
+
     OmegaStart = 0.0;
     staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
 end
@@ -310,14 +310,14 @@ dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained); %c
 redVectorMap = zeros(numReducedDof,1);
 
 for i=1:numReducedDof
-    
+
     if(ismember(i,bcdoflist))              %creates a map of unconstrained reduced DOFs
         redVectorMap(i) = -1.0;
     else
         index = find(ismember(dofList,i));
         redVectorMap(i) = index;
     end
-    
+
 end
 
 end
@@ -335,7 +335,7 @@ for i=1:numNodes
         if~(isConstrained((i-1)*numDofPerNode + j))
 %             dofVector(index) = (i-1)*numDofPerNode + j; %DOF vector only contains unconstrained DOFs
             index = index + 1;
-        end       
+        end
     end
 end
 
@@ -345,7 +345,7 @@ for i=1:numNodes
         if~(isConstrained((i-1)*numDofPerNode + j))
             dofVector(index) = (i-1)*numDofPerNode + j; %DOF vector only contains unconstrained DOFs
             index = index + 1;
-        end       
+        end
     end
 end
 
