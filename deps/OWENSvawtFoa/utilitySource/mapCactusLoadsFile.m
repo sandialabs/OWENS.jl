@@ -94,14 +94,14 @@ end
 [bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn);
 
 %Initialize structuralLoad
-init_structuralLoad = struct('N',zeros,'T',zeros,'M25',zeros);
+init_structuralLoad = struct('N',zeros(cactusGeom.NBlade,length(structuralElNumbers)),'T',zeros(cactusGeom.NBlade,length(structuralElNumbers)),'M25',zeros(cactusGeom.NBlade,length(structuralElNumbers)));
 structuralLoad = repmat(init_structuralLoad,1,cactusGeom.NBlade);
 
-for i = 1:cactusGeom.NBlade
-    structuralLoad(i).N = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
-    structuralLoad(i).T = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
-    structuralLoad(i).M25 = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
-end
+% for i = 1:cactusGeom.NBlade
+%     structuralLoad(i).N = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
+%     structuralLoad(i).T = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
+%     structuralLoad(i).M25 = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
+% end
 
 for i=1:cactusGeom.NBlade
     for j=1:numAeroTS
