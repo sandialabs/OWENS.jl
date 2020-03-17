@@ -105,9 +105,9 @@ end
 
 for i=1:cactusGeom.NBlade
     for j=1:numAeroTS
-        structuralLoad(i).N(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).N(j,:),structuralSpanLocNorm(i,:),'linear','extrap');
-        structuralLoad(i).T(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).T(j,:),structuralSpanLocNorm(i,:),'linear','extrap');
-        structuralLoad(i).M25(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).M25(j,:),structuralSpanLocNorm(i,:),'linear','extrap');
+        structuralLoad(i).N(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).N(j,:),structuralSpanLocNorm(i,:),'linear');%,'extrap');
+        structuralLoad(i).T(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).T(j,:),structuralSpanLocNorm(i,:),'linear');%,'extrap');
+        structuralLoad(i).M25(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).M25(j,:),structuralSpanLocNorm(i,:),'linear');%,'extrap');
     end
 end
 
