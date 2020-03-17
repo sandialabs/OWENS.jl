@@ -98,7 +98,7 @@ while(iterationCount < maxIter && uNorm > tol)  %iteration loop
             elInput.modalFlag = true;
             elInput.timeInt = timeInt;
             elInput.xloc = [0.0 el.elLen(i)];
-            elInput.sectionProps = el.props{i};
+            elInput.sectionProps = el.props(i);
             elInput.sweepAngle = el.psi(i);
             elInput.coneAngle = el.theta(i);
             elInput.rollAngle = el.roll(i);

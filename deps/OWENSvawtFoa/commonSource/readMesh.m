@@ -29,7 +29,8 @@ z = zeros(numNodes,1);
 
 conn = zeros(numEl,2);
 elNum = zeros(numEl,1);
-
+temp = zeros(1,4);
+    
 for i=1:numNodes            % read in node number and node coordinates
     temp = getSplitLine(fid,'	');
     nodeNum(i) = temp(1);
