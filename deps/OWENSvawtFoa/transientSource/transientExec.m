@@ -35,6 +35,10 @@ if(model.aeroOn)
     aeroReceivePort = 4200;
     [d_output_streamAero,~,server_socketAero,input_socketAero,output_socketAero] = delftAeroStartUp('localhost',aeroReceivePort,aeroSendPort,model);
 end
+
+% Get AeroLoads
+aeroLoads = processAeroLoadsBLE(model.aeroloadfile, model.owensfile);
+
 %................................................................
 
 %% Rotor mode initialization
@@ -364,7 +368,7 @@ for i=1:numTS
 
         %% compile external forcing on rotor
         %compile forces to supply to structural dynamics solver
-        [Fexternal, Fdof] = externalForcing(t(i)+delta_t);
+        [Fexternal, Fdof] = externalForcing(t(i)+delta_t,aeroLoads);
         Fexternal = [Fexternal; FAero];
         Fdof = [Fdof, FAeroDof];
 

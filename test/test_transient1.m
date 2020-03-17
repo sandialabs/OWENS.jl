@@ -87,8 +87,6 @@ writeOwensNDL(fname, nodes, cmkType, cmkValues)
 CACTUSfileRoot = './input_files_test/DVAWT_2B_LCDT';
 OWENSfileRoot = bmOwens;
 
-processAeroLoadsBLE(CACTUSfileRoot, OWENSfileRoot)
-
 % *********************************************************************
 % run a modal analysis of the platform design
 % *********************************************************************

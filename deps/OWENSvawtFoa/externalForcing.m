@@ -1,4 +1,4 @@
-function [Fexternal, Fdof] = externalForcing(time)
+function [Fexternal, Fdof] = externalForcing(time,aeroLoads)
 
 %owens externalForcing function for the OWENS toolkit
 % **********************************************************************
@@ -6,7 +6,7 @@ function [Fexternal, Fdof] = externalForcing(time)
 % * Developed by Sandia National Laboratories Wind Energy Technologies *
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
-%   [Fexternal, Fdof] = externalForcing(time)
+%   [Fexternal, Fdof] = externalForcing(time,aeroLoads)
 %
 %   This function specifies external forcing for a transient analysis.
 %   Fexternal is a vector of loads and Fdof is a corresponding vector of
@@ -38,10 +38,10 @@ function [Fexternal, Fdof] = externalForcing(time)
 %         Fdof = [];
 %     end
 
-temp = load('aeroLoads.mat');
-timeArray = temp.timeArray;
-ForceValHist = temp.ForceValHist;
-ForceDof = temp.ForceDof;
+%temp = load('aeroLoads.mat');
+timeArray = aeroLoads.timeArray;
+ForceValHist = aeroLoads.ForceValHist;
+ForceDof = aeroLoads.ForceDof;
 
 
 Fexternal = interp1(timeArray,ForceValHist',time,'linear');

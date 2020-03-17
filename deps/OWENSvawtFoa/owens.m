@@ -158,7 +158,6 @@ else
     error('Analysis type not recognized.');
 end
 
-
 fid = fopen(inputfile,'r'); %reads in model file names from .owens file
 last_delimiter   = find(or(inputfile == '/', inputfile == '\')); %'
 fdirectory       = inputfile(1:last_delimiter(end));
@@ -178,7 +177,8 @@ delimiter_idx    = find(line == ' ');
 
 aeroFlag         = real(str2double(line(1))); %flag for activating aerodynamic analysis
 blddatafilename  = [fdirectory line(delimiter_idx(1)+1:delimiter_idx(2)-1)]; %blade data file name
-model.aeroloadfile = [fdirectory line(delimiter_idx(2)+1:end)]; %.mat file containing CACTUS aerodynamic loads
+model.aeroloadfile = [fdirectory line(delimiter_idx(2)+1:end)]; %.csv file containing CACTUS aerodynamic loads
+model.owensfile = [blddatafilename(1:end-4) '.owens'];
 
 line             = myfgetl(fid); %flag to include drive shaft effects
 driveShaftFlag   = real(str2double(line(1:2)));
