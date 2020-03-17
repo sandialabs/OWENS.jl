@@ -31,7 +31,7 @@ fid = fopen(BCfile,'w');     %open boundary condition file
 for nn = 1:length(nodes)
     [row, col, val] = find(cmkValues(:,:,1));
     for ii = 1:length(row)
-        fprintf(fid,'%i %s %i %i %.2f\n', nodes(nn),cmkType{nn},row(ii),col(ii),val(ii));
+        fprintf(fid,'%.0f %s %.0f %.0f %.2f\n', nodes(nn),cmkType{nn},row(ii),col(ii),val(ii));
     end
 end
 

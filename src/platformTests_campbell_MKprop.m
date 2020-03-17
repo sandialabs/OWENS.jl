@@ -1,7 +1,7 @@
 clear all
 clc
 
-cd('C:\data\OffshoreVAWT\SESPhaseI_OWENS\dvawt\carbon\dvawt_c_2_lcdt\modalAnalysis')
+% cd('C:\data\OffshoreVAWT\SESPhaseI_OWENS\dvawt\carbon\dvawt_c_2_lcdt\modalAnalysis')
 
 %% ****************** COORDINATE SYSTEM DEFINITION *********************** %
 % 1 - x -  surge (pointed downstream)
@@ -11,6 +11,32 @@ cd('C:\data\OffshoreVAWT\SESPhaseI_OWENS\dvawt\carbon\dvawt_c_2_lcdt\modalAnalys
 % 5 - Oy - pitch
 % 6 - Oz - yaw
 % *********************************************************************** %
+if (~isdeployed)
+    clear all
+    
+    
+    tol1 = 1e-12;
+    VAWT_Toolbox_path_main = '../deps/OWENSvawtFoa/';
+    addpath(VAWT_Toolbox_path_main)
+    % add sub folders of the OWENS directory
+    VAWT_Toolbox_path_1 = [VAWT_Toolbox_path_main 'commonSource'];
+    addpath(VAWT_Toolbox_path_1)
+    VAWT_Toolbox_path_2 = [VAWT_Toolbox_path_main 'modalSource'];
+    addpath(VAWT_Toolbox_path_2)
+    VAWT_Toolbox_path_3 = [VAWT_Toolbox_path_main 'transientSource'];
+    addpath(VAWT_Toolbox_path_3)
+    VAWT_Toolbox_path_4 = [VAWT_Toolbox_path_main 'utilitySource'];
+    addpath(VAWT_Toolbox_path_4)
+    %     VAWT_Toolbox_path_5 = [VAWT_Toolbox_path_main 'serverFiles'];
+    %     addpath(VAWT_Toolbox_path_5)
+    VAWT_Toolbox_path_6 = [VAWT_Toolbox_path_main 'processingScripts'];
+    addpath(VAWT_Toolbox_path_6)
+    
+    % add the main directory of VAWTgen
+    % add sub folders of the OWENS directory
+    VAWT_Toolbox_path_1 = [VAWT_Toolbox_path_main '../vizFiles'];
+    addpath(VAWT_Toolbox_path_1)
+end
 
 if 1
     % use this benchmark file
