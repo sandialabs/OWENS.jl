@@ -72,6 +72,17 @@ model.turbineStartup = 0;           %initialization of turbine startup,
 model.aeroElasticOn = false;        % aeroElastic flags, and air density
 model.airDensity = 0;
 model.gravityOn = true;             %flag to activate gravity loading in structural dynamics/static simulations
+model.generatorOn = false; %Initialize only, gets changed later on
+model.OmegaGenStart = false; %Initialize only, gets changed later on
+model.totalNumDof = 0.0; %Initialize only, gets changed later on
+
+model.nlParams = struct('iterationType', 'NR',...
+    'adaptiveLoadSteppingFlag', true,...
+    'tolerance', 1.0000e-06,...
+    'maxIterations', 50,...
+    'maxNumLoadSteps', 20,...
+    'minLoadStepDelta', 0.0500,...
+    'minLoadStep', 0.0500);
 
 if(strcmp(analysisType,'S')) %STATIC ANALYSIS
     Omega = varargin{3};            %initialization of rotor speed (Hz)
@@ -84,8 +95,8 @@ if(strcmp(analysisType,'S')) %STATIC ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-
-
+    
+    
 elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     Omega = varargin{3};              %initialization of rotor speed (Hz)
     model.spinUpOn = varargin{4};     %flag for pre-stressed modal analysis
@@ -103,7 +114,7 @@ elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-
+    
 elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
     model.delta_t = varargin{3};  % time step size
     model.numTS = varargin{4};    % number of time steps
@@ -130,7 +141,7 @@ elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSI
             model.OmegaInit = Omegaocp(1);
         end
     end
-
+    
 elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
     model.delta_t = varargin{3}; %time step size
     model.numTS = varargin{4};   %number of time steps
@@ -158,13 +169,13 @@ elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
             model.OmegaInit = Omegaocp(1);
         end
     end
-
+    
 elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     Omega = varargin{3};   %rotor speed (Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
     model.guessFreq = varargin{5}; %``guess'' modal frequency
     model.aeroElasticOn = true;
-
+    
     if(length(varargin)>5)   %air density initialization
         model.airDensity = varargin{6};
     else
@@ -175,12 +186,12 @@ elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     else
         model.numModesToExtract = 20;
     end
-
+    
 elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
     omegaArray = varargin{3};    %array of rotor speed values(Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
     model.aeroElasticOn = true;
-
+    
     if(length(varargin)>4)    %air density initializatio
         model.airDensity = varargin{5};
     else
@@ -191,7 +202,7 @@ elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
     else
         model.numModesToExtract = 20;
     end
-
+    
 else
     error('Analysis type not recognized.');
 end
@@ -259,32 +270,32 @@ model.hydroOn = false;
 model.platformTurbineConnectionNodeNumber = 1;
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %for transient analysis...
-
+    
     [model.initCond] = readInitCond(initcondfilename); %read initial conditions
-
+    
     if(aeroFlag)
         model.aeroLoadsOn = true;
     else
         model.aeroLoadsOn = false;
     end
-
-%     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
+    
+    %     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
     model.driveTrainOn = false;          %set drive shaft unactive
-
+    
     model.driveShaftProps.k = 0.0;       %set drive shat properties to 0
     model.driveShaftProps.c = 0.0;
     model.JgearBox =0.0;
-
+    
     model.gearRatio = 1.0;             %set gear ratio and efficiency to 1
     model.gearBoxEfficiency = 1.0;
-
+    
     if(real(str2double(generatorfilename))==1.0)
         model.useGeneratorFunction = true;
     else
         model.useGeneratorFunction = false;
         [model.generatorProps] = readGeneratorProps(generatorfilename); %reads generator properties
     end
-
+    
 end
 
 [model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results %TODO: map to the output location instead of input
@@ -294,6 +305,7 @@ model.jointTransform = jnt_struct.jointTransform;
 model.reducedDOFList = jnt_struct.reducedDOF;
 [model.BC.map] = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,jnt_struct.reducedDOF); %create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
 numReducedDof = length(jnt_struct.jointTransform(1,:));
+model.BC.redVectorMap = zeros(numReducedDof,1);
 [model.BC.redVectorMap] = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,model.BC); %create a map between reduced and full DOF lists
 
 if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS
@@ -301,7 +313,7 @@ if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS
     if(length(varargin)<=4 || ~model.nlOn)                %sets initial guess for nonlinear calculations
         displInitGuess = zeros(mesh.numNodes*6,1);
     end
-
+    
     OmegaStart = 0.0;
     staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
 end
@@ -367,14 +379,14 @@ dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained); %c
 redVectorMap = zeros(numReducedDof,1);
 
 for i=1:numReducedDof
-
+    
     if(ismember(i,bcdoflist))              %creates a map of unconstrained reduced DOFs
         redVectorMap(i) = -1.0;
     else
         index = find(ismember(dofList,i));
         redVectorMap(i) = index;
     end
-
+    
 end
 
 end
@@ -390,7 +402,7 @@ index = 1;
 for i=1:numNodes
     for j=1:numDofPerNode
         if~(isConstrained((i-1)*numDofPerNode + j))
-%             dofVector(index) = (i-1)*numDofPerNode + j; %DOF vector only contains unconstrained DOFs
+            %             dofVector(index) = (i-1)*numDofPerNode + j; %DOF vector only contains unconstrained DOFs
             index = index + 1;
         end
     end

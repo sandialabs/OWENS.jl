@@ -24,17 +24,9 @@ function transientExec(model,mesh,el)
 
 %% activate platform module
 %............... flags for module activation ....................
-model.aeroOn                 = false;
-
+aeroOn = false;
 %modularIteration
 moduleIteration = true;
-
-
-if(model.aeroOn)
-    aeroSendPort = 3200;
-    aeroReceivePort = 4200;
-    [d_output_streamAero,~,server_socketAero,input_socketAero,output_socketAero] = delftAeroStartUp('localhost',aeroReceivePort,aeroSendPort,model);
-end
 
 % Get AeroLoads
 aeroLoads = processAeroLoadsBLE(model.aeroloadfile, model.owensfile);
@@ -355,7 +347,7 @@ for i=1:numTS
         %==================================================
         %% evaluate aerodynamic module (TU DELFT)
         %%======= aerodynamics module ======================
-        if(model.aeroOn && needsAeroCalcAtThisTimestep)
+        if(aeroOn && needsAeroCalcAtThisTimestep)
 
             %             [FAero,FAeroDof] = aeroModule(model,t(i) + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero);
             %
@@ -537,16 +529,16 @@ end %end timestep loop
 
 %% kill platform module process
 if(model.hydroOn)
-    serverSendVector(-1.0,d_output_streamPlatform);
-    terminateServer(server_socketPlatform,output_socketPlatform,1);
-    terminateClient(input_socketPlatform,1);
+%     serverSendVector(-1.0,d_output_streamPlatform);
+%     terminateServer(server_socketPlatform,output_socketPlatform,1);
+%     terminateClient(input_socketPlatform,1);
 end
 
 %% kill aerodynamic module process
-if(model.aeroOn)
-    serverSendVector(decodeVec(4,-1.0),d_output_streamAero) ;
-    terminateClient(input_socketAero,1); %close down client connection to forcing module
-    terminateServer(server_socketAero,output_socketAero,1); %close down server on this side
+if(aeroOn)
+%     serverSendVector(decodeVec(4,-1.0),d_output_streamAero) ;
+%     terminateClient(input_socketAero,1); %close down client connection to forcing module
+%     terminateServer(server_socketAero,output_socketAero,1); %close down server on this side
 end
 
 %%
