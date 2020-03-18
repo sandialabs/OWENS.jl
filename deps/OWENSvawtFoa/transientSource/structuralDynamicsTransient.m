@@ -82,8 +82,9 @@ if(strcmp(analysisType,'TNB'))
     timeInt.delta_t = delta_t;
     timeInt.a1 = alpha*delta_t;
     timeInt.a2 = (1.0-alpha)*delta_t;
-    timeInt.a3 = 1.0/(beta*delta_t*delta_t);
-    timeInt.a4 = timeInt.a3*delta_t;
+    a3 = 1.0/(beta*delta_t*delta_t);
+    timeInt.a3 = a3;
+    timeInt.a4 = a3*delta_t;
     timeInt.a5 = 1.0/gamma-1.0;
     timeInt.a6 = alpha/(beta*delta_t);
     timeInt.a7 = alpha/beta - 1.0;
@@ -214,7 +215,8 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         elInput.RayleighBeta = model.RayleighBeta;
 
         elInput.CN2H = CN2H;
-
+        elInput.airDensity = model.airDensity;
+        elInput.freq = 0.0; %Is not used for this model type, but must be declared.
 
         [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %calculate timoshenko element
 

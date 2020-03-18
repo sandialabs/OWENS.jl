@@ -43,27 +43,23 @@ preStress      = input.preStress;
 aeroElasticOn  = input.aeroElasticOn;
 aeroForceOn    = input.aeroForceOn;
 iterationType  = input.iterationType;
+disp_iter      = input.displ_iter;
+omegaVec       = input.omegaVec;
+CN2H           = input.CN2H;
+omegaDotVec    = input.omegaDotVec;
+timeInt        = input.timeInt;
+dispm1 = zeros; %declare type
+accelVec = zeros;%declare type
+dispdot = zeros;%declare type
+dispddot = zeros;%declare type
 
 %options for Dean integrator
 if(strcmp(input.analysisType,'TD'))
-    timeInt        = input.timeInt;
-    CN2H           = input.CN2H;
-    omegaVec       = input.omegaVec;
-    omegaDotVec    = input.omegaDotVec;
     dispm1         = input.dispm1;
-    disp_iter      = input.displ_iter;
-end
-
-%options for newmark beta integrator
-if(strcmp(input.analysisType,'TNB'))
-    timeInt        = input.timeInt;
-    CN2H           = input.CN2H;
-    omegaVec       = input.omegaVec;
-    omegaDotVec    = input.omegaDotVec;
+elseif(strcmp(input.analysisType,'TNB'))%options for newmark beta integrator
     accelVec       = input.accelVec;
     dispdot      = input.dispdot;
     dispddot     = input.dispddot;
-    disp_iter    = input.displ_iter;
 end
 
 %--------------------------------------------
@@ -83,6 +79,8 @@ end
 %settings if aeroelastic analysis is active
 if(aeroElasticOn)
     freq = input.freq;
+else
+    freq = 0.0; %Not used, but must be declared
 end
 
 
@@ -105,27 +103,27 @@ F6 = F1;
 SS22 = zeros(numNodesPerEl); %initialize pre-stress (stress stiffening matrices)
 SS33 = SS22;
 
-if(useDisp) %initialize nonlinear element matrices
-    K12NL = zeros(numNodesPerEl);
-    K13NL = K12NL;
-    K22NL = K12NL;
-    K23NL = K12NL;
-    K33NL = K12NL;
-    K22NLhat = K22NL;
-    K33NLhat = K33NL;
-    K23NLhat = K23NL;
-end
+%initialize nonlinear element matrices, only used if (useDisp)
+K12NL = zeros(numNodesPerEl);
+K13NL = K12NL;
+K22NL = K12NL;
+K23NL = K12NL;
+K33NL = K12NL;
+K22NLhat = K22NL;
+K33NLhat = K33NL;
+K23NLhat = K23NL;
 
-if(aeroElasticOn) %initialize aeroelastic matrices
-    K33Aero = zeros(numNodesPerEl);
-    K34Aero = K33Aero;
-    C33Aero = K33Aero;
-    C34Aero = K33Aero;
-    K43Aero = K33Aero;
-    K44Aero = K33Aero;
-    C43Aero = K33Aero;
-    C44Aero = K33Aero;
-end
+
+%initialize aeroelastic matrices only used if aeroElasticOn, but must declare type
+K33Aero = zeros(numNodesPerEl);
+K34Aero = K33Aero;
+C33Aero = K33Aero;
+C34Aero = K33Aero;
+K43Aero = K33Aero;
+K44Aero = K33Aero;
+C43Aero = K33Aero;
+C44Aero = K33Aero;
+
 C33 = zeros(numNodesPerEl);
 C44 = C33;
 
@@ -194,26 +192,28 @@ for i=1:numGP
     N5 = N;
     N6 = N;
     integrationFactor = Jac * weight(i);
-    
+
     %..... interpolate for value at quad point .....
     rhoA   = interpolateVal(sectionProps.rhoA,N); %struct mass terms
-    
-    if(useDisp || preStress)
-        EA   = interpolateVal(sectionProps.EA,N);
-        uprime = interpolateVal(uNode,p_N1_x);
-        vprime = interpolateVal(vNode,p_N2_x);
-        wprime = interpolateVal(wNode,p_N3_x);
-        Faxial = EA*(uprime+0.5*vprime^2+0.5*wprime^2);
-    end
-    
+
+    % Only used if (useDisp || preStress)
+    EA   = interpolateVal(sectionProps.EA,N);
+    uprime = interpolateVal(uNode,p_N1_x);
+    vprime = interpolateVal(vNode,p_N2_x);
+    wprime = interpolateVal(wNode,p_N3_x);
+    Faxial = EA*(uprime+0.5*vprime^2+0.5*wprime^2);
+
+
     %mass center offsets
     ycm = interpolateVal(sectionProps.ycm,N);
     zcm = interpolateVal(sectionProps.zcm,N);
-    
+
     xgp      = interpolateVal(x,N1);
     ygp      = interpolateVal(y,N1);
     zgp      = interpolateVal(z,N1);
-    
+
+
+
     if(aeroElasticOn || aeroForceOn)
         %aerodynamic props/data
         airDensity = input.airDensity;
@@ -225,14 +225,25 @@ for i=1:numGP
         Uinfgp   = Omega*radiusgp;
         twistgp = interpolateVal(sectionProps.twist,N1);
         %.... end interpolate value at quad points ........
+    else
+        airDensity = 0.0; %Not used but must declare type
+        acgp     = 0.0; %Not used but must declare type
+        a0gp     = 0.0; %Not used but must declare type
+        bgp      = 0.0; %Not used but must declare type
+        agp      = 0.0; %Not used but must declare type
+        Uinfgp   = 0.0; %Not used but must declare type
+        twistgp = 0.0; %Not used but must declare type
     end
-    
+
     if(aeroElasticOn)
         kgp      = freq*bgp/Uinfgp;
         Theogp   = calculateTheo(kgp);
+    else
+        kgp = 0.0; %Not used but must declare type
+        Theogp = 0.0; %Not used but must declare type
     end
-    
-    
+
+
     %Calculate Centrifugal load vector and gravity load vector
     %eventually incorporate lambda into gp level to account for variable
     %twist
@@ -240,24 +251,24 @@ for i=1:numGP
     xbarlocal = posLocal(1);
     ybarlocal = posLocal(2);
     zbarlocal = posLocal(3);
-    
+
     fx = rhoA*a_x; %let these loads be defined in the inertial frame
     fy = rhoA*a_y;
     fz = rhoA*a_z;
     rvec = [ 0; ycm; zcm];
-    
+
     fi_hub = [fx;fy;fz];
-    
+
     disLoadgpLocal = lambdaSlim*fi_hub;
     cpskew= [0,-rvec(3),rvec(2);rvec(3),0,-rvec(1);-rvec(2),rvec(1),0];
     disMomentgp = cpskew*disLoadgpLocal;
-    
+
     if(preStress) %stress-stiffening/pre-stress calculations
         [SS22] = calculateElement1(Faxial,integrationFactor,p_N2_x,p_N2_x,SS22);
         [SS33] = calculateElement1(Faxial,integrationFactor,p_N3_x,p_N3_x,SS33);
     end
-    
-    
+
+
     %calculate static aerodynamic load
     sectionAeroLift = 0.0;
     sectionAeroMoment = 0.0;
@@ -267,7 +278,7 @@ for i=1:numGP
         sectionAeroLift = qinf*cl;
         sectionAeroMoment = sectionAeroLift*(acgp+agp);
     end
-    
+
     %distributed/body force load calculations
     f1 = rhoA*((O2^2 + O3^2)*xbarlocal - O1*O2*ybarlocal - O1*O3*zbarlocal + O3dot*ybarlocal - O2dot*zbarlocal) - disLoadgpLocal(1);
     [F1] = calculateVec1(f1,integrationFactor,N1,F1);
@@ -282,7 +293,7 @@ for i=1:numGP
     [F5] = calculateVec1(f5,integrationFactor,N5,F5);
     f6 = rhoA*ycm*((O1*O3*zbarlocal + O1*O2*ybarlocal)-(xbarlocal*(O2^2+O3^2)) - O3dot*ybarlocal + O2dot*zbarlocal) - disMomentgp(3);
     [F6] = calculateVec1(f6,integrationFactor,N6,F6);
-    
+
     if(aeroElasticOn && (bgp ~= 0)) %aeroelastic calculations
         %This is a real valued aeroelastic representation from
         %Wright and Cooper
@@ -294,7 +305,7 @@ for i=1:numGP
         Fgp = Fgp*lcsrat;
         Ggp = Ggp*lcsrat;
         agp = agp/bgp;
-        
+
         if(Uinfgp==0)
             kgp = 1;
         end
@@ -306,7 +317,7 @@ for i=1:numGP
         else
             lthetadot = -2*pi*(.5 + Fgp*(.5-agp) + Ggp/kgp);
         end
-        
+
         mz = -2*pi*(-0.5*kgp^2*agp-kgp*(agp+acgp)*Ggp); %same as above for lz,lzdot,leheta,lthetadot
         mzdot = -2*pi*(agp+acgp)*Fgp;
         mtheta = -2*pi*(0.5*kgp^2*(1.0/8.0+agp^2)+Fgp*(agp+acgp)-kgp*Ggp*(agp+0.5)*(0.5-agp));
@@ -315,29 +326,29 @@ for i=1:numGP
         else
             mthetadot = -2*pi*(-0.5*kgp*(0.5-agp) + kgp*Fgp*(agp+acgp)*(.5-agp)+Ggp/kgp*(agp+acgp));
         end
-        
+
         k33fac = airDensity*Uinfgp^2*lz;
         k34fac = airDensity*Uinfgp^2*bgp*ltheta;
         k43fac = -airDensity*Uinfgp^2*bgp*mz; %leading negative
         k44fac = -airDensity*Uinfgp^2*bgp^2*mtheta; %leading negative
-        
+
         c33fac = airDensity*Uinfgp*bgp*lzdot;
         c34fac = airDensity*Uinfgp*bgp^2*lthetadot;
         c43fac = -airDensity*Uinfgp*bgp^2*mzdot; %leading negative
         c44fac = -airDensity*Uinfgp*bgp^3*mthetadot; %leading negative
-        
+
         [K33Aero] = calculateElement1(-k33fac,integrationFactor,N3,N3,K33Aero);
         [K34Aero] = calculateElement1(-k34fac,integrationFactor,N3,N4,K34Aero);
         [C34Aero] = calculateElement1(-c34fac,integrationFactor,N3,N4,C34Aero);
         [C33Aero] = calculateElement1(-c33fac,integrationFactor,N3,N3,C33Aero);
-        
+
         [K43Aero] = calculateElement1(-k43fac,integrationFactor,N4,N3,K43Aero);
         [K44Aero] = calculateElement1(-k44fac,integrationFactor,N4,N4,K44Aero);
         [C43Aero] = calculateElement1(-c43fac,integrationFactor,N4,N3,C43Aero);
         [C44Aero] = calculateElement1(-c44fac,integrationFactor,N4,N4,C44Aero);
-        
+
     end
-    
+
 end %END OF INTEGRATION LOOP
 
 %Integration loop
@@ -347,19 +358,19 @@ for i=1:numGPRI
     p_N1_x = p_N_x;
     p_N2_x = p_N_x;
     p_N3_x = p_N_x;
-    
+
     integrationFactor = Jac * weightRI(i);
-    
+
     %..... interpolate for value at quad point .....
-    
+
     if(useDisp || preStress)
         EA   = interpolateVal(sectionProps.EA,N);
         uprime = interpolateVal(uNode,p_N1_x);
         vprime = interpolateVal(vNode,p_N2_x);
         wprime = interpolateVal(wNode,p_N3_x);
     end
-    
-    
+
+
     if(useDisp)
         %nonlinear element calculations
         [K12NL] = calculateElement1(0.5*EA*vprime,integrationFactor,p_N1_x,p_N2_x,K12NL);
@@ -367,7 +378,7 @@ for i=1:numGPRI
         [K22NL] = calculateElement1(0.5*EA*vprime^2,integrationFactor,p_N2_x,p_N2_x,K22NL);
         [K23NL] = calculateElement1(0.5*EA*vprime*wprime,integrationFactor,p_N2_x,p_N3_x,K23NL);
         [K33NL] = calculateElement1(0.5*EA*wprime^2,integrationFactor,p_N3_x,p_N3_x,K33NL);
-        
+
         %K12NLhat = K12;
         %K13NLhat = K13;
         %nonlinear element tangent matrix component calculations
@@ -377,9 +388,9 @@ for i=1:numGPRI
             [K33NLhat] = calculateElement1(EA*(uprime + wprime^2 + 0.5*vprime^2),integrationFactor,p_N3_x,p_N3_x,K33NLhat);
             [K23NLhat] = calculateElement1(0.5*EA*vprime*wprime,integrationFactor,p_N2_x,p_N3_x,K23NLhat);
         end
-        
+
     end
-    
+
 end %END OF REDUCED INTEGRATION LOOP
 
 %unpack stored element stiffness data
@@ -413,12 +424,14 @@ if(useDisp) %modify stiffness matrices to account for nonlinear effects
     K22 = K22 + K22NL;
     K23 = K23 + K23NL;
     K33 = K33 + K33NL;
-    K12hat  = K12;
-    K13hat  = K13;
 else
     K21 = K12';
     K31 = K13';
 end
+
+% Only used if (useDisp)
+K12hat  = K12;
+K13hat  = K13;
 
 %unpack stored element mass data
 M11 = elStorage.M11;
@@ -553,7 +566,7 @@ zm=zeros(2,2);
     K15',K52,K53,K54,K55,K56;
     K16',K62,K63,K64,K56',K66]);
 
-
+Kehat = 0.0; % Declare type
 if(useDisp && strcmp(iterationType,'NR'))
     %compile component of tangent matrix
     [Kehat] = mapMatrixNonSym([zm,K12hat,K13hat,zm,zm,zm;
@@ -624,14 +637,14 @@ if(concMassFlag)
     Me(4,4) = Me(4,4) + concMass(2,1);
     Me(5,5) = Me(5,5) + concMass(3,1);
     Me(6,6) = Me(6,6) + concMass(4,1);
-    
+
     Me(7,7) = Me(7,7) + concMass(1,2);
     Me(8,8) = Me(8,8) + concMass(1,2);
     Me(9,9) = Me(9,9) + concMass(1,2);
     Me(10,10) = Me(10,10) + concMass(2,2);
     Me(11,11) = Me(11,11) + concMass(3,2);
     Me(12,12) = Me(12,12) + concMass(4,2);
-    
+
     %modify Ce for concentrated mass
     Ce(1,2) = Ce(1,2) - 2*concMass(1,1)*omega_z;
     Ce(2,1) = Ce(2,1) + 2*concMass(1,1)*omega_z;
@@ -693,22 +706,24 @@ end
 
 
 %%
-
+% Declare Types
+Fhate = zeros(12,1);
+FhatLessConc = zeros(12,1);
 if(strcmp(input.analysisType,'TD')) %calculate effective stiffness matrix and force vector for Dean integrator
-    
+
     a1 = timeInt.a1;
     a2 = timeInt.a2;
     a3 = timeInt.a3;
     a4 = timeInt.a4;
-    
+
     xn=disp(1:12); xnm1=dispm1(1:12);
     A = 2.0.*xn - xnm1;
     B = -a1.*xnm1 - a2.*xn;
     D = a3.*xnm1;
-    
+
     Khate = Ke*a1 + a3.*Ce + Me;
     Fhate = Fe*a4 + Me*(A') + Ke*(B') + Ce*(D');
-    
+
     FhatLessConc =   Fhate - [concLoad(1,1);
         concLoad(2,1);
         concLoad(3,1);
@@ -721,15 +736,15 @@ if(strcmp(input.analysisType,'TD')) %calculate effective stiffness matrix and fo
         concLoad(4,2);
         concLoad(5,2);
         concLoad(6,2)].*a4;
-    
+
     %........................................................
-    
+
     %..........................................................
-    
+
     Ke = Khate;
     Fe = Fhate;
-    
-    
+
+
 end
 
 if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and load vector for Newmark-Beta integrator
@@ -741,7 +756,7 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
     a6 = timeInt.a6;
     a7 = timeInt.a7;
     a8 = timeInt.a8;
-    
+
     u=disp; udot=dispdot; uddot=dispddot;
     if(strcmp(iterationType,'NR'))    %considerations if newton raphson iteration is used
         if(input.firstIteration)
@@ -756,12 +771,12 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
         B = a6*u + a7*udot + a8*uddot;
         Fhate = Fe + Me*(A') + Ce*(B');
     end
-    
+
     Khate = Ke + a3.*Me + a6.*Ce;
     if(strcmp(iterationType,'NR')) %considerations if newton raphson iteration is used
         Khate = Kehat + Khate;
     end
-    
+
     FhatLessConc =   Fhate - [concLoad(1,1);
         concLoad(2,1);
         concLoad(3,1);
@@ -774,12 +789,12 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
         concLoad(4,2);
         concLoad(5,2);
         concLoad(6,2)];
-    
+
     %........................................................
-    
+
     Ke = Khate;
     Fe = Fhate;
-    
+
 end
 
 if(strcmp(input.analysisType,'M'))
@@ -795,9 +810,9 @@ if(strcmp(input.analysisType,'M'))
         concLoad(4,2);
         concLoad(5,2);
         concLoad(6,2)];
-    
+
     output.FhatLessConc = FhatLessConc;
-    
+
     if(strcmp(iterationType,'DI'))
         Fe = Fe*input.loadStep;
     end
@@ -814,6 +829,9 @@ end
 %----- assign output block ----------------
 output.Ke = Ke;
 output.Fe = Fe;
+output.Me  = zeros;
+output.Ce  = zeros;
+output.FhatLessConc  = zeros;
 
 if(strcmp(input.analysisType,'M')||strcmp(input.analysisType,'RM0'))
     output.Me = Me;
@@ -911,5 +929,3 @@ end
 
 end
 % %-------------------------------------------------------------------------
-
-
