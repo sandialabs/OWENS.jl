@@ -339,7 +339,7 @@ end
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %EXECUTE TRANSIENT ANALYSIS
     [model.nlParams] = readNLParamsFile(inputfile);
     model.analysisType = analysisType;
-    transientExec(model,mesh,el);
+    transientExec(model,mesh,el); 
     freq=0;
 end
 

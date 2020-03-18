@@ -3,7 +3,6 @@ function test_transient1()
 
 tol1 = 1e-12;
 if (~isdeployed)
-%     clear all
 %     
 %     
 %     VAWT_Toolbox_path_main = '../deps/OWENSvawtFoa/';

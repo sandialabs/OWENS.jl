@@ -32,7 +32,10 @@ if(~isempty(jointData))
     res2 = find(ismember(jointData(:,3),nodeNum)); %search joint data slave nodes for node number
     %if it is, change it to the corresponding master node
     if(~isempty(res2))
-        nodeNum = jointData(res2,2);
+        nodeNum = jointData((end),2);
+        if length(jointData)>1
+            error('Incorrect Joint Data and nodeNum, too many joints')
+        end
     end
     
     res1 = find(ismember(jointData(:,2),nodeNum)); %search joint data master nodes for node number
@@ -51,6 +54,8 @@ if(~isempty(jointData))
             end
         end
     end
+else
+    error('empty jointData')
 end
 
 
