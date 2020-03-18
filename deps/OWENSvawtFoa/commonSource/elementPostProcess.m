@@ -162,7 +162,7 @@ end
 
 %calculate element stiffness matrix and force vector
 %(or effective stiffness matrix and force vector from time integration)
-[elOutput] = calculateTimoshenkoElementNL(elInput,elStorage{elementNumber});
+[elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(elementNumber));
 
 %post process for reaction force
 FhatEl1PP = elOutput.Ke*eldispiter';
@@ -176,4 +176,3 @@ Fpp = (FhatEl1PP - elOutput.FhatLessConc)./denom;
 %----------------------------------------------------------------------
 
 end
-

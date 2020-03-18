@@ -85,6 +85,11 @@ modNodalLoads = nodalLoads;
 if(numJoints > 0)
     node1flag=ismember(joint(:,2),node1);  %see if nodes are associated with a joint constraint as a master node
     node2flag=ismember(joint(:,2),node2);
+else
+    node1flag = false;
+    node2flag = false;
+    mass1 = 0.0;
+    mass2 = 0.0;
 end
 
 for i=1:numJoints           %if nodes are associated with joint constraint, use (if any) mass and stiffness specification from the joint file

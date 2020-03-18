@@ -6,7 +6,7 @@ function  [rom] = calculateROM(model,mesh,el,displ,omegaVec,omegaDotVec,elStorag
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [rom] = calculateROM(model,mesh,el,displ,omegaVec,omegaDotVec,elStorage)
-%                    
+%
 %   This function calculates a reduced order model for a conventional
 %   structural dynamics system (parked, non-rotating)
 %
@@ -49,8 +49,8 @@ nodalTerms = model.nodalTerms;
         %Calculate Ke and Fe for element i
         index = 1;                     %assign element i properties to elInput
         elInput.analysisType = 'RM0';  %set analysis type to initial ROM calculations
-        elInput.useDisp = true;         
-        elInput.preStress = false; 
+        elInput.useDisp = true;
+        elInput.preStress = false;
         elInput.iterationType = 'LINEAR'; %linear analysis option
         elInput.elementOrder = elementOrder;
         elInput.modalFlag = true;
@@ -60,7 +60,7 @@ nodalTerms = model.nodalTerms;
         elInput.coneAngle = el.theta(i);
         elInput.rollAngle = el.roll(i);
         elInput.aeroSweepAngle = 0.0;
-        
+
         for j=1:numNodesPerEl %get element coordinates and displacements
             elx(j) = x(conn(i,j));
             ely(j) = y(conn(i,j));
@@ -71,10 +71,10 @@ nodalTerms = model.nodalTerms;
                 index = index + 1;
             end
         end
-        
+
         %get concentrated terms associated with element
         [massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff] = ConcMassAssociatedWithElement(conn(i,:),model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad);
-        
+
         elInput.concMass = massConc;
         elInput.concStiff = stiffConc;
         elInput.concLoad = loadConc;
@@ -85,10 +85,10 @@ nodalTerms = model.nodalTerms;
         Omega = 0.0;
         elInput.accelVec = zeros(3,1);
         elInput.gravityOn = model.gravityOn;
-        
+
         elInput.RayleighAlpha = model.RayleighAlpha;
         elInput.RayleighBeta = model.RayleighBeta;
-        
+
         if(el.rotationalEffects(i))
             elInput.Omega = Omega;
             elInput.omegaVec = omegaVec;
@@ -100,20 +100,20 @@ nodalTerms = model.nodalTerms;
             elInput.omegaDotVec = omegaDotVec;
             elInput.OmegaDot = 0.0;
         end
-        
+
         elInput.aeroElasticOn = model.aeroElasticOn;
         elInput.aeroForceOn = false;
         if(model.aeroElasticOn)   %make assignments if aeroelastic analysis is active (needs check for consistency with ROM)
             elInput.freq = model.guessFreq*2.0*pi;
             elInput.airDensity = model.airDensity;
         end
-        
-        [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage{i});   %calculate element
-         
-        [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element Kg and Fg 
+
+        [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i));   %calculate element
+
+        [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element Kg and Fg
         [Mg] = assemblyMatrixOnly(elOutput.Me,conn(i,:),numNodesPerEl,numDOFPerNode,Mg); %assemble Mg
         [Cg] = assemblyMatrixOnly(elOutput.Ce,conn(i,:),numNodesPerEl,numDOFPerNode,Cg); %assemble Cg
-      
+
     end
 
 
@@ -123,14 +123,14 @@ nodalTerms = model.nodalTerms;
     [Mg] = applyConstraints(Mg,model.jointTransform);
     [Cg] = applyConstraints(Cg,model.jointTransform);
     [Fg] = applyConstraintsVec(Fg,model.jointTransform);
-   
-           
+
+
     %APPLY BOUNDARY CONDITIONS
     [KgTotal] = applyBCModal(Kg,model.BC.numpBC,BC.map); %apply boundary conditions to system matrices and force vector
     [MgTotal] = applyBCModal(Mg,model.BC.numpBC,BC.map);
     [CgTotal] = applyBCModal(Cg,model.BC.numpBC,BC.map);
     [FgTotal] = applyBCModalVec(Fg,model.BC.numpBC,BC.map);
-    
+
     if(Omega==0.0)
         solveFlag = 3;  %set solve flag to 3 for parked modal analysis (no Gyric effects: spring mass system)
     else
@@ -138,16 +138,16 @@ nodalTerms = model.nodalTerms;
     end
    [eigVec,eigVal] = eigSolve(MgTotal,CgTotal,KgTotal,...   %calculate eigenvalues and eigvenvectors of system
                       model.numModesForROM,solveFlag);
-    len=length(KgTotal);                  
+    len=length(KgTotal);
     Phi = real(eigVec);   %assign modal matrix to Phi
-    rom.Phi = Phi;        
+    rom.Phi = Phi;
     rom.invPhi = pinv(Phi); %calculate psuedo inverse of Phi
-    
+
     rom.Mr = Phi'*MgTotal*Phi;   %calculate ROM mass matrix
     rom.Kr = Phi'*KgTotal*Phi;   %calculate ROM stiffness matrix
     rom.Cr = Phi'*CgTotal*Phi;   %calculate ROM damping matrix
     rom.Fr = Phi'*FgTotal;       %calculate ROM force vector
-    
+
     %apply modal damping
     dampRatio = 0.02;
     Cmodal = zeros(length(rom.Kr));
@@ -155,7 +155,7 @@ nodalTerms = model.nodalTerms;
        Cmodal(i,i) = 2*dampRatio*sqrt(rom.Kr(i,i)*rom.Mr(i,i));
     end
     rom.CrModal = Cmodal;
-      
+
 end
 
 function [Kg] = applyConstraints(Kg,transMatrix)

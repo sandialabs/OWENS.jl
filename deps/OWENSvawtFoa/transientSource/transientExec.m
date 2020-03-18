@@ -83,8 +83,9 @@ uHist(:,1) = u_s;          %store initial condition
 t = zeros(1,numTS+1);
 FReactionHist = zeros(numTS+1,6);
 % strainHist(numTS+1) = struct();
-strainHist = struct('eps_xx_0',cell(1,numTS+1),'eps_xx_z',cell(1,numTS+1),'eps_xx_y',...
-    cell(1,numTS+1),'gam_xz_0',cell(1,numTS+1),'gam_xz_y',cell(1,numTS+1),'gam_xy_0',cell(1,numTS+1),'gam_xy_z',cell(1,numTS+1));
+single_strainHist = struct('eps_xx_0',zeros,'eps_xx_z',zeros,'eps_xx_y',...
+    zeros,'gam_xz_0',zeros,'gam_xz_y',zeros,'gam_xy_0',zeros,'gam_xy_z',zeros);
+strainHist = repmat(single_strainHist,1,(numTS+1));
 
 aziHist = zeros(1,numTS+1);
 OmegaHist = zeros(1,numTS+1);

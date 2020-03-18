@@ -78,7 +78,7 @@ if(strcmp(analysisType,'TNB'))
     alpha = 0.5;
     gamma = 0.5;
     beta = 0.5*gamma;
-    
+
     timeInt.delta_t = delta_t;
     timeInt.a1 = alpha*delta_t;
     timeInt.a2 = (1.0-alpha)*delta_t;
@@ -88,11 +88,11 @@ if(strcmp(analysisType,'TNB'))
     timeInt.a6 = alpha/(beta*delta_t);
     timeInt.a7 = alpha/beta - 1.0;
     timeInt.a8 = delta_t*(alpha/gamma-1.0);
-    
+
     disp_s = dispData.displ_s;
     dispdot_s = dispData.displdot_s;
     dispddot_s = dispData.displddot_s;
-    
+
     displddot_im1 = dispddot_s;
     displdot_im1 = dispdot_s;
     displ_im1 = disp_s;
@@ -101,7 +101,7 @@ end
 if(strcmp(analysisType,'TD'))
     %------ dean integration parameters -------------
     alpha = 0.25;
-    
+
     timeInt.delta_t = delta_t;
     timeInt.a1 = alpha*delta_t^2;
     timeInt.a2 = (1-2*alpha)*delta_t^2;
@@ -117,10 +117,10 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
     %------- intitialization -----------------
     Kg = zeros(totalNumDOF,totalNumDOF); %initialize global stiffness and force vector
     Fg = zeros(totalNumDOF,1);
-    
+
     nodalTerms = nodalTermsCopy;
     %-------------------------------------------
-    
+
     %---- element  calculation and assembly ----------------------------------
     for i=1:numEl
         %Calculate Ke and Fe for element i
@@ -140,14 +140,14 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         else
             elInput.firstIteration = false;
         end
-        
+
         for j=1:numNodesPerEl
-            
+
             %get element cooridnates
             elx(j) = x(conn(i,j));
             ely(j) = y(conn(i,j));
             elz(j) = z(conn(i,j));
-            
+
             %get element nodal displacements at s and s-1 time step
             for k=1:numDOFPerNode
                 %                 if(strcmp(analysisType,'TD'))
@@ -170,10 +170,10 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
                 index = index + 1;
             end
         end
-        
+
         %get concentrated terms associated with elemetn
         [massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff] = ConcMassAssociatedWithElement(conn(i,:),model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad);
-        
+
         elInput.concMass = massConc;
         elInput.concStiff = stiffConc;
         elInput.concLoad = loadConc;
@@ -201,7 +201,7 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
             elInput.Omega = 0.0;
             elInput.OmegaDot = 0.0;
         end
-        
+
         elInput.displ_iter = eldispiter;
         elInput.useDisp = model.nlOn;
         elInput.preStress = false;
@@ -209,25 +209,25 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         elInput.aeroElasticOn = false;
         elInput.aeroForceOn = false;
         elInput.gravityOn = model.gravityOn;
-        
+
         elInput.RayleighAlpha = model.RayleighAlpha;
         elInput.RayleighBeta = model.RayleighBeta;
-        
+
         elInput.CN2H = CN2H;
-        
-        
-        [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage{i}); %calculate timoshenko element
-        
+
+
+        [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %calculate timoshenko element
+
         [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element stiffness matrix and force vector
-        
+
         %         Erestotal = Erestotal + elOutput.Eres;
         %................................................
     end
     %------- end element calculation and assembly ------------------
-    
+
     %%
     %----------------------------------------------------------------------
-    
+
     %%
     %Apply external loads to structure
     for i=1:length(Fexternal)
@@ -238,20 +238,20 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
             Fg(Fdof(i)) = Fg(Fdof(i)) + Fexternal(i);
         end
     end
-    
+
     %------ apply constraints on system -----------------------------------
     [Kg] = applyConstraints(Kg,model.jointTransform);
     [Fg] = applyConstraintsVec(Fg,model.jointTransform);
-    
+
     %----------------------------------------------------------------------
     %%
-    
+
     %Apply BCs to global system
     [KgTotal,FgTotal] = applyBC(Kg,Fg,BC,numDOFPerNode);
-    
+
     solution = KgTotal\FgTotal;  %solve for displacements
     solution = model.jointTransform*solution; %transform to full dof listing
-    
+
     if(model.nlOn)  %calculate norm between current iteration and last iteration
         if(strcmp(iterationType,'NR'))
             [unorm] = calcUnorm(displ_im1+solution,displ_im1);
@@ -261,7 +261,7 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
     else
         unorm = 0.0;
     end
-    
+
     if(strcmp(iterationType,'NR'))
         %if newton raphson update u, udot, uddot at each iteration
         displ_im1 = displ_im1 + solution;
@@ -271,7 +271,7 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
     elseif(strcmp(iterationType,'DI')||strcmp(iterationType,'LINEAR'))
         displ_im1 = solution;
     end
-    
+
     iterationCount = iterationCount + 1;
 end
 %Calculate reaction at turbine base (hardwired to node number 1)
@@ -315,4 +315,3 @@ function [unorm] = calcUnorm(unew,uold)
 %uold
 unorm = norm(unew-uold)/norm(unew);
 end
-

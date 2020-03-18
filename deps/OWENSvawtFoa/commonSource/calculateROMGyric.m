@@ -6,7 +6,7 @@ function  [rom] = calculateROMGyric(model,mesh,el,displ,omegaVec,omegaDotVec,acc
 % *             See license.txt for disclaimer information             *
 % **********************************************************************
 %   [rom] = calculateROMGyric(model,mesh,el,displ,omegaVec,omegaDotVec,elStorage,rom0)
-%                    
+%
 %   This function calculates a reduced order model with rotational/ rigid
 %   body motion effects
 %
@@ -61,7 +61,7 @@ nodalTerms = model.nodalTerms;
         elInput.coneAngle = el.theta(i);
         elInput.rollAngle = el.roll(i);
         elInput.aeroSweepAngle = 0.0;
-        
+
         for j=1:numNodesPerEl %get element coordinates and displacements
             elx(j) = x(conn(i,j));
             ely(j) = y(conn(i,j));
@@ -73,7 +73,7 @@ nodalTerms = model.nodalTerms;
         end
         %get concentrated terms associated with element
         [massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff] = ConcMassAssociatedWithElement(conn(i,:),model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad);
-        
+
         elInput.concMass = massConc;
         elInput.concStiff = stiffConc;
         elInput.concLoad = loadConc;
@@ -94,44 +94,44 @@ nodalTerms = model.nodalTerms;
             elInput.omegaDotVec = zeros(3,1);
             elInput.OmegaDot = 0.0;
         end
-        
+
         elInput.aeroElasticOn = model.aeroElasticOn;
         elInput.aeroForceOn = false;
         elInput.gravityOn = model.gravityOn;
-        
+
         elInput.RayleighAlpha = model.RayleighAlpha;
         elInput.RayleighBeta = model.RayleighBeta;
-        
+
         if(model.aeroElasticOn)  %make assignments if aeroelastic analysis is active (needs check for consistency with ROM)
             elInput.freq = model.guessFreq*2.0*pi;
             elInput.airDensity = model.airDensity;
         end
-        
-        [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage{i});   %calculate element
-        
-        [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element Kg and Fg 
+
+        [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i));   %calculate element
+
+        [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element Kg and Fg
         [Cg] = assemblyMatrixOnly(elOutput.Ce,conn(i,:),numNodesPerEl,numDOFPerNode,Cg); %assemble Mg
-  
+
     end
-    
+
     %----------------------------------------------------------------------
     %APPLY CONSTRAINT
     [Kg] = applyConstraints(Kg,model.jointTransform); %apply constraints to system matrices and force vector
     [Cg] = applyConstraints(Cg,model.jointTransform);
     [Fg] = applyConstraintsVec(Fg,model.jointTransform);
-     
-          
+
+
     %APPLY BOUNDARY CONDITIONS
     [KgTotal] = applyBCModal(Kg,model.BC.numpBC,BC.map); %apply boundary conditions to system matrices and force vector
     [CgTotal] = applyBCModal(Cg,model.BC.numpBC,BC.map);
     [FgTotal] = applyBCModalVec(Fg,model.BC.numpBC,BC.map);
-    
+
     Phi = rom0.Phi;
-    
+
     rom.Kr = Phi'*KgTotal*Phi - rom0.Kr; %removes contribution of structural stiffness to reduced K
     rom.Cr = Phi'*CgTotal*Phi - rom0.Cr; %removes contribution of structural damping to reduced C
     rom.Fr = Phi'*FgTotal - rom0.Fr;
-      
+
 end
 
 function [Kg] = applyConstraints(Kg,transMatrix)

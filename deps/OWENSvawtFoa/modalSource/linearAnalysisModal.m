@@ -113,7 +113,7 @@ for i=1:numEl   %element loop
         elInput.airDensity = model.airDensity;     %set air density if aeroelastic analysis
     end
 
-    [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage{i}); %do element calculation
+    [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %do element calculation
 
     [Kg] = assemblyMatrixOnly(elOutput.Ke,conn(i,:),numNodesPerEl,numDOFPerNode,Kg); %assemble element into global stiffness matrix
     [Mg] = assemblyMatrixOnly(elOutput.Me,conn(i,:),numNodesPerEl,numDOFPerNode,Mg); %assemble element into global mass matrix
