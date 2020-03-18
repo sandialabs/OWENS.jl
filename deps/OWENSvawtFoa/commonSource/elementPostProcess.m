@@ -160,6 +160,10 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
     elInput.CN2H = CN2H;
 end
 
+elInput.airDensity = model.airDensity;
+elInput.freq = 0.0; %Is not used for this model type, but must be declared.
+elInput.firstIteration = false;
+
 %calculate element stiffness matrix and force vector
 %(or effective stiffness matrix and force vector from time integration)
 [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(elementNumber));
