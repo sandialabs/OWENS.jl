@@ -1,4 +1,4 @@
-function [jointTransform,reducedDOF] = createJointTransform(joint,numNodes,numDofPerNode)
+function [output] = createJointTransform(joint,numNodes,numDofPerNode)
 %createJointTransform   Creates transformation matrix for joint constaints
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -77,6 +77,9 @@ for i=1:numJoints % loop of number of joints in the model
         end
     end
 end
+
+output.jointTransform = jointTransform;
+output.reducedDOF = reducedDOF;
 
 end
 

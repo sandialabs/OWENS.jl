@@ -36,6 +36,9 @@ for i=1:numpBC
 
 end
 
+totalNumDof = numNodes*numDofPerNode;
+
+BC = struct('numpBC',zeros,'pBC',zeros,'numsBC',zeros,'nummBC',zeros,'isConstrained',zeros(totalNumDof,1));
 BC.numpBC = numpBC;  %store boundary condition data  in boundayr condition object
 BC.pBC = pBC;
 BC.numsBC = 0;
@@ -46,7 +49,7 @@ fclose(fid);
 %create a vector denoting constrained DOFs in the model (0 unconstrained, 1
 %constrained)
 
-totalNumDof = numNodes*numDofPerNode;
+
 %calculate constrained dof vector
 isConstrained = zeros(totalNumDof,1);
 constDof = (BC.pBC(:,1)-1)*numDofPerNode + BC.pBC(:,2);

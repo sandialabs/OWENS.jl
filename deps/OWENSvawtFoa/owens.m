@@ -28,6 +28,42 @@ function [freq,damp]=owens(varargin)
 %      displ        = array containing converged solution for static
 %                     displacement
 
+% Initialize Model Struct
+% model = struct('analysisType',char,...
+% 'turbineStartup',false,...
+% 'aeroElasticOn',false,...
+% 'airDensity',zeros,...
+% 'gravityOn',false,...
+% 'nlOn',false,...
+% 'spinUpOn',false,...
+% 'numModesToExtract',zeros,...
+% 'delta_t',zeros,...
+% 'numTS',zeros,...
+% 'OmegaInit',zeros,...
+% 'OmegaGenStart',zeros,...
+% 'usingRotorSpeedFunction',false,...
+% 'tocp',zeros,...
+% 'Omegaocp',zeros,...
+% 'numModesForROM',zeros,...
+% 'guessFreq',zeros,...
+% 'aeroloadfile',char,...
+% 'owensfile',char,...
+% 'RayleighAlpha',zeros,...
+% 'RayleighBeta',zeros,...
+% 'elementOrder',zeros,...
+% 'bladeData',zeros,...
+% 'BC',zeros,...
+% 'joint',zeros,...
+% 'nodalTerms',zeros,...
+% 'initCond',zeros,...
+% 'aeroLoadsOn',zeros,...
+% 'useGeneratorFunction',zeros,...
+% 'generatorProps',zeros,...
+% 'outFilename',zeros,...
+% 'jointTransform',zeros,...
+% 'reducedDOFList',zeros,...
+% 'nlParams',zeros,...
+% 'analysisType',zeros);
 
 inputfile = varargin{1};            %input file initialization
 analysisType = varargin{2};         %anaysis type intialization
@@ -89,8 +125,9 @@ elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSI
             %this option uses a discretely specified rotor speed profile
             model.usingRotorSpeedFunction = false; %set flag to not use user specified rotor speed function
             model.tocp = varargin{7}; %time points for rotor speed provfile
-            model.Omegaocp = varargin{8}; %rotor speed value at time points (Hz)
-            model.OmegaInit = model.Omegaocp(1);
+            Omegaocp = varargin{8}; %rotor speed value at time points (Hz)
+            model.Omegaocp = Omegaocp;
+            model.OmegaInit = Omegaocp(1);
         end
     end
 
@@ -116,8 +153,9 @@ elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
             %this option uses a discretely specified rotor speed profile
             model.usingRotorSpeedFunction = false; %set flag to not use user specified rotor speed function
             model.tocp = varargin{8}; %time points for rotor speed provfile
-            model.Omegaocp = varargin{9}; %rotor speed value at time points (Hz)
-            model.OmegaInit = model.Omegaocp(1);
+            Omegaocp = varargin{9}; %rotor speed value at time points (Hz)
+            model.Omegaocp = Omegaocp;
+            model.OmegaInit = Omegaocp(1);
         end
     end
 
@@ -202,14 +240,23 @@ model.elementOrder = 1; %linear element order
 %--------------------------------------------
 [mesh] = readMesh(meshfilename); %read mesh file
 numDofPerNode = 6;
-[model.bladeData] = readBladeData(blddatafilename); %reads overall blade data file
-[model.BC] = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode); %read boundary condition file
-[el] = readElementData(mesh.numEl,eldatafilename,ortdatafilename,model.bladeData); %read element data file (also reads orientation and blade data file associated with elements)
-[model.joint] = readJointData(jntdatafilename); %read joint data file
-rbarFileName = [inputfile(1:end-6),'.rbar']; %setrbarfile
-[model.joint] = readRBarFile(rbarFileName,model.joint,mesh); %read rbar file name
+bladeData = readBladeData(blddatafilename); %reads overall blade data file
+model.bladeData = bladeData;
+BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode); %read boundary condition file
+model.BC.numpBC = BC.numpBC;
+model.BC.pBC = BC.pBC;
+model.BC.numsBC = BC.numsBC;
+model.BC.nummBC = BC.nummBC;
+model.BC.isConstrained = BC.isConstrained;
+[el] = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData); %read element data file (also reads orientation and blade data file associated with elements)
+joint = readJointData(jntdatafilename); %read joint data file
+model.joint = joint;
+% rbarFileName = [inputfile(1:end-6),'.rbar']; %setrbarfile
+% [model.joint] = readRBarFile(rbarFileName,model.joint,mesh); %read rbar file name
 [model.nodalTerms] = readNodalTerms(ndldatafilename); %read concentrated nodal terms file
-[model] = readPlatformFile(model,platformFlag,platfilename);
+% [model] = readPlatformFile(model,platformFlag,platfilename);
+model.hydroOn = false;
+model.platformTurbineConnectionNodeNumber = 1;
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %for transient analysis...
 
@@ -221,7 +268,15 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
         model.aeroLoadsOn = false;
     end
 
-    [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
+%     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
+    model.driveTrainOn = false;          %set drive shaft unactive
+
+    model.driveShaftProps.k = 0.0;       %set drive shat properties to 0
+    model.driveShaftProps.c = 0.0;
+    model.JgearBox =0.0;
+
+    model.gearRatio = 1.0;             %set gear ratio and efficiency to 1
+    model.gearBoxEfficiency = 1.0;
 
     if(real(str2double(generatorfilename))==1.0)
         model.useGeneratorFunction = true;
@@ -234,9 +289,11 @@ end
 
 [model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results %TODO: map to the output location instead of input
 
-[model.jointTransform,model.reducedDOFList] = createJointTransform(model.joint,mesh.numNodes,6); %creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
-[model.BC.map] = calculateBCMap(model.BC.numpBC,model.BC.pBC,numDofPerNode,model.reducedDOFList); %create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
-[~,numReducedDof] = size(model.jointTransform);
+[jnt_struct] = createJointTransform(joint,mesh.numNodes,6); %creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+model.jointTransform = jnt_struct.jointTransform;
+model.reducedDOFList = jnt_struct.reducedDOF;
+[model.BC.map] = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,jnt_struct.reducedDOF); %create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
+numReducedDof = length(jnt_struct.jointTransform(1,:));
 [model.BC.redVectorMap] = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,model.BC); %create a map between reduced and full DOF lists
 
 if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS

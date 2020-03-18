@@ -1,4 +1,4 @@
-function [model] = readPlatformFile(model,platformFlag,platfilename)
+function [hydromodel] = readPlatformFile(hydromodel,platformFlag,platfilename)
 %readPlatformFile reads platform file
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -20,14 +20,14 @@ function [model] = readPlatformFile(model,platformFlag,platfilename)
 %      model          = object containing model data
 
 if(platformFlag == 1)
-    model.hydroOn = true;
+    hydromodel.hydroOn = true;
 elseif(platformFlag == 0)
-    model.hydroOn = false;
+    hydromodel.hydroOn = false;
 else
     error('Platform translation flag not recognized.');
 end
 
-model.platformTurbineConnectionNodeNumber = 1; %default to node number 1, update with platform file
+hydromodel.platformTurbineConnectionNodeNumber = 1; %default to node number 1, update with platform file
 if(platformFlag == 1)
     
     fid = fopen(platfilename);
