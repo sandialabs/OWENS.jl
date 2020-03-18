@@ -74,6 +74,7 @@ model.airDensity = 0;
 model.gravityOn = true;             %flag to activate gravity loading in structural dynamics/static simulations
 model.generatorOn = false; %Initialize only, gets changed later on
 model.OmegaGenStart = false; %Initialize only, gets changed later on
+model.omegaControl = false; %Initialize only, gets changed later on
 model.totalNumDof = 0.0; %Initialize only, gets changed later on
 
 model.nlParams = struct('iterationType', 'NR',...

@@ -229,7 +229,7 @@ for i=1:numTS
 
         %.... inertial frame to platform transformation matrix ...........
         if(model.hydroOn)
-            CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4));
+%             CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4));
         else
             CN2P=eye(3);
         end
@@ -556,8 +556,8 @@ if(tocp(length(tocp))<tCurrent)
     disp('Simulation time is greater than that specified in control points for prescribed rotor speed profile.');
     disp('Terminating simulation.');
     terminateSimulation = true;
-    OmegaCurrent = [];
-    OmegaDotCurrent = [];
+    OmegaCurrent = 0.0;
+    OmegaDotCurrent = 0.0;
 else
     OmegaCurrent = interp1(tocp,Omegaocp,tCurrent); %interpolated discreteized profile for current omega
 
