@@ -129,6 +129,7 @@ tic
 %% structural dynamics initialization
 %..........................................................................
 if(strcmp(model.analysisType,'ROM')) %initialize reduced order model
+    error('ROM not fully implemented');
     %     %calculate constrained dof vector
     %     numDofPerNode = 6;
     %     isConstrained = zeros(model.totalNumDof,1);
@@ -267,13 +268,13 @@ for i=1:numTS
                 if(model.useGeneratorFunction)
                     [genTorqueHSS0] = userDefinedGenerator(gbDot_j*model.gearRatio);
                 else
-                    [genTorqueHSS0] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
+                    error('simpleGenerator not fully implemented')%[genTorqueHSS0] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
                 end
             else
                 if(model.useGeneratorFunction)
                     [genTorqueHSS0] = userDefinedGenerator(Omega_j);
                 else
-                    [genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j);
+                    error('simpleGenerator not fully implemented')%[genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j);
                 end
             end
             %should eventually account for Omega = gbDot*gearRatio here...
@@ -379,19 +380,19 @@ for i=1:numTS
             dispData.displddot_s = uddot_s;
         end
 
-        if(strcmp(model.analysisType,'ROM'))
-            dispData.displ_s = u_s;
-            dispData.displdot_s = udot_s;
-            dispData.displddot_s = uddot_s;
+%         if(strcmp(model.analysisType,'ROM'))
+%             dispData.displ_s = u_s;
+%             dispData.displdot_s = udot_s;
+%             dispData.displddot_s = uddot_s;
+%
+%             dispData.eta_s     = eta_s;
+%             dispData.etadot_s  = etadot_s;
+%             dispData.etaddot_s = etaddot_s;
+%         end
 
-            dispData.eta_s     = eta_s;
-            dispData.etadot_s  = etadot_s;
-            dispData.etaddot_s = etaddot_s;
-        end
-
         if(strcmp(model.analysisType,'ROM'))
-            % evalulate structural dynamics using reduced order model
-            [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t(i),delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData);
+%             % evalulate structural dynamics using reduced order model
+%             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t(i),delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData);
         else
             % evalulate structural dynamics using conventional representation
             [dispOut,FReaction_j] = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t(i),delta_t,elStorage,Fexternal,Fdof,CN2H,rbData);
@@ -404,14 +405,14 @@ for i=1:numTS
             uddot_j = dispOut.displddot_sp1;
         end
 
-        if(strcmp(model.analysisType,'ROM'))
-            udot_j  = dispOut.displdot_sp1;
-            uddot_j = dispOut.displddot_sp1;
-
-            eta_j = dispOut.eta_sp1;
-            etadot_j = dispOut.etadot_sp1;
-            etaddot_j = dispOut.etaddot_sp1;
-        end
+%         if(strcmp(model.analysisType,'ROM'))
+%             udot_j  = dispOut.displdot_sp1;
+%             uddot_j = dispOut.displddot_sp1;
+%
+%             eta_j = dispOut.eta_sp1;
+%             etadot_j = dispOut.etadot_sp1;
+%             etaddot_j = dispOut.etaddot_sp1;
+%         end
         %%
 
         %% calculate norms
@@ -440,7 +441,7 @@ for i=1:numTS
     %% calculate converged generator torque/power
     if(~isempty(model.generatorProps))
         if(model.generatorOn || (model.turbineStartup==0))
-            [genTorquePlot] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
+            error('simpleGenerator not fully implemented')%[genTorquePlot] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
         else
             genTorquePlot = 0;
         end
@@ -460,15 +461,15 @@ for i=1:numTS
         udot_s = udot_j;
         uddot_s = uddot_j;
     end
-    if(strcmp(model.analysisType,'ROM'))
-        u_s = u_j;
-        udot_s = udot_j;
-        uddot_s = uddot_j;
-
-        eta_s = eta_j;
-        etadot_s = etadot_j;
-        etaddot_s = etaddot_j;
-    end
+%     if(strcmp(model.analysisType,'ROM'))
+%         u_s = u_j;
+%         udot_s = udot_j;
+%         uddot_s = uddot_j;
+%
+%         eta_s = eta_j;
+%         etadot_s = etadot_j;
+%         etaddot_s = etaddot_j;
+%     end
 
     uHist(:,i+1) = u_s;
     FReactionHist(i+1,:) = FReaction_j;
