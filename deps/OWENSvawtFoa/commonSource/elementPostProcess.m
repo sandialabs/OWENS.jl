@@ -43,24 +43,12 @@ eldisp_sm1 = zeros(1,numNodesPerEl*numDOFPerNode);
 eldispdot = eldisp;
 eldispddot = eldisp;
 eldispiter = eldisp;
-
+disp_s = dispData.displ_s;
+% not always used, but must be declared, specific to TNB and ROM
+dispdot_s = dispData.displdot_s;
+dispddot_s = dispData.displddot_s;
 %unpack displacement information
 analysisType = model.analysisType;
-if(strcmp(analysisType,'TD'))
-    %------ dean integration parameters -------------
-    disp_s = dispData.displ_s;
-    %                 disp_sm1 = dispData.displ_sm1;
-    %-------------------------------------------
-end
-
-if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
-    %------ newmark integration parameters ---------
-    disp_s = dispData.displ_s;
-    dispdot_s = dispData.displdot_s;
-    dispddot_s = dispData.displddot_s;
-    %-----------------------------------------------
-end
-
 
 %unpack mesh information
 x = mesh.x;
@@ -89,6 +77,8 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
     elInput.analysisType = 'TNB';
 elseif(strcmp(analysisType,'S'))
     elInput.analysisType = 'M';
+else
+    error('analysisType not supported, choose another')
 end
 
 %unpack connectivity list, nodal terms, etc.
@@ -111,15 +101,18 @@ for j=1:numNodesPerEl
         index = index + 1;
     end
 end
+
+elInput.disp = eldisp;
+elInput.dispdot = eldispdot;%specific to TNB and ROM
+elInput.dispddot = eldispddot;%specific to TNB and ROM
+
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
-    elInput.disp= eldisp;
-    elInput.dispdot = eldispdot;
-    elInput.dispddot = eldispddot;
     elInput.displ_iter = eldispiter;
 elseif(strcmp(analysisType,'S'))
-    elInput.disp= eldisp;
     elInput.displ_iter = eldisp;
     eldispiter = eldisp;
+else
+    error('analysisType not supported, choose another')
 end
 
 %get concentrated terms associated with element
@@ -146,6 +139,8 @@ elseif(strcmp(analysisType,'S'))
     elInput.accelVec = zeros(3,1);
     elInput.omegaVec = zeros(3,1);
     elInput.omegaDotVec = zeros(3,1);
+else
+    error('analysisType not supported, choose another')
 end
 
 if(el.rotationalEffects(elementNumber))
@@ -156,9 +151,9 @@ else
     elInput.OmegaDot = 0.0;
 end
 
-if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
-    elInput.CN2H = CN2H;
-end
+% Specific to TNB and ROM, but must be declared
+elInput.CN2H = CN2H;
+    
 
 elInput.airDensity = model.airDensity;
 elInput.freq = 0.0; %Is not used for this model type, but must be declared.
@@ -172,9 +167,10 @@ elInput.firstIteration = false;
 FhatEl1PP = elOutput.Ke*eldispiter';
 if(strcmp(analysisType,'TD'))
     denom = timeInt.a4;
-end
-if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM')||strcmp(analysisType,'S'))
+elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM')||strcmp(analysisType,'S'))
     denom = 1.0;
+else
+    error('analysisType not supported, choose another')
 end
 Fpp = (FhatEl1PP - elOutput.FhatLessConc)./denom;
 %----------------------------------------------------------------------
