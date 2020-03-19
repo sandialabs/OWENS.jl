@@ -97,17 +97,11 @@ end
 init_structuralLoad = struct('N',zeros(cactusGeom.NBlade,length(structuralElNumbers)),'T',zeros(cactusGeom.NBlade,length(structuralElNumbers)),'M25',zeros(cactusGeom.NBlade,length(structuralElNumbers)));
 structuralLoad = repmat(init_structuralLoad,1,cactusGeom.NBlade);
 
-% for i = 1:cactusGeom.NBlade
-%     structuralLoad(i).N = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
-%     structuralLoad(i).T = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
-%     structuralLoad(i).M25 = zeros(numAeroTS,length(structuralSpanLocNorm(1,:)));
-% end
-
 for i=1:cactusGeom.NBlade
     for j=1:numAeroTS
-        structuralLoad(i).N(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).N(j,:),structuralSpanLocNorm(i,:),'linear');%,'extrap');
-        structuralLoad(i).T(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).T(j,:),structuralSpanLocNorm(i,:),'linear');%,'extrap');
-        structuralLoad(i).M25(j,:) = interp1(spanLocNorm(i,:),bladeForce(i).M25(j,:),structuralSpanLocNorm(i,:),'linear');%,'extrap');
+        structuralLoad(i).N(j,:) = linear_interp(spanLocNorm(i,:),bladeForce(i).N(j,:),structuralSpanLocNorm(i,:));
+        structuralLoad(i).T(j,:) = linear_interp(spanLocNorm(i,:),bladeForce(i).T(j,:),structuralSpanLocNorm(i,:));
+        structuralLoad(i).M25(j,:) = linear_interp(spanLocNorm(i,:),bladeForce(i).M25(j,:),structuralSpanLocNorm(i,:));
     end
 end
 
