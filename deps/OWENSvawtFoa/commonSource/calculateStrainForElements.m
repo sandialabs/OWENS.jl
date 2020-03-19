@@ -1,8 +1,10 @@
 function [elStrain] = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,nlflag)
 % calculate strains
 
-elStrain = struct('eps_xx_0',cell(1,numEl),'eps_xx_z',cell(1,numEl),'eps_xx_y',...
-    cell(1,numEl),'gam_xz_0',cell(1,numEl),'gam_xz_y',cell(1,numEl),'gam_xy_0',cell(1,numEl),'gam_xy_z',cell(1,numEl));
+single_elStrain = struct('eps_xx_0',zeros(1,4),'eps_xx_z',zeros(1,4),'eps_xx_y',...
+    zeros(1,4),'gam_xz_0',zeros(1,4),'gam_xz_y',zeros(1,4),'gam_xy_0',zeros(1,4),'gam_xy_z',zeros(1,4));
+
+elStrain = repmat(single_elStrain,1,numEl);
 
 for i=1:numEl
     %Calculate Ke and Fe for element i
