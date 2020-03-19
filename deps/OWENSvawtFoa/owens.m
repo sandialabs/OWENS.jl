@@ -292,6 +292,7 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
 
     if(real(str2double(generatorfilename))==1.0)
         model.useGeneratorFunction = true;
+        model.generatorProps = 0.0;
     else
         model.useGeneratorFunction = false;
         [model.generatorProps] = readGeneratorProps(generatorfilename); %reads generator properties

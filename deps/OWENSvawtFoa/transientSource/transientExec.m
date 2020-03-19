@@ -453,7 +453,7 @@ for i=1:numTS
     end %end iteration while loop
     
     %% calculate converged generator torque/power
-    if(~isempty(model.generatorProps))
+    if(model.useGeneratorFunction)
         if(model.generatorOn || (model.turbineStartup==0))
             error('simpleGenerator not fully implemented')%[genTorquePlot] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
         else
