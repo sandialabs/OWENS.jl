@@ -73,6 +73,15 @@ eldispiter = eldisp;
 % end
 iterationType = 'DI';
 analysisType = model.analysisType;
+timeInt = struct('delta_t',0.0,...
+'a1',0.0,...
+'a2',0.0,...
+'a3',0.0,...
+'a4',0.0,...
+'a5',0.0,...
+'a6',0.0,...
+'a7',0.0,...
+'a8',0.0);
 if(strcmp(analysisType,'TNB'))
     %------ newmark integration parameters ---------
     alpha = 0.5;
@@ -97,9 +106,7 @@ if(strcmp(analysisType,'TNB'))
     displddot_im1 = dispddot_s;
     displdot_im1 = dispdot_s;
     displ_im1 = disp_s;
-end
-
-if(strcmp(analysisType,'TD'))
+elseif(strcmp(analysisType,'TD'))
     %------ dean integration parameters -------------
     alpha = 0.25;
 
@@ -111,6 +118,8 @@ if(strcmp(analysisType,'TD'))
     disp_s = dispData.displ_s;
     %     disp_sm1 = dispData.displ_sm1;
     %-------------------------------------------
+else
+    error('analysis type not supported, choose another')
 end
 %-----------------------------------------------
 
@@ -178,15 +187,15 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         elInput.concMass = massConc;
         elInput.concStiff = stiffConc;
         elInput.concLoad = loadConc;
-        if(strcmp(analysisType,'TD'))
-            elInput.disp = eldisp;
-            elInput.dispm1= eldisp_sm1;
-        end
-        if(strcmp(analysisType,'TNB'))
-            elInput.disp= eldisp;
-            elInput.dispdot = eldispdot;
-            elInput.dispddot = eldispddot;
-        end
+        elInput.disp = eldisp;
+        
+        % specific to 'TD', but must be declared
+        elInput.dispm1= eldisp_sm1;
+       
+        % specific to 'TNB' , but must be declared
+        elInput.dispdot = eldispdot;
+        elInput.dispddot = eldispddot;
+        
         elInput.x = elx;
         elInput.y = ely;
         elInput.z = elz;
@@ -272,6 +281,8 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         displdot_im1  = -timeInt.a7*dispData.displdot_s -timeInt.a8*dispData.displddot_s + timeInt.a6*(cap_delta_displ);
     elseif(strcmp(iterationType,'DI')||strcmp(iterationType,'LINEAR'))
         displ_im1 = solution;
+    else
+        error('iteration type not supported, choose another')
     end
 
     iterationCount = iterationCount + 1;
@@ -291,10 +302,12 @@ end
 FReaction_sp1 =FReaction;
 displ_sp1 = displ_im1;
 dispOut.displ_sp1 = displ_sp1;  %store displacement vector in dispOut
-if(strcmp(analysisType,'TNB'))
-    dispOut.displddot_sp1 = timeInt.a3*(displ_sp1-dispData.displ_s) - timeInt.a4*dispData.displdot_s - timeInt.a5*dispData.displddot_s; %store velocity vector in dispOut
-    dispOut.displdot_sp1 = dispData.displdot_s + timeInt.a2*dispData.displddot_s + timeInt.a1*dispOut.displddot_sp1;                    %store acceleration vector in dispOut
-end
+
+% Specific to TNB, but must be declared
+displddot_sp1 = timeInt.a3*(displ_sp1-dispData.displ_s) - timeInt.a4*dispData.displdot_s - timeInt.a5*dispData.displddot_s; %store velocity vector in dispOut
+dispOut.displddot_sp1 = displddot_sp1;
+dispOut.displdot_sp1 = dispData.displdot_s + timeInt.a2*dispData.displddot_s + timeInt.a1*displddot_sp1;                    %store acceleration vector in dispOut
+
 
 
 end
