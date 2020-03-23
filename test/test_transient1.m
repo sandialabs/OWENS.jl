@@ -78,7 +78,7 @@ omegaArrayHz = rpmArray ./ 60;
 owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
 
 
-OLD = ('1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_OLD.mat');
+OLD = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff0.mat');
 NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.mat');
 
 FileInfo = dir(NEW);
@@ -88,9 +88,10 @@ FileInfo = dir(NEW);
 % end
 
 
-old = load(OLD);
+% old = load(OLD);
 % new = load(NEW);
 
+old = loadOWENSmat(OLD,n_t);
 new = loadOWENSmat(NEW,n_t);
 
 total_mismatch = 0;
