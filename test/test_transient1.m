@@ -1,31 +1,7 @@
 
-function test_transient1()
+% function test_transient1()
 
-tol1 = 1e-12;
-if (~isdeployed)
-%     
-%     
-%     VAWT_Toolbox_path_main = '../deps/OWENSvawtFoa/';
-%     addpath(VAWT_Toolbox_path_main)
-%     % add sub folders of the OWENS directory
-%     VAWT_Toolbox_path_1 = [VAWT_Toolbox_path_main 'commonSource'];
-%     addpath(VAWT_Toolbox_path_1)
-%     VAWT_Toolbox_path_2 = [VAWT_Toolbox_path_main 'modalSource'];
-%     addpath(VAWT_Toolbox_path_2)
-%     VAWT_Toolbox_path_3 = [VAWT_Toolbox_path_main 'transientSource'];
-%     addpath(VAWT_Toolbox_path_3)
-%     VAWT_Toolbox_path_4 = [VAWT_Toolbox_path_main 'utilitySource'];
-%     addpath(VAWT_Toolbox_path_4)
-%     %     VAWT_Toolbox_path_5 = [VAWT_Toolbox_path_main 'serverFiles'];
-%     %     addpath(VAWT_Toolbox_path_5)
-%     VAWT_Toolbox_path_6 = [VAWT_Toolbox_path_main 'processingScripts'];
-%     addpath(VAWT_Toolbox_path_6)
-%     
-%     % add the main directory of VAWTgen
-%     % add sub folders of the OWENS directory
-%     VAWT_Toolbox_path_1 = [VAWT_Toolbox_path_main '../vizFiles'];
-%     addpath(VAWT_Toolbox_path_1)
-end
+tol1 = 1e-4;
 
 fprintf('%s\n','Starting')
 tic
@@ -94,6 +70,7 @@ Nrpm = 10;    % number of rpm stations
 Nmodes = 40;  % number of modes to calculate
 timeStep = 2e-3;
 timeSim = 0.1;       % [sec]
+n_t = timeSim/timeStep; % length of time vector
 timeArray = [0 timeSim+1];
 rpmArray  = [operatingRPM operatingRPM];
 omegaArrayHz = rpmArray ./ 60;
@@ -101,77 +78,79 @@ omegaArrayHz = rpmArray ./ 60;
 owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
 
 
-if (~isdeployed)
+OLD = ('1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_OLD.mat');
+NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.mat');
+
+FileInfo = dir(NEW);
+
+% if (datetime - FileInfo.date) > duration(0,1,0)
+%     error('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
+% end
+
+
+old = load(OLD);
+% new = load(NEW);
+
+new = loadOWENSmat(NEW,n_t);
+
+total_mismatch = 0;
+
+varnames = fieldnames(old);
+for i = 1:length(varnames)
     
-    OLD = ('1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_OLD.mat');
-    NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.mat');
+    num_mismatch = 0;
+    old_data = old.(varnames{i});
+    new_data = new.(varnames{i});
     
-    FileInfo = dir(NEW);
-    
-    if (datetime - FileInfo.date) > duration(0,1,0)
-        error('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
-    end
-    
-    old = load(OLD);
-    new = load(NEW);
-    
-    total_mismatch = 0;
-    
-    varnames = fieldnames(old);
-    for i = 1:length(varnames)
-        
-        num_mismatch = 0;
-        old_data = old.(varnames{i});
-        new_data = new.(varnames{i});
-        
-        if ~isnumeric(old_data)
-            subvarnames = fieldnames(old_data);
-            for j = 1:length(subvarnames)
-                
-                sub_old_data = old_data.(subvarnames{j});
-                sub_new_data = new_data.(subvarnames{j});
-                for ii = 1:length(sub_old_data(:,1))
-                    for jj = 1:length(sub_old_data(1,:))
-                        if (abs(sub_old_data(ii,jj)-sub_new_data(ii,jj))>tol1)
-                            msg = sprintf('%20s%i%2s%i%6s%8e%6s%8e', subvarnames{j}  , ii , ':' , jj ,' OLD: ' , sub_old_data(ii,jj) , ' NEW: ' , sub_new_data(ii,jj));
-                            fprintf('%s\n',msg)
-                            num_mismatch = num_mismatch + 1;
-                        end
-                    end
-                end
-            end
+    if ~isnumeric(old_data)
+        subvarnames = fieldnames(old_data);
+        for j = 1:length(subvarnames)
             
-        elseif ~(min(min(ismembertol(old_data,new_data,tol1))))
-            for ii = 1:length(old_data(:,1))
-                for jj = 1:length(old_data(1,:))
-                    if (abs(old_data(ii,jj)-new_data(ii,jj))>tol1)
-                        msg = sprintf('%20s%i%2s%i%6s%8e%6s%8e',varnames{i} , ii , ':' , jj ,' OLD: ' , old_data(ii,jj) , ' NEW: ' , new_data(ii,jj));
+            sub_old_data = old_data.(subvarnames{j});
+            sub_new_data = new_data.(subvarnames{j});
+            for ii = 1:length(sub_old_data(:,1))
+                for jj = 1:length(sub_old_data(1,:))
+                    if (abs(sub_old_data(ii,jj)-sub_new_data(ii,jj))>tol1)
+                        msg = sprintf('%20s%i%2s%i%6s%8e%6s%8e', subvarnames{j}  , ii , ':' , jj ,' OLD: ' , sub_old_data(ii,jj) , ' NEW: ' , sub_new_data(ii,jj));
                         fprintf('%s\n',msg)
                         num_mismatch = num_mismatch + 1;
                     end
                 end
             end
-            
         end
         
-        if num_mismatch == 0
-            fprintf('%s\n',['PASSED | ' , varnames{i}])
-        else
-            fprintf('%s\n',['FAILED | ', varnames{i}])
+    elseif ~(min(min(ismembertol(old_data,new_data,tol1))))
+        for ii = 1:length(old_data(:,1))
+            for jj = 1:length(old_data(1,:))
+                if (abs(old_data(ii,jj)-new_data(ii,jj))>tol1)
+                    msg = sprintf('%20s%i%2s%i%6s%8e%6s%8e',varnames{i} , ii , ':' , jj ,' OLD: ' , old_data(ii,jj) , ' NEW: ' , new_data(ii,jj));
+                    fprintf('%s\n',msg)
+                    num_mismatch = num_mismatch + 1;
+                end
+            end
         end
-        
-        total_mismatch = total_mismatch + num_mismatch;
         
     end
     
-    toc
-    
-    if total_mismatch == 0
-        fprintf('%s\n','TESTS PASSED')
+    if num_mismatch == 0
+        fprintf('%s\n',['PASSED | ' , varnames{i}])
     else
-        fprintf('%s\n','!!!TESTS FAILED!!!')
+        fprintf('%s\n',['FAILED | ', varnames{i}])
     end
+    
+    total_mismatch = total_mismatch + num_mismatch;
     
 end
 
+toc
+
+if total_mismatch == 0
+    fprintf('%s\n','TESTS PASSED')
+else
+    fprintf('%s\n','!!!TESTS FAILED!!!')
 end
+
+% end
+
+
+
