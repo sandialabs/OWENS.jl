@@ -23,7 +23,8 @@ end
 [len,~] = size(data);
 
 numAeroTS = len/numAeroEl;
-time = normTime(1:numAeroEl:end).*RefR/V;
+% time = zeros(len/numAeroEl,1);
+time = normTime(1:int32(numAeroEl):end,1).*RefR(1)./V(1);
 
 urel = data(:,12);
 uloc = urel.*V;
@@ -59,7 +60,7 @@ for i=1:len
 end
 
 % Initialize bladeForce
-init_bladeForce = struct('N',zeros,'T',zeros,'M25',zeros);
+init_bladeForce = struct('N',zeros(numAeroTS,blade(1).NElem),'T',zeros(numAeroTS,blade(1).NElem),'M25',zeros(numAeroTS,blade(1).NElem));
 bladeForce = repmat(init_bladeForce,1,cactusGeom.NBlade);
 
 index = 1;
@@ -88,13 +89,13 @@ end
 
 spanLocNorm = zeros(cactusGeom.NBlade,blade(1).NElem);
 for i=1:cactusGeom.NBlade
-    spanLocNorm(i,:) = blade(i).PEy.*RefR/(blade(i).QCy(end)*RefR);
+    spanLocNorm(i,:) = blade(i).PEy(1:blade(1).NElem(1,1),1).*RefR(1,1)/(blade(i).QCy(blade(1).NElem(1,1)+1,1)*RefR(1,1));
 end
 
 [bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers] = readBldFile(bldFn);
 
 %Initialize structuralLoad
-init_structuralLoad = struct('N',zeros(cactusGeom.NBlade,length(structuralElNumbers)),'T',zeros(cactusGeom.NBlade,length(structuralElNumbers)),'M25',zeros(cactusGeom.NBlade,length(structuralElNumbers)));
+init_structuralLoad = struct('N',zeros(numAeroTS,length(structuralElNumbers)),'T',zeros(numAeroTS,length(structuralElNumbers)),'M25',zeros(numAeroTS,length(structuralElNumbers)));
 structuralLoad = repmat(init_structuralLoad,1,cactusGeom.NBlade);
 
 for i=1:cactusGeom.NBlade

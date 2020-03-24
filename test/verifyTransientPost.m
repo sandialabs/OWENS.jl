@@ -1,5 +1,5 @@
 function verifyTransientPost()
-test_transient1()
+% test_transient1()
 n_t = 50;
 
 tol1 = 1e-5;

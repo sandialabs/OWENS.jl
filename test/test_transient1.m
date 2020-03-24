@@ -76,7 +76,7 @@ omegaArrayHz = rpmArray ./ 60;
 % EXAMPLE: owens(inputFile,'TNB',timeStep, nlBool, 0)
 owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
 
-
+fprintf('%s\n','Function Finished')
 end
 
 

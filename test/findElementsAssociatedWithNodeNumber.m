@@ -26,7 +26,8 @@ function [elList,localNode] = findElementsAssociatedWithNodeNumber(nodeNum,conn,
 %search joint constraints
 index = 1;
 [numEl,~] = size(conn); %get number of elements in mesh
-
+elList = zeros(1,1);
+localNode = zeros(1,1);
 if(~isempty(jointData))
     %first see if specified node is a slave node in a joint constraint
     res2 = find(ismember(jointData(:,3),nodeNum)); %search joint data slave nodes for node number
@@ -39,18 +40,20 @@ if(~isempty(jointData))
     end
     
     res1 = find(ismember(jointData(:,2),nodeNum)); %search joint data master nodes for node number
-    jointNodeNumbers = jointData(res1,3);
-    
-    elList = zeros(length(jointNodeNumbers)*numEl);
-    localNode = zeros(length(jointNodeNumbers)*numEl);
-    for j=1:length(jointNodeNumbers) %loop over joints
-        for i=1:numEl
-            res = ismember(conn(i,:),jointNodeNumbers(j)); %finds indices of nodeNum in connectivity of element i
-            localNodeNumber = find(res); %finds the local node number of element i that corresponds to nodeNum
-            if(localNodeNumber~=0) %assigns to an elementList and localNode list
-                elList(index) = i;
-                localNode(index) = localNodeNumber;
-                index = index + 1;
+    if ~isempty(res1)
+        jointNodeNumbers = jointData(res1,3);
+        
+        elList = zeros(1,length(jointNodeNumbers)*numEl);
+        localNode = zeros(length(jointNodeNumbers)*numEl);
+        for j=1:length(jointNodeNumbers) %loop over joints
+            for i=1:numEl
+                res = ismember(conn(i,:),jointNodeNumbers(j)); %finds indices of nodeNum in connectivity of element i
+                localNodeNumber = find(res); %finds the local node number of element i that corresponds to nodeNum
+                if(localNodeNumber~=0) %assigns to an elementList and localNode list
+                    elList(index) = i;
+                    localNode(index) = localNodeNumber;
+                    index = index + 1;
+                end
             end
         end
     end
