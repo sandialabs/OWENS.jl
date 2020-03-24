@@ -1,5 +1,5 @@
 
-% function test_transient1()
+function test_transient1()
 
 tol1 = 1e-4;
 
@@ -81,7 +81,7 @@ owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeA
 OLD = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff0.mat');
 NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.mat');
 
-FileInfo = dir(NEW);
+% FileInfo = dir(NEW);
 
 % if (datetime - FileInfo.date) > duration(0,1,0)
 %     error('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
@@ -120,7 +120,7 @@ for i = 1:length(varnames)
             end
         end
         
-    elseif ~(min(min(ismembertol(old_data,new_data,tol1))))
+    else%if ~(min(min(ismembertol(old_data,new_data,tol1))))
         for ii = 1:length(old_data(:,1))
             for jj = 1:length(old_data(1,:))
                 if (abs(old_data(ii,jj)-new_data(ii,jj))>tol1)
@@ -151,7 +151,7 @@ else
     fprintf('%s\n','!!!TESTS FAILED!!!')
 end
 
-% end
+end
 
 
 
