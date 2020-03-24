@@ -3,7 +3,7 @@ function [data] = getSplitLine(fid,delim)
 line = myfgetl(fid);
 
 % Find where all of the delimiters are
-delimiter_idx = [0.0,find(line == delim),length(line)+1];
+delimiter_idx = [0.0,find(line' == delim)',length(line)+1];
 
 % % Reduce index, getting rid of duplicate delimiters if spaces
 % if delim == ' '

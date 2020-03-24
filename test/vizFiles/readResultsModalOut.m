@@ -36,13 +36,13 @@ for modecount = 1:numModes
     headerInd = 0;
     while ~headerInd
         line = fgetl(fid);
-        if strfind(line, 'Frequency')
+        if strfind(line', 'Frequency')
             freq = strrep(line,'Frequency','');
             freq = strrep(freq,':','');
             freq = strrep(freq,' ','');
             output{modecount}.frequency = real(str2double(freq));
         end
-        if strfind(line, 'Damping')
+        if strfind(line', 'Damping')
             damp = strrep(line,'Damping','');
             damp = strrep(damp,':','');
             damp = strrep(damp,' ','');
@@ -61,7 +61,7 @@ for modecount = 1:numModes
     headerInd = 0;
     while ~headerInd
         line = fgetl(fid);
-        if strfind(line, '90 deg Mode Shape')
+        if strfind(line', '90 deg Mode Shape')
             headerInd = 1;
         end
     end

@@ -28,7 +28,7 @@ for i=1:numpBC
     % Find where all of the delimiters are
     %first two are boundary condition node number and local DOF number
     %third is boundary condition value (typically zero)
-    delimiter_idx = [0.0,find(line == ' '),length(line)+1];
+    delimiter_idx = [0.0,find(line' == ' ')',length(line)+1];
     % Extract the data from the beginning to the last delimiter
     for k = 2:length(delimiter_idx)
         pBC(i,k-1) = real(str2double(line(delimiter_idx(k-1)+1:delimiter_idx(k)-1)));

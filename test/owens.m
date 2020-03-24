@@ -223,7 +223,7 @@ platfilename     = [fdirectory line(3:end)];
 initcondfilename = [fdirectory myfgetl(fid)]; %initial condition filename
 
 line             = myfgetl(fid);
-delimiter_idx    = find(line == ' ');
+delimiter_idx    = find(line' == ' ');
 
 aeroFlag         = real(str2double(line(1))); %flag for activating aerodynamic analysis
 blddatafilename  = [fdirectory line(delimiter_idx(1)+1:delimiter_idx(2)-1)]; %blade data file name
