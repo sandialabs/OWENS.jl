@@ -595,10 +595,16 @@ fid = fopen([model.outFilename(1:end-4) '_uHist.txt'],'w+'); %open/create new fo
 for i = 0:length(t)
     if i == 0
         line = ['t uHist' newline'];
+        fwrite(fid,line,'char');
     else
-        line = [sprintf('%1.12e',t(i)), ' ', sprintf('%1.12e',uHist(:,i)'), newline ];
+        for ii = 1:length(uHist(:,1))-1
+            line = [sprintf('%1.12e',t(i)), ' ', sprintf('%1.12e',uHist(ii,i)') ];
+            fwrite(fid,line,'char');
+        end
+        line = [sprintf('%1.12e',t(i)), ' ', sprintf('%1.12e',uHist(end,i)'), newline ];
+        fwrite(fid,line,'char');
     end
-    fwrite(fid,line,'char');
+
 end
 
 fclose(fid);
@@ -623,20 +629,55 @@ for i = 0:length(t)-1
             line = [sprintf('%1.12e',t(i)), ' ', sprintf('%1.12e',j), newline];
             fwrite(fid,line,'char');
 
-            line = ['eps_xx_0 ' sprintf('%1.12e',strainHist(j,i).eps_xx_0) newline];
+            for jj = 1:3
+                line = ['eps_xx_0 ' sprintf('%1.12e',strainHist(j,i).eps_xx_0(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['eps_xx_0 ' sprintf('%1.12e',strainHist(j,i).eps_xx_0(4)) newline];
             fwrite(fid,line,'char');
-            line = ['eps_xx_z ' sprintf('%1.12e',strainHist(j,i).eps_xx_z) newline];
+
+            for jj = 1:3
+                line = ['eps_xx_z ' sprintf('%1.12e',strainHist(j,i).eps_xx_z(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['eps_xx_z ' sprintf('%1.12e',strainHist(j,i).eps_xx_z(4)) newline];
             fwrite(fid,line,'char');
-            line = ['eps_xx_y ' sprintf('%1.12e',strainHist(j,i).eps_xx_y) newline];
+
+            for jj = 1:3
+                line = ['eps_xx_y ' sprintf('%1.12e',strainHist(j,i).eps_xx_y(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['eps_xx_y ' sprintf('%1.12e',strainHist(j,i).eps_xx_y(4)) newline];
             fwrite(fid,line,'char');
-            line = ['gam_xz_0 ' sprintf('%1.12e',strainHist(j,i).gam_xz_0) newline];
+
+            for jj = 1:3
+                line = ['gam_xz_0 ' sprintf('%1.12e',strainHist(j,i).gam_xz_0(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['gam_xz_0 ' sprintf('%1.12e',strainHist(j,i).gam_xz_0(4)) newline];
             fwrite(fid,line,'char');
-            line = ['gam_xz_y ' sprintf('%1.12e',strainHist(j,i).gam_xz_y) newline];
+
+            for jj = 1:3
+                line = ['gam_xz_y ' sprintf('%1.12e',strainHist(j,i).gam_xz_y(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['gam_xz_y ' sprintf('%1.12e',strainHist(j,i).gam_xz_y(4)) newline];
             fwrite(fid,line,'char');
-            line = ['gam_xy_0 ' sprintf('%1.12e',strainHist(j,i).gam_xy_0) newline];
+
+            for jj = 1:3
+                line = ['gam_xy_0 ' sprintf('%1.12e',strainHist(j,i).gam_xy_0(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['gam_xy_0 ' sprintf('%1.12e',strainHist(j,i).gam_xy_0(4)) newline];
             fwrite(fid,line,'char');
-            line = ['gam_xy_z ' sprintf('%1.12e',strainHist(j,i).gam_xy_z) newline];
+
+            for jj = 1:3
+                line = ['gam_xy_z ' sprintf('%1.12e',strainHist(j,i).gam_xy_z(jj))];
+                fwrite(fid,line,'char');
+            end
+            line = ['gam_xy_z ' sprintf('%1.12e',strainHist(j,i).gam_xy_z(4)) newline];
             fwrite(fid,line,'char');
+                
         end
     end
 end

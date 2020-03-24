@@ -1,7 +1,7 @@
 
 function test_transient1()
 
-tol1 = 1e-4;
+tol1 = 1e-5;
 
 fprintf('%s\n','Starting')
 tic
