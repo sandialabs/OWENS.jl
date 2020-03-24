@@ -397,10 +397,8 @@ function [dofVector] = calculateReducedDOFVector(numNodes,numDofPerNode,isConstr
 %This function searches over all DOFs in a structural model and
 %determines and returns "dofVector" containing only unconstrained DOFs
 
-index = 1;
-
 %loop over all DOFs in the model checking if constrained by BC or not
-
+index = 1;
 for i=1:numNodes
     for j=1:numDofPerNode
         if~(isConstrained((i-1)*numDofPerNode + j))
@@ -411,6 +409,7 @@ for i=1:numNodes
 end
 
 dofVector = zeros(1,index);
+index = 1;
 for i=1:numNodes
     for j=1:numDofPerNode
         if~(isConstrained((i-1)*numDofPerNode + j))

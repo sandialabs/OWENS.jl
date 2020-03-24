@@ -92,7 +92,7 @@ nodeNum = bladeData_struct.nodeNum;  %node number associated with blade section
 elNum = bladeData_struct.elementNum;    %element number associated with blade sectino
 bladeData = bladeData_struct.remaining;  %blade data
 
-chord = zeros(length(elNum),1);
+chord = zeros(max(nodeNum),1);
 for i=1:length(elNum)
     chord(nodeNum(i)) = bladeData(i,10);  %store chord of blade sections
 end
