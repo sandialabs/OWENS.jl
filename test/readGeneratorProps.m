@@ -27,6 +27,7 @@ if(fid~=-1) %if file can be opened
     %         dum = fgetl(fid);
     %
     %         fclose(fid); %close generator propery file
+    genprops = 0.0;
     error('GENERATOR NOT FULLY ENABLED')
 else
     genprops = 0.0; %if generator property file does not exist, set object to null

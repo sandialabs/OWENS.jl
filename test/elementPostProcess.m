@@ -72,13 +72,27 @@ elInput.useDisp = model.nlOn;
 elInput.preStress = false;
 elInput.aeroElasticOn = false;
 elInput.aeroForceOn = false;
+nlParams = model.nlParams;
+
+if(nlParams.adaptiveLoadSteppingFlag)
+    elInput.loadStepPrev = 0.0;
+    elInput.loadStep = 1.0;
+else
+    elInput.loadStepPrev = 0.0;
+    elInput.loadStep = nlParams.prescribedLoadStep(1);
+    fprintf('Prescribed load step: %f\n',nlParams.prescribedLoadStep(1));
+end
+
+elInput.maxNumLoadSteps = nlParams.maxNumLoadSteps;
+elInput.MAXIT = nlParams.maxIterations;
+elInput.tolerance = nlParams.tolerance;
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
     elInput.analysisType = 'TNB';
-elseif(strcmp(analysisType,'S'))
+else%if(strcmp(analysisType,'S'))
     elInput.analysisType = 'M';
-else
-    error('analysisType not supported, choose another')
+% else
+%     error('analysisType not supported, choose another')
 end
 
 %unpack connectivity list, nodal terms, etc.
@@ -108,11 +122,11 @@ elInput.dispddot = eldispddot;%specific to TNB and ROM
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
     elInput.displ_iter = eldispiter;
-elseif(strcmp(analysisType,'S'))
+else%if(strcmp(analysisType,'S'))
     elInput.displ_iter = eldisp;
     eldispiter = eldisp;
-else
-    error('analysisType not supported, choose another')
+% else
+%     error('analysisType not supported, choose another')
 end
 
 %get concentrated terms associated with element
@@ -135,12 +149,12 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM'))
     elInput.accelVec = rbData(1:3);
     elInput.omegaVec = rbData(4:6);
     elInput.omegaDotVec = rbData(7:9);
-elseif(strcmp(analysisType,'S'))
+else %if(strcmp(analysisType,'S'))
     elInput.accelVec = zeros(3,1);
     elInput.omegaVec = zeros(3,1);
     elInput.omegaDotVec = zeros(3,1);
-else
-    error('analysisType not supported, choose another')
+% else
+%     error('analysisType not supported, choose another')
 end
 
 if(el.rotationalEffects(elementNumber))
@@ -167,10 +181,10 @@ elInput.firstIteration = false;
 FhatEl1PP = elOutput.Ke*eldispiter';
 if(strcmp(analysisType,'TD'))
     denom = timeInt.a4;
-elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM')||strcmp(analysisType,'S'))
+else %if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM')||strcmp(analysisType,'S'))
     denom = 1.0;
-else
-    error('analysisType not supported, choose another')
+% else
+%     error('analysisType not supported, choose another')
 end
 Fpp = (FhatEl1PP - elOutput.FhatLessConc)./denom;
 %----------------------------------------------------------------------

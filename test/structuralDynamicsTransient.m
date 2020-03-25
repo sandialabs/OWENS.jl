@@ -188,14 +188,14 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         elInput.concStiff = stiffConc;
         elInput.concLoad = loadConc;
         elInput.disp = eldisp;
-        
+
         % specific to 'TD', but must be declared
         elInput.dispm1= eldisp_sm1;
-       
+
         % specific to 'TNB' , but must be declared
         elInput.dispdot = eldispdot;
         elInput.dispddot = eldispddot;
-        
+
         elInput.x = elx;
         elInput.y = ely;
         elInput.z = elz;

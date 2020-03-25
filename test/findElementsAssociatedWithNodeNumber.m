@@ -38,11 +38,11 @@ if(~isempty(jointData))
             error('Incorrect Joint Data and nodeNum, too many joints')
         end
     end
-    
+
     res1 = find(ismember(jointData(:,2),nodeNum)); %search joint data master nodes for node number
     if ~isempty(res1)
         jointNodeNumbers = jointData(res1,3);
-        
+
         elList = zeros(1,length(jointNodeNumbers)*numEl);
         localNode = zeros(length(jointNodeNumbers)*numEl);
         for j=1:length(jointNodeNumbers) %loop over joints

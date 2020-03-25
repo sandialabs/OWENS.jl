@@ -827,11 +827,11 @@ end
 
 
 %----- assign output block ----------------
+output.FhatLessConc  = zeros(size(Fe));
 output.Ke = Ke;
 output.Fe = Fe;
 output.Me  = zeros;
 output.Ce  = zeros;
-output.FhatLessConc  = zeros;
 
 if(strcmp(input.analysisType,'M')||strcmp(input.analysisType,'RM0'))
     output.Me = Me;

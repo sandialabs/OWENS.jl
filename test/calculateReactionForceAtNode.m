@@ -29,7 +29,6 @@ function [cummulativeForce] = calculateReactionForceAtNode(nodeNum,model,mesh,el
 %
 %   output:
 %   cummulativeForce  = vector containing reaction force at nodeNum
-
 conn = mesh.conn;  %get connectivity list
 numDofPerNode = 6;
 
@@ -48,4 +47,3 @@ for i=1:length(elList)
 end
 
 end
-

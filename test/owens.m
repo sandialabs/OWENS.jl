@@ -76,15 +76,14 @@ model.generatorOn = false; %Initialize only, gets changed later on
 model.OmegaGenStart = 0.0; %Initialize only, gets changed later on
 model.omegaControl = false; %Initialize only, gets changed later on
 model.totalNumDof = 0.0; %Initialize only, gets changed later on
-
 model.nlParams = struct('iterationType', 'NR',...
     'adaptiveLoadSteppingFlag', true,...
     'tolerance', 1.0000e-06,...
     'maxIterations', 50,...
     'maxNumLoadSteps', 20,...
     'minLoadStepDelta', 0.0500,...
-    'minLoadStep', 0.0500);
-
+    'minLoadStep', 0.0500,...
+    'prescribedLoadStep',1.0);
 if(strcmp(analysisType,'S')) %STATIC ANALYSIS
     Omega = varargin{3};            %initialization of rotor speed (Hz)
     model.nlOn= varargin{4};        %flag for nonlinear elastic calculation
@@ -96,7 +95,6 @@ if(strcmp(analysisType,'S')) %STATIC ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-
 
 elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     Omega = varargin{3};              %initialization of rotor speed (Hz)
@@ -170,7 +168,6 @@ elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
             model.OmegaInit = Omegaocp(1);
         end
     end
-
 elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     Omega = varargin{3};   %rotor speed (Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
@@ -207,6 +204,7 @@ elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
 else
     error('Analysis type not recognized.');
 end
+
 
 fid = fopen(inputfile,'r'); %reads in model file names from .owens file
 last_delimiter   = find(or(inputfile == '/', inputfile == '\')); %'
@@ -299,7 +297,6 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
     end
 
 end
-
 [model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results %TODO: map to the output location instead of input
 
 [jnt_struct] = createJointTransform(joint,mesh.numNodes,6); %creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
@@ -339,7 +336,7 @@ end
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %EXECUTE TRANSIENT ANALYSIS
     [model.nlParams] = readNLParamsFile(inputfile);
-    model.analysisType = analysisType;
+    model.analysisType = analysisType;    
     transientExec(model,mesh,el);
     freq=0;
 end

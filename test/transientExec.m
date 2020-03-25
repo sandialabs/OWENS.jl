@@ -27,7 +27,6 @@ function transientExec(model,mesh,el)
 aeroOn = false;
 %modularIteration
 moduleIteration = true;
-
 % Get AeroLoads
 aeroLoads = processAeroLoadsBLE(model.aeroloadfile, model.owensfile);
 
@@ -72,7 +71,6 @@ end
 %     plotGenSpeedVsTorque([0:.01:5],model.generatorProps);
 % end
 %%
-
 %% state initialization
 numDOFPerNode = 6;
 model.totalNumDof = mesh.numNodes*numDOFPerNode;
@@ -136,7 +134,6 @@ gbDotDotHist(1) = gbDotDot_s;
 genTorque(1) = genTorque_s;
 torqueDriveShaft(1) = torqueDriveShaft_s;
 %%
-
 tic
 
 
@@ -677,7 +674,7 @@ for i = 0:length(t)-1
             end
             line = ['gam_xy_z ' sprintf('%1.12e',strainHist(j,i).gam_xy_z(4)) newline];
             fwrite(fid,line,'char');
-                
+
         end
     end
 end
