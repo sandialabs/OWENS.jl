@@ -40,7 +40,7 @@ for i=1:numNodes*numDofPerNode %loop over total number of DOFs in model
     end
 end
 
-reducedDOF = zeros(1,count);
+reducedDOF = zeros(1,count-1);
 count = 1;
 for i=1:numNodes*numDofPerNode %loop over total number of DOFs in model
     if(sum(ismember(slaveDof,i))==0)
