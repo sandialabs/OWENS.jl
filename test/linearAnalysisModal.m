@@ -151,7 +151,7 @@ end
 if(Omega==0.0) %set eigensolver flag
     solveFlag = 2;
 else
-    solveFlag = 2;
+    solveFlag = 1;
 end
 [eigVec,eigVal] = eigSolve(MgTotal,CgTotal,KgTotal,... %eigensolve of global system
     model.numModesToExtract,solveFlag);
