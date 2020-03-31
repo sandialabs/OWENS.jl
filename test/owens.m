@@ -318,13 +318,12 @@ if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS
 end
 
 if(strcmp(analysisType,'M') || strcmp(analysisType,'F')) %EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
-    %     [model.nlParams] = readNLParamsFile(inputfile);
-    %     if(length(varargin)<=5 || ~model.nlOn)
-    %         displInitGuess = zeros(mesh.numNodes*6,1);
-    %     end
-    %     OmegaStart = 0.0;
-    %     [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
-    error('Modal and Manual Flutter not fully implemented');
+    [model.nlParams] = readNLParamsFile(inputfile);
+    if(length(varargin)<=5 || ~model.nlOn)
+        displInitGuess = zeros(mesh.numNodes*6,1);
+    end
+    OmegaStart = 0.0;
+    [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
 end
 
 if(strcmp(analysisType,'FA')) %EXECUTE AUTOMATED FLUTTER ANALYSIS

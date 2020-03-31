@@ -1,9 +1,8 @@
+function test_modal1()
 
-function test_transient1()
-
-
-fprintf('%s\n','Starting Transient')
+fprintf('%s\n','Starting Modal')
 tic
+
 
 %% ****************** COORDINATE SYSTEM DEFINITION *********************** %
 % 1 - x -  surge (pointed downstream)
@@ -18,7 +17,6 @@ tic
 bmOwens = './input_files_test/_15mTower_transient_dvawt_c_2_lcdt';
 % append this name to the end of the saved files
 outFileExt = '_15mTowerExt_NOcentStiff';
-
 % convert rotational stiffness to N-m/rad
 StiffDiag_Nm_deg = [1.329e5 1.329e5 1.985e6 3.993e6 3.995e6 1.076e6];
 convRotStiff = [1 1 1 180/pi 180/pi 180/pi];
@@ -31,10 +29,8 @@ platformProp = struct('fileRoot','./input_files_test/1_FourColumnSemi_2ndPass',.
     'StiffDiag',StiffDiag);
 
 %% ************************************************************************
-% perform the transient simulations using OWENS
+% perform the modal simulations using OWENS
 % *************************************************************************
-
-
 % define the filename saving convention
 fname = [platformProp.fileRoot outFileExt];
 
@@ -56,25 +52,39 @@ end
 writeOwensNDL(fname, nodes, cmkType, cmkValues)
 
 % *********************************************************************
-% perform operations for the aerodynamic forces file generation
+% read in the main owens file
 % *********************************************************************
-CACTUSfileRoot = './input_files_test/DVAWT_2B_LCDT';
-OWENSfileRoot = bmOwens;
+fid = fopen([bmOwens '.owens']);
+owensMain = textscan(fid, '%s','whitespace','\r');
+fclose(fid)
+% change the reference for the nodal input file
+owensMain{1}{5} = [fname '.ndl'];
+
+% save the owens input file
+fid = fopen([fname '.owens'],'w');
+fprintf(fid,'%s\n',owensMain{1}{:});
+fclose(fid);
 
 % *********************************************************************
 % run a modal analysis of the platform design
 % *********************************************************************
-operatingRPM = 7.2; % rpm
+maxRPM = 0;%7.2; % rpm
 Nrpm = 10;    % number of rpm stations
 Nmodes = 40;  % number of modes to calculate
-timeStep = 2e-3;
-timeSim = 0.5;       % [sec]
-n_t = timeSim/timeStep; % length of time vector
-timeArray = [0 timeSim+1];
-rpmArray  = [operatingRPM operatingRPM];
-omegaArrayHz = rpmArray ./ 60;
-% EXAMPLE: owens(inputFile,'TNB',timeStep, nlBool, 0)
-owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
+
+owens([fname '.owens'],'M', 0.5*maxRPM*2*pi/60, false, Nmodes)
+
 
 fprintf('%s\n','Function Finished')
+
 end
+
+
+
+
+
+
+
+
+
+

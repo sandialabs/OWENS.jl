@@ -55,21 +55,31 @@ for i=1:numEl   %element loop
     index = 1;
     elInput.analysisType = 'M';      %define element input object flags and element properties from el object
     elInput.iterationType = 'NONE';
+    elInput.displ_iter = eldisp;
     elInput.useDisp = false;
     elInput.preStress = true;
     elInput.elementOrder = elementOrder;
     elInput.modalFlag = true;
+    elInput.timeInt = struct('delta_t',0.0,...
+        'a1',0.0,...
+        'a2',0.0,...
+        'a3',0.0,...
+        'a4',0.0,...
+        'a5',0.0,...
+        'a6',0.0,...
+        'a7',0.0,...
+        'a8',0.0);
     elInput.xloc = [0.0 el.elLen(i)];
     elInput.sectionProps = el.props(i);
     elInput.sweepAngle = el.psi(i);
     elInput.coneAngle = el.theta(i);
     elInput.rollAngle = el.roll(i);
     elInput.aeroSweepAngle = 0.0;
-
+    
     elx = zeros(numNodesPerEl,1); %initialize element coordinate list
     ely = elx;
     elz = elx;
-
+    
     for j=1:numNodesPerEl       %define element coordinates and displacements associated with element
         elx(j) = x(conn(i,j));
         ely(j) = y(conn(i,j));
@@ -79,10 +89,10 @@ for i=1:numEl   %element loop
             index = index + 1;
         end
     end
-
+    
     %retrieve concentrated nodal terms associated with element
     [massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff] = ConcMassAssociatedWithElement(conn(i,:),model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad);
-
+    
     %assign concentrated nodal terms and coordinates to element input
     %object
     elInput.concMass = massConc;
@@ -92,7 +102,9 @@ for i=1:numEl   %element loop
     elInput.x = elx;
     elInput.y = ely;
     elInput.z = elz;
-
+    elInput.omegaVec = zeros(3,1);
+    elInput.omegaDotVec = zeros(3,1);
+    
     if(el.rotationalEffects(i)) %activate or deactivate rotational effects for element
         elInput.Omega = Omega;
         elInput.OmegaDot = 0.0;
@@ -100,25 +112,25 @@ for i=1:numEl   %element loop
         elInput.Omega = 0.0;
         elInput.OmegaDot = 0.0;
     end
-
+    
     elInput.aeroElasticOn = model.aeroElasticOn;   %set aeroelastic flag
     elInput.aeroForceOn = false;
     elInput.gravityOn = model.gravityOn;
-
+    elInput.CN2H = eye(3);
     elInput.RayleighAlpha = model.RayleighAlpha;
     elInput.RayleighBeta = model.RayleighBeta;
-
+    
     if(model.aeroElasticOn)
         elInput.freq = model.guessFreq*2.0*pi;     %set guess frequency if aeroelastic analysis
         elInput.airDensity = model.airDensity;     %set air density if aeroelastic analysis
     end
-
+    
     [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %do element calculation
-
+    
     [Kg] = assemblyMatrixOnly(elOutput.Ke,conn(i,:),numNodesPerEl,numDOFPerNode,Kg); %assemble element into global stiffness matrix
     [Mg] = assemblyMatrixOnly(elOutput.Me,conn(i,:),numNodesPerEl,numDOFPerNode,Mg); %assemble element into global mass matrix
     [Cg] = assemblyMatrixOnly(elOutput.Ce,conn(i,:),numNodesPerEl,numDOFPerNode,Cg); %assemble element into global damping matrix
-
+    
 end
 
 %apply general 6x6  mass, damping, and stiffness matrices to nodes
