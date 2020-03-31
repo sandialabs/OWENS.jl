@@ -45,7 +45,7 @@ if(fid ~= -1) %if file can be opened read it
     %         else
     %             fclose(fid);
     %             error('Load stepping parameter in .nl file not recognized. Exiting.');
-    %         end\
+    %         end
     error('NLParams not fully implemented')
 
 else %default parameters if file cannot be opened (doesnt exist)
@@ -67,7 +67,7 @@ if(adaptiveLoadSteppingFlag)
     nlParams.maxNumLoadSteps = maxNumLoadSteps;
     nlParams.minLoadStepDelta = minLoadStepDelta;
     nlParams.minLoadStep = minLoadStep;
-    nlParams.prescribedLoadStep = 1; % not used but must be declared 
+    nlParams.prescribedLoadStep = 1; % not used but must be declared
 else
     error('NLParams not fully implemented')
     %     nlParams.prescribedLoadStep = prescribedLoadStep;

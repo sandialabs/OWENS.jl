@@ -2,7 +2,7 @@
 function line  = myfgetl(fid)
 line = '';
 c = fread(fid,1,'char=>char');
-while ~feof(fid) && ~strcmp(c, newline)
+while ~feof(fid) && ~strcmp(c, sprintf('\n'))
     if ~strcmp(c,sprintf('\r'))
         line = [line,c];
     end

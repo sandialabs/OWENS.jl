@@ -1,0 +1,47 @@
+//
+// Trial License - for use to evaluate programs for possible purchase as
+// an end-user only.
+// File: timeKeeper.cpp
+//
+// MATLAB Coder version            : 4.3
+// C/C++ source code generated on  : 31-Mar-2020 09:49:33
+//
+
+// Include Files
+#include "timeKeeper.h"
+#include "rt_nonfinite.h"
+#include "test_transient1.h"
+#include <string.h>
+
+// Variable Definitions
+static boolean_T savedTime_not_empty;
+
+// Function Definitions
+
+//
+// Arguments    : void
+// Return Type  : void
+//
+void savedTime_not_empty_init()
+{
+  savedTime_not_empty = false;
+}
+
+//
+// Arguments    : void
+// Return Type  : void
+//
+void timeKeeper()
+{
+  struct timespec b_timespec;
+  if (!savedTime_not_empty) {
+    clock_gettime(CLOCK_MONOTONIC, &b_timespec);
+    savedTime_not_empty = true;
+  }
+}
+
+//
+// File trailer for timeKeeper.cpp
+//
+// [EOF]
+//
