@@ -49,8 +49,9 @@ Cg = zeros(totalNumDOF,totalNumDOF);
 
 nodalTerms = model.nodalTerms; %extract concentrated nodal terms from model
 
-eldisp = zeros(1,numEl*numNodesPerEl);
+
 for i=1:numEl   %element loop
+    eldisp = zeros(1,numNodesPerEl*numDOFPerNode);
     %Calculate Ke and Fe for element i
     index = 1;
     elInput.analysisType = 'M';      %define element input object flags and element properties from el object

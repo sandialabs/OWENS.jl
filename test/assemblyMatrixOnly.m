@@ -21,7 +21,7 @@ function [Kg] = assemblyMatrixOnly(Ke,conn,numNodesPerEl,numDOFPerNode,Kg)
 %      Kg             = global system matrix with assembled element
 
 count = 1;
-dofList = zeros(numNodesPerEl*numDOFPerNode);
+dofList = zeros(1,numNodesPerEl*numDOFPerNode);
 for i=1:numNodesPerEl
     for j=1:numDOFPerNode
         dofList(count) = (conn(i)-1)*numDOFPerNode + j;

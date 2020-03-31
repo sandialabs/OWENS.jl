@@ -68,7 +68,7 @@ fclose(fid);
 % *********************************************************************
 % run a modal analysis of the platform design
 % *********************************************************************
-maxRPM = 0;%7.2; % rpm
+maxRPM = 10;%7.2; % rpm
 Nrpm = 10;    % number of rpm stations
 Nmodes = 40;  % number of modes to calculate
 

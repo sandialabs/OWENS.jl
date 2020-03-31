@@ -49,7 +49,6 @@ CN2H           = input.CN2H;
 omegaDotVec    = input.omegaDotVec;
 timeInt        = input.timeInt;
 dispm1 = zeros; %declare type
-accelVec = zeros;%declare type
 dispdot = zeros;%declare type
 dispddot = zeros;%declare type
 
