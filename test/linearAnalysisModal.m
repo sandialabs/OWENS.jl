@@ -160,12 +160,12 @@ save eigVectors eigVec %save eigenvector for later use (if needed)
 
 %extract frequency, damping, mode shapes from eigenvalues and vectors
 [~,len] = size(eigVal);
-% freq = zeros(len);
-% damp = zeros(len);
-% phase1 = zeros(len);
-% phase2 = zeros(len);
-% sortedModes = zeros(len);
-% imagCompSign = zeros(len);
+freq = zeros(len);
+damp = zeros(len);
+phase1 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
+phase2 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
+sortedModes = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
+imagCompSign = zeros(len);
 for i=1:len
     [freq(i),damp(i),phase1(:,:,i),phase2(:,:,i),sortedModes(:,:,i)] = extractFreqDamp(eigVal(i,i),eigVec(:,i),numDOFPerNode,model.jointTransform,model.reducedDOFList,model.BC,model.analysisType);
     imagCompSign(i) = sign(imag(eigVal(i,i)));

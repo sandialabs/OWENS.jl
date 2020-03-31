@@ -39,7 +39,7 @@ function [freq,damp,phase1,phase2,sortedModes] = extractFreqDamp(val,vec,numDOFP
      end
 
     if(~strcmp(analysisType,'FA'))  %for all but automated flutter analysis
-         [len,numModeShapes] = size(vec);
+%          [len,numModeShapes] = size(vec);
          [dispReduc] = constructReducedDispVecFromEigVec(vec,reducedDOFList,BC); %construct mode shape vector with boundary conditinos
          dispOrig = jointTransform*dispReduc; %transform from reduced DOF list to full DOF list
          lenOrig=length(dispOrig);
@@ -90,7 +90,7 @@ end
 function [vec1Red] = constructReducedDispVecFromEigVec(vec1,reducedDOFList,BC)
     %This function takes the original mode shape and modifies it to
     %account for boundary conditions
-    bcdoflist=[];
+    bcdoflist=zeros(1,BC.numpBC);
     %form pBC DOF list
     for i=1:BC.numpBC
         bcnodenum = BC.pBC(i,1);

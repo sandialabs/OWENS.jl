@@ -115,7 +115,7 @@ for i=1:length(elNum)
 end
 
 
-disp('EIyz, rhoIyz deactivated');
+fprintf('%s\n','EIyz, rhoIyz deactivated');
 fclose(fid); %close element file
 
 %read element orientation data

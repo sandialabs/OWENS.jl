@@ -1,7 +1,7 @@
 
 function test_transient1()
 
-test_transient = false;
+test_transient = true;
 test_modal = true;
 fprintf('%s\n','Starting')
 tic
@@ -70,18 +70,18 @@ Nrpm = 10;    % number of rpm stations
 maxRPM = 10;
 Nmodes = 40;  % number of modes to calculate
 timeStep = 2e-3;
-timeSim = 0.5;       % [sec]
+timeSim = 0.1;       % [sec]
 n_t = timeSim/timeStep; % length of time vector
 timeArray = [0 timeSim+1];
 rpmArray  = [operatingRPM operatingRPM];
 omegaArrayHz = rpmArray ./ 60;
 
 if test_transient
-    owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
+    [freq,damp]=owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz);
 end
 
 if test_modal
-    owens([fname '.owens'],'M', 0.5*maxRPM*2*pi/60, false, Nmodes)
+    [freq,damp]=owens([fname '.owens'],'M', 0.5*maxRPM*2*pi/60, false, Nmodes);
 end
 fprintf('%s\n','Function Finished')
 end

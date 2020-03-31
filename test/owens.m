@@ -337,7 +337,8 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
     [model.nlParams] = readNLParamsFile(inputfile);
     model.analysisType = analysisType;    
     transientExec(model,mesh,el);
-    freq=0;
+    freq = 0;
+    damp = 0;
 end
 
 end
