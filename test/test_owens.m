@@ -1,8 +1,6 @@
 
-function test_transient1()
+function test_owens(test_transient,test_modal)
 
-test_transient = true;
-test_modal = true;
 fprintf('%s\n','Starting')
 tic
 

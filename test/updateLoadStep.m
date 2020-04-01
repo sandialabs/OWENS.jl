@@ -35,6 +35,7 @@ function [loadStep,loadStepPrev,displ,displPrev,staticAnalysisSuccessful,staticA
 %      staticAnalysisComplete   = boolean flag, true if analysis is complete
 %
 %
+staticAnalysisComplete = false; %initialize variable
 
 if(loadStepParams.adaptiveLoadSteppingFlag) %for adaptive load stepping option
     %check if maximum number of load steps has been exceeded.

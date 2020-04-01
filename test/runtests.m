@@ -1,1 +1,1 @@
-test_transient1()
+test_transient1(false,true)

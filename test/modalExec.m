@@ -26,7 +26,7 @@ function [freq,damp] = modalExec(model,mesh,el,displ,Omega,OmegaStart)
 
 [elStorage] = initialElementCalculations(model,el,mesh); %performs initial element calculations
 
-[structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage); %calculate mass properties of structure
+% [structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage); %calculate mass properties of structure
 
 %Do nonlinear iteration if needed
 if(model.spinUpOn)
@@ -39,7 +39,7 @@ else
 end
 
 if(staticAnalysisSuccessful)
-[freq,damp,phase1,phase2,imagCompSign] = linearAnalysisModal(model,mesh,el,displ,Omega,elStorage); %performs modal analysis
+[freq,damp,~,~,~] = linearAnalysisModal(model,mesh,el,displ,Omega,elStorage); %performs modal analysis
 else
     error('Static analysis unsuccessful. Exiting');
 end
