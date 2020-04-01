@@ -116,6 +116,7 @@ for i=1:numEl   %element loop
     
     elInput.aeroElasticOn = model.aeroElasticOn;   %set aeroelastic flag
     elInput.aeroForceOn = false;
+    elInput.airDensity = model.airDensity;    
     elInput.gravityOn = model.gravityOn;
     elInput.CN2H = eye(3);
     elInput.RayleighAlpha = model.RayleighAlpha;
@@ -123,7 +124,8 @@ for i=1:numEl   %element loop
     
     if(model.aeroElasticOn)
         elInput.freq = model.guessFreq*2.0*pi;     %set guess frequency if aeroelastic analysis
-        elInput.airDensity = model.airDensity;     %set air density if aeroelastic analysis
+    else
+        elInput.freq = 0.0; %Declare variable on all execution paths
     end
     
     [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %do element calculation
@@ -155,7 +157,7 @@ else
 end
 [eigVec,eigVal] = eigSolve(MgTotal,CgTotal,KgTotal,... %eigensolve of global system
     model.numModesToExtract,solveFlag);
-save eigVectors eigVec %save eigenvector for later use (if needed)
+%save eigVectors eigVec %save eigenvector for later use (if needed) TODO: Doesn't appear to be used
 
 
 %extract frequency, damping, mode shapes from eigenvalues and vectors

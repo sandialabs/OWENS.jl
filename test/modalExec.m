@@ -33,7 +33,7 @@ if(model.spinUpOn)
 model.aeroElasticOn = false;
 model.aeroForceOn = true;
 [displ,~,staticAnalysisSuccessful]=staticAnalysis(model,mesh,el,displ,Omega,OmegaStart,elStorage); %performs static analysis about specified operating condition
-save displnl displ %saves displacement vector from static analysis
+%save displnl displ %saves displacement vector from static analysis TODO: This doesn't appear to be used
 else
     staticAnalysisSuccessful = true;
 end

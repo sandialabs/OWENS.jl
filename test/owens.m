@@ -63,6 +63,7 @@ if(strcmp(analysisType,'S')) %STATIC ANALYSIS
 elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     Omega = varargin{3};              %initialization of rotor speed (Hz)
     model.spinUpOn = varargin{4};     %flag for pre-stressed modal analysis
+    model.guessFreq = 0.0; %``guess'' modal frequency
     model.nlOn = true;
     if(length(varargin)>4)
         model.numModesToExtract = varargin{5}; %number of modes to extract
@@ -299,7 +300,7 @@ end
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %EXECUTE TRANSIENT ANALYSIS
     [model.nlParams] = readNLParamsFile(inputfile);
-    model.analysisType = analysisType;    
+    model.analysisType = analysisType;
     transientExec(model,mesh,el);
     freq = 0;
     damp = 0;

@@ -216,16 +216,16 @@ while(unorm>tol && iterationCount < maxIterations) %iteration loop
         elInput.useDisp = model.nlOn;
         elInput.preStress = false;
         elInput.iterationType = iterationType;
+        elInput.freq = 0.0; %Is not used for this model type, but must be declared.
         elInput.aeroElasticOn = false;
         elInput.aeroForceOn = false;
+        elInput.airDensity = model.airDensity;
         elInput.gravityOn = model.gravityOn;
 
         elInput.RayleighAlpha = model.RayleighAlpha;
         elInput.RayleighBeta = model.RayleighBeta;
 
         elInput.CN2H = CN2H;
-        elInput.airDensity = model.airDensity;
-        elInput.freq = 0.0; %Is not used for this model type, but must be declared.
 
         [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %calculate timoshenko element
 

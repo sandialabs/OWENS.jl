@@ -70,12 +70,13 @@ tolerance = nlParams.tolerance;
 dispOld = displ;  %initialize dispOld, first iteration logic below for accurate calculations
 %.........................................................................
 staticAnalysisSuccessfulForLoadStep = false; %initialize variable
+iterationType = 'NA'; %Initialize iterationType so it is in scope.  Is set below.
 while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
     % staticAnalysisSuccessful = false; %initialize staticAnalysisSuccessful flag
     uNorm = 1.0; %initialize norm for convergence check
-    
+
     iterationCount = 0; %initialize iteration count
-    
+
     while(uNorm > tolerance && iterationCount < MAXIT) %iteration loop (convergence tolerance of 1.0e-6)
         Kg = zeros(totalNumDOF,totalNumDOF);   %initialize global stiffness matrix
         Fg = zeros(totalNumDOF,1);             %initialize global force vector
@@ -91,17 +92,18 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
             index = 1;
             elInput.analysisType = 'M';  %define element input object flags and element properties from el object
             if(model.nlOn)
-                elInput.iterationType = nlParams.iterationType;  %define nonlinear iteration type
+                iterationType = nlParams.iterationType;  %define nonlinear iteration type
             else
-                elInput.iterationType = 'LINEAR';
+                iterationType = 'LINEAR';
             end
+            elInput.iterationType = iterationType;
             eldisp = zeros(1,numNodesPerEl*numDOFPerNode);
             elInput.displ_iter = eldisp;
             elInput.useDisp = model.nlOn;
             elInput.preStress = false;
             elInput.elementOrder = elementOrder;
             elInput.modalFlag = false;
-            elInput.timeInt = struct('delta_t',0.0,...
+            elInput.timeInt = struct('delta_t',0.0,... %Initialize variable, but isn't used
                 'a1',0.0,...
                 'a2',0.0,...
                 'a3',0.0,...
@@ -116,11 +118,11 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
             elInput.coneAngle = el.theta(i);
             elInput.rollAngle = el.roll(i);
             elInput.aeroSweepAngle = 0.0;
-            
+
             elx = zeros(numNodesPerEl,1); %initialize element coordinate list
             ely = elx;
             elz = elx;
-            
+
             for j=1:numNodesPerEl       %define element coordinates and displacements associated with element
                 elx(j) = x(conn(i,j));
                 ely(j) = y(conn(i,j));
@@ -130,10 +132,10 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
                     index = index + 1;
                 end
             end
-            
+
             %retrieve concentrated nodal terms associated with element
             [massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff] = ConcMassAssociatedWithElement(conn(i,:),model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad);
-            
+
             %assign concentrated nodal terms and coordinates to element input
             %object
             elInput.concMass = massConc;
@@ -145,7 +147,7 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
             elInput.z = elz;
             elInput.omegaVec = zeros(3,1);
             elInput.omegaDotVec = zeros(3,1);
-            
+
             if(el.rotationalEffects(i)) %activate or deactivate rotational effects for element
                 elInput.Omega = Omega;
                 elInput.OmegaDot = 0.0;
@@ -153,56 +155,54 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
                 elInput.Omega = 0.0;
                 elInput.OmegaDot = 0.0;
             end
-            
-            %deactivate flutter type input
-            if(~model.aeroElasticOn)
-                elInput.freq = 0.0*2*pi;
-                elInput.aeroElasticOn = 0; %turn off for static calculation
-            end
+
+
+            elInput.freq = 0.0*2*pi;  %deactivate flutter type input
+            elInput.aeroElasticOn = model.aeroElasticOn; %turn off for static calculation
             elInput.aeroForceOn = model.aeroForceOn;
             elInput.airDensity = model.airDensity;
             elInput.gravityOn = model.gravityOn;
             elInput.CN2H = eye(3);
-            
+
             elInput.RayleighAlpha = model.RayleighAlpha; %not used for static analysis but in general the calculate element function will look for this data in the input struct
             elInput.RayleighBeta = model.RayleighBeta;
-            
+
             elInput.loadStep = loadStep;
             elInput.dispDerivatives = false;
             [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %do element calculation
-            
+
             [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element i into global system
         end
-        
+
         [Fexternal, Fdof] = externalForcingStatic();  %get arbitrary external loads from externalForcingStatic() function
         for i=1:length(Fdof)
             Fg(Fdof(i)) =  Fg(Fdof(i)) + Fexternal(i)*loadStep; %modify assembled global load vector for external loads
         end
-        
+
         %----------------------------------------------------------------------
-        
+
         %apply general 6x6  mass, damping, and stiffness matrices to nodes
         [Kg,~,~] = applyGeneralConcentratedTerms(Kg,Kg,Kg,model.nodalTerms.concStiffGen,model.nodalTerms.concMassGen,model.nodalTerms.concDampGen);
-        
+
         %APPLY BOUNDARY CONDITIONS
         [Kg] = applyConstraints(Kg,model.jointTransform); %modify global stiffness matrix for joint constraints using joint transform
         [Fg] = applyConstraintsVec(Fg,model.jointTransform); %modify global force vector for joint constraints using joint transform
-        
+
         if(BC.numpBC==0)
             disp('*WARNING*: No boundary conditions detected. Fully fixing DOFs at Node 1 to faciliate static solve.');
             BC.numpBC = 6;
             BC.pBC = [1 1 0; 1 2 0; 1 3 0;1 4 0;1 5 0;1 6 0];
         end
-        
+
         [Kg,Fg] = applyBC(Kg,Fg,BC,numDOFPerNode);  %apply boundary conditions to global stiffness matrix and force vector
         dispOld = displ;  %assign displacement vector from previous iteration
-        
-        if(strcmp(elInput.iterationType,'NR'))  %system solve, norm calculation for newton-raphson iteration
+
+        if(strcmp(iterationType,'NR'))  %system solve, norm calculation for newton-raphson iteration
             delta_displ = Kg\Fg;
             delta_displ = model.jointTransform*delta_displ;
             displ = displ + delta_displ;
             uNorm = calculateNorm(displ-delta_displ,displ);
-        elseif(strcmp(elInput.iterationType,'DI'))  %system solve, norm calculation for direct iteration
+        elseif(strcmp(iterationType,'DI'))  %system solve, norm calculation for direct iteration
             displ_last = displ;
             displ = Kg\Fg;
             displ = model.jointTransform*displ;
@@ -216,12 +216,12 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
         end
         iterationCount = iterationCount +1;         %increment iteration count
     end
-    
+
     loadStepCount = loadStepCount + 1; %increment load step count
-    
+
     %update load step whether adaptive or prescribed
     [loadStep,loadStepPrev,displ,displPrev,staticAnalysisSuccessfulForLoadStep,staticAnalysisComplete] = updateLoadStep(iterationCount,nlParams,loadStep,loadStepPrev,loadStepCount,displPrev,displ);
-    
+
 end
 staticAnalysisSuccessful = staticAnalysisSuccessfulForLoadStep;
 t_static = toc;
