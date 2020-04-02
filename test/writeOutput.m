@@ -8,7 +8,7 @@ function [freqSorted,dampSorted,imagCompSignSorted] = writeOutput(freq,damp,phas
 %   [freqSorted,dampSorted,imagCompSignSorted] = writeOutput(freq,damp,...
 %                                                phase1,phase2,...
 %                                                imagComponentSign,fid)
-%                    
+%
 %   This function writes an output file for modal analysis.
 %
 %      input:
@@ -33,34 +33,34 @@ freqSorted = zeros(1,length(freq)-1);
 imagCompSignSorted = zeros(1,length(freq)-1);
 
 index = 1;
-    for i=posIndex:1:posIndex+(length(freq)-1) %prints mode frequency, damping and in/out of phase mode shapes
-       fprintf(fid,'MODE # %i \n\n',index);
-       fprintf(fid,'Frequency: %i: \n',freq(i)); 
-       fprintf(fid,'Damping %i: \n',damp(map(i)));
-       fprintf(fid,'0 deg Mode Shape:\n');
-       fprintf(fid,'U_x          U_y          U_z          theta_x     theta_y     theta_z \n');
-       dampSorted(i) = damp(map(i));
-       freqSorted(i) = freq(i);
-       imagCompSignSorted(i) = imagComponentSign(map(i));
-
-       for j=1:l
-            fprintf(fid,'%8.6f \t',phase1(j,:,map(i)));
-            fprintf(fid,'\n');
-       end
-       fprintf(fid,'\n');
-
-       fprintf(fid,'90 deg Mode Shape:\n');
-       fprintf(fid,'U_x          U_y          U_z          theta_x     theta_y     theta_z \n');
-       for j=1:l
-            fprintf(fid,'%8.6f \t',phase2(j,:,map(i)));
-            fprintf(fid,'\n');
-       end
-
-       if(i<posIndex+(length(freq)-1))
-            fprintf(fid,'\n\n');
-       end
-
-       index = index + 1;
-
+for i=posIndex:1:posIndex+(length(freq)-1) %prints mode frequency, damping and in/out of phase mode shapes
+    fprintf(fid,'MODE # %i \n\n',index);
+    fprintf(fid,'Frequency: %i: \n',freq(i));
+    fprintf(fid,'Damping %i: \n',damp(map(i)));
+    fprintf(fid,'0 deg Mode Shape:\n');
+    fprintf(fid,'U_x          U_y          U_z          theta_x     theta_y     theta_z \n');
+    dampSorted(i) = damp(map(i));
+    freqSorted(i) = freq(i);
+    imagCompSignSorted(i) = imagComponentSign(map(i));
+    
+    for j=1:l
+        fprintf(fid,'%8.6f \t',phase1(j,:,map(i)));
+        fprintf(fid,'\n');
     end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'90 deg Mode Shape:\n');
+    fprintf(fid,'U_x          U_y          U_z          theta_x     theta_y     theta_z \n');
+    for j=1:l
+        fprintf(fid,'%8.6f \t',phase2(j,:,map(i)));
+        fprintf(fid,'\n');
+    end
+    
+    if(i<posIndex+(length(freq)-1))
+        fprintf(fid,'\n\n');
+    end
+    
+    index = index + 1;
+    
+end
 end

@@ -1,5 +1,5 @@
 
-verify_transient = true;
+verify_transient = false;
 verify_modal = true;
 
 test_owens(verify_transient,verify_modal);
