@@ -42,25 +42,25 @@ for i=posIndex:1:posIndex+(length(freq)-1) %prints mode frequency, damping and i
     dampSorted(i) = damp(map(i));
     freqSorted(i) = freq(i);
     imagCompSignSorted(i) = imagComponentSign(map(i));
-    
+
     for j=1:l
-        fprintf(fid,'%8.6f \t',phase1(j,:,map(i)));
+        fprintf(fid,'%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t',phase1(j,1,map(i)),phase1(j,2,map(i)),phase1(j,3,map(i)),phase1(j,4,map(i)),phase1(j,5,map(i)),phase1(j,6,map(i)));
         fprintf(fid,'\n');
     end
     fprintf(fid,'\n');
-    
+
     fprintf(fid,'90 deg Mode Shape:\n');
     fprintf(fid,'U_x          U_y          U_z          theta_x     theta_y     theta_z \n');
     for j=1:l
-        fprintf(fid,'%8.6f \t',phase2(j,:,map(i)));
+        fprintf(fid,'%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t',phase2(j,1,map(i)),phase2(j,2,map(i)),phase2(j,3,map(i)),phase2(j,4,map(i)),phase2(j,5,map(i)),phase2(j,6,map(i)));
         fprintf(fid,'\n');
     end
-    
+
     if(i<posIndex+(length(freq)-1))
         fprintf(fid,'\n\n');
     end
-    
+
     index = index + 1;
-    
+
 end
 end
