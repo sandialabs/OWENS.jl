@@ -34,9 +34,9 @@ imagCompSignSorted = zeros(1,length(freq)-1);
 
 index = 1;
 for i=posIndex:1:posIndex+(length(freq)-1) %prints mode frequency, damping and in/out of phase mode shapes
-    fprintf(fid,'MODE # %i \n\n',index);
-    fprintf(fid,'Frequency: %i: \n',freq(i));
-    fprintf(fid,'Damping %i: \n',damp(map(i)));
+    fprintf(fid,'MODE # %0.0f \n\n',index);
+    fprintf(fid,'Frequency: %e: \n',freq(i));
+    fprintf(fid,'Damping %e: \n',damp(map(i)));
     fprintf(fid,'0 deg Mode Shape:\n');
     fprintf(fid,'U_x          U_y          U_z          theta_x     theta_y     theta_z \n');
     dampSorted(i) = damp(map(i));
