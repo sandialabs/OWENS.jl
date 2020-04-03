@@ -556,7 +556,7 @@ end
 % fprintf('%s\n','Output Saving Not Currently Implemented')
 
 %Writefile
-writefile = false;
+writefile = true;
 if ~writefile
     fprintf('%s\n','NOT WRITING Verification File')
 end
