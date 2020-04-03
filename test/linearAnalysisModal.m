@@ -166,7 +166,8 @@ freq = zeros(len);
 damp = zeros(len);
 phase1 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
 phase2 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
-sortedModes = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
+sortedModes0 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
+sortedModes = complex(sortedModes0,0);
 imagCompSign = zeros(len);
 for i=1:len
     [freq(i),damp(i),phase1(:,:,i),phase2(:,:,i),sortedModes(:,:,i)] = extractFreqDamp(eigVal(i,i),eigVec(:,i),numDOFPerNode,model.jointTransform,model.reducedDOFList,model.BC,model.analysisType);
@@ -179,7 +180,7 @@ disp('Elapsed time for modal analysis(s):');
 disp(t_modal);
 
 if(~strcmp(model.analysisType,'FA'))
-    fidout=fopen(model.outFilename,'wt');
+    fidout=fopen(model.outFilename,'w');
     [freq,damp,imagCompSign] = writeOutput(freq,damp,phase1,phase2,imagCompSign,fidout);
     fclose(fidout);
 end

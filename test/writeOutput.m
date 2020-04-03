@@ -28,9 +28,9 @@ function [freqSorted,dampSorted,imagCompSignSorted] = writeOutput(freq,damp,phas
 
 [freq,map,posIndex] = bubbleSort(freq); %sorts frequency
 
-dampSorted = zeros(1,length(freq)-1);
-freqSorted = zeros(1,length(freq)-1);
-imagCompSignSorted = zeros(1,length(freq)-1);
+dampSorted = zeros(1,length(freq));
+freqSorted = zeros(1,length(freq));
+imagCompSignSorted = zeros(1,length(freq));
 
 index = 1;
 for i=posIndex:1:posIndex+(length(freq)-1) %prints mode frequency, damping and in/out of phase mode shapes
