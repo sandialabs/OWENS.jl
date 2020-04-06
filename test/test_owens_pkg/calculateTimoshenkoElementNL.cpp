@@ -4,7 +4,7 @@
 // File: calculateTimoshenkoElementNL.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -121,11 +121,11 @@ static void mapMatrixNonSym(const double Ktemp_data[], double Kel[144])
 //       output:
 //       output     = object containing element data
 // Arguments    : const p_struct_T *input
-//                const e_struct_T *elStorage
+//                const f_struct_T *elStorage
 //                o_struct_T *output
 // Return Type  : void
 //
-void b_calculateTimoshenkoElementNL(const p_struct_T *input, const e_struct_T
+void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   *elStorage, o_struct_T *output)
 {
   double disp_iter_data[12];
@@ -1939,7 +1939,7 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const e_struct_T
 //                const double input_CN2H[9]
 //                double input_RayleighAlpha
 //                double input_RayleighBeta
-//                const e_struct_T *elStorage
+//                const f_struct_T *elStorage
 //                o_struct_T *output
 // Return Type  : void
 //
@@ -1950,7 +1950,7 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   input_coneAngle, double input_rollAngle, const double input_concMass[8], const
   double input_disp_data[], const double input_x_data[], const double
   input_y_data[], const double input_z_data[], const double input_CN2H[9],
-  double input_RayleighAlpha, double input_RayleighBeta, const e_struct_T
+  double input_RayleighAlpha, double input_RayleighBeta, const f_struct_T
   *elStorage, o_struct_T *output)
 {
   double F1_data_idx_0;
@@ -3602,11 +3602,11 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
 //       output:
 //       output     = object containing element data
 // Arguments    : const n_struct_T *input
-//                const e_struct_T *elStorage
+//                const f_struct_T *elStorage
 //                o_struct_T *output
 // Return Type  : void
 //
-void calculateTimoshenkoElementNL(const n_struct_T *input, const e_struct_T
+void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   *elStorage, o_struct_T *output)
 {
   int dispdot_size_idx_1;

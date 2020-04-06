@@ -4,7 +4,7 @@
 // File: calculateTimoshenkoElementInitialRun.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -142,7 +142,7 @@ static void calculateElementMass(double rhoA, double rhoIyy, double rhoIzz,
 //                const double input_z[2]
 //                boolean_T input_concMassFlag
 //                const double input_concMass[8]
-//                e_struct_T *elStorage
+//                f_struct_T *elStorage
 // Return Type  : void
 //
 void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
@@ -154,7 +154,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   double input_sectionProps_zcm[2], const double input_sectionProps_ycm[2],
   double input_sweepAngle, double input_coneAngle, double input_rollAngle, const
   double input_x[2], const double input_y[2], const double input_z[2], boolean_T
-  input_concMassFlag, const double input_concMass[8], e_struct_T *elStorage)
+  input_concMassFlag, const double input_concMass[8], f_struct_T *elStorage)
 {
   double K11_idx_0;
   double K12_idx_0;

@@ -4,7 +4,7 @@
 // File: test_owens_data.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 #ifndef TEST_OWENS_DATA_H
 #define TEST_OWENS_DATA_H
@@ -17,10 +17,11 @@
 
 // Variable Declarations
 extern const boolean_T bv[128];
+extern const e_struct_T r1;
 extern const double dv[4];
 extern const double dv1[4];
 extern const signed char iv1[12];
-extern const e_struct_T r1;
+extern const f_struct_T r2;
 extern boolean_T isInitialized_test_owens;
 
 #endif

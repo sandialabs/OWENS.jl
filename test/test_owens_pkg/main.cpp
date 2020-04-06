@@ -4,7 +4,7 @@
 // File: main.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 02-Apr-2020 17:04:27
+// C/C++ source code generated on  : 03-Apr-2020 17:41:26
 //
 
 //***********************************************************************
@@ -49,10 +49,7 @@ static void main_test_owens();
 // Arguments    : void
 // Return Type  : boolean_T
 //
-static boolean_T argInit_boolean_T()
-{
-  return true;
-}
+
 
 //
 // Arguments    : void
@@ -60,13 +57,8 @@ static boolean_T argInit_boolean_T()
 //
 static void main_test_owens()
 {
-  boolean_T test_transient_tmp;
-
-  // Initialize function 'test_owens' input arguments.
-  test_transient_tmp = argInit_boolean_T();
-
   // Call the entry-point 'test_owens'.
-  test_owens(test_transient_tmp, test_transient_tmp);
+  test_owens(true, true);
 }
 
 //

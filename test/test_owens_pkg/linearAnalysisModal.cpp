@@ -4,7 +4,7 @@
 // File: linearAnalysisModal.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -29,7 +29,7 @@
 #include <string.h>
 
 // Function Declarations
-static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
+static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   *transMatrix);
 
 // Function Definitions
@@ -41,7 +41,7 @@ static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
 //                const emxArray_real_T *transMatrix
 // Return Type  : void
 //
-static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
+static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   *transMatrix)
 {
   emxArray_real_T *transMatrix_d;
@@ -208,7 +208,7 @@ static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
 //                const emxArray_real_T *mesh_conn
 //                const h_struct_T el
 //                const emxArray_real_T *displ
-//                const b_emxArray_struct_T *elStorage
+//                const c_emxArray_struct_T *elStorage
 //                emxArray_real_T *freq
 //                emxArray_real_T *damp
 //                emxArray_real_T *phase1
@@ -224,7 +224,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   *model_reducedDOFList, double mesh_numEl, const emxArray_real_T *mesh_x, const
   emxArray_real_T *mesh_y, const emxArray_real_T *mesh_z, const emxArray_real_T *
   mesh_conn, const h_struct_T el, const emxArray_real_T *displ, const
-  b_emxArray_struct_T *elStorage, emxArray_real_T *freq, emxArray_real_T *damp,
+  c_emxArray_struct_T *elStorage, emxArray_real_T *freq, emxArray_real_T *damp,
   emxArray_real_T *phase1, emxArray_real_T *phase2, emxArray_real_T
   *imagCompSign)
 {
@@ -261,7 +261,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   double elOutput_Me_data[144];
   int elOutput_Ce_size[2];
   double elOutput_Ce_data[144];
-  emxArray_real_T *r2;
+  emxArray_real_T *b_r2;
   emxArray_real_T *r3;
   emxArray_creal_T *r4;
   emxArray_creal_T *b_eigVec;
@@ -403,11 +403,11 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   // apply general 6x6  mass, damping, and stiffness matrices to nodes
   // ----------------------------------------------------------------------
   // APPLY CONSTRAINT
-  applyConstraints(Kg, model_jointTransform);
+  b_applyConstraints(Kg, model_jointTransform);
 
   // modify global matrices for joint constraints using joint transform
-  applyConstraints(Mg, model_jointTransform);
-  applyConstraints(Cg, model_jointTransform);
+  b_applyConstraints(Mg, model_jointTransform);
+  b_applyConstraints(Cg, model_jointTransform);
 
   // APPLY BOUNDARY CONDITIONS
   // apply boundary conditions to global matrices
@@ -474,7 +474,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   }
 
   i = eigVal->size[1];
-  emxInit_real_T(&r2, 2);
+  emxInit_real_T(&b_r2, 2);
   emxInit_real_T(&r3, 2);
   emxInit_creal_T(&r4, 2);
   emxInit_creal_T(&b_eigVec, 1);
@@ -489,13 +489,14 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
 
     extractFreqDamp(eigVal->data[b_i + eigVal->size[0] * b_i], b_eigVec,
                     model_jointTransform, model_reducedDOFList, model_BC_numpBC,
-                    model_BC_pBC, &freq->data[b_i], &damp->data[b_i], r2, r3, r4);
-    loop_ub_tmp = r2->size[0];
+                    model_BC_pBC, &freq->data[b_i], &damp->data[b_i], b_r2, r3,
+                    r4);
+    loop_ub_tmp = b_r2->size[0];
     b_index = r3->size[0];
     for (i1 = 0; i1 < 6; i1++) {
       for (j = 0; j < loop_ub_tmp; j++) {
         phase1->data[(j + phase1->size[0] * i1) + phase1->size[0] * 6 * b_i] =
-          r2->data[j + r2->size[0] * i1];
+          b_r2->data[j + b_r2->size[0] * i1];
       }
 
       for (j = 0; j < b_index; j++) {
@@ -521,7 +522,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   emxFree_creal_T(&b_eigVec);
   emxFree_creal_T(&r4);
   emxFree_real_T(&r3);
-  emxFree_real_T(&r2);
+  emxFree_real_T(&b_r2);
   emxFree_creal_T(&eigVal);
   emxFree_creal_T(&eigVec);
   emxInit_real_T(&b_freq, 2);

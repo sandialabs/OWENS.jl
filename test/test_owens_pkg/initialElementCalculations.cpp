@@ -4,7 +4,7 @@
 // File: initialElementCalculations.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -49,7 +49,7 @@
 //                const emxArray_real_T *mesh_y
 //                const emxArray_real_T *mesh_z
 //                const emxArray_real_T *mesh_conn
-//                b_emxArray_struct_T *elStorage
+//                c_emxArray_struct_T *elStorage
 // Return Type  : void
 //
 void initialElementCalculations(const emxArray_real_T *model_joint, const
@@ -57,7 +57,7 @@ void initialElementCalculations(const emxArray_real_T *model_joint, const
   emxArray_real_T *el_psi, const emxArray_real_T *el_theta, const
   emxArray_real_T *el_roll, double mesh_numEl, const emxArray_real_T *mesh_x,
   const emxArray_real_T *mesh_y, const emxArray_real_T *mesh_z, const
-  emxArray_real_T *mesh_conn, b_emxArray_struct_T *elStorage)
+  emxArray_real_T *mesh_conn, c_emxArray_struct_T *elStorage)
 {
   int idx;
   int loop_ub;
@@ -89,9 +89,9 @@ void initialElementCalculations(const emxArray_real_T *model_joint, const
   elStorage->size[0] = 1;
   loop_ub = static_cast<int>(mesh_numEl);
   elStorage->size[1] = loop_ub;
-  emxEnsureCapacity_struct_T4(elStorage, idx);
+  emxEnsureCapacity_struct_T5(elStorage, idx);
   for (idx = 0; idx < loop_ub; idx++) {
-    elStorage->data[idx] = r1;
+    elStorage->data[idx] = r2;
   }
 
   for (i = 0; i < loop_ub; i++) {

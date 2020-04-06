@@ -4,7 +4,7 @@
 // File: structuralDynamicsTransient.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -15,14 +15,109 @@
 #include "calculateStrainForElements.h"
 #include "calculateTimoshenkoElementNL.h"
 #include "mldivide.h"
+#include "mtimes1.h"
 #include "rt_nonfinite.h"
+#include "sparse.h"
 #include "strcmp.h"
 #include "test_owens.h"
 #include "test_owens_emxutil.h"
 #include <cstring>
 #include <string.h>
 
+// Function Declarations
+static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
+  *transMatrix);
+
 // Function Definitions
+
+//
+// This function transforms a matrix by the transformation matrix to
+// enforce joint constraints
+//  Kg = transMatrix'*(Kg*transMatrix);
+// Arguments    : emxArray_real_T *Kg
+//                const emxArray_real_T *transMatrix
+// Return Type  : void
+//
+static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
+  *transMatrix)
+{
+  emxArray_real_T *b_transMatrix;
+  int i;
+  int loop_ub;
+  emxArray_real_T *this_d;
+  int cend;
+  emxArray_int32_T *this_colidx;
+  int t3_m;
+  emxArray_int32_T *this_rowidx;
+  emxArray_real_T *t2_d;
+  emxArray_int32_T *t2_colidx;
+  emxArray_int32_T *t2_rowidx;
+  emxArray_real_T *t3_d;
+  emxArray_int32_T *t3_colidx;
+  emxArray_int32_T *t3_rowidx;
+  int this_m;
+  int this_n;
+  emxInit_real_T(&b_transMatrix, 2);
+  i = b_transMatrix->size[0] * b_transMatrix->size[1];
+  b_transMatrix->size[0] = transMatrix->size[1];
+  b_transMatrix->size[1] = transMatrix->size[0];
+  emxEnsureCapacity_real_T(b_transMatrix, i);
+  loop_ub = transMatrix->size[0];
+  for (i = 0; i < loop_ub; i++) {
+    cend = transMatrix->size[1];
+    for (t3_m = 0; t3_m < cend; t3_m++) {
+      b_transMatrix->data[t3_m + b_transMatrix->size[0] * i] = transMatrix->
+        data[i + transMatrix->size[0] * t3_m];
+    }
+  }
+
+  emxInit_real_T(&this_d, 1);
+  emxInit_int32_T(&this_colidx, 1);
+  emxInit_int32_T(&this_rowidx, 1);
+  emxInit_real_T(&t2_d, 1);
+  emxInit_int32_T(&t2_colidx, 1);
+  emxInit_int32_T(&t2_rowidx, 1);
+  emxInit_real_T(&t3_d, 1);
+  emxInit_int32_T(&t3_colidx, 1);
+  emxInit_int32_T(&t3_rowidx, 1);
+  b_sparse(b_transMatrix, t2_d, t2_colidx, t2_rowidx, &cend, &loop_ub);
+  b_sparse(Kg, this_d, this_colidx, this_rowidx, &this_m, &this_n);
+  d_sparse_mtimes(t2_d, t2_colidx, t2_rowidx, cend, this_d, this_colidx,
+                  this_rowidx, this_n, t3_d, t3_colidx, t3_rowidx, &t3_m,
+                  &loop_ub);
+  b_sparse(transMatrix, t2_d, t2_colidx, t2_rowidx, &cend, &loop_ub);
+  d_sparse_mtimes(t3_d, t3_colidx, t3_rowidx, t3_m, t2_d, t2_colidx, t2_rowidx,
+                  loop_ub, this_d, this_colidx, this_rowidx, &this_m, &this_n);
+  i = Kg->size[0] * Kg->size[1];
+  Kg->size[0] = this_m;
+  Kg->size[1] = this_n;
+  emxEnsureCapacity_real_T(Kg, i);
+  emxFree_real_T(&b_transMatrix);
+  emxFree_int32_T(&t3_rowidx);
+  emxFree_int32_T(&t3_colidx);
+  emxFree_real_T(&t3_d);
+  emxFree_int32_T(&t2_rowidx);
+  emxFree_int32_T(&t2_colidx);
+  emxFree_real_T(&t2_d);
+  for (i = 0; i < this_n; i++) {
+    for (t3_m = 0; t3_m < this_m; t3_m++) {
+      Kg->data[t3_m + Kg->size[0] * i] = 0.0;
+    }
+  }
+
+  for (loop_ub = 0; loop_ub < this_n; loop_ub++) {
+    cend = this_colidx->data[loop_ub + 1] - 1;
+    i = this_colidx->data[loop_ub];
+    for (t3_m = i; t3_m <= cend; t3_m++) {
+      Kg->data[(this_rowidx->data[t3_m - 1] + Kg->size[0] * loop_ub) - 1] =
+        this_d->data[t3_m - 1];
+    }
+  }
+
+  emxFree_int32_T(&this_rowidx);
+  emxFree_int32_T(&this_colidx);
+  emxFree_real_T(&this_d);
+}
 
 //
 // structuralDynamicsTransient perform transient analysis
@@ -74,7 +169,7 @@
 //                const i_struct_T dispData
 //                double Omega
 //                double OmegaDot
-//                const b_emxArray_struct_T *elStorage
+//                const c_emxArray_struct_T *elStorage
 //                const emxArray_real_T *Fexternal
 //                const emxArray_real_T *Fdof
 //                const double CN2H[9]
@@ -88,7 +183,7 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   emxArray_real_T *model_jointTransform, double mesh_numEl, const
   emxArray_real_T *mesh_x, const emxArray_real_T *mesh_y, const emxArray_real_T *
   mesh_z, const emxArray_real_T *mesh_conn, const h_struct_T el, const
-  i_struct_T dispData, double Omega, double OmegaDot, const b_emxArray_struct_T *
+  i_struct_T dispData, double Omega, double OmegaDot, const c_emxArray_struct_T *
   elStorage, const emxArray_real_T *Fexternal, const emxArray_real_T *Fdof,
   const double CN2H[9], j_struct_T *dispOut, double FReaction_sp1[6])
 {
@@ -103,10 +198,9 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   emxArray_real_T *dispddot_s;
   emxArray_real_T *solution;
   int i;
+  int aoffset;
   emxArray_real_T *Kg;
   emxArray_real_T *Fg;
-  emxArray_real_T *y;
-  int loop_ub;
   emxArray_real_T *a;
   int m;
   boolean_T elInput_firstIteration;
@@ -115,17 +209,14 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   double b_mesh_conn[2];
   double elInput_concMass[8];
   double elx_data[2];
-  double ely_data[2];
   n_struct_T expl_temp;
+  double ely_data[2];
   int k;
-  int boffset;
   int inner;
-  int coffset;
-  int aoffset;
+  double eqNumber;
   o_struct_T b_expl_temp;
   double elOutput_Ke[144];
   double elOutput_Fe[12];
-  double eqNumber;
   b_struct_T c_expl_temp;
 
   // -------- get model information -----------
@@ -156,59 +247,62 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
     i = disp_s->size[0];
     disp_s->size[0] = dispData.displ_s->size[0];
     emxEnsureCapacity_real_T(disp_s, i);
-    loop_ub = dispData.displ_s->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = dispData.displ_s->size[0];
+    for (i = 0; i < aoffset; i++) {
       disp_s->data[i] = dispData.displ_s->data[i];
     }
 
     i = dispdot_s->size[0];
     dispdot_s->size[0] = dispData.displdot_s->size[0];
     emxEnsureCapacity_real_T(dispdot_s, i);
-    loop_ub = dispData.displdot_s->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = dispData.displdot_s->size[0];
+    for (i = 0; i < aoffset; i++) {
       dispdot_s->data[i] = dispData.displdot_s->data[i];
     }
 
     i = dispddot_s->size[0];
     dispddot_s->size[0] = dispData.displddot_s->size[0];
     emxEnsureCapacity_real_T(dispddot_s, i);
-    loop_ub = dispData.displddot_s->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = dispData.displddot_s->size[0];
+    for (i = 0; i < aoffset; i++) {
       dispddot_s->data[i] = dispData.displddot_s->data[i];
     }
 
     i = solution->size[0];
     solution->size[0] = dispData.displ_s->size[0];
     emxEnsureCapacity_real_T(solution, i);
-    loop_ub = dispData.displ_s->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = dispData.displ_s->size[0];
+    for (i = 0; i < aoffset; i++) {
       solution->data[i] = dispData.displ_s->data[i];
     }
   }
 
   // -----------------------------------------------
+  //  Initialize elInput, and DO NOT redundantly re-assign the memory in the
+  //  while and for loops below.
+  //  %Is not used for this model type, but must be declared
+  // Try to force matlab to write the C++ code so as to allocate the memory here and not inside the convergence loop. 
   emxInit_real_T(&Kg, 2);
   emxInit_real_T(&Fg, 1);
-  emxInit_real_T(&y, 2);
   emxInit_real_T(&a, 2);
 
   // iteration loop
   // ------- intitialization -----------------
   i = Kg->size[0] * Kg->size[1];
-  loop_ub = static_cast<int>(totalNumDOF);
-  Kg->size[0] = loop_ub;
-  Kg->size[1] = loop_ub;
+  aoffset = static_cast<int>(totalNumDOF);
+  Kg->size[0] = aoffset;
+  Kg->size[1] = aoffset;
   emxEnsureCapacity_real_T(Kg, i);
-  m = loop_ub * loop_ub;
+  m = aoffset * aoffset;
   for (i = 0; i < m; i++) {
     Kg->data[i] = 0.0;
   }
 
   // initialize global stiffness and force vector
   i = Fg->size[0];
-  Fg->size[0] = loop_ub;
+  Fg->size[0] = aoffset;
   emxEnsureCapacity_real_T(Fg, i);
-  for (i = 0; i < loop_ub; i++) {
+  for (i = 0; i < aoffset; i++) {
     Fg->data[i] = 0.0;
   }
 
@@ -227,11 +321,11 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
     // get concentrated terms associated with elemetn
     for (j = 0; j < 2; j++) {
       // get element cooridnates
-      loop_ub = static_cast<int>(mesh_conn->data[b_i + mesh_conn->size[0] * j])
+      aoffset = static_cast<int>(mesh_conn->data[b_i + mesh_conn->size[0] * j])
         - 1;
-      elx_data[j] = mesh_x->data[loop_ub];
-      ely_data[j] = mesh_y->data[loop_ub];
-      elz_data[j] = mesh_z->data[loop_ub];
+      elx_data[j] = mesh_x->data[aoffset];
+      ely_data[j] = mesh_y->data[aoffset];
+      elz_data[j] = mesh_z->data[aoffset];
 
       // get element nodal displacements at s and s-1 time step
       for (k = 0; k < 6; k++) {
@@ -241,13 +335,13 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
         //                      eldispiter(index) = displ_iter((conn(i,j)-1)*numDOFPerNode + k); 
         //                  end
         if (c_strcmp(model_analysisType)) {
-          loop_ub = static_cast<int>(((mesh_conn->data[b_i + mesh_conn->size[0] *
-            j] - 1.0) * 6.0 + (static_cast<double>(k) + 1.0))) - 1;
-          m = static_cast<int>(totalNumDOF) - 1;
-          eldispiter_data[m] = solution->data[loop_ub];
-          eldisp_data[m] = disp_s->data[loop_ub];
-          eldispdot_data[m] = dispdot_s->data[loop_ub];
-          eldispddot_data[m] = dispddot_s->data[loop_ub];
+          m = static_cast<int>(((mesh_conn->data[b_i + mesh_conn->size[0] * j] -
+            1.0) * 6.0 + (static_cast<double>(k) + 1.0))) - 1;
+          inner = static_cast<int>(totalNumDOF) - 1;
+          eldispiter_data[inner] = solution->data[m];
+          eldisp_data[inner] = disp_s->data[m];
+          eldispdot_data[inner] = dispdot_s->data[m];
+          eldispddot_data[inner] = dispddot_s->data[m];
         }
 
         totalNumDOF++;
@@ -260,7 +354,6 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
 
     //  specific to 'TD', but must be declared
     //  specific to 'TNB' , but must be declared
-    // Is not used for this model type, but must be declared.
     std::memcpy(&expl_temp.CN2H[0], &CN2H[0], 9U * sizeof(double));
     expl_temp.RayleighBeta = model_RayleighBeta;
     expl_temp.RayleighAlpha = model_RayleighAlpha;
@@ -306,14 +399,14 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
     expl_temp.dispm1.size[1] = 12;
     expl_temp.disp.size[0] = 1;
     expl_temp.disp.size[1] = 12;
-    for (boffset = 0; boffset < 12; boffset++) {
-      expl_temp.displ_iter.data[boffset] = eldispiter_data[boffset];
-      expl_temp.dispddot.data[boffset] = eldispddot_data[boffset];
-      expl_temp.dispdot.data[boffset] = eldispdot_data[boffset];
-      expl_temp.dispm1.data[boffset] = 0.0;
-      expl_temp.disp.data[boffset] = eldisp_data[boffset];
-      expl_temp.concLoad[boffset] = 0.0;
-      expl_temp.concStiff[boffset] = 0.0;
+    for (inner = 0; inner < 12; inner++) {
+      expl_temp.displ_iter.data[inner] = eldispiter_data[inner];
+      expl_temp.dispddot.data[inner] = eldispddot_data[inner];
+      expl_temp.dispdot.data[inner] = eldispdot_data[inner];
+      expl_temp.dispm1.data[inner] = 0.0;
+      expl_temp.disp.data[inner] = eldisp_data[inner];
+      expl_temp.concLoad[inner] = 0.0;
+      expl_temp.concStiff[inner] = 0.0;
     }
 
     std::memcpy(&expl_temp.concMass[0], &elInput_concMass[0], 8U * sizeof(double));
@@ -359,119 +452,19 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   //     %%
   // Apply external loads to structure
   if ((Fexternal->size[0] == 0) || (Fexternal->size[1] == 0)) {
-    loop_ub = 0;
+    aoffset = 0;
   } else {
-    loop_ub = Fexternal->size[1];
+    aoffset = Fexternal->size[1];
   }
 
-  for (b_i = 0; b_i < loop_ub; b_i++) {
+  for (b_i = 0; b_i < aoffset; b_i++) {
     if (c_strcmp(model_analysisType)) {
       Fg->data[static_cast<int>(Fdof->data[b_i]) - 1] += Fexternal->data[b_i];
     }
   }
 
   // ------ apply constraints on system -----------------------------------
-  // This function transforms a matrix by the transformation matrix to
-  // enforce joint constraints
-  i = a->size[0] * a->size[1];
-  a->size[0] = model_jointTransform->size[1];
-  a->size[1] = model_jointTransform->size[0];
-  emxEnsureCapacity_real_T(a, i);
-  loop_ub = model_jointTransform->size[0];
-  for (i = 0; i < loop_ub; i++) {
-    m = model_jointTransform->size[1];
-    for (boffset = 0; boffset < m; boffset++) {
-      a->data[boffset + a->size[0] * i] = model_jointTransform->data[i +
-        model_jointTransform->size[0] * boffset];
-    }
-  }
-
-  if ((a->size[1] == 1) || (Kg->size[0] == 1)) {
-    i = y->size[0] * y->size[1];
-    y->size[0] = a->size[0];
-    y->size[1] = Kg->size[1];
-    emxEnsureCapacity_real_T(y, i);
-    loop_ub = a->size[0];
-    for (i = 0; i < loop_ub; i++) {
-      m = Kg->size[1];
-      for (boffset = 0; boffset < m; boffset++) {
-        y->data[i + y->size[0] * boffset] = 0.0;
-        inner = a->size[1];
-        for (coffset = 0; coffset < inner; coffset++) {
-          y->data[i + y->size[0] * boffset] += a->data[i + a->size[0] * coffset]
-            * Kg->data[coffset + Kg->size[0] * boffset];
-        }
-      }
-    }
-  } else {
-    m = a->size[0];
-    inner = a->size[1];
-    loop_ub = Kg->size[1];
-    i = y->size[0] * y->size[1];
-    y->size[0] = a->size[0];
-    y->size[1] = Kg->size[1];
-    emxEnsureCapacity_real_T(y, i);
-    for (j = 0; j < loop_ub; j++) {
-      coffset = j * m;
-      boffset = j * inner;
-      for (b_i = 0; b_i < m; b_i++) {
-        y->data[coffset + b_i] = 0.0;
-      }
-
-      for (k = 0; k < inner; k++) {
-        aoffset = k * m;
-        totalNumDOF = Kg->data[boffset + k];
-        for (b_i = 0; b_i < m; b_i++) {
-          i = coffset + b_i;
-          y->data[i] += totalNumDOF * a->data[aoffset + b_i];
-        }
-      }
-    }
-  }
-
-  if ((y->size[1] == 1) || (model_jointTransform->size[0] == 1)) {
-    i = Kg->size[0] * Kg->size[1];
-    Kg->size[0] = y->size[0];
-    Kg->size[1] = model_jointTransform->size[1];
-    emxEnsureCapacity_real_T(Kg, i);
-    loop_ub = y->size[0];
-    for (i = 0; i < loop_ub; i++) {
-      m = model_jointTransform->size[1];
-      for (boffset = 0; boffset < m; boffset++) {
-        Kg->data[i + Kg->size[0] * boffset] = 0.0;
-        inner = y->size[1];
-        for (coffset = 0; coffset < inner; coffset++) {
-          Kg->data[i + Kg->size[0] * boffset] += y->data[i + y->size[0] *
-            coffset] * model_jointTransform->data[coffset +
-            model_jointTransform->size[0] * boffset];
-        }
-      }
-    }
-  } else {
-    m = y->size[0];
-    inner = y->size[1];
-    loop_ub = model_jointTransform->size[1];
-    i = Kg->size[0] * Kg->size[1];
-    Kg->size[0] = y->size[0];
-    Kg->size[1] = model_jointTransform->size[1];
-    emxEnsureCapacity_real_T(Kg, i);
-    for (j = 0; j < loop_ub; j++) {
-      coffset = j * m;
-      boffset = j * inner;
-      for (b_i = 0; b_i < m; b_i++) {
-        Kg->data[coffset + b_i] = 0.0;
-      }
-
-      for (k = 0; k < inner; k++) {
-        aoffset = k * m;
-        totalNumDOF = model_jointTransform->data[boffset + k];
-        for (b_i = 0; b_i < m; b_i++) {
-          i = coffset + b_i;
-          Kg->data[i] += totalNumDOF * y->data[aoffset + b_i];
-        }
-      }
-    }
-  }
+  applyConstraints(Kg, model_jointTransform);
 
   // This function transforms a vector by the transformation matrix to
   // enforce joint constraints
@@ -479,20 +472,20 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   a->size[0] = model_jointTransform->size[1];
   a->size[1] = model_jointTransform->size[0];
   emxEnsureCapacity_real_T(a, i);
-  loop_ub = model_jointTransform->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  aoffset = model_jointTransform->size[0];
+  for (i = 0; i < aoffset; i++) {
     m = model_jointTransform->size[1];
-    for (boffset = 0; boffset < m; boffset++) {
-      a->data[boffset + a->size[0] * i] = model_jointTransform->data[i +
-        model_jointTransform->size[0] * boffset];
+    for (inner = 0; inner < m; inner++) {
+      a->data[inner + a->size[0] * i] = model_jointTransform->data[i +
+        model_jointTransform->size[0] * inner];
     }
   }
 
   i = solution->size[0];
   solution->size[0] = Fg->size[0];
   emxEnsureCapacity_real_T(solution, i);
-  loop_ub = Fg->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  aoffset = Fg->size[0];
+  for (i = 0; i < aoffset; i++) {
     solution->data[i] = Fg->data[i];
   }
 
@@ -500,21 +493,20 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
     i = solution->size[0];
     solution->size[0] = a->size[0];
     emxEnsureCapacity_real_T(solution, i);
-    loop_ub = a->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = a->size[0];
+    for (i = 0; i < aoffset; i++) {
       solution->data[i] = 0.0;
       m = a->size[1];
-      for (boffset = 0; boffset < m; boffset++) {
-        solution->data[i] += a->data[i + a->size[0] * boffset] * Fg->
-          data[boffset];
+      for (inner = 0; inner < m; inner++) {
+        solution->data[i] += a->data[i + a->size[0] * inner] * Fg->data[inner];
       }
     }
 
     i = Fg->size[0];
     Fg->size[0] = solution->size[0];
     emxEnsureCapacity_real_T(Fg, i);
-    loop_ub = solution->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = solution->size[0];
+    for (i = 0; i < aoffset; i++) {
       Fg->data[i] = solution->data[i];
     }
   } else {
@@ -559,7 +551,7 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   //       output:
   //       Kg            = global stiffness matrix with boundary conditions
   //       Fg            = global load vector with boundary condition
-  m = Kg->size[0] - 1;
+  inner = Kg->size[0] - 1;
 
   // APPLY BCs FOR PRIMARY VARIABLE
   if (model_BC_numpBC > 0.0) {
@@ -568,16 +560,16 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
       totalNumDOF = model_BC_pBC->data[b_i + model_BC_pBC->size[0] * 2];
       eqNumber = (model_BC_pBC->data[b_i] - 1.0) * 6.0 + model_BC_pBC->data[b_i
         + model_BC_pBC->size[0]];
-      for (j = 0; j <= m; j++) {
-        loop_ub = static_cast<int>(eqNumber) - 1;
-        Kg->data[loop_ub + Kg->size[0] * j] = 0.0;
-        Fg->data[j] -= Kg->data[j + Kg->size[0] * loop_ub] * totalNumDOF;
-        Kg->data[j + Kg->size[0] * loop_ub] = 0.0;
+      for (j = 0; j <= inner; j++) {
+        m = static_cast<int>(eqNumber) - 1;
+        Kg->data[m + Kg->size[0] * j] = 0.0;
+        Fg->data[j] -= Kg->data[j + Kg->size[0] * m] * totalNumDOF;
+        Kg->data[j + Kg->size[0] * m] = 0.0;
       }
 
-      loop_ub = static_cast<int>(eqNumber) - 1;
-      Fg->data[loop_ub] = totalNumDOF;
-      Kg->data[loop_ub + Kg->size[0] * loop_ub] = 1.0;
+      aoffset = static_cast<int>(eqNumber) - 1;
+      Fg->data[aoffset] = totalNumDOF;
+      Kg->data[aoffset + Kg->size[0] * aoffset] = 1.0;
     }
   }
 
@@ -604,13 +596,13 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
     i = solution->size[0];
     solution->size[0] = model_jointTransform->size[0];
     emxEnsureCapacity_real_T(solution, i);
-    loop_ub = model_jointTransform->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    aoffset = model_jointTransform->size[0];
+    for (i = 0; i < aoffset; i++) {
       solution->data[i] = 0.0;
       m = model_jointTransform->size[1];
-      for (boffset = 0; boffset < m; boffset++) {
+      for (inner = 0; inner < m; inner++) {
         solution->data[i] += model_jointTransform->data[i +
-          model_jointTransform->size[0] * boffset] * Fg->data[boffset];
+          model_jointTransform->size[0] * inner] * Fg->data[inner];
       }
     }
   } else {
@@ -634,7 +626,6 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
 
   // transform to full dof listing
   emxFree_real_T(&a);
-  emxFree_real_T(&y);
   emxFree_real_T(&Fg);
   emxFree_real_T(&Kg);
   emxFree_real_T(&dispddot_s);
@@ -662,15 +653,15 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   i = dispOut->displ_sp1->size[0];
   dispOut->displ_sp1->size[0] = solution->size[0];
   emxEnsureCapacity_real_T(dispOut->displ_sp1, i);
-  loop_ub = solution->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  aoffset = solution->size[0];
+  for (i = 0; i < aoffset; i++) {
     dispOut->displ_sp1->data[i] = solution->data[i];
   }
 
   // store displacement vector in dispOut
   //  Specific to TNB, but must be declared
-  loop_ub = solution->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  aoffset = solution->size[0];
+  for (i = 0; i < aoffset; i++) {
     solution->data[i] = (1.0E+6 * (solution->data[i] - dispData.displ_s->data[i])
                          - 2000.0 * dispData.displdot_s->data[i]) -
       dispData.displddot_s->data[i];
@@ -680,16 +671,16 @@ void structuralDynamicsTransient(const char model_analysisType[3], double
   i = dispOut->displddot_sp1->size[0];
   dispOut->displddot_sp1->size[0] = solution->size[0];
   emxEnsureCapacity_real_T(dispOut->displddot_sp1, i);
-  loop_ub = solution->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  aoffset = solution->size[0];
+  for (i = 0; i < aoffset; i++) {
     dispOut->displddot_sp1->data[i] = solution->data[i];
   }
 
   i = dispOut->displdot_sp1->size[0];
   dispOut->displdot_sp1->size[0] = dispData.displdot_s->size[0];
   emxEnsureCapacity_real_T(dispOut->displdot_sp1, i);
-  loop_ub = dispData.displdot_s->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  aoffset = dispData.displdot_s->size[0];
+  for (i = 0; i < aoffset; i++) {
     dispOut->displdot_sp1->data[i] = (dispData.displdot_s->data[i] + 0.001 *
       dispData.displddot_s->data[i]) + 0.001 * solution->data[i];
   }

@@ -4,7 +4,7 @@
 // File: initialElementCalculations.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 #ifndef INITIALELEMENTCALCULATIONS_H
 #define INITIALELEMENTCALCULATIONS_H
@@ -21,7 +21,7 @@ extern void initialElementCalculations(const emxArray_real_T *model_joint, const
   emxArray_real_T *el_psi, const emxArray_real_T *el_theta, const
   emxArray_real_T *el_roll, double mesh_numEl, const emxArray_real_T *mesh_x,
   const emxArray_real_T *mesh_y, const emxArray_real_T *mesh_z, const
-  emxArray_real_T *mesh_conn, b_emxArray_struct_T *elStorage);
+  emxArray_real_T *mesh_conn, c_emxArray_struct_T *elStorage);
 
 #endif
 

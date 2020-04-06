@@ -4,7 +4,7 @@
 // File: owens.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -42,7 +42,18 @@ static const char cv[73] = { '.', '/', 'i', 'n', 'p', 'u', 't', '_', 'f', 'i',
   's', '_', '1', '5', 'm', 'T', 'o', 'w', 'e', 'r', 'E', 'x', 't', '_', 'N', 'O',
   'c', 'e', 'n', 't', 'S', 't', 'i', 'f', 'f', '.', 'o', 'w', 'e', 'n', 's' };
 
+static const boolean_T bv1[73] = { true, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, true, false, false, false, false,
+  false };
+
 // Function Declarations
+static void b_generateOutputFilename(char outputfilename_data[], int
+  outputfilename_size[2]);
 static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
   double BC_numpBC, const emxArray_real_T *BC_pBC, const emxArray_real_T
   *BC_isConstrained, emxArray_real_T *redVectorMap);
@@ -50,6 +61,61 @@ static void generateOutputFilename(char outputfilename_data[], int
   outputfilename_size[2]);
 
 // Function Definitions
+
+//
+// This function generates an output file name depending on the analysis type
+// Arguments    : char outputfilename_data[]
+//                int outputfilename_size[2]
+// Return Type  : void
+//
+static void b_generateOutputFilename(char outputfilename_data[], int
+  outputfilename_size[2])
+{
+  int idx;
+  int ii;
+  boolean_T exitg1;
+  signed char ii_data[73];
+
+  // find the last '.' in inputfilename - helps to extract the prefix in the .owens 
+  idx = 0;
+  ii = 0;
+  exitg1 = false;
+  while ((!exitg1) && (ii < 73)) {
+    if (bv1[ii]) {
+      idx++;
+      ii_data[idx - 1] = static_cast<signed char>((ii + 1));
+      if (idx >= 73) {
+        exitg1 = true;
+      } else {
+        ii++;
+      }
+    } else {
+      ii++;
+    }
+  }
+
+  if (1 > idx) {
+    idx = 0;
+  }
+
+  // output filename (*.out) for modal/flutter analysis
+  if (1 > ii_data[idx - 1] - 1) {
+    idx = 0;
+  } else {
+    idx = ii_data[idx - 1] - 1;
+  }
+
+  outputfilename_size[0] = 1;
+  outputfilename_size[1] = idx + 4;
+  if (0 <= idx - 1) {
+    std::memcpy(&outputfilename_data[0], &cv[0], idx * sizeof(char));
+  }
+
+  outputfilename_data[idx] = '.';
+  outputfilename_data[idx + 1] = 'o';
+  outputfilename_data[idx + 2] = 'u';
+  outputfilename_data[idx + 3] = 't';
+}
 
 //
 // This function creates a map of unconstrained DOFs between a full
@@ -251,15 +317,6 @@ static void generateOutputFilename(char outputfilename_data[], int
   int idx;
   int ii;
   boolean_T exitg1;
-  static const boolean_T b_bv[73] = { true, false, false, false, false, false,
-    false, false, false, false, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, true, false, false, false, false,
-    false };
-
   signed char ii_data[73];
 
   // find the last '.' in inputfilename - helps to extract the prefix in the .owens 
@@ -267,7 +324,7 @@ static void generateOutputFilename(char outputfilename_data[], int
   ii = 0;
   exitg1 = false;
   while ((!exitg1) && (ii < 73)) {
-    if (b_bv[ii]) {
+    if (bv1[ii]) {
       idx++;
       ii_data[idx - 1] = static_cast<signed char>((ii + 1));
       if (idx >= 73) {
@@ -284,7 +341,7 @@ static void generateOutputFilename(char outputfilename_data[], int
     idx = 0;
   }
 
-  // output filename (*.out) for modal/flutter analysis
+  // output filename (*.mat) for transient analysis
   if (1 > ii_data[idx - 1] - 1) {
     idx = 0;
   } else {
@@ -298,8 +355,8 @@ static void generateOutputFilename(char outputfilename_data[], int
   }
 
   outputfilename_data[idx] = '.';
-  outputfilename_data[idx + 1] = 'o';
-  outputfilename_data[idx + 2] = 'u';
+  outputfilename_data[idx + 1] = 'm';
+  outputfilename_data[idx + 2] = 'a';
   outputfilename_data[idx + 3] = 't';
 }
 
@@ -925,7 +982,7 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   }
 
   emxFree_struct_T(&el_props);
-  generateOutputFilename(tmp_data, last_delimiter_size);
+  b_generateOutputFilename(tmp_data, last_delimiter_size);
   modalExec(model_RayleighAlpha, model_RayleighBeta, BC_numpBC, model_BC_pBC,
             model_BC_map, joint, tmp_data, last_delimiter_size,
             jnt_struct_jointTransform, jnt_struct_reducedDOF, mesh_numEl, mesh_x,
@@ -1062,6 +1119,7 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   double model_nlParams_minLoadStep;
   double c_model_nlParams_prescribedLoad;
   h_struct_T d_expl_temp;
+  char tmp_data[76];
   static const char model_analysisType[3] = { 'T', 'N', 'B' };
 
   // input file initialization
@@ -1737,10 +1795,11 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   }
 
   emxFree_struct_T(&el_props);
+  generateOutputFilename(tmp_data, last_delimiter_size);
   transientExec(model_analysisType, varargin_7, model_aeroloadfile,
                 model_owensfile, model_RayleighAlpha, model_RayleighBeta,
-                BC_numpBC, model_BC_pBC, joint, jnt_struct_jointTransform,
-                c_expl_temp, d_expl_temp);
+                BC_numpBC, model_BC_pBC, joint, tmp_data, last_delimiter_size,
+                jnt_struct_jointTransform, c_expl_temp, d_expl_temp);
   *freq = 0.0;
   *damp = 0.0;
   emxFreeStruct_struct_T1(&d_expl_temp);

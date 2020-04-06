@@ -4,7 +4,7 @@
 // File: calculateStrainForElements.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -30,27 +30,18 @@
 //                const emxArray_real_T *el_theta
 //                const emxArray_real_T *el_roll
 //                const emxArray_real_T *displ
-//                c_emxArray_struct_T *elStrain
+//                b_emxArray_struct_T *elStrain
 // Return Type  : void
 //
 void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
   emxArray_struct_T *el_props, const emxArray_real_T *el_elLen, const
   emxArray_real_T *el_psi, const emxArray_real_T *el_theta, const
-  emxArray_real_T *el_roll, const emxArray_real_T *displ, c_emxArray_struct_T
+  emxArray_real_T *el_roll, const emxArray_real_T *displ, b_emxArray_struct_T
   *elStrain)
 {
   int b_index;
   int loop_ub;
   int i;
-  static const f_struct_T b_r = { { 0.0, 0.0, 0.0, 0.0 },// eps_xx_0
-    { 0.0, 0.0, 0.0, 0.0 },            // eps_xx_z
-    { 0.0, 0.0, 0.0, 0.0 },            // eps_xx_y
-    { 0.0, 0.0, 0.0, 0.0 },            // gam_xz_0
-    { 0.0, 0.0, 0.0, 0.0 },            // gam_xz_y
-    { 0.0, 0.0, 0.0, 0.0 },            // gam_xy_0
-    { 0.0, 0.0, 0.0, 0.0 }             // gam_xy_z
-  };
-
   double elInput_xloc[2];
   double elInput_disp_data[12];
   int aoffset;
@@ -71,9 +62,9 @@ void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
   elStrain->size[0] = 1;
   loop_ub = static_cast<int>(numEl);
   elStrain->size[1] = loop_ub;
-  emxEnsureCapacity_struct_T5(elStrain, b_index);
+  emxEnsureCapacity_struct_T1(elStrain, b_index);
   for (i = 0; i < loop_ub; i++) {
-    elStrain->data[i] = b_r;
+    elStrain->data[i] = r1;
 
     // Calculate Ke and Fe for element i
     b_index = 0;

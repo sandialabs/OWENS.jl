@@ -4,7 +4,7 @@
 // File: test_owens.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -227,7 +227,7 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
   //  length of time vector
   if (test_transient) {
     b_dv1[0] = 0.0;
-    b_dv1[1] = 1.1;
+    b_dv1[1] = 11.1;
     owens(b_dv1, &b_freq, &damp);
   }
 

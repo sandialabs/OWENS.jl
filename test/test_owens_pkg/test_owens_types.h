@@ -4,7 +4,7 @@
 // File: test_owens_types.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 #ifndef TEST_OWENS_TYPES_H
 #define TEST_OWENS_TYPES_H
@@ -195,15 +195,6 @@ struct sOEAe0pL1P7QsnkyxNjo8cH_tag
 };
 
 typedef sOEAe0pL1P7QsnkyxNjo8cH_tag p_struct_T;
-struct emxArray_char_T
-{
-  char *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
-};
-
 struct emxArray_boolean_T
 {
   boolean_T *data;
@@ -216,6 +207,15 @@ struct emxArray_boolean_T
 struct emxArray_int32_T
 {
   int *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
+struct emxArray_char_T
+{
+  char *data;
   int *size;
   int allocatedSize;
   int numDimensions;
@@ -262,15 +262,6 @@ struct h_struct_T
   emxArray_boolean_T *rotationalEffects;
 };
 
-struct emxArray_uint32_T
-{
-  unsigned int *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
-};
-
 struct emxArray_int8_T
 {
   signed char *data;
@@ -281,6 +272,26 @@ struct emxArray_int8_T
 };
 
 struct e_struct_T
+{
+  double eps_xx_0[4];
+  double eps_xx_z[4];
+  double eps_xx_y[4];
+  double gam_xz_0[4];
+  double gam_xz_y[4];
+  double gam_xy_0[4];
+  double gam_xy_z[4];
+};
+
+struct b_emxArray_struct_T
+{
+  e_struct_T *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
+struct f_struct_T
 {
   double K11[4];
   double K12[4];
@@ -362,9 +373,9 @@ struct e_struct_T
   double xmel[3];
 };
 
-struct b_emxArray_struct_T
+struct c_emxArray_struct_T
 {
-  e_struct_T *data;
+  f_struct_T *data;
   int *size;
   int allocatedSize;
   int numDimensions;
@@ -378,29 +389,9 @@ struct i_struct_T
   emxArray_real_T *displddot_s;
 };
 
-struct f_struct_T
-{
-  double eps_xx_0[4];
-  double eps_xx_z[4];
-  double eps_xx_y[4];
-  double gam_xz_0[4];
-  double gam_xz_y[4];
-  double gam_xy_0[4];
-  double gam_xy_z[4];
-};
-
-struct c_emxArray_struct_T
-{
-  f_struct_T *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
-};
-
 struct j_struct_T
 {
-  c_emxArray_struct_T *elStrain;
+  b_emxArray_struct_T *elStrain;
   emxArray_real_T *displ_sp1;
   emxArray_real_T *displddot_sp1;
   emxArray_real_T *displdot_sp1;
@@ -481,6 +472,15 @@ struct l_struct_T
   emxArray_real_T *M25;
 };
 
+struct e_emxArray_struct_T
+{
+  l_struct_T *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
 struct emxArray_creal_T
 {
   creal_T *data;
@@ -490,9 +490,9 @@ struct emxArray_creal_T
   boolean_T canFreeData;
 };
 
-struct e_emxArray_struct_T
+struct emxArray_uint32_T
 {
-  l_struct_T *data;
+  unsigned int *data;
   int *size;
   int allocatedSize;
   int numDimensions;

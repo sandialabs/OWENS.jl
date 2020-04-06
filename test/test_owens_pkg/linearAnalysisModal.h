@@ -4,7 +4,7 @@
 // File: linearAnalysisModal.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 #ifndef LINEARANALYSISMODAL_H
 #define LINEARANALYSISMODAL_H
@@ -24,7 +24,7 @@ extern void linearAnalysisModal(double model_RayleighAlpha, double
   emxArray_real_T *model_reducedDOFList, double mesh_numEl, const
   emxArray_real_T *mesh_x, const emxArray_real_T *mesh_y, const emxArray_real_T *
   mesh_z, const emxArray_real_T *mesh_conn, const h_struct_T el, const
-  emxArray_real_T *displ, const b_emxArray_struct_T *elStorage, emxArray_real_T *
+  emxArray_real_T *displ, const c_emxArray_struct_T *elStorage, emxArray_real_T *
   freq, emxArray_real_T *damp, emxArray_real_T *phase1, emxArray_real_T *phase2,
   emxArray_real_T *imagCompSign);
 

@@ -4,7 +4,7 @@
 // File: repmat.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -28,7 +28,7 @@ void b_repmat(const m_struct_T *a, int varargin_2, f_emxArray_struct_T *b)
   i = b->size[0] * b->size[1];
   b->size[0] = 1;
   b->size[1] = varargin_2;
-  emxEnsureCapacity_struct_T2(b, i);
+  emxEnsureCapacity_struct_T3(b, i);
   for (i = 0; i < varargin_2; i++) {
     emxCopyStruct_struct_T1(&b->data[i], a);
   }
@@ -46,7 +46,7 @@ void c_repmat(const l_struct_T a, int varargin_2, e_emxArray_struct_T *b)
   i = b->size[0] * b->size[1];
   b->size[0] = 1;
   b->size[1] = varargin_2;
-  emxEnsureCapacity_struct_T3(b, i);
+  emxEnsureCapacity_struct_T4(b, i);
   for (i = 0; i < varargin_2; i++) {
     emxCopyStruct_struct_T2(&b->data[i], &a);
   }
@@ -64,7 +64,7 @@ void repmat(const k_struct_T *a, int varargin_2, d_emxArray_struct_T *b)
   i = b->size[0] * b->size[1];
   b->size[0] = 1;
   b->size[1] = varargin_2;
-  emxEnsureCapacity_struct_T1(b, i);
+  emxEnsureCapacity_struct_T2(b, i);
   for (i = 0; i < varargin_2; i++) {
     emxCopyStruct_struct_T(&b->data[i], a);
   }

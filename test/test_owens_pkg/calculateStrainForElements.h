@@ -4,7 +4,7 @@
 // File: calculateStrainForElements.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 #ifndef CALCULATESTRAINFORELEMENTS_H
 #define CALCULATESTRAINFORELEMENTS_H
@@ -19,7 +19,7 @@
 extern void calculateStrainForElements(double numEl, const emxArray_real_T *conn,
   const emxArray_struct_T *el_props, const emxArray_real_T *el_elLen, const
   emxArray_real_T *el_psi, const emxArray_real_T *el_theta, const
-  emxArray_real_T *el_roll, const emxArray_real_T *displ, c_emxArray_struct_T
+  emxArray_real_T *el_roll, const emxArray_real_T *displ, b_emxArray_struct_T
   *elStrain);
 
 #endif

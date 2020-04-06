@@ -4,7 +4,7 @@
 // File: test_owens_emxutil.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -23,8 +23,6 @@ static void emxExpand_struct_T1(f_emxArray_struct_T *emxArray, int fromIndex,
   int toIndex);
 static void emxExpand_struct_T2(e_emxArray_struct_T *emxArray, int fromIndex,
   int toIndex);
-static void emxFree_struct_T2(c_emxArray_struct_T **pEmxArray);
-static void emxInit_struct_T2(c_emxArray_struct_T **pEmxArray, int numDimensions);
 static void emxTrim_struct_T(d_emxArray_struct_T *emxArray, int fromIndex, int
   toIndex);
 static void emxTrim_struct_T1(f_emxArray_struct_T *emxArray, int fromIndex, int
@@ -103,45 +101,6 @@ static void emxExpand_struct_T2(e_emxArray_struct_T *emxArray, int fromIndex,
   int i;
   for (i = fromIndex; i < toIndex; i++) {
     emxInitStruct_struct_T4(&emxArray->data[i]);
-  }
-}
-
-//
-// Arguments    : c_emxArray_struct_T **pEmxArray
-// Return Type  : void
-//
-static void emxFree_struct_T2(c_emxArray_struct_T **pEmxArray)
-{
-  if (*pEmxArray != (c_emxArray_struct_T *)NULL) {
-    if (((*pEmxArray)->data != (f_struct_T *)NULL) && (*pEmxArray)->canFreeData)
-    {
-      std::free((*pEmxArray)->data);
-    }
-
-    std::free((*pEmxArray)->size);
-    std::free(*pEmxArray);
-    *pEmxArray = (c_emxArray_struct_T *)NULL;
-  }
-}
-
-//
-// Arguments    : c_emxArray_struct_T **pEmxArray
-//                int numDimensions
-// Return Type  : void
-//
-static void emxInit_struct_T2(c_emxArray_struct_T **pEmxArray, int numDimensions)
-{
-  c_emxArray_struct_T *emxArray;
-  int i;
-  *pEmxArray = (c_emxArray_struct_T *)std::malloc(sizeof(c_emxArray_struct_T));
-  emxArray = *pEmxArray;
-  emxArray->data = (f_struct_T *)NULL;
-  emxArray->numDimensions = numDimensions;
-  emxArray->size = (int *)std::malloc(sizeof(int) * numDimensions);
-  emxArray->allocatedSize = 0;
-  emxArray->canFreeData = true;
-  for (i = 0; i < numDimensions; i++) {
-    emxArray->size[i] = 0;
   }
 }
 
@@ -592,11 +551,58 @@ void emxEnsureCapacity_struct_T(emxArray_struct_T *emxArray, int oldNumel)
 }
 
 //
+// Arguments    : b_emxArray_struct_T *emxArray
+//                int oldNumel
+// Return Type  : void
+//
+void emxEnsureCapacity_struct_T1(b_emxArray_struct_T *emxArray, int oldNumel)
+{
+  int newNumel;
+  int i;
+  void *newData;
+  if (oldNumel < 0) {
+    oldNumel = 0;
+  }
+
+  newNumel = 1;
+  for (i = 0; i < emxArray->numDimensions; i++) {
+    newNumel *= emxArray->size[i];
+  }
+
+  if (newNumel > emxArray->allocatedSize) {
+    i = emxArray->allocatedSize;
+    if (i < 16) {
+      i = 16;
+    }
+
+    while (i < newNumel) {
+      if (i > 1073741823) {
+        i = MAX_int32_T;
+      } else {
+        i *= 2;
+      }
+    }
+
+    newData = std::calloc(static_cast<unsigned int>(i), sizeof(e_struct_T));
+    if (emxArray->data != NULL) {
+      std::memcpy(newData, emxArray->data, sizeof(e_struct_T) * oldNumel);
+      if (emxArray->canFreeData) {
+        std::free(emxArray->data);
+      }
+    }
+
+    emxArray->data = (e_struct_T *)newData;
+    emxArray->allocatedSize = i;
+    emxArray->canFreeData = true;
+  }
+}
+
+//
 // Arguments    : d_emxArray_struct_T *emxArray
 //                int oldNumel
 // Return Type  : void
 //
-void emxEnsureCapacity_struct_T1(d_emxArray_struct_T *emxArray, int oldNumel)
+void emxEnsureCapacity_struct_T2(d_emxArray_struct_T *emxArray, int oldNumel)
 {
   int newNumel;
   int i;
@@ -651,7 +657,7 @@ void emxEnsureCapacity_struct_T1(d_emxArray_struct_T *emxArray, int oldNumel)
 //                int oldNumel
 // Return Type  : void
 //
-void emxEnsureCapacity_struct_T2(f_emxArray_struct_T *emxArray, int oldNumel)
+void emxEnsureCapacity_struct_T3(f_emxArray_struct_T *emxArray, int oldNumel)
 {
   int newNumel;
   int i;
@@ -706,7 +712,7 @@ void emxEnsureCapacity_struct_T2(f_emxArray_struct_T *emxArray, int oldNumel)
 //                int oldNumel
 // Return Type  : void
 //
-void emxEnsureCapacity_struct_T3(e_emxArray_struct_T *emxArray, int oldNumel)
+void emxEnsureCapacity_struct_T4(e_emxArray_struct_T *emxArray, int oldNumel)
 {
   int newNumel;
   int i;
@@ -753,53 +759,6 @@ void emxEnsureCapacity_struct_T3(e_emxArray_struct_T *emxArray, int oldNumel)
     if (oldNumel < newNumel) {
       emxExpand_struct_T2(emxArray, oldNumel, newNumel);
     }
-  }
-}
-
-//
-// Arguments    : b_emxArray_struct_T *emxArray
-//                int oldNumel
-// Return Type  : void
-//
-void emxEnsureCapacity_struct_T4(b_emxArray_struct_T *emxArray, int oldNumel)
-{
-  int newNumel;
-  int i;
-  void *newData;
-  if (oldNumel < 0) {
-    oldNumel = 0;
-  }
-
-  newNumel = 1;
-  for (i = 0; i < emxArray->numDimensions; i++) {
-    newNumel *= emxArray->size[i];
-  }
-
-  if (newNumel > emxArray->allocatedSize) {
-    i = emxArray->allocatedSize;
-    if (i < 16) {
-      i = 16;
-    }
-
-    while (i < newNumel) {
-      if (i > 1073741823) {
-        i = MAX_int32_T;
-      } else {
-        i *= 2;
-      }
-    }
-
-    newData = std::calloc(static_cast<unsigned int>(i), sizeof(e_struct_T));
-    if (emxArray->data != NULL) {
-      std::memcpy(newData, emxArray->data, sizeof(e_struct_T) * oldNumel);
-      if (emxArray->canFreeData) {
-        std::free(emxArray->data);
-      }
-    }
-
-    emxArray->data = (e_struct_T *)newData;
-    emxArray->allocatedSize = i;
-    emxArray->canFreeData = true;
   }
 }
 
@@ -942,7 +901,7 @@ void emxFreeStruct_struct_T2(i_struct_T *pStruct)
 //
 void emxFreeStruct_struct_T3(j_struct_T *pStruct)
 {
-  emxFree_struct_T2(&pStruct->elStrain);
+  emxFree_struct_T1(&pStruct->elStrain);
   emxFree_real_T(&pStruct->displ_sp1);
   emxFree_real_T(&pStruct->displddot_sp1);
   emxFree_real_T(&pStruct->displdot_sp1);
@@ -1150,6 +1109,24 @@ void emxFree_struct_T1(b_emxArray_struct_T **pEmxArray)
 }
 
 //
+// Arguments    : c_emxArray_struct_T **pEmxArray
+// Return Type  : void
+//
+void emxFree_struct_T2(c_emxArray_struct_T **pEmxArray)
+{
+  if (*pEmxArray != (c_emxArray_struct_T *)NULL) {
+    if (((*pEmxArray)->data != (f_struct_T *)NULL) && (*pEmxArray)->canFreeData)
+    {
+      std::free((*pEmxArray)->data);
+    }
+
+    std::free((*pEmxArray)->size);
+    std::free(*pEmxArray);
+    *pEmxArray = (c_emxArray_struct_T *)NULL;
+  }
+}
+
+//
 // Arguments    : d_emxArray_struct_T **pEmxArray
 // Return Type  : void
 //
@@ -1302,7 +1279,7 @@ void emxInitStruct_struct_T2(i_struct_T *pStruct)
 //
 void emxInitStruct_struct_T3(j_struct_T *pStruct)
 {
-  emxInit_struct_T2(&pStruct->elStrain, 2);
+  emxInit_struct_T1(&pStruct->elStrain, 2);
   emxInit_real_T(&pStruct->displ_sp1, 1);
   emxInit_real_T(&pStruct->displddot_sp1, 1);
   emxInit_real_T(&pStruct->displdot_sp1, 1);
@@ -1528,6 +1505,27 @@ void emxInit_struct_T1(b_emxArray_struct_T **pEmxArray, int numDimensions)
   *pEmxArray = (b_emxArray_struct_T *)std::malloc(sizeof(b_emxArray_struct_T));
   emxArray = *pEmxArray;
   emxArray->data = (e_struct_T *)NULL;
+  emxArray->numDimensions = numDimensions;
+  emxArray->size = (int *)std::malloc(sizeof(int) * numDimensions);
+  emxArray->allocatedSize = 0;
+  emxArray->canFreeData = true;
+  for (i = 0; i < numDimensions; i++) {
+    emxArray->size[i] = 0;
+  }
+}
+
+//
+// Arguments    : c_emxArray_struct_T **pEmxArray
+//                int numDimensions
+// Return Type  : void
+//
+void emxInit_struct_T2(c_emxArray_struct_T **pEmxArray, int numDimensions)
+{
+  c_emxArray_struct_T *emxArray;
+  int i;
+  *pEmxArray = (c_emxArray_struct_T *)std::malloc(sizeof(c_emxArray_struct_T));
+  emxArray = *pEmxArray;
+  emxArray->data = (f_struct_T *)NULL;
   emxArray->numDimensions = numDimensions;
   emxArray->size = (int *)std::malloc(sizeof(int) * numDimensions);
   emxArray->allocatedSize = 0;

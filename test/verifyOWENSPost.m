@@ -1,8 +1,8 @@
 tic()
 verify_transient = true;
-verify_modal = true;
+verify_modal = false;
 
-test_owens(verify_transient,verify_modal);
+% test_owens(verify_transient,verify_modal);
 
 if verify_modal
     OLD = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out');

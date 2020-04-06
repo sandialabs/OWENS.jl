@@ -4,7 +4,7 @@
 // File: modalExec.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -77,7 +77,7 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
                const emxArray_real_T *displ, emxArray_real_T *freq,
                emxArray_real_T *damp)
 {
-  b_emxArray_struct_T *elStorage;
+  c_emxArray_struct_T *elStorage;
   int idx;
   int loop_ub;
   int i;
@@ -107,7 +107,7 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
   int ii_size_idx_0;
   int ii;
   boolean_T exitg1;
-  emxInit_struct_T1(&elStorage, 2);
+  emxInit_struct_T2(&elStorage, 2);
 
   // initialElementCalculations  performs intitial element calculations
   //  **********************************************************************
@@ -132,9 +132,9 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
   elStorage->size[0] = 1;
   loop_ub = static_cast<int>(mesh_numEl);
   elStorage->size[1] = loop_ub;
-  emxEnsureCapacity_struct_T4(elStorage, idx);
+  emxEnsureCapacity_struct_T5(elStorage, idx);
   for (idx = 0; idx < loop_ub; idx++) {
-    elStorage->data[idx] = r1;
+    elStorage->data[idx] = r2;
   }
 
   for (i = 0; i < loop_ub; i++) {
@@ -236,7 +236,7 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
   emxFree_real_T(&unusedU3);
   emxFree_real_T(&unusedU2);
   emxFree_real_T(&unusedU1);
-  emxFree_struct_T1(&elStorage);
+  emxFree_struct_T2(&elStorage);
   for (idx = 0; idx < loop_ub; idx++) {
     freq->data[idx] = b_freq->data[idx];
   }

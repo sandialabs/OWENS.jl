@@ -4,7 +4,7 @@
 // File: test_owens_emxutil.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 #ifndef TEST_OWENS_EMXUTIL_H
 #define TEST_OWENS_EMXUTIL_H
@@ -27,13 +27,13 @@ extern void emxEnsureCapacity_int32_T(emxArray_int32_T *emxArray, int oldNumel);
 extern void emxEnsureCapacity_int8_T(emxArray_int8_T *emxArray, int oldNumel);
 extern void emxEnsureCapacity_real_T(emxArray_real_T *emxArray, int oldNumel);
 extern void emxEnsureCapacity_struct_T(emxArray_struct_T *emxArray, int oldNumel);
-extern void emxEnsureCapacity_struct_T1(d_emxArray_struct_T *emxArray, int
+extern void emxEnsureCapacity_struct_T1(b_emxArray_struct_T *emxArray, int
   oldNumel);
-extern void emxEnsureCapacity_struct_T2(f_emxArray_struct_T *emxArray, int
+extern void emxEnsureCapacity_struct_T2(d_emxArray_struct_T *emxArray, int
   oldNumel);
-extern void emxEnsureCapacity_struct_T3(e_emxArray_struct_T *emxArray, int
+extern void emxEnsureCapacity_struct_T3(f_emxArray_struct_T *emxArray, int
   oldNumel);
-extern void emxEnsureCapacity_struct_T4(b_emxArray_struct_T *emxArray, int
+extern void emxEnsureCapacity_struct_T4(e_emxArray_struct_T *emxArray, int
   oldNumel);
 extern void emxEnsureCapacity_struct_T5(c_emxArray_struct_T *emxArray, int
   oldNumel);
@@ -53,6 +53,7 @@ extern void emxFree_int8_T(emxArray_int8_T **pEmxArray);
 extern void emxFree_real_T(emxArray_real_T **pEmxArray);
 extern void emxFree_struct_T(emxArray_struct_T **pEmxArray);
 extern void emxFree_struct_T1(b_emxArray_struct_T **pEmxArray);
+extern void emxFree_struct_T2(c_emxArray_struct_T **pEmxArray);
 extern void emxFree_struct_T3(d_emxArray_struct_T **pEmxArray);
 extern void emxFree_struct_T4(e_emxArray_struct_T **pEmxArray);
 extern void emxFree_struct_T5(f_emxArray_struct_T **pEmxArray);
@@ -72,6 +73,7 @@ extern void emxInit_int8_T(emxArray_int8_T **pEmxArray, int numDimensions);
 extern void emxInit_real_T(emxArray_real_T **pEmxArray, int numDimensions);
 extern void emxInit_struct_T(emxArray_struct_T **pEmxArray, int numDimensions);
 extern void emxInit_struct_T1(b_emxArray_struct_T **pEmxArray, int numDimensions);
+extern void emxInit_struct_T2(c_emxArray_struct_T **pEmxArray, int numDimensions);
 extern void emxInit_struct_T3(d_emxArray_struct_T **pEmxArray, int numDimensions);
 extern void emxInit_struct_T4(e_emxArray_struct_T **pEmxArray, int numDimensions);
 extern void emxInit_struct_T5(f_emxArray_struct_T **pEmxArray, int numDimensions);

@@ -4,7 +4,7 @@
 // File: test_owens_data.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 03-Apr-2020 15:56:19
+// C/C++ source code generated on  : 06-Apr-2020 16:48:15
 //
 
 // Include Files
@@ -27,6 +27,15 @@ const boolean_T bv[128] = { false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false };
 
+const e_struct_T r1 = { { 0.0, 0.0, 0.0, 0.0 },// eps_xx_0
+  { 0.0, 0.0, 0.0, 0.0 },              // eps_xx_z
+  { 0.0, 0.0, 0.0, 0.0 },              // eps_xx_y
+  { 0.0, 0.0, 0.0, 0.0 },              // gam_xz_0
+  { 0.0, 0.0, 0.0, 0.0 },              // gam_xz_y
+  { 0.0, 0.0, 0.0, 0.0 },              // gam_xy_0
+  { 0.0, 0.0, 0.0, 0.0 }               // gam_xy_z
+};
+
 const double dv[4] = { 0.33998104358485631, -0.33998104358485631,
   0.86113631159405257, -0.86113631159405257 };
 
@@ -35,7 +44,7 @@ const double dv1[4] = { 0.65214515486254621, 0.65214515486254621,
 
 const signed char iv1[12] = { 1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 6, 12 };
 
-const e_struct_T r1 = { { 0.0, 0.0, 0.0, 0.0 },// K11
+const f_struct_T r2 = { { 0.0, 0.0, 0.0, 0.0 },// K11
   { 0.0, 0.0, 0.0, 0.0 },              // K12
   { 0.0, 0.0, 0.0, 0.0 },              // K13
   { 0.0, 0.0, 0.0, 0.0 },              // K14
