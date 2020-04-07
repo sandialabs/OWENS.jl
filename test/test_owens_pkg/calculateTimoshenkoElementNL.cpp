@@ -4,7 +4,7 @@
 // File: calculateTimoshenkoElementNL.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 15:21:39
+// C/C++ source code generated on  : 07-Apr-2020 17:21:12
 //
 
 // Include Files
@@ -1131,175 +1131,175 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
 
   //  Row 1
   ktemp2_tmp = elStorage->C12[0] * Oel[2];
-  ktemp2[24] = ktemp2_tmp;
+  ktemp2[2] = ktemp2_tmp;
   b_ktemp2_tmp = elStorage->C12[2] * Oel[2];
-  ktemp2[36] = b_ktemp2_tmp;
+  ktemp2[3] = b_ktemp2_tmp;
   c_ktemp2_tmp = elStorage->C13[0] * Oel[1];
-  ktemp2[48] = c_ktemp2_tmp;
+  ktemp2[4] = c_ktemp2_tmp;
   d_ktemp2_tmp = elStorage->C13[2] * Oel[1];
-  ktemp2[60] = d_ktemp2_tmp;
+  ktemp2[5] = d_ktemp2_tmp;
   e_ktemp2_tmp = elStorage->C14_1[0] * Oel[1] + elStorage->C14_2[0] * Oel[2];
-  ktemp2[72] = e_ktemp2_tmp;
+  ktemp2[6] = e_ktemp2_tmp;
   f_ktemp2_tmp = elStorage->C14_1[2] * Oel[1] + elStorage->C14_2[2] * Oel[2];
-  ktemp2[84] = f_ktemp2_tmp;
+  ktemp2[7] = f_ktemp2_tmp;
 
   //  Row 2
   g_ktemp2_tmp = elStorage->C12[1] * Oel[2];
-  ktemp2[25] = g_ktemp2_tmp;
+  ktemp2[14] = g_ktemp2_tmp;
   O1 = elStorage->C12[3] * Oel[2];
-  ktemp2[37] = O1;
+  ktemp2[15] = O1;
   integrationFactor = elStorage->C13[1] * Oel[1];
-  ktemp2[49] = integrationFactor;
+  ktemp2[16] = integrationFactor;
   ycm = elStorage->C13[3] * Oel[1];
-  ktemp2[61] = ycm;
+  ktemp2[17] = ycm;
   rhoA = elStorage->C14_1[1] * Oel[1] + elStorage->C14_2[1] * Oel[2];
-  ktemp2[73] = rhoA;
+  ktemp2[18] = rhoA;
   zcm = elStorage->C14_1[3] * Oel[1] + elStorage->C14_2[3] * Oel[2];
-  ktemp2[85] = zcm;
+  ktemp2[19] = zcm;
 
   //  Row 3
-  ktemp2[2] = -ktemp2_tmp;
-  ktemp2[14] = -g_ktemp2_tmp;
+  ktemp2[24] = -ktemp2_tmp;
+  ktemp2[25] = -g_ktemp2_tmp;
   ktemp2_tmp = elStorage->C23[0] * Oel[0];
-  ktemp2[50] = ktemp2_tmp;
+  ktemp2[28] = ktemp2_tmp;
   g_ktemp2_tmp = elStorage->C23[2] * Oel[0];
-  ktemp2[62] = g_ktemp2_tmp;
+  ktemp2[29] = g_ktemp2_tmp;
   S34_idx_0 = elStorage->C24[0] * Oel[0];
-  ktemp2[74] = S34_idx_0;
+  ktemp2[30] = S34_idx_0;
   S35_idx_0 = elStorage->C24[2] * Oel[0];
-  ktemp2[86] = S35_idx_0;
+  ktemp2[31] = S35_idx_0;
   S13_idx_0 = elStorage->C25[0] * Oel[2];
-  ktemp2[98] = S13_idx_0;
+  ktemp2[32] = S13_idx_0;
   S26_idx_0 = elStorage->C25[2] * Oel[2];
-  ktemp2[110] = S26_idx_0;
+  ktemp2[33] = S26_idx_0;
   S25_idx_0 = elStorage->C26[0] * Oel[2];
-  ktemp2[122] = S25_idx_0;
+  ktemp2[34] = S25_idx_0;
   S24_idx_0 = elStorage->C26[2] * Oel[2];
-  ktemp2[134] = S24_idx_0;
+  ktemp2[35] = S24_idx_0;
 
   //  Row 4
-  ktemp2[3] = -b_ktemp2_tmp;
-  ktemp2[15] = -O1;
+  ktemp2[36] = -b_ktemp2_tmp;
+  ktemp2[37] = -O1;
   b_ktemp2_tmp = elStorage->C23[1] * Oel[0];
-  ktemp2[51] = b_ktemp2_tmp;
+  ktemp2[40] = b_ktemp2_tmp;
   O1 = elStorage->C23[3] * Oel[0];
-  ktemp2[63] = O1;
+  ktemp2[41] = O1;
   H12_idx_0 = elStorage->C24[1] * Oel[0];
-  ktemp2[75] = H12_idx_0;
+  ktemp2[42] = H12_idx_0;
   K15_idx_0 = elStorage->C24[3] * Oel[0];
-  ktemp2[87] = K15_idx_0;
+  ktemp2[43] = K15_idx_0;
   H34_idx_3 = elStorage->C25[1] * Oel[2];
-  ktemp2[99] = H34_idx_3;
+  ktemp2[44] = H34_idx_3;
   S14_idx_0 = elStorage->C25[3] * Oel[2];
-  ktemp2[111] = S14_idx_0;
+  ktemp2[45] = S14_idx_0;
   S12_idx_0 = elStorage->C26[1] * Oel[2];
-  ktemp2[123] = S12_idx_0;
+  ktemp2[46] = S12_idx_0;
   S23_idx_0 = elStorage->C26[3] * Oel[2];
-  ktemp2[135] = S23_idx_0;
+  ktemp2[47] = S23_idx_0;
 
   //  Row 5
-  ktemp2[4] = -c_ktemp2_tmp;
-  ktemp2[16] = -integrationFactor;
-  ktemp2[28] = -ktemp2_tmp;
-  ktemp2[40] = -b_ktemp2_tmp;
+  ktemp2[48] = -c_ktemp2_tmp;
+  ktemp2[49] = -integrationFactor;
+  ktemp2[50] = -ktemp2_tmp;
+  ktemp2[51] = -b_ktemp2_tmp;
   ktemp2[52] = 0.0;
-  ktemp2[64] = 0.0;
-  ktemp2[76] = C34_idx_0;
-  ktemp2[88] = C34_idx_2;
+  ktemp2[53] = 0.0;
+  ktemp2[54] = C34_idx_0;
+  ktemp2[55] = C34_idx_2;
   ktemp2_tmp = elStorage->C35[0] * Oel[1];
-  ktemp2[100] = ktemp2_tmp;
+  ktemp2[56] = ktemp2_tmp;
   b_ktemp2_tmp = elStorage->C35[2] * Oel[1];
-  ktemp2[112] = b_ktemp2_tmp;
+  ktemp2[57] = b_ktemp2_tmp;
   c_ktemp2_tmp = elStorage->C36[0] * Oel[1];
-  ktemp2[124] = c_ktemp2_tmp;
+  ktemp2[58] = c_ktemp2_tmp;
   integrationFactor = elStorage->C36[2] * Oel[1];
-  ktemp2[136] = integrationFactor;
+  ktemp2[59] = integrationFactor;
 
   //  Row 6
-  ktemp2[5] = -d_ktemp2_tmp;
-  ktemp2[17] = -ycm;
-  ktemp2[29] = -g_ktemp2_tmp;
-  ktemp2[41] = -O1;
-  ktemp2[53] = 0.0;
+  ktemp2[60] = -d_ktemp2_tmp;
+  ktemp2[61] = -ycm;
+  ktemp2[62] = -g_ktemp2_tmp;
+  ktemp2[63] = -O1;
+  ktemp2[64] = 0.0;
   ktemp2[65] = 0.0;
-  ktemp2[77] = C34_idx_1;
-  ktemp2[89] = C34_idx_3;
+  ktemp2[66] = C34_idx_1;
+  ktemp2[67] = C34_idx_3;
   d_ktemp2_tmp = elStorage->C35[1] * Oel[1];
-  ktemp2[101] = d_ktemp2_tmp;
+  ktemp2[68] = d_ktemp2_tmp;
   g_ktemp2_tmp = elStorage->C35[3] * Oel[1];
-  ktemp2[113] = g_ktemp2_tmp;
+  ktemp2[69] = g_ktemp2_tmp;
   O1 = elStorage->C36[1] * Oel[1];
-  ktemp2[125] = O1;
+  ktemp2[70] = O1;
   ycm = elStorage->C36[3] * Oel[1];
-  ktemp2[137] = ycm;
+  ktemp2[71] = ycm;
 
   //  Row 7
-  ktemp2[6] = -e_ktemp2_tmp;
-  ktemp2[18] = -rhoA;
-  ktemp2[30] = -S34_idx_0;
-  ktemp2[42] = -H12_idx_0;
-  ktemp2[54] = -C34_idx_0;
-  ktemp2[66] = -C34_idx_1;
+  ktemp2[72] = -e_ktemp2_tmp;
+  ktemp2[73] = -rhoA;
+  ktemp2[74] = -S34_idx_0;
+  ktemp2[75] = -H12_idx_0;
+  ktemp2[76] = -C34_idx_0;
+  ktemp2[77] = -C34_idx_1;
   ktemp2[78] = 0.0;
-  ktemp2[90] = 0.0;
+  ktemp2[79] = 0.0;
   e_ktemp2_tmp = elStorage->C45_1[0] * Oel[2] + elStorage->C45_2[0] * Oel[1];
-  ktemp2[102] = e_ktemp2_tmp;
+  ktemp2[80] = e_ktemp2_tmp;
   rhoA = elStorage->C45_1[2] * Oel[2] + elStorage->C45_2[2] * Oel[1];
-  ktemp2[114] = rhoA;
+  ktemp2[81] = rhoA;
   S34_idx_0 = elStorage->C46_1[0] * Oel[1] + elStorage->C46_2[0] * Oel[2];
-  ktemp2[126] = S34_idx_0;
+  ktemp2[82] = S34_idx_0;
   H12_idx_0 = elStorage->C46_1[2] * Oel[1] + elStorage->C46_2[2] * Oel[2];
-  ktemp2[138] = H12_idx_0;
+  ktemp2[83] = H12_idx_0;
 
   //  Row 8
-  ktemp2[7] = -f_ktemp2_tmp;
-  ktemp2[19] = -zcm;
-  ktemp2[31] = -S35_idx_0;
-  ktemp2[43] = -K15_idx_0;
-  ktemp2[55] = -C34_idx_2;
-  ktemp2[67] = -C34_idx_3;
-  ktemp2[79] = 0.0;
+  ktemp2[84] = -f_ktemp2_tmp;
+  ktemp2[85] = -zcm;
+  ktemp2[86] = -S35_idx_0;
+  ktemp2[87] = -K15_idx_0;
+  ktemp2[88] = -C34_idx_2;
+  ktemp2[89] = -C34_idx_3;
+  ktemp2[90] = 0.0;
   ktemp2[91] = 0.0;
   f_ktemp2_tmp = elStorage->C45_1[1] * Oel[2] + elStorage->C45_2[1] * Oel[1];
-  ktemp2[103] = f_ktemp2_tmp;
+  ktemp2[92] = f_ktemp2_tmp;
   zcm = elStorage->C45_1[3] * Oel[2] + elStorage->C45_2[3] * Oel[1];
-  ktemp2[115] = zcm;
+  ktemp2[93] = zcm;
   S35_idx_0 = elStorage->C46_1[1] * Oel[1] + elStorage->C46_2[1] * Oel[2];
-  ktemp2[127] = S35_idx_0;
+  ktemp2[94] = S35_idx_0;
   K15_idx_0 = elStorage->C46_1[3] * Oel[1] + elStorage->C46_2[3] * Oel[2];
-  ktemp2[139] = K15_idx_0;
+  ktemp2[95] = K15_idx_0;
 
   //  Row 9
-  ktemp2[32] = -S13_idx_0;
-  ktemp2[44] = -H34_idx_3;
-  ktemp2[56] = -ktemp2_tmp;
-  ktemp2[68] = -d_ktemp2_tmp;
-  ktemp2[80] = -e_ktemp2_tmp;
-  ktemp2[92] = -f_ktemp2_tmp;
+  ktemp2[98] = -S13_idx_0;
+  ktemp2[99] = -H34_idx_3;
+  ktemp2[100] = -ktemp2_tmp;
+  ktemp2[101] = -d_ktemp2_tmp;
+  ktemp2[102] = -e_ktemp2_tmp;
+  ktemp2[103] = -f_ktemp2_tmp;
 
   //  Row 10
-  ktemp2[33] = -S26_idx_0;
-  ktemp2[45] = -S14_idx_0;
-  ktemp2[57] = -b_ktemp2_tmp;
-  ktemp2[69] = -g_ktemp2_tmp;
-  ktemp2[81] = -rhoA;
-  ktemp2[93] = -zcm;
+  ktemp2[110] = -S26_idx_0;
+  ktemp2[111] = -S14_idx_0;
+  ktemp2[112] = -b_ktemp2_tmp;
+  ktemp2[113] = -g_ktemp2_tmp;
+  ktemp2[114] = -rhoA;
+  ktemp2[115] = -zcm;
 
   //  Row 11
-  ktemp2[34] = -S25_idx_0;
-  ktemp2[46] = -S12_idx_0;
-  ktemp2[58] = -c_ktemp2_tmp;
-  ktemp2[70] = -O1;
-  ktemp2[82] = -S34_idx_0;
-  ktemp2[94] = -S35_idx_0;
+  ktemp2[122] = -S25_idx_0;
+  ktemp2[123] = -S12_idx_0;
+  ktemp2[124] = -c_ktemp2_tmp;
+  ktemp2[125] = -O1;
+  ktemp2[126] = -S34_idx_0;
+  ktemp2[127] = -S35_idx_0;
 
   //  Row 12
-  ktemp2[35] = -S24_idx_0;
-  ktemp2[47] = -S23_idx_0;
-  ktemp2[59] = -integrationFactor;
-  ktemp2[71] = -ycm;
-  ktemp2[83] = -H12_idx_0;
-  ktemp2[95] = -K15_idx_0;
+  ktemp2[134] = -S24_idx_0;
+  ktemp2[135] = -S23_idx_0;
+  ktemp2[136] = -integrationFactor;
+  ktemp2[137] = -ycm;
+  ktemp2[138] = -H12_idx_0;
+  ktemp2[139] = -K15_idx_0;
   mapMatrixNonSym(ktemp2, Ce);
 
   // compile mass matrix
@@ -2754,175 +2754,175 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
 
   //  Row 1
   ktemp2_tmp = elStorage->C12[0] * Oel[2];
-  ktemp2[24] = ktemp2_tmp;
+  ktemp2[2] = ktemp2_tmp;
   b_ktemp2_tmp = elStorage->C12[2] * Oel[2];
-  ktemp2[36] = b_ktemp2_tmp;
+  ktemp2[3] = b_ktemp2_tmp;
   c_ktemp2_tmp = elStorage->C13[0] * Oel[1];
-  ktemp2[48] = c_ktemp2_tmp;
+  ktemp2[4] = c_ktemp2_tmp;
   d_ktemp2_tmp = elStorage->C13[2] * Oel[1];
-  ktemp2[60] = d_ktemp2_tmp;
+  ktemp2[5] = d_ktemp2_tmp;
   e_ktemp2_tmp = elStorage->C14_1[0] * Oel[1] + elStorage->C14_2[0] * Oel[2];
-  ktemp2[72] = e_ktemp2_tmp;
+  ktemp2[6] = e_ktemp2_tmp;
   SS33_data_idx_0 = elStorage->C14_1[2] * Oel[1] + elStorage->C14_2[2] * Oel[2];
-  ktemp2[84] = SS33_data_idx_0;
+  ktemp2[7] = SS33_data_idx_0;
 
   //  Row 2
   SS22_data_idx_0 = elStorage->C12[1] * Oel[2];
-  ktemp2[25] = SS22_data_idx_0;
+  ktemp2[14] = SS22_data_idx_0;
   Faxial = elStorage->C12[3] * Oel[2];
-  ktemp2[37] = Faxial;
+  ktemp2[15] = Faxial;
   rhoA = elStorage->C13[1] * Oel[1];
-  ktemp2[49] = rhoA;
+  ktemp2[16] = rhoA;
   ycm = elStorage->C13[3] * Oel[1];
-  ktemp2[61] = ycm;
+  ktemp2[17] = ycm;
   zcm = elStorage->C14_1[1] * Oel[1] + elStorage->C14_2[1] * Oel[2];
-  ktemp2[73] = zcm;
+  ktemp2[18] = zcm;
   H13_idx_0 = elStorage->C14_1[3] * Oel[1] + elStorage->C14_2[3] * Oel[2];
-  ktemp2[85] = H13_idx_0;
+  ktemp2[19] = H13_idx_0;
 
   //  Row 3
-  ktemp2[2] = -ktemp2_tmp;
-  ktemp2[14] = -SS22_data_idx_0;
+  ktemp2[24] = -ktemp2_tmp;
+  ktemp2[25] = -SS22_data_idx_0;
   ktemp2_tmp = elStorage->C23[0] * Oel[0];
-  ktemp2[50] = ktemp2_tmp;
+  ktemp2[28] = ktemp2_tmp;
   SS22_data_idx_0 = elStorage->C23[2] * Oel[0];
-  ktemp2[62] = SS22_data_idx_0;
+  ktemp2[29] = SS22_data_idx_0;
   S34_idx_0 = elStorage->C24[0] * Oel[0];
-  ktemp2[74] = S34_idx_0;
+  ktemp2[30] = S34_idx_0;
   S35_idx_0 = elStorage->C24[2] * Oel[0];
-  ktemp2[86] = S35_idx_0;
+  ktemp2[31] = S35_idx_0;
   S13_idx_0 = elStorage->C25[0] * Oel[2];
-  ktemp2[98] = S13_idx_0;
+  ktemp2[32] = S13_idx_0;
   S26_idx_0 = elStorage->C25[2] * Oel[2];
-  ktemp2[110] = S26_idx_0;
+  ktemp2[33] = S26_idx_0;
   S25_idx_0 = elStorage->C26[0] * Oel[2];
-  ktemp2[122] = S25_idx_0;
+  ktemp2[34] = S25_idx_0;
   S24_idx_0 = elStorage->C26[2] * Oel[2];
-  ktemp2[134] = S24_idx_0;
+  ktemp2[35] = S24_idx_0;
 
   //  Row 4
-  ktemp2[3] = -b_ktemp2_tmp;
-  ktemp2[15] = -Faxial;
+  ktemp2[36] = -b_ktemp2_tmp;
+  ktemp2[37] = -Faxial;
   b_ktemp2_tmp = elStorage->C23[1] * Oel[0];
-  ktemp2[51] = b_ktemp2_tmp;
+  ktemp2[40] = b_ktemp2_tmp;
   Faxial = elStorage->C23[3] * Oel[0];
-  ktemp2[63] = Faxial;
+  ktemp2[41] = Faxial;
   H12_idx_0 = elStorage->C24[1] * Oel[0];
-  ktemp2[75] = H12_idx_0;
+  ktemp2[42] = H12_idx_0;
   K16_idx_0 = elStorage->C24[3] * Oel[0];
-  ktemp2[87] = K16_idx_0;
+  ktemp2[43] = K16_idx_0;
   K15_idx_0 = elStorage->C25[1] * Oel[2];
-  ktemp2[99] = K15_idx_0;
+  ktemp2[44] = K15_idx_0;
   S14_idx_0 = elStorage->C25[3] * Oel[2];
-  ktemp2[111] = S14_idx_0;
+  ktemp2[45] = S14_idx_0;
   S12_idx_0 = elStorage->C26[1] * Oel[2];
-  ktemp2[123] = S12_idx_0;
+  ktemp2[46] = S12_idx_0;
   S23_idx_0 = elStorage->C26[3] * Oel[2];
-  ktemp2[135] = S23_idx_0;
+  ktemp2[47] = S23_idx_0;
 
   //  Row 5
-  ktemp2[4] = -c_ktemp2_tmp;
-  ktemp2[16] = -rhoA;
-  ktemp2[28] = -ktemp2_tmp;
-  ktemp2[40] = -b_ktemp2_tmp;
+  ktemp2[48] = -c_ktemp2_tmp;
+  ktemp2[49] = -rhoA;
+  ktemp2[50] = -ktemp2_tmp;
+  ktemp2[51] = -b_ktemp2_tmp;
   ktemp2[52] = 0.0;
-  ktemp2[64] = 0.0;
-  ktemp2[76] = C34_idx_0;
-  ktemp2[88] = C34_idx_2;
+  ktemp2[53] = 0.0;
+  ktemp2[54] = C34_idx_0;
+  ktemp2[55] = C34_idx_2;
   ktemp2_tmp = elStorage->C35[0] * Oel[1];
-  ktemp2[100] = ktemp2_tmp;
+  ktemp2[56] = ktemp2_tmp;
   b_ktemp2_tmp = elStorage->C35[2] * Oel[1];
-  ktemp2[112] = b_ktemp2_tmp;
+  ktemp2[57] = b_ktemp2_tmp;
   c_ktemp2_tmp = elStorage->C36[0] * Oel[1];
-  ktemp2[124] = c_ktemp2_tmp;
+  ktemp2[58] = c_ktemp2_tmp;
   rhoA = elStorage->C36[2] * Oel[1];
-  ktemp2[136] = rhoA;
+  ktemp2[59] = rhoA;
 
   //  Row 6
-  ktemp2[5] = -d_ktemp2_tmp;
-  ktemp2[17] = -ycm;
-  ktemp2[29] = -SS22_data_idx_0;
-  ktemp2[41] = -Faxial;
-  ktemp2[53] = 0.0;
+  ktemp2[60] = -d_ktemp2_tmp;
+  ktemp2[61] = -ycm;
+  ktemp2[62] = -SS22_data_idx_0;
+  ktemp2[63] = -Faxial;
+  ktemp2[64] = 0.0;
   ktemp2[65] = 0.0;
-  ktemp2[77] = C34_idx_1;
-  ktemp2[89] = C34_idx_3;
+  ktemp2[66] = C34_idx_1;
+  ktemp2[67] = C34_idx_3;
   d_ktemp2_tmp = elStorage->C35[1] * Oel[1];
-  ktemp2[101] = d_ktemp2_tmp;
+  ktemp2[68] = d_ktemp2_tmp;
   SS22_data_idx_0 = elStorage->C35[3] * Oel[1];
-  ktemp2[113] = SS22_data_idx_0;
+  ktemp2[69] = SS22_data_idx_0;
   Faxial = elStorage->C36[1] * Oel[1];
-  ktemp2[125] = Faxial;
+  ktemp2[70] = Faxial;
   ycm = elStorage->C36[3] * Oel[1];
-  ktemp2[137] = ycm;
+  ktemp2[71] = ycm;
 
   //  Row 7
-  ktemp2[6] = -e_ktemp2_tmp;
-  ktemp2[18] = -zcm;
-  ktemp2[30] = -S34_idx_0;
-  ktemp2[42] = -H12_idx_0;
-  ktemp2[54] = -C34_idx_0;
-  ktemp2[66] = -C34_idx_1;
+  ktemp2[72] = -e_ktemp2_tmp;
+  ktemp2[73] = -zcm;
+  ktemp2[74] = -S34_idx_0;
+  ktemp2[75] = -H12_idx_0;
+  ktemp2[76] = -C34_idx_0;
+  ktemp2[77] = -C34_idx_1;
   ktemp2[78] = 0.0;
-  ktemp2[90] = 0.0;
+  ktemp2[79] = 0.0;
   e_ktemp2_tmp = elStorage->C45_1[0] * Oel[2] + elStorage->C45_2[0] * Oel[1];
-  ktemp2[102] = e_ktemp2_tmp;
+  ktemp2[80] = e_ktemp2_tmp;
   zcm = elStorage->C45_1[2] * Oel[2] + elStorage->C45_2[2] * Oel[1];
-  ktemp2[114] = zcm;
+  ktemp2[81] = zcm;
   S34_idx_0 = elStorage->C46_1[0] * Oel[1] + elStorage->C46_2[0] * Oel[2];
-  ktemp2[126] = S34_idx_0;
+  ktemp2[82] = S34_idx_0;
   H12_idx_0 = elStorage->C46_1[2] * Oel[1] + elStorage->C46_2[2] * Oel[2];
-  ktemp2[138] = H12_idx_0;
+  ktemp2[83] = H12_idx_0;
 
   //  Row 8
-  ktemp2[7] = -SS33_data_idx_0;
-  ktemp2[19] = -H13_idx_0;
-  ktemp2[31] = -S35_idx_0;
-  ktemp2[43] = -K16_idx_0;
-  ktemp2[55] = -C34_idx_2;
-  ktemp2[67] = -C34_idx_3;
-  ktemp2[79] = 0.0;
+  ktemp2[84] = -SS33_data_idx_0;
+  ktemp2[85] = -H13_idx_0;
+  ktemp2[86] = -S35_idx_0;
+  ktemp2[87] = -K16_idx_0;
+  ktemp2[88] = -C34_idx_2;
+  ktemp2[89] = -C34_idx_3;
+  ktemp2[90] = 0.0;
   ktemp2[91] = 0.0;
   SS33_data_idx_0 = elStorage->C45_1[1] * Oel[2] + elStorage->C45_2[1] * Oel[1];
-  ktemp2[103] = SS33_data_idx_0;
+  ktemp2[92] = SS33_data_idx_0;
   H13_idx_0 = elStorage->C45_1[3] * Oel[2] + elStorage->C45_2[3] * Oel[1];
-  ktemp2[115] = H13_idx_0;
+  ktemp2[93] = H13_idx_0;
   S35_idx_0 = elStorage->C46_1[1] * Oel[1] + elStorage->C46_2[1] * Oel[2];
-  ktemp2[127] = S35_idx_0;
+  ktemp2[94] = S35_idx_0;
   K16_idx_0 = elStorage->C46_1[3] * Oel[1] + elStorage->C46_2[3] * Oel[2];
-  ktemp2[139] = K16_idx_0;
+  ktemp2[95] = K16_idx_0;
 
   //  Row 9
-  ktemp2[32] = -S13_idx_0;
-  ktemp2[44] = -K15_idx_0;
-  ktemp2[56] = -ktemp2_tmp;
-  ktemp2[68] = -d_ktemp2_tmp;
-  ktemp2[80] = -e_ktemp2_tmp;
-  ktemp2[92] = -SS33_data_idx_0;
+  ktemp2[98] = -S13_idx_0;
+  ktemp2[99] = -K15_idx_0;
+  ktemp2[100] = -ktemp2_tmp;
+  ktemp2[101] = -d_ktemp2_tmp;
+  ktemp2[102] = -e_ktemp2_tmp;
+  ktemp2[103] = -SS33_data_idx_0;
 
   //  Row 10
-  ktemp2[33] = -S26_idx_0;
-  ktemp2[45] = -S14_idx_0;
-  ktemp2[57] = -b_ktemp2_tmp;
-  ktemp2[69] = -SS22_data_idx_0;
-  ktemp2[81] = -zcm;
-  ktemp2[93] = -H13_idx_0;
+  ktemp2[110] = -S26_idx_0;
+  ktemp2[111] = -S14_idx_0;
+  ktemp2[112] = -b_ktemp2_tmp;
+  ktemp2[113] = -SS22_data_idx_0;
+  ktemp2[114] = -zcm;
+  ktemp2[115] = -H13_idx_0;
 
   //  Row 11
-  ktemp2[34] = -S25_idx_0;
-  ktemp2[46] = -S12_idx_0;
-  ktemp2[58] = -c_ktemp2_tmp;
-  ktemp2[70] = -Faxial;
-  ktemp2[82] = -S34_idx_0;
-  ktemp2[94] = -S35_idx_0;
+  ktemp2[122] = -S25_idx_0;
+  ktemp2[123] = -S12_idx_0;
+  ktemp2[124] = -c_ktemp2_tmp;
+  ktemp2[125] = -Faxial;
+  ktemp2[126] = -S34_idx_0;
+  ktemp2[127] = -S35_idx_0;
 
   //  Row 12
-  ktemp2[35] = -S24_idx_0;
-  ktemp2[47] = -S23_idx_0;
-  ktemp2[59] = -rhoA;
-  ktemp2[71] = -ycm;
-  ktemp2[83] = -H12_idx_0;
-  ktemp2[95] = -K16_idx_0;
+  ktemp2[134] = -S24_idx_0;
+  ktemp2[135] = -S23_idx_0;
+  ktemp2[136] = -rhoA;
+  ktemp2[137] = -ycm;
+  ktemp2[138] = -H12_idx_0;
+  ktemp2[139] = -K16_idx_0;
   mapMatrixNonSym(ktemp2, Ce);
 
   // compile mass matrix
@@ -4161,175 +4161,175 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
 
   //  Row 1
   ktemp2_tmp = elStorage->C12[0] * Oel[2];
-  ktemp2[24] = ktemp2_tmp;
+  ktemp2[2] = ktemp2_tmp;
   b_ktemp2_tmp = elStorage->C12[2] * Oel[2];
-  ktemp2[36] = b_ktemp2_tmp;
+  ktemp2[3] = b_ktemp2_tmp;
   c_ktemp2_tmp = elStorage->C13[0] * Oel[1];
-  ktemp2[48] = c_ktemp2_tmp;
+  ktemp2[4] = c_ktemp2_tmp;
   d_ktemp2_tmp = elStorage->C13[2] * Oel[1];
-  ktemp2[60] = d_ktemp2_tmp;
+  ktemp2[5] = d_ktemp2_tmp;
   e_ktemp2_tmp = elStorage->C14_1[0] * Oel[1] + elStorage->C14_2[0] * Oel[2];
-  ktemp2[72] = e_ktemp2_tmp;
+  ktemp2[6] = e_ktemp2_tmp;
   f_ktemp2_tmp = elStorage->C14_1[2] * Oel[1] + elStorage->C14_2[2] * Oel[2];
-  ktemp2[84] = f_ktemp2_tmp;
+  ktemp2[7] = f_ktemp2_tmp;
 
   //  Row 2
   g_ktemp2_tmp = elStorage->C12[1] * Oel[2];
-  ktemp2[25] = g_ktemp2_tmp;
+  ktemp2[14] = g_ktemp2_tmp;
   O1 = elStorage->C12[3] * Oel[2];
-  ktemp2[37] = O1;
+  ktemp2[15] = O1;
   integrationFactor = elStorage->C13[1] * Oel[1];
-  ktemp2[49] = integrationFactor;
+  ktemp2[16] = integrationFactor;
   ycm = elStorage->C13[3] * Oel[1];
-  ktemp2[61] = ycm;
+  ktemp2[17] = ycm;
   rhoA = elStorage->C14_1[1] * Oel[1] + elStorage->C14_2[1] * Oel[2];
-  ktemp2[73] = rhoA;
+  ktemp2[18] = rhoA;
   zcm = elStorage->C14_1[3] * Oel[1] + elStorage->C14_2[3] * Oel[2];
-  ktemp2[85] = zcm;
+  ktemp2[19] = zcm;
 
   //  Row 3
-  ktemp2[2] = -ktemp2_tmp;
-  ktemp2[14] = -g_ktemp2_tmp;
+  ktemp2[24] = -ktemp2_tmp;
+  ktemp2[25] = -g_ktemp2_tmp;
   ktemp2_tmp = elStorage->C23[0] * Oel[0];
-  ktemp2[50] = ktemp2_tmp;
+  ktemp2[28] = ktemp2_tmp;
   g_ktemp2_tmp = elStorage->C23[2] * Oel[0];
-  ktemp2[62] = g_ktemp2_tmp;
+  ktemp2[29] = g_ktemp2_tmp;
   S34_idx_0 = elStorage->C24[0] * Oel[0];
-  ktemp2[74] = S34_idx_0;
+  ktemp2[30] = S34_idx_0;
   S35_idx_0 = elStorage->C24[2] * Oel[0];
-  ktemp2[86] = S35_idx_0;
+  ktemp2[31] = S35_idx_0;
   S13_idx_0 = elStorage->C25[0] * Oel[2];
-  ktemp2[98] = S13_idx_0;
+  ktemp2[32] = S13_idx_0;
   S26_idx_0 = elStorage->C25[2] * Oel[2];
-  ktemp2[110] = S26_idx_0;
+  ktemp2[33] = S26_idx_0;
   S25_idx_0 = elStorage->C26[0] * Oel[2];
-  ktemp2[122] = S25_idx_0;
+  ktemp2[34] = S25_idx_0;
   S24_idx_0 = elStorage->C26[2] * Oel[2];
-  ktemp2[134] = S24_idx_0;
+  ktemp2[35] = S24_idx_0;
 
   //  Row 4
-  ktemp2[3] = -b_ktemp2_tmp;
-  ktemp2[15] = -O1;
+  ktemp2[36] = -b_ktemp2_tmp;
+  ktemp2[37] = -O1;
   b_ktemp2_tmp = elStorage->C23[1] * Oel[0];
-  ktemp2[51] = b_ktemp2_tmp;
+  ktemp2[40] = b_ktemp2_tmp;
   O1 = elStorage->C23[3] * Oel[0];
-  ktemp2[63] = O1;
+  ktemp2[41] = O1;
   H12_idx_0 = elStorage->C24[1] * Oel[0];
-  ktemp2[75] = H12_idx_0;
+  ktemp2[42] = H12_idx_0;
   K15_idx_0 = elStorage->C24[3] * Oel[0];
-  ktemp2[87] = K15_idx_0;
+  ktemp2[43] = K15_idx_0;
   H34_idx_3 = elStorage->C25[1] * Oel[2];
-  ktemp2[99] = H34_idx_3;
+  ktemp2[44] = H34_idx_3;
   S14_idx_0 = elStorage->C25[3] * Oel[2];
-  ktemp2[111] = S14_idx_0;
+  ktemp2[45] = S14_idx_0;
   S12_idx_0 = elStorage->C26[1] * Oel[2];
-  ktemp2[123] = S12_idx_0;
+  ktemp2[46] = S12_idx_0;
   S23_idx_0 = elStorage->C26[3] * Oel[2];
-  ktemp2[135] = S23_idx_0;
+  ktemp2[47] = S23_idx_0;
 
   //  Row 5
-  ktemp2[4] = -c_ktemp2_tmp;
-  ktemp2[16] = -integrationFactor;
-  ktemp2[28] = -ktemp2_tmp;
-  ktemp2[40] = -b_ktemp2_tmp;
+  ktemp2[48] = -c_ktemp2_tmp;
+  ktemp2[49] = -integrationFactor;
+  ktemp2[50] = -ktemp2_tmp;
+  ktemp2[51] = -b_ktemp2_tmp;
   ktemp2[52] = 0.0;
-  ktemp2[64] = 0.0;
-  ktemp2[76] = C34_idx_0;
-  ktemp2[88] = C34_idx_2;
+  ktemp2[53] = 0.0;
+  ktemp2[54] = C34_idx_0;
+  ktemp2[55] = C34_idx_2;
   ktemp2_tmp = elStorage->C35[0] * Oel[1];
-  ktemp2[100] = ktemp2_tmp;
+  ktemp2[56] = ktemp2_tmp;
   b_ktemp2_tmp = elStorage->C35[2] * Oel[1];
-  ktemp2[112] = b_ktemp2_tmp;
+  ktemp2[57] = b_ktemp2_tmp;
   c_ktemp2_tmp = elStorage->C36[0] * Oel[1];
-  ktemp2[124] = c_ktemp2_tmp;
+  ktemp2[58] = c_ktemp2_tmp;
   integrationFactor = elStorage->C36[2] * Oel[1];
-  ktemp2[136] = integrationFactor;
+  ktemp2[59] = integrationFactor;
 
   //  Row 6
-  ktemp2[5] = -d_ktemp2_tmp;
-  ktemp2[17] = -ycm;
-  ktemp2[29] = -g_ktemp2_tmp;
-  ktemp2[41] = -O1;
-  ktemp2[53] = 0.0;
+  ktemp2[60] = -d_ktemp2_tmp;
+  ktemp2[61] = -ycm;
+  ktemp2[62] = -g_ktemp2_tmp;
+  ktemp2[63] = -O1;
+  ktemp2[64] = 0.0;
   ktemp2[65] = 0.0;
-  ktemp2[77] = C34_idx_1;
-  ktemp2[89] = C34_idx_3;
+  ktemp2[66] = C34_idx_1;
+  ktemp2[67] = C34_idx_3;
   d_ktemp2_tmp = elStorage->C35[1] * Oel[1];
-  ktemp2[101] = d_ktemp2_tmp;
+  ktemp2[68] = d_ktemp2_tmp;
   g_ktemp2_tmp = elStorage->C35[3] * Oel[1];
-  ktemp2[113] = g_ktemp2_tmp;
+  ktemp2[69] = g_ktemp2_tmp;
   O1 = elStorage->C36[1] * Oel[1];
-  ktemp2[125] = O1;
+  ktemp2[70] = O1;
   ycm = elStorage->C36[3] * Oel[1];
-  ktemp2[137] = ycm;
+  ktemp2[71] = ycm;
 
   //  Row 7
-  ktemp2[6] = -e_ktemp2_tmp;
-  ktemp2[18] = -rhoA;
-  ktemp2[30] = -S34_idx_0;
-  ktemp2[42] = -H12_idx_0;
-  ktemp2[54] = -C34_idx_0;
-  ktemp2[66] = -C34_idx_1;
+  ktemp2[72] = -e_ktemp2_tmp;
+  ktemp2[73] = -rhoA;
+  ktemp2[74] = -S34_idx_0;
+  ktemp2[75] = -H12_idx_0;
+  ktemp2[76] = -C34_idx_0;
+  ktemp2[77] = -C34_idx_1;
   ktemp2[78] = 0.0;
-  ktemp2[90] = 0.0;
+  ktemp2[79] = 0.0;
   e_ktemp2_tmp = elStorage->C45_1[0] * Oel[2] + elStorage->C45_2[0] * Oel[1];
-  ktemp2[102] = e_ktemp2_tmp;
+  ktemp2[80] = e_ktemp2_tmp;
   rhoA = elStorage->C45_1[2] * Oel[2] + elStorage->C45_2[2] * Oel[1];
-  ktemp2[114] = rhoA;
+  ktemp2[81] = rhoA;
   S34_idx_0 = elStorage->C46_1[0] * Oel[1] + elStorage->C46_2[0] * Oel[2];
-  ktemp2[126] = S34_idx_0;
+  ktemp2[82] = S34_idx_0;
   H12_idx_0 = elStorage->C46_1[2] * Oel[1] + elStorage->C46_2[2] * Oel[2];
-  ktemp2[138] = H12_idx_0;
+  ktemp2[83] = H12_idx_0;
 
   //  Row 8
-  ktemp2[7] = -f_ktemp2_tmp;
-  ktemp2[19] = -zcm;
-  ktemp2[31] = -S35_idx_0;
-  ktemp2[43] = -K15_idx_0;
-  ktemp2[55] = -C34_idx_2;
-  ktemp2[67] = -C34_idx_3;
-  ktemp2[79] = 0.0;
+  ktemp2[84] = -f_ktemp2_tmp;
+  ktemp2[85] = -zcm;
+  ktemp2[86] = -S35_idx_0;
+  ktemp2[87] = -K15_idx_0;
+  ktemp2[88] = -C34_idx_2;
+  ktemp2[89] = -C34_idx_3;
+  ktemp2[90] = 0.0;
   ktemp2[91] = 0.0;
   f_ktemp2_tmp = elStorage->C45_1[1] * Oel[2] + elStorage->C45_2[1] * Oel[1];
-  ktemp2[103] = f_ktemp2_tmp;
+  ktemp2[92] = f_ktemp2_tmp;
   zcm = elStorage->C45_1[3] * Oel[2] + elStorage->C45_2[3] * Oel[1];
-  ktemp2[115] = zcm;
+  ktemp2[93] = zcm;
   S35_idx_0 = elStorage->C46_1[1] * Oel[1] + elStorage->C46_2[1] * Oel[2];
-  ktemp2[127] = S35_idx_0;
+  ktemp2[94] = S35_idx_0;
   K15_idx_0 = elStorage->C46_1[3] * Oel[1] + elStorage->C46_2[3] * Oel[2];
-  ktemp2[139] = K15_idx_0;
+  ktemp2[95] = K15_idx_0;
 
   //  Row 9
-  ktemp2[32] = -S13_idx_0;
-  ktemp2[44] = -H34_idx_3;
-  ktemp2[56] = -ktemp2_tmp;
-  ktemp2[68] = -d_ktemp2_tmp;
-  ktemp2[80] = -e_ktemp2_tmp;
-  ktemp2[92] = -f_ktemp2_tmp;
+  ktemp2[98] = -S13_idx_0;
+  ktemp2[99] = -H34_idx_3;
+  ktemp2[100] = -ktemp2_tmp;
+  ktemp2[101] = -d_ktemp2_tmp;
+  ktemp2[102] = -e_ktemp2_tmp;
+  ktemp2[103] = -f_ktemp2_tmp;
 
   //  Row 10
-  ktemp2[33] = -S26_idx_0;
-  ktemp2[45] = -S14_idx_0;
-  ktemp2[57] = -b_ktemp2_tmp;
-  ktemp2[69] = -g_ktemp2_tmp;
-  ktemp2[81] = -rhoA;
-  ktemp2[93] = -zcm;
+  ktemp2[110] = -S26_idx_0;
+  ktemp2[111] = -S14_idx_0;
+  ktemp2[112] = -b_ktemp2_tmp;
+  ktemp2[113] = -g_ktemp2_tmp;
+  ktemp2[114] = -rhoA;
+  ktemp2[115] = -zcm;
 
   //  Row 11
-  ktemp2[34] = -S25_idx_0;
-  ktemp2[46] = -S12_idx_0;
-  ktemp2[58] = -c_ktemp2_tmp;
-  ktemp2[70] = -O1;
-  ktemp2[82] = -S34_idx_0;
-  ktemp2[94] = -S35_idx_0;
+  ktemp2[122] = -S25_idx_0;
+  ktemp2[123] = -S12_idx_0;
+  ktemp2[124] = -c_ktemp2_tmp;
+  ktemp2[125] = -O1;
+  ktemp2[126] = -S34_idx_0;
+  ktemp2[127] = -S35_idx_0;
 
   //  Row 12
-  ktemp2[35] = -S24_idx_0;
-  ktemp2[47] = -S23_idx_0;
-  ktemp2[59] = -integrationFactor;
-  ktemp2[71] = -ycm;
-  ktemp2[83] = -H12_idx_0;
-  ktemp2[95] = -K15_idx_0;
+  ktemp2[134] = -S24_idx_0;
+  ktemp2[135] = -S23_idx_0;
+  ktemp2[136] = -integrationFactor;
+  ktemp2[137] = -ycm;
+  ktemp2[138] = -H12_idx_0;
+  ktemp2[139] = -K15_idx_0;
   mapMatrixNonSym(ktemp2, Ce);
 
   // compile mass matrix
