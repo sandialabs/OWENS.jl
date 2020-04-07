@@ -4,7 +4,7 @@
 // File: createJointTransform.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 06-Apr-2020 16:48:15
+// C/C++ source code generated on  : 07-Apr-2020 15:21:39
 //
 
 // Include Files
@@ -526,11 +526,11 @@ static void createTda(double jointType, double slaveNodeNum, double
     0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 };
 
   int globalConstraintEqMatrix4_tmp;
-  static const signed char b_iv2[24] = { 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0,
+  static const signed char iv2[24] = { 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0,
     0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 };
 
   double d_Tda[36];
-  static const signed char b_iv3[24] = { 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0,
+  static const signed char iv3[24] = { 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0,
     0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0 };
 
   static const signed char iv4[24] = { 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0,
@@ -648,10 +648,9 @@ static void createTda(double jointType, double slaveNodeNum, double
 
       for (i = 0; i < 12; i++) {
         globalConstraintEqMatrix4_tmp = i << 1;
-        globalConstraintEqMatrix4[5 * i + 3] =
-          b_iv2[globalConstraintEqMatrix4_tmp];
-        globalConstraintEqMatrix4[5 * i + 4] =
-          b_iv2[globalConstraintEqMatrix4_tmp + 1];
+        globalConstraintEqMatrix4[5 * i + 3] = iv2[globalConstraintEqMatrix4_tmp];
+        globalConstraintEqMatrix4[5 * i + 4] = iv2[globalConstraintEqMatrix4_tmp
+          + 1];
       }
     } else {
       for (i = 0; i < 6; i++) {
@@ -763,10 +762,9 @@ static void createTda(double jointType, double slaveNodeNum, double
 
       for (i = 0; i < 12; i++) {
         globalConstraintEqMatrix4_tmp = i << 1;
-        globalConstraintEqMatrix4[5 * i + 3] =
-          b_iv3[globalConstraintEqMatrix4_tmp];
-        globalConstraintEqMatrix4[5 * i + 4] =
-          b_iv3[globalConstraintEqMatrix4_tmp + 1];
+        globalConstraintEqMatrix4[5 * i + 3] = iv3[globalConstraintEqMatrix4_tmp];
+        globalConstraintEqMatrix4[5 * i + 4] = iv3[globalConstraintEqMatrix4_tmp
+          + 1];
       }
     } else if ((std::abs(std::abs(psi) - 90.0) < 0.001) || (std::abs(std::abs
                  (psi) - 270.0) < 0.001)) {

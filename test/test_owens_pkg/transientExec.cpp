@@ -4,7 +4,7 @@
 // File: transientExec.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 06-Apr-2020 16:48:15
+// C/C++ source code generated on  : 07-Apr-2020 15:21:39
 //
 
 // Include Files
@@ -50,7 +50,7 @@ static void omegaSpecCheck(double tCurrent, const double tocp[2], double
   int exitg1;
   double Vq;
   double b_Vq;
-  if (11.1 < tCurrent) {
+  if (1.1 < tCurrent) {
     *terminateSimulation = true;
     *OmegaCurrent = 0.0;
     *OmegaDotCurrent = 0.0;
@@ -106,7 +106,7 @@ static void omegaSpecCheck(double tCurrent, const double tocp[2], double
         }
       } else {
         b_Vq = rtNaN;
-        if ((!rtIsNaN(tCurrent + 0.001)) && (!(tCurrent + 0.001 > 11.1))) {
+        if ((!rtIsNaN(tCurrent + 0.001)) && (!(tCurrent + 0.001 > 1.1))) {
           b_Vq = 0.12000000000000001;
         }
 
@@ -181,15 +181,15 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   emxArray_real_T *uddot_s;
   int gbNorm;
   emxArray_real_T *uHist;
-  static double t_data[5051];
-  emxArray_real_T *FReactionHist;
+  double t_data[51];
+  double FReactionHist_data[306];
   b_emxArray_struct_T *strainHist;
-  static double aziHist_data[5051];
-  static double OmegaHist_data[5051];
-  static double OmegaDotHist_data[5051];
-  static double gbHist_data[5051];
-  double gbDotHist_data[5051];
-  double genPower_data[5051];
+  double aziHist_data[51];
+  double OmegaHist_data[51];
+  double OmegaDotHist_data[51];
+  double gbHist_data[51];
+  double gbDotHist_data[51];
+  double genPower_data[51];
   double gb_s;
   double gbDot_s;
   double azi_s;
@@ -251,26 +251,26 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
     'n', 'P', 'o', 'w', 'e', 'r', ',', 't', 'o', 'r', 'q', 'u', 'e', 'D', 'r',
     'i', 'v', 'e', 'S', 'h', 'a', 'f', 't', '\x0a' };
 
-  int c_model_outFilename_size[2];
   int sizes_idx_0;
-  char d_model_outFilename_data[82];
+  int c_model_outFilename_size[2];
   signed char input_sizes_idx_1;
+  char d_model_outFilename_data[82];
   emxArray_char_T e_model_outFilename_data;
   static const char cv1[10] = { '_', 'u', 'H', 'i', 's', 't', '.', 't', 'x', 't'
   };
 
+  double structureMOI[9];
   int d_model_outFilename_size[2];
   int i1;
-  double structureMOI[9];
   char f_model_outFilename_data[87];
   emxArray_char_T g_model_outFilename_data;
   static const char cv2[15] = { '_', 's', 't', 'r', 'a', 'i', 'n', 'H', 'i', 's',
     't', '.', 't', 'x', 't' };
 
   double CP2H_tmp[9];
+  double b_CP2H_tmp[9];
   static const char cv3[9] = { 'e', 'p', 's', '_', 'x', 'x', '_', '0', ' ' };
 
-  double b_CP2H_tmp[9];
   static const char cv4[9] = { 'e', 'p', 's', '_', 'x', 'x', '_', 'z', ' ' };
 
   static const char cv5[9] = { 'e', 'p', 's', '_', 'x', 'x', '_', 'y', ' ' };
@@ -386,9 +386,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   // define time step size
   i = uHist->size[0] * uHist->size[1];
   uHist->size[0] = platNorm;
-  uHist->size[1] = 5051;
+  uHist->size[1] = 51;
   emxEnsureCapacity_real_T(uHist, i);
-  gbNorm = platNorm * 5051;
+  gbNorm = platNorm * 51;
   for (i = 0; i < gbNorm; i++) {
     uHist->data[i] = 0.0;
   }
@@ -402,35 +402,27 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   //  omega_platform = zeros(3,1);
   //  omega_platform_dot = zeros(3,1);
   //  omegaPlatHist(:,1) = omega_platform;
-  std::memset(&t_data[0], 0, 5051U * sizeof(double));
-  emxInit_real_T(&FReactionHist, 2);
-  i = FReactionHist->size[0] * FReactionHist->size[1];
-  FReactionHist->size[0] = 5051;
-  FReactionHist->size[1] = 6;
-  emxEnsureCapacity_real_T(FReactionHist, i);
-  for (i = 0; i < 30306; i++) {
-    FReactionHist->data[i] = 0.0;
-  }
-
+  std::memset(&t_data[0], 0, 51U * sizeof(double));
+  std::memset(&FReactionHist_data[0], 0, 306U * sizeof(double));
   emxInit_struct_T1(&strainHist, 2);
 
   //  strainHist(numTS+1) = struct();
   i = strainHist->size[0] * strainHist->size[1];
   strainHist->size[0] = loop_ub;
-  strainHist->size[1] = 5050;
+  strainHist->size[1] = 50;
   emxEnsureCapacity_struct_T1(strainHist, i);
-  loop_ub *= 5050;
+  loop_ub *= 50;
   for (i = 0; i < loop_ub; i++) {
     strainHist->data[i] = r1;
   }
 
   // genTorque = zeros(1,numTS+1);
-  std::memset(&aziHist_data[0], 0, 5051U * sizeof(double));
-  std::memset(&OmegaHist_data[0], 0, 5051U * sizeof(double));
-  std::memset(&OmegaDotHist_data[0], 0, 5051U * sizeof(double));
-  std::memset(&gbHist_data[0], 0, 5051U * sizeof(double));
-  std::memset(&gbDotHist_data[0], 0, 5051U * sizeof(double));
-  std::memset(&genPower_data[0], 0, 5051U * sizeof(double));
+  std::memset(&aziHist_data[0], 0, 51U * sizeof(double));
+  std::memset(&OmegaHist_data[0], 0, 51U * sizeof(double));
+  std::memset(&OmegaDotHist_data[0], 0, 51U * sizeof(double));
+  std::memset(&gbHist_data[0], 0, 51U * sizeof(double));
+  std::memset(&gbDotHist_data[0], 0, 51U * sizeof(double));
+  std::memset(&genPower_data[0], 0, 51U * sizeof(double));
   t_data[0] = 0.0;
 
   // initialize various states and variables
@@ -444,7 +436,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   OmegaDotHist_data[0] = 0.0;
   for (b_i = 0; b_i < 6; b_i++) {
     FReactionsm1[b_i] = 0.0;
-    FReactionHist->data[5051 * b_i] = 0.0;
+    FReactionHist_data[51 * b_i] = 0.0;
   }
 
   gbHist_data[0] = 0.0;
@@ -480,15 +472,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   emxInit_real_T(&b_Fexternal_sub, 2);
   emxInit_real_T(&b_udot_j, 2);
   exitg1 = false;
-  while ((!exitg1) && (b_i - 1 < 5050)) {
+  while ((!exitg1) && (b_i - 1 < 50)) {
     //      i %TODO add verbose printing
-    if (std::fmod(static_cast<double>((b_i - 1)) + 1.0, 100.0) == 0.0) {
-      // print command that displays progress of time stepping
-      // TODO: add string conversion of i
-      printf("%s\n", "Iteration: ");
-      fflush(stdout);
-    }
-
     //     %% check for specified rotor speed at t(i) + delta_t
     // use discreteized rotor speed profile function
     omegaSpecCheck(t_data[b_i - 1] + 0.002, model_tocp, &omegaCurrent,
@@ -818,7 +803,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       }
 
       for (i = 0; i < 6; i++) {
-        FReactionHist->data[b_i + 5051 * i] = FReactionsm1[i];
+        FReactionHist_data[b_i + 51 * i] = FReactionsm1[i];
       }
 
       loop_ub = strainHist->size[0];
@@ -837,7 +822,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
       // genTorque(i+1) = genTorque_s;
       for (i = 0; i < 6; i++) {
-        FReactionHist->data[b_i + 5051 * i] = FReactionsm1[i];
+        FReactionHist_data[b_i + 51 * i] = FReactionsm1[i];
       }
 
       //     %%
@@ -916,7 +901,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   emxInit_char_T(&r14, 2);
   emxInit_char_T(&r15, 2);
   emxInit_char_T(&r16, 2);
-  for (b_i = 0; b_i < 5052; b_i++) {
+  for (b_i = 0; b_i < 52; b_i++) {
     if (b_i == 0) {
       i = line->size[0] * line->size[1];
       line->size[0] = 1;
@@ -933,12 +918,12 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       b_sprintf(gbHist_data[b_i - 1], r4);
       b_sprintf(gbDotHist_data[b_i - 1], r5);
       b_sprintf(0.0, r6);
-      b_sprintf(FReactionHist->data[b_i - 1], r7);
-      b_sprintf(FReactionHist->data[b_i + 5050], r8);
-      b_sprintf(FReactionHist->data[b_i + 10101], r9);
-      b_sprintf(FReactionHist->data[b_i + 15152], r10);
-      b_sprintf(FReactionHist->data[b_i + 20203], r11);
-      b_sprintf(FReactionHist->data[b_i + 25254], r12);
+      b_sprintf(FReactionHist_data[b_i - 1], r7);
+      b_sprintf(FReactionHist_data[b_i + 50], r8);
+      b_sprintf(FReactionHist_data[b_i + 101], r9);
+      b_sprintf(FReactionHist_data[b_i + 152], r10);
+      b_sprintf(FReactionHist_data[b_i + 203], r11);
+      b_sprintf(FReactionHist_data[b_i + 254], r12);
       b_sprintf(0.0, r13);
       b_sprintf(0.0, r14);
       b_sprintf(genPower_data[b_i - 1], r15);
@@ -1146,7 +1131,6 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   emxFree_char_T(&r4);
   emxFree_char_T(&r3);
   emxFree_char_T(&b_r2);
-  emxFree_real_T(&FReactionHist);
   cfclose(static_cast<double>(input_sizes_idx_0));
 
   //  Save uHist
@@ -1175,7 +1159,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   input_sizes_idx_0 = c_cfopen(&e_model_outFilename_data, "wb+");
 
   // open/create new for writing and discard existing data
-  for (b_i = 0; b_i < 5052; b_i++) {
+  for (b_i = 0; b_i < 52; b_i++) {
     if (b_i == 0) {
       c_fwrite(static_cast<double>(input_sizes_idx_0));
     } else {
@@ -1253,10 +1237,10 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   input_sizes_idx_0 = c_cfopen(&g_model_outFilename_data, "wb+");
 
   // open/create new for writing and discard existing data
-  for (b_i = 0; b_i < 5051; b_i++) {
+  for (b_i = 0; b_i < 51; b_i++) {
     if (b_i == 0) {
       d_fwrite(static_cast<double>(input_sizes_idx_0));
-      b_sprintf(5051.0, b_r);
+      b_sprintf(51.0, b_r);
       b_sprintf(static_cast<double>(strainHist->size[0]), b_r1);
       i = line->size[0] * line->size[1];
       line->size[0] = 1;

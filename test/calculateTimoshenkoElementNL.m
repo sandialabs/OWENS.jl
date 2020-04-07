@@ -577,12 +577,133 @@ if(useDisp && strcmp(iterationType,'NR'))
 end
 
 %compile Coriolis/damping matrix
-[Ce] = mapMatrixNonSym([zm,C12,C13,C14,zm,zm;
-    -C12',zm,C23,C24,C25,C26;
-    -C13',-C23',C33,C34,C35,C36;
-    -C14',-C24',C43,C44,C45,C46;
-    zm,-C25',-C35',-C45',zm,zm;
-    zm,-C26',-C36',-C46',zm,zm]);
+% ktemp = [zm,C12,C13,C14,zm,zm;
+%     -C12',zm,C23,C24,C25,C26;
+%     -C13',-C23',C33,C34,C35,C36;
+%     -C14',-C24',C43,C44,C45,C46;
+%     zm,-C25',-C35',-C45',zm,zm;
+%     zm,-C26',-C36',-C46',zm,zm];
+
+ktemp2 = zeros(12,12);
+
+% Row 1
+ktemp2(1,3) = elStorage.C12(1,1).*O3;
+ktemp2(1,4) = elStorage.C12(1,2).*O3;
+ktemp2(1,5) = elStorage.C13(1,1).*O2;
+ktemp2(1,6) = elStorage.C13(1,2).*O2;
+ktemp2(1,7) = elStorage.C14_1(1,1).*O2 + elStorage.C14_2(1,1).*O3;
+ktemp2(1,8) = elStorage.C14_1(1,2).*O2 + elStorage.C14_2(1,2).*O3;
+% Row 2
+ktemp2(2,3) = elStorage.C12(2,1).*O3;
+ktemp2(2,4) = elStorage.C12(2,2).*O3;
+ktemp2(2,5) = elStorage.C13(2,1).*O2;
+ktemp2(2,6) = elStorage.C13(2,2).*O2;
+ktemp2(2,7) = elStorage.C14_1(2,1).*O2 + elStorage.C14_2(2,1).*O3;
+ktemp2(2,8) = elStorage.C14_1(2,2).*O2 + elStorage.C14_2(2,2).*O3;
+% Row 3
+ktemp2(3,1) = -(elStorage.C12(1,1).*O3);
+ktemp2(3,2) = -(elStorage.C12(2,1).*O3);
+ktemp2(3,5) = elStorage.C23(1,1).*O1;
+ktemp2(3,6) = elStorage.C23(1,2).*O1;
+ktemp2(3,7) = elStorage.C24(1,1).*O1;
+ktemp2(3,8) = elStorage.C24(1,2).*O1;
+ktemp2(3,9) = elStorage.C25(1,1).*O3;
+ktemp2(3,10) = elStorage.C25(1,2).*O3;
+ktemp2(3,11) = elStorage.C26(1,1).*O3;
+ktemp2(3,12) = elStorage.C26(1,2).*O3;
+% Row 4
+ktemp2(4,1) = -(elStorage.C12(1,2).*O3);
+ktemp2(4,2) = -(elStorage.C12(2,2).*O3);
+ktemp2(4,5) = elStorage.C23(2,1).*O1;
+ktemp2(4,6) = elStorage.C23(2,2).*O1;
+ktemp2(4,7) = elStorage.C24(2,1).*O1;
+ktemp2(4,8) = elStorage.C24(2,2).*O1;
+ktemp2(4,9) = elStorage.C25(2,1).*O3;
+ktemp2(4,10) = elStorage.C25(2,2).*O3;
+ktemp2(4,11) = elStorage.C26(2,1).*O3;
+ktemp2(4,12) = elStorage.C26(2,2).*O3;
+% Row 5
+ktemp2(5,1) = -(elStorage.C13(1,1).*O2);
+ktemp2(5,2) = -(elStorage.C13(2,1).*O2);
+ktemp2(5,3) = -(elStorage.C23(1,1).*O1);
+ktemp2(5,4) = -(elStorage.C23(2,1).*O1);
+ktemp2(5,5) = C33(1,1);
+ktemp2(5,6) = C33(1,2);
+ktemp2(5,7) = C34(1,1);
+ktemp2(5,8) = C34(1,2);
+ktemp2(5,9) = elStorage.C35(1,1).*O2;
+ktemp2(5,10) = elStorage.C35(1,2).*O2;
+ktemp2(5,11) = elStorage.C36(1,1).*O2;
+ktemp2(5,12) = elStorage.C36(1,2).*O2;
+% Row 6
+ktemp2(6,1) = -(elStorage.C13(1,2).*O2);
+ktemp2(6,2) = -(elStorage.C13(2,2).*O2);
+ktemp2(6,3) = -(elStorage.C23(1,2).*O1);
+ktemp2(6,4) = -(elStorage.C23(2,2).*O1);
+ktemp2(6,5) = C33(2,1);
+ktemp2(6,6) = C33(2,2);
+ktemp2(6,7) = C34(2,1);
+ktemp2(6,8) = C34(2,2);
+ktemp2(6,9) = elStorage.C35(2,1).*O2;
+ktemp2(6,10) = elStorage.C35(2,2).*O2;
+ktemp2(6,11) = elStorage.C36(2,1).*O2;
+ktemp2(6,12) = elStorage.C36(2,2).*O2;
+% Row 7
+ktemp2(7,1) = -(elStorage.C14_1(1,1).*O2 + elStorage.C14_2(1,1).*O3);
+ktemp2(7,2) = -(elStorage.C14_1(2,1).*O2 + elStorage.C14_2(2,1).*O3);
+ktemp2(7,3) = -(elStorage.C24(1,1).*O1);
+ktemp2(7,4) = -(elStorage.C24(2,1).*O1);
+ktemp2(7,5) = C43(1,1);
+ktemp2(7,6) = C43(1,2);
+ktemp2(7,7) = C44(1,1);
+ktemp2(7,8) = C44(1,2);
+ktemp2(7,9) = elStorage.C45_1(1,1).*O3 + elStorage.C45_2(1,1).*O2;
+ktemp2(7,10) = elStorage.C45_1(1,2).*O3 + elStorage.C45_2(1,2).*O2;
+ktemp2(7,11) = elStorage.C46_1(1,1).*O2 + elStorage.C46_2(1,1).*O3;
+ktemp2(7,12) = elStorage.C46_1(1,2).*O2 + elStorage.C46_2(1,2).*O3;
+% Row 8
+ktemp2(8,1) = -(elStorage.C14_1(1,2).*O2 + elStorage.C14_2(1,2).*O3);
+ktemp2(8,2) = -(elStorage.C14_1(2,2).*O2 + elStorage.C14_2(2,2).*O3);
+ktemp2(8,3) = -(elStorage.C24(1,2).*O1);
+ktemp2(8,4) = -(elStorage.C24(2,2).*O1);
+ktemp2(8,5) = C43(2,1);
+ktemp2(8,6) = C43(2,2);
+ktemp2(8,7) = C44(2,1);
+ktemp2(8,8) = C44(2,2);
+ktemp2(8,9) = elStorage.C45_1(2,1).*O3 + elStorage.C45_2(2,1).*O2;
+ktemp2(8,10) = elStorage.C45_1(2,2).*O3 + elStorage.C45_2(2,2).*O2;
+ktemp2(8,11) = elStorage.C46_1(2,1).*O2 + elStorage.C46_2(2,1).*O3;
+ktemp2(8,12) = elStorage.C46_1(2,2).*O2 + elStorage.C46_2(2,2).*O3;
+% Row 9
+ktemp2(9,3) = -(elStorage.C25(1,1).*O3);
+ktemp2(9,4) = -(elStorage.C25(2,1).*O3);
+ktemp2(9,5) = -(elStorage.C35(1,1).*O2);
+ktemp2(9,6) = -(elStorage.C35(2,1).*O2);
+ktemp2(9,7) = -(elStorage.C45_1(1,1).*O3 + elStorage.C45_2(1,1).*O2);
+ktemp2(9,8) = -(elStorage.C45_1(2,1).*O3 + elStorage.C45_2(2,1).*O2);
+% Row 10
+ktemp2(10,3) = -(elStorage.C25(1,2).*O3);
+ktemp2(10,4) = -(elStorage.C25(2,2).*O3);
+ktemp2(10,5) = -(elStorage.C35(1,2).*O2);
+ktemp2(10,6) = -(elStorage.C35(2,2).*O2);
+ktemp2(10,7) = -(elStorage.C45_1(1,2).*O3 + elStorage.C45_2(1,2).*O2);
+ktemp2(10,8) = -(elStorage.C45_1(2,2).*O3 + elStorage.C45_2(2,2).*O2);
+% Row 11
+ktemp2(11,3) = -(elStorage.C26(1,1).*O3);
+ktemp2(11,4) = -(elStorage.C26(2,1).*O3);
+ktemp2(11,5) = -(elStorage.C36(1,1).*O2);
+ktemp2(11,6) = -(elStorage.C36(2,1).*O2);
+ktemp2(11,7) = -(elStorage.C46_1(1,1).*O2 + elStorage.C46_2(1,1).*O3);
+ktemp2(11,8) = -(elStorage.C46_1(2,1).*O2 + elStorage.C46_2(2,1).*O3);
+% Row 12
+ktemp2(12,3) = -(elStorage.C26(1,2).*O3);
+ktemp2(12,4) = -(elStorage.C26(2,2).*O3);
+ktemp2(12,5) = -(elStorage.C36(1,2).*O2);
+ktemp2(12,6) = -(elStorage.C36(2,2).*O2);
+ktemp2(12,7) = -(elStorage.C46_1(1,2).*O2 + elStorage.C46_2(1,2).*O3);
+ktemp2(12,8) = -(elStorage.C46_1(2,2).*O2 + elStorage.C46_2(2,2).*O3);
+
+[Ce] = mapMatrixNonSym(ktemp2);
 
 %compile mass matrix
 [Me] = mapMatrixNonSym([M11,zm,zm,zm,M15,M16;
@@ -894,7 +1015,7 @@ T = [1 0 0 0 0 0 0 0 0 0 0 0;
     0 0 0 0 0 0 0 0 0 0 0 1];
 
 %map to FEA numbering
-Kel = T'*Ktemp*T;
+Kel = full(sparse(T')*sparse(Ktemp)*sparse(T));
 
 %declare map
 % map = [1, 7, 2, 8, 3, 9,...

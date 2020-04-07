@@ -4,7 +4,7 @@
 // File: linearAnalysisModal.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 06-Apr-2020 16:48:15
+// C/C++ source code generated on  : 07-Apr-2020 15:21:39
 //
 
 // Include Files
@@ -125,9 +125,9 @@ static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
 
   emxInit_real_T(&t0_d, 1);
   emxInit_int32_T(&t0_rowidx, 1);
-  d_sparse_mtimes(y_d, y_colidx, y_rowidx, y_m, Kg_d, Kg_colidx, Kg_rowidx, Kg_n,
+  e_sparse_mtimes(y_d, y_colidx, y_rowidx, y_m, Kg_d, Kg_colidx, Kg_rowidx, Kg_n,
                   t0_d, counts, t0_rowidx, &outridx, &cend);
-  d_sparse_mtimes(t0_d, counts, t0_rowidx, outridx, transMatrix_d,
+  e_sparse_mtimes(t0_d, counts, t0_rowidx, outridx, transMatrix_d,
                   transMatrix_colidx, transMatrix_rowidx, transMatrix_n, Kg_d,
                   Kg_colidx, Kg_rowidx, &Kg_m, &Kg_n);
   i = Kg->size[0] * Kg->size[1];

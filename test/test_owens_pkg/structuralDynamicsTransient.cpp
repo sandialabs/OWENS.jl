@@ -4,7 +4,7 @@
 // File: structuralDynamicsTransient.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 06-Apr-2020 16:48:15
+// C/C++ source code generated on  : 07-Apr-2020 15:21:39
 //
 
 // Include Files
@@ -47,14 +47,14 @@ static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   emxArray_real_T *this_d;
   int cend;
   emxArray_int32_T *this_colidx;
-  int t3_m;
+  int t5_m;
   emxArray_int32_T *this_rowidx;
-  emxArray_real_T *t2_d;
-  emxArray_int32_T *t2_colidx;
-  emxArray_int32_T *t2_rowidx;
-  emxArray_real_T *t3_d;
-  emxArray_int32_T *t3_colidx;
-  emxArray_int32_T *t3_rowidx;
+  emxArray_real_T *t4_d;
+  emxArray_int32_T *t4_colidx;
+  emxArray_int32_T *t4_rowidx;
+  emxArray_real_T *t5_d;
+  emxArray_int32_T *t5_colidx;
+  emxArray_int32_T *t5_rowidx;
   int this_m;
   int this_n;
   emxInit_real_T(&b_transMatrix, 2);
@@ -65,52 +65,52 @@ static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   loop_ub = transMatrix->size[0];
   for (i = 0; i < loop_ub; i++) {
     cend = transMatrix->size[1];
-    for (t3_m = 0; t3_m < cend; t3_m++) {
-      b_transMatrix->data[t3_m + b_transMatrix->size[0] * i] = transMatrix->
-        data[i + transMatrix->size[0] * t3_m];
+    for (t5_m = 0; t5_m < cend; t5_m++) {
+      b_transMatrix->data[t5_m + b_transMatrix->size[0] * i] = transMatrix->
+        data[i + transMatrix->size[0] * t5_m];
     }
   }
 
   emxInit_real_T(&this_d, 1);
   emxInit_int32_T(&this_colidx, 1);
   emxInit_int32_T(&this_rowidx, 1);
-  emxInit_real_T(&t2_d, 1);
-  emxInit_int32_T(&t2_colidx, 1);
-  emxInit_int32_T(&t2_rowidx, 1);
-  emxInit_real_T(&t3_d, 1);
-  emxInit_int32_T(&t3_colidx, 1);
-  emxInit_int32_T(&t3_rowidx, 1);
-  b_sparse(b_transMatrix, t2_d, t2_colidx, t2_rowidx, &cend, &loop_ub);
+  emxInit_real_T(&t4_d, 1);
+  emxInit_int32_T(&t4_colidx, 1);
+  emxInit_int32_T(&t4_rowidx, 1);
+  emxInit_real_T(&t5_d, 1);
+  emxInit_int32_T(&t5_colidx, 1);
+  emxInit_int32_T(&t5_rowidx, 1);
+  b_sparse(b_transMatrix, t4_d, t4_colidx, t4_rowidx, &cend, &loop_ub);
   b_sparse(Kg, this_d, this_colidx, this_rowidx, &this_m, &this_n);
-  d_sparse_mtimes(t2_d, t2_colidx, t2_rowidx, cend, this_d, this_colidx,
-                  this_rowidx, this_n, t3_d, t3_colidx, t3_rowidx, &t3_m,
+  e_sparse_mtimes(t4_d, t4_colidx, t4_rowidx, cend, this_d, this_colidx,
+                  this_rowidx, this_n, t5_d, t5_colidx, t5_rowidx, &t5_m,
                   &loop_ub);
-  b_sparse(transMatrix, t2_d, t2_colidx, t2_rowidx, &cend, &loop_ub);
-  d_sparse_mtimes(t3_d, t3_colidx, t3_rowidx, t3_m, t2_d, t2_colidx, t2_rowidx,
+  b_sparse(transMatrix, t4_d, t4_colidx, t4_rowidx, &cend, &loop_ub);
+  e_sparse_mtimes(t5_d, t5_colidx, t5_rowidx, t5_m, t4_d, t4_colidx, t4_rowidx,
                   loop_ub, this_d, this_colidx, this_rowidx, &this_m, &this_n);
   i = Kg->size[0] * Kg->size[1];
   Kg->size[0] = this_m;
   Kg->size[1] = this_n;
   emxEnsureCapacity_real_T(Kg, i);
   emxFree_real_T(&b_transMatrix);
-  emxFree_int32_T(&t3_rowidx);
-  emxFree_int32_T(&t3_colidx);
-  emxFree_real_T(&t3_d);
-  emxFree_int32_T(&t2_rowidx);
-  emxFree_int32_T(&t2_colidx);
-  emxFree_real_T(&t2_d);
+  emxFree_int32_T(&t5_rowidx);
+  emxFree_int32_T(&t5_colidx);
+  emxFree_real_T(&t5_d);
+  emxFree_int32_T(&t4_rowidx);
+  emxFree_int32_T(&t4_colidx);
+  emxFree_real_T(&t4_d);
   for (i = 0; i < this_n; i++) {
-    for (t3_m = 0; t3_m < this_m; t3_m++) {
-      Kg->data[t3_m + Kg->size[0] * i] = 0.0;
+    for (t5_m = 0; t5_m < this_m; t5_m++) {
+      Kg->data[t5_m + Kg->size[0] * i] = 0.0;
     }
   }
 
   for (loop_ub = 0; loop_ub < this_n; loop_ub++) {
     cend = this_colidx->data[loop_ub + 1] - 1;
     i = this_colidx->data[loop_ub];
-    for (t3_m = i; t3_m <= cend; t3_m++) {
-      Kg->data[(this_rowidx->data[t3_m - 1] + Kg->size[0] * loop_ub) - 1] =
-        this_d->data[t3_m - 1];
+    for (t5_m = i; t5_m <= cend; t5_m++) {
+      Kg->data[(this_rowidx->data[t5_m - 1] + Kg->size[0] * loop_ub) - 1] =
+        this_d->data[t5_m - 1];
     }
   }
 

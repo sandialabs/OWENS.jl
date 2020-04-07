@@ -4,7 +4,7 @@
 // File: elementPostProcess.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 06-Apr-2020 16:48:15
+// C/C++ source code generated on  : 07-Apr-2020 15:21:39
 //
 
 // Include Files
@@ -313,8 +313,8 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   expl_temp.timeInt = *timeInt;
   expl_temp.modalFlag = true;
   expl_temp.elementOrder = 1.0;
-  b_calculateTimoshenkoElementNL(&expl_temp, &elStorage->
-    data[elInput_xloc_idx_1_tmp], &b_expl_temp);
+  b_calculateTimoshenkoElementNL(&expl_temp, &elStorage->data[static_cast<int>
+    (elementNumber) - 1], &b_expl_temp);
   std::memcpy(&eldisp_data[0], &b_expl_temp.FhatLessConc[0], 12U * sizeof(double));
   std::memcpy(&elOutput_Ke[0], &b_expl_temp.Ke[0], 144U * sizeof(double));
 
