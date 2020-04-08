@@ -4,7 +4,7 @@
 // File: structuralDynamicsTransient.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 #ifndef STRUCTURALDYNAMICSTRANSIENT_H
 #define STRUCTURALDYNAMICSTRANSIENT_H

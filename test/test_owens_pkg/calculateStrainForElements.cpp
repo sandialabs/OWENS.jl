@@ -4,7 +4,7 @@
 // File: calculateStrainForElements.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -39,16 +39,18 @@ void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
   emxArray_real_T *el_roll, const emxArray_real_T *displ, b_emxArray_struct_T
   *elStrain)
 {
-  int b_index;
-  int loop_ub;
   int i;
-  double elInput_xloc[2];
-  double elInput_disp_data[12];
-  int aoffset;
+  int loop_ub;
+  int b_i;
+  int b_index;
+  double input_xloc[2];
+  double input_disp_data[12];
+  int j;
   int k;
-  double lambda[144];
+  double a[144];
   double b_data[12];
   double dispLocal[12];
+  int aoffset;
   double theta_yNode_idx_0;
   double theta_yNode_idx_1;
   double theta_zNode_idx_0;
@@ -57,26 +59,27 @@ void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
   int N_size[2];
   double p_N_x_data[2];
   int p_N_x_size[1];
+  double unusedU1;
   double theta_x_prime;
-  b_index = elStrain->size[0] * elStrain->size[1];
+  i = elStrain->size[0] * elStrain->size[1];
   elStrain->size[0] = 1;
   loop_ub = static_cast<int>(numEl);
   elStrain->size[1] = loop_ub;
-  emxEnsureCapacity_struct_T1(elStrain, b_index);
-  for (i = 0; i < loop_ub; i++) {
-    elStrain->data[i] = r1;
+  emxEnsureCapacity_struct_T1(elStrain, i);
+  for (b_i = 0; b_i < loop_ub; b_i++) {
+    elStrain->data[b_i] = r1;
 
     // Calculate Ke and Fe for element i
     b_index = 0;
-    elInput_xloc[0] = 0.0;
-    elInput_xloc[1] = el_elLen->data[i];
-    std::memset(&elInput_disp_data[0], 0, 12U * sizeof(double));
-    for (aoffset = 0; aoffset < 2; aoffset++) {
+    input_xloc[0] = 0.0;
+    input_xloc[1] = el_elLen->data[b_i];
+    std::memset(&input_disp_data[0], 0, 12U * sizeof(double));
+    for (j = 0; j < 2; j++) {
       // define element coordinates and displacements associated with element
       for (k = 0; k < 6; k++) {
-        elInput_disp_data[b_index] = displ->data[static_cast<int>(((conn->data[i
-          + conn->size[0] * aoffset] - 1.0) * 6.0 + (static_cast<double>(k) +
-          1.0))) - 1];
+        input_disp_data[b_index] = displ->data[static_cast<int>(((conn->data[b_i
+          + conn->size[0] * j] - 1.0) * 6.0 + (static_cast<double>(k) + 1.0))) -
+          1];
         b_index++;
       }
     }
@@ -104,19 +107,19 @@ void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
     // Initialize element sub matrices and sub vectors
     // Sort displacement vector
     // Written for 2 node element with 6 dof per node
-    calculateLambda(el_psi->data[i] * 3.1415926535897931 / 180.0, el_theta->
-                    data[i] * 3.1415926535897931 / 180.0, (el_roll->data[i] +
-      0.5 * (el_props->data[i].twist[0] + el_props->data[i].twist[1])) *
-                    3.1415926535897931 / 180.0, lambda);
-    for (b_index = 0; b_index < 12; b_index++) {
-      b_data[b_index] = elInput_disp_data[b_index];
-      dispLocal[b_index] = 0.0;
+    calculateLambda(el_psi->data[b_i] * 3.1415926535897931 / 180.0,
+                    el_theta->data[b_i] * 3.1415926535897931 / 180.0,
+                    (el_roll->data[b_i] + 0.5 * (el_props->data[b_i].twist[0] +
+      el_props->data[b_i].twist[1])) * 3.1415926535897931 / 180.0, a);
+    for (i = 0; i < 12; i++) {
+      b_data[i] = input_disp_data[i];
+      dispLocal[i] = 0.0;
     }
 
     for (k = 0; k < 12; k++) {
       aoffset = k * 12;
-      for (b_index = 0; b_index < 12; b_index++) {
-        dispLocal[b_index] += b_data[k] * lambda[aoffset + b_index];
+      for (i = 0; i < 12; i++) {
+        dispLocal[i] += b_data[k] * a[aoffset + i];
       }
     }
 
@@ -128,10 +131,10 @@ void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
 
     // Integration loop
     // END OF INTEGRATION LOOP
-    for (b_index = 0; b_index < 4; b_index++) {
+    for (i = 0; i < 4; i++) {
       // Calculate shape functions at quad point i
-      calculateShapeFunctions(dv[b_index], elInput_xloc, N_data, N_size,
-        p_N_x_data, p_N_x_size, &theta_x_prime);
+      calculateShapeFunctions(dv[i], input_xloc, N_data, N_size, p_N_x_data,
+        p_N_x_size, &unusedU1);
 
       // N1 = N;
       // N2 = N;
@@ -155,20 +158,20 @@ void calculateStrainForElements(double numEl, const emxArray_real_T *conn, const
       // This function interpolates a value using distinct values at valNode
       // and the corresponding shape function N.
       theta_x_prime = p_N_x_data[0] * dispLocal[3] + p_N_x_data[1] * dispLocal[9];
-      elStrain->data[i].eps_xx_0[b_index] = p_N_x_data[0] * dispLocal[0] +
+      elStrain->data[b_i].eps_xx_0[i] = p_N_x_data[0] * dispLocal[0] +
         p_N_x_data[1] * dispLocal[6];
-      elStrain->data[i].eps_xx_z[b_index] = p_N_x_data[0] * theta_yNode_idx_0 +
+      elStrain->data[b_i].eps_xx_z[i] = p_N_x_data[0] * theta_yNode_idx_0 +
         p_N_x_data[1] * theta_yNode_idx_1;
-      elStrain->data[i].eps_xx_y[b_index] = -(p_N_x_data[0] * theta_zNode_idx_0
-        + p_N_x_data[1] * theta_zNode_idx_1);
-      elStrain->data[i].gam_xz_0[b_index] = (N_data[0] * theta_yNode_idx_0 +
-        N_data[1] * theta_yNode_idx_1) + (p_N_x_data[0] * dispLocal[2] +
-        p_N_x_data[1] * dispLocal[8]);
-      elStrain->data[i].gam_xz_y[b_index] = theta_x_prime;
-      elStrain->data[i].gam_xy_0[b_index] = -(N_data[0] * theta_zNode_idx_0 +
+      elStrain->data[b_i].eps_xx_y[i] = -(p_N_x_data[0] * theta_zNode_idx_0 +
+        p_N_x_data[1] * theta_zNode_idx_1);
+      elStrain->data[b_i].gam_xz_0[i] = (N_data[0] * theta_yNode_idx_0 + N_data
+        [1] * theta_yNode_idx_1) + (p_N_x_data[0] * dispLocal[2] + p_N_x_data[1]
+        * dispLocal[8]);
+      elStrain->data[b_i].gam_xz_y[i] = theta_x_prime;
+      elStrain->data[b_i].gam_xy_0[i] = -(N_data[0] * theta_zNode_idx_0 +
         N_data[1] * theta_zNode_idx_1) + (p_N_x_data[0] * dispLocal[1] +
         p_N_x_data[1] * dispLocal[7]);
-      elStrain->data[i].gam_xy_z[b_index] = -theta_x_prime;
+      elStrain->data[b_i].gam_xy_z[i] = -theta_x_prime;
     }
   }
 }

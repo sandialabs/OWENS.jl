@@ -4,7 +4,7 @@
 // File: str2double.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -196,7 +196,7 @@ creal_T c_str2double(const emxArray_char_T *s)
   boolean_T isimag1;
   boolean_T isfinite1;
   double scanned1;
-  boolean_T unusedU0;
+  boolean_T isimag2;
   boolean_T success;
   double scanned2;
   boolean_T isfinite2;
@@ -229,7 +229,7 @@ creal_T c_str2double(const emxArray_char_T *s)
 
     idx = 1;
     c_readfloat(s1, &idx, s, &k, s->size[1], true, &isimag1, &isfinite1,
-                &scanned1, &unusedU0, &success);
+                &scanned1, &isimag2, &success);
     if (isfinite1) {
       ntoread = 1;
     }
@@ -237,14 +237,14 @@ creal_T c_str2double(const emxArray_char_T *s)
     if (success && (k <= s->size[1])) {
       s1->data[idx - 1] = ' ';
       idx++;
-      c_readfloat(s1, &idx, s, &k, s->size[1], true, &unusedU0, &isfinite2,
+      c_readfloat(s1, &idx, s, &k, s->size[1], true, &isimag2, &isfinite2,
                   &scanned2, &foundsign, &success);
       if (isfinite2) {
         ntoread++;
       }
 
-      if (success && (k > s->size[1]) && ((isimag1 ^ unusedU0) != 0) &&
-          foundsign) {
+      if (success && (k > s->size[1]) && ((isimag1 ^ isimag2) != 0) && foundsign)
+      {
         success = true;
       } else {
         success = false;
@@ -307,7 +307,7 @@ creal_T d_str2double(const emxArray_char_T *s)
   boolean_T isimag1;
   boolean_T isfinite1;
   double scanned1;
-  boolean_T unusedU0;
+  boolean_T isimag2;
   boolean_T success;
   double scanned2;
   boolean_T isfinite2;
@@ -336,7 +336,7 @@ creal_T d_str2double(const emxArray_char_T *s)
 
     idx = 1;
     d_readfloat(s1, &idx, s, &k, n, true, &isimag1, &isfinite1, &scanned1,
-                &unusedU0, &success);
+                &isimag2, &success);
     if (isfinite1) {
       ntoread = 1;
     }
@@ -344,13 +344,13 @@ creal_T d_str2double(const emxArray_char_T *s)
     if (success && (k <= n)) {
       s1->data[idx - 1] = ' ';
       idx++;
-      d_readfloat(s1, &idx, s, &k, n, true, &unusedU0, &isfinite2, &scanned2,
+      d_readfloat(s1, &idx, s, &k, n, true, &isimag2, &isfinite2, &scanned2,
                   &foundsign, &success);
       if (isfinite2) {
         ntoread++;
       }
 
-      if (success && (k > n) && ((isimag1 ^ unusedU0) != 0) && foundsign) {
+      if (success && (k > n) && ((isimag1 ^ isimag2) != 0) && foundsign) {
         success = true;
       } else {
         success = false;
@@ -416,7 +416,7 @@ creal_T str2double(const char s[2])
   boolean_T success;
   int b_k;
   double scanned2;
-  boolean_T unusedU2;
+  boolean_T isfinite2;
   boolean_T foundsign;
   double b_scanned1;
   char c;
@@ -475,7 +475,7 @@ creal_T str2double(const char s[2])
       if ((b_k <= 2) && (s[1] == '*')) {
         b_k = 3;
         readfloat(s1, &idx, s, &b_k, false, &isneg, &b_finite, &scanned1,
-                  &unusedU2, &success);
+                  &isfinite2, &success);
       } else {
         s1[idx - 1] = '1';
         idx++;
@@ -549,9 +549,9 @@ creal_T str2double(const char s[2])
   if (success && (b_k <= 2)) {
     s1[idx - 1] = ' ';
     idx++;
-    readfloat(s1, &idx, s, &b_k, true, &isneg, &unusedU2, &scanned2, &foundsign,
+    readfloat(s1, &idx, s, &b_k, true, &isneg, &isfinite2, &scanned2, &foundsign,
               &success);
-    if (unusedU2) {
+    if (isfinite2) {
       ntoread++;
     }
 

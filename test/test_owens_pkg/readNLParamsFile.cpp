@@ -4,7 +4,7 @@
 // File: readNLParamsFile.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -50,48 +50,15 @@ void readNLParamsFile(char nlParams_iterationType[2], boolean_T
                       *nlParams_minLoadStepDelta, double *nlParams_minLoadStep,
                       double *nlParams_prescribedLoadStep)
 {
-  signed char fileid;
-
   // get main file prefix
   // create .nl file name string
-  fileid = cfopen("./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.nl",
-                  "rb");
+  cfopen("./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.nl",
+         "rb");
 
   // attempt to open file
-  if (fileid == -1) {
-    // default parameters if file cannot be opened (doesnt exist)
-    // uses adaptive load stepping by default
-    nlParams_iterationType[0] = 'N';
-    nlParams_iterationType[1] = 'R';
-  } else {
-    // if file can be opened read it
-    //          iterationType = fscanf(fid,'%c',2); fgetl(fid); %read iteration type 'NR' = Newton Raphson, 'DI' = Direct Iteration 
-    //          tolerance = fscanf(fid,'%f',1); fgetl(fid);
-    //          maxIterations    = fscanf(fid,'%i',1); fgetl(fid); %read in maximum iterations allowed per time step 
-    //          temp  = fscanf(fid,'%i',1);
-    //          if(temp == 0) % if temp = 0 adaptive load stepping, read in params 
-    //              fgetl(fid);
-    //              adaptiveLoadSteppingFlag = true;
-    //              maxNumLoadSteps     = fscanf(fid,'%i',1); fgetl(fid);
-    //              minLoadStep      = fscanf(fid,'%f',1); fgetl(fid);
-    //              minLoadStepDelta= fscanf(fid,'%f',1); fgetl(fid);
-    //              fclose(fid); %close file
-    //          elseif(temp>0) %if temp > 0, prescribed load stepping profile, read in params 
-    //              adaptiveLoadSteppingFlag = false;
-    //              prescribedLoadStep = zeros(temp,1);
-    //              for i=1:temp
-    //                  prescribedLoadStep(i) = fscanf(fid,'%f',1);
-    //              end
-    //              fgetl(fid);
-    //              maxNumLoadSteps = 1e6;
-    //              fclose(fid); %close file
-    //          else
-    //              fclose(fid);
-    //              error('Load stepping parameter in .nl file not recognized. Exiting.'); 
-    //          end
-  }
-
   // assign parameters to nlParams file
+  nlParams_iterationType[0] = 'N';
+  nlParams_iterationType[1] = 'R';
   *c_nlParams_adaptiveLoadStepping = true;
   *nlParams_tolerance = 1.0E-6;
   *nlParams_maxIterations = 50.0;

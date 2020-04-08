@@ -4,7 +4,7 @@
 // File: getSplitLine.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -30,13 +30,13 @@ void getSplitLine(double fid, emxArray_real_T *data)
   int i;
   int loop_ub;
   emxArray_int32_T *ii;
-  int b_loop_ub;
+  int b_ii;
   int nx;
-  int i1;
   int idx;
   boolean_T exitg1;
   emxArray_uint32_T *delimiter_idx;
   emxArray_char_T *b_line;
+  int k;
   unsigned int u;
   unsigned int u1;
   creal_T dc;
@@ -51,9 +51,9 @@ void getSplitLine(double fid, emxArray_real_T *data)
   emxEnsureCapacity_boolean_T(x, i);
   loop_ub = line->size[0];
   for (i = 0; i < loop_ub; i++) {
-    b_loop_ub = line->size[1];
-    for (i1 = 0; i1 < b_loop_ub; i1++) {
-      x->data[i1 + x->size[0] * i] = (line->data[i + line->size[0] * i1] ==
+    b_ii = line->size[1];
+    for (idx = 0; idx < b_ii; idx++) {
+      x->data[idx + x->size[0] * i] = (line->data[i + line->size[0] * idx] ==
         '\x09');
     }
   }
@@ -64,19 +64,19 @@ void getSplitLine(double fid, emxArray_real_T *data)
   i = ii->size[0];
   ii->size[0] = nx;
   emxEnsureCapacity_int32_T(ii, i);
-  b_loop_ub = 0;
+  b_ii = 0;
   exitg1 = false;
-  while ((!exitg1) && (b_loop_ub <= nx - 1)) {
-    if (x->data[b_loop_ub]) {
+  while ((!exitg1) && (b_ii <= nx - 1)) {
+    if (x->data[b_ii]) {
       idx++;
-      ii->data[idx - 1] = b_loop_ub + 1;
+      ii->data[idx - 1] = b_ii + 1;
       if (idx >= nx) {
         exitg1 = true;
       } else {
-        b_loop_ub++;
+        b_ii++;
       }
     } else {
-      b_loop_ub++;
+      b_ii++;
     }
   }
 
@@ -97,9 +97,9 @@ void getSplitLine(double fid, emxArray_real_T *data)
   }
 
   if ((line->size[0] == 0) || (line->size[1] == 0)) {
-    b_loop_ub = 0;
+    b_ii = 0;
   } else {
-    b_loop_ub = line->size[1];
+    b_ii = line->size[1];
   }
 
   emxInit_uint32_T(&delimiter_idx, 2);
@@ -113,7 +113,7 @@ void getSplitLine(double fid, emxArray_real_T *data)
     delimiter_idx->data[i + 1] = static_cast<unsigned int>(ii->data[i]);
   }
 
-  delimiter_idx->data[ii->size[0] + 1] = b_loop_ub + 1U;
+  delimiter_idx->data[ii->size[0] + 1] = b_ii + 1U;
 
   //  % Reduce index, getting rid of duplicate delimiters if spaces
   //  if delim == ' '
@@ -141,28 +141,28 @@ void getSplitLine(double fid, emxArray_real_T *data)
 
   i = delimiter_idx->size[1];
   emxInit_char_T(&b_line, 2);
-  for (b_loop_ub = 0; b_loop_ub <= i - 2; b_loop_ub++) {
-    u = delimiter_idx->data[b_loop_ub];
-    u1 = delimiter_idx->data[b_loop_ub + 1];
+  for (k = 0; k <= i - 2; k++) {
+    u = delimiter_idx->data[k];
+    u1 = delimiter_idx->data[k + 1];
     if (static_cast<double>(u) + 1.0 > static_cast<double>(u1) - 1.0) {
-      i1 = 0;
-      nx = 0;
+      idx = 0;
+      b_ii = 0;
     } else {
-      i1 = static_cast<int>(u);
-      nx = static_cast<int>((static_cast<double>(u1) - 1.0));
+      idx = static_cast<int>(u);
+      b_ii = static_cast<int>((static_cast<double>(u1) - 1.0));
     }
 
-    idx = b_line->size[0] * b_line->size[1];
+    nx = b_line->size[0] * b_line->size[1];
     b_line->size[0] = 1;
-    loop_ub = nx - i1;
+    loop_ub = b_ii - idx;
     b_line->size[1] = loop_ub;
-    emxEnsureCapacity_char_T(b_line, idx);
-    for (nx = 0; nx < loop_ub; nx++) {
-      b_line->data[nx] = line->data[i1 + nx];
+    emxEnsureCapacity_char_T(b_line, nx);
+    for (b_ii = 0; b_ii < loop_ub; b_ii++) {
+      b_line->data[b_ii] = line->data[idx + b_ii];
     }
 
     dc = c_str2double(b_line);
-    data->data[b_loop_ub] = dc.re;
+    data->data[k] = dc.re;
   }
 
   emxFree_char_T(&b_line);

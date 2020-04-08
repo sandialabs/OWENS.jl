@@ -4,7 +4,7 @@
 // File: owens.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -75,6 +75,7 @@ static void b_generateOutputFilename(char outputfilename_data[], int
   int ii;
   boolean_T exitg1;
   signed char ii_data[73];
+  signed char index_all_data[73];
 
   // find the last '.' in inputfilename - helps to extract the prefix in the .owens 
   idx = 0;
@@ -98,11 +99,14 @@ static void b_generateOutputFilename(char outputfilename_data[], int
     idx = 0;
   }
 
+  if (0 <= idx - 1) {
+    std::memcpy(&index_all_data[0], &ii_data[0], idx * sizeof(signed char));
+  }
+
   // output filename (*.out) for modal/flutter analysis
-  if (1 > ii_data[idx - 1] - 1) {
+  idx = index_all_data[idx - 1] - 1;
+  if (1 > idx) {
     idx = 0;
-  } else {
-    idx = ii_data[idx - 1] - 1;
   }
 
   outputfilename_size[0] = 1;
@@ -133,13 +137,14 @@ static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
   *BC_isConstrained, emxArray_real_T *redVectorMap)
 {
   emxArray_real_T *bcdoflist;
-  int loop_ub;
+  int k;
   int i;
   int b_i;
   double b_index;
   emxArray_real_T *dofList;
+  int j;
   int i1;
-  double d;
+  double absx;
   emxArray_boolean_T *tf;
   emxArray_int32_T *ii;
   boolean_T b_tf;
@@ -149,13 +154,13 @@ static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
   int exponent;
   int b_exponent;
   emxInit_real_T(&bcdoflist, 1);
-  loop_ub = static_cast<int>(BC_numpBC);
+  k = static_cast<int>(BC_numpBC);
   i = bcdoflist->size[0];
-  bcdoflist->size[0] = loop_ub;
+  bcdoflist->size[0] = k;
   emxEnsureCapacity_real_T(bcdoflist, i);
 
   // create a listing of constrained DOFs from boundary condition file
-  for (b_i = 0; b_i < loop_ub; b_i++) {
+  for (b_i = 0; b_i < k; b_i++) {
     bcdoflist->data[b_i] = 0.0;
     bcdoflist->data[b_i] = (BC_pBC->data[b_i] - 1.0) * 6.0 + BC_pBC->data[b_i +
       BC_pBC->size[0]];
@@ -167,10 +172,10 @@ static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
   b_index = 1.0;
   i = static_cast<int>(numNodes);
   for (b_i = 0; b_i < i; b_i++) {
-    for (loop_ub = 0; loop_ub < 6; loop_ub++) {
+    for (j = 0; j < 6; j++) {
       if (!(BC_isConstrained->data[static_cast<int>((((static_cast<double>(b_i)
-               + 1.0) - 1.0) * 6.0 + (static_cast<double>(loop_ub) + 1.0))) - 1]
-            != 0.0)) {
+               + 1.0) - 1.0) * 6.0 + (static_cast<double>(j) + 1.0))) - 1] !=
+            0.0)) {
         //              dofVector(index) = (i-1)*numDofPerNode + j; %DOF vector only contains unconstrained DOFs 
         b_index++;
       }
@@ -180,20 +185,20 @@ static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
   emxInit_real_T(&dofList, 2);
   i1 = dofList->size[0] * dofList->size[1];
   dofList->size[0] = 1;
-  loop_ub = static_cast<int>(b_index);
-  dofList->size[1] = loop_ub;
+  k = static_cast<int>(b_index);
+  dofList->size[1] = k;
   emxEnsureCapacity_real_T(dofList, i1);
-  for (i1 = 0; i1 < loop_ub; i1++) {
+  for (i1 = 0; i1 < k; i1++) {
     dofList->data[i1] = 0.0;
   }
 
   b_index = 1.0;
   for (b_i = 0; b_i < i; b_i++) {
-    for (loop_ub = 0; loop_ub < 6; loop_ub++) {
-      d = ((static_cast<double>(b_i) + 1.0) - 1.0) * 6.0 + (static_cast<double>
-        (loop_ub) + 1.0);
-      if (!(BC_isConstrained->data[static_cast<int>(d) - 1] != 0.0)) {
-        dofList->data[static_cast<int>(b_index) - 1] = d;
+    for (j = 0; j < 6; j++) {
+      absx = ((static_cast<double>(b_i) + 1.0) - 1.0) * 6.0 + (static_cast<
+        double>(j) + 1.0);
+      if (!(BC_isConstrained->data[static_cast<int>(absx) - 1] != 0.0)) {
+        dofList->data[static_cast<int>(b_index) - 1] = absx;
 
         // DOF vector only contains unconstrained DOFs
         b_index++;
@@ -210,27 +215,27 @@ static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
   emxInit_int32_T(&ii, 2);
   for (b_i = 0; b_i < i; b_i++) {
     b_tf = false;
-    loop_ub = 0;
+    k = 0;
     exitg1 = false;
-    while ((!exitg1) && (loop_ub <= bcdoflist->size[0] - 1)) {
-      b_index = std::abs(bcdoflist->data[loop_ub] / 2.0);
-      if ((!rtIsInf(b_index)) && (!rtIsNaN(b_index))) {
-        if (b_index <= 2.2250738585072014E-308) {
-          b_index = 4.94065645841247E-324;
+    while ((!exitg1) && (k <= bcdoflist->size[0] - 1)) {
+      absx = std::abs(bcdoflist->data[k] / 2.0);
+      if ((!rtIsInf(absx)) && (!rtIsNaN(absx))) {
+        if (absx <= 2.2250738585072014E-308) {
+          absx = 4.94065645841247E-324;
         } else {
-          frexp(b_index, &exponent);
-          b_index = std::ldexp(1.0, exponent - 53);
+          frexp(absx, &exponent);
+          absx = std::ldexp(1.0, exponent - 53);
         }
       } else {
-        b_index = rtNaN;
+        absx = rtNaN;
       }
 
-      if (std::abs(bcdoflist->data[loop_ub] - (static_cast<double>(b_i) + 1.0)) <
-          b_index) {
+      if (std::abs(bcdoflist->data[k] - (static_cast<double>(b_i) + 1.0)) < absx)
+      {
         b_tf = true;
         exitg1 = true;
       } else {
-        loop_ub++;
+        k++;
       }
     }
 
@@ -244,38 +249,38 @@ static void constructReducedDispVectorMap(double numNodes, double numReducedDof,
       tf->size[0] = 1;
       tf->size[1] = static_cast<int>(unnamed_idx_1);
       emxEnsureCapacity_boolean_T(tf, i1);
-      loop_ub = static_cast<int>(unnamed_idx_1);
-      for (i1 = 0; i1 < loop_ub; i1++) {
+      k = static_cast<int>(unnamed_idx_1);
+      for (i1 = 0; i1 < k; i1++) {
         tf->data[i1] = false;
       }
 
-      for (loop_ub = 0; loop_ub < na; loop_ub++) {
+      for (j = 0; j < na; j++) {
         frexp((static_cast<double>(b_i) + 1.0) / 2.0, &b_exponent);
-        if (std::abs((static_cast<double>(b_i) + 1.0) - dofList->data[loop_ub]) <
-            std::ldexp(1.0, b_exponent - 53)) {
-          tf->data[loop_ub] = true;
+        if (std::abs((static_cast<double>(b_i) + 1.0) - dofList->data[j]) < std::
+            ldexp(1.0, b_exponent - 53)) {
+          tf->data[j] = true;
         }
       }
 
       i1 = tf->size[1];
       na = 0;
-      loop_ub = ii->size[0] * ii->size[1];
+      k = ii->size[0] * ii->size[1];
       ii->size[0] = 1;
       ii->size[1] = tf->size[1];
-      emxEnsureCapacity_int32_T(ii, loop_ub);
-      loop_ub = 0;
+      emxEnsureCapacity_int32_T(ii, k);
+      k = 0;
       exitg1 = false;
-      while ((!exitg1) && (loop_ub <= i1 - 1)) {
-        if (tf->data[loop_ub]) {
+      while ((!exitg1) && (k <= i1 - 1)) {
+        if (tf->data[k]) {
           na++;
-          ii->data[na - 1] = loop_ub + 1;
+          ii->data[na - 1] = k + 1;
           if (na >= i1) {
             exitg1 = true;
           } else {
-            loop_ub++;
+            k++;
           }
         } else {
-          loop_ub++;
+          k++;
         }
       }
 
@@ -318,6 +323,7 @@ static void generateOutputFilename(char outputfilename_data[], int
   int ii;
   boolean_T exitg1;
   signed char ii_data[73];
+  signed char index_all_data[73];
 
   // find the last '.' in inputfilename - helps to extract the prefix in the .owens 
   idx = 0;
@@ -341,11 +347,14 @@ static void generateOutputFilename(char outputfilename_data[], int
     idx = 0;
   }
 
+  if (0 <= idx - 1) {
+    std::memcpy(&index_all_data[0], &ii_data[0], idx * sizeof(signed char));
+  }
+
   // output filename (*.mat) for transient analysis
-  if (1 > ii_data[idx - 1] - 1) {
+  idx = index_all_data[idx - 1] - 1;
+  if (1 > idx) {
     idx = 0;
-  } else {
-    idx = ii_data[idx - 1] - 1;
   }
 
   outputfilename_size[0] = 1;
@@ -395,9 +404,10 @@ static void generateOutputFilename(char outputfilename_data[], int
 void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
 {
   signed char fileid;
-  int last_delimiter_data[73];
-  int last_delimiter_size[2];
+  int tmp_data[73];
+  int tmp_size[2];
   int loop_ub;
+  int last_delimiter_data[73];
   char fdirectory_data[73];
   emxArray_char_T *line;
   emxArray_char_T *varargin_2;
@@ -421,21 +431,21 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   int e_sizes_idx_1;
   int i;
   int b_loop_ub;
-  emxArray_real_T *delimiter_idx;
+  emxArray_int32_T *delimiter_idx;
   int c_loop_ub;
   emxArray_int32_T *b_r;
   int i1;
   emxArray_char_T *blddatafilename;
+  emxArray_real_T *rayleighDamping;
   emxArray_char_T *fdirectory;
   emxArray_char_T *c_fileid;
-  double model_RayleighAlpha;
-  double model_RayleighBeta;
   int unnamed_idx_1;
   emxArray_real_T *mesh_x;
   emxArray_real_T *mesh_y;
   emxArray_real_T *mesh_z;
   emxArray_real_T *mesh_conn;
   emxArray_real_T *expl_temp;
+  emxArray_real_T *b_expl_temp;
   double mesh_numEl;
   double mesh_numNodes;
   double bladeData_numBlades;
@@ -450,8 +460,10 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   double bladeData_remaining_data[720];
   emxArray_real_T *model_BC_pBC;
   emxArray_real_T *BC_pBC;
+  emxArray_real_T *BC_isConstrained;
   double BC_numpBC;
-  double b_expl_temp;
+  double c_expl_temp;
+  double d_expl_temp;
   emxArray_struct_T *el_props;
   emxArray_real_T *el_elLen;
   emxArray_real_T *el_psi;
@@ -460,17 +472,20 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   emxArray_boolean_T *el_rotationalEffects;
   emxArray_real_T *joint;
   emxArray_real_T *model_BC_map;
+  emxArray_real_T *displInitGuess;
   emxArray_real_T *jnt_struct_jointTransform;
   emxArray_real_T *jnt_struct_reducedDOF;
   emxArray_real_T *b_mesh_numNodes;
   char model_nlParams_iterationType[2];
   boolean_T c_model_nlParams_adaptiveLoadSt;
+  double model_nlParams_tolerance;
+  double model_nlParams_maxIterations;
   double model_nlParams_maxNumLoadSteps;
   double model_nlParams_minLoadStepDelta;
   double model_nlParams_minLoadStep;
   double c_model_nlParams_prescribedLoad;
-  h_struct_T c_expl_temp;
-  char tmp_data[76];
+  h_struct_T e_expl_temp;
+  char b_tmp_data[76];
 
   // input file initialization
   // anaysis type intialization
@@ -494,10 +509,14 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
                   "rb");
 
   // reads in model file names from .owens file
-  eml_find(last_delimiter_data, last_delimiter_size);
+  eml_find(tmp_data, tmp_size);
+  loop_ub = tmp_size[0] * tmp_size[1];
+  if (0 <= loop_ub - 1) {
+    std::memcpy(&last_delimiter_data[0], &tmp_data[0], loop_ub * sizeof(int));
+  }
 
   // '
-  loop_ub = last_delimiter_data[last_delimiter_size[1] - 1];
+  loop_ub = last_delimiter_data[tmp_size[1] - 1];
   if (1 > loop_ub) {
     loop_ub = 0;
   }
@@ -613,12 +632,12 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
     }
   }
 
-  emxInit_real_T(&delimiter_idx, 1);
+  emxInit_int32_T(&delimiter_idx, 1);
   emxInit_int32_T(&b_r, 1);
   b_eml_find(b_line, b_r);
   i = delimiter_idx->size[0];
   delimiter_idx->size[0] = b_r->size[0];
-  emxEnsureCapacity_real_T(delimiter_idx, i);
+  emxEnsureCapacity_int32_T(delimiter_idx, i);
   b_loop_ub = b_r->size[0];
   emxFree_boolean_T(&b_line);
   for (i = 0; i < b_loop_ub; i++) {
@@ -629,14 +648,16 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   b_str2double(line->data[0]);
 
   // flag for activating aerodynamic analysis
-  if (delimiter_idx->data[0] + 1.0 > delimiter_idx->data[1] - 1.0) {
+  if (static_cast<double>(delimiter_idx->data[0]) + 1.0 > static_cast<double>
+      (delimiter_idx->data[1]) - 1.0) {
     i = 0;
     i1 = 0;
   } else {
-    i = static_cast<int>((delimiter_idx->data[0] + 1.0)) - 1;
-    i1 = static_cast<int>((delimiter_idx->data[1] - 1.0));
+    i = delimiter_idx->data[0];
+    i1 = delimiter_idx->data[1] - 1;
   }
 
+  emxFree_int32_T(&delimiter_idx);
   emxInit_char_T(&blddatafilename, 2);
   c_loop_ub = blddatafilename->size[0] * blddatafilename->size[1];
   blddatafilename->size[0] = 1;
@@ -651,6 +672,7 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
     blddatafilename->data[i1 + loop_ub] = line->data[i + i1];
   }
 
+  emxInit_real_T(&rayleighDamping, 1);
   emxInit_char_T(&fdirectory, 2);
   emxInit_char_T(&c_fileid, 2);
 
@@ -665,11 +687,9 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   myfgetl(static_cast<double>(fileid), c_fileid);
 
   // generator file name
-  getSplitLine(static_cast<double>(fileid), delimiter_idx);
+  getSplitLine(static_cast<double>(fileid), rayleighDamping);
 
   // read in alpha/beta for rayleigh damping
-  model_RayleighAlpha = delimiter_idx->data[0];
-  model_RayleighBeta = delimiter_idx->data[1];
   cfclose(static_cast<double>(fileid));
 
   //  close .owens file
@@ -688,6 +708,7 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   emxEnsureCapacity_char_T(fdirectory, i);
   b_loop_ub = input_sizes_idx_1;
   emxFree_char_T(&c_fileid);
+  emxFree_char_T(&line);
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
       fdirectory->data[fdirectory->size[0] * i] = fdirectory_data[i];
@@ -701,21 +722,21 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
     }
   }
 
-  emxFree_char_T(&varargin_2);
   emxInit_real_T(&mesh_x, 1);
   emxInit_real_T(&mesh_y, 1);
   emxInit_real_T(&mesh_z, 1);
   emxInit_real_T(&mesh_conn, 2);
   emxInit_real_T(&expl_temp, 1);
-  readMesh(fdirectory, delimiter_idx, &mesh_numEl, &mesh_numNodes, mesh_x,
-           mesh_y, mesh_z, expl_temp, mesh_conn);
+  emxInit_real_T(&b_expl_temp, 1);
+  readMesh(fdirectory, expl_temp, &mesh_numEl, &mesh_numNodes, mesh_x, mesh_y,
+           mesh_z, b_expl_temp, mesh_conn);
 
   // read mesh file
   readBladeData(blddatafilename, &bladeData_numBlades, bladeData_bladeNum_data,
                 bladeData_bladeNum_size, bladeData_h_data, bladeData_h_size,
                 bladeData_nodeNum_data, bladeData_nodeNum_size,
                 bladeData_elementNum_data, bladeData_elementNum_size,
-                bladeData_remaining_data, last_delimiter_size);
+                bladeData_remaining_data, tmp_size);
 
   // reads overall blade data file
   if (loop_ub != 0) {
@@ -729,6 +750,8 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   fdirectory->size[1] = f_input_sizes_idx_1 + e_sizes_idx_1;
   emxEnsureCapacity_char_T(fdirectory, i);
   b_loop_ub = f_input_sizes_idx_1;
+  emxFree_real_T(&b_expl_temp);
+  emxFree_real_T(&expl_temp);
   emxFree_char_T(&blddatafilename);
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
@@ -746,8 +769,9 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   emxFree_char_T(&f_varargin_2);
   emxInit_real_T(&model_BC_pBC, 2);
   emxInit_real_T(&BC_pBC, 2);
-  readBCdata(fdirectory, mesh_numNodes, &BC_numpBC, BC_pBC, &bladeData_numBlades,
-             &b_expl_temp, expl_temp);
+  emxInit_real_T(&BC_isConstrained, 1);
+  readBCdata(fdirectory, mesh_numNodes, &BC_numpBC, BC_pBC, &c_expl_temp,
+             &d_expl_temp, BC_isConstrained);
 
   // read boundary condition file
   i = model_BC_pBC->size[0] * model_BC_pBC->size[1];
@@ -796,21 +820,21 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   }
 
   emxFree_char_T(&b_varargin_2);
-  i = line->size[0] * line->size[1];
-  line->size[0] = 1;
-  line->size[1] = c_input_sizes_idx_1 + b_sizes_idx_1;
-  emxEnsureCapacity_char_T(line, i);
+  i = varargin_2->size[0] * varargin_2->size[1];
+  varargin_2->size[0] = 1;
+  varargin_2->size[1] = c_input_sizes_idx_1 + b_sizes_idx_1;
+  emxEnsureCapacity_char_T(varargin_2, i);
   b_loop_ub = c_input_sizes_idx_1;
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
-      line->data[line->size[0] * i] = fdirectory_data[i];
+      varargin_2->data[varargin_2->size[0] * i] = fdirectory_data[i];
     }
   }
 
   for (i = 0; i < b_sizes_idx_1; i++) {
     for (i1 = 0; i1 < 1; i1++) {
-      line->data[line->size[0] * (i + sizes_idx_1)] = c_varargin_2->
-        data[c_varargin_2->size[0] * i];
+      varargin_2->data[varargin_2->size[0] * (i + sizes_idx_1)] =
+        c_varargin_2->data[c_varargin_2->size[0] * i];
     }
   }
 
@@ -821,11 +845,11 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   emxInit_real_T(&el_theta, 1);
   emxInit_real_T(&el_roll, 1);
   emxInit_boolean_T(&el_rotationalEffects, 2);
-  readElementData(mesh_numEl, fdirectory, line, bladeData_nodeNum_data,
+  readElementData(mesh_numEl, fdirectory, varargin_2, bladeData_nodeNum_data,
                   bladeData_nodeNum_size, bladeData_elementNum_data,
-                  bladeData_elementNum_size, bladeData_remaining_data,
-                  last_delimiter_size, el_props, el_elLen, el_psi, el_theta,
-                  el_roll, el_rotationalEffects);
+                  bladeData_elementNum_size, bladeData_remaining_data, tmp_size,
+                  el_props, el_elLen, el_psi, el_theta, el_roll,
+                  el_rotationalEffects);
 
   // read element data file (also reads orientation and blade data file associated with elements) 
   if (loop_ub != 0) {
@@ -839,7 +863,7 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   fdirectory->size[1] = d_input_sizes_idx_1 + c_sizes_idx_1;
   emxEnsureCapacity_char_T(fdirectory, i);
   b_loop_ub = d_input_sizes_idx_1;
-  emxFree_char_T(&line);
+  emxFree_char_T(&varargin_2);
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
       fdirectory->data[fdirectory->size[0] * i] = fdirectory_data[i];
@@ -886,6 +910,7 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
 
   emxFree_char_T(&e_varargin_2);
   emxInit_real_T(&model_BC_map, 1);
+  emxInit_real_T(&displInitGuess, 1);
   emxInit_real_T(&jnt_struct_jointTransform, 2);
   emxInit_real_T(&jnt_struct_reducedDOF, 2);
   emxInit_real_T(&b_mesh_numNodes, 1);
@@ -902,92 +927,93 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
 
   // create boundary condition map from original DOF numbering to reduced/constrained DOF numbering 
   constructReducedDispVectorMap(mesh_numNodes, static_cast<double>
-    (jnt_struct_jointTransform->size[1]), BC_numpBC, model_BC_pBC, expl_temp,
-    b_mesh_numNodes);
+    (jnt_struct_jointTransform->size[1]), BC_numpBC, model_BC_pBC,
+    BC_isConstrained, b_mesh_numNodes);
 
   // create a map between reduced and full DOF lists
   // EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
   readNLParamsFile(model_nlParams_iterationType,
-                   &c_model_nlParams_adaptiveLoadSt, &bladeData_numBlades,
-                   &b_expl_temp, &model_nlParams_maxNumLoadSteps,
+                   &c_model_nlParams_adaptiveLoadSt, &model_nlParams_tolerance,
+                   &model_nlParams_maxIterations,
+                   &model_nlParams_maxNumLoadSteps,
                    &model_nlParams_minLoadStepDelta, &model_nlParams_minLoadStep,
                    &c_model_nlParams_prescribedLoad);
   loop_ub = static_cast<int>((mesh_numNodes * 6.0));
-  i = delimiter_idx->size[0];
-  delimiter_idx->size[0] = loop_ub;
-  emxEnsureCapacity_real_T(delimiter_idx, i);
+  i = displInitGuess->size[0];
+  displInitGuess->size[0] = loop_ub;
+  emxEnsureCapacity_real_T(displInitGuess, i);
   emxFree_real_T(&b_mesh_numNodes);
   emxFree_char_T(&fdirectory);
-  emxFree_real_T(&expl_temp);
+  emxFree_real_T(&BC_isConstrained);
   emxFree_real_T(&BC_pBC);
   for (i = 0; i < loop_ub; i++) {
-    delimiter_idx->data[i] = 0.0;
+    displInitGuess->data[i] = 0.0;
   }
 
-  emxInitStruct_struct_T1(&c_expl_temp);
-  i = c_expl_temp.rotationalEffects->size[0] *
-    c_expl_temp.rotationalEffects->size[1];
-  c_expl_temp.rotationalEffects->size[0] = 1;
-  c_expl_temp.rotationalEffects->size[1] = el_rotationalEffects->size[1];
-  emxEnsureCapacity_boolean_T(c_expl_temp.rotationalEffects, i);
+  emxInitStruct_struct_T1(&e_expl_temp);
+  i = e_expl_temp.rotationalEffects->size[0] *
+    e_expl_temp.rotationalEffects->size[1];
+  e_expl_temp.rotationalEffects->size[0] = 1;
+  e_expl_temp.rotationalEffects->size[1] = el_rotationalEffects->size[1];
+  emxEnsureCapacity_boolean_T(e_expl_temp.rotationalEffects, i);
   loop_ub = el_rotationalEffects->size[0] * el_rotationalEffects->size[1];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.rotationalEffects->data[i] = el_rotationalEffects->data[i];
+    e_expl_temp.rotationalEffects->data[i] = el_rotationalEffects->data[i];
   }
 
   emxFree_boolean_T(&el_rotationalEffects);
-  i = c_expl_temp.roll->size[0];
-  c_expl_temp.roll->size[0] = el_roll->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.roll, i);
+  i = e_expl_temp.roll->size[0];
+  e_expl_temp.roll->size[0] = el_roll->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.roll, i);
   loop_ub = el_roll->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.roll->data[i] = el_roll->data[i];
+    e_expl_temp.roll->data[i] = el_roll->data[i];
   }
 
   emxFree_real_T(&el_roll);
-  i = c_expl_temp.theta->size[0];
-  c_expl_temp.theta->size[0] = el_theta->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.theta, i);
+  i = e_expl_temp.theta->size[0];
+  e_expl_temp.theta->size[0] = el_theta->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.theta, i);
   loop_ub = el_theta->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.theta->data[i] = el_theta->data[i];
+    e_expl_temp.theta->data[i] = el_theta->data[i];
   }
 
   emxFree_real_T(&el_theta);
-  i = c_expl_temp.psi->size[0];
-  c_expl_temp.psi->size[0] = el_psi->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.psi, i);
+  i = e_expl_temp.psi->size[0];
+  e_expl_temp.psi->size[0] = el_psi->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.psi, i);
   loop_ub = el_psi->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.psi->data[i] = el_psi->data[i];
+    e_expl_temp.psi->data[i] = el_psi->data[i];
   }
 
   emxFree_real_T(&el_psi);
-  i = c_expl_temp.elLen->size[0];
-  c_expl_temp.elLen->size[0] = el_elLen->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.elLen, i);
+  i = e_expl_temp.elLen->size[0];
+  e_expl_temp.elLen->size[0] = el_elLen->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.elLen, i);
   loop_ub = el_elLen->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.elLen->data[i] = el_elLen->data[i];
+    e_expl_temp.elLen->data[i] = el_elLen->data[i];
   }
 
   emxFree_real_T(&el_elLen);
-  i = c_expl_temp.props->size[0] * c_expl_temp.props->size[1];
-  c_expl_temp.props->size[0] = 1;
-  c_expl_temp.props->size[1] = el_props->size[1];
-  emxEnsureCapacity_struct_T(c_expl_temp.props, i);
+  i = e_expl_temp.props->size[0] * e_expl_temp.props->size[1];
+  e_expl_temp.props->size[0] = 1;
+  e_expl_temp.props->size[1] = el_props->size[1];
+  emxEnsureCapacity_struct_T(e_expl_temp.props, i);
   loop_ub = el_props->size[0] * el_props->size[1];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.props->data[i] = el_props->data[i];
+    e_expl_temp.props->data[i] = el_props->data[i];
   }
 
   emxFree_struct_T(&el_props);
-  b_generateOutputFilename(tmp_data, last_delimiter_size);
-  modalExec(model_RayleighAlpha, model_RayleighBeta, BC_numpBC, model_BC_pBC,
-            model_BC_map, joint, tmp_data, last_delimiter_size,
+  b_generateOutputFilename(b_tmp_data, tmp_size);
+  modalExec(rayleighDamping->data[0], rayleighDamping->data[1], BC_numpBC,
+            model_BC_pBC, model_BC_map, joint, b_tmp_data, tmp_size,
             jnt_struct_jointTransform, jnt_struct_reducedDOF, mesh_numEl, mesh_x,
-            mesh_y, mesh_z, mesh_conn, c_expl_temp, delimiter_idx, freq, damp);
-  emxFreeStruct_struct_T1(&c_expl_temp);
+            mesh_y, mesh_z, mesh_conn, e_expl_temp, displInitGuess, freq, damp);
+  emxFreeStruct_struct_T1(&e_expl_temp);
   emxFree_real_T(&jnt_struct_reducedDOF);
   emxFree_real_T(&jnt_struct_jointTransform);
   emxFree_real_T(&joint);
@@ -995,7 +1021,8 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
   emxFree_real_T(&mesh_z);
   emxFree_real_T(&mesh_y);
   emxFree_real_T(&mesh_x);
-  emxFree_real_T(&delimiter_idx);
+  emxFree_real_T(&rayleighDamping);
+  emxFree_real_T(&displInitGuess);
   emxFree_real_T(&model_BC_map);
   emxFree_real_T(&model_BC_pBC);
 }
@@ -1036,9 +1063,10 @@ void b_owens(emxArray_real_T *freq, emxArray_real_T *damp)
 void owens(const double varargin_7[2], double *freq, double *damp)
 {
   signed char fileid;
-  int last_delimiter_data[73];
-  int last_delimiter_size[2];
+  int tmp_data[73];
+  int tmp_size[2];
   int loop_ub;
+  int last_delimiter_data[73];
   char fdirectory_data[73];
   emxArray_char_T *line;
   emxArray_char_T *varargin_2;
@@ -1064,7 +1092,7 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   int f_sizes_idx_1;
   int i;
   int b_loop_ub;
-  emxArray_real_T *delimiter_idx;
+  emxArray_int32_T *delimiter_idx;
   int g_sizes_idx_1;
   emxArray_int32_T *b_r;
   int i1;
@@ -1074,16 +1102,17 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   emxArray_char_T *generatorfilename;
   static const char b_cv[6] = { '.', 'o', 'w', 'e', 'n', 's' };
 
+  emxArray_char_T *h_varargin_2;
   signed char h_input_sizes_idx_1;
   int unnamed_idx_1;
+  emxArray_real_T *rayleighDamping;
   emxArray_char_T *fdirectory;
-  double model_RayleighAlpha;
-  double model_RayleighBeta;
   emxArray_real_T *mesh_x;
   emxArray_real_T *mesh_y;
   emxArray_real_T *mesh_z;
   emxArray_real_T *mesh_conn;
   emxArray_real_T *expl_temp;
+  emxArray_real_T *b_expl_temp;
   double mesh_numEl;
   double mesh_numNodes;
   double bladeData_numBlades;
@@ -1098,9 +1127,12 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   double bladeData_remaining_data[720];
   emxArray_real_T *model_BC_pBC;
   emxArray_real_T *BC_pBC;
+  emxArray_real_T *BC_isConstrained;
   double BC_numpBC;
-  double b_expl_temp;
+  double c_expl_temp;
+  double d_expl_temp;
   emxArray_struct_T *el_props;
+  emxArray_real_T *el_elLen;
   emxArray_real_T *el_psi;
   emxArray_real_T *el_theta;
   emxArray_real_T *el_roll;
@@ -1109,17 +1141,19 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   creal_T dc;
   emxArray_real_T *jnt_struct_jointTransform;
   emxArray_real_T *jnt_struct_reducedDOF;
-  g_struct_T c_expl_temp;
+  g_struct_T e_expl_temp;
   emxArray_real_T *b_BC_numpBC;
   emxArray_real_T *b_mesh_numNodes;
   char model_nlParams_iterationType[2];
   boolean_T c_model_nlParams_adaptiveLoadSt;
+  double model_nlParams_tolerance;
+  double model_nlParams_maxIterations;
   double model_nlParams_maxNumLoadSteps;
   double model_nlParams_minLoadStepDelta;
   double model_nlParams_minLoadStep;
   double c_model_nlParams_prescribedLoad;
-  h_struct_T d_expl_temp;
-  char tmp_data[76];
+  h_struct_T f_expl_temp;
+  char b_tmp_data[76];
   static const char model_analysisType[3] = { 'T', 'N', 'B' };
 
   // input file initialization
@@ -1145,10 +1179,14 @@ void owens(const double varargin_7[2], double *freq, double *damp)
                   "rb");
 
   // reads in model file names from .owens file
-  eml_find(last_delimiter_data, last_delimiter_size);
+  eml_find(tmp_data, tmp_size);
+  loop_ub = tmp_size[0] * tmp_size[1];
+  if (0 <= loop_ub - 1) {
+    std::memcpy(&last_delimiter_data[0], &tmp_data[0], loop_ub * sizeof(int));
+  }
 
   // '
-  loop_ub = last_delimiter_data[last_delimiter_size[1] - 1];
+  loop_ub = last_delimiter_data[tmp_size[1] - 1];
   if (1 > loop_ub) {
     loop_ub = 0;
   }
@@ -1274,12 +1312,12 @@ void owens(const double varargin_7[2], double *freq, double *damp)
     }
   }
 
-  emxInit_real_T(&delimiter_idx, 1);
+  emxInit_int32_T(&delimiter_idx, 1);
   emxInit_int32_T(&b_r, 1);
   b_eml_find(b_line, b_r);
   i = delimiter_idx->size[0];
   delimiter_idx->size[0] = b_r->size[0];
-  emxEnsureCapacity_real_T(delimiter_idx, i);
+  emxEnsureCapacity_int32_T(delimiter_idx, i);
   b_loop_ub = b_r->size[0];
   emxFree_boolean_T(&b_line);
   for (i = 0; i < b_loop_ub; i++) {
@@ -1290,12 +1328,13 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   b_str2double(line->data[0]);
 
   // flag for activating aerodynamic analysis
-  if (delimiter_idx->data[0] + 1.0 > delimiter_idx->data[1] - 1.0) {
+  if (static_cast<double>(delimiter_idx->data[0]) + 1.0 > static_cast<double>
+      (delimiter_idx->data[1]) - 1.0) {
     i = 0;
     i1 = 0;
   } else {
-    i = static_cast<int>((delimiter_idx->data[0] + 1.0)) - 1;
-    i1 = static_cast<int>((delimiter_idx->data[1] - 1.0));
+    i = delimiter_idx->data[0];
+    i1 = delimiter_idx->data[1] - 1;
   }
 
   emxInit_char_T(&blddatafilename, 2);
@@ -1314,13 +1353,14 @@ void owens(const double varargin_7[2], double *freq, double *damp)
 
   // blade data file name
   i = line->size[0] * line->size[1];
-  if (delimiter_idx->data[1] + 1.0 > i) {
+  if (static_cast<double>(delimiter_idx->data[1]) + 1.0 > i) {
     i1 = 0;
     i = 0;
   } else {
-    i1 = static_cast<int>((delimiter_idx->data[1] + 1.0)) - 1;
+    i1 = delimiter_idx->data[1];
   }
 
+  emxFree_int32_T(&delimiter_idx);
   emxInit_char_T(&model_aeroloadfile, 2);
   g_sizes_idx_1 = model_aeroloadfile->size[0] * model_aeroloadfile->size[1];
   model_aeroloadfile->size[0] = 1;
@@ -1357,21 +1397,22 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   }
 
   emxInit_char_T(&generatorfilename, 2);
+  emxInit_char_T(&h_varargin_2, 2);
   myfgetl(static_cast<double>(fileid), line);
 
   // flag to include drive shaft effects
   str2double(*(char (*)[2])&line->data[0]);
 
   // drive shaft file name
-  myfgetl(static_cast<double>(fileid), line);
+  myfgetl(static_cast<double>(fileid), h_varargin_2);
   if (loop_ub != 0) {
     h_input_sizes_idx_1 = static_cast<signed char>(loop_ub);
   } else {
     h_input_sizes_idx_1 = 0;
   }
 
-  if ((line->size[0] != 0) && (line->size[1] != 0)) {
-    g_sizes_idx_1 = line->size[1];
+  if ((h_varargin_2->size[0] != 0) && (h_varargin_2->size[1] != 0)) {
+    g_sizes_idx_1 = h_varargin_2->size[1];
   } else {
     g_sizes_idx_1 = 0;
   }
@@ -1387,6 +1428,7 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   generatorfilename->size[1] = h_input_sizes_idx_1 + g_sizes_idx_1;
   emxEnsureCapacity_char_T(generatorfilename, i);
   b_loop_ub = h_input_sizes_idx_1;
+  emxFree_char_T(&line);
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
       generatorfilename->data[generatorfilename->size[0] * i] =
@@ -1397,18 +1439,17 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   for (i = 0; i < g_sizes_idx_1; i++) {
     for (i1 = 0; i1 < 1; i1++) {
       generatorfilename->data[generatorfilename->size[0] * (i + unnamed_idx_1)] =
-        line->data[line->size[0] * i];
+        h_varargin_2->data[h_varargin_2->size[0] * i];
     }
   }
 
+  emxInit_real_T(&rayleighDamping, 1);
   emxInit_char_T(&fdirectory, 2);
 
   // generator file name
-  getSplitLine(static_cast<double>(fileid), delimiter_idx);
+  getSplitLine(static_cast<double>(fileid), rayleighDamping);
 
   // read in alpha/beta for rayleigh damping
-  model_RayleighAlpha = delimiter_idx->data[0];
-  model_RayleighBeta = delimiter_idx->data[1];
   cfclose(static_cast<double>(fileid));
 
   //  close .owens file
@@ -1445,15 +1486,16 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   emxInit_real_T(&mesh_z, 1);
   emxInit_real_T(&mesh_conn, 2);
   emxInit_real_T(&expl_temp, 1);
-  readMesh(fdirectory, delimiter_idx, &mesh_numEl, &mesh_numNodes, mesh_x,
-           mesh_y, mesh_z, expl_temp, mesh_conn);
+  emxInit_real_T(&b_expl_temp, 1);
+  readMesh(fdirectory, expl_temp, &mesh_numEl, &mesh_numNodes, mesh_x, mesh_y,
+           mesh_z, b_expl_temp, mesh_conn);
 
   // read mesh file
   readBladeData(blddatafilename, &bladeData_numBlades, bladeData_bladeNum_data,
                 bladeData_bladeNum_size, bladeData_h_data, bladeData_h_size,
                 bladeData_nodeNum_data, bladeData_nodeNum_size,
                 bladeData_elementNum_data, bladeData_elementNum_size,
-                bladeData_remaining_data, last_delimiter_size);
+                bladeData_remaining_data, tmp_size);
 
   // reads overall blade data file
   if (loop_ub != 0) {
@@ -1467,6 +1509,8 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   fdirectory->size[1] = f_input_sizes_idx_1 + e_sizes_idx_1;
   emxEnsureCapacity_char_T(fdirectory, i);
   b_loop_ub = f_input_sizes_idx_1;
+  emxFree_real_T(&b_expl_temp);
+  emxFree_real_T(&expl_temp);
   emxFree_char_T(&blddatafilename);
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
@@ -1484,8 +1528,9 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   emxFree_char_T(&f_varargin_2);
   emxInit_real_T(&model_BC_pBC, 2);
   emxInit_real_T(&BC_pBC, 2);
-  readBCdata(fdirectory, mesh_numNodes, &BC_numpBC, BC_pBC, &bladeData_numBlades,
-             &b_expl_temp, delimiter_idx);
+  emxInit_real_T(&BC_isConstrained, 1);
+  readBCdata(fdirectory, mesh_numNodes, &BC_numpBC, BC_pBC, &c_expl_temp,
+             &d_expl_temp, BC_isConstrained);
 
   // read boundary condition file
   i = model_BC_pBC->size[0] * model_BC_pBC->size[1];
@@ -1534,35 +1579,36 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   }
 
   emxFree_char_T(&b_varargin_2);
-  i = line->size[0] * line->size[1];
-  line->size[0] = 1;
-  line->size[1] = c_input_sizes_idx_1 + b_sizes_idx_1;
-  emxEnsureCapacity_char_T(line, i);
+  i = h_varargin_2->size[0] * h_varargin_2->size[1];
+  h_varargin_2->size[0] = 1;
+  h_varargin_2->size[1] = c_input_sizes_idx_1 + b_sizes_idx_1;
+  emxEnsureCapacity_char_T(h_varargin_2, i);
   b_loop_ub = c_input_sizes_idx_1;
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
-      line->data[line->size[0] * i] = fdirectory_data[i];
+      h_varargin_2->data[h_varargin_2->size[0] * i] = fdirectory_data[i];
     }
   }
 
   for (i = 0; i < b_sizes_idx_1; i++) {
     for (i1 = 0; i1 < 1; i1++) {
-      line->data[line->size[0] * (i + sizes_idx_1)] = c_varargin_2->
-        data[c_varargin_2->size[0] * i];
+      h_varargin_2->data[h_varargin_2->size[0] * (i + sizes_idx_1)] =
+        c_varargin_2->data[c_varargin_2->size[0] * i];
     }
   }
 
   emxFree_char_T(&c_varargin_2);
   emxInit_struct_T(&el_props, 2);
+  emxInit_real_T(&el_elLen, 1);
   emxInit_real_T(&el_psi, 1);
   emxInit_real_T(&el_theta, 1);
   emxInit_real_T(&el_roll, 1);
   emxInit_boolean_T(&el_rotationalEffects, 2);
-  readElementData(mesh_numEl, fdirectory, line, bladeData_nodeNum_data,
+  readElementData(mesh_numEl, fdirectory, h_varargin_2, bladeData_nodeNum_data,
                   bladeData_nodeNum_size, bladeData_elementNum_data,
-                  bladeData_elementNum_size, bladeData_remaining_data,
-                  last_delimiter_size, el_props, expl_temp, el_psi, el_theta,
-                  el_roll, el_rotationalEffects);
+                  bladeData_elementNum_size, bladeData_remaining_data, tmp_size,
+                  el_props, el_elLen, el_psi, el_theta, el_roll,
+                  el_rotationalEffects);
 
   // read element data file (also reads orientation and blade data file associated with elements) 
   if (loop_ub != 0) {
@@ -1576,7 +1622,7 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   fdirectory->size[1] = d_input_sizes_idx_1 + c_sizes_idx_1;
   emxEnsureCapacity_char_T(fdirectory, i);
   b_loop_ub = d_input_sizes_idx_1;
-  emxFree_char_T(&line);
+  emxFree_char_T(&h_varargin_2);
   for (i = 0; i < b_loop_ub; i++) {
     for (i1 = 0; i1 < 1; i1++) {
       fdirectory->data[fdirectory->size[0] * i] = fdirectory_data[i];
@@ -1670,7 +1716,7 @@ void owens(const double varargin_7[2], double *freq, double *damp)
   emxFree_char_T(&generatorfilename);
   emxInit_real_T(&jnt_struct_jointTransform, 2);
   emxInit_real_T(&jnt_struct_reducedDOF, 2);
-  emxInitStruct_struct_T(&c_expl_temp);
+  emxInitStruct_struct_T(&e_expl_temp);
   emxInit_real_T(&b_BC_numpBC, 1);
   emxInit_real_T(&b_mesh_numNodes, 1);
 
@@ -1683,129 +1729,131 @@ void owens(const double varargin_7[2], double *freq, double *damp)
 
   // create boundary condition map from original DOF numbering to reduced/constrained DOF numbering 
   constructReducedDispVectorMap(mesh_numNodes, static_cast<double>
-    (jnt_struct_jointTransform->size[1]), BC_numpBC, model_BC_pBC, delimiter_idx,
-    b_mesh_numNodes);
+    (jnt_struct_jointTransform->size[1]), BC_numpBC, model_BC_pBC,
+    BC_isConstrained, b_mesh_numNodes);
 
   // create a map between reduced and full DOF lists
   // EXECUTE TRANSIENT ANALYSIS
   readNLParamsFile(model_nlParams_iterationType,
-                   &c_model_nlParams_adaptiveLoadSt, &bladeData_numBlades,
-                   &b_expl_temp, &model_nlParams_maxNumLoadSteps,
+                   &c_model_nlParams_adaptiveLoadSt, &model_nlParams_tolerance,
+                   &model_nlParams_maxIterations,
+                   &model_nlParams_maxNumLoadSteps,
                    &model_nlParams_minLoadStepDelta, &model_nlParams_minLoadStep,
                    &c_model_nlParams_prescribedLoad);
-  i = c_expl_temp.conn->size[0] * c_expl_temp.conn->size[1];
-  c_expl_temp.conn->size[0] = mesh_conn->size[0];
-  c_expl_temp.conn->size[1] = 2;
-  emxEnsureCapacity_real_T(c_expl_temp.conn, i);
+  i = e_expl_temp.conn->size[0] * e_expl_temp.conn->size[1];
+  e_expl_temp.conn->size[0] = mesh_conn->size[0];
+  e_expl_temp.conn->size[1] = 2;
+  emxEnsureCapacity_real_T(e_expl_temp.conn, i);
   loop_ub = mesh_conn->size[0] * mesh_conn->size[1];
   emxFree_real_T(&b_mesh_numNodes);
   emxFree_real_T(&b_BC_numpBC);
   emxFree_real_T(&jnt_struct_reducedDOF);
+  emxFree_real_T(&BC_isConstrained);
   emxFree_real_T(&BC_pBC);
-  emxFree_real_T(&delimiter_idx);
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.conn->data[i] = mesh_conn->data[i];
+    e_expl_temp.conn->data[i] = mesh_conn->data[i];
   }
 
   emxFree_real_T(&mesh_conn);
-  i = c_expl_temp.z->size[0];
-  c_expl_temp.z->size[0] = mesh_z->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.z, i);
+  i = e_expl_temp.z->size[0];
+  e_expl_temp.z->size[0] = mesh_z->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.z, i);
   loop_ub = mesh_z->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.z->data[i] = mesh_z->data[i];
+    e_expl_temp.z->data[i] = mesh_z->data[i];
   }
 
   emxFree_real_T(&mesh_z);
-  i = c_expl_temp.y->size[0];
-  c_expl_temp.y->size[0] = mesh_y->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.y, i);
+  i = e_expl_temp.y->size[0];
+  e_expl_temp.y->size[0] = mesh_y->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.y, i);
   loop_ub = mesh_y->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.y->data[i] = mesh_y->data[i];
+    e_expl_temp.y->data[i] = mesh_y->data[i];
   }
 
   emxFree_real_T(&mesh_y);
-  i = c_expl_temp.x->size[0];
-  c_expl_temp.x->size[0] = mesh_x->size[0];
-  emxEnsureCapacity_real_T(c_expl_temp.x, i);
+  i = e_expl_temp.x->size[0];
+  e_expl_temp.x->size[0] = mesh_x->size[0];
+  emxEnsureCapacity_real_T(e_expl_temp.x, i);
   loop_ub = mesh_x->size[0];
   for (i = 0; i < loop_ub; i++) {
-    c_expl_temp.x->data[i] = mesh_x->data[i];
+    e_expl_temp.x->data[i] = mesh_x->data[i];
   }
 
   emxFree_real_T(&mesh_x);
-  emxInitStruct_struct_T1(&d_expl_temp);
-  c_expl_temp.numNodes = mesh_numNodes;
-  c_expl_temp.numEl = mesh_numEl;
-  i = d_expl_temp.rotationalEffects->size[0] *
-    d_expl_temp.rotationalEffects->size[1];
-  d_expl_temp.rotationalEffects->size[0] = 1;
-  d_expl_temp.rotationalEffects->size[1] = el_rotationalEffects->size[1];
-  emxEnsureCapacity_boolean_T(d_expl_temp.rotationalEffects, i);
+  emxInitStruct_struct_T1(&f_expl_temp);
+  e_expl_temp.numNodes = mesh_numNodes;
+  e_expl_temp.numEl = mesh_numEl;
+  i = f_expl_temp.rotationalEffects->size[0] *
+    f_expl_temp.rotationalEffects->size[1];
+  f_expl_temp.rotationalEffects->size[0] = 1;
+  f_expl_temp.rotationalEffects->size[1] = el_rotationalEffects->size[1];
+  emxEnsureCapacity_boolean_T(f_expl_temp.rotationalEffects, i);
   loop_ub = el_rotationalEffects->size[0] * el_rotationalEffects->size[1];
   for (i = 0; i < loop_ub; i++) {
-    d_expl_temp.rotationalEffects->data[i] = el_rotationalEffects->data[i];
+    f_expl_temp.rotationalEffects->data[i] = el_rotationalEffects->data[i];
   }
 
   emxFree_boolean_T(&el_rotationalEffects);
-  i = d_expl_temp.roll->size[0];
-  d_expl_temp.roll->size[0] = el_roll->size[0];
-  emxEnsureCapacity_real_T(d_expl_temp.roll, i);
+  i = f_expl_temp.roll->size[0];
+  f_expl_temp.roll->size[0] = el_roll->size[0];
+  emxEnsureCapacity_real_T(f_expl_temp.roll, i);
   loop_ub = el_roll->size[0];
   for (i = 0; i < loop_ub; i++) {
-    d_expl_temp.roll->data[i] = el_roll->data[i];
+    f_expl_temp.roll->data[i] = el_roll->data[i];
   }
 
   emxFree_real_T(&el_roll);
-  i = d_expl_temp.theta->size[0];
-  d_expl_temp.theta->size[0] = el_theta->size[0];
-  emxEnsureCapacity_real_T(d_expl_temp.theta, i);
+  i = f_expl_temp.theta->size[0];
+  f_expl_temp.theta->size[0] = el_theta->size[0];
+  emxEnsureCapacity_real_T(f_expl_temp.theta, i);
   loop_ub = el_theta->size[0];
   for (i = 0; i < loop_ub; i++) {
-    d_expl_temp.theta->data[i] = el_theta->data[i];
+    f_expl_temp.theta->data[i] = el_theta->data[i];
   }
 
   emxFree_real_T(&el_theta);
-  i = d_expl_temp.psi->size[0];
-  d_expl_temp.psi->size[0] = el_psi->size[0];
-  emxEnsureCapacity_real_T(d_expl_temp.psi, i);
+  i = f_expl_temp.psi->size[0];
+  f_expl_temp.psi->size[0] = el_psi->size[0];
+  emxEnsureCapacity_real_T(f_expl_temp.psi, i);
   loop_ub = el_psi->size[0];
   for (i = 0; i < loop_ub; i++) {
-    d_expl_temp.psi->data[i] = el_psi->data[i];
+    f_expl_temp.psi->data[i] = el_psi->data[i];
   }
 
   emxFree_real_T(&el_psi);
-  i = d_expl_temp.elLen->size[0];
-  d_expl_temp.elLen->size[0] = expl_temp->size[0];
-  emxEnsureCapacity_real_T(d_expl_temp.elLen, i);
-  loop_ub = expl_temp->size[0];
+  i = f_expl_temp.elLen->size[0];
+  f_expl_temp.elLen->size[0] = el_elLen->size[0];
+  emxEnsureCapacity_real_T(f_expl_temp.elLen, i);
+  loop_ub = el_elLen->size[0];
   for (i = 0; i < loop_ub; i++) {
-    d_expl_temp.elLen->data[i] = expl_temp->data[i];
+    f_expl_temp.elLen->data[i] = el_elLen->data[i];
   }
 
-  emxFree_real_T(&expl_temp);
-  i = d_expl_temp.props->size[0] * d_expl_temp.props->size[1];
-  d_expl_temp.props->size[0] = 1;
-  d_expl_temp.props->size[1] = el_props->size[1];
-  emxEnsureCapacity_struct_T(d_expl_temp.props, i);
+  emxFree_real_T(&el_elLen);
+  i = f_expl_temp.props->size[0] * f_expl_temp.props->size[1];
+  f_expl_temp.props->size[0] = 1;
+  f_expl_temp.props->size[1] = el_props->size[1];
+  emxEnsureCapacity_struct_T(f_expl_temp.props, i);
   loop_ub = el_props->size[0] * el_props->size[1];
   for (i = 0; i < loop_ub; i++) {
-    d_expl_temp.props->data[i] = el_props->data[i];
+    f_expl_temp.props->data[i] = el_props->data[i];
   }
 
   emxFree_struct_T(&el_props);
-  generateOutputFilename(tmp_data, last_delimiter_size);
+  generateOutputFilename(b_tmp_data, tmp_size);
   transientExec(model_analysisType, varargin_7, model_aeroloadfile,
-                model_owensfile, model_RayleighAlpha, model_RayleighBeta,
-                BC_numpBC, model_BC_pBC, joint, tmp_data, last_delimiter_size,
-                jnt_struct_jointTransform, c_expl_temp, d_expl_temp);
+                model_owensfile, rayleighDamping->data[0], rayleighDamping->
+                data[1], BC_numpBC, model_BC_pBC, joint, b_tmp_data, tmp_size,
+                jnt_struct_jointTransform, e_expl_temp, f_expl_temp);
   *freq = 0.0;
   *damp = 0.0;
-  emxFreeStruct_struct_T1(&d_expl_temp);
-  emxFreeStruct_struct_T(&c_expl_temp);
+  emxFreeStruct_struct_T1(&f_expl_temp);
+  emxFreeStruct_struct_T(&e_expl_temp);
   emxFree_real_T(&jnt_struct_jointTransform);
   emxFree_real_T(&joint);
+  emxFree_real_T(&rayleighDamping);
   emxFree_real_T(&model_BC_pBC);
   emxFree_char_T(&model_owensfile);
   emxFree_char_T(&model_aeroloadfile);

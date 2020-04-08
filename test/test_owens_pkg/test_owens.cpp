@@ -4,7 +4,7 @@
 // File: test_owens.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -30,7 +30,7 @@
 void test_owens(boolean_T test_transient, boolean_T test_modal)
 {
   double cmkValues[72];
-  int idx;
+  int dd;
   int jj;
   static const unsigned int uv[6] = { 9808800U, 9781100U, 18914000U, 3635100000U,
     3650900000U, 2436200000U };
@@ -39,16 +39,19 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
     2.2878204759573773E+8, 2.2889663915476388E+8, 6.1650258756076582E+7 };
 
   signed char fileid;
+  int idx;
   int ii;
   boolean_T exitg1;
-  int i;
+  int ii_size_idx_0;
   boolean_T guard1 = false;
-  int i_data[36];
+  int ii_data[36];
+  int row_data[36];
+  signed char jj_data[36];
+  double v_data[36];
+  signed char col_data[36];
   FILE * b_NULL;
-  signed char j_data[36];
   FILE * filestar;
   boolean_T autoflush;
-  double v_data[36];
   double b_dv1[2];
   emxArray_real_T *freq;
   double b_freq;
@@ -82,13 +85,13 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
   //  perform operations for the nodal file generation
   //  *********************************************************************
   std::memset(&cmkValues[0], 0, 72U * sizeof(double));
-  for (idx = 0; idx < 6; idx++) {
+  for (dd = 0; dd < 6; dd++) {
     //  set up mass matrix
-    jj = idx + 6 * idx;
-    cmkValues[jj] = uv[idx];
+    jj = dd + 6 * dd;
+    cmkValues[jj] = uv[dd];
 
     //  set up stiffness matrix
-    cmkValues[jj + 36] = b_dv[idx];
+    cmkValues[jj + 36] = b_dv[dd];
   }
 
   //  writeOwensNDL writes a nodal input file for the OWENS Toolkit
@@ -124,13 +127,13 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
   jj = 1;
   exitg1 = false;
   while ((!exitg1) && (jj <= 6)) {
-    i = (ii + 6 * (jj - 1)) - 1;
+    ii_size_idx_0 = (ii + 6 * (jj - 1)) - 1;
     guard1 = false;
-    if (cmkValues[i] != 0.0) {
+    if (cmkValues[ii_size_idx_0] != 0.0) {
       idx++;
-      i_data[idx - 1] = ii;
-      j_data[idx - 1] = static_cast<signed char>(jj);
-      v_data[idx - 1] = cmkValues[i];
+      ii_data[idx - 1] = ii;
+      jj_data[idx - 1] = static_cast<signed char>(jj);
+      v_data[idx - 1] = cmkValues[ii_size_idx_0];
       if (idx >= 36) {
         exitg1 = true;
       } else {
@@ -150,15 +153,28 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
   }
 
   if (1 > idx) {
-    idx = 0;
+    ii_size_idx_0 = 0;
+    jj = 0;
+  } else {
+    ii_size_idx_0 = idx;
+    jj = idx;
   }
 
-  for (ii = 0; ii < idx; ii++) {
+  if (0 <= ii_size_idx_0 - 1) {
+    std::memcpy(&row_data[0], &ii_data[0], ii_size_idx_0 * sizeof(int));
+  }
+
+  if (0 <= jj - 1) {
+    std::memcpy(&col_data[0], &jj_data[0], jj * sizeof(signed char));
+  }
+
+  for (ii = 0; ii < ii_size_idx_0; ii++) {
     b_NULL = NULL;
     getfilestar(static_cast<double>(fileid), &filestar, &autoflush);
     if (!(filestar == b_NULL)) {
       fprintf(filestar, "%.0f %s %.0f %.0f %.2f\n", 1.0, "M6", static_cast<
-              double>(i_data[ii]), static_cast<double>(j_data[ii]), v_data[ii]);
+              double>(row_data[ii]), static_cast<double>(col_data[ii]),
+              v_data[ii]);
       if (autoflush) {
         fflush(filestar);
       }
@@ -170,13 +186,13 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
   jj = 1;
   exitg1 = false;
   while ((!exitg1) && (jj <= 6)) {
-    i = (ii + 6 * (jj - 1)) - 1;
+    ii_size_idx_0 = (ii + 6 * (jj - 1)) - 1;
     guard1 = false;
-    if (cmkValues[i] != 0.0) {
+    if (cmkValues[ii_size_idx_0] != 0.0) {
       idx++;
-      i_data[idx - 1] = ii;
-      j_data[idx - 1] = static_cast<signed char>(jj);
-      v_data[idx - 1] = cmkValues[i];
+      ii_data[idx - 1] = ii;
+      jj_data[idx - 1] = static_cast<signed char>(jj);
+      v_data[idx - 1] = cmkValues[ii_size_idx_0];
       if (idx >= 36) {
         exitg1 = true;
       } else {
@@ -196,15 +212,28 @@ void test_owens(boolean_T test_transient, boolean_T test_modal)
   }
 
   if (1 > idx) {
-    idx = 0;
+    ii_size_idx_0 = 0;
+    jj = 0;
+  } else {
+    ii_size_idx_0 = idx;
+    jj = idx;
   }
 
-  for (ii = 0; ii < idx; ii++) {
+  if (0 <= ii_size_idx_0 - 1) {
+    std::memcpy(&row_data[0], &ii_data[0], ii_size_idx_0 * sizeof(int));
+  }
+
+  if (0 <= jj - 1) {
+    std::memcpy(&col_data[0], &jj_data[0], jj * sizeof(signed char));
+  }
+
+  for (ii = 0; ii < ii_size_idx_0; ii++) {
     b_NULL = NULL;
     getfilestar(static_cast<double>(fileid), &filestar, &autoflush);
     if (!(filestar == b_NULL)) {
       fprintf(filestar, "%.0f %s %.0f %.0f %.2f\n", 1.0, "K6", static_cast<
-              double>(i_data[ii]), static_cast<double>(j_data[ii]), v_data[ii]);
+              double>(row_data[ii]), static_cast<double>(col_data[ii]),
+              v_data[ii]);
       if (autoflush) {
         fflush(filestar);
       }

@@ -1,4 +1,4 @@
-function [eigVec,eigVal] = eigSolve(M,C,K,numModes,flag)
+function [eigVec,eigVal] = eigSolve(M,C,K)%,numModes,flag)
 %eigSolve   Calculates eigenvalues and vectors of structural dynamics rep.
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -29,36 +29,51 @@ function [eigVec,eigVal] = eigSolve(M,C,K,numModes,flag)
 %         [eigVec,eigVal] = eigSolveMeirovitch(M,C,K,flag);
 %     else
 %         disp('Solving with standard state space approach ...');
+
 len=length(M);
-eyelen = eye(len);
-zeroslen = zeros(len);
-if(flag == 1)
-    sysMat = [zeros(len), eye(len);   %constructs state space form (with mass matrix inverted)
-        -M\K, -M\C];
-end
-if(flag == 2)
-    sysMat = [zeroslen, eyelen;      %construct state space form and lets eigs invert mass matrix
-        -K, -C];
-    sysMat = sparse(sysMat);
-    
-    MMat = [eyelen,zeroslen;zeroslen,M];
-    MMat = sparse(MMat);
-end
+% eyelen = eye(len);
+% zeroslen = zeros(len);
+
+%%% if(flag == 1)
+sysMat = [zeros(len), eye(len);   %constructs state space form (with mass matrix inverted)
+    -M\K, -M\C];
+%%% end
+
+%%% if(flag == 2)
+% sysMat2 = [zeroslen, eyelen;      %construct state space form and lets eigs invert mass matrix
+%     -K, -C];
+% sysMat2 = sparse(sysMat2);
+%
+% MMat2 = [eyelen,zeroslen;zeroslen,M];
+% MMat2 = sparse(MMat2);
+%%% end
 
 
-if(flag==1)
-    [eigVec,eigVal] = eig(sysMat);		  %full eigenvalue solve
-end
-if(flag==2)
-    error('Cannot compute subset of modes for eiganvalue solve when deployed, eigs not supported for compilition! Run with full set of modes.')
-    %             [eigVec,eigVal] = eigs(sysMat,MMat,numModes,'SM');  %subest of modes for eigenvalue solve
-end
-if(flag==3)
-    sysMat=inv(M)*K;                      %eigenvalue solve on spring mass system only
-    [eigVec,eigVal] = eig(sysMat);
-    [eigVec] = sortEigOutput(diag(eigVal),eigVec,numModes); %eigenvalues/vectors sorted in ascending frequency before returning
-end
-%     end
+%%% if(flag==1)
+[eigVec0,eigVal0] = eig(sysMat,'vector');		  %full eigenvalue solve
+
+% residual0 = sysMat*eigVec0 - eigVec0*diag(eigVal0);
+
+[sorted_eigVal,eigsortidx] = sort(eigVal0,'ComparisonMethod','abs');
+eigVec = eigVec0(:,eigsortidx);
+eigVal = diag(sorted_eigVal); % return to diag
+% residual = sysMat*eigVec - eigVec*eigVal;
+% output = max(max(real(residual)));
+% fprintf('%e\n',output)
+%%% end
+
+%%% if(flag==2)
+% [eigVec,eigVal] = eigs(sysMat2,MMat2,828,'SM');  %subest of modes for eigenvalue solve
+% test = sysMat2*eigVec - MMat2*eigVec*eigVal;
+% output = max(max(real(test)));
+% fprintf('%e\n',output)
+%%% end
+
+%%% if(flag==3)
+%     sysMat=inv(M)*K;                      %eigenvalue solve on spring mass system only
+%     [eigVec,eigVal] = eig(sysMat);
+%     [eigVec] = sortEigOutput(diag(eigVal),eigVec,numModes); %eigenvalues/vectors sorted in ascending frequency before returning
+%%% end
 
 
 end
@@ -144,5 +159,3 @@ end
 %         eigVec(:,index2) = temp2;
 %     end
 % end
-
-

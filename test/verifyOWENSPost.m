@@ -1,11 +1,11 @@
 tic()
-verify_transient = false;
+verify_transient = true;
 verify_modal = true;
 
 test_owens(verify_transient,verify_modal);
 
 if verify_modal
-    OLD = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out');
+    OLD = ('./input_files_test/SORTED_EIG_VERIF_TEMP.out');
     NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.out');
     
     old = fread(fopen(OLD));

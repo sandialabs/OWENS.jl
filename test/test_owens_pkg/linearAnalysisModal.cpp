@@ -4,7 +4,7 @@
 // File: linearAnalysisModal.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -53,17 +53,18 @@ static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   emxArray_real_T *y_d;
   emxArray_int32_T *y_colidx;
   emxArray_int32_T *y_rowidx;
-  int outridx;
+  int transMatrix_m;
   int transMatrix_n;
-  int Kg_m;
+  int cend;
   int Kg_n;
   int y_m;
-  int cend;
+  int y_n;
   boolean_T p;
   emxArray_int32_T *counts;
   emxArray_real_T *t0_d;
-  int i;
+  int outridx;
   emxArray_int32_T *t0_rowidx;
+  int c;
   int idx;
   emxInit_real_T(&transMatrix_d, 1);
   emxInit_int32_T(&transMatrix_colidx, 1);
@@ -75,12 +76,12 @@ static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   emxInit_int32_T(&y_colidx, 1);
   emxInit_int32_T(&y_rowidx, 1);
   d_sparse(transMatrix, transMatrix_d, transMatrix_colidx, transMatrix_rowidx,
-           &outridx, &transMatrix_n);
-  d_sparse(Kg, Kg_d, Kg_colidx, Kg_rowidx, &Kg_m, &Kg_n);
-  sparse_sparse(transMatrix_n, outridx, transMatrix_colidx->
+           &transMatrix_m, &transMatrix_n);
+  d_sparse(Kg, Kg_d, Kg_colidx, Kg_rowidx, &cend, &Kg_n);
+  sparse_sparse(transMatrix_n, transMatrix_m, transMatrix_colidx->
                 data[transMatrix_colidx->size[0] - 1] - 1, y_d, y_colidx,
-                y_rowidx, &y_m, &cend);
-  if ((outridx == 0) || (transMatrix_n == 0)) {
+                y_rowidx, &y_m, &y_n);
+  if ((transMatrix_m == 0) || (transMatrix_n == 0)) {
     p = true;
   } else {
     p = false;
@@ -89,35 +90,35 @@ static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   emxInit_int32_T(&counts, 1);
   if (!p) {
     cend = y_colidx->size[0];
-    for (i = 0; i < cend; i++) {
-      y_colidx->data[i] = 0;
+    for (outridx = 0; outridx < cend; outridx++) {
+      y_colidx->data[outridx] = 0;
     }
 
-    i = transMatrix_colidx->data[transMatrix_colidx->size[0] - 1];
-    for (cend = 0; cend <= i - 2; cend++) {
+    outridx = transMatrix_colidx->data[transMatrix_colidx->size[0] - 1];
+    for (cend = 0; cend <= outridx - 2; cend++) {
       y_colidx->data[transMatrix_rowidx->data[cend]]++;
     }
 
     y_colidx->data[0] = 1;
-    i = outridx + 1;
-    for (cend = 2; cend <= i; cend++) {
+    outridx = transMatrix_m + 1;
+    for (cend = 2; cend <= outridx; cend++) {
       y_colidx->data[cend - 1] += y_colidx->data[cend - 2];
     }
 
-    i = counts->size[0];
-    counts->size[0] = outridx;
-    emxEnsureCapacity_int32_T(counts, i);
-    for (i = 0; i < outridx; i++) {
-      counts->data[i] = 0;
+    outridx = counts->size[0];
+    counts->size[0] = transMatrix_m;
+    emxEnsureCapacity_int32_T(counts, outridx);
+    for (outridx = 0; outridx < transMatrix_m; outridx++) {
+      counts->data[outridx] = 0;
     }
 
-    for (Kg_m = 0; Kg_m < transMatrix_n; Kg_m++) {
-      for (idx = transMatrix_colidx->data[Kg_m] - 1; idx + 1 <
-           transMatrix_colidx->data[Kg_m + 1]; idx++) {
+    for (c = 0; c < transMatrix_n; c++) {
+      for (idx = transMatrix_colidx->data[c] - 1; idx + 1 <
+           transMatrix_colidx->data[c + 1]; idx++) {
         cend = counts->data[transMatrix_rowidx->data[idx] - 1];
         outridx = (cend + y_colidx->data[transMatrix_rowidx->data[idx] - 1]) - 1;
         y_d->data[outridx] = transMatrix_d->data[idx];
-        y_rowidx->data[outridx] = Kg_m + 1;
+        y_rowidx->data[outridx] = c + 1;
         counts->data[transMatrix_rowidx->data[idx] - 1] = cend + 1;
       }
     }
@@ -128,39 +129,39 @@ static void b_applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   e_sparse_mtimes(y_d, y_colidx, y_rowidx, y_m, Kg_d, Kg_colidx, Kg_rowidx, Kg_n,
                   t0_d, counts, t0_rowidx, &outridx, &cend);
   e_sparse_mtimes(t0_d, counts, t0_rowidx, outridx, transMatrix_d,
-                  transMatrix_colidx, transMatrix_rowidx, transMatrix_n, Kg_d,
-                  Kg_colidx, Kg_rowidx, &Kg_m, &Kg_n);
-  i = Kg->size[0] * Kg->size[1];
-  Kg->size[0] = Kg_m;
-  Kg->size[1] = Kg_n;
-  emxEnsureCapacity_real_T(Kg, i);
+                  transMatrix_colidx, transMatrix_rowidx, transMatrix_n, y_d,
+                  y_colidx, y_rowidx, &y_m, &y_n);
+  outridx = Kg->size[0] * Kg->size[1];
+  Kg->size[0] = y_m;
+  Kg->size[1] = y_n;
+  emxEnsureCapacity_real_T(Kg, outridx);
   emxFree_int32_T(&t0_rowidx);
   emxFree_real_T(&t0_d);
   emxFree_int32_T(&counts);
-  emxFree_int32_T(&y_rowidx);
-  emxFree_int32_T(&y_colidx);
-  emxFree_real_T(&y_d);
-  emxFree_int32_T(&transMatrix_rowidx);
-  emxFree_int32_T(&transMatrix_colidx);
-  emxFree_real_T(&transMatrix_d);
-  for (i = 0; i < Kg_n; i++) {
-    for (cend = 0; cend < Kg_m; cend++) {
-      Kg->data[cend + Kg->size[0] * i] = 0.0;
-    }
-  }
-
-  for (Kg_m = 0; Kg_m < Kg_n; Kg_m++) {
-    cend = Kg_colidx->data[Kg_m + 1] - 1;
-    i = Kg_colidx->data[Kg_m];
-    for (idx = i; idx <= cend; idx++) {
-      Kg->data[(Kg_rowidx->data[idx - 1] + Kg->size[0] * Kg_m) - 1] = Kg_d->
-        data[idx - 1];
-    }
-  }
-
   emxFree_int32_T(&Kg_rowidx);
   emxFree_int32_T(&Kg_colidx);
   emxFree_real_T(&Kg_d);
+  emxFree_int32_T(&transMatrix_rowidx);
+  emxFree_int32_T(&transMatrix_colidx);
+  emxFree_real_T(&transMatrix_d);
+  for (outridx = 0; outridx < y_n; outridx++) {
+    for (cend = 0; cend < y_m; cend++) {
+      Kg->data[cend + Kg->size[0] * outridx] = 0.0;
+    }
+  }
+
+  for (c = 0; c < y_n; c++) {
+    cend = y_colidx->data[c + 1] - 1;
+    outridx = y_colidx->data[c];
+    for (idx = outridx; idx <= cend; idx++) {
+      Kg->data[(y_rowidx->data[idx - 1] + Kg->size[0] * c) - 1] = y_d->data[idx
+        - 1];
+    }
+  }
+
+  emxFree_int32_T(&y_rowidx);
+  emxFree_int32_T(&y_colidx);
+  emxFree_real_T(&y_d);
 }
 
 //
@@ -242,6 +243,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   emxArray_real_T *b_r;
   emxArray_real_T *b_r1;
   int b_index;
+  emxArray_real_T *b_r2;
   double elInput_xloc[2];
   int j;
   double b_mesh_conn[2];
@@ -252,23 +254,27 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   double elInput_sectionProps_zcm[2];
   double elInput_sectionProps_ycm[2];
   double elInput_CN2H[9];
+  double x;
   double elx_data[2];
   double elInput_y_data[2];
   double elInput_z_data[2];
   o_struct_T expl_temp;
   double elOutput_Ke[144];
+  int k;
   int elOutput_Me_size[2];
   double elOutput_Me_data[144];
   int elOutput_Ce_size[2];
   double elOutput_Ce_data[144];
-  emxArray_real_T *b_r2;
   emxArray_real_T *r3;
-  emxArray_creal_T *r4;
+  emxArray_real_T *r4;
+  emxArray_creal_T *r5;
   emxArray_creal_T *b_eigVec;
   emxArray_real_T *b_freq;
   emxArray_real_T *b_damp;
   emxArray_real_T *b_imagCompSign;
+  int loop_ub;
   emxArray_char_T b_model_outFilename_data;
+  int i2;
   signed char fileid;
   emxInit_real_T(&Kg, 2);
   tic();
@@ -329,17 +335,17 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
       elInput_sectionProps_ycm[j] = el.props->data[b_i].ycm[j];
 
       // define element coordinates and displacements associated with element
-      totalNumDOF = mesh_conn->data[b_i + mesh_conn->size[0] * j];
-      loop_ub_tmp = static_cast<int>(totalNumDOF) - 1;
+      x = mesh_conn->data[b_i + mesh_conn->size[0] * j];
+      loop_ub_tmp = static_cast<int>(x) - 1;
       elx_data[j] = mesh_x->data[loop_ub_tmp];
       elInput_y_data[j] = mesh_y->data[loop_ub_tmp];
       elInput_z_data[j] = mesh_z->data[loop_ub_tmp];
-      for (loop_ub_tmp = 0; loop_ub_tmp < 6; loop_ub_tmp++) {
+      for (k = 0; k < 6; k++) {
         eldisp_data[b_index] = 0.0;
         b_index++;
       }
 
-      b_mesh_conn[j] = totalNumDOF;
+      b_mesh_conn[j] = x;
     }
 
     ConcMassAssociatedWithElement(b_mesh_conn, model_joint, elInput_concMass);
@@ -399,6 +405,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   emxInit_creal_T(&eigVal, 2);
   emxInit_real_T(&b_r, 2);
   emxInit_real_T(&b_r1, 2);
+  emxInit_real_T(&b_r2, 2);
 
   // apply general 6x6  mass, damping, and stiffness matrices to nodes
   // ----------------------------------------------------------------------
@@ -411,12 +418,13 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
 
   // APPLY BOUNDARY CONDITIONS
   // apply boundary conditions to global matrices
-  //  %eigensolve of global system
   applyBCModal(Mg, model_BC_numpBC, model_BC_map, b_r);
   applyBCModal(Cg, model_BC_numpBC, model_BC_map, b_r1);
-  applyBCModal(Kg, model_BC_numpBC, model_BC_map, Mg);
-  eigSolve(b_r, b_r1, Mg, eigVec, eigVal);
+  applyBCModal(Kg, model_BC_numpBC, model_BC_map, b_r2);
+  eigSolve(b_r, b_r1, b_r2, eigVec, eigVal);
 
+  // ,... %eigensolve of global system
+  // model.numModesToExtract,solveFlag);
   // save eigVectors eigVec %save eigenvector for later use (if needed) TODO: Doesn't appear to be used 
   // extract frequency, damping, mode shapes from eigenvalues and vectors
   i = freq->size[0] * freq->size[1];
@@ -424,6 +432,7 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   freq->size[1] = eigVal->size[1];
   emxEnsureCapacity_real_T(freq, i);
   loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
+  emxFree_real_T(&b_r2);
   emxFree_real_T(&b_r1);
   emxFree_real_T(&b_r);
   emxFree_real_T(&Cg);
@@ -474,9 +483,9 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   }
 
   i = eigVal->size[1];
-  emxInit_real_T(&b_r2, 2);
   emxInit_real_T(&r3, 2);
-  emxInit_creal_T(&r4, 2);
+  emxInit_real_T(&r4, 2);
+  emxInit_creal_T(&r5, 2);
   emxInit_creal_T(&b_eigVec, 1);
   for (b_i = 0; b_i < i; b_i++) {
     loop_ub_tmp = eigVec->size[0];
@@ -489,40 +498,39 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
 
     extractFreqDamp(eigVal->data[b_i + eigVal->size[0] * b_i], b_eigVec,
                     model_jointTransform, model_reducedDOFList, model_BC_numpBC,
-                    model_BC_pBC, &freq->data[b_i], &damp->data[b_i], b_r2, r3,
-                    r4);
-    loop_ub_tmp = b_r2->size[0];
-    b_index = r3->size[0];
+                    model_BC_pBC, &freq->data[b_i], &damp->data[b_i], r3, r4, r5);
+    loop_ub_tmp = r3->size[0];
+    loop_ub = r4->size[0];
     for (i1 = 0; i1 < 6; i1++) {
-      for (j = 0; j < loop_ub_tmp; j++) {
-        phase1->data[(j + phase1->size[0] * i1) + phase1->size[0] * 6 * b_i] =
-          b_r2->data[j + b_r2->size[0] * i1];
+      for (i2 = 0; i2 < loop_ub_tmp; i2++) {
+        phase1->data[(i2 + phase1->size[0] * i1) + phase1->size[0] * 6 * b_i] =
+          r3->data[i2 + r3->size[0] * i1];
       }
 
-      for (j = 0; j < b_index; j++) {
-        phase2->data[(j + phase2->size[0] * i1) + phase2->size[0] * 6 * b_i] =
-          r3->data[j + r3->size[0] * i1];
+      for (i2 = 0; i2 < loop_ub; i2++) {
+        phase2->data[(i2 + phase2->size[0] * i1) + phase2->size[0] * 6 * b_i] =
+          r4->data[i2 + r4->size[0] * i1];
       }
     }
 
-    totalNumDOF = eigVal->data[b_i + eigVal->size[0] * b_i].im;
+    x = eigVal->data[b_i + eigVal->size[0] * b_i].im;
     if (eigVal->data[b_i + eigVal->size[0] * b_i].im < 0.0) {
-      totalNumDOF = -1.0;
+      x = -1.0;
     } else if (eigVal->data[b_i + eigVal->size[0] * b_i].im > 0.0) {
-      totalNumDOF = 1.0;
+      x = 1.0;
     } else {
       if (eigVal->data[b_i + eigVal->size[0] * b_i].im == 0.0) {
-        totalNumDOF = 0.0;
+        x = 0.0;
       }
     }
 
-    imagCompSign->data[b_i] = totalNumDOF;
+    imagCompSign->data[b_i] = x;
   }
 
   emxFree_creal_T(&b_eigVec);
-  emxFree_creal_T(&r4);
+  emxFree_creal_T(&r5);
+  emxFree_real_T(&r4);
   emxFree_real_T(&r3);
-  emxFree_real_T(&b_r2);
   emxFree_creal_T(&eigVal);
   emxFree_creal_T(&eigVec);
   emxInit_real_T(&b_freq, 2);
