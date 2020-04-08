@@ -4,7 +4,7 @@
 // File: test_owens_emxutil.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 
 // Include Files
@@ -147,6 +147,28 @@ static void emxTrim_struct_T2(e_emxArray_struct_T *emxArray, int fromIndex, int
   for (i = fromIndex; i < toIndex; i++) {
     emxFreeStruct_struct_T5(&emxArray->data[i]);
   }
+}
+
+//
+// Arguments    : coder_internal_sparse *pStruct
+// Return Type  : void
+//
+void c_emxFreeStruct_coder_internal_(coder_internal_sparse *pStruct)
+{
+  emxFree_real_T(&pStruct->d);
+  emxFree_int32_T(&pStruct->colidx);
+  emxFree_int32_T(&pStruct->rowidx);
+}
+
+//
+// Arguments    : coder_internal_sparse *pStruct
+// Return Type  : void
+//
+void c_emxInitStruct_coder_internal_(coder_internal_sparse *pStruct)
+{
+  emxInit_real_T(&pStruct->d, 1);
+  emxInit_int32_T(&pStruct->colidx, 1);
+  emxInit_int32_T(&pStruct->rowidx, 1);
 }
 
 //

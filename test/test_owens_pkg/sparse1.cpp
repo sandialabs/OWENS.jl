@@ -4,7 +4,7 @@
 // File: sparse1.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 
 // Include Files
@@ -15,6 +15,50 @@
 #include <string.h>
 
 // Function Definitions
+
+//
+// Arguments    : int nzmax
+//                emxArray_real_T *s_d
+//                emxArray_int32_T *s_colidx
+//                emxArray_int32_T *s_rowidx
+// Return Type  : void
+//
+void sparse_spallocLike(int nzmax, emxArray_real_T *s_d, emxArray_int32_T
+  *s_colidx, emxArray_int32_T *s_rowidx)
+{
+  int numalloc;
+  int i;
+  if (nzmax >= 1) {
+    numalloc = nzmax;
+  } else {
+    numalloc = 1;
+  }
+
+  i = s_d->size[0];
+  s_d->size[0] = numalloc;
+  emxEnsureCapacity_real_T(s_d, i);
+  for (i = 0; i < numalloc; i++) {
+    s_d->data[i] = 0.0;
+  }
+
+  i = s_colidx->size[0];
+  s_colidx->size[0] = 13;
+  emxEnsureCapacity_int32_T(s_colidx, i);
+  s_colidx->data[0] = 1;
+  i = s_rowidx->size[0];
+  s_rowidx->size[0] = numalloc;
+  emxEnsureCapacity_int32_T(s_rowidx, i);
+  for (i = 0; i < numalloc; i++) {
+    s_rowidx->data[i] = 0;
+  }
+
+  for (numalloc = 0; numalloc < 12; numalloc++) {
+    s_colidx->data[numalloc + 1] = 1;
+    s_colidx->data[numalloc] = 1;
+  }
+
+  s_colidx->data[12] = 1;
+}
 
 //
 // Arguments    : int m

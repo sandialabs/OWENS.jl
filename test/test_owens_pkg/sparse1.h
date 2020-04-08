@@ -4,7 +4,7 @@
 // File: sparse1.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 #ifndef SPARSE1_H
 #define SPARSE1_H
@@ -16,6 +16,8 @@
 #include "test_owens_types.h"
 
 // Function Declarations
+extern void sparse_spallocLike(int nzmax, emxArray_real_T *s_d, emxArray_int32_T
+  *s_colidx, emxArray_int32_T *s_rowidx);
 extern void sparse_sparse(int m, int n, int nzmaxval, emxArray_real_T *this_d,
   emxArray_int32_T *this_colidx, emxArray_int32_T *this_rowidx, int *this_m, int
   *this_n);

@@ -4,7 +4,7 @@
 // File: sparse.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 #ifndef SPARSE_H
 #define SPARSE_H
@@ -16,7 +16,11 @@
 #include "test_owens_types.h"
 
 // Function Declarations
-extern void b_sparse(const emxArray_real_T *varargin_1, emxArray_real_T *y_d,
+extern void b_sparse(emxArray_real_T *y_d, emxArray_int32_T *y_colidx,
+                     emxArray_int32_T *y_rowidx);
+extern void c_sparse(emxArray_real_T *y_d, emxArray_int32_T *y_colidx,
+                     emxArray_int32_T *y_rowidx);
+extern void d_sparse(const emxArray_real_T *varargin_1, emxArray_real_T *y_d,
                      emxArray_int32_T *y_colidx, emxArray_int32_T *y_rowidx, int
                      *y_m, int *y_n);
 extern void sparse(const double varargin_1[144], emxArray_real_T *y_d,

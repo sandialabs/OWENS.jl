@@ -4,7 +4,7 @@
 // File: mtimes1.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 #ifndef MTIMES1_H
 #define MTIMES1_H
@@ -31,8 +31,8 @@ extern void e_sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T
   *c_rowidx, int *c_m, int *c_n);
 extern void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T
   *a_colidx, const emxArray_int32_T *a_rowidx, const emxArray_real_T *b_d, const
-  emxArray_int32_T *b_colidx, const emxArray_int32_T *b_rowidx, emxArray_real_T *
-  c_d, emxArray_int32_T *c_colidx, emxArray_int32_T *c_rowidx);
+  emxArray_int32_T *b_colidx, const emxArray_int32_T *b_rowidx,
+  coder_internal_sparse *c);
 
 #endif
 

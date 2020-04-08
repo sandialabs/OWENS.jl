@@ -4,7 +4,7 @@
 // File: sparse.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 
 // Include Files
@@ -17,6 +17,120 @@
 // Function Definitions
 
 //
+// Arguments    : emxArray_real_T *y_d
+//                emxArray_int32_T *y_colidx
+//                emxArray_int32_T *y_rowidx
+// Return Type  : void
+//
+void b_sparse(emxArray_real_T *y_d, emxArray_int32_T *y_colidx, emxArray_int32_T
+              *y_rowidx)
+{
+  int ctr;
+  int col;
+  int row;
+  static const signed char x[144] = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+  };
+
+  ctr = y_d->size[0];
+  y_d->size[0] = 12;
+  emxEnsureCapacity_real_T(y_d, ctr);
+  for (ctr = 0; ctr < 12; ctr++) {
+    y_d->data[ctr] = 0.0;
+  }
+
+  ctr = y_colidx->size[0];
+  y_colidx->size[0] = 13;
+  emxEnsureCapacity_int32_T(y_colidx, ctr);
+  for (ctr = 0; ctr < 13; ctr++) {
+    y_colidx->data[ctr] = 0;
+  }
+
+  y_colidx->data[0] = 1;
+  ctr = y_rowidx->size[0];
+  y_rowidx->size[0] = 12;
+  emxEnsureCapacity_int32_T(y_rowidx, ctr);
+  for (ctr = 0; ctr < 12; ctr++) {
+    y_rowidx->data[ctr] = 0;
+  }
+
+  y_rowidx->data[0] = 1;
+  ctr = 0;
+  for (col = 0; col < 12; col++) {
+    for (row = 0; row < 12; row++) {
+      if (x[row + 12 * col] != 0) {
+        y_rowidx->data[ctr] = row + 1;
+        y_d->data[ctr] = 1.0;
+        ctr++;
+      }
+    }
+
+    y_colidx->data[col + 1] = ctr + 1;
+  }
+}
+
+//
+// Arguments    : emxArray_real_T *y_d
+//                emxArray_int32_T *y_colidx
+//                emxArray_int32_T *y_rowidx
+// Return Type  : void
+//
+void c_sparse(emxArray_real_T *y_d, emxArray_int32_T *y_colidx, emxArray_int32_T
+              *y_rowidx)
+{
+  int ctr;
+  int col;
+  int row;
+  static const signed char x[144] = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+  };
+
+  ctr = y_d->size[0];
+  y_d->size[0] = 12;
+  emxEnsureCapacity_real_T(y_d, ctr);
+  for (ctr = 0; ctr < 12; ctr++) {
+    y_d->data[ctr] = 0.0;
+  }
+
+  ctr = y_colidx->size[0];
+  y_colidx->size[0] = 13;
+  emxEnsureCapacity_int32_T(y_colidx, ctr);
+  for (ctr = 0; ctr < 13; ctr++) {
+    y_colidx->data[ctr] = 0;
+  }
+
+  y_colidx->data[0] = 1;
+  ctr = y_rowidx->size[0];
+  y_rowidx->size[0] = 12;
+  emxEnsureCapacity_int32_T(y_rowidx, ctr);
+  for (ctr = 0; ctr < 12; ctr++) {
+    y_rowidx->data[ctr] = 0;
+  }
+
+  y_rowidx->data[0] = 1;
+  ctr = 0;
+  for (col = 0; col < 12; col++) {
+    for (row = 0; row < 12; row++) {
+      if (x[row + 12 * col] != 0) {
+        y_rowidx->data[ctr] = row + 1;
+        y_d->data[ctr] = 1.0;
+        ctr++;
+      }
+    }
+
+    y_colidx->data[col + 1] = ctr + 1;
+  }
+}
+
+//
 // Arguments    : const emxArray_real_T *varargin_1
 //                emxArray_real_T *y_d
 //                emxArray_int32_T *y_colidx
@@ -25,7 +139,7 @@
 //                int *y_n
 // Return Type  : void
 //
-void b_sparse(const emxArray_real_T *varargin_1, emxArray_real_T *y_d,
+void d_sparse(const emxArray_real_T *varargin_1, emxArray_real_T *y_d,
               emxArray_int32_T *y_colidx, emxArray_int32_T *y_rowidx, int *y_m,
               int *y_n)
 {

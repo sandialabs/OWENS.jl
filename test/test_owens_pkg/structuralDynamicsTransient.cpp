@@ -4,7 +4,7 @@
 // File: structuralDynamicsTransient.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 
 // Include Files
@@ -80,12 +80,12 @@ static void applyConstraints(emxArray_real_T *Kg, const emxArray_real_T
   emxInit_real_T(&t5_d, 1);
   emxInit_int32_T(&t5_colidx, 1);
   emxInit_int32_T(&t5_rowidx, 1);
-  b_sparse(b_transMatrix, t4_d, t4_colidx, t4_rowidx, &cend, &loop_ub);
-  b_sparse(Kg, this_d, this_colidx, this_rowidx, &this_m, &this_n);
+  d_sparse(b_transMatrix, t4_d, t4_colidx, t4_rowidx, &cend, &loop_ub);
+  d_sparse(Kg, this_d, this_colidx, this_rowidx, &this_m, &this_n);
   e_sparse_mtimes(t4_d, t4_colidx, t4_rowidx, cend, this_d, this_colidx,
                   this_rowidx, this_n, t5_d, t5_colidx, t5_rowidx, &t5_m,
                   &loop_ub);
-  b_sparse(transMatrix, t4_d, t4_colidx, t4_rowidx, &cend, &loop_ub);
+  d_sparse(transMatrix, t4_d, t4_colidx, t4_rowidx, &cend, &loop_ub);
   e_sparse_mtimes(t5_d, t5_colidx, t5_rowidx, t5_m, t4_d, t4_colidx, t4_rowidx,
                   loop_ub, this_d, this_colidx, this_rowidx, &this_m, &this_n);
   i = Kg->size[0] * Kg->size[1];

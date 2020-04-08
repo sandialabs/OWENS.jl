@@ -4,7 +4,7 @@
 // File: strcmp.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 #ifndef STRCMP_H
 #define STRCMP_H

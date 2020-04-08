@@ -4,7 +4,7 @@
 // File: test_owens_types.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 #ifndef TEST_OWENS_TYPES_H
 #define TEST_OWENS_TYPES_H
@@ -479,6 +479,13 @@ struct e_emxArray_struct_T
   int allocatedSize;
   int numDimensions;
   boolean_T canFreeData;
+};
+
+struct coder_internal_sparse
+{
+  emxArray_real_T *d;
+  emxArray_int32_T *colidx;
+  emxArray_int32_T *rowidx;
 };
 
 struct emxArray_creal_T

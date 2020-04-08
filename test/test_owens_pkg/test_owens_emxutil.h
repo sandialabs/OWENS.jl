@@ -4,7 +4,7 @@
 // File: test_owens_emxutil.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:21:12
+// C/C++ source code generated on  : 07-Apr-2020 17:47:29
 //
 #ifndef TEST_OWENS_EMXUTIL_H
 #define TEST_OWENS_EMXUTIL_H
@@ -16,6 +16,8 @@
 #include "test_owens_types.h"
 
 // Function Declarations
+extern void c_emxFreeStruct_coder_internal_(coder_internal_sparse *pStruct);
+extern void c_emxInitStruct_coder_internal_(coder_internal_sparse *pStruct);
 extern void emxCopyStruct_struct_T(k_struct_T *dst, const k_struct_T *src);
 extern void emxCopyStruct_struct_T1(m_struct_T *dst, const m_struct_T *src);
 extern void emxCopyStruct_struct_T2(l_struct_T *dst, const l_struct_T *src);
