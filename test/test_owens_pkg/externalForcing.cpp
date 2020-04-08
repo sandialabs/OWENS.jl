@@ -4,7 +4,7 @@
 // File: externalForcing.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -55,7 +55,7 @@ void externalForcing(double time, const double aeroLoads_timeArray_data[], const
 {
   int high_i;
   int n;
-  double timeArray_data[2002];
+  double varargin_1_data[2002];
   int i;
   emxArray_real_T *varargin_2;
   int nyrows;
@@ -89,7 +89,7 @@ void externalForcing(double time, const double aeroLoads_timeArray_data[], const
   high_i = aeroLoads_timeArray_size[0];
   n = aeroLoads_timeArray_size[0];
   if (0 <= n - 1) {
-    std::memcpy(&timeArray_data[0], &aeroLoads_timeArray_data[0], n * sizeof
+    std::memcpy(&varargin_1_data[0], &aeroLoads_timeArray_data[0], n * sizeof
                 (double));
   }
 
@@ -140,10 +140,10 @@ void externalForcing(double time, const double aeroLoads_timeArray_data[], const
       if (aeroLoads_timeArray_data[1] < aeroLoads_timeArray_data[0]) {
         i = (nx + 1) >> 1;
         for (vlen = 0; vlen < i; vlen++) {
-          xtmp = timeArray_data[vlen];
+          xtmp = varargin_1_data[vlen];
           n = nx - vlen;
-          timeArray_data[vlen] = timeArray_data[n];
-          timeArray_data[n] = xtmp;
+          varargin_1_data[vlen] = varargin_1_data[n];
+          varargin_1_data[n] = xtmp;
         }
 
         if ((varargin_2->size[0] != 0) && (varargin_2->size[1] != 0) &&
@@ -170,8 +170,8 @@ void externalForcing(double time, const double aeroLoads_timeArray_data[], const
           Fexternal->data[j] = rtNaN;
         }
       } else {
-        if ((!(time > timeArray_data[high_i - 1])) && (!(time < timeArray_data[0])))
-        {
+        if ((!(time > varargin_1_data[high_i - 1])) && (!(time <
+              varargin_1_data[0]))) {
           nx = 1;
           vlen = 2;
           while (high_i > vlen) {
@@ -180,7 +180,7 @@ void externalForcing(double time, const double aeroLoads_timeArray_data[], const
               n++;
             }
 
-            if (time >= timeArray_data[n - 1]) {
+            if (time >= varargin_1_data[n - 1]) {
               nx = n;
               vlen = n + 1;
             } else {
@@ -188,8 +188,8 @@ void externalForcing(double time, const double aeroLoads_timeArray_data[], const
             }
           }
 
-          xtmp = timeArray_data[nx - 1];
-          xtmp = (time - xtmp) / (timeArray_data[nx] - xtmp);
+          xtmp = varargin_1_data[nx - 1];
+          xtmp = (time - xtmp) / (varargin_1_data[nx] - xtmp);
           if (xtmp == 0.0) {
             for (j = 0; j <= nycols; j++) {
               Fexternal->data[j] = varargin_2->data[(nx + j * nyrows) - 1];

@@ -4,7 +4,7 @@
 // File: writeOutput.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -66,6 +66,9 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
   int u1;
   boolean_T swapped;
   emxArray_real_T *map;
+  int i;
+  double temp;
+  double temp2;
   double b_index;
   FILE * b_NULL;
   FILE * c_NULL;
@@ -73,12 +76,14 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
   FILE * e_NULL;
   FILE * f_NULL;
   FILE * filestar;
-  int i;
+  boolean_T autoflush;
+  int b_i;
   FILE * g_NULL;
   FILE * h_NULL;
   FILE * i_NULL;
   int i1;
   int b_u1;
+  int j;
   FILE * j_NULL;
   emxInit_real_T(&b_freq, 2);
 
@@ -139,15 +144,15 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
 
   while (swapped) {
     swapped = false;
-    for (loop_ub = 0; loop_ub <= u1 - 2; loop_ub++) {
-      if (b_freq->data[loop_ub + 1] < b_freq->data[loop_ub]) {
-        b_index = b_freq->data[loop_ub];
-        b_freq->data[loop_ub] = b_freq->data[loop_ub + 1];
-        b_freq->data[loop_ub + 1] = b_index;
+    for (i = 0; i <= u1 - 2; i++) {
+      if (b_freq->data[i + 1] < b_freq->data[i]) {
+        temp = b_freq->data[i];
+        b_freq->data[i] = b_freq->data[i + 1];
+        b_freq->data[i + 1] = temp;
         swapped = true;
-        b_index = map->data[loop_ub];
-        map->data[loop_ub] = map->data[loop_ub + 1];
-        map->data[loop_ub + 1] = b_index;
+        temp2 = map->data[i];
+        map->data[i] = map->data[i + 1];
+        map->data[i + 1] = temp2;
       }
     }
   }
@@ -226,7 +231,7 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
     d_NULL = NULL;
     e_NULL = NULL;
     f_NULL = NULL;
-    i = phase1->size[0] - 1;
+    b_i = phase1->size[0] - 1;
     g_NULL = NULL;
     h_NULL = NULL;
     i_NULL = NULL;
@@ -242,147 +247,145 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
     }
   }
 
-  for (loop_ub = 0; loop_ub < u1; loop_ub++) {
+  for (i = 0; i < u1; i++) {
     // prints mode frequency, damping and in/out of phase mode shapes
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == b_NULL)) {
       fprintf(filestar, "MODE # %0.0f \n\n", b_index);
-      if (swapped) {
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == c_NULL)) {
-      fprintf(filestar, "Frequency: %e: \n", b_freq->data[loop_ub]);
-      if (swapped) {
+      fprintf(filestar, "Frequency: %e: \n", b_freq->data[i]);
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == d_NULL)) {
       fprintf(filestar, "Damping %e: \n", damp->data[static_cast<int>(map->
-               data[loop_ub]) - 1]);
-      if (swapped) {
+               data[i]) - 1]);
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == e_NULL)) {
       fprintf(filestar, "0 deg Mode Shape:\n");
-      if (swapped) {
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == f_NULL)) {
       fprintf(filestar,
               "U_x          U_y          U_z          theta_x     theta_y     theta_z \n");
-      if (swapped) {
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    u0 = static_cast<int>(map->data[loop_ub]) - 1;
-    dampSorted->data[loop_ub] = damp->data[u0];
-    freqSorted->data[loop_ub] = b_freq->data[loop_ub];
-    imagCompSignSorted->data[loop_ub] = imagComponentSign->data[u0];
-    for (u0 = 0; u0 <= i; u0++) {
+    u0 = static_cast<int>(map->data[i]) - 1;
+    dampSorted->data[i] = damp->data[u0];
+    freqSorted->data[i] = b_freq->data[i];
+    imagCompSignSorted->data[i] = imagComponentSign->data[u0];
+    for (j = 0; j <= b_i; j++) {
       j_NULL = NULL;
-      getfilestar(fid, &filestar, &swapped);
+      getfilestar(fid, &filestar, &autoflush);
       if (!(filestar == j_NULL)) {
         fprintf(filestar, "%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",
-                phase1->data[u0 + phase1->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase1->data[(u0 + phase1->size[0])
-                + phase1->size[0] * 6 * (static_cast<int>(map->data[loop_ub]) -
-                 1)], phase1->data[(u0 + phase1->size[0] * 2) + phase1->size[0] *
-                6 * (static_cast<int>(map->data[loop_ub]) - 1)], phase1->data
-                [(u0 + phase1->size[0] * 3) + phase1->size[0] * 6 * (
-                 static_cast<int>(map->data[loop_ub]) - 1)], phase1->data[(u0 +
-                 phase1->size[0] * 4) + phase1->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase1->data[(u0 + phase1->size[0] *
-                 5) + phase1->size[0] * 6 * (static_cast<int>(map->data[loop_ub])
-                 - 1)]);
-        if (swapped) {
+                phase1->data[j + phase1->size[0] * 6 * (static_cast<int>
+                 (map->data[i]) - 1)], phase1->data[(j + phase1->size[0]) +
+                phase1->size[0] * 6 * (static_cast<int>(map->data[i]) - 1)],
+                phase1->data[(j + phase1->size[0] * 2) + phase1->size[0] * 6 * (
+                 static_cast<int>(map->data[i]) - 1)], phase1->data[(j +
+                 phase1->size[0] * 3) + phase1->size[0] * 6 * (static_cast<int>
+                 (map->data[i]) - 1)], phase1->data[(j + phase1->size[0] * 4) +
+                phase1->size[0] * 6 * (static_cast<int>(map->data[i]) - 1)],
+                phase1->data[(j + phase1->size[0] * 5) + phase1->size[0] * 6 * (
+                 static_cast<int>(map->data[i]) - 1)]);
+        if (autoflush) {
           fflush(filestar);
         }
       }
 
       j_NULL = NULL;
-      getfilestar(fid, &filestar, &swapped);
+      getfilestar(fid, &filestar, &autoflush);
       if (!(filestar == j_NULL)) {
         fprintf(filestar, "\n");
-        if (swapped) {
+        if (autoflush) {
           fflush(filestar);
         }
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == g_NULL)) {
       fprintf(filestar, "\n");
-      if (swapped) {
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == h_NULL)) {
       fprintf(filestar, "90 deg Mode Shape:\n");
-      if (swapped) {
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    getfilestar(fid, &filestar, &swapped);
+    getfilestar(fid, &filestar, &autoflush);
     if (!(filestar == i_NULL)) {
       fprintf(filestar,
               "U_x          U_y          U_z          theta_x     theta_y     theta_z \n");
-      if (swapped) {
+      if (autoflush) {
         fflush(filestar);
       }
     }
 
-    for (u0 = 0; u0 <= i1; u0++) {
+    for (j = 0; j <= i1; j++) {
       j_NULL = NULL;
-      getfilestar(fid, &filestar, &swapped);
+      getfilestar(fid, &filestar, &autoflush);
       if (!(filestar == j_NULL)) {
         fprintf(filestar, "%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",
-                phase2->data[u0 + phase2->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase2->data[(u0 + phase2->size[0])
-                + phase2->size[0] * 6 * (static_cast<int>(map->data[loop_ub]) -
-                 1)], phase2->data[(u0 + phase2->size[0] * 2) + phase2->size[0] *
-                6 * (static_cast<int>(map->data[loop_ub]) - 1)], phase2->data
-                [(u0 + phase2->size[0] * 3) + phase2->size[0] * 6 * (
-                 static_cast<int>(map->data[loop_ub]) - 1)], phase2->data[(u0 +
-                 phase2->size[0] * 4) + phase2->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase2->data[(u0 + phase2->size[0] *
-                 5) + phase2->size[0] * 6 * (static_cast<int>(map->data[loop_ub])
-                 - 1)]);
-        if (swapped) {
+                phase2->data[j + phase2->size[0] * 6 * (static_cast<int>
+                 (map->data[i]) - 1)], phase2->data[(j + phase2->size[0]) +
+                phase2->size[0] * 6 * (static_cast<int>(map->data[i]) - 1)],
+                phase2->data[(j + phase2->size[0] * 2) + phase2->size[0] * 6 * (
+                 static_cast<int>(map->data[i]) - 1)], phase2->data[(j +
+                 phase2->size[0] * 3) + phase2->size[0] * 6 * (static_cast<int>
+                 (map->data[i]) - 1)], phase2->data[(j + phase2->size[0] * 4) +
+                phase2->size[0] * 6 * (static_cast<int>(map->data[i]) - 1)],
+                phase2->data[(j + phase2->size[0] * 5) + phase2->size[0] * 6 * (
+                 static_cast<int>(map->data[i]) - 1)]);
+        if (autoflush) {
           fflush(filestar);
         }
       }
 
       j_NULL = NULL;
-      getfilestar(fid, &filestar, &swapped);
+      getfilestar(fid, &filestar, &autoflush);
       if (!(filestar == j_NULL)) {
         fprintf(filestar, "\n");
-        if (swapped) {
+        if (autoflush) {
           fflush(filestar);
         }
       }
     }
 
-    if (loop_ub + 1 < b_u1) {
+    if (i + 1 < b_u1) {
       j_NULL = NULL;
-      getfilestar(fid, &filestar, &swapped);
+      getfilestar(fid, &filestar, &autoflush);
       if (!(filestar == j_NULL)) {
         fprintf(filestar, "\n\n");
-        if (swapped) {
+        if (autoflush) {
           fflush(filestar);
         }
       }

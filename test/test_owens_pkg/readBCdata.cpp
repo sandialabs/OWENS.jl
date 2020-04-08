@@ -4,7 +4,7 @@
 // File: readBCdata.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -58,11 +58,12 @@ void readBCdata(const emxArray_char_T *bcfilename, double numNodes, double
   emxArray_real_T *pBC;
   static const char b_cv[3] = { 'a', 'l', 'l' };
 
-  emxArray_char_T *line;
+  emxArray_char_T *b_r;
   creal_T dc;
   int i;
   int i1;
   int loop_ub;
+  emxArray_char_T *line;
   emxArray_uint32_T *delimiter_idx;
   emxArray_boolean_T *x;
   emxArray_int32_T *ii;
@@ -74,6 +75,7 @@ void readBCdata(const emxArray_char_T *bcfilename, double numNodes, double
   boolean_T exitg2;
   emxArray_real_T *constDof;
   double b_index;
+  int j;
   double a;
   int k;
   unsigned int u;
@@ -110,11 +112,11 @@ void readBCdata(const emxArray_char_T *bcfilename, double numNodes, double
   }
 
   emxInit_real_T(&pBC, 2);
-  emxInit_char_T(&line, 2);
+  emxInit_char_T(&b_r, 2);
 
   // open boundary condition file
-  myfgetl(static_cast<double>(fid), line);
-  dc = d_str2double(line);
+  myfgetl(static_cast<double>(fid), b_r);
+  dc = d_str2double(b_r);
 
   // read in number of boundary conditions (displacement boundary conditions)
   i = static_cast<int>(dc.re);
@@ -123,11 +125,13 @@ void readBCdata(const emxArray_char_T *bcfilename, double numNodes, double
   pBC->size[1] = 3;
   emxEnsureCapacity_real_T(pBC, i1);
   loop_ub = i * 3;
+  emxFree_char_T(&b_r);
   for (i1 = 0; i1 < loop_ub; i1++) {
     pBC->data[i1] = 0.0;
   }
 
   // initialize boundary conditions
+  emxInit_char_T(&line, 2);
   emxInit_uint32_T(&delimiter_idx, 2);
   emxInit_boolean_T(&x, 2);
   emxInit_int32_T(&ii, 1);
@@ -275,9 +279,9 @@ void readBCdata(const emxArray_char_T *bcfilename, double numNodes, double
   b_index = 1.0;
   i = static_cast<int>(numNodes);
   for (b_i = 0; b_i < i; b_i++) {
-    for (kstr = 0; kstr < 6; kstr++) {
+    for (j = 0; j < 6; j++) {
       a = ((static_cast<double>(b_i) + 1.0) - 1.0) * 6.0 + (static_cast<double>
-        (kstr) + 1.0);
+        (j) + 1.0);
       b_bool = false;
       k = 0;
       exitg2 = false;

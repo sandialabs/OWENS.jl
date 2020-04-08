@@ -155,8 +155,8 @@ if(Omega==0.0) %set eigensolver flag
 else
     solveFlag = 1;
 end
-[eigVec,eigVal] = eigSolve(MgTotal,CgTotal,KgTotal,... %eigensolve of global system
-    model.numModesToExtract,solveFlag);
+[eigVec,eigVal] = eigSolve(MgTotal,CgTotal,KgTotal);%,... %eigensolve of global system
+    %model.numModesToExtract,solveFlag);
 %save eigVectors eigVec %save eigenvector for later use (if needed) TODO: Doesn't appear to be used
 
 

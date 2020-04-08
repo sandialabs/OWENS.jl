@@ -4,7 +4,7 @@
 // File: transientExec.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -176,10 +176,11 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   int i;
   int loop_ub;
   emxArray_real_T *u_s;
-  int platNorm;
+  int b_loop_ub;
+  emxArray_real_T *udot_s_tmp;
   emxArray_real_T *udot_s;
+  int sizes_idx_1;
   emxArray_real_T *uddot_s;
-  int gbNorm;
   emxArray_real_T *uHist;
   double t_data[51];
   double FReactionHist_data[306];
@@ -194,26 +195,32 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   double gbDot_s;
   double azi_s;
   int b_i;
-  double FReactionsm1[6];
+  double FReaction_j[6];
   c_emxArray_struct_T *elStorage;
   emxArray_real_T *dispOut_displ_sp1;
   emxArray_real_T *dispOut_displddot_sp1;
   emxArray_real_T *dispOut_displdot_sp1;
   emxArray_real_T *u_j;
   emxArray_real_T *u_jLast;
-  emxArray_real_T *Fexternal_sub;
+  emxArray_real_T *varargin_1;
   i_struct_T expl_temp;
   j_struct_T dispOut;
-  emxArray_real_T *b_Fexternal_sub;
-  emxArray_real_T *b_udot_j;
+  emxArray_real_T *b_varargin_1;
+  emxArray_real_T *b_udot_s_tmp;
   boolean_T exitg1;
   double omegaCurrent;
   double OmegaDotCurrent;
   boolean_T terminateSimulation;
   double azi_j;
+  double gb_j;
+  double gbDot_j;
   int numIterations;
   double uNorm;
+  int platNorm;
   double aziNorm;
+  int gbNorm;
+  double CP2H_tmp;
+  double b_CP2H_tmp;
   int b_model_outFilename_size[2];
   char b_model_outFilename_data[76];
   emxArray_char_T c_model_outFilename_data;
@@ -236,6 +243,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   emxArray_char_T *r14;
   emxArray_char_T *r15;
   emxArray_char_T *r16;
+  double azi_jLast;
   static const char b_cv[198] = { 't', ',', 'a', 'z', 'i', 'H', 'i', 's', 't',
     ',', 'O', 'm', 'e', 'g', 'a', 'H', 'i', 's', 't', ',', 'O', 'm', 'e', 'g',
     'a', 'D', 'o', 't', 'H', 'i', 's', 't', ',', 'g', 'b', 'H', 'i', 's', 't',
@@ -251,26 +259,29 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
     'n', 'P', 'o', 'w', 'e', 'r', ',', 't', 'o', 'r', 'q', 'u', 'e', 'D', 'r',
     'i', 'v', 'e', 'S', 'h', 'a', 'f', 't', '\x0a' };
 
-  int sizes_idx_0;
   int c_model_outFilename_size[2];
-  signed char input_sizes_idx_1;
+  int sizes_idx_0;
   char d_model_outFilename_data[82];
+  signed char input_sizes_idx_1;
   emxArray_char_T e_model_outFilename_data;
   static const char cv1[10] = { '_', 'u', 'H', 'i', 's', 't', '.', 't', 'x', 't'
   };
 
-  double structureMOI[9];
+  int ii;
   int d_model_outFilename_size[2];
   int i1;
+  double b_dv[9];
   char f_model_outFilename_data[87];
   emxArray_char_T g_model_outFilename_data;
   static const char cv2[15] = { '_', 's', 't', 'r', 'a', 'i', 'n', 'H', 'i', 's',
     't', '.', 't', 'x', 't' };
 
-  double CP2H_tmp[9];
-  double b_CP2H_tmp[9];
+  int j;
+  double c_CP2H_tmp[9];
+  int jj;
   static const char cv3[9] = { 'e', 'p', 's', '_', 'x', 'x', '_', '0', ' ' };
 
+  double d_CP2H_tmp[9];
   static const char cv4[9] = { 'e', 'p', 's', '_', 'x', 'x', '_', 'z', ' ' };
 
   static const char cv5[9] = { 'e', 'p', 's', '_', 'x', 'x', '_', 'y', ' ' };
@@ -330,15 +341,15 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   //
   //  state initialization
   // ......... specify initial conditions .......................
-  platNorm = static_cast<int>((mesh.numNodes * 6.0));
+  b_loop_ub = static_cast<int>((mesh.numNodes * 6.0));
   i = u_s->size[0];
-  u_s->size[0] = platNorm;
+  u_s->size[0] = b_loop_ub;
   emxEnsureCapacity_real_T(u_s, i);
-  for (i = 0; i < platNorm; i++) {
+  for (i = 0; i < b_loop_ub; i++) {
     u_s->data[i] = 0.0;
   }
 
-  emxInit_real_T(&udot_s, 1);
+  emxInit_real_T(&udot_s_tmp, 1);
 
   // setInitialConditions sets initial conditions
   //  **********************************************************************
@@ -363,20 +374,29 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   // get number of specified initial conditions
   // unspecified initial conditions are assumed to
   // be zero
+  i = udot_s_tmp->size[0];
+  udot_s_tmp->size[0] = b_loop_ub;
+  emxEnsureCapacity_real_T(udot_s_tmp, i);
+  for (i = 0; i < b_loop_ub; i++) {
+    udot_s_tmp->data[i] = 0.0;
+  }
+
+  emxInit_real_T(&udot_s, 1);
   i = udot_s->size[0];
-  udot_s->size[0] = platNorm;
+  udot_s->size[0] = udot_s_tmp->size[0];
   emxEnsureCapacity_real_T(udot_s, i);
-  for (i = 0; i < platNorm; i++) {
-    udot_s->data[i] = 0.0;
+  sizes_idx_1 = udot_s_tmp->size[0];
+  for (i = 0; i < sizes_idx_1; i++) {
+    udot_s->data[i] = udot_s_tmp->data[i];
   }
 
   emxInit_real_T(&uddot_s, 1);
   i = uddot_s->size[0];
-  uddot_s->size[0] = udot_s->size[0];
+  uddot_s->size[0] = udot_s_tmp->size[0];
   emxEnsureCapacity_real_T(uddot_s, i);
-  gbNorm = udot_s->size[0];
-  for (i = 0; i < gbNorm; i++) {
-    uddot_s->data[i] = udot_s->data[i];
+  sizes_idx_1 = udot_s_tmp->size[0];
+  for (i = 0; i < sizes_idx_1; i++) {
+    uddot_s->data[i] = udot_s_tmp->data[i];
   }
 
   emxInit_real_T(&uHist, 2);
@@ -385,15 +405,15 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   // define number of time steps
   // define time step size
   i = uHist->size[0] * uHist->size[1];
-  uHist->size[0] = platNorm;
+  uHist->size[0] = b_loop_ub;
   uHist->size[1] = 51;
   emxEnsureCapacity_real_T(uHist, i);
-  gbNorm = platNorm * 51;
-  for (i = 0; i < gbNorm; i++) {
+  sizes_idx_1 = b_loop_ub * 51;
+  for (i = 0; i < sizes_idx_1; i++) {
     uHist->data[i] = 0.0;
   }
 
-  for (i = 0; i < platNorm; i++) {
+  for (i = 0; i < b_loop_ub; i++) {
     uHist->data[i] = 0.0;
   }
 
@@ -435,8 +455,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   OmegaHist_data[0] = 0.12000000000000001;
   OmegaDotHist_data[0] = 0.0;
   for (b_i = 0; b_i < 6; b_i++) {
-    FReactionsm1[b_i] = 0.0;
     FReactionHist_data[51 * b_i] = 0.0;
+    FReaction_j[b_i] = 0.0;
   }
 
   gbHist_data[0] = 0.0;
@@ -466,11 +486,11 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
   emxInit_real_T(&dispOut_displdot_sp1, 1);
   emxInit_real_T(&u_j, 1);
   emxInit_real_T(&u_jLast, 1);
-  emxInit_real_T(&Fexternal_sub, 2);
+  emxInit_real_T(&varargin_1, 2);
   emxInitStruct_struct_T2(&expl_temp);
   emxInitStruct_struct_T3(&dispOut);
-  emxInit_real_T(&b_Fexternal_sub, 2);
-  emxInit_real_T(&b_udot_j, 2);
+  emxInit_real_T(&b_varargin_1, 2);
+  emxInit_real_T(&b_udot_s_tmp, 2);
   exitg1 = false;
   while ((!exitg1) && (b_i - 1 < 50)) {
     //      i %TODO add verbose printing
@@ -492,6 +512,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       }
 
       azi_j = azi_s;
+      gb_j = gb_s;
+      gbDot_j = gbDot_s;
 
       // initialize  platform module related variables only used if(model.hydroOn) 
       //  		Accel_j = Accel;
@@ -510,8 +532,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
               (gbNorm > 1.0E-8)) && (numIterations < 50)) {
         // module gauss-seidel iteration loop
         // calculate CP2H (platform frame to hub frame transformation matrix)
-        aziNorm = std::sin(azi_j);
-        uNorm = std::cos(azi_j);
+        CP2H_tmp = std::sin(azi_j);
+        b_CP2H_tmp = std::cos(azi_j);
 
         // .... inertial frame to platform transformation matrix ...........
         // .........................................
@@ -542,12 +564,13 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
         //         %%
         //         %% evaluate drivetrain module
         //  %===== drivetrain module ==========================
-        gb_s = azi_j;
-        gbDot_s = omegaCurrent * 2.0 * 3.1415926535897931;
+        gb_j = azi_j;
+        gbDot_j = omegaCurrent * 2.0 * 3.1415926535897931;
 
         // ==================================================
         //         %% rotor speed update
         // ===== update rotor speed =========================
+        azi_jLast = azi_j;
         azi_j = azi_s + omegaCurrent * 0.002 * 2.0 * 3.1415926535897931;
 
         // ===================================================
@@ -563,26 +586,26 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
         // compile forces to supply to structural dynamics solver
         externalForcing(t_data[b_i - 1] + 0.002, aeroLoads_timeArray_data,
                         aeroLoads_timeArray_size, aeroLoads_ForceValHist,
-                        aeroLoads_ForceDof, Fexternal_sub, udot_j);
-        if (Fexternal_sub->size[1] != 0) {
-          gbNorm = Fexternal_sub->size[1];
+                        aeroLoads_ForceDof, varargin_1, udot_s_tmp);
+        if (varargin_1->size[1] != 0) {
+          sizes_idx_1 = varargin_1->size[1];
         } else {
-          gbNorm = 0;
+          sizes_idx_1 = 0;
         }
 
-        if ((gbNorm == 0) || (Fexternal_sub->size[1] != 0)) {
+        if ((sizes_idx_1 == 0) || (varargin_1->size[1] != 0)) {
           input_sizes_idx_0 = 1;
         } else {
           input_sizes_idx_0 = 0;
         }
 
-        if (udot_j->size[0] != 0) {
-          sizes_idx_0 = udot_j->size[0];
+        if (udot_s_tmp->size[0] != 0) {
+          sizes_idx_0 = udot_s_tmp->size[0];
         } else {
           sizes_idx_0 = 0;
         }
 
-        if ((sizes_idx_0 == 0) || (udot_j->size[0] != 0)) {
+        if ((sizes_idx_0 == 0) || (udot_s_tmp->size[0] != 0)) {
           input_sizes_idx_1 = 1;
         } else {
           input_sizes_idx_1 = 0;
@@ -604,7 +627,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
         //          end
         if (!b_strcmp(model_analysisType)) {
           //  evalulate structural dynamics using conventional representation
-          eye(structureMOI);
+          eye(b_dv);
           i = expl_temp.displddot_s->size[0];
           expl_temp.displddot_s->size[0] = uddot_s->size[0];
           emxEnsureCapacity_real_T(expl_temp.displddot_s, i);
@@ -629,45 +652,45 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
             expl_temp.displ_s->data[i] = u_s->data[i];
           }
 
-          platNorm = input_sizes_idx_0;
-          CP2H_tmp[0] = uNorm;
-          CP2H_tmp[3] = aziNorm;
-          CP2H_tmp[6] = 0.0;
-          CP2H_tmp[1] = -aziNorm;
-          CP2H_tmp[4] = uNorm;
-          CP2H_tmp[7] = 0.0;
-          CP2H_tmp[2] = 0.0;
-          CP2H_tmp[5] = 0.0;
-          CP2H_tmp[8] = 1.0;
-          i = b_Fexternal_sub->size[0] * b_Fexternal_sub->size[1];
-          b_Fexternal_sub->size[0] = input_sizes_idx_0;
-          b_Fexternal_sub->size[1] = gbNorm;
-          emxEnsureCapacity_real_T(b_Fexternal_sub, i);
-          for (i = 0; i < gbNorm; i++) {
-            for (i1 = 0; i1 < platNorm; i1++) {
-              b_Fexternal_sub->data[b_Fexternal_sub->size[0] * i] =
-                Fexternal_sub->data[input_sizes_idx_0 * i];
+          b_loop_ub = input_sizes_idx_0;
+          c_CP2H_tmp[0] = b_CP2H_tmp;
+          c_CP2H_tmp[3] = CP2H_tmp;
+          c_CP2H_tmp[6] = 0.0;
+          c_CP2H_tmp[1] = -CP2H_tmp;
+          c_CP2H_tmp[4] = b_CP2H_tmp;
+          c_CP2H_tmp[7] = 0.0;
+          c_CP2H_tmp[2] = 0.0;
+          c_CP2H_tmp[5] = 0.0;
+          c_CP2H_tmp[8] = 1.0;
+          i = b_varargin_1->size[0] * b_varargin_1->size[1];
+          b_varargin_1->size[0] = input_sizes_idx_0;
+          b_varargin_1->size[1] = sizes_idx_1;
+          emxEnsureCapacity_real_T(b_varargin_1, i);
+          for (i = 0; i < sizes_idx_1; i++) {
+            for (i1 = 0; i1 < b_loop_ub; i1++) {
+              b_varargin_1->data[b_varargin_1->size[0] * i] = varargin_1->
+                data[input_sizes_idx_0 * i];
             }
           }
 
-          i = b_udot_j->size[0] * b_udot_j->size[1];
-          b_udot_j->size[0] = sizes_idx_0;
-          b_udot_j->size[1] = input_sizes_idx_1;
-          emxEnsureCapacity_real_T(b_udot_j, i);
+          i = b_udot_s_tmp->size[0] * b_udot_s_tmp->size[1];
+          b_udot_s_tmp->size[0] = sizes_idx_0;
+          b_udot_s_tmp->size[1] = input_sizes_idx_1;
+          emxEnsureCapacity_real_T(b_udot_s_tmp, i);
           loop_ub = input_sizes_idx_1;
           for (i = 0; i < loop_ub; i++) {
             for (i1 = 0; i1 < sizes_idx_0; i1++) {
-              b_udot_j->data[i1] = udot_j->data[i1];
+              b_udot_s_tmp->data[i1] = udot_s_tmp->data[i1];
             }
           }
 
           for (i = 0; i < 3; i++) {
-            aziNorm = CP2H_tmp[i + 3];
-            i1 = static_cast<int>(CP2H_tmp[i + 6]);
-            for (platNorm = 0; platNorm < 3; platNorm++) {
-              b_CP2H_tmp[i + 3 * platNorm] = (CP2H_tmp[i] * structureMOI[3 *
-                platNorm] + aziNorm * structureMOI[3 * platNorm + 1]) +
-                static_cast<double>(i1) * structureMOI[3 * platNorm + 2];
+            CP2H_tmp = c_CP2H_tmp[i + 3];
+            i1 = static_cast<int>(c_CP2H_tmp[i + 6]);
+            for (b_loop_ub = 0; b_loop_ub < 3; b_loop_ub++) {
+              d_CP2H_tmp[i + 3 * b_loop_ub] = (c_CP2H_tmp[i] * b_dv[3 *
+                b_loop_ub] + CP2H_tmp * b_dv[3 * b_loop_ub + 1]) + static_cast<
+                double>(i1) * b_dv[3 * b_loop_ub + 2];
             }
           }
 
@@ -675,7 +698,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
             model_RayleighBeta, model_BC_numpBC, model_BC_pBC, model_joint,
             model_jointTransform, mesh.numEl, mesh.x, mesh.y, mesh.z, mesh.conn,
             el, expl_temp, omegaCurrent, OmegaDotCurrent, elStorage,
-            b_Fexternal_sub, b_udot_j, b_CP2H_tmp, &dispOut, FReactionsm1);
+            b_varargin_1, b_udot_s_tmp, d_CP2H_tmp, &dispOut, FReaction_j);
           i = dispOut_elStrain->size[0] * dispOut_elStrain->size[1];
           dispOut_elStrain->size[0] = 1;
           dispOut_elStrain->size[1] = dispOut.elStrain->size[1];
@@ -747,18 +770,18 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         //         %%
         //         %% calculate norms
-        i = u_jLast->size[0];
-        u_jLast->size[0] = dispOut_displ_sp1->size[0];
-        emxEnsureCapacity_real_T(u_jLast, i);
+        i = udot_s_tmp->size[0];
+        udot_s_tmp->size[0] = dispOut_displ_sp1->size[0];
+        emxEnsureCapacity_real_T(udot_s_tmp, i);
         loop_ub = dispOut_displ_sp1->size[0];
         for (i = 0; i < loop_ub; i++) {
-          u_jLast->data[i] = dispOut_displ_sp1->data[i] - u_jLast->data[i];
+          udot_s_tmp->data[i] = dispOut_displ_sp1->data[i] - u_jLast->data[i];
         }
 
-        uNorm = b_norm(u_jLast) / b_norm(dispOut_displ_sp1);
+        uNorm = b_norm(udot_s_tmp) / b_norm(dispOut_displ_sp1);
 
         // structural dynamics displacement iteration norm
-        aziNorm = std::abs(azi_j - gb_s) / std::abs(azi_j);
+        aziNorm = std::abs(azi_j - azi_jLast) / std::abs(azi_j);
 
         // rotor azimuth iteration norm
         platNorm = 0;
@@ -768,7 +791,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
       // end iteration while loop
       //     %% calculate converged generator torque/power
-      genPower_data[b_i] = 0.0 * (gbDot_s * 2.0 * 3.1415926535897931);
+      genPower_data[b_i] = 0.0 * (gbDot_j * 2.0 * 3.1415926535897931);
 
       //     %% update timestepping variables and other states, store in history arrays 
       if (c_strcmp(model_analysisType)) {
@@ -803,7 +826,7 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       }
 
       for (i = 0; i < 6; i++) {
-        FReactionHist_data[b_i + 51 * i] = FReactionsm1[i];
+        FReactionHist_data[b_i + 51 * i] = FReaction_j[i];
       }
 
       loop_ub = strainHist->size[0];
@@ -817,12 +840,14 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       aziHist_data[b_i] = azi_j;
       OmegaHist_data[b_i] = omegaCurrent;
       OmegaDotHist_data[b_i] = OmegaDotCurrent;
-      gbHist_data[b_i] = gb_s;
-      gbDotHist_data[b_i] = gbDot_s;
+      gb_s = gb_j;
+      gbDot_s = gbDot_j;
+      gbHist_data[b_i] = gb_j;
+      gbDotHist_data[b_i] = gbDot_j;
 
       // genTorque(i+1) = genTorque_s;
       for (i = 0; i < 6; i++) {
-        FReactionHist_data[b_i + 51 * i] = FReactionsm1[i];
+        FReactionHist_data[b_i + 51 * i] = FReaction_j[i];
       }
 
       //     %%
@@ -832,11 +857,12 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
     }
   }
 
-  emxFree_real_T(&b_udot_j);
-  emxFree_real_T(&b_Fexternal_sub);
+  emxFree_real_T(&b_udot_s_tmp);
+  emxFree_real_T(&b_varargin_1);
   emxFreeStruct_struct_T3(&dispOut);
   emxFreeStruct_struct_T2(&expl_temp);
-  emxFree_real_T(&Fexternal_sub);
+  emxFree_real_T(&varargin_1);
+  emxFree_real_T(&udot_s_tmp);
   emxFree_real_T(&u_jLast);
   emxFree_real_T(&u_j);
   emxFree_struct_T2(&elStorage);
@@ -1164,9 +1190,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       c_fwrite(static_cast<double>(input_sizes_idx_0));
     } else {
       i = uHist->size[0] - 2;
-      for (platNorm = 0; platNorm <= i; platNorm++) {
+      for (ii = 0; ii <= i; ii++) {
         b_sprintf(t_data[b_i - 1], b_r);
-        b_sprintf(uHist->data[platNorm + uHist->size[0] * (b_i - 1)], b_r1);
+        b_sprintf(uHist->data[ii + uHist->size[0] * (b_i - 1)], b_r1);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = (b_r->size[1] + b_r1->size[1]) + 1;
@@ -1261,10 +1287,10 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
       b_fwrite(static_cast<double>(input_sizes_idx_0), line);
     } else {
       i = strainHist->size[0] - 1;
-      for (platNorm = 0; platNorm <= i; platNorm++) {
+      for (j = 0; j <= i; j++) {
         e_fwrite(static_cast<double>(input_sizes_idx_0));
         b_sprintf(t_data[b_i - 1], b_r);
-        b_sprintf(static_cast<double>(platNorm) + 1.0, b_r1);
+        b_sprintf(static_cast<double>(j) + 1.0, b_r1);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = (b_r->size[1] + b_r1->size[1]) + 2;
@@ -1282,9 +1308,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[(b_r->size[1] + b_r1->size[1]) + 1] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .eps_xx_0[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    eps_xx_0[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1301,8 +1327,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  eps_xx_0[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .eps_xx_0[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;
@@ -1318,9 +1344,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[b_r->size[1] + 9] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .eps_xx_z[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    eps_xx_z[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1337,8 +1363,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  eps_xx_z[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .eps_xx_z[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;
@@ -1354,9 +1380,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[b_r->size[1] + 9] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .eps_xx_y[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    eps_xx_y[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1373,8 +1399,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  eps_xx_y[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .eps_xx_y[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;
@@ -1390,9 +1416,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[b_r->size[1] + 9] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .gam_xz_0[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    gam_xz_0[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1409,8 +1435,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  gam_xz_0[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .gam_xz_0[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;
@@ -1426,9 +1452,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[b_r->size[1] + 9] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .gam_xz_y[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    gam_xz_y[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1445,8 +1471,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  gam_xz_y[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .gam_xz_y[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;
@@ -1462,9 +1488,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[b_r->size[1] + 9] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .gam_xy_0[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    gam_xy_0[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1481,8 +1507,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  gam_xy_0[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .gam_xy_0[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;
@@ -1498,9 +1524,9 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
 
         line->data[b_r->size[1] + 9] = '\x0a';
         b_fwrite(static_cast<double>(input_sizes_idx_0), line);
-        for (gbNorm = 0; gbNorm < 3; gbNorm++) {
-          b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)]
-                    .gam_xy_z[gbNorm], b_r);
+        for (jj = 0; jj < 3; jj++) {
+          b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)].
+                    gam_xy_z[jj], b_r);
           i1 = line->size[0] * line->size[1];
           line->size[0] = 1;
           line->size[1] = b_r->size[1] + 9;
@@ -1517,8 +1543,8 @@ void transientExec(const char model_analysisType[3], const double model_tocp[2],
           b_fwrite(static_cast<double>(input_sizes_idx_0), line);
         }
 
-        b_sprintf(strainHist->data[platNorm + strainHist->size[0] * (b_i - 1)].
-                  gam_xy_z[3], b_r);
+        b_sprintf(strainHist->data[j + strainHist->size[0] * (b_i - 1)]
+                  .gam_xy_z[3], b_r);
         i1 = line->size[0] * line->size[1];
         line->size[0] = 1;
         line->size[1] = b_r->size[1] + 10;

@@ -6,3 +6,6 @@
 *codegen*
 *.pdf
 *.ppt*
+*_checkpoints*
+*.dSYM
+*.zip

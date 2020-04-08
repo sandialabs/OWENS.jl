@@ -4,7 +4,7 @@
 // File: mtimes1.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -400,7 +400,7 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
 {
   emxArray_int32_T *ccolidx;
   int i;
-  int b_i;
+  int blen;
   int cnnz;
   int flag[12];
   int j;
@@ -419,13 +419,13 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
   i = ccolidx->size[0];
   ccolidx->size[0] = b_colidx->size[0];
   emxEnsureCapacity_int32_T(ccolidx, i);
-  b_i = b_colidx->size[0];
-  for (i = 0; i < b_i; i++) {
+  blen = b_colidx->size[0];
+  for (i = 0; i < blen; i++) {
     ccolidx->data[i] = 0;
   }
 
-  for (b_i = 0; b_i < 12; b_i++) {
-    flag[b_i] = 0;
+  for (blen = 0; blen < 12; blen++) {
+    flag[blen] = 0;
   }
 
   cnnz = 0;
@@ -438,11 +438,11 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
       cmax = cnnz + 12;
       ccolidx->data[j] = cnnz + 1;
       while ((bcidx < b_colidx->data[j + 1]) && (cnnz <= cmax)) {
-        b_i = b_rowidx->data[bcidx - 1];
-        pcstart = a_colidx->data[b_i] - 1;
-        i = a_colidx->data[b_i - 1];
-        for (b_i = i; b_i <= pcstart; b_i++) {
-          i1 = a_rowidx->data[b_i - 1] - 1;
+        blen = b_rowidx->data[bcidx - 1];
+        pcstart = a_colidx->data[blen] - 1;
+        i = a_colidx->data[blen - 1];
+        for (blen = i; blen <= pcstart; blen++) {
+          i1 = a_rowidx->data[blen - 1] - 1;
           if (flag[i1] != j + 1) {
             flag[i1] = j + 1;
             cnnz++;
@@ -467,13 +467,13 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
   i = c->colidx->size[0];
   c->colidx->size[0] = ccolidx->size[0];
   emxEnsureCapacity_int32_T(c->colidx, i);
-  b_i = ccolidx->size[0];
-  for (i = 0; i < b_i; i++) {
+  blen = ccolidx->size[0];
+  for (i = 0; i < blen; i++) {
     c->colidx->data[i] = ccolidx->data[i];
   }
 
-  for (b_i = 0; b_i < 12; b_i++) {
-    flag[b_i] = 0;
+  for (blen = 0; blen < 12; blen++) {
+    flag[blen] = 0;
   }
 
   pb = 0;
@@ -482,9 +482,9 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
     needSort = false;
     pcstart = cnnz + 2;
     blen_tmp = b_colidx->data[j + 1];
-    b_i = (blen_tmp - pb) - 1;
-    if (b_i != 0) {
-      if (b_i == 1) {
+    blen = (blen_tmp - pb) - 1;
+    if (blen != 0) {
+      if (blen == 1) {
         cstart = a_colidx->data[b_rowidx->data[pb]] - 1;
         i = a_colidx->data[b_rowidx->data[pb] - 1];
         for (cmax = i; cmax <= cstart; cmax++) {
@@ -500,10 +500,10 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
         i = a_colidx->data[b_rowidx->data[pb] - 1];
         for (cmax = i; cmax <= cstart; cmax++) {
           cnnz++;
-          b_i = a_rowidx->data[cmax - 1];
-          bcidx = b_i - 1;
+          blen = a_rowidx->data[cmax - 1];
+          bcidx = blen - 1;
           flag[bcidx] = cnnz + 1;
-          c->rowidx->data[cnnz] = b_i;
+          c->rowidx->data[cnnz] = blen;
           wd[bcidx] = a_d->data[cmax - 1] * b_d->data[pb];
         }
 
@@ -513,28 +513,28 @@ void sparse_mtimes(const emxArray_real_T *a_d, const emxArray_int32_T *a_colidx,
           i = a_colidx->data[b_rowidx->data[pb] - 1];
           for (cmax = i; cmax <= cstart; cmax++) {
             i1 = a_rowidx->data[cmax - 1];
-            b_i = i1 - 1;
-            if (flag[b_i] < pcstart) {
+            blen = i1 - 1;
+            if (flag[blen] < pcstart) {
               cnnz++;
-              flag[b_i] = cnnz + 1;
+              flag[blen] = cnnz + 1;
               c->rowidx->data[cnnz] = i1;
-              wd[b_i] = a_d->data[cmax - 1] * bd;
+              wd[blen] = a_d->data[cmax - 1] * bd;
               needSort = true;
             } else {
-              wd[b_i] += a_d->data[cmax - 1] * bd;
+              wd[blen] += a_d->data[cmax - 1] * bd;
             }
           }
         }
       }
     }
 
-    b_i = ccolidx->data[j + 1] - 1;
+    blen = ccolidx->data[j + 1] - 1;
     i = ccolidx->data[j];
     if (needSort) {
       introsort(c->rowidx, ccolidx->data[j], ccolidx->data[j + 1] - 1);
     }
 
-    for (bcidx = i; bcidx <= b_i; bcidx++) {
+    for (bcidx = i; bcidx <= blen; bcidx++) {
       c->d->data[bcidx - 1] = wd[c->rowidx->data[bcidx - 1] - 1];
     }
   }

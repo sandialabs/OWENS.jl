@@ -4,7 +4,7 @@
 // File: calculateTimoshenkoElementNL.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -326,7 +326,7 @@ static void mapMatrixNonSym(const double Ktemp[144], double Kel[144])
   emxArray_int32_T *t1_rowidx;
   coder_internal_sparse expl_temp;
   int i;
-  int loop_ub;
+  int c;
   int cend;
   int idx;
   emxInit_real_T(&this_d, 1);
@@ -345,24 +345,24 @@ static void mapMatrixNonSym(const double Ktemp[144], double Kel[144])
   i = this_d->size[0];
   this_d->size[0] = expl_temp.d->size[0];
   emxEnsureCapacity_real_T(this_d, i);
-  loop_ub = expl_temp.d->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  c = expl_temp.d->size[0];
+  for (i = 0; i < c; i++) {
     this_d->data[i] = expl_temp.d->data[i];
   }
 
   i = this_colidx->size[0];
   this_colidx->size[0] = expl_temp.colidx->size[0];
   emxEnsureCapacity_int32_T(this_colidx, i);
-  loop_ub = expl_temp.colidx->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  c = expl_temp.colidx->size[0];
+  for (i = 0; i < c; i++) {
     this_colidx->data[i] = expl_temp.colidx->data[i];
   }
 
   i = this_rowidx->size[0];
   this_rowidx->size[0] = expl_temp.rowidx->size[0];
   emxEnsureCapacity_int32_T(this_rowidx, i);
-  loop_ub = expl_temp.rowidx->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  c = expl_temp.rowidx->size[0];
+  for (i = 0; i < c; i++) {
     this_rowidx->data[i] = expl_temp.rowidx->data[i];
   }
 
@@ -372,38 +372,37 @@ static void mapMatrixNonSym(const double Ktemp[144], double Kel[144])
   i = this_d->size[0];
   this_d->size[0] = expl_temp.d->size[0];
   emxEnsureCapacity_real_T(this_d, i);
-  loop_ub = expl_temp.d->size[0];
+  c = expl_temp.d->size[0];
   emxFree_int32_T(&t1_rowidx);
   emxFree_int32_T(&t1_colidx);
   emxFree_real_T(&t1_d);
-  for (i = 0; i < loop_ub; i++) {
+  for (i = 0; i < c; i++) {
     this_d->data[i] = expl_temp.d->data[i];
   }
 
   i = this_colidx->size[0];
   this_colidx->size[0] = expl_temp.colidx->size[0];
   emxEnsureCapacity_int32_T(this_colidx, i);
-  loop_ub = expl_temp.colidx->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  c = expl_temp.colidx->size[0];
+  for (i = 0; i < c; i++) {
     this_colidx->data[i] = expl_temp.colidx->data[i];
   }
 
   i = this_rowidx->size[0];
   this_rowidx->size[0] = expl_temp.rowidx->size[0];
   emxEnsureCapacity_int32_T(this_rowidx, i);
-  loop_ub = expl_temp.rowidx->size[0];
-  for (i = 0; i < loop_ub; i++) {
+  c = expl_temp.rowidx->size[0];
+  for (i = 0; i < c; i++) {
     this_rowidx->data[i] = expl_temp.rowidx->data[i];
   }
 
   c_emxFreeStruct_coder_internal_(&expl_temp);
   std::memset(&Kel[0], 0, 144U * sizeof(double));
-  for (loop_ub = 0; loop_ub < 12; loop_ub++) {
-    cend = this_colidx->data[loop_ub + 1] - 1;
-    i = this_colidx->data[loop_ub];
+  for (c = 0; c < 12; c++) {
+    cend = this_colidx->data[c + 1] - 1;
+    i = this_colidx->data[c];
     for (idx = i; idx <= cend; idx++) {
-      Kel[(this_rowidx->data[idx - 1] + 12 * loop_ub) - 1] = this_d->data[idx -
-        1];
+      Kel[(this_rowidx->data[idx - 1] + 12 * c) - 1] = this_d->data[idx - 1];
     }
   }
 
@@ -474,9 +473,9 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   int i;
   double O1;
   double Oel[3];
-  double c_tmp;
+  double elStorage_tmp;
   double O2;
-  double H46_idx_3;
+  double Oel_tmp;
   double O3;
   double O1dot;
   double ODotel[3];
@@ -484,51 +483,60 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   double O2dot;
   double O3dot;
   double b_dv[9];
-  double S26_idx_0;
+  double f_tmp;
   int b_i;
   double N_data[2];
   int N_size[2];
   double p_N_x_data[2];
   int p_N_x_size[1];
+  double Jac;
   double integrationFactor;
+  double c_tmp;
   double b_c_tmp;
-  double c_c_tmp;
+  double S12_idx_0;
   double S13_idx_0;
+  double S23_idx_0;
+  double S25_idx_0;
+  double S26_idx_0;
   double S35_idx_0;
   double S36_idx_0;
-  double ycm;
+  double S14_idx_0;
+  double S24_idx_0;
   double S34_idx_0;
   double S45_idx_0;
   double S46_idx_0;
   double C12_idx_0;
-  double K15_idx_1;
+  double b_elStorage_tmp;
   double C13_idx_0;
-  double K15_idx_0;
+  double valGP;
   double rhoA;
   double C23_idx_0;
-  double K16_idx_0;
+  double ycm;
+  double b_valGP;
   double zcm;
   double C24_idx_0;
-  double K56_idx_0;
+  double valGP_idx_0;
   double C25_idx_0;
-  double f_tmp;
+  double valGP_idx_1;
   double C26_idx_0;
-  double disMomentgp[3];
-  double b_f_tmp;
+  double valGP_idx_2;
   double C34_idx_0;
-  double c_f_tmp;
+  double b_f_tmp;
   double C35_idx_0;
-  double d_f_tmp;
+  double c_f_tmp;
   double C36_idx_0;
-  double e_f_tmp;
+  double d_f_tmp;
   double posLocal[3];
   double f;
   double disLoadgpLocal[3];
   double C14_idx_0;
   double b_f;
   double c_f;
+  double disMomentgp[3];
   double C45_idx_0;
+  double c_elStorage_tmp;
   double C46_idx_0;
+  double H12_idx_0;
   double H13_idx_0;
   double H23_idx_0;
   double H24_idx_0;
@@ -647,8 +655,14 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   double H36_idx_3;
   double H14_idx_3;
   double H45_idx_3;
+  double H46_idx_3;
   double b_elStorage[144];
   double Kenr[144];
+  double c_c_tmp;
+  double K15_idx_0;
+  double K16_idx_0;
+  double K56_idx_0;
+  double K15_idx_1;
   double K16_idx_1;
   double K56_idx_1;
   double K15_idx_2;
@@ -657,7 +671,11 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   double K15_idx_3;
   double K16_idx_3;
   double K56_idx_3;
-  double Khate[144];
+  double d_elStorage_tmp;
+  double e_elStorage_tmp;
+  double f_elStorage_tmp;
+  double g_elStorage_tmp;
+  double Ke[144];
   double reshapes_f3_data[24];
   double reshapes_f4_data[24];
   double reshapes_f1[24];
@@ -665,6 +683,7 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   double reshapes_f5[24];
   double reshapes_f6[24];
   double Ce[144];
+  int reshapes_f1_tmp;
   int reshapes_f1_data_tmp;
   double Me[144];
   emxArray_real_T *lambda_d;
@@ -674,13 +693,16 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   emxArray_int32_T *lambdaTran_colidx;
   emxArray_int32_T *lambdaTran_rowidx;
   double Ftemp_data[12];
-  double Fhate[12];
+  double Fel_data[12];
   double Fe[12];
   int tmp_size[1];
   boolean_T concMassFlag;
+  double Fhate[12];
   double FhatLessConc[12];
-  double b_Khate[12];
+  double xnm1[12];
+  double y[12];
   double b_data[12];
+  double Khate[144];
 
   // -------- assign input block ----------------
   //  modalFlag      = input.modalFlag;
@@ -760,12 +782,12 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   //      theta_yNode = [dispLocal(5)  dispLocal(11)];
   //      theta_zNode = [dispLocal(6)  dispLocal(12)];
   for (i = 0; i < 3; i++) {
-    c_tmp = lambda[i + 24];
-    H46_idx_3 = lambda[i] * 0.0 + lambda[i + 12] * 0.0;
-    Oel[i] = H46_idx_3 + c_tmp * Omega;
+    elStorage_tmp = lambda[i + 24];
+    Oel_tmp = lambda[i] * 0.0 + lambda[i + 12] * 0.0;
+    Oel[i] = Oel_tmp + elStorage_tmp * Omega;
     a_temp[i] = (input->CN2H[i] * 0.0 + input->CN2H[i + 3] * 0.0) + input->
       CN2H[i + 6] * 9.81;
-    ODotel[i] = H46_idx_3 + c_tmp * OmegaDot;
+    ODotel[i] = Oel_tmp + elStorage_tmp * OmegaDot;
   }
 
   O1 = Oel[0];
@@ -784,12 +806,12 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   b_dv[7] = -0.0;
   b_dv[5] = 0.0;
   b_dv[8] = 0.0;
-  S26_idx_0 = O1 * O3;
+  f_tmp = O1 * O3;
   for (b_i = 0; b_i < 4; b_i++) {
     // Calculate shape functions at quad point i
     calculateShapeFunctions(dv[b_i], input->xloc, N_data, N_size, p_N_x_data,
-      p_N_x_size, &H46_idx_3);
-    integrationFactor = H46_idx_3 * dv1[b_i];
+      p_N_x_size, &Jac);
+    integrationFactor = Jac * dv1[b_i];
 
     // ..... interpolate for value at quad point .....
     // This function interpolates a value using distinct values at valNode
@@ -825,21 +847,21 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
       input->sectionProps.ycm[1];
     zcm = N_data[0] * input->sectionProps.zcm[0] + N_data[1] *
       input->sectionProps.zcm[1];
-    K15_idx_0 = N_data[0] * input->x.data[0] + N_data[1] * input->x.data[1];
-    K16_idx_0 = N_data[0] * input->y.data[0] + N_data[1] * input->y.data[1];
-    H46_idx_3 = N_data[0] * input->z.data[0] + N_data[1] * input->z.data[1];
+    Oel_tmp = N_data[0] * input->x.data[0] + N_data[1] * input->x.data[1];
+    valGP = N_data[0] * input->y.data[0] + N_data[1] * input->y.data[1];
+    b_valGP = N_data[0] * input->z.data[0] + N_data[1] * input->z.data[1];
 
     // let these loads be defined in the inertial frame
-    disMomentgp[0] = rhoA * a_temp[0];
-    disMomentgp[1] = rhoA * a_temp[1];
-    disMomentgp[2] = rhoA * a_temp[2];
+    valGP_idx_0 = rhoA * a_temp[0];
+    valGP_idx_1 = rhoA * a_temp[1];
+    valGP_idx_2 = rhoA * a_temp[2];
     for (i = 0; i < 3; i++) {
-      c_tmp = lambda[i + 12];
-      K15_idx_1 = lambda[i + 24];
-      posLocal[i] = (lambda[i] * K15_idx_0 + c_tmp * K16_idx_0) + K15_idx_1 *
-        H46_idx_3;
-      disLoadgpLocal[i] = (lambda[i] * disMomentgp[0] + c_tmp * disMomentgp[1])
-        + K15_idx_1 * disMomentgp[2];
+      elStorage_tmp = lambda[i + 12];
+      b_elStorage_tmp = lambda[i + 24];
+      posLocal[i] = (lambda[i] * Oel_tmp + elStorage_tmp * valGP) +
+        b_elStorage_tmp * b_valGP;
+      disLoadgpLocal[i] = (lambda[i] * valGP_idx_0 + elStorage_tmp * valGP_idx_1)
+        + b_elStorage_tmp * valGP_idx_2;
     }
 
     b_dv[3] = -zcm;
@@ -853,56 +875,56 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
 
     // calculate static aerodynamic load
     // distributed/body force load calculations
-    f_tmp = (O2 * O2 + O3 * O3) * posLocal[0];
-    b_f_tmp = O2dot * posLocal[2];
-    c_f_tmp = O3dot * posLocal[1];
-    d_f_tmp = S26_idx_0 * posLocal[2];
-    e_f_tmp = O1 * O2 * posLocal[1];
-    f = rhoA * ((((f_tmp - e_f_tmp) - d_f_tmp) + c_f_tmp) - b_f_tmp) -
+    valGP_idx_1 = (O2 * O2 + O3 * O3) * posLocal[0];
+    valGP_idx_2 = O2dot * posLocal[2];
+    b_f_tmp = O3dot * posLocal[1];
+    c_f_tmp = f_tmp * posLocal[2];
+    d_f_tmp = O1 * O2 * posLocal[1];
+    f = rhoA * ((((valGP_idx_1 - d_f_tmp) - c_f_tmp) + b_f_tmp) - valGP_idx_2) -
       disLoadgpLocal[0];
 
     // This function is a general routine to calculate an element vector
-    H46_idx_3 = O1dot * posLocal[2];
-    K56_idx_0 = O3dot * posLocal[0];
+    Oel_tmp = O1dot * posLocal[2];
+    valGP = O3dot * posLocal[0];
     b_f = rhoA * (((((O1 * O1 + O3 * O3) * posLocal[1] - posLocal[2] * O2 * O3)
-                    - posLocal[0] * O1 * O2) + H46_idx_3) - K56_idx_0) -
+                    - posLocal[0] * O1 * O2) + Oel_tmp) - valGP) -
       disLoadgpLocal[1];
 
     // This function is a general routine to calculate an element vector
-    K15_idx_0 = O2dot * posLocal[0];
-    K16_idx_0 = O1dot * posLocal[1];
-    c_f = rhoA * (((((O1 * O1 + O2 * O2) * posLocal[2] - S26_idx_0 * posLocal[0])
-                    - O2 * O3 * posLocal[1]) + K15_idx_0) - K16_idx_0) -
+    b_valGP = O2dot * posLocal[0];
+    valGP_idx_0 = O1dot * posLocal[1];
+    c_f = rhoA * (((((O1 * O1 + O2 * O2) * posLocal[2] - f_tmp * posLocal[0]) -
+                    O2 * O3 * posLocal[1]) + b_valGP) - valGP_idx_0) -
       disLoadgpLocal[2];
 
     // This function is a general routine to calculate an element vector
-    K15_idx_0 = rhoA * ((((posLocal[0] * (O1 * O2 * zcm - ycm * O1 * O3) -
-      posLocal[1] * (ycm * O2 * O3 + zcm * (O1 * O1 + O3 * O3))) + posLocal[2] *
-                          (ycm * (O1 * O1 + O2 * O2) + zcm * O2 * O3)) + ycm *
-                         (K15_idx_0 - K16_idx_0)) - zcm * (H46_idx_3 - K56_idx_0))
+    valGP = rhoA * ((((posLocal[0] * (O1 * O2 * zcm - ycm * O1 * O3) - posLocal
+                       [1] * (ycm * O2 * O3 + zcm * (O1 * O1 + O3 * O3))) +
+                      posLocal[2] * (ycm * (O1 * O1 + O2 * O2) + zcm * O2 * O3))
+                     + ycm * (b_valGP - valGP_idx_0)) - zcm * (Oel_tmp - valGP))
       - disMomentgp[0];
 
     // This function is a general routine to calculate an element vector
-    H46_idx_3 = rhoA * zcm * ((((f_tmp - posLocal[1] * O1 * O2) - posLocal[2] *
-      O1 * O3) - b_f_tmp) + c_f_tmp) - disMomentgp[1];
+    Oel_tmp = rhoA * zcm * ((((valGP_idx_1 - posLocal[1] * O1 * O2) - posLocal[2]
+      * O1 * O3) - valGP_idx_2) + b_f_tmp) - disMomentgp[1];
 
     // This function is a general routine to calculate an element vector
-    K56_idx_0 = rhoA * ycm * ((((d_f_tmp + e_f_tmp) - f_tmp) - c_f_tmp) +
-      b_f_tmp) - disMomentgp[2];
+    valGP_idx_0 = rhoA * ycm * ((((c_f_tmp + d_f_tmp) - valGP_idx_1) - b_f_tmp)
+      + valGP_idx_2) - disMomentgp[2];
 
     // This function is a general routine to calculate an element vector
     F1_data_idx_0 += f * N_data[0] * integrationFactor;
     F2_data_idx_0 += b_f * N_data[0] * integrationFactor;
     F3_data_idx_0 += c_f * N_data[0] * integrationFactor;
-    F4_data_idx_0 += K15_idx_0 * N_data[0] * integrationFactor;
-    F5_data_idx_0 += H46_idx_3 * N_data[0] * integrationFactor;
-    F6_data_idx_0 += K56_idx_0 * N_data[0] * integrationFactor;
+    F4_data_idx_0 += valGP * N_data[0] * integrationFactor;
+    F5_data_idx_0 += Oel_tmp * N_data[0] * integrationFactor;
+    F6_data_idx_0 += valGP_idx_0 * N_data[0] * integrationFactor;
     F1_data_idx_1 += f * N_data[1] * integrationFactor;
     F2_data_idx_1 += b_f * N_data[1] * integrationFactor;
     F3_data_idx_1 += c_f * N_data[1] * integrationFactor;
-    F4_data_idx_1 += K15_idx_0 * N_data[1] * integrationFactor;
-    F5_data_idx_1 += H46_idx_3 * N_data[1] * integrationFactor;
-    F6_data_idx_1 += K56_idx_0 * N_data[1] * integrationFactor;
+    F4_data_idx_1 += valGP * N_data[1] * integrationFactor;
+    F5_data_idx_1 += Oel_tmp * N_data[1] * integrationFactor;
+    F6_data_idx_1 += valGP_idx_0 * N_data[1] * integrationFactor;
   }
 
   // END OF INTEGRATION LOOP
@@ -914,236 +936,233 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   //  Only used if (useDisp)
   // unpack stored element mass data
   // unpack and scale stored element spin softening data
-  H46_idx_3 = Oel[0] * Oel[1];
-  b_c_tmp = Oel[0] * Oel[0];
-  c_c_tmp = b_c_tmp + Oel[2] * Oel[2];
-  b_c_tmp += Oel[1] * Oel[1];
+  Oel_tmp = Oel[0] * Oel[1];
+  c_tmp = Oel[0] * Oel[0];
+  b_c_tmp = c_tmp + Oel[2] * Oel[2];
+  c_tmp += Oel[1] * Oel[1];
 
   // unpack and scale stored element Corilois data
   // unpack and scale stored element Circulatory data
-  integrationFactor = elStorage->S12[0] * Oel[0] * Oel[1];
+  S12_idx_0 = elStorage->S12[0] * Oel[0] * Oel[1];
   S13_idx_0 = elStorage->S13[0] * Oel[0] * Oel[2];
-  O1 = elStorage->S23[0] * Oel[1] * Oel[2];
-  O2dot = elStorage->S25[0] * H46_idx_3;
-  S26_idx_0 = elStorage->S26[0] * H46_idx_3;
+  S23_idx_0 = elStorage->S23[0] * Oel[1] * Oel[2];
+  S25_idx_0 = elStorage->S25[0] * Oel_tmp;
+  S26_idx_0 = elStorage->S26[0] * Oel_tmp;
   S35_idx_0 = elStorage->S35[0] * Oel[0] * Oel[2];
   S36_idx_0 = elStorage->S36[0] * Oel[0] * Oel[2];
-  ycm = elStorage->S14_1[0] * Oel[0] * Oel[2] + elStorage->S14_2[0] * Oel[0] *
-    Oel[1];
-  O3 = elStorage->S24_1[0] * c_c_tmp + elStorage->S24_2[0] * Oel[1] * Oel[2];
-  S34_idx_0 = elStorage->S34_1[0] * b_c_tmp + elStorage->S34_2[0] * Oel[1] *
+  S14_idx_0 = elStorage->S14_1[0] * Oel[0] * Oel[2] + elStorage->S14_2[0] * Oel
+    [0] * Oel[1];
+  S24_idx_0 = elStorage->S24_1[0] * b_c_tmp + elStorage->S24_2[0] * Oel[1] *
     Oel[2];
+  S34_idx_0 = elStorage->S34_1[0] * c_tmp + elStorage->S34_2[0] * Oel[1] * Oel[2];
   S45_idx_0 = elStorage->S45_1[0] * Oel[0] * Oel[2] + elStorage->S45_2[0] * Oel
     [0] * Oel[1];
   S46_idx_0 = elStorage->S46_1[0] * Oel[0] * Oel[1] + elStorage->S46_2[0] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[0];
-  C12_idx_0 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[0];
-  C13_idx_0 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[0];
-  C23_idx_0 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[0];
-  C24_idx_0 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[0];
-  C25_idx_0 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[0];
-  C26_idx_0 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[0];
-  C34_idx_0 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[0];
-  C35_idx_0 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[0];
-  C36_idx_0 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[0];
+  elStorage_tmp = elStorage->C12[0];
+  C12_idx_0 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[0];
+  C13_idx_0 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[0];
+  C23_idx_0 = valGP * Oel[0];
+  b_valGP = elStorage->C24[0];
+  C24_idx_0 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[0];
+  C25_idx_0 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[0];
+  C26_idx_0 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[0];
+  C34_idx_0 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[0];
+  C35_idx_0 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[0];
+  C36_idx_0 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[0];
   f = elStorage->C14_2[0];
-  C14_idx_0 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_0 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[0];
   c_f = elStorage->C45_2[0];
   C45_idx_0 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[0];
-  rhoA = elStorage->C46_2[0];
-  C46_idx_0 = zcm * Oel[1] + rhoA * Oel[2];
-  O2 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_0 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_0 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_0 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_0 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_0 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_0 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_0 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_0 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_0 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[0];
+  c_elStorage_tmp = elStorage->C46_2[0];
+  C46_idx_0 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_0 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_0 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_0 = 0.5 * valGP * ODotel[0];
+  H24_idx_0 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_0 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_0 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_0 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_0 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_0 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_0 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_0 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_0 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_0 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
   S12_idx_1 = elStorage->S12[1] * Oel[0] * Oel[1];
   S13_idx_1 = elStorage->S13[1] * Oel[0] * Oel[2];
   S23_idx_1 = elStorage->S23[1] * Oel[1] * Oel[2];
-  S25_idx_1 = elStorage->S25[1] * H46_idx_3;
-  S26_idx_1 = elStorage->S26[1] * H46_idx_3;
+  S25_idx_1 = elStorage->S25[1] * Oel_tmp;
+  S26_idx_1 = elStorage->S26[1] * Oel_tmp;
   S35_idx_1 = elStorage->S35[1] * Oel[0] * Oel[2];
   S36_idx_1 = elStorage->S36[1] * Oel[0] * Oel[2];
   S14_idx_1 = elStorage->S14_1[1] * Oel[0] * Oel[2] + elStorage->S14_2[1] * Oel
     [0] * Oel[1];
-  S24_idx_1 = elStorage->S24_1[1] * c_c_tmp + elStorage->S24_2[1] * Oel[1] *
+  S24_idx_1 = elStorage->S24_1[1] * b_c_tmp + elStorage->S24_2[1] * Oel[1] *
     Oel[2];
-  S34_idx_1 = elStorage->S34_1[1] * b_c_tmp + elStorage->S34_2[1] * Oel[1] *
-    Oel[2];
+  S34_idx_1 = elStorage->S34_1[1] * c_tmp + elStorage->S34_2[1] * Oel[1] * Oel[2];
   S45_idx_1 = elStorage->S45_1[1] * Oel[0] * Oel[2] + elStorage->S45_2[1] * Oel
     [0] * Oel[1];
   S46_idx_1 = elStorage->S46_1[1] * Oel[0] * Oel[1] + elStorage->S46_2[1] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[1];
-  C12_idx_1 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[1];
-  C13_idx_1 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[1];
-  C23_idx_1 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[1];
-  C24_idx_1 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[1];
-  C25_idx_1 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[1];
-  C26_idx_1 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[1];
-  C34_idx_1 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[1];
-  C35_idx_1 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[1];
-  C36_idx_1 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[1];
+  elStorage_tmp = elStorage->C12[1];
+  C12_idx_1 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[1];
+  C13_idx_1 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[1];
+  C23_idx_1 = valGP * Oel[0];
+  b_valGP = elStorage->C24[1];
+  C24_idx_1 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[1];
+  C25_idx_1 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[1];
+  C26_idx_1 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[1];
+  C34_idx_1 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[1];
+  C35_idx_1 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[1];
+  C36_idx_1 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[1];
   f = elStorage->C14_2[1];
-  C14_idx_1 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_1 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[1];
   c_f = elStorage->C45_2[1];
   C45_idx_1 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[1];
-  rhoA = elStorage->C46_2[1];
-  C46_idx_1 = zcm * Oel[1] + rhoA * Oel[2];
-  H12_idx_1 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_1 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_1 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_1 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_1 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_1 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_1 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_1 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_1 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_1 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[1];
+  c_elStorage_tmp = elStorage->C46_2[1];
+  C46_idx_1 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_1 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_1 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_1 = 0.5 * valGP * ODotel[0];
+  H24_idx_1 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_1 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_1 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_1 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_1 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_1 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_1 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_1 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_1 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_1 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
   S12_idx_2 = elStorage->S12[2] * Oel[0] * Oel[1];
   S13_idx_2 = elStorage->S13[2] * Oel[0] * Oel[2];
   S23_idx_2 = elStorage->S23[2] * Oel[1] * Oel[2];
-  S25_idx_2 = elStorage->S25[2] * H46_idx_3;
-  S26_idx_2 = elStorage->S26[2] * H46_idx_3;
+  S25_idx_2 = elStorage->S25[2] * Oel_tmp;
+  S26_idx_2 = elStorage->S26[2] * Oel_tmp;
   S35_idx_2 = elStorage->S35[2] * Oel[0] * Oel[2];
   S36_idx_2 = elStorage->S36[2] * Oel[0] * Oel[2];
   S14_idx_2 = elStorage->S14_1[2] * Oel[0] * Oel[2] + elStorage->S14_2[2] * Oel
     [0] * Oel[1];
-  S24_idx_2 = elStorage->S24_1[2] * c_c_tmp + elStorage->S24_2[2] * Oel[1] *
+  S24_idx_2 = elStorage->S24_1[2] * b_c_tmp + elStorage->S24_2[2] * Oel[1] *
     Oel[2];
-  S34_idx_2 = elStorage->S34_1[2] * b_c_tmp + elStorage->S34_2[2] * Oel[1] *
-    Oel[2];
+  S34_idx_2 = elStorage->S34_1[2] * c_tmp + elStorage->S34_2[2] * Oel[1] * Oel[2];
   S45_idx_2 = elStorage->S45_1[2] * Oel[0] * Oel[2] + elStorage->S45_2[2] * Oel
     [0] * Oel[1];
   S46_idx_2 = elStorage->S46_1[2] * Oel[0] * Oel[1] + elStorage->S46_2[2] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[2];
-  C12_idx_2 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[2];
-  C13_idx_2 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[2];
-  C23_idx_2 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[2];
-  C24_idx_2 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[2];
-  C25_idx_2 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[2];
-  C26_idx_2 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[2];
-  C34_idx_2 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[2];
-  C35_idx_2 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[2];
-  C36_idx_2 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[2];
+  elStorage_tmp = elStorage->C12[2];
+  C12_idx_2 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[2];
+  C13_idx_2 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[2];
+  C23_idx_2 = valGP * Oel[0];
+  b_valGP = elStorage->C24[2];
+  C24_idx_2 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[2];
+  C25_idx_2 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[2];
+  C26_idx_2 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[2];
+  C34_idx_2 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[2];
+  C35_idx_2 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[2];
+  C36_idx_2 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[2];
   f = elStorage->C14_2[2];
-  C14_idx_2 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_2 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[2];
   c_f = elStorage->C45_2[2];
   C45_idx_2 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[2];
-  rhoA = elStorage->C46_2[2];
-  C46_idx_2 = zcm * Oel[1] + rhoA * Oel[2];
-  H12_idx_2 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_2 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_2 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_2 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_2 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_2 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_2 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_2 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_2 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_2 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[2];
+  c_elStorage_tmp = elStorage->C46_2[2];
+  C46_idx_2 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_2 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_2 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_2 = 0.5 * valGP * ODotel[0];
+  H24_idx_2 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_2 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_2 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_2 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_2 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_2 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_2 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_2 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_2 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_2 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
   S12_idx_3 = elStorage->S12[3] * Oel[0] * Oel[1];
   S13_idx_3 = elStorage->S13[3] * Oel[0] * Oel[2];
   S23_idx_3 = elStorage->S23[3] * Oel[1] * Oel[2];
-  S25_idx_3 = elStorage->S25[3] * H46_idx_3;
-  S26_idx_3 = elStorage->S26[3] * H46_idx_3;
+  S25_idx_3 = elStorage->S25[3] * Oel_tmp;
+  S26_idx_3 = elStorage->S26[3] * Oel_tmp;
   S35_idx_3 = elStorage->S35[3] * Oel[0] * Oel[2];
   S36_idx_3 = elStorage->S36[3] * Oel[0] * Oel[2];
   S14_idx_3 = elStorage->S14_1[3] * Oel[0] * Oel[2] + elStorage->S14_2[3] * Oel
     [0] * Oel[1];
-  S24_idx_3 = elStorage->S24_1[3] * c_c_tmp + elStorage->S24_2[3] * Oel[1] *
+  S24_idx_3 = elStorage->S24_1[3] * b_c_tmp + elStorage->S24_2[3] * Oel[1] *
     Oel[2];
-  S34_idx_3 = elStorage->S34_1[3] * b_c_tmp + elStorage->S34_2[3] * Oel[1] *
-    Oel[2];
+  S34_idx_3 = elStorage->S34_1[3] * c_tmp + elStorage->S34_2[3] * Oel[1] * Oel[2];
   S45_idx_3 = elStorage->S45_1[3] * Oel[0] * Oel[2] + elStorage->S45_2[3] * Oel
     [0] * Oel[1];
   S46_idx_3 = elStorage->S46_1[3] * Oel[0] * Oel[1] + elStorage->S46_2[3] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[3];
-  C12_idx_3 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[3];
-  C13_idx_3 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[3];
-  C23_idx_3 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[3];
-  C24_idx_3 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[3];
-  C25_idx_3 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[3];
-  C26_idx_3 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[3];
-  C34_idx_3 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[3];
-  C35_idx_3 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[3];
-  C36_idx_3 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[3];
+  elStorage_tmp = elStorage->C12[3];
+  C12_idx_3 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[3];
+  C13_idx_3 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[3];
+  C23_idx_3 = valGP * Oel[0];
+  b_valGP = elStorage->C24[3];
+  C24_idx_3 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[3];
+  C25_idx_3 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[3];
+  C26_idx_3 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[3];
+  C34_idx_3 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[3];
+  C35_idx_3 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[3];
+  C36_idx_3 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[3];
   f = elStorage->C14_2[3];
-  C14_idx_3 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_3 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[3];
   c_f = elStorage->C45_2[3];
   C45_idx_3 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[3];
-  rhoA = elStorage->C46_2[3];
-  C46_idx_3 = zcm * Oel[1] + rhoA * Oel[2];
-  H12_idx_3 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_3 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_3 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_3 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_3 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_3 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_3 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_3 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_3 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_3 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[3];
+  c_elStorage_tmp = elStorage->C46_2[3];
+  C46_idx_3 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_3 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_3 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_3 = 0.5 * valGP * ODotel[0];
+  H24_idx_3 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_3 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_3 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_3 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_3 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_3 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_3 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_3 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_3 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_3 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
 
   // compile stiffness matrix without rotational effects
   b_elStorage[0] = elStorage->K11[0];
@@ -1293,211 +1312,211 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   mapMatrixNonSym(b_elStorage, Kenr);
 
   // add spin softening and circulatory effects to stiffness marix
-  c_tmp = Oel[1] * Oel[1] + Oel[2] * Oel[2];
-  K15_idx_0 = elStorage->K15[0] + elStorage->S15[0] * c_tmp;
-  K16_idx_0 = elStorage->K16[0] + elStorage->S16[0] * c_tmp;
-  K56_idx_0 = elStorage->K56[0] + elStorage->S56[0] * c_tmp;
-  K15_idx_1 = elStorage->K15[1] + elStorage->S15[1] * c_tmp;
-  K16_idx_1 = elStorage->K16[1] + elStorage->S16[1] * c_tmp;
-  K56_idx_1 = elStorage->K56[1] + elStorage->S56[1] * c_tmp;
-  K15_idx_2 = elStorage->K15[2] + elStorage->S15[2] * c_tmp;
-  K16_idx_2 = elStorage->K16[2] + elStorage->S16[2] * c_tmp;
-  K56_idx_2 = elStorage->K56[2] + elStorage->S56[2] * c_tmp;
-  K15_idx_3 = elStorage->K15[3] + elStorage->S15[3] * c_tmp;
-  K16_idx_3 = elStorage->K16[3] + elStorage->S16[3] * c_tmp;
-  K56_idx_3 = elStorage->K56[3] + elStorage->S56[3] * c_tmp;
+  c_c_tmp = Oel[1] * Oel[1] + Oel[2] * Oel[2];
+  K15_idx_0 = elStorage->K15[0] + elStorage->S15[0] * c_c_tmp;
+  K16_idx_0 = elStorage->K16[0] + elStorage->S16[0] * c_c_tmp;
+  K56_idx_0 = elStorage->K56[0] + elStorage->S56[0] * c_c_tmp;
+  K15_idx_1 = elStorage->K15[1] + elStorage->S15[1] * c_c_tmp;
+  K16_idx_1 = elStorage->K16[1] + elStorage->S16[1] * c_c_tmp;
+  K56_idx_1 = elStorage->K56[1] + elStorage->S56[1] * c_c_tmp;
+  K15_idx_2 = elStorage->K15[2] + elStorage->S15[2] * c_c_tmp;
+  K16_idx_2 = elStorage->K16[2] + elStorage->S16[2] * c_c_tmp;
+  K56_idx_2 = elStorage->K56[2] + elStorage->S56[2] * c_c_tmp;
+  K15_idx_3 = elStorage->K15[3] + elStorage->S15[3] * c_c_tmp;
+  K16_idx_3 = elStorage->K16[3] + elStorage->S16[3] * c_c_tmp;
+  K56_idx_3 = elStorage->K56[3] + elStorage->S56[3] * c_c_tmp;
 
   // ---------------------------------------------
   // compile stiffness matrix with rotational effects
-  b_elStorage[0] = elStorage->K11[0] + elStorage->S11[0] * c_tmp;
-  b_elStorage[24] = (elStorage->K12[0] + integrationFactor) + O2;
+  b_elStorage[0] = elStorage->K11[0] + elStorage->S11[0] * c_c_tmp;
+  b_elStorage[24] = (elStorage->K12[0] + S12_idx_0) + H12_idx_0;
   b_elStorage[48] = (elStorage->K13[0] + S13_idx_0) + H13_idx_0;
-  O3dot = elStorage->K14[0] + ycm;
-  b_elStorage[72] = O3dot + H14_idx_0;
+  d_elStorage_tmp = elStorage->K14[0] + S14_idx_0;
+  b_elStorage[72] = d_elStorage_tmp + H14_idx_0;
   b_elStorage[96] = K15_idx_0;
   b_elStorage[120] = K16_idx_0;
-  b_elStorage[2] = (elStorage->K12[0] + integrationFactor) - O2;
-  b_elStorage[26] = elStorage->K22[0] + elStorage->S22[0] * c_c_tmp;
-  O1dot = elStorage->K23[0] + O1;
-  b_elStorage[50] = O1dot + H23_idx_0;
-  O3 += elStorage->K24[0];
-  b_elStorage[74] = O3 + H24_idx_0;
-  O2 = elStorage->K25[0] + O2dot;
-  b_elStorage[98] = O2 + H25_idx_0;
-  O1 = elStorage->K26[0] + S26_idx_0;
-  b_elStorage[122] = O1 + H26_idx_0;
+  b_elStorage[2] = (elStorage->K12[0] + S12_idx_0) - H12_idx_0;
+  b_elStorage[26] = elStorage->K22[0] + elStorage->S22[0] * b_c_tmp;
+  e_elStorage_tmp = elStorage->K23[0] + S23_idx_0;
+  b_elStorage[50] = e_elStorage_tmp + H23_idx_0;
+  f_elStorage_tmp = elStorage->K24[0] + S24_idx_0;
+  b_elStorage[74] = f_elStorage_tmp + H24_idx_0;
+  g_elStorage_tmp = elStorage->K25[0] + S25_idx_0;
+  b_elStorage[98] = g_elStorage_tmp + H25_idx_0;
+  b_elStorage_tmp = elStorage->K26[0] + S26_idx_0;
+  b_elStorage[122] = b_elStorage_tmp + H26_idx_0;
   b_elStorage[4] = (elStorage->K13[0] + S13_idx_0) - H13_idx_0;
-  b_elStorage[28] = O1dot - H23_idx_0;
-  b_elStorage[52] = elStorage->K33[0] + elStorage->S33[0] * b_c_tmp;
-  O1dot = elStorage->K34[0] + S34_idx_0;
-  b_elStorage[76] = O1dot + H34_idx_0;
-  integrationFactor = elStorage->K35[0] + S35_idx_0;
-  b_elStorage[100] = integrationFactor + H35_idx_0;
-  ycm = elStorage->K36[0] + S36_idx_0;
-  b_elStorage[124] = ycm + H36_idx_0;
-  b_elStorage[6] = O3dot - H14_idx_0;
-  b_elStorage[30] = O3 - H24_idx_0;
-  b_elStorage[54] = O1dot - H34_idx_0;
-  b_elStorage[78] = elStorage->K44[0] + ((elStorage->S44_1[0] * c_c_tmp +
-    elStorage->S44_2[0] * b_c_tmp) + elStorage->S44_3[0] * Oel[1] * Oel[2]);
-  O3dot = elStorage->K45[0] + S45_idx_0;
-  b_elStorage[102] = O3dot + H45_idx_0;
-  O1dot = elStorage->K46[0] + S46_idx_0;
-  b_elStorage[126] = O1dot + H46_idx_0;
+  b_elStorage[28] = e_elStorage_tmp - H23_idx_0;
+  b_elStorage[52] = elStorage->K33[0] + elStorage->S33[0] * c_tmp;
+  e_elStorage_tmp = elStorage->K34[0] + S34_idx_0;
+  b_elStorage[76] = e_elStorage_tmp + H34_idx_0;
+  elStorage_tmp = elStorage->K35[0] + S35_idx_0;
+  b_elStorage[100] = elStorage_tmp + H35_idx_0;
+  c_elStorage_tmp = elStorage->K36[0] + S36_idx_0;
+  b_elStorage[124] = c_elStorage_tmp + H36_idx_0;
+  b_elStorage[6] = d_elStorage_tmp - H14_idx_0;
+  b_elStorage[30] = f_elStorage_tmp - H24_idx_0;
+  b_elStorage[54] = e_elStorage_tmp - H34_idx_0;
+  b_elStorage[78] = elStorage->K44[0] + ((elStorage->S44_1[0] * b_c_tmp +
+    elStorage->S44_2[0] * c_tmp) + elStorage->S44_3[0] * Oel[1] * Oel[2]);
+  d_elStorage_tmp = elStorage->K45[0] + S45_idx_0;
+  b_elStorage[102] = d_elStorage_tmp + H45_idx_0;
+  e_elStorage_tmp = elStorage->K46[0] + S46_idx_0;
+  b_elStorage[126] = e_elStorage_tmp + H46_idx_0;
   b_elStorage[8] = K15_idx_0;
-  b_elStorage[32] = O2 - H25_idx_0;
-  b_elStorage[56] = integrationFactor - H35_idx_0;
-  b_elStorage[80] = O3dot - H45_idx_0;
-  b_elStorage[104] = elStorage->K55[0] + elStorage->S55[0] * c_tmp;
+  b_elStorage[32] = g_elStorage_tmp - H25_idx_0;
+  b_elStorage[56] = elStorage_tmp - H35_idx_0;
+  b_elStorage[80] = d_elStorage_tmp - H45_idx_0;
+  b_elStorage[104] = elStorage->K55[0] + elStorage->S55[0] * c_c_tmp;
   b_elStorage[128] = K56_idx_0;
   b_elStorage[10] = K16_idx_0;
-  b_elStorage[34] = O1 - H26_idx_0;
-  b_elStorage[58] = ycm - H36_idx_0;
-  b_elStorage[82] = O1dot - H46_idx_0;
+  b_elStorage[34] = b_elStorage_tmp - H26_idx_0;
+  b_elStorage[58] = c_elStorage_tmp - H36_idx_0;
+  b_elStorage[82] = e_elStorage_tmp - H46_idx_0;
   b_elStorage[106] = K56_idx_0;
-  b_elStorage[130] = elStorage->K66[0] + elStorage->S66[0] * c_tmp;
-  b_elStorage[1] = elStorage->K11[1] + elStorage->S11[1] * c_tmp;
+  b_elStorage[130] = elStorage->K66[0] + elStorage->S66[0] * c_c_tmp;
+  b_elStorage[1] = elStorage->K11[1] + elStorage->S11[1] * c_c_tmp;
   b_elStorage[25] = (elStorage->K12[1] + S12_idx_1) + H12_idx_1;
   b_elStorage[49] = (elStorage->K13[1] + S13_idx_1) + H13_idx_1;
-  O3dot = elStorage->K14[1] + S14_idx_1;
-  b_elStorage[73] = O3dot + H14_idx_1;
+  d_elStorage_tmp = elStorage->K14[1] + S14_idx_1;
+  b_elStorage[73] = d_elStorage_tmp + H14_idx_1;
   b_elStorage[97] = K15_idx_1;
   b_elStorage[121] = K16_idx_1;
   b_elStorage[3] = (elStorage->K12[2] + S12_idx_2) - H12_idx_2;
-  b_elStorage[27] = elStorage->K22[1] + elStorage->S22[1] * c_c_tmp;
-  O1dot = elStorage->K23[1] + S23_idx_1;
-  b_elStorage[51] = O1dot + H23_idx_1;
-  O3 = elStorage->K24[1] + S24_idx_1;
-  b_elStorage[75] = O3 + H24_idx_1;
-  O2 = elStorage->K25[1] + S25_idx_1;
-  b_elStorage[99] = O2 + H25_idx_1;
-  O1 = elStorage->K26[1] + S26_idx_1;
-  b_elStorage[123] = O1 + H26_idx_1;
+  b_elStorage[27] = elStorage->K22[1] + elStorage->S22[1] * b_c_tmp;
+  e_elStorage_tmp = elStorage->K23[1] + S23_idx_1;
+  b_elStorage[51] = e_elStorage_tmp + H23_idx_1;
+  f_elStorage_tmp = elStorage->K24[1] + S24_idx_1;
+  b_elStorage[75] = f_elStorage_tmp + H24_idx_1;
+  g_elStorage_tmp = elStorage->K25[1] + S25_idx_1;
+  b_elStorage[99] = g_elStorage_tmp + H25_idx_1;
+  b_elStorage_tmp = elStorage->K26[1] + S26_idx_1;
+  b_elStorage[123] = b_elStorage_tmp + H26_idx_1;
   b_elStorage[5] = (elStorage->K13[2] + S13_idx_2) - H13_idx_2;
-  integrationFactor = elStorage->K23[2] + S23_idx_2;
-  b_elStorage[29] = integrationFactor - H23_idx_2;
-  b_elStorage[53] = elStorage->K33[1] + elStorage->S33[1] * b_c_tmp;
-  ycm = elStorage->K34[1] + S34_idx_1;
-  b_elStorage[77] = ycm + H34_idx_1;
-  rhoA = elStorage->K35[1] + S35_idx_1;
-  b_elStorage[101] = rhoA + H35_idx_1;
-  zcm = elStorage->K36[1] + S36_idx_1;
-  b_elStorage[125] = zcm + H36_idx_1;
+  elStorage_tmp = elStorage->K23[2] + S23_idx_2;
+  b_elStorage[29] = elStorage_tmp - H23_idx_2;
+  b_elStorage[53] = elStorage->K33[1] + elStorage->S33[1] * c_tmp;
+  c_elStorage_tmp = elStorage->K34[1] + S34_idx_1;
+  b_elStorage[77] = c_elStorage_tmp + H34_idx_1;
+  Oel_tmp = elStorage->K35[1] + S35_idx_1;
+  b_elStorage[101] = Oel_tmp + H35_idx_1;
+  f_tmp = elStorage->K36[1] + S36_idx_1;
+  b_elStorage[125] = f_tmp + H36_idx_1;
   c_f = elStorage->K14[2] + S14_idx_2;
   b_elStorage[7] = c_f - H14_idx_2;
   b_f = elStorage->K24[2] + S24_idx_2;
   b_elStorage[31] = b_f - H24_idx_2;
   f = elStorage->K34[2] + S34_idx_2;
   b_elStorage[55] = f - H34_idx_2;
-  b_elStorage[79] = elStorage->K44[1] + ((elStorage->S44_1[1] * c_c_tmp +
-    elStorage->S44_2[1] * b_c_tmp) + elStorage->S44_3[1] * Oel[1] * Oel[2]);
-  e_f_tmp = elStorage->K45[1] + S45_idx_1;
-  b_elStorage[103] = e_f_tmp + H45_idx_1;
-  d_f_tmp = elStorage->K46[1] + S46_idx_1;
-  b_elStorage[127] = d_f_tmp + H46_idx_1;
+  b_elStorage[79] = elStorage->K44[1] + ((elStorage->S44_1[1] * b_c_tmp +
+    elStorage->S44_2[1] * c_tmp) + elStorage->S44_3[1] * Oel[1] * Oel[2]);
+  d_f_tmp = elStorage->K45[1] + S45_idx_1;
+  b_elStorage[103] = d_f_tmp + H45_idx_1;
+  c_f_tmp = elStorage->K46[1] + S46_idx_1;
+  b_elStorage[127] = c_f_tmp + H46_idx_1;
   b_elStorage[9] = K15_idx_2;
-  c_f_tmp = elStorage->K25[2] + S25_idx_2;
-  b_elStorage[33] = c_f_tmp - H25_idx_2;
-  b_f_tmp = elStorage->K35[2] + S35_idx_2;
-  b_elStorage[57] = b_f_tmp - H35_idx_2;
-  f_tmp = elStorage->K45[2] + S45_idx_2;
-  b_elStorage[81] = f_tmp - H45_idx_2;
-  b_elStorage[105] = elStorage->K55[1] + elStorage->S55[1] * c_tmp;
+  b_f_tmp = elStorage->K25[2] + S25_idx_2;
+  b_elStorage[33] = b_f_tmp - H25_idx_2;
+  valGP_idx_2 = elStorage->K35[2] + S35_idx_2;
+  b_elStorage[57] = valGP_idx_2 - H35_idx_2;
+  valGP_idx_1 = elStorage->K45[2] + S45_idx_2;
+  b_elStorage[81] = valGP_idx_1 - H45_idx_2;
+  b_elStorage[105] = elStorage->K55[1] + elStorage->S55[1] * c_c_tmp;
   b_elStorage[129] = K56_idx_1;
   b_elStorage[11] = K16_idx_2;
-  K56_idx_0 = elStorage->K26[2] + S26_idx_2;
-  b_elStorage[35] = K56_idx_0 - H26_idx_2;
-  K16_idx_0 = elStorage->K36[2] + S36_idx_2;
-  b_elStorage[59] = K16_idx_0 - H36_idx_2;
-  K15_idx_0 = elStorage->K46[2] + S46_idx_2;
-  b_elStorage[83] = K15_idx_0 - H46_idx_2;
+  valGP_idx_0 = elStorage->K26[2] + S26_idx_2;
+  b_elStorage[35] = valGP_idx_0 - H26_idx_2;
+  b_valGP = elStorage->K36[2] + S36_idx_2;
+  b_elStorage[59] = b_valGP - H36_idx_2;
+  valGP = elStorage->K46[2] + S46_idx_2;
+  b_elStorage[83] = valGP - H46_idx_2;
   b_elStorage[107] = K56_idx_2;
-  b_elStorage[131] = elStorage->K66[1] + elStorage->S66[1] * c_tmp;
-  b_elStorage[12] = elStorage->K11[2] + elStorage->S11[2] * c_tmp;
+  b_elStorage[131] = elStorage->K66[1] + elStorage->S66[1] * c_c_tmp;
+  b_elStorage[12] = elStorage->K11[2] + elStorage->S11[2] * c_c_tmp;
   b_elStorage[36] = (elStorage->K12[2] + S12_idx_2) + H12_idx_2;
   b_elStorage[60] = (elStorage->K13[2] + S13_idx_2) + H13_idx_2;
   b_elStorage[84] = c_f + H14_idx_2;
   b_elStorage[108] = K15_idx_2;
   b_elStorage[132] = K16_idx_2;
   b_elStorage[14] = (elStorage->K12[1] + S12_idx_1) - H12_idx_1;
-  b_elStorage[38] = elStorage->K22[2] + elStorage->S22[2] * c_c_tmp;
-  b_elStorage[62] = integrationFactor + H23_idx_2;
+  b_elStorage[38] = elStorage->K22[2] + elStorage->S22[2] * b_c_tmp;
+  b_elStorage[62] = elStorage_tmp + H23_idx_2;
   b_elStorage[86] = b_f + H24_idx_2;
-  b_elStorage[110] = c_f_tmp + H25_idx_2;
-  b_elStorage[134] = K56_idx_0 + H26_idx_2;
+  b_elStorage[110] = b_f_tmp + H25_idx_2;
+  b_elStorage[134] = valGP_idx_0 + H26_idx_2;
   b_elStorage[16] = (elStorage->K13[1] + S13_idx_1) - H13_idx_1;
-  b_elStorage[40] = O1dot - H23_idx_1;
-  b_elStorage[64] = elStorage->K33[2] + elStorage->S33[2] * b_c_tmp;
+  b_elStorage[40] = e_elStorage_tmp - H23_idx_1;
+  b_elStorage[64] = elStorage->K33[2] + elStorage->S33[2] * c_tmp;
   b_elStorage[88] = f + H34_idx_2;
-  b_elStorage[112] = b_f_tmp + H35_idx_2;
-  b_elStorage[136] = K16_idx_0 + H36_idx_2;
-  b_elStorage[18] = O3dot - H14_idx_1;
-  b_elStorage[42] = O3 - H24_idx_1;
-  b_elStorage[66] = ycm - H34_idx_1;
-  b_elStorage[90] = elStorage->K44[2] + ((elStorage->S44_1[2] * c_c_tmp +
-    elStorage->S44_2[2] * b_c_tmp) + elStorage->S44_3[2] * Oel[1] * Oel[2]);
-  b_elStorage[114] = f_tmp + H45_idx_2;
-  b_elStorage[138] = K15_idx_0 + H46_idx_2;
+  b_elStorage[112] = valGP_idx_2 + H35_idx_2;
+  b_elStorage[136] = b_valGP + H36_idx_2;
+  b_elStorage[18] = d_elStorage_tmp - H14_idx_1;
+  b_elStorage[42] = f_elStorage_tmp - H24_idx_1;
+  b_elStorage[66] = c_elStorage_tmp - H34_idx_1;
+  b_elStorage[90] = elStorage->K44[2] + ((elStorage->S44_1[2] * b_c_tmp +
+    elStorage->S44_2[2] * c_tmp) + elStorage->S44_3[2] * Oel[1] * Oel[2]);
+  b_elStorage[114] = valGP_idx_1 + H45_idx_2;
+  b_elStorage[138] = valGP + H46_idx_2;
   b_elStorage[20] = K15_idx_1;
-  b_elStorage[44] = O2 - H25_idx_1;
-  b_elStorage[68] = rhoA - H35_idx_1;
-  b_elStorage[92] = e_f_tmp - H45_idx_1;
-  b_elStorage[116] = elStorage->K55[2] + elStorage->S55[2] * c_tmp;
+  b_elStorage[44] = g_elStorage_tmp - H25_idx_1;
+  b_elStorage[68] = Oel_tmp - H35_idx_1;
+  b_elStorage[92] = d_f_tmp - H45_idx_1;
+  b_elStorage[116] = elStorage->K55[2] + elStorage->S55[2] * c_c_tmp;
   b_elStorage[140] = K56_idx_2;
   b_elStorage[22] = K16_idx_1;
-  b_elStorage[46] = O1 - H26_idx_1;
-  b_elStorage[70] = zcm - H36_idx_1;
-  b_elStorage[94] = d_f_tmp - H46_idx_1;
+  b_elStorage[46] = b_elStorage_tmp - H26_idx_1;
+  b_elStorage[70] = f_tmp - H36_idx_1;
+  b_elStorage[94] = c_f_tmp - H46_idx_1;
   b_elStorage[118] = K56_idx_1;
-  b_elStorage[142] = elStorage->K66[2] + elStorage->S66[2] * c_tmp;
-  b_elStorage[13] = elStorage->K11[3] + elStorage->S11[3] * c_tmp;
+  b_elStorage[142] = elStorage->K66[2] + elStorage->S66[2] * c_c_tmp;
+  b_elStorage[13] = elStorage->K11[3] + elStorage->S11[3] * c_c_tmp;
   b_elStorage[37] = (elStorage->K12[3] + S12_idx_3) + H12_idx_3;
   b_elStorage[61] = (elStorage->K13[3] + S13_idx_3) + H13_idx_3;
-  O3dot = elStorage->K14[3] + S14_idx_3;
-  b_elStorage[85] = O3dot + H14_idx_3;
+  d_elStorage_tmp = elStorage->K14[3] + S14_idx_3;
+  b_elStorage[85] = d_elStorage_tmp + H14_idx_3;
   b_elStorage[109] = K15_idx_3;
   b_elStorage[133] = K16_idx_3;
   b_elStorage[15] = (elStorage->K12[3] + S12_idx_3) - H12_idx_3;
-  b_elStorage[39] = elStorage->K22[3] + elStorage->S22[3] * c_c_tmp;
-  O1dot = elStorage->K23[3] + S23_idx_3;
-  b_elStorage[63] = O1dot + H23_idx_3;
-  O3 = elStorage->K24[3] + S24_idx_3;
-  b_elStorage[87] = O3 + H24_idx_3;
-  O2 = elStorage->K25[3] + S25_idx_3;
-  b_elStorage[111] = O2 + H25_idx_3;
-  O1 = elStorage->K26[3] + S26_idx_3;
-  b_elStorage[135] = O1 + H26_idx_3;
+  b_elStorage[39] = elStorage->K22[3] + elStorage->S22[3] * b_c_tmp;
+  e_elStorage_tmp = elStorage->K23[3] + S23_idx_3;
+  b_elStorage[63] = e_elStorage_tmp + H23_idx_3;
+  f_elStorage_tmp = elStorage->K24[3] + S24_idx_3;
+  b_elStorage[87] = f_elStorage_tmp + H24_idx_3;
+  g_elStorage_tmp = elStorage->K25[3] + S25_idx_3;
+  b_elStorage[111] = g_elStorage_tmp + H25_idx_3;
+  b_elStorage_tmp = elStorage->K26[3] + S26_idx_3;
+  b_elStorage[135] = b_elStorage_tmp + H26_idx_3;
   b_elStorage[17] = (elStorage->K13[3] + S13_idx_3) - H13_idx_3;
-  b_elStorage[41] = O1dot - H23_idx_3;
-  b_elStorage[65] = elStorage->K33[3] + elStorage->S33[3] * b_c_tmp;
-  O1dot = elStorage->K34[3] + S34_idx_3;
-  b_elStorage[89] = O1dot + H34_idx_3;
-  integrationFactor = elStorage->K35[3] + S35_idx_3;
-  b_elStorage[113] = integrationFactor + H35_idx_3;
-  ycm = elStorage->K36[3] + S36_idx_3;
-  b_elStorage[137] = ycm + H36_idx_3;
-  b_elStorage[19] = O3dot - H14_idx_3;
-  b_elStorage[43] = O3 - H24_idx_3;
-  b_elStorage[67] = O1dot - H34_idx_3;
-  b_elStorage[91] = elStorage->K44[3] + ((elStorage->S44_1[3] * c_c_tmp +
-    elStorage->S44_2[3] * b_c_tmp) + elStorage->S44_3[3] * Oel[1] * Oel[2]);
-  O3dot = elStorage->K45[3] + S45_idx_3;
-  b_elStorage[115] = O3dot + H45_idx_3;
-  O1dot = elStorage->K46[3] + S46_idx_3;
-  b_elStorage[139] = O1dot + H46_idx_3;
+  b_elStorage[41] = e_elStorage_tmp - H23_idx_3;
+  b_elStorage[65] = elStorage->K33[3] + elStorage->S33[3] * c_tmp;
+  e_elStorage_tmp = elStorage->K34[3] + S34_idx_3;
+  b_elStorage[89] = e_elStorage_tmp + H34_idx_3;
+  elStorage_tmp = elStorage->K35[3] + S35_idx_3;
+  b_elStorage[113] = elStorage_tmp + H35_idx_3;
+  c_elStorage_tmp = elStorage->K36[3] + S36_idx_3;
+  b_elStorage[137] = c_elStorage_tmp + H36_idx_3;
+  b_elStorage[19] = d_elStorage_tmp - H14_idx_3;
+  b_elStorage[43] = f_elStorage_tmp - H24_idx_3;
+  b_elStorage[67] = e_elStorage_tmp - H34_idx_3;
+  b_elStorage[91] = elStorage->K44[3] + ((elStorage->S44_1[3] * b_c_tmp +
+    elStorage->S44_2[3] * c_tmp) + elStorage->S44_3[3] * Oel[1] * Oel[2]);
+  d_elStorage_tmp = elStorage->K45[3] + S45_idx_3;
+  b_elStorage[115] = d_elStorage_tmp + H45_idx_3;
+  e_elStorage_tmp = elStorage->K46[3] + S46_idx_3;
+  b_elStorage[139] = e_elStorage_tmp + H46_idx_3;
   b_elStorage[21] = K15_idx_3;
-  b_elStorage[45] = O2 - H25_idx_3;
-  b_elStorage[69] = integrationFactor - H35_idx_3;
-  b_elStorage[93] = O3dot - H45_idx_3;
-  b_elStorage[117] = elStorage->K55[3] + elStorage->S55[3] * c_tmp;
+  b_elStorage[45] = g_elStorage_tmp - H25_idx_3;
+  b_elStorage[69] = elStorage_tmp - H35_idx_3;
+  b_elStorage[93] = d_elStorage_tmp - H45_idx_3;
+  b_elStorage[117] = elStorage->K55[3] + elStorage->S55[3] * c_c_tmp;
   b_elStorage[141] = K56_idx_3;
   b_elStorage[23] = K16_idx_3;
-  b_elStorage[47] = O1 - H26_idx_3;
-  b_elStorage[71] = ycm - H36_idx_3;
-  b_elStorage[95] = O1dot - H46_idx_3;
+  b_elStorage[47] = b_elStorage_tmp - H26_idx_3;
+  b_elStorage[71] = c_elStorage_tmp - H36_idx_3;
+  b_elStorage[95] = e_elStorage_tmp - H46_idx_3;
   b_elStorage[119] = K56_idx_3;
-  b_elStorage[143] = elStorage->K66[3] + elStorage->S66[3] * c_tmp;
-  mapMatrixNonSym(b_elStorage, Khate);
+  b_elStorage[143] = elStorage->K66[3] + elStorage->S66[3] * c_c_tmp;
+  mapMatrixNonSym(b_elStorage, Ke);
 
   //  Declare type
   // compile Coriolis/damping matrix
@@ -1646,21 +1665,21 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   reshapes_f6[19] = 0.0;
   reshapes_f6[23] = 0.0;
   for (i = 0; i < 12; i++) {
-    b_i = i << 1;
-    b_elStorage[12 * i] = reshapes_f1[b_i];
-    b_elStorage[12 * i + 2] = reshapes_f2[b_i];
+    reshapes_f1_tmp = i << 1;
+    b_elStorage[12 * i] = reshapes_f1[reshapes_f1_tmp];
+    b_elStorage[12 * i + 2] = reshapes_f2[reshapes_f1_tmp];
     b_elStorage[12 * i + 4] = reshapes_f3_data[2 * i];
     b_elStorage[12 * i + 6] = reshapes_f4_data[2 * i];
-    b_elStorage[12 * i + 8] = reshapes_f5[b_i];
-    b_elStorage[12 * i + 10] = reshapes_f6[b_i];
-    b_i++;
-    b_elStorage[12 * i + 1] = reshapes_f1[b_i];
-    b_elStorage[12 * i + 3] = reshapes_f2[b_i];
+    b_elStorage[12 * i + 8] = reshapes_f5[reshapes_f1_tmp];
+    b_elStorage[12 * i + 10] = reshapes_f6[reshapes_f1_tmp];
+    reshapes_f1_tmp++;
+    b_elStorage[12 * i + 1] = reshapes_f1[reshapes_f1_tmp];
+    b_elStorage[12 * i + 3] = reshapes_f2[reshapes_f1_tmp];
     reshapes_f1_data_tmp = 2 * i + 1;
     b_elStorage[12 * i + 5] = reshapes_f3_data[reshapes_f1_data_tmp];
     b_elStorage[12 * i + 7] = reshapes_f4_data[reshapes_f1_data_tmp];
-    b_elStorage[12 * i + 9] = reshapes_f5[b_i];
-    b_elStorage[12 * i + 11] = reshapes_f6[b_i];
+    b_elStorage[12 * i + 9] = reshapes_f5[reshapes_f1_tmp];
+    b_elStorage[12 * i + 11] = reshapes_f6[reshapes_f1_tmp];
   }
 
   b_mapMatrixNonSym(b_elStorage, Ce);
@@ -1827,8 +1846,8 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   //  positive rotation
   sparse(lambda, lambda_d, lambda_colidx, lambda_rowidx);
   for (i = 0; i < 12; i++) {
-    for (b_i = 0; b_i < 12; b_i++) {
-      b_elStorage[b_i + 12 * i] = lambda[i + 12 * b_i];
+    for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+      b_elStorage[reshapes_f1_tmp + 12 * i] = lambda[i + 12 * reshapes_f1_tmp];
     }
   }
 
@@ -1842,9 +1861,9 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   b_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Ce,
                   b_elStorage);
   c_sparse_mtimes(b_elStorage, lambda_d, lambda_colidx, lambda_rowidx, Ce);
-  b_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Khate,
+  b_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Ke,
                   b_elStorage);
-  c_sparse_mtimes(b_elStorage, lambda_d, lambda_colidx, lambda_rowidx, Khate);
+  c_sparse_mtimes(b_elStorage, lambda_d, lambda_colidx, lambda_rowidx, Ke);
   Ftemp_data[0] = F1_data_idx_0;
   Ftemp_data[2] = F2_data_idx_0;
   Ftemp_data[4] = F3_data_idx_0;
@@ -1863,16 +1882,17 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   emxFree_int32_T(&lambda_rowidx);
   emxFree_int32_T(&lambda_colidx);
   emxFree_real_T(&lambda_d);
-  std::memset(&Fhate[0], 0, 12U * sizeof(double));
+  std::memset(&Fel_data[0], 0, 12U * sizeof(double));
 
   //
   //  %declare map
   for (b_i = 0; b_i < 12; b_i++) {
-    Fhate[iv1[b_i] - 1] = Ftemp_data[b_i];
+    Fel_data[iv1[b_i] - 1] = Ftemp_data[b_i];
   }
 
   //  %------------------------------------------------------------------------- 
-  d_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Fhate, Fe);
+  d_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Fel_data,
+                  Fe);
 
   //
   // concentrated mass
@@ -1899,76 +1919,76 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
     Me[143] += input->concMass[7];
 
     // modify Ce for concentrated mass
-    H46_idx_3 = 2.0 * input->concMass[0] * Omega;
-    Ce[12] -= H46_idx_3;
-    Ce[1] += H46_idx_3;
-    H46_idx_3 = 2.0 * input->concMass[0] * 0.0;
-    Ce[24] += H46_idx_3;
-    Ce[2] -= H46_idx_3;
-    Ce[25] -= H46_idx_3;
-    Ce[14] += H46_idx_3;
-    H46_idx_3 = 2.0 * input->concMass[4] * Omega;
-    Ce[90] -= H46_idx_3;
-    Ce[79] += H46_idx_3;
-    H46_idx_3 = 2.0 * input->concMass[4] * 0.0;
-    Ce[102] += H46_idx_3;
-    Ce[80] -= H46_idx_3;
-    Ce[103] -= H46_idx_3;
-    Ce[92] += H46_idx_3;
+    valGP_idx_0 = 2.0 * input->concMass[0] * Omega;
+    Ce[12] -= valGP_idx_0;
+    Ce[1] += valGP_idx_0;
+    valGP_idx_0 = 2.0 * input->concMass[0] * 0.0;
+    Ce[24] += valGP_idx_0;
+    Ce[2] -= valGP_idx_0;
+    Ce[25] -= valGP_idx_0;
+    Ce[14] += valGP_idx_0;
+    valGP_idx_0 = 2.0 * input->concMass[4] * Omega;
+    Ce[90] -= valGP_idx_0;
+    Ce[79] += valGP_idx_0;
+    valGP_idx_0 = 2.0 * input->concMass[4] * 0.0;
+    Ce[102] += valGP_idx_0;
+    Ce[80] -= valGP_idx_0;
+    Ce[103] -= valGP_idx_0;
+    Ce[92] += valGP_idx_0;
 
     // modify Ke for concentrated mass
-    H46_idx_3 = Omega * Omega;
-    K56_idx_0 = input->concMass[0] * H46_idx_3;
-    Khate[0] -= K56_idx_0;
-    K15_idx_0 = input->concMass[0] * 0.0 * 0.0;
-    K16_idx_0 = input->concMass[0] * OmegaDot;
-    Khate[12] = (Khate[12] + K15_idx_0) - K16_idx_0;
-    Khate[1] = (Khate[1] + K15_idx_0) + K16_idx_0;
-    K15_idx_0 = input->concMass[0] * 0.0 * Omega;
-    Khate[24] = (Khate[24] + K15_idx_0) + input->concMass[0] * 0.0;
-    Khate[2] = (Khate[2] + K15_idx_0) - input->concMass[0] * 0.0;
-    Khate[25] = (Khate[25] + K15_idx_0) - input->concMass[0] * 0.0;
-    Khate[14] = (Khate[14] + K15_idx_0) + input->concMass[0] * 0.0;
-    Khate[13] -= K56_idx_0;
-    Khate[26] -= input->concMass[0] * 0.0;
-    K56_idx_0 = input->concMass[4] * H46_idx_3;
-    Khate[78] -= K56_idx_0;
-    K15_idx_0 = input->concMass[4] * 0.0 * 0.0;
-    K16_idx_0 = input->concMass[4] * OmegaDot;
-    Khate[90] = (Khate[90] + K15_idx_0) - K16_idx_0;
-    Khate[79] = (Khate[79] + K15_idx_0) + K16_idx_0;
-    K15_idx_0 = input->concMass[4] * 0.0 * Omega;
-    Khate[102] = (Khate[102] + K15_idx_0) + input->concMass[4] * 0.0;
-    Khate[80] = (Khate[80] + K15_idx_0) - input->concMass[4] * 0.0;
-    Khate[103] = (Khate[103] + K15_idx_0) - input->concMass[4] * 0.0;
-    Khate[92] = (Khate[92] + K15_idx_0) + input->concMass[4] * 0.0;
-    Khate[91] -= K56_idx_0;
-    Khate[104] -= input->concMass[4] * 0.0;
+    valGP_idx_0 = Omega * Omega;
+    Oel_tmp = input->concMass[0] * valGP_idx_0;
+    Ke[0] -= Oel_tmp;
+    valGP = input->concMass[0] * 0.0 * 0.0;
+    b_valGP = input->concMass[0] * OmegaDot;
+    Ke[12] = (Ke[12] + valGP) - b_valGP;
+    Ke[1] = (Ke[1] + valGP) + b_valGP;
+    valGP = input->concMass[0] * 0.0 * Omega;
+    Ke[24] = (Ke[24] + valGP) + input->concMass[0] * 0.0;
+    Ke[2] = (Ke[2] + valGP) - input->concMass[0] * 0.0;
+    Ke[25] = (Ke[25] + valGP) - input->concMass[0] * 0.0;
+    Ke[14] = (Ke[14] + valGP) + input->concMass[0] * 0.0;
+    Ke[13] -= Oel_tmp;
+    Ke[26] -= input->concMass[0] * 0.0;
+    Oel_tmp = input->concMass[4] * valGP_idx_0;
+    Ke[78] -= Oel_tmp;
+    valGP = input->concMass[4] * 0.0 * 0.0;
+    b_valGP = input->concMass[4] * OmegaDot;
+    Ke[90] = (Ke[90] + valGP) - b_valGP;
+    Ke[79] = (Ke[79] + valGP) + b_valGP;
+    valGP = input->concMass[4] * 0.0 * Omega;
+    Ke[102] = (Ke[102] + valGP) + input->concMass[4] * 0.0;
+    Ke[80] = (Ke[80] + valGP) - input->concMass[4] * 0.0;
+    Ke[103] = (Ke[103] + valGP) - input->concMass[4] * 0.0;
+    Ke[92] = (Ke[92] + valGP) + input->concMass[4] * 0.0;
+    Ke[91] -= Oel_tmp;
+    Ke[104] -= input->concMass[4] * 0.0;
   }
 
   // modify Fe for  concentrated load
   if (concMassFlag) {
-    H46_idx_3 = Omega * Omega;
-    K56_idx_0 = 0.0 * Omega * input->z.data[0];
-    Fe[0] = ((Fe[0] + input->concMass[0] * ((input->x.data[0] * H46_idx_3 - 0.0 *
-                input->y.data[0]) - K56_idx_0)) + input->concMass[0] *
+    valGP_idx_0 = Omega * Omega;
+    Oel_tmp = 0.0 * Omega * input->z.data[0];
+    Fe[0] = ((Fe[0] + input->concMass[0] * ((input->x.data[0] * valGP_idx_0 -
+                0.0 * input->y.data[0]) - Oel_tmp)) + input->concMass[0] *
              (input->y.data[0] * OmegaDot - input->z.data[0] * 0.0)) -
       input->concMass[0] * a_temp[0];
-    Fe[1] = ((Fe[1] + input->concMass[0] * ((input->y.data[0] * H46_idx_3 -
-                K56_idx_0) - 0.0 * input->x.data[0])) + input->concMass[0] *
+    Fe[1] = ((Fe[1] + input->concMass[0] * ((input->y.data[0] * valGP_idx_0 -
+                Oel_tmp) - 0.0 * input->x.data[0])) + input->concMass[0] *
              (input->z.data[0] * 0.0 - input->x.data[0] * OmegaDot)) -
       input->concMass[0] * a_temp[1];
     Fe[2] = ((Fe[2] + input->concMass[0] * ((input->z.data[0] * 0.0 - Omega *
                 0.0 * input->x.data[0]) - Omega * 0.0 * input->y.data[0])) +
              input->concMass[0] * (input->x.data[0] * 0.0 - input->y.data[0] *
               0.0)) - input->concMass[0] * a_temp[2];
-    K56_idx_0 = 0.0 * Omega * input->z.data[1];
-    Fe[6] = ((Fe[6] + input->concMass[4] * ((input->x.data[1] * H46_idx_3 - 0.0 *
-                input->y.data[1]) - K56_idx_0)) + input->concMass[4] *
+    Oel_tmp = 0.0 * Omega * input->z.data[1];
+    Fe[6] = ((Fe[6] + input->concMass[4] * ((input->x.data[1] * valGP_idx_0 -
+                0.0 * input->y.data[1]) - Oel_tmp)) + input->concMass[4] *
              (input->y.data[1] * OmegaDot - input->z.data[1] * 0.0)) -
       input->concMass[4] * a_temp[0];
-    Fe[7] = ((Fe[7] + input->concMass[4] * ((input->y.data[1] * H46_idx_3 -
-                K56_idx_0) - 0.0 * input->x.data[1])) + input->concMass[4] *
+    Fe[7] = ((Fe[7] + input->concMass[4] * ((input->y.data[1] * valGP_idx_0 -
+                Oel_tmp) - 0.0 * input->x.data[1])) + input->concMass[4] *
              (input->z.data[1] * 0.0 - input->x.data[1] * OmegaDot)) -
       input->concMass[4] * a_temp[1];
     Fe[8] = ((Fe[8] + input->concMass[4] * ((input->z.data[1] * 0.0 - Omega *
@@ -1984,44 +2004,39 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
   if (g_strcmp(input->analysisType.data, input->analysisType.size)) {
     // calculate effective stiffness matrix and force vector for Dean integrator 
     for (i = 0; i < 12; i++) {
-      FhatLessConc[i] = dispm1_data[i];
-      b_Khate[i] = 2.0 * input->disp.data[i] - dispm1_data[i];
-      Fhate[i] = -0.001 * dispm1_data[i] - 0.001 * input->disp.data[i];
+      xnm1[i] = dispm1_data[i];
+      Ftemp_data[i] = 2.0 * input->disp.data[i] - dispm1_data[i];
+      y[i] = -0.001 * dispm1_data[i] - 0.001 * input->disp.data[i];
     }
 
     for (i = 0; i < 12; i++) {
-      c_tmp = 0.0;
-      for (b_i = 0; b_i < 12; b_i++) {
-        c_tmp += Me[i + 12 * b_i] * b_Khate[b_i];
+      elStorage_tmp = 0.0;
+      for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+        elStorage_tmp += Me[i + 12 * reshapes_f1_tmp] *
+          Ftemp_data[reshapes_f1_tmp];
       }
 
-      Ftemp_data[i] = Fe[i] * 2000.0 + c_tmp;
+      Fel_data[i] = Fe[i] * 2000.0 + elStorage_tmp;
     }
 
-    for (i = 0; i < 12; i++) {
-      c_tmp = 0.0;
-      for (b_i = 0; b_i < 12; b_i++) {
-        c_tmp += Khate[i + 12 * b_i] * Fhate[b_i];
+    for (b_i = 0; b_i < 12; b_i++) {
+      elStorage_tmp = 0.0;
+      b_elStorage_tmp = 0.0;
+      for (i = 0; i < 12; i++) {
+        reshapes_f1_tmp = b_i + 12 * i;
+        b_elStorage_tmp += Ke[reshapes_f1_tmp] * y[i];
+        elStorage_tmp += Ce[reshapes_f1_tmp] * (1.0E+6 * xnm1[i]);
       }
 
-      b_Khate[i] = c_tmp;
+      elStorage_tmp += Fel_data[b_i] + b_elStorage_tmp;
+      Fhate[b_i] = elStorage_tmp;
+      FhatLessConc[b_i] = elStorage_tmp;
     }
-
-    for (i = 0; i < 12; i++) {
-      c_tmp = 0.0;
-      for (b_i = 0; b_i < 12; b_i++) {
-        c_tmp += Ce[i + 12 * b_i] * (1.0E+6 * FhatLessConc[b_i]);
-      }
-
-      Fhate[i] = (Ftemp_data[i] + b_Khate[i]) + c_tmp;
-    }
-
-    std::memcpy(&FhatLessConc[0], &Fhate[0], 12U * sizeof(double));
 
     // ........................................................
     // ..........................................................
     for (i = 0; i < 144; i++) {
-      Khate[i] = (Khate[i] * 0.001 + 1.0E+6 * Ce[i]) + Me[i];
+      Ke[i] = (Ke[i] * 0.001 + 1.0E+6 * Ce[i]) + Me[i];
     }
 
     std::memcpy(&Fe[0], &Fhate[0], 12U * sizeof(double));
@@ -2040,15 +2055,16 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
 
       if (dispddot_size_idx_1 == 1) {
         for (i = 0; i < 12; i++) {
-          c_tmp = 0.0;
-          for (b_i = 0; b_i < 12; b_i++) {
-            c_tmp += Me[i + 12 * b_i] * b_data[b_i];
+          elStorage_tmp = 0.0;
+          for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+            elStorage_tmp += Me[i + 12 * reshapes_f1_tmp] *
+              b_data[reshapes_f1_tmp];
           }
 
-          Fhate[i] = c_tmp;
+          y[i] = elStorage_tmp;
         }
       } else {
-        mtimes(Me, b_data, Fhate);
+        mtimes(Me, b_data, y);
       }
 
       if (0 <= dispdot_size_idx_1 - 1) {
@@ -2058,21 +2074,22 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
 
       if (dispdot_size_idx_1 == 1) {
         for (i = 0; i < 12; i++) {
-          c_tmp = 0.0;
-          for (b_i = 0; b_i < 12; b_i++) {
-            c_tmp += Ce[i + 12 * b_i] * b_data[b_i];
+          elStorage_tmp = 0.0;
+          for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+            elStorage_tmp += Ce[i + 12 * reshapes_f1_tmp] *
+              b_data[reshapes_f1_tmp];
           }
 
-          b_Khate[i] = c_tmp;
+          Ftemp_data[i] = elStorage_tmp;
         }
       } else {
-        mtimes(Ce, b_data, b_Khate);
+        mtimes(Ce, b_data, Ftemp_data);
       }
 
       std::memcpy(&b_data[0], &input->disp.data[0], 12U * sizeof(double));
-      mtimes(Khate, b_data, FhatLessConc);
-      for (i = 0; i < 12; i++) {
-        Fhate[i] = ((Fe[i] - Fhate[i]) - b_Khate[i]) - FhatLessConc[i];
+      mtimes(Ke, b_data, Fel_data);
+      for (b_i = 0; b_i < 12; b_i++) {
+        Fhate[b_i] = ((Fe[b_i] - y[b_i]) - Ftemp_data[b_i]) - Fel_data[b_i];
       }
     } else {
       if (f_strcmp(input->iterationType)) {
@@ -2082,25 +2099,27 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
             + dispddot_data[i];
         }
 
-        mtimes(Me, b_data, Fhate);
+        mtimes(Me, b_data, y);
         for (i = 0; i < 12; i++) {
           b_data[i] = (1000.0 * input->disp.data[i] + dispdot_data[i]) + 0.0 *
             dispddot_data[i];
         }
 
-        mtimes(Ce, b_data, b_Khate);
-        for (i = 0; i < 12; i++) {
-          Fhate[i] = (Fe[i] + Fhate[i]) + b_Khate[i];
+        mtimes(Ce, b_data, Ftemp_data);
+        for (b_i = 0; b_i < 12; b_i++) {
+          Fhate[b_i] = (Fe[b_i] + y[b_i]) + Ftemp_data[b_i];
         }
       }
     }
 
     for (i = 0; i < 144; i++) {
-      Khate[i] = (Khate[i] + 1.0E+6 * Me[i]) + 1000.0 * Ce[i];
+      Khate[i] = (Ke[i] + 1.0E+6 * Me[i]) + 1000.0 * Ce[i];
     }
 
-    // ........................................................
     std::memcpy(&FhatLessConc[0], &Fhate[0], 12U * sizeof(double));
+
+    // ........................................................
+    std::memcpy(&Ke[0], &Khate[0], 144U * sizeof(double));
     std::memcpy(&Fe[0], &Fhate[0], 12U * sizeof(double));
   }
 
@@ -2113,15 +2132,15 @@ void b_calculateTimoshenkoElementNL(const p_struct_T *input, const f_struct_T
       (input->iterationType)) {
     // considerations for newton-raphson iteration
     std::memcpy(&b_data[0], &disp_iter_data[0], 12U * sizeof(double));
-    mtimes(Khate, b_data, b_Khate);
+    mtimes(Ke, b_data, y);
     for (i = 0; i < 12; i++) {
-      Fe[i] -= b_Khate[i];
+      Fe[i] -= y[i];
     }
   }
 
   // ----- assign output block ----------------
   std::memset(&output->FhatLessConc[0], 0, 12U * sizeof(double));
-  std::memcpy(&output->Ke[0], &Khate[0], 144U * sizeof(double));
+  std::memcpy(&output->Ke[0], &Ke[0], 144U * sizeof(double));
   std::memcpy(&output->Fe[0], &Fe[0], 12U * sizeof(double));
   output->Me.size[0] = 1;
   output->Me.size[1] = 1;
@@ -2221,9 +2240,9 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   int i;
   double O1;
   double Oel[3];
-  double K15_idx_1;
+  double elStorage_tmp;
   double O2;
-  double K16_idx_1;
+  double b_elStorage_tmp;
   double O3;
   double a_temp[3];
   double O1dot;
@@ -2237,45 +2256,52 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   int N_size[2];
   double p_N_x_data[2];
   int p_N_x_size[1];
-  double K15_idx_0;
+  double Jac;
   double integrationFactor;
+  double a;
   double c_tmp;
   double b_c_tmp;
-  double rhoA;
+  double S12_idx_0;
   double S13_idx_0;
+  double rhoA;
+  double S23_idx_0;
+  double S25_idx_0;
+  double b_a;
+  double S26_idx_0;
   double Faxial;
-  double K16_idx_0;
   double S35_idx_0;
   double S36_idx_0;
-  double ycm;
+  double S14_idx_0;
+  double S24_idx_0;
   double S34_idx_0;
   double S45_idx_0;
   double S46_idx_0;
   double C12_idx_0;
   double C13_idx_0;
   double C23_idx_0;
-  double K56_idx_0;
+  double valGP;
   double C24_idx_0;
-  double b_f_tmp;
+  double valGP_idx_0;
   double C25_idx_0;
-  double f;
+  double valGP_idx_1;
   double C26_idx_0;
-  double c_f_tmp;
+  double valGP_idx_2;
   double C34_idx_0;
-  double d_f_tmp;
+  double b_f_tmp;
   double C35_idx_0;
-  double e_f_tmp;
+  double c_f_tmp;
+  double ycm;
   double C36_idx_0;
   double zcm;
-  double f_f_tmp;
-  double g_f_tmp;
+  double d_f_tmp;
+  double e_f_tmp;
   double C14_idx_0;
+  double f;
   double b_f;
-  double c_f;
-  double disMomentgp[3];
   double C45_idx_0;
-  double d_f;
+  double c_f;
   double C46_idx_0;
+  double H12_idx_0;
   double H13_idx_0;
   double H23_idx_0;
   double posLocal[3];
@@ -2284,6 +2310,7 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   double H25_idx_0;
   double H26_idx_0;
   double H34_idx_0;
+  double disMomentgp[3];
   double H35_idx_0;
   double H36_idx_0;
   double H14_idx_0;
@@ -2396,8 +2423,15 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   double H36_idx_3;
   double H14_idx_3;
   double H45_idx_3;
+  double H46_idx_3;
   double b_elStorage[144];
   double Kenr[144];
+  double c_c_tmp;
+  double K15_idx_0;
+  double K16_idx_0;
+  double K56_idx_0;
+  double K15_idx_1;
+  double K16_idx_1;
   double K56_idx_1;
   double K15_idx_2;
   double K16_idx_2;
@@ -2405,6 +2439,10 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   double K15_idx_3;
   double K16_idx_3;
   double K56_idx_3;
+  double c_elStorage_tmp;
+  double d_elStorage_tmp;
+  double e_elStorage_tmp;
+  double f_elStorage_tmp;
   double Ke[144];
   double reshapes_f3_data[24];
   double reshapes_f4_data[24];
@@ -2413,6 +2451,7 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   double reshapes_f5[24];
   double reshapes_f6[24];
   double Ce[144];
+  int reshapes_f1_tmp;
   int reshapes_f1_data_tmp;
   double Me[144];
   emxArray_real_T *lambda_d;
@@ -2423,6 +2462,7 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   emxArray_int32_T *lambdaTran_rowidx;
   double Ftemp_data[12];
   double Fel_data[12];
+  double Fe[12];
   int tmp_size[1];
   boolean_T concMassFlag;
 
@@ -2481,12 +2521,12 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   //      theta_yNode = [dispLocal(5)  dispLocal(11)];
   //      theta_zNode = [dispLocal(6)  dispLocal(12)];
   for (i = 0; i < 3; i++) {
-    K15_idx_1 = lambda[i] * 0.0 + lambda[i + 12] * 0.0;
-    K16_idx_1 = lambda[i + 24];
+    elStorage_tmp = lambda[i] * 0.0 + lambda[i + 12] * 0.0;
+    b_elStorage_tmp = lambda[i + 24];
     a_temp[i] = (input_CN2H[i] * 0.0 + input_CN2H[i + 3] * 0.0) + input_CN2H[i +
       6] * 9.81;
-    ODotel[i] = K15_idx_1 + K16_idx_1 * 0.0;
-    Oel[i] = K15_idx_1 + K16_idx_1 * 3.2898681336964524;
+    ODotel[i] = elStorage_tmp + b_elStorage_tmp * 0.0;
+    Oel[i] = elStorage_tmp + b_elStorage_tmp * 3.2898681336964524;
   }
 
   O1 = Oel[0];
@@ -2509,8 +2549,8 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   for (b_i = 0; b_i < 4; b_i++) {
     // Calculate shape functions at quad point i
     calculateShapeFunctions(dv[b_i], input_xloc, N_data, N_size, p_N_x_data,
-      p_N_x_size, &K15_idx_0);
-    integrationFactor = K15_idx_0 * dv1[b_i];
+      p_N_x_size, &Jac);
+    integrationFactor = Jac * dv1[b_i];
 
     // ..... interpolate for value at quad point .....
     // This function interpolates a value using distinct values at valNode
@@ -2527,12 +2567,11 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
     // and the corresponding shape function N.
     rhoA = N_data[0] * input_sectionProps_rhoA[0] + N_data[1] *
       input_sectionProps_rhoA[1];
-    K15_idx_0 = p_N_x_data[0] * dispLocal[1] + p_N_x_data[1] * dispLocal[7];
-    K16_idx_0 = p_N_x_data[0] * dispLocal[2] + p_N_x_data[1] * dispLocal[8];
+    a = p_N_x_data[0] * dispLocal[1] + p_N_x_data[1] * dispLocal[7];
+    b_a = p_N_x_data[0] * dispLocal[2] + p_N_x_data[1] * dispLocal[8];
     Faxial = (N_data[0] * input_sectionProps_EA[0] + N_data[1] *
               input_sectionProps_EA[1]) * (((p_N_x_data[0] * dispLocal[0] +
-      p_N_x_data[1] * dispLocal[6]) + 0.5 * (K15_idx_0 * K15_idx_0)) + 0.5 *
-      (K16_idx_0 * K16_idx_0));
+      p_N_x_data[1] * dispLocal[6]) + 0.5 * (a * a)) + 0.5 * (b_a * b_a));
 
     // mass center offsets
     // This function interpolates a value using distinct values at valNode
@@ -2561,21 +2600,21 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
       input_sectionProps_ycm[1];
     zcm = N_data[0] * input_sectionProps_zcm[0] + N_data[1] *
       input_sectionProps_zcm[1];
-    K15_idx_0 = N_data[0] * input_x_data[0] + N_data[1] * input_x_data[1];
-    K16_idx_0 = N_data[0] * input_y_data[0] + N_data[1] * input_y_data[1];
-    K56_idx_0 = N_data[0] * input_z_data[0] + N_data[1] * input_z_data[1];
+    a = N_data[0] * input_x_data[0] + N_data[1] * input_x_data[1];
+    b_a = N_data[0] * input_y_data[0] + N_data[1] * input_y_data[1];
+    valGP = N_data[0] * input_z_data[0] + N_data[1] * input_z_data[1];
 
     // let these loads be defined in the inertial frame
-    disMomentgp[0] = rhoA * a_temp[0];
-    disMomentgp[1] = rhoA * a_temp[1];
-    disMomentgp[2] = rhoA * a_temp[2];
+    valGP_idx_0 = rhoA * a_temp[0];
+    valGP_idx_1 = rhoA * a_temp[1];
+    valGP_idx_2 = rhoA * a_temp[2];
     for (i = 0; i < 3; i++) {
-      K15_idx_1 = lambda[i + 12];
-      K16_idx_1 = lambda[i + 24];
-      posLocal[i] = (lambda[i] * K15_idx_0 + K15_idx_1 * K16_idx_0) + K16_idx_1 *
-        K56_idx_0;
-      disLoadgpLocal[i] = (lambda[i] * disMomentgp[0] + K15_idx_1 * disMomentgp
-                           [1]) + K16_idx_1 * disMomentgp[2];
+      elStorage_tmp = lambda[i + 12];
+      b_elStorage_tmp = lambda[i + 24];
+      posLocal[i] = (lambda[i] * a + elStorage_tmp * b_a) + b_elStorage_tmp *
+        valGP;
+      disLoadgpLocal[i] = (lambda[i] * valGP_idx_0 + elStorage_tmp * valGP_idx_1)
+        + b_elStorage_tmp * valGP_idx_2;
     }
 
     b_dv[3] = -zcm;
@@ -2594,70 +2633,68 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
     // Element calculation functions---------------------------------
     // calculate static aerodynamic load
     // distributed/body force load calculations
-    c_f_tmp = (O2 * O2 + O3 * O3) * posLocal[0];
-    d_f_tmp = O2dot * posLocal[2];
-    e_f_tmp = O3dot * posLocal[1];
-    f_f_tmp = f_tmp * posLocal[2];
-    g_f_tmp = O1 * O2 * posLocal[1];
-    b_f = rhoA * ((((c_f_tmp - g_f_tmp) - f_f_tmp) + e_f_tmp) - d_f_tmp) -
+    valGP_idx_2 = (O2 * O2 + O3 * O3) * posLocal[0];
+    b_f_tmp = O2dot * posLocal[2];
+    c_f_tmp = O3dot * posLocal[1];
+    d_f_tmp = f_tmp * posLocal[2];
+    e_f_tmp = O1 * O2 * posLocal[1];
+    f = rhoA * ((((valGP_idx_2 - e_f_tmp) - d_f_tmp) + c_f_tmp) - b_f_tmp) -
       disLoadgpLocal[0];
 
     // This function is a general routine to calculate an element vector
-    K15_idx_0 = O1dot * posLocal[2];
-    K16_idx_0 = O3dot * posLocal[0];
-    c_f = rhoA * (((((O1 * O1 + O3 * O3) * posLocal[1] - posLocal[2] * O2 * O3)
-                    - posLocal[0] * O1 * O2) + K15_idx_0) - K16_idx_0) -
-      disLoadgpLocal[1];
+    a = O1dot * posLocal[2];
+    b_a = O3dot * posLocal[0];
+    b_f = rhoA * (((((O1 * O1 + O3 * O3) * posLocal[1] - posLocal[2] * O2 * O3)
+                    - posLocal[0] * O1 * O2) + a) - b_a) - disLoadgpLocal[1];
 
     // This function is a general routine to calculate an element vector
-    K56_idx_0 = O2dot * posLocal[0];
-    b_f_tmp = O1dot * posLocal[1];
-    d_f = rhoA * (((((O1 * O1 + O2 * O2) * posLocal[2] - f_tmp * posLocal[0]) -
-                    O2 * O3 * posLocal[1]) + K56_idx_0) - b_f_tmp) -
+    valGP = O2dot * posLocal[0];
+    valGP_idx_0 = O1dot * posLocal[1];
+    c_f = rhoA * (((((O1 * O1 + O2 * O2) * posLocal[2] - f_tmp * posLocal[0]) -
+                    O2 * O3 * posLocal[1]) + valGP) - valGP_idx_0) -
       disLoadgpLocal[2];
 
     // This function is a general routine to calculate an element vector
-    f = rhoA * ((((posLocal[0] * (O1 * O2 * zcm - ycm * O1 * O3) - posLocal[1] *
-                   (ycm * O2 * O3 + zcm * (O1 * O1 + O3 * O3))) + posLocal[2] *
-                  (ycm * (O1 * O1 + O2 * O2) + zcm * O2 * O3)) + ycm *
-                 (K56_idx_0 - b_f_tmp)) - zcm * (K15_idx_0 - K16_idx_0)) -
-      disMomentgp[0];
+    valGP_idx_1 = rhoA * ((((posLocal[0] * (O1 * O2 * zcm - ycm * O1 * O3) -
+      posLocal[1] * (ycm * O2 * O3 + zcm * (O1 * O1 + O3 * O3))) + posLocal[2] *
+      (ycm * (O1 * O1 + O2 * O2) + zcm * O2 * O3)) + ycm * (valGP - valGP_idx_0))
+                          - zcm * (a - b_a)) - disMomentgp[0];
 
     // This function is a general routine to calculate an element vector
-    b_f_tmp = rhoA * zcm * ((((c_f_tmp - posLocal[1] * O1 * O2) - posLocal[2] *
-      O1 * O3) - d_f_tmp) + e_f_tmp) - disMomentgp[1];
+    valGP_idx_0 = rhoA * zcm * ((((valGP_idx_2 - posLocal[1] * O1 * O2) -
+      posLocal[2] * O1 * O3) - b_f_tmp) + c_f_tmp) - disMomentgp[1];
 
     // This function is a general routine to calculate an element vector
-    K15_idx_0 = rhoA * ycm * ((((f_f_tmp + g_f_tmp) - c_f_tmp) - e_f_tmp) +
-      d_f_tmp) - disMomentgp[2];
+    a = rhoA * ycm * ((((d_f_tmp + e_f_tmp) - valGP_idx_2) - c_f_tmp) + b_f_tmp)
+      - disMomentgp[2];
 
     // This function is a general routine to calculate an element vector
-    K16_idx_0 = Faxial * p_N_x_data[0];
-    K56_idx_0 = K16_idx_0 * p_N_x_data[0] * integrationFactor;
-    SS22_data_idx_0 += K56_idx_0;
-    SS33_data_idx_0 += K56_idx_0;
-    K56_idx_0 = K16_idx_0 * p_N_x_data[1] * integrationFactor;
-    SS22_data_idx_2 += K56_idx_0;
-    SS33_data_idx_2 += K56_idx_0;
-    F1_data_idx_0 += b_f * N_data[0] * integrationFactor;
-    F2_data_idx_0 += c_f * N_data[0] * integrationFactor;
-    F3_data_idx_0 += d_f * N_data[0] * integrationFactor;
-    F4_data_idx_0 += f * N_data[0] * integrationFactor;
-    F5_data_idx_0 += b_f_tmp * N_data[0] * integrationFactor;
-    F6_data_idx_0 += K15_idx_0 * N_data[0] * integrationFactor;
-    K16_idx_0 = Faxial * p_N_x_data[1];
-    K56_idx_0 = K16_idx_0 * p_N_x_data[0] * integrationFactor;
-    SS22_data_idx_1 += K56_idx_0;
-    SS33_data_idx_1 += K56_idx_0;
-    K56_idx_0 = K16_idx_0 * p_N_x_data[1] * integrationFactor;
-    SS22_data_idx_3 += K56_idx_0;
-    SS33_data_idx_3 += K56_idx_0;
-    F1_data_idx_1 += b_f * N_data[1] * integrationFactor;
-    F2_data_idx_1 += c_f * N_data[1] * integrationFactor;
-    F3_data_idx_1 += d_f * N_data[1] * integrationFactor;
-    F4_data_idx_1 += f * N_data[1] * integrationFactor;
-    F5_data_idx_1 += b_f_tmp * N_data[1] * integrationFactor;
-    F6_data_idx_1 += K15_idx_0 * N_data[1] * integrationFactor;
+    b_a = Faxial * p_N_x_data[0];
+    valGP = b_a * p_N_x_data[0] * integrationFactor;
+    SS22_data_idx_0 += valGP;
+    SS33_data_idx_0 += valGP;
+    valGP = b_a * p_N_x_data[1] * integrationFactor;
+    SS22_data_idx_2 += valGP;
+    SS33_data_idx_2 += valGP;
+    F1_data_idx_0 += f * N_data[0] * integrationFactor;
+    F2_data_idx_0 += b_f * N_data[0] * integrationFactor;
+    F3_data_idx_0 += c_f * N_data[0] * integrationFactor;
+    F4_data_idx_0 += valGP_idx_1 * N_data[0] * integrationFactor;
+    F5_data_idx_0 += valGP_idx_0 * N_data[0] * integrationFactor;
+    F6_data_idx_0 += a * N_data[0] * integrationFactor;
+    b_a = Faxial * p_N_x_data[1];
+    valGP = b_a * p_N_x_data[0] * integrationFactor;
+    SS22_data_idx_1 += valGP;
+    SS33_data_idx_1 += valGP;
+    valGP = b_a * p_N_x_data[1] * integrationFactor;
+    SS22_data_idx_3 += valGP;
+    SS33_data_idx_3 += valGP;
+    F1_data_idx_1 += f * N_data[1] * integrationFactor;
+    F2_data_idx_1 += b_f * N_data[1] * integrationFactor;
+    F3_data_idx_1 += c_f * N_data[1] * integrationFactor;
+    F4_data_idx_1 += valGP_idx_1 * N_data[1] * integrationFactor;
+    F5_data_idx_1 += valGP_idx_0 * N_data[1] * integrationFactor;
+    F6_data_idx_1 += a * N_data[1] * integrationFactor;
   }
 
   // END OF INTEGRATION LOOP
@@ -2669,72 +2706,73 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   //  Only used if (useDisp)
   // unpack stored element mass data
   // unpack and scale stored element spin softening data
-  K15_idx_0 = Oel[0] * Oel[1];
+  a = Oel[0] * Oel[1];
   c_tmp = Oel[0] * Oel[0];
   b_c_tmp = c_tmp + Oel[2] * Oel[2];
   c_tmp += Oel[1] * Oel[1];
 
   // unpack and scale stored element Corilois data
   // unpack and scale stored element Circulatory data
-  rhoA = elStorage->S12[0] * Oel[0] * Oel[1];
+  S12_idx_0 = elStorage->S12[0] * Oel[0] * Oel[1];
   S13_idx_0 = elStorage->S13[0] * Oel[0] * Oel[2];
-  Faxial = elStorage->S23[0] * Oel[1] * Oel[2];
-  O3 = elStorage->S25[0] * K15_idx_0;
-  O2dot = elStorage->S26[0] * K15_idx_0;
+  S23_idx_0 = elStorage->S23[0] * Oel[1] * Oel[2];
+  S25_idx_0 = elStorage->S25[0] * a;
+  S26_idx_0 = elStorage->S26[0] * a;
   S35_idx_0 = elStorage->S35[0] * Oel[0] * Oel[2];
   S36_idx_0 = elStorage->S36[0] * Oel[0] * Oel[2];
-  ycm = elStorage->S14_1[0] * Oel[0] * Oel[2] + elStorage->S14_2[0] * Oel[0] *
-    Oel[1];
-  O2 = elStorage->S24_1[0] * b_c_tmp + elStorage->S24_2[0] * Oel[1] * Oel[2];
+  S14_idx_0 = elStorage->S14_1[0] * Oel[0] * Oel[2] + elStorage->S14_2[0] * Oel
+    [0] * Oel[1];
+  S24_idx_0 = elStorage->S24_1[0] * b_c_tmp + elStorage->S24_2[0] * Oel[1] *
+    Oel[2];
   S34_idx_0 = elStorage->S34_1[0] * c_tmp + elStorage->S34_2[0] * Oel[1] * Oel[2];
   S45_idx_0 = elStorage->S45_1[0] * Oel[0] * Oel[2] + elStorage->S45_2[0] * Oel
     [0] * Oel[1];
   S46_idx_0 = elStorage->S46_1[0] * Oel[0] * Oel[1] + elStorage->S46_2[0] * Oel
     [0] * Oel[2];
-  K15_idx_1 = elStorage->C12[0];
-  C12_idx_0 = K15_idx_1 * Oel[2];
-  K16_idx_1 = elStorage->C13[0];
-  C13_idx_0 = K16_idx_1 * Oel[1];
-  K16_idx_0 = elStorage->C23[0];
-  C23_idx_0 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C24[0];
-  C24_idx_0 = K56_idx_0 * Oel[0];
-  b_f_tmp = elStorage->C25[0];
-  C25_idx_0 = b_f_tmp * Oel[2];
-  f = elStorage->C26[0];
-  C26_idx_0 = f * Oel[2];
-  c_f_tmp = elStorage->C34[0];
-  C34_idx_0 = c_f_tmp * Oel[0];
-  d_f_tmp = elStorage->C35[0];
-  C35_idx_0 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C36[0];
-  C36_idx_0 = e_f_tmp * Oel[1];
-  f_f_tmp = elStorage->C14_1[0];
-  g_f_tmp = elStorage->C14_2[0];
-  C14_idx_0 = f_f_tmp * Oel[1] + g_f_tmp * Oel[2];
-  b_f = elStorage->C45_1[0];
-  c_f = elStorage->C45_2[0];
-  C45_idx_0 = b_f * Oel[2] + c_f * Oel[1];
-  d_f = elStorage->C46_1[0];
-  zcm = elStorage->C46_2[0];
-  C46_idx_0 = d_f * Oel[1] + zcm * Oel[2];
-  integrationFactor = 0.5 * K15_idx_1 * ODotel[2];
-  H13_idx_0 = 0.5 * K16_idx_1 * ODotel[1];
-  H23_idx_0 = 0.5 * K16_idx_0 * ODotel[0];
-  H24_idx_0 = 0.5 * K56_idx_0 * ODotel[0];
-  H25_idx_0 = 0.5 * b_f_tmp * ODotel[2];
-  H26_idx_0 = 0.5 * f * ODotel[2];
-  H34_idx_0 = 0.5 * c_f_tmp * ODotel[0];
-  H35_idx_0 = 0.5 * d_f_tmp * ODotel[1];
-  H36_idx_0 = 0.5 * e_f_tmp * ODotel[1];
-  H14_idx_0 = 0.5 * (f_f_tmp * ODotel[1] + g_f_tmp * ODotel[2]);
-  H45_idx_0 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_0 = 0.5 * (d_f * ODotel[1] + zcm * ODotel[2]);
+  elStorage_tmp = elStorage->C12[0];
+  C12_idx_0 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[0];
+  C13_idx_0 = b_elStorage_tmp * Oel[1];
+  b_a = elStorage->C23[0];
+  C23_idx_0 = b_a * Oel[0];
+  valGP = elStorage->C24[0];
+  C24_idx_0 = valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[0];
+  C25_idx_0 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[0];
+  C26_idx_0 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[0];
+  C34_idx_0 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[0];
+  C35_idx_0 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[0];
+  C36_idx_0 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[0];
+  e_f_tmp = elStorage->C14_2[0];
+  C14_idx_0 = d_f_tmp * Oel[1] + e_f_tmp * Oel[2];
+  f = elStorage->C45_1[0];
+  b_f = elStorage->C45_2[0];
+  C45_idx_0 = f * Oel[2] + b_f * Oel[1];
+  c_f = elStorage->C46_1[0];
+  f_tmp = elStorage->C46_2[0];
+  C46_idx_0 = c_f * Oel[1] + f_tmp * Oel[2];
+  H12_idx_0 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_0 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_0 = 0.5 * b_a * ODotel[0];
+  H24_idx_0 = 0.5 * valGP * ODotel[0];
+  H25_idx_0 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_0 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_0 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_0 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_0 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_0 = 0.5 * (d_f_tmp * ODotel[1] + e_f_tmp * ODotel[2]);
+  H45_idx_0 = 0.5 * (f * ODotel[2] + b_f * ODotel[1]);
+  H46_idx_0 = 0.5 * (c_f * ODotel[1] + f_tmp * ODotel[2]);
   S12_idx_1 = elStorage->S12[1] * Oel[0] * Oel[1];
   S13_idx_1 = elStorage->S13[1] * Oel[0] * Oel[2];
   S23_idx_1 = elStorage->S23[1] * Oel[1] * Oel[2];
-  S25_idx_1 = elStorage->S25[1] * K15_idx_0;
-  S26_idx_1 = elStorage->S26[1] * K15_idx_0;
+  S25_idx_1 = elStorage->S25[1] * a;
+  S26_idx_1 = elStorage->S26[1] * a;
   S35_idx_1 = elStorage->S35[1] * Oel[0] * Oel[2];
   S36_idx_1 = elStorage->S36[1] * Oel[0] * Oel[2];
   S14_idx_1 = elStorage->S14_1[1] * Oel[0] * Oel[2] + elStorage->S14_2[1] * Oel
@@ -2746,50 +2784,50 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
     [0] * Oel[1];
   S46_idx_1 = elStorage->S46_1[1] * Oel[0] * Oel[1] + elStorage->S46_2[1] * Oel
     [0] * Oel[2];
-  K15_idx_1 = elStorage->C12[1];
-  C12_idx_1 = K15_idx_1 * Oel[2];
-  K16_idx_1 = elStorage->C13[1];
-  C13_idx_1 = K16_idx_1 * Oel[1];
-  K16_idx_0 = elStorage->C23[1];
-  C23_idx_1 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C24[1];
-  C24_idx_1 = K56_idx_0 * Oel[0];
-  b_f_tmp = elStorage->C25[1];
-  C25_idx_1 = b_f_tmp * Oel[2];
-  f = elStorage->C26[1];
-  C26_idx_1 = f * Oel[2];
-  c_f_tmp = elStorage->C34[1];
-  C34_idx_1 = c_f_tmp * Oel[0];
-  d_f_tmp = elStorage->C35[1];
-  C35_idx_1 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C36[1];
-  C36_idx_1 = e_f_tmp * Oel[1];
-  f_f_tmp = elStorage->C14_1[1];
-  g_f_tmp = elStorage->C14_2[1];
-  C14_idx_1 = f_f_tmp * Oel[1] + g_f_tmp * Oel[2];
-  b_f = elStorage->C45_1[1];
-  c_f = elStorage->C45_2[1];
-  C45_idx_1 = b_f * Oel[2] + c_f * Oel[1];
-  d_f = elStorage->C46_1[1];
-  zcm = elStorage->C46_2[1];
-  C46_idx_1 = d_f * Oel[1] + zcm * Oel[2];
-  H12_idx_1 = 0.5 * K15_idx_1 * ODotel[2];
-  H13_idx_1 = 0.5 * K16_idx_1 * ODotel[1];
-  H23_idx_1 = 0.5 * K16_idx_0 * ODotel[0];
-  H24_idx_1 = 0.5 * K56_idx_0 * ODotel[0];
-  H25_idx_1 = 0.5 * b_f_tmp * ODotel[2];
-  H26_idx_1 = 0.5 * f * ODotel[2];
-  H34_idx_1 = 0.5 * c_f_tmp * ODotel[0];
-  H35_idx_1 = 0.5 * d_f_tmp * ODotel[1];
-  H36_idx_1 = 0.5 * e_f_tmp * ODotel[1];
-  H14_idx_1 = 0.5 * (f_f_tmp * ODotel[1] + g_f_tmp * ODotel[2]);
-  H45_idx_1 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_1 = 0.5 * (d_f * ODotel[1] + zcm * ODotel[2]);
+  elStorage_tmp = elStorage->C12[1];
+  C12_idx_1 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[1];
+  C13_idx_1 = b_elStorage_tmp * Oel[1];
+  b_a = elStorage->C23[1];
+  C23_idx_1 = b_a * Oel[0];
+  valGP = elStorage->C24[1];
+  C24_idx_1 = valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[1];
+  C25_idx_1 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[1];
+  C26_idx_1 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[1];
+  C34_idx_1 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[1];
+  C35_idx_1 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[1];
+  C36_idx_1 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[1];
+  e_f_tmp = elStorage->C14_2[1];
+  C14_idx_1 = d_f_tmp * Oel[1] + e_f_tmp * Oel[2];
+  f = elStorage->C45_1[1];
+  b_f = elStorage->C45_2[1];
+  C45_idx_1 = f * Oel[2] + b_f * Oel[1];
+  c_f = elStorage->C46_1[1];
+  f_tmp = elStorage->C46_2[1];
+  C46_idx_1 = c_f * Oel[1] + f_tmp * Oel[2];
+  H12_idx_1 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_1 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_1 = 0.5 * b_a * ODotel[0];
+  H24_idx_1 = 0.5 * valGP * ODotel[0];
+  H25_idx_1 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_1 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_1 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_1 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_1 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_1 = 0.5 * (d_f_tmp * ODotel[1] + e_f_tmp * ODotel[2]);
+  H45_idx_1 = 0.5 * (f * ODotel[2] + b_f * ODotel[1]);
+  H46_idx_1 = 0.5 * (c_f * ODotel[1] + f_tmp * ODotel[2]);
   S12_idx_2 = elStorage->S12[2] * Oel[0] * Oel[1];
   S13_idx_2 = elStorage->S13[2] * Oel[0] * Oel[2];
   S23_idx_2 = elStorage->S23[2] * Oel[1] * Oel[2];
-  S25_idx_2 = elStorage->S25[2] * K15_idx_0;
-  S26_idx_2 = elStorage->S26[2] * K15_idx_0;
+  S25_idx_2 = elStorage->S25[2] * a;
+  S26_idx_2 = elStorage->S26[2] * a;
   S35_idx_2 = elStorage->S35[2] * Oel[0] * Oel[2];
   S36_idx_2 = elStorage->S36[2] * Oel[0] * Oel[2];
   S14_idx_2 = elStorage->S14_1[2] * Oel[0] * Oel[2] + elStorage->S14_2[2] * Oel
@@ -2801,50 +2839,50 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
     [0] * Oel[1];
   S46_idx_2 = elStorage->S46_1[2] * Oel[0] * Oel[1] + elStorage->S46_2[2] * Oel
     [0] * Oel[2];
-  K15_idx_1 = elStorage->C12[2];
-  C12_idx_2 = K15_idx_1 * Oel[2];
-  K16_idx_1 = elStorage->C13[2];
-  C13_idx_2 = K16_idx_1 * Oel[1];
-  K16_idx_0 = elStorage->C23[2];
-  C23_idx_2 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C24[2];
-  C24_idx_2 = K56_idx_0 * Oel[0];
-  b_f_tmp = elStorage->C25[2];
-  C25_idx_2 = b_f_tmp * Oel[2];
-  f = elStorage->C26[2];
-  C26_idx_2 = f * Oel[2];
-  c_f_tmp = elStorage->C34[2];
-  C34_idx_2 = c_f_tmp * Oel[0];
-  d_f_tmp = elStorage->C35[2];
-  C35_idx_2 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C36[2];
-  C36_idx_2 = e_f_tmp * Oel[1];
-  f_f_tmp = elStorage->C14_1[2];
-  g_f_tmp = elStorage->C14_2[2];
-  C14_idx_2 = f_f_tmp * Oel[1] + g_f_tmp * Oel[2];
-  b_f = elStorage->C45_1[2];
-  c_f = elStorage->C45_2[2];
-  C45_idx_2 = b_f * Oel[2] + c_f * Oel[1];
-  d_f = elStorage->C46_1[2];
-  zcm = elStorage->C46_2[2];
-  C46_idx_2 = d_f * Oel[1] + zcm * Oel[2];
-  H12_idx_2 = 0.5 * K15_idx_1 * ODotel[2];
-  H13_idx_2 = 0.5 * K16_idx_1 * ODotel[1];
-  H23_idx_2 = 0.5 * K16_idx_0 * ODotel[0];
-  H24_idx_2 = 0.5 * K56_idx_0 * ODotel[0];
-  H25_idx_2 = 0.5 * b_f_tmp * ODotel[2];
-  H26_idx_2 = 0.5 * f * ODotel[2];
-  H34_idx_2 = 0.5 * c_f_tmp * ODotel[0];
-  H35_idx_2 = 0.5 * d_f_tmp * ODotel[1];
-  H36_idx_2 = 0.5 * e_f_tmp * ODotel[1];
-  H14_idx_2 = 0.5 * (f_f_tmp * ODotel[1] + g_f_tmp * ODotel[2]);
-  H45_idx_2 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_2 = 0.5 * (d_f * ODotel[1] + zcm * ODotel[2]);
+  elStorage_tmp = elStorage->C12[2];
+  C12_idx_2 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[2];
+  C13_idx_2 = b_elStorage_tmp * Oel[1];
+  b_a = elStorage->C23[2];
+  C23_idx_2 = b_a * Oel[0];
+  valGP = elStorage->C24[2];
+  C24_idx_2 = valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[2];
+  C25_idx_2 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[2];
+  C26_idx_2 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[2];
+  C34_idx_2 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[2];
+  C35_idx_2 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[2];
+  C36_idx_2 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[2];
+  e_f_tmp = elStorage->C14_2[2];
+  C14_idx_2 = d_f_tmp * Oel[1] + e_f_tmp * Oel[2];
+  f = elStorage->C45_1[2];
+  b_f = elStorage->C45_2[2];
+  C45_idx_2 = f * Oel[2] + b_f * Oel[1];
+  c_f = elStorage->C46_1[2];
+  f_tmp = elStorage->C46_2[2];
+  C46_idx_2 = c_f * Oel[1] + f_tmp * Oel[2];
+  H12_idx_2 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_2 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_2 = 0.5 * b_a * ODotel[0];
+  H24_idx_2 = 0.5 * valGP * ODotel[0];
+  H25_idx_2 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_2 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_2 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_2 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_2 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_2 = 0.5 * (d_f_tmp * ODotel[1] + e_f_tmp * ODotel[2]);
+  H45_idx_2 = 0.5 * (f * ODotel[2] + b_f * ODotel[1]);
+  H46_idx_2 = 0.5 * (c_f * ODotel[1] + f_tmp * ODotel[2]);
   S12_idx_3 = elStorage->S12[3] * Oel[0] * Oel[1];
   S13_idx_3 = elStorage->S13[3] * Oel[0] * Oel[2];
   S23_idx_3 = elStorage->S23[3] * Oel[1] * Oel[2];
-  S25_idx_3 = elStorage->S25[3] * K15_idx_0;
-  S26_idx_3 = elStorage->S26[3] * K15_idx_0;
+  S25_idx_3 = elStorage->S25[3] * a;
+  S26_idx_3 = elStorage->S26[3] * a;
   S35_idx_3 = elStorage->S35[3] * Oel[0] * Oel[2];
   S36_idx_3 = elStorage->S36[3] * Oel[0] * Oel[2];
   S14_idx_3 = elStorage->S14_1[3] * Oel[0] * Oel[2] + elStorage->S14_2[3] * Oel
@@ -2856,45 +2894,45 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
     [0] * Oel[1];
   S46_idx_3 = elStorage->S46_1[3] * Oel[0] * Oel[1] + elStorage->S46_2[3] * Oel
     [0] * Oel[2];
-  K15_idx_1 = elStorage->C12[3];
-  C12_idx_3 = K15_idx_1 * Oel[2];
-  K16_idx_1 = elStorage->C13[3];
-  C13_idx_3 = K16_idx_1 * Oel[1];
-  K16_idx_0 = elStorage->C23[3];
-  C23_idx_3 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C24[3];
-  C24_idx_3 = K56_idx_0 * Oel[0];
-  b_f_tmp = elStorage->C25[3];
-  C25_idx_3 = b_f_tmp * Oel[2];
-  f = elStorage->C26[3];
-  C26_idx_3 = f * Oel[2];
-  c_f_tmp = elStorage->C34[3];
-  C34_idx_3 = c_f_tmp * Oel[0];
-  d_f_tmp = elStorage->C35[3];
-  C35_idx_3 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C36[3];
-  C36_idx_3 = e_f_tmp * Oel[1];
-  f_f_tmp = elStorage->C14_1[3];
-  g_f_tmp = elStorage->C14_2[3];
-  C14_idx_3 = f_f_tmp * Oel[1] + g_f_tmp * Oel[2];
-  b_f = elStorage->C45_1[3];
-  c_f = elStorage->C45_2[3];
-  C45_idx_3 = b_f * Oel[2] + c_f * Oel[1];
-  d_f = elStorage->C46_1[3];
-  zcm = elStorage->C46_2[3];
-  C46_idx_3 = d_f * Oel[1] + zcm * Oel[2];
-  H12_idx_3 = 0.5 * K15_idx_1 * ODotel[2];
-  H13_idx_3 = 0.5 * K16_idx_1 * ODotel[1];
-  H23_idx_3 = 0.5 * K16_idx_0 * ODotel[0];
-  H24_idx_3 = 0.5 * K56_idx_0 * ODotel[0];
-  H25_idx_3 = 0.5 * b_f_tmp * ODotel[2];
-  H26_idx_3 = 0.5 * f * ODotel[2];
-  H34_idx_3 = 0.5 * c_f_tmp * ODotel[0];
-  H35_idx_3 = 0.5 * d_f_tmp * ODotel[1];
-  H36_idx_3 = 0.5 * e_f_tmp * ODotel[1];
-  H14_idx_3 = 0.5 * (f_f_tmp * ODotel[1] + g_f_tmp * ODotel[2]);
-  H45_idx_3 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  O3dot = 0.5 * (d_f * ODotel[1] + zcm * ODotel[2]);
+  elStorage_tmp = elStorage->C12[3];
+  C12_idx_3 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[3];
+  C13_idx_3 = b_elStorage_tmp * Oel[1];
+  b_a = elStorage->C23[3];
+  C23_idx_3 = b_a * Oel[0];
+  valGP = elStorage->C24[3];
+  C24_idx_3 = valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[3];
+  C25_idx_3 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[3];
+  C26_idx_3 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[3];
+  C34_idx_3 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[3];
+  C35_idx_3 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[3];
+  C36_idx_3 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[3];
+  e_f_tmp = elStorage->C14_2[3];
+  C14_idx_3 = d_f_tmp * Oel[1] + e_f_tmp * Oel[2];
+  f = elStorage->C45_1[3];
+  b_f = elStorage->C45_2[3];
+  C45_idx_3 = f * Oel[2] + b_f * Oel[1];
+  c_f = elStorage->C46_1[3];
+  f_tmp = elStorage->C46_2[3];
+  C46_idx_3 = c_f * Oel[1] + f_tmp * Oel[2];
+  H12_idx_3 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_3 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_3 = 0.5 * b_a * ODotel[0];
+  H24_idx_3 = 0.5 * valGP * ODotel[0];
+  H25_idx_3 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_3 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_3 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_3 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_3 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_3 = 0.5 * (d_f_tmp * ODotel[1] + e_f_tmp * ODotel[2]);
+  H45_idx_3 = 0.5 * (f * ODotel[2] + b_f * ODotel[1]);
+  H46_idx_3 = 0.5 * (c_f * ODotel[1] + f_tmp * ODotel[2]);
 
   // compile stiffness matrix without rotational effects
   b_elStorage[0] = elStorage->K11[0];
@@ -3044,218 +3082,218 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   mapMatrixNonSym(b_elStorage, Kenr);
 
   // add spin softening and circulatory effects to stiffness marix
-  f_tmp = Oel[1] * Oel[1] + Oel[2] * Oel[2];
-  K15_idx_0 = elStorage->K15[0] + elStorage->S15[0] * f_tmp;
-  K16_idx_0 = elStorage->K16[0] + elStorage->S16[0] * f_tmp;
-  K56_idx_0 = elStorage->K56[0] + elStorage->S56[0] * f_tmp;
-  K15_idx_1 = elStorage->K15[1] + elStorage->S15[1] * f_tmp;
-  K16_idx_1 = elStorage->K16[1] + elStorage->S16[1] * f_tmp;
-  K56_idx_1 = elStorage->K56[1] + elStorage->S56[1] * f_tmp;
-  K15_idx_2 = elStorage->K15[2] + elStorage->S15[2] * f_tmp;
-  K16_idx_2 = elStorage->K16[2] + elStorage->S16[2] * f_tmp;
-  K56_idx_2 = elStorage->K56[2] + elStorage->S56[2] * f_tmp;
-  K15_idx_3 = elStorage->K15[3] + elStorage->S15[3] * f_tmp;
-  K16_idx_3 = elStorage->K16[3] + elStorage->S16[3] * f_tmp;
-  K56_idx_3 = elStorage->K56[3] + elStorage->S56[3] * f_tmp;
+  c_c_tmp = Oel[1] * Oel[1] + Oel[2] * Oel[2];
+  K15_idx_0 = elStorage->K15[0] + elStorage->S15[0] * c_c_tmp;
+  K16_idx_0 = elStorage->K16[0] + elStorage->S16[0] * c_c_tmp;
+  K56_idx_0 = elStorage->K56[0] + elStorage->S56[0] * c_c_tmp;
+  K15_idx_1 = elStorage->K15[1] + elStorage->S15[1] * c_c_tmp;
+  K16_idx_1 = elStorage->K16[1] + elStorage->S16[1] * c_c_tmp;
+  K56_idx_1 = elStorage->K56[1] + elStorage->S56[1] * c_c_tmp;
+  K15_idx_2 = elStorage->K15[2] + elStorage->S15[2] * c_c_tmp;
+  K16_idx_2 = elStorage->K16[2] + elStorage->S16[2] * c_c_tmp;
+  K56_idx_2 = elStorage->K56[2] + elStorage->S56[2] * c_c_tmp;
+  K15_idx_3 = elStorage->K15[3] + elStorage->S15[3] * c_c_tmp;
+  K16_idx_3 = elStorage->K16[3] + elStorage->S16[3] * c_c_tmp;
+  K56_idx_3 = elStorage->K56[3] + elStorage->S56[3] * c_c_tmp;
 
   // ---------------------------------------------
   // compile stiffness matrix with rotational effects
-  b_elStorage[0] = elStorage->K11[0] + elStorage->S11[0] * f_tmp;
-  b_elStorage[24] = (elStorage->K12[0] + rhoA) + integrationFactor;
+  b_elStorage[0] = elStorage->K11[0] + elStorage->S11[0] * c_c_tmp;
+  b_elStorage[24] = (elStorage->K12[0] + S12_idx_0) + H12_idx_0;
   b_elStorage[48] = (elStorage->K13[0] + S13_idx_0) + H13_idx_0;
-  O1dot = elStorage->K14[0] + ycm;
-  b_elStorage[72] = O1dot + H14_idx_0;
+  c_elStorage_tmp = elStorage->K14[0] + S14_idx_0;
+  b_elStorage[72] = c_elStorage_tmp + H14_idx_0;
   b_elStorage[96] = K15_idx_0;
   b_elStorage[120] = K16_idx_0;
-  b_elStorage[2] = (elStorage->K12[0] + rhoA) - integrationFactor;
+  b_elStorage[2] = (elStorage->K12[0] + S12_idx_0) - H12_idx_0;
   b_elStorage[26] = (elStorage->K22[0] + elStorage->S22[0] * b_c_tmp) +
     SS22_data_idx_0;
-  O1 = elStorage->K23[0] + Faxial;
-  b_elStorage[50] = O1 + H23_idx_0;
-  integrationFactor = elStorage->K24[0] + O2;
-  b_elStorage[74] = integrationFactor + H24_idx_0;
-  Faxial = elStorage->K25[0] + O3;
-  b_elStorage[98] = Faxial + H25_idx_0;
-  rhoA = elStorage->K26[0] + O2dot;
-  b_elStorage[122] = rhoA + H26_idx_0;
+  d_elStorage_tmp = elStorage->K23[0] + S23_idx_0;
+  b_elStorage[50] = d_elStorage_tmp + H23_idx_0;
+  e_elStorage_tmp = elStorage->K24[0] + S24_idx_0;
+  b_elStorage[74] = e_elStorage_tmp + H24_idx_0;
+  f_elStorage_tmp = elStorage->K25[0] + S25_idx_0;
+  b_elStorage[98] = f_elStorage_tmp + H25_idx_0;
+  b_elStorage_tmp = elStorage->K26[0] + S26_idx_0;
+  b_elStorage[122] = b_elStorage_tmp + H26_idx_0;
   b_elStorage[4] = (elStorage->K13[0] + S13_idx_0) - H13_idx_0;
-  b_elStorage[28] = O1 - H23_idx_0;
+  b_elStorage[28] = d_elStorage_tmp - H23_idx_0;
   b_elStorage[52] = (elStorage->K33[0] + elStorage->S33[0] * c_tmp) +
     SS33_data_idx_0;
-  O1 = elStorage->K34[0] + S34_idx_0;
-  b_elStorage[76] = O1 + H34_idx_0;
-  ycm = elStorage->K35[0] + S35_idx_0;
-  b_elStorage[100] = ycm + H35_idx_0;
-  zcm = elStorage->K36[0] + S36_idx_0;
-  b_elStorage[124] = zcm + H36_idx_0;
-  b_elStorage[6] = O1dot - H14_idx_0;
-  b_elStorage[30] = integrationFactor - H24_idx_0;
-  b_elStorage[54] = O1 - H34_idx_0;
+  d_elStorage_tmp = elStorage->K34[0] + S34_idx_0;
+  b_elStorage[76] = d_elStorage_tmp + H34_idx_0;
+  elStorage_tmp = elStorage->K35[0] + S35_idx_0;
+  b_elStorage[100] = elStorage_tmp + H35_idx_0;
+  f_tmp = elStorage->K36[0] + S36_idx_0;
+  b_elStorage[124] = f_tmp + H36_idx_0;
+  b_elStorage[6] = c_elStorage_tmp - H14_idx_0;
+  b_elStorage[30] = e_elStorage_tmp - H24_idx_0;
+  b_elStorage[54] = d_elStorage_tmp - H34_idx_0;
   b_elStorage[78] = elStorage->K44[0] + ((elStorage->S44_1[0] * b_c_tmp +
     elStorage->S44_2[0] * c_tmp) + elStorage->S44_3[0] * Oel[1] * Oel[2]);
-  O1dot = elStorage->K45[0] + S45_idx_0;
-  b_elStorage[102] = O1dot + H45_idx_0;
-  O1 = elStorage->K46[0] + S46_idx_0;
-  b_elStorage[126] = O1 + H46_idx_0;
+  c_elStorage_tmp = elStorage->K45[0] + S45_idx_0;
+  b_elStorage[102] = c_elStorage_tmp + H45_idx_0;
+  d_elStorage_tmp = elStorage->K46[0] + S46_idx_0;
+  b_elStorage[126] = d_elStorage_tmp + H46_idx_0;
   b_elStorage[8] = K15_idx_0;
-  b_elStorage[32] = Faxial - H25_idx_0;
-  b_elStorage[56] = ycm - H35_idx_0;
-  b_elStorage[80] = O1dot - H45_idx_0;
-  b_elStorage[104] = elStorage->K55[0] + elStorage->S55[0] * f_tmp;
+  b_elStorage[32] = f_elStorage_tmp - H25_idx_0;
+  b_elStorage[56] = elStorage_tmp - H35_idx_0;
+  b_elStorage[80] = c_elStorage_tmp - H45_idx_0;
+  b_elStorage[104] = elStorage->K55[0] + elStorage->S55[0] * c_c_tmp;
   b_elStorage[128] = K56_idx_0;
   b_elStorage[10] = K16_idx_0;
-  b_elStorage[34] = rhoA - H26_idx_0;
-  b_elStorage[58] = zcm - H36_idx_0;
-  b_elStorage[82] = O1 - H46_idx_0;
+  b_elStorage[34] = b_elStorage_tmp - H26_idx_0;
+  b_elStorage[58] = f_tmp - H36_idx_0;
+  b_elStorage[82] = d_elStorage_tmp - H46_idx_0;
   b_elStorage[106] = K56_idx_0;
-  b_elStorage[130] = elStorage->K66[0] + elStorage->S66[0] * f_tmp;
-  b_elStorage[1] = elStorage->K11[1] + elStorage->S11[1] * f_tmp;
+  b_elStorage[130] = elStorage->K66[0] + elStorage->S66[0] * c_c_tmp;
+  b_elStorage[1] = elStorage->K11[1] + elStorage->S11[1] * c_c_tmp;
   b_elStorage[25] = (elStorage->K12[1] + S12_idx_1) + H12_idx_1;
   b_elStorage[49] = (elStorage->K13[1] + S13_idx_1) + H13_idx_1;
-  O1dot = elStorage->K14[1] + S14_idx_1;
-  b_elStorage[73] = O1dot + H14_idx_1;
+  c_elStorage_tmp = elStorage->K14[1] + S14_idx_1;
+  b_elStorage[73] = c_elStorage_tmp + H14_idx_1;
   b_elStorage[97] = K15_idx_1;
   b_elStorage[121] = K16_idx_1;
   b_elStorage[3] = (elStorage->K12[2] + S12_idx_2) - H12_idx_2;
   b_elStorage[27] = (elStorage->K22[1] + elStorage->S22[1] * b_c_tmp) +
     SS22_data_idx_1;
-  O1 = elStorage->K23[1] + S23_idx_1;
-  b_elStorage[51] = O1 + H23_idx_1;
-  integrationFactor = elStorage->K24[1] + S24_idx_1;
-  b_elStorage[75] = integrationFactor + H24_idx_1;
-  Faxial = elStorage->K25[1] + S25_idx_1;
-  b_elStorage[99] = Faxial + H25_idx_1;
-  rhoA = elStorage->K26[1] + S26_idx_1;
-  b_elStorage[123] = rhoA + H26_idx_1;
+  d_elStorage_tmp = elStorage->K23[1] + S23_idx_1;
+  b_elStorage[51] = d_elStorage_tmp + H23_idx_1;
+  e_elStorage_tmp = elStorage->K24[1] + S24_idx_1;
+  b_elStorage[75] = e_elStorage_tmp + H24_idx_1;
+  f_elStorage_tmp = elStorage->K25[1] + S25_idx_1;
+  b_elStorage[99] = f_elStorage_tmp + H25_idx_1;
+  b_elStorage_tmp = elStorage->K26[1] + S26_idx_1;
+  b_elStorage[123] = b_elStorage_tmp + H26_idx_1;
   b_elStorage[5] = (elStorage->K13[2] + S13_idx_2) - H13_idx_2;
-  ycm = elStorage->K23[2] + S23_idx_2;
-  b_elStorage[29] = ycm - H23_idx_2;
+  elStorage_tmp = elStorage->K23[2] + S23_idx_2;
+  b_elStorage[29] = elStorage_tmp - H23_idx_2;
   b_elStorage[53] = (elStorage->K33[1] + elStorage->S33[1] * c_tmp) +
     SS33_data_idx_1;
-  zcm = elStorage->K34[1] + S34_idx_1;
-  b_elStorage[77] = zcm + H34_idx_1;
-  d_f = elStorage->K35[1] + S35_idx_1;
-  b_elStorage[101] = d_f + H35_idx_1;
-  c_f = elStorage->K36[1] + S36_idx_1;
-  b_elStorage[125] = c_f + H36_idx_1;
-  b_f = elStorage->K14[2] + S14_idx_2;
-  b_elStorage[7] = b_f - H14_idx_2;
-  g_f_tmp = elStorage->K24[2] + S24_idx_2;
-  b_elStorage[31] = g_f_tmp - H24_idx_2;
-  f_f_tmp = elStorage->K34[2] + S34_idx_2;
-  b_elStorage[55] = f_f_tmp - H34_idx_2;
+  f_tmp = elStorage->K34[1] + S34_idx_1;
+  b_elStorage[77] = f_tmp + H34_idx_1;
+  c_f = elStorage->K35[1] + S35_idx_1;
+  b_elStorage[101] = c_f + H35_idx_1;
+  b_f = elStorage->K36[1] + S36_idx_1;
+  b_elStorage[125] = b_f + H36_idx_1;
+  f = elStorage->K14[2] + S14_idx_2;
+  b_elStorage[7] = f - H14_idx_2;
+  e_f_tmp = elStorage->K24[2] + S24_idx_2;
+  b_elStorage[31] = e_f_tmp - H24_idx_2;
+  d_f_tmp = elStorage->K34[2] + S34_idx_2;
+  b_elStorage[55] = d_f_tmp - H34_idx_2;
   b_elStorage[79] = elStorage->K44[1] + ((elStorage->S44_1[1] * b_c_tmp +
     elStorage->S44_2[1] * c_tmp) + elStorage->S44_3[1] * Oel[1] * Oel[2]);
-  e_f_tmp = elStorage->K45[1] + S45_idx_1;
-  b_elStorage[103] = e_f_tmp + H45_idx_1;
-  d_f_tmp = elStorage->K46[1] + S46_idx_1;
-  b_elStorage[127] = d_f_tmp + H46_idx_1;
+  c_f_tmp = elStorage->K45[1] + S45_idx_1;
+  b_elStorage[103] = c_f_tmp + H45_idx_1;
+  b_f_tmp = elStorage->K46[1] + S46_idx_1;
+  b_elStorage[127] = b_f_tmp + H46_idx_1;
   b_elStorage[9] = K15_idx_2;
-  c_f_tmp = elStorage->K25[2] + S25_idx_2;
-  b_elStorage[33] = c_f_tmp - H25_idx_2;
-  f = elStorage->K35[2] + S35_idx_2;
-  b_elStorage[57] = f - H35_idx_2;
-  b_f_tmp = elStorage->K45[2] + S45_idx_2;
-  b_elStorage[81] = b_f_tmp - H45_idx_2;
-  b_elStorage[105] = elStorage->K55[1] + elStorage->S55[1] * f_tmp;
+  valGP_idx_2 = elStorage->K25[2] + S25_idx_2;
+  b_elStorage[33] = valGP_idx_2 - H25_idx_2;
+  valGP_idx_1 = elStorage->K35[2] + S35_idx_2;
+  b_elStorage[57] = valGP_idx_1 - H35_idx_2;
+  valGP_idx_0 = elStorage->K45[2] + S45_idx_2;
+  b_elStorage[81] = valGP_idx_0 - H45_idx_2;
+  b_elStorage[105] = elStorage->K55[1] + elStorage->S55[1] * c_c_tmp;
   b_elStorage[129] = K56_idx_1;
   b_elStorage[11] = K16_idx_2;
-  K56_idx_0 = elStorage->K26[2] + S26_idx_2;
-  b_elStorage[35] = K56_idx_0 - H26_idx_2;
-  K16_idx_0 = elStorage->K36[2] + S36_idx_2;
-  b_elStorage[59] = K16_idx_0 - H36_idx_2;
-  K15_idx_0 = elStorage->K46[2] + S46_idx_2;
-  b_elStorage[83] = K15_idx_0 - H46_idx_2;
+  valGP = elStorage->K26[2] + S26_idx_2;
+  b_elStorage[35] = valGP - H26_idx_2;
+  b_a = elStorage->K36[2] + S36_idx_2;
+  b_elStorage[59] = b_a - H36_idx_2;
+  a = elStorage->K46[2] + S46_idx_2;
+  b_elStorage[83] = a - H46_idx_2;
   b_elStorage[107] = K56_idx_2;
-  b_elStorage[131] = elStorage->K66[1] + elStorage->S66[1] * f_tmp;
-  b_elStorage[12] = elStorage->K11[2] + elStorage->S11[2] * f_tmp;
+  b_elStorage[131] = elStorage->K66[1] + elStorage->S66[1] * c_c_tmp;
+  b_elStorage[12] = elStorage->K11[2] + elStorage->S11[2] * c_c_tmp;
   b_elStorage[36] = (elStorage->K12[2] + S12_idx_2) + H12_idx_2;
   b_elStorage[60] = (elStorage->K13[2] + S13_idx_2) + H13_idx_2;
-  b_elStorage[84] = b_f + H14_idx_2;
+  b_elStorage[84] = f + H14_idx_2;
   b_elStorage[108] = K15_idx_2;
   b_elStorage[132] = K16_idx_2;
   b_elStorage[14] = (elStorage->K12[1] + S12_idx_1) - H12_idx_1;
   b_elStorage[38] = (elStorage->K22[2] + elStorage->S22[2] * b_c_tmp) +
     SS22_data_idx_2;
-  b_elStorage[62] = ycm + H23_idx_2;
-  b_elStorage[86] = g_f_tmp + H24_idx_2;
-  b_elStorage[110] = c_f_tmp + H25_idx_2;
-  b_elStorage[134] = K56_idx_0 + H26_idx_2;
+  b_elStorage[62] = elStorage_tmp + H23_idx_2;
+  b_elStorage[86] = e_f_tmp + H24_idx_2;
+  b_elStorage[110] = valGP_idx_2 + H25_idx_2;
+  b_elStorage[134] = valGP + H26_idx_2;
   b_elStorage[16] = (elStorage->K13[1] + S13_idx_1) - H13_idx_1;
-  b_elStorage[40] = O1 - H23_idx_1;
+  b_elStorage[40] = d_elStorage_tmp - H23_idx_1;
   b_elStorage[64] = (elStorage->K33[2] + elStorage->S33[2] * c_tmp) +
     SS33_data_idx_2;
-  b_elStorage[88] = f_f_tmp + H34_idx_2;
-  b_elStorage[112] = f + H35_idx_2;
-  b_elStorage[136] = K16_idx_0 + H36_idx_2;
-  b_elStorage[18] = O1dot - H14_idx_1;
-  b_elStorage[42] = integrationFactor - H24_idx_1;
-  b_elStorage[66] = zcm - H34_idx_1;
+  b_elStorage[88] = d_f_tmp + H34_idx_2;
+  b_elStorage[112] = valGP_idx_1 + H35_idx_2;
+  b_elStorage[136] = b_a + H36_idx_2;
+  b_elStorage[18] = c_elStorage_tmp - H14_idx_1;
+  b_elStorage[42] = e_elStorage_tmp - H24_idx_1;
+  b_elStorage[66] = f_tmp - H34_idx_1;
   b_elStorage[90] = elStorage->K44[2] + ((elStorage->S44_1[2] * b_c_tmp +
     elStorage->S44_2[2] * c_tmp) + elStorage->S44_3[2] * Oel[1] * Oel[2]);
-  b_elStorage[114] = b_f_tmp + H45_idx_2;
-  b_elStorage[138] = K15_idx_0 + H46_idx_2;
+  b_elStorage[114] = valGP_idx_0 + H45_idx_2;
+  b_elStorage[138] = a + H46_idx_2;
   b_elStorage[20] = K15_idx_1;
-  b_elStorage[44] = Faxial - H25_idx_1;
-  b_elStorage[68] = d_f - H35_idx_1;
-  b_elStorage[92] = e_f_tmp - H45_idx_1;
-  b_elStorage[116] = elStorage->K55[2] + elStorage->S55[2] * f_tmp;
+  b_elStorage[44] = f_elStorage_tmp - H25_idx_1;
+  b_elStorage[68] = c_f - H35_idx_1;
+  b_elStorage[92] = c_f_tmp - H45_idx_1;
+  b_elStorage[116] = elStorage->K55[2] + elStorage->S55[2] * c_c_tmp;
   b_elStorage[140] = K56_idx_2;
   b_elStorage[22] = K16_idx_1;
-  b_elStorage[46] = rhoA - H26_idx_1;
-  b_elStorage[70] = c_f - H36_idx_1;
-  b_elStorage[94] = d_f_tmp - H46_idx_1;
+  b_elStorage[46] = b_elStorage_tmp - H26_idx_1;
+  b_elStorage[70] = b_f - H36_idx_1;
+  b_elStorage[94] = b_f_tmp - H46_idx_1;
   b_elStorage[118] = K56_idx_1;
-  b_elStorage[142] = elStorage->K66[2] + elStorage->S66[2] * f_tmp;
-  b_elStorage[13] = elStorage->K11[3] + elStorage->S11[3] * f_tmp;
+  b_elStorage[142] = elStorage->K66[2] + elStorage->S66[2] * c_c_tmp;
+  b_elStorage[13] = elStorage->K11[3] + elStorage->S11[3] * c_c_tmp;
   b_elStorage[37] = (elStorage->K12[3] + S12_idx_3) + H12_idx_3;
   b_elStorage[61] = (elStorage->K13[3] + S13_idx_3) + H13_idx_3;
-  O1dot = elStorage->K14[3] + S14_idx_3;
-  b_elStorage[85] = O1dot + H14_idx_3;
+  c_elStorage_tmp = elStorage->K14[3] + S14_idx_3;
+  b_elStorage[85] = c_elStorage_tmp + H14_idx_3;
   b_elStorage[109] = K15_idx_3;
   b_elStorage[133] = K16_idx_3;
   b_elStorage[15] = (elStorage->K12[3] + S12_idx_3) - H12_idx_3;
   b_elStorage[39] = (elStorage->K22[3] + elStorage->S22[3] * b_c_tmp) +
     SS22_data_idx_3;
-  O1 = elStorage->K23[3] + S23_idx_3;
-  b_elStorage[63] = O1 + H23_idx_3;
-  integrationFactor = elStorage->K24[3] + S24_idx_3;
-  b_elStorage[87] = integrationFactor + H24_idx_3;
-  Faxial = elStorage->K25[3] + S25_idx_3;
-  b_elStorage[111] = Faxial + H25_idx_3;
-  rhoA = elStorage->K26[3] + S26_idx_3;
-  b_elStorage[135] = rhoA + H26_idx_3;
+  d_elStorage_tmp = elStorage->K23[3] + S23_idx_3;
+  b_elStorage[63] = d_elStorage_tmp + H23_idx_3;
+  e_elStorage_tmp = elStorage->K24[3] + S24_idx_3;
+  b_elStorage[87] = e_elStorage_tmp + H24_idx_3;
+  f_elStorage_tmp = elStorage->K25[3] + S25_idx_3;
+  b_elStorage[111] = f_elStorage_tmp + H25_idx_3;
+  b_elStorage_tmp = elStorage->K26[3] + S26_idx_3;
+  b_elStorage[135] = b_elStorage_tmp + H26_idx_3;
   b_elStorage[17] = (elStorage->K13[3] + S13_idx_3) - H13_idx_3;
-  b_elStorage[41] = O1 - H23_idx_3;
+  b_elStorage[41] = d_elStorage_tmp - H23_idx_3;
   b_elStorage[65] = (elStorage->K33[3] + elStorage->S33[3] * c_tmp) +
     SS33_data_idx_3;
-  O1 = elStorage->K34[3] + S34_idx_3;
-  b_elStorage[89] = O1 + H34_idx_3;
-  ycm = elStorage->K35[3] + S35_idx_3;
-  b_elStorage[113] = ycm + H35_idx_3;
-  zcm = elStorage->K36[3] + S36_idx_3;
-  b_elStorage[137] = zcm + H36_idx_3;
-  b_elStorage[19] = O1dot - H14_idx_3;
-  b_elStorage[43] = integrationFactor - H24_idx_3;
-  b_elStorage[67] = O1 - H34_idx_3;
+  d_elStorage_tmp = elStorage->K34[3] + S34_idx_3;
+  b_elStorage[89] = d_elStorage_tmp + H34_idx_3;
+  elStorage_tmp = elStorage->K35[3] + S35_idx_3;
+  b_elStorage[113] = elStorage_tmp + H35_idx_3;
+  f_tmp = elStorage->K36[3] + S36_idx_3;
+  b_elStorage[137] = f_tmp + H36_idx_3;
+  b_elStorage[19] = c_elStorage_tmp - H14_idx_3;
+  b_elStorage[43] = e_elStorage_tmp - H24_idx_3;
+  b_elStorage[67] = d_elStorage_tmp - H34_idx_3;
   b_elStorage[91] = elStorage->K44[3] + ((elStorage->S44_1[3] * b_c_tmp +
     elStorage->S44_2[3] * c_tmp) + elStorage->S44_3[3] * Oel[1] * Oel[2]);
-  O1dot = elStorage->K45[3] + S45_idx_3;
-  b_elStorage[115] = O1dot + H45_idx_3;
-  O1 = elStorage->K46[3] + S46_idx_3;
-  b_elStorage[139] = O1 + O3dot;
+  c_elStorage_tmp = elStorage->K45[3] + S45_idx_3;
+  b_elStorage[115] = c_elStorage_tmp + H45_idx_3;
+  d_elStorage_tmp = elStorage->K46[3] + S46_idx_3;
+  b_elStorage[139] = d_elStorage_tmp + H46_idx_3;
   b_elStorage[21] = K15_idx_3;
-  b_elStorage[45] = Faxial - H25_idx_3;
-  b_elStorage[69] = ycm - H35_idx_3;
-  b_elStorage[93] = O1dot - H45_idx_3;
-  b_elStorage[117] = elStorage->K55[3] + elStorage->S55[3] * f_tmp;
+  b_elStorage[45] = f_elStorage_tmp - H25_idx_3;
+  b_elStorage[69] = elStorage_tmp - H35_idx_3;
+  b_elStorage[93] = c_elStorage_tmp - H45_idx_3;
+  b_elStorage[117] = elStorage->K55[3] + elStorage->S55[3] * c_c_tmp;
   b_elStorage[141] = K56_idx_3;
   b_elStorage[23] = K16_idx_3;
-  b_elStorage[47] = rhoA - H26_idx_3;
-  b_elStorage[71] = zcm - H36_idx_3;
-  b_elStorage[95] = O1 - O3dot;
+  b_elStorage[47] = b_elStorage_tmp - H26_idx_3;
+  b_elStorage[71] = f_tmp - H36_idx_3;
+  b_elStorage[95] = d_elStorage_tmp - H46_idx_3;
   b_elStorage[119] = K56_idx_3;
-  b_elStorage[143] = elStorage->K66[3] + elStorage->S66[3] * f_tmp;
+  b_elStorage[143] = elStorage->K66[3] + elStorage->S66[3] * c_c_tmp;
   mapMatrixNonSym(b_elStorage, Ke);
 
   //  Declare type
@@ -3405,21 +3443,21 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   reshapes_f6[19] = 0.0;
   reshapes_f6[23] = 0.0;
   for (i = 0; i < 12; i++) {
-    b_i = i << 1;
-    b_elStorage[12 * i] = reshapes_f1[b_i];
-    b_elStorage[12 * i + 2] = reshapes_f2[b_i];
+    reshapes_f1_tmp = i << 1;
+    b_elStorage[12 * i] = reshapes_f1[reshapes_f1_tmp];
+    b_elStorage[12 * i + 2] = reshapes_f2[reshapes_f1_tmp];
     b_elStorage[12 * i + 4] = reshapes_f3_data[2 * i];
     b_elStorage[12 * i + 6] = reshapes_f4_data[2 * i];
-    b_elStorage[12 * i + 8] = reshapes_f5[b_i];
-    b_elStorage[12 * i + 10] = reshapes_f6[b_i];
-    b_i++;
-    b_elStorage[12 * i + 1] = reshapes_f1[b_i];
-    b_elStorage[12 * i + 3] = reshapes_f2[b_i];
+    b_elStorage[12 * i + 8] = reshapes_f5[reshapes_f1_tmp];
+    b_elStorage[12 * i + 10] = reshapes_f6[reshapes_f1_tmp];
+    reshapes_f1_tmp++;
+    b_elStorage[12 * i + 1] = reshapes_f1[reshapes_f1_tmp];
+    b_elStorage[12 * i + 3] = reshapes_f2[reshapes_f1_tmp];
     reshapes_f1_data_tmp = 2 * i + 1;
     b_elStorage[12 * i + 5] = reshapes_f3_data[reshapes_f1_data_tmp];
     b_elStorage[12 * i + 7] = reshapes_f4_data[reshapes_f1_data_tmp];
-    b_elStorage[12 * i + 9] = reshapes_f5[b_i];
-    b_elStorage[12 * i + 11] = reshapes_f6[b_i];
+    b_elStorage[12 * i + 9] = reshapes_f5[reshapes_f1_tmp];
+    b_elStorage[12 * i + 11] = reshapes_f6[reshapes_f1_tmp];
   }
 
   b_mapMatrixNonSym(b_elStorage, Ce);
@@ -3586,8 +3624,8 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   //  positive rotation
   sparse(lambda, lambda_d, lambda_colidx, lambda_rowidx);
   for (i = 0; i < 12; i++) {
-    for (b_i = 0; b_i < 12; b_i++) {
-      b_elStorage[b_i + 12 * i] = lambda[i + 12 * b_i];
+    for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+      b_elStorage[reshapes_f1_tmp + 12 * i] = lambda[i + 12 * reshapes_f1_tmp];
     }
   }
 
@@ -3632,7 +3670,7 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
 
   //  %------------------------------------------------------------------------- 
   d_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Fel_data,
-                  dispLocal);
+                  Fe);
 
   //
   // concentrated mass
@@ -3659,74 +3697,72 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
     Me[143] += input_concMass[7];
 
     // modify Ce for concentrated mass
-    K15_idx_0 = 2.0 * input_concMass[0] * 3.2898681336964524;
-    Ce[12] -= K15_idx_0;
-    Ce[1] += K15_idx_0;
-    K15_idx_0 = 2.0 * input_concMass[0] * 0.0;
-    Ce[24] += K15_idx_0;
-    Ce[2] -= K15_idx_0;
-    Ce[25] -= K15_idx_0;
-    Ce[14] += K15_idx_0;
-    K15_idx_0 = 2.0 * input_concMass[4] * 3.2898681336964524;
-    Ce[90] -= K15_idx_0;
-    Ce[79] += K15_idx_0;
-    K15_idx_0 = 2.0 * input_concMass[4] * 0.0;
-    Ce[102] += K15_idx_0;
-    Ce[80] -= K15_idx_0;
-    Ce[103] -= K15_idx_0;
-    Ce[92] += K15_idx_0;
+    a = 2.0 * input_concMass[0] * 3.2898681336964524;
+    Ce[12] -= a;
+    Ce[1] += a;
+    a = 2.0 * input_concMass[0] * 0.0;
+    Ce[24] += a;
+    Ce[2] -= a;
+    Ce[25] -= a;
+    Ce[14] += a;
+    a = 2.0 * input_concMass[4] * 3.2898681336964524;
+    Ce[90] -= a;
+    Ce[79] += a;
+    a = 2.0 * input_concMass[4] * 0.0;
+    Ce[102] += a;
+    Ce[80] -= a;
+    Ce[103] -= a;
+    Ce[92] += a;
 
     // modify Ke for concentrated mass
     Ke[0] -= input_concMass[0] * 10.823232337111378;
-    K15_idx_0 = input_concMass[0] * 0.0 * 0.0;
-    Ke[12] = (Ke[12] + K15_idx_0) - input_concMass[0] * 0.0;
-    Ke[1] = (Ke[1] + K15_idx_0) + input_concMass[0] * 0.0;
-    K15_idx_0 = input_concMass[0] * 0.0 * 3.2898681336964524;
-    Ke[24] = (Ke[24] + K15_idx_0) + input_concMass[0] * 0.0;
-    Ke[2] = (Ke[2] + K15_idx_0) - input_concMass[0] * 0.0;
-    Ke[25] = (Ke[25] + K15_idx_0) - input_concMass[0] * 0.0;
-    Ke[14] = (Ke[14] + K15_idx_0) + input_concMass[0] * 0.0;
+    a = input_concMass[0] * 0.0 * 0.0;
+    Ke[12] = (Ke[12] + a) - input_concMass[0] * 0.0;
+    Ke[1] = (Ke[1] + a) + input_concMass[0] * 0.0;
+    a = input_concMass[0] * 0.0 * 3.2898681336964524;
+    Ke[24] = (Ke[24] + a) + input_concMass[0] * 0.0;
+    Ke[2] = (Ke[2] + a) - input_concMass[0] * 0.0;
+    Ke[25] = (Ke[25] + a) - input_concMass[0] * 0.0;
+    Ke[14] = (Ke[14] + a) + input_concMass[0] * 0.0;
     Ke[13] -= input_concMass[0] * 10.823232337111378;
     Ke[26] -= input_concMass[0] * 0.0;
     Ke[78] -= input_concMass[4] * 10.823232337111378;
-    K15_idx_0 = input_concMass[4] * 0.0 * 0.0;
-    Ke[90] = (Ke[90] + K15_idx_0) - input_concMass[4] * 0.0;
-    Ke[79] = (Ke[79] + K15_idx_0) + input_concMass[4] * 0.0;
-    K15_idx_0 = input_concMass[4] * 0.0 * 3.2898681336964524;
-    Ke[102] = (Ke[102] + K15_idx_0) + input_concMass[4] * 0.0;
-    Ke[80] = (Ke[80] + K15_idx_0) - input_concMass[4] * 0.0;
-    Ke[103] = (Ke[103] + K15_idx_0) - input_concMass[4] * 0.0;
-    Ke[92] = (Ke[92] + K15_idx_0) + input_concMass[4] * 0.0;
+    a = input_concMass[4] * 0.0 * 0.0;
+    Ke[90] = (Ke[90] + a) - input_concMass[4] * 0.0;
+    Ke[79] = (Ke[79] + a) + input_concMass[4] * 0.0;
+    a = input_concMass[4] * 0.0 * 3.2898681336964524;
+    Ke[102] = (Ke[102] + a) + input_concMass[4] * 0.0;
+    Ke[80] = (Ke[80] + a) - input_concMass[4] * 0.0;
+    Ke[103] = (Ke[103] + a) - input_concMass[4] * 0.0;
+    Ke[92] = (Ke[92] + a) + input_concMass[4] * 0.0;
     Ke[91] -= input_concMass[4] * 10.823232337111378;
     Ke[104] -= input_concMass[4] * 0.0;
   }
 
   // modify Fe for  concentrated load
   if (concMassFlag) {
-    dispLocal[0] = ((dispLocal[0] + input_concMass[0] * ((input_x_data[0] *
-      10.823232337111378 - 0.0 * input_y_data[0]) - 0.0 * input_z_data[0])) +
-                    input_concMass[0] * (input_y_data[0] * 0.0 - input_z_data[0]
-      * 0.0)) - input_concMass[0] * a_temp[0];
-    K15_idx_0 = input_z_data[0] * 0.0 - input_x_data[0] * 0.0;
-    dispLocal[1] = ((dispLocal[1] + input_concMass[0] * ((input_y_data[0] *
-      10.823232337111378 - 0.0 * input_z_data[0]) - 0.0 * input_x_data[0])) +
-                    input_concMass[0] * K15_idx_0) - input_concMass[0] * a_temp
-      [1];
-    dispLocal[2] = ((dispLocal[2] + input_concMass[0] * (K15_idx_0 - 0.0 *
-      input_y_data[0])) + input_concMass[0] * (input_x_data[0] * 0.0 -
-      input_y_data[0] * 0.0)) - input_concMass[0] * a_temp[2];
-    dispLocal[6] = ((dispLocal[6] + input_concMass[4] * ((input_x_data[1] *
-      10.823232337111378 - 0.0 * input_y_data[1]) - 0.0 * input_z_data[1])) +
-                    input_concMass[4] * (input_y_data[1] * 0.0 - input_z_data[1]
-      * 0.0)) - input_concMass[4] * a_temp[0];
-    K15_idx_0 = input_z_data[1] * 0.0 - input_x_data[1] * 0.0;
-    dispLocal[7] = ((dispLocal[7] + input_concMass[4] * ((input_y_data[1] *
-      10.823232337111378 - 0.0 * input_z_data[1]) - 0.0 * input_x_data[1])) +
-                    input_concMass[4] * K15_idx_0) - input_concMass[4] * a_temp
-      [1];
-    dispLocal[8] = ((dispLocal[8] + input_concMass[4] * (K15_idx_0 - 0.0 *
-      input_y_data[1])) + input_concMass[4] * (input_x_data[1] * 0.0 -
-      input_y_data[1] * 0.0)) - input_concMass[4] * a_temp[2];
+    Fe[0] = ((Fe[0] + input_concMass[0] * ((input_x_data[0] * 10.823232337111378
+                - 0.0 * input_y_data[0]) - 0.0 * input_z_data[0])) +
+             input_concMass[0] * (input_y_data[0] * 0.0 - input_z_data[0] * 0.0))
+      - input_concMass[0] * a_temp[0];
+    a = input_z_data[0] * 0.0 - input_x_data[0] * 0.0;
+    Fe[1] = ((Fe[1] + input_concMass[0] * ((input_y_data[0] * 10.823232337111378
+                - 0.0 * input_z_data[0]) - 0.0 * input_x_data[0])) +
+             input_concMass[0] * a) - input_concMass[0] * a_temp[1];
+    Fe[2] = ((Fe[2] + input_concMass[0] * (a - 0.0 * input_y_data[0])) +
+             input_concMass[0] * (input_x_data[0] * 0.0 - input_y_data[0] * 0.0))
+      - input_concMass[0] * a_temp[2];
+    Fe[6] = ((Fe[6] + input_concMass[4] * ((input_x_data[1] * 10.823232337111378
+                - 0.0 * input_y_data[1]) - 0.0 * input_z_data[1])) +
+             input_concMass[4] * (input_y_data[1] * 0.0 - input_z_data[1] * 0.0))
+      - input_concMass[4] * a_temp[0];
+    a = input_z_data[1] * 0.0 - input_x_data[1] * 0.0;
+    Fe[7] = ((Fe[7] + input_concMass[4] * ((input_y_data[1] * 10.823232337111378
+                - 0.0 * input_z_data[1]) - 0.0 * input_x_data[1])) +
+             input_concMass[4] * a) - input_concMass[4] * a_temp[1];
+    Fe[8] = ((Fe[8] + input_concMass[4] * (a - 0.0 * input_y_data[1])) +
+             input_concMass[4] * (input_x_data[1] * 0.0 - input_y_data[1] * 0.0))
+      - input_concMass[4] * a_temp[2];
   }
 
   //
@@ -3734,7 +3770,7 @@ void c_calculateTimoshenkoElementNL(const double input_xloc[2], const double
   // ----- assign output block ----------------
   std::memset(&output->FhatLessConc[0], 0, 12U * sizeof(double));
   std::memcpy(&output->Ke[0], &Ke[0], 144U * sizeof(double));
-  std::memcpy(&output->Fe[0], &dispLocal[0], 12U * sizeof(double));
+  std::memcpy(&output->Fe[0], &Fe[0], 12U * sizeof(double));
   output->Me.size[0] = 12;
   output->Me.size[1] = 12;
   output->Ce.size[0] = 12;
@@ -3792,9 +3828,9 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   int i;
   double O1;
   double Oel[3];
-  double c_tmp;
+  double elStorage_tmp;
   double O2;
-  double H46_idx_3;
+  double Oel_tmp;
   double O3;
   double O1dot;
   double ODotel[3];
@@ -3802,51 +3838,60 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   double O2dot;
   double O3dot;
   double b_dv[9];
-  double S26_idx_0;
+  double f_tmp;
   int b_i;
   double N_data[2];
   int N_size[2];
   double p_N_x_data[2];
   int p_N_x_size[1];
+  double Jac;
   double integrationFactor;
+  double c_tmp;
   double b_c_tmp;
-  double c_c_tmp;
+  double S12_idx_0;
   double S13_idx_0;
+  double S23_idx_0;
+  double S25_idx_0;
+  double S26_idx_0;
   double S35_idx_0;
   double S36_idx_0;
-  double ycm;
+  double S14_idx_0;
+  double S24_idx_0;
   double S34_idx_0;
   double S45_idx_0;
   double S46_idx_0;
   double C12_idx_0;
-  double K15_idx_1;
+  double b_elStorage_tmp;
   double C13_idx_0;
-  double K15_idx_0;
+  double valGP;
   double rhoA;
   double C23_idx_0;
-  double K16_idx_0;
+  double ycm;
+  double b_valGP;
   double zcm;
   double C24_idx_0;
-  double K56_idx_0;
+  double valGP_idx_0;
   double C25_idx_0;
-  double f_tmp;
+  double valGP_idx_1;
   double C26_idx_0;
-  double disMomentgp[3];
-  double b_f_tmp;
+  double valGP_idx_2;
   double C34_idx_0;
-  double c_f_tmp;
+  double b_f_tmp;
   double C35_idx_0;
-  double d_f_tmp;
+  double c_f_tmp;
   double C36_idx_0;
-  double e_f_tmp;
+  double d_f_tmp;
   double posLocal[3];
   double f;
   double disLoadgpLocal[3];
   double C14_idx_0;
   double b_f;
   double c_f;
+  double disMomentgp[3];
   double C45_idx_0;
+  double c_elStorage_tmp;
   double C46_idx_0;
+  double H12_idx_0;
   double H13_idx_0;
   double H23_idx_0;
   double H24_idx_0;
@@ -3965,8 +4010,14 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   double H36_idx_3;
   double H14_idx_3;
   double H45_idx_3;
+  double H46_idx_3;
   double b_elStorage[144];
   double Kenr[144];
+  double c_c_tmp;
+  double K15_idx_0;
+  double K16_idx_0;
+  double K56_idx_0;
+  double K15_idx_1;
   double K16_idx_1;
   double K56_idx_1;
   double K15_idx_2;
@@ -3975,7 +4026,11 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   double K15_idx_3;
   double K16_idx_3;
   double K56_idx_3;
-  double Khate[144];
+  double d_elStorage_tmp;
+  double e_elStorage_tmp;
+  double f_elStorage_tmp;
+  double g_elStorage_tmp;
+  double Ke[144];
   double reshapes_f3_data[24];
   double reshapes_f4_data[24];
   double reshapes_f1[24];
@@ -3983,6 +4038,7 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   double reshapes_f5[24];
   double reshapes_f6[24];
   double Ce[144];
+  int reshapes_f1_tmp;
   int reshapes_f1_data_tmp;
   double Me[144];
   emxArray_real_T *lambda_d;
@@ -3992,12 +4048,15 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   emxArray_int32_T *lambdaTran_colidx;
   emxArray_int32_T *lambdaTran_rowidx;
   double Ftemp_data[12];
-  double Fhate[12];
+  double Fel_data[12];
   double Fe[12];
   int tmp_size[1];
   boolean_T concMassFlag;
+  double Fhate[12];
   double FhatLessConc[12];
   double b_data[12];
+  double y[12];
+  double Khate[144];
 
   // -------- assign input block ----------------
   //  modalFlag      = input.modalFlag;
@@ -4060,12 +4119,12 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   //      theta_yNode = [dispLocal(5)  dispLocal(11)];
   //      theta_zNode = [dispLocal(6)  dispLocal(12)];
   for (i = 0; i < 3; i++) {
-    c_tmp = lambda[i + 24];
-    H46_idx_3 = lambda[i] * 0.0 + lambda[i + 12] * 0.0;
-    Oel[i] = H46_idx_3 + c_tmp * Omega;
+    elStorage_tmp = lambda[i + 24];
+    Oel_tmp = lambda[i] * 0.0 + lambda[i + 12] * 0.0;
+    Oel[i] = Oel_tmp + elStorage_tmp * Omega;
     a_temp[i] = (input->CN2H[i] * 0.0 + input->CN2H[i + 3] * 0.0) + input->
       CN2H[i + 6] * 9.81;
-    ODotel[i] = H46_idx_3 + c_tmp * OmegaDot;
+    ODotel[i] = Oel_tmp + elStorage_tmp * OmegaDot;
   }
 
   O1 = Oel[0];
@@ -4084,12 +4143,12 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   b_dv[7] = -0.0;
   b_dv[5] = 0.0;
   b_dv[8] = 0.0;
-  S26_idx_0 = O1 * O3;
+  f_tmp = O1 * O3;
   for (b_i = 0; b_i < 4; b_i++) {
     // Calculate shape functions at quad point i
     calculateShapeFunctions(dv[b_i], input->xloc, N_data, N_size, p_N_x_data,
-      p_N_x_size, &H46_idx_3);
-    integrationFactor = H46_idx_3 * dv1[b_i];
+      p_N_x_size, &Jac);
+    integrationFactor = Jac * dv1[b_i];
 
     // ..... interpolate for value at quad point .....
     // This function interpolates a value using distinct values at valNode
@@ -4125,21 +4184,21 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
       input->sectionProps.ycm[1];
     zcm = N_data[0] * input->sectionProps.zcm[0] + N_data[1] *
       input->sectionProps.zcm[1];
-    K15_idx_0 = N_data[0] * input->x.data[0] + N_data[1] * input->x.data[1];
-    K16_idx_0 = N_data[0] * input->y.data[0] + N_data[1] * input->y.data[1];
-    H46_idx_3 = N_data[0] * input->z.data[0] + N_data[1] * input->z.data[1];
+    Oel_tmp = N_data[0] * input->x.data[0] + N_data[1] * input->x.data[1];
+    valGP = N_data[0] * input->y.data[0] + N_data[1] * input->y.data[1];
+    b_valGP = N_data[0] * input->z.data[0] + N_data[1] * input->z.data[1];
 
     // let these loads be defined in the inertial frame
-    disMomentgp[0] = rhoA * a_temp[0];
-    disMomentgp[1] = rhoA * a_temp[1];
-    disMomentgp[2] = rhoA * a_temp[2];
+    valGP_idx_0 = rhoA * a_temp[0];
+    valGP_idx_1 = rhoA * a_temp[1];
+    valGP_idx_2 = rhoA * a_temp[2];
     for (i = 0; i < 3; i++) {
-      c_tmp = lambda[i + 12];
-      K15_idx_1 = lambda[i + 24];
-      posLocal[i] = (lambda[i] * K15_idx_0 + c_tmp * K16_idx_0) + K15_idx_1 *
-        H46_idx_3;
-      disLoadgpLocal[i] = (lambda[i] * disMomentgp[0] + c_tmp * disMomentgp[1])
-        + K15_idx_1 * disMomentgp[2];
+      elStorage_tmp = lambda[i + 12];
+      b_elStorage_tmp = lambda[i + 24];
+      posLocal[i] = (lambda[i] * Oel_tmp + elStorage_tmp * valGP) +
+        b_elStorage_tmp * b_valGP;
+      disLoadgpLocal[i] = (lambda[i] * valGP_idx_0 + elStorage_tmp * valGP_idx_1)
+        + b_elStorage_tmp * valGP_idx_2;
     }
 
     b_dv[3] = -zcm;
@@ -4153,56 +4212,56 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
 
     // calculate static aerodynamic load
     // distributed/body force load calculations
-    f_tmp = (O2 * O2 + O3 * O3) * posLocal[0];
-    b_f_tmp = O2dot * posLocal[2];
-    c_f_tmp = O3dot * posLocal[1];
-    d_f_tmp = S26_idx_0 * posLocal[2];
-    e_f_tmp = O1 * O2 * posLocal[1];
-    f = rhoA * ((((f_tmp - e_f_tmp) - d_f_tmp) + c_f_tmp) - b_f_tmp) -
+    valGP_idx_1 = (O2 * O2 + O3 * O3) * posLocal[0];
+    valGP_idx_2 = O2dot * posLocal[2];
+    b_f_tmp = O3dot * posLocal[1];
+    c_f_tmp = f_tmp * posLocal[2];
+    d_f_tmp = O1 * O2 * posLocal[1];
+    f = rhoA * ((((valGP_idx_1 - d_f_tmp) - c_f_tmp) + b_f_tmp) - valGP_idx_2) -
       disLoadgpLocal[0];
 
     // This function is a general routine to calculate an element vector
-    H46_idx_3 = O1dot * posLocal[2];
-    K56_idx_0 = O3dot * posLocal[0];
+    Oel_tmp = O1dot * posLocal[2];
+    valGP = O3dot * posLocal[0];
     b_f = rhoA * (((((O1 * O1 + O3 * O3) * posLocal[1] - posLocal[2] * O2 * O3)
-                    - posLocal[0] * O1 * O2) + H46_idx_3) - K56_idx_0) -
+                    - posLocal[0] * O1 * O2) + Oel_tmp) - valGP) -
       disLoadgpLocal[1];
 
     // This function is a general routine to calculate an element vector
-    K15_idx_0 = O2dot * posLocal[0];
-    K16_idx_0 = O1dot * posLocal[1];
-    c_f = rhoA * (((((O1 * O1 + O2 * O2) * posLocal[2] - S26_idx_0 * posLocal[0])
-                    - O2 * O3 * posLocal[1]) + K15_idx_0) - K16_idx_0) -
+    b_valGP = O2dot * posLocal[0];
+    valGP_idx_0 = O1dot * posLocal[1];
+    c_f = rhoA * (((((O1 * O1 + O2 * O2) * posLocal[2] - f_tmp * posLocal[0]) -
+                    O2 * O3 * posLocal[1]) + b_valGP) - valGP_idx_0) -
       disLoadgpLocal[2];
 
     // This function is a general routine to calculate an element vector
-    K15_idx_0 = rhoA * ((((posLocal[0] * (O1 * O2 * zcm - ycm * O1 * O3) -
-      posLocal[1] * (ycm * O2 * O3 + zcm * (O1 * O1 + O3 * O3))) + posLocal[2] *
-                          (ycm * (O1 * O1 + O2 * O2) + zcm * O2 * O3)) + ycm *
-                         (K15_idx_0 - K16_idx_0)) - zcm * (H46_idx_3 - K56_idx_0))
+    valGP = rhoA * ((((posLocal[0] * (O1 * O2 * zcm - ycm * O1 * O3) - posLocal
+                       [1] * (ycm * O2 * O3 + zcm * (O1 * O1 + O3 * O3))) +
+                      posLocal[2] * (ycm * (O1 * O1 + O2 * O2) + zcm * O2 * O3))
+                     + ycm * (b_valGP - valGP_idx_0)) - zcm * (Oel_tmp - valGP))
       - disMomentgp[0];
 
     // This function is a general routine to calculate an element vector
-    H46_idx_3 = rhoA * zcm * ((((f_tmp - posLocal[1] * O1 * O2) - posLocal[2] *
-      O1 * O3) - b_f_tmp) + c_f_tmp) - disMomentgp[1];
+    Oel_tmp = rhoA * zcm * ((((valGP_idx_1 - posLocal[1] * O1 * O2) - posLocal[2]
+      * O1 * O3) - valGP_idx_2) + b_f_tmp) - disMomentgp[1];
 
     // This function is a general routine to calculate an element vector
-    K56_idx_0 = rhoA * ycm * ((((d_f_tmp + e_f_tmp) - f_tmp) - c_f_tmp) +
-      b_f_tmp) - disMomentgp[2];
+    valGP_idx_0 = rhoA * ycm * ((((c_f_tmp + d_f_tmp) - valGP_idx_1) - b_f_tmp)
+      + valGP_idx_2) - disMomentgp[2];
 
     // This function is a general routine to calculate an element vector
     F1_data_idx_0 += f * N_data[0] * integrationFactor;
     F2_data_idx_0 += b_f * N_data[0] * integrationFactor;
     F3_data_idx_0 += c_f * N_data[0] * integrationFactor;
-    F4_data_idx_0 += K15_idx_0 * N_data[0] * integrationFactor;
-    F5_data_idx_0 += H46_idx_3 * N_data[0] * integrationFactor;
-    F6_data_idx_0 += K56_idx_0 * N_data[0] * integrationFactor;
+    F4_data_idx_0 += valGP * N_data[0] * integrationFactor;
+    F5_data_idx_0 += Oel_tmp * N_data[0] * integrationFactor;
+    F6_data_idx_0 += valGP_idx_0 * N_data[0] * integrationFactor;
     F1_data_idx_1 += f * N_data[1] * integrationFactor;
     F2_data_idx_1 += b_f * N_data[1] * integrationFactor;
     F3_data_idx_1 += c_f * N_data[1] * integrationFactor;
-    F4_data_idx_1 += K15_idx_0 * N_data[1] * integrationFactor;
-    F5_data_idx_1 += H46_idx_3 * N_data[1] * integrationFactor;
-    F6_data_idx_1 += K56_idx_0 * N_data[1] * integrationFactor;
+    F4_data_idx_1 += valGP * N_data[1] * integrationFactor;
+    F5_data_idx_1 += Oel_tmp * N_data[1] * integrationFactor;
+    F6_data_idx_1 += valGP_idx_0 * N_data[1] * integrationFactor;
   }
 
   // END OF INTEGRATION LOOP
@@ -4214,236 +4273,233 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   //  Only used if (useDisp)
   // unpack stored element mass data
   // unpack and scale stored element spin softening data
-  H46_idx_3 = Oel[0] * Oel[1];
-  b_c_tmp = Oel[0] * Oel[0];
-  c_c_tmp = b_c_tmp + Oel[2] * Oel[2];
-  b_c_tmp += Oel[1] * Oel[1];
+  Oel_tmp = Oel[0] * Oel[1];
+  c_tmp = Oel[0] * Oel[0];
+  b_c_tmp = c_tmp + Oel[2] * Oel[2];
+  c_tmp += Oel[1] * Oel[1];
 
   // unpack and scale stored element Corilois data
   // unpack and scale stored element Circulatory data
-  integrationFactor = elStorage->S12[0] * Oel[0] * Oel[1];
+  S12_idx_0 = elStorage->S12[0] * Oel[0] * Oel[1];
   S13_idx_0 = elStorage->S13[0] * Oel[0] * Oel[2];
-  O1 = elStorage->S23[0] * Oel[1] * Oel[2];
-  O2dot = elStorage->S25[0] * H46_idx_3;
-  S26_idx_0 = elStorage->S26[0] * H46_idx_3;
+  S23_idx_0 = elStorage->S23[0] * Oel[1] * Oel[2];
+  S25_idx_0 = elStorage->S25[0] * Oel_tmp;
+  S26_idx_0 = elStorage->S26[0] * Oel_tmp;
   S35_idx_0 = elStorage->S35[0] * Oel[0] * Oel[2];
   S36_idx_0 = elStorage->S36[0] * Oel[0] * Oel[2];
-  ycm = elStorage->S14_1[0] * Oel[0] * Oel[2] + elStorage->S14_2[0] * Oel[0] *
-    Oel[1];
-  O3 = elStorage->S24_1[0] * c_c_tmp + elStorage->S24_2[0] * Oel[1] * Oel[2];
-  S34_idx_0 = elStorage->S34_1[0] * b_c_tmp + elStorage->S34_2[0] * Oel[1] *
+  S14_idx_0 = elStorage->S14_1[0] * Oel[0] * Oel[2] + elStorage->S14_2[0] * Oel
+    [0] * Oel[1];
+  S24_idx_0 = elStorage->S24_1[0] * b_c_tmp + elStorage->S24_2[0] * Oel[1] *
     Oel[2];
+  S34_idx_0 = elStorage->S34_1[0] * c_tmp + elStorage->S34_2[0] * Oel[1] * Oel[2];
   S45_idx_0 = elStorage->S45_1[0] * Oel[0] * Oel[2] + elStorage->S45_2[0] * Oel
     [0] * Oel[1];
   S46_idx_0 = elStorage->S46_1[0] * Oel[0] * Oel[1] + elStorage->S46_2[0] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[0];
-  C12_idx_0 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[0];
-  C13_idx_0 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[0];
-  C23_idx_0 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[0];
-  C24_idx_0 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[0];
-  C25_idx_0 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[0];
-  C26_idx_0 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[0];
-  C34_idx_0 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[0];
-  C35_idx_0 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[0];
-  C36_idx_0 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[0];
+  elStorage_tmp = elStorage->C12[0];
+  C12_idx_0 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[0];
+  C13_idx_0 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[0];
+  C23_idx_0 = valGP * Oel[0];
+  b_valGP = elStorage->C24[0];
+  C24_idx_0 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[0];
+  C25_idx_0 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[0];
+  C26_idx_0 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[0];
+  C34_idx_0 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[0];
+  C35_idx_0 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[0];
+  C36_idx_0 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[0];
   f = elStorage->C14_2[0];
-  C14_idx_0 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_0 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[0];
   c_f = elStorage->C45_2[0];
   C45_idx_0 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[0];
-  rhoA = elStorage->C46_2[0];
-  C46_idx_0 = zcm * Oel[1] + rhoA * Oel[2];
-  O2 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_0 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_0 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_0 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_0 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_0 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_0 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_0 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_0 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_0 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[0];
+  c_elStorage_tmp = elStorage->C46_2[0];
+  C46_idx_0 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_0 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_0 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_0 = 0.5 * valGP * ODotel[0];
+  H24_idx_0 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_0 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_0 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_0 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_0 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_0 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_0 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_0 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_0 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_0 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
   S12_idx_1 = elStorage->S12[1] * Oel[0] * Oel[1];
   S13_idx_1 = elStorage->S13[1] * Oel[0] * Oel[2];
   S23_idx_1 = elStorage->S23[1] * Oel[1] * Oel[2];
-  S25_idx_1 = elStorage->S25[1] * H46_idx_3;
-  S26_idx_1 = elStorage->S26[1] * H46_idx_3;
+  S25_idx_1 = elStorage->S25[1] * Oel_tmp;
+  S26_idx_1 = elStorage->S26[1] * Oel_tmp;
   S35_idx_1 = elStorage->S35[1] * Oel[0] * Oel[2];
   S36_idx_1 = elStorage->S36[1] * Oel[0] * Oel[2];
   S14_idx_1 = elStorage->S14_1[1] * Oel[0] * Oel[2] + elStorage->S14_2[1] * Oel
     [0] * Oel[1];
-  S24_idx_1 = elStorage->S24_1[1] * c_c_tmp + elStorage->S24_2[1] * Oel[1] *
+  S24_idx_1 = elStorage->S24_1[1] * b_c_tmp + elStorage->S24_2[1] * Oel[1] *
     Oel[2];
-  S34_idx_1 = elStorage->S34_1[1] * b_c_tmp + elStorage->S34_2[1] * Oel[1] *
-    Oel[2];
+  S34_idx_1 = elStorage->S34_1[1] * c_tmp + elStorage->S34_2[1] * Oel[1] * Oel[2];
   S45_idx_1 = elStorage->S45_1[1] * Oel[0] * Oel[2] + elStorage->S45_2[1] * Oel
     [0] * Oel[1];
   S46_idx_1 = elStorage->S46_1[1] * Oel[0] * Oel[1] + elStorage->S46_2[1] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[1];
-  C12_idx_1 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[1];
-  C13_idx_1 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[1];
-  C23_idx_1 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[1];
-  C24_idx_1 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[1];
-  C25_idx_1 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[1];
-  C26_idx_1 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[1];
-  C34_idx_1 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[1];
-  C35_idx_1 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[1];
-  C36_idx_1 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[1];
+  elStorage_tmp = elStorage->C12[1];
+  C12_idx_1 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[1];
+  C13_idx_1 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[1];
+  C23_idx_1 = valGP * Oel[0];
+  b_valGP = elStorage->C24[1];
+  C24_idx_1 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[1];
+  C25_idx_1 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[1];
+  C26_idx_1 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[1];
+  C34_idx_1 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[1];
+  C35_idx_1 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[1];
+  C36_idx_1 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[1];
   f = elStorage->C14_2[1];
-  C14_idx_1 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_1 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[1];
   c_f = elStorage->C45_2[1];
   C45_idx_1 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[1];
-  rhoA = elStorage->C46_2[1];
-  C46_idx_1 = zcm * Oel[1] + rhoA * Oel[2];
-  H12_idx_1 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_1 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_1 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_1 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_1 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_1 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_1 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_1 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_1 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_1 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[1];
+  c_elStorage_tmp = elStorage->C46_2[1];
+  C46_idx_1 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_1 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_1 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_1 = 0.5 * valGP * ODotel[0];
+  H24_idx_1 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_1 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_1 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_1 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_1 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_1 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_1 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_1 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_1 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_1 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
   S12_idx_2 = elStorage->S12[2] * Oel[0] * Oel[1];
   S13_idx_2 = elStorage->S13[2] * Oel[0] * Oel[2];
   S23_idx_2 = elStorage->S23[2] * Oel[1] * Oel[2];
-  S25_idx_2 = elStorage->S25[2] * H46_idx_3;
-  S26_idx_2 = elStorage->S26[2] * H46_idx_3;
+  S25_idx_2 = elStorage->S25[2] * Oel_tmp;
+  S26_idx_2 = elStorage->S26[2] * Oel_tmp;
   S35_idx_2 = elStorage->S35[2] * Oel[0] * Oel[2];
   S36_idx_2 = elStorage->S36[2] * Oel[0] * Oel[2];
   S14_idx_2 = elStorage->S14_1[2] * Oel[0] * Oel[2] + elStorage->S14_2[2] * Oel
     [0] * Oel[1];
-  S24_idx_2 = elStorage->S24_1[2] * c_c_tmp + elStorage->S24_2[2] * Oel[1] *
+  S24_idx_2 = elStorage->S24_1[2] * b_c_tmp + elStorage->S24_2[2] * Oel[1] *
     Oel[2];
-  S34_idx_2 = elStorage->S34_1[2] * b_c_tmp + elStorage->S34_2[2] * Oel[1] *
-    Oel[2];
+  S34_idx_2 = elStorage->S34_1[2] * c_tmp + elStorage->S34_2[2] * Oel[1] * Oel[2];
   S45_idx_2 = elStorage->S45_1[2] * Oel[0] * Oel[2] + elStorage->S45_2[2] * Oel
     [0] * Oel[1];
   S46_idx_2 = elStorage->S46_1[2] * Oel[0] * Oel[1] + elStorage->S46_2[2] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[2];
-  C12_idx_2 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[2];
-  C13_idx_2 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[2];
-  C23_idx_2 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[2];
-  C24_idx_2 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[2];
-  C25_idx_2 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[2];
-  C26_idx_2 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[2];
-  C34_idx_2 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[2];
-  C35_idx_2 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[2];
-  C36_idx_2 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[2];
+  elStorage_tmp = elStorage->C12[2];
+  C12_idx_2 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[2];
+  C13_idx_2 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[2];
+  C23_idx_2 = valGP * Oel[0];
+  b_valGP = elStorage->C24[2];
+  C24_idx_2 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[2];
+  C25_idx_2 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[2];
+  C26_idx_2 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[2];
+  C34_idx_2 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[2];
+  C35_idx_2 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[2];
+  C36_idx_2 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[2];
   f = elStorage->C14_2[2];
-  C14_idx_2 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_2 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[2];
   c_f = elStorage->C45_2[2];
   C45_idx_2 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[2];
-  rhoA = elStorage->C46_2[2];
-  C46_idx_2 = zcm * Oel[1] + rhoA * Oel[2];
-  H12_idx_2 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_2 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_2 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_2 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_2 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_2 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_2 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_2 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_2 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_2 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[2];
+  c_elStorage_tmp = elStorage->C46_2[2];
+  C46_idx_2 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_2 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_2 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_2 = 0.5 * valGP * ODotel[0];
+  H24_idx_2 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_2 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_2 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_2 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_2 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_2 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_2 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_2 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_2 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_2 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
   S12_idx_3 = elStorage->S12[3] * Oel[0] * Oel[1];
   S13_idx_3 = elStorage->S13[3] * Oel[0] * Oel[2];
   S23_idx_3 = elStorage->S23[3] * Oel[1] * Oel[2];
-  S25_idx_3 = elStorage->S25[3] * H46_idx_3;
-  S26_idx_3 = elStorage->S26[3] * H46_idx_3;
+  S25_idx_3 = elStorage->S25[3] * Oel_tmp;
+  S26_idx_3 = elStorage->S26[3] * Oel_tmp;
   S35_idx_3 = elStorage->S35[3] * Oel[0] * Oel[2];
   S36_idx_3 = elStorage->S36[3] * Oel[0] * Oel[2];
   S14_idx_3 = elStorage->S14_1[3] * Oel[0] * Oel[2] + elStorage->S14_2[3] * Oel
     [0] * Oel[1];
-  S24_idx_3 = elStorage->S24_1[3] * c_c_tmp + elStorage->S24_2[3] * Oel[1] *
+  S24_idx_3 = elStorage->S24_1[3] * b_c_tmp + elStorage->S24_2[3] * Oel[1] *
     Oel[2];
-  S34_idx_3 = elStorage->S34_1[3] * b_c_tmp + elStorage->S34_2[3] * Oel[1] *
-    Oel[2];
+  S34_idx_3 = elStorage->S34_1[3] * c_tmp + elStorage->S34_2[3] * Oel[1] * Oel[2];
   S45_idx_3 = elStorage->S45_1[3] * Oel[0] * Oel[2] + elStorage->S45_2[3] * Oel
     [0] * Oel[1];
   S46_idx_3 = elStorage->S46_1[3] * Oel[0] * Oel[1] + elStorage->S46_2[3] * Oel
     [0] * Oel[2];
-  c_tmp = elStorage->C12[3];
-  C12_idx_3 = c_tmp * Oel[2];
-  K15_idx_1 = elStorage->C13[3];
-  C13_idx_3 = K15_idx_1 * Oel[1];
-  K15_idx_0 = elStorage->C23[3];
-  C23_idx_3 = K15_idx_0 * Oel[0];
-  K16_idx_0 = elStorage->C24[3];
-  C24_idx_3 = K16_idx_0 * Oel[0];
-  K56_idx_0 = elStorage->C25[3];
-  C25_idx_3 = K56_idx_0 * Oel[2];
-  f_tmp = elStorage->C26[3];
-  C26_idx_3 = f_tmp * Oel[2];
-  b_f_tmp = elStorage->C34[3];
-  C34_idx_3 = b_f_tmp * Oel[0];
-  c_f_tmp = elStorage->C35[3];
-  C35_idx_3 = c_f_tmp * Oel[1];
-  d_f_tmp = elStorage->C36[3];
-  C36_idx_3 = d_f_tmp * Oel[1];
-  e_f_tmp = elStorage->C14_1[3];
+  elStorage_tmp = elStorage->C12[3];
+  C12_idx_3 = elStorage_tmp * Oel[2];
+  b_elStorage_tmp = elStorage->C13[3];
+  C13_idx_3 = b_elStorage_tmp * Oel[1];
+  valGP = elStorage->C23[3];
+  C23_idx_3 = valGP * Oel[0];
+  b_valGP = elStorage->C24[3];
+  C24_idx_3 = b_valGP * Oel[0];
+  valGP_idx_0 = elStorage->C25[3];
+  C25_idx_3 = valGP_idx_0 * Oel[2];
+  valGP_idx_1 = elStorage->C26[3];
+  C26_idx_3 = valGP_idx_1 * Oel[2];
+  valGP_idx_2 = elStorage->C34[3];
+  C34_idx_3 = valGP_idx_2 * Oel[0];
+  b_f_tmp = elStorage->C35[3];
+  C35_idx_3 = b_f_tmp * Oel[1];
+  c_f_tmp = elStorage->C36[3];
+  C36_idx_3 = c_f_tmp * Oel[1];
+  d_f_tmp = elStorage->C14_1[3];
   f = elStorage->C14_2[3];
-  C14_idx_3 = e_f_tmp * Oel[1] + f * Oel[2];
+  C14_idx_3 = d_f_tmp * Oel[1] + f * Oel[2];
   b_f = elStorage->C45_1[3];
   c_f = elStorage->C45_2[3];
   C45_idx_3 = b_f * Oel[2] + c_f * Oel[1];
-  zcm = elStorage->C46_1[3];
-  rhoA = elStorage->C46_2[3];
-  C46_idx_3 = zcm * Oel[1] + rhoA * Oel[2];
-  H12_idx_3 = 0.5 * c_tmp * ODotel[2];
-  H13_idx_3 = 0.5 * K15_idx_1 * ODotel[1];
-  H23_idx_3 = 0.5 * K15_idx_0 * ODotel[0];
-  H24_idx_3 = 0.5 * K16_idx_0 * ODotel[0];
-  H25_idx_3 = 0.5 * K56_idx_0 * ODotel[2];
-  H26_idx_3 = 0.5 * f_tmp * ODotel[2];
-  H34_idx_3 = 0.5 * b_f_tmp * ODotel[0];
-  H35_idx_3 = 0.5 * c_f_tmp * ODotel[1];
-  H36_idx_3 = 0.5 * d_f_tmp * ODotel[1];
-  H14_idx_3 = 0.5 * (e_f_tmp * ODotel[1] + f * ODotel[2]);
+  f_tmp = elStorage->C46_1[3];
+  c_elStorage_tmp = elStorage->C46_2[3];
+  C46_idx_3 = f_tmp * Oel[1] + c_elStorage_tmp * Oel[2];
+  H12_idx_3 = 0.5 * elStorage_tmp * ODotel[2];
+  H13_idx_3 = 0.5 * b_elStorage_tmp * ODotel[1];
+  H23_idx_3 = 0.5 * valGP * ODotel[0];
+  H24_idx_3 = 0.5 * b_valGP * ODotel[0];
+  H25_idx_3 = 0.5 * valGP_idx_0 * ODotel[2];
+  H26_idx_3 = 0.5 * valGP_idx_1 * ODotel[2];
+  H34_idx_3 = 0.5 * valGP_idx_2 * ODotel[0];
+  H35_idx_3 = 0.5 * b_f_tmp * ODotel[1];
+  H36_idx_3 = 0.5 * c_f_tmp * ODotel[1];
+  H14_idx_3 = 0.5 * (d_f_tmp * ODotel[1] + f * ODotel[2]);
   H45_idx_3 = 0.5 * (b_f * ODotel[2] + c_f * ODotel[1]);
-  H46_idx_3 = 0.5 * (zcm * ODotel[1] + rhoA * ODotel[2]);
+  H46_idx_3 = 0.5 * (f_tmp * ODotel[1] + c_elStorage_tmp * ODotel[2]);
 
   // compile stiffness matrix without rotational effects
   b_elStorage[0] = elStorage->K11[0];
@@ -4593,211 +4649,211 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   mapMatrixNonSym(b_elStorage, Kenr);
 
   // add spin softening and circulatory effects to stiffness marix
-  c_tmp = Oel[1] * Oel[1] + Oel[2] * Oel[2];
-  K15_idx_0 = elStorage->K15[0] + elStorage->S15[0] * c_tmp;
-  K16_idx_0 = elStorage->K16[0] + elStorage->S16[0] * c_tmp;
-  K56_idx_0 = elStorage->K56[0] + elStorage->S56[0] * c_tmp;
-  K15_idx_1 = elStorage->K15[1] + elStorage->S15[1] * c_tmp;
-  K16_idx_1 = elStorage->K16[1] + elStorage->S16[1] * c_tmp;
-  K56_idx_1 = elStorage->K56[1] + elStorage->S56[1] * c_tmp;
-  K15_idx_2 = elStorage->K15[2] + elStorage->S15[2] * c_tmp;
-  K16_idx_2 = elStorage->K16[2] + elStorage->S16[2] * c_tmp;
-  K56_idx_2 = elStorage->K56[2] + elStorage->S56[2] * c_tmp;
-  K15_idx_3 = elStorage->K15[3] + elStorage->S15[3] * c_tmp;
-  K16_idx_3 = elStorage->K16[3] + elStorage->S16[3] * c_tmp;
-  K56_idx_3 = elStorage->K56[3] + elStorage->S56[3] * c_tmp;
+  c_c_tmp = Oel[1] * Oel[1] + Oel[2] * Oel[2];
+  K15_idx_0 = elStorage->K15[0] + elStorage->S15[0] * c_c_tmp;
+  K16_idx_0 = elStorage->K16[0] + elStorage->S16[0] * c_c_tmp;
+  K56_idx_0 = elStorage->K56[0] + elStorage->S56[0] * c_c_tmp;
+  K15_idx_1 = elStorage->K15[1] + elStorage->S15[1] * c_c_tmp;
+  K16_idx_1 = elStorage->K16[1] + elStorage->S16[1] * c_c_tmp;
+  K56_idx_1 = elStorage->K56[1] + elStorage->S56[1] * c_c_tmp;
+  K15_idx_2 = elStorage->K15[2] + elStorage->S15[2] * c_c_tmp;
+  K16_idx_2 = elStorage->K16[2] + elStorage->S16[2] * c_c_tmp;
+  K56_idx_2 = elStorage->K56[2] + elStorage->S56[2] * c_c_tmp;
+  K15_idx_3 = elStorage->K15[3] + elStorage->S15[3] * c_c_tmp;
+  K16_idx_3 = elStorage->K16[3] + elStorage->S16[3] * c_c_tmp;
+  K56_idx_3 = elStorage->K56[3] + elStorage->S56[3] * c_c_tmp;
 
   // ---------------------------------------------
   // compile stiffness matrix with rotational effects
-  b_elStorage[0] = elStorage->K11[0] + elStorage->S11[0] * c_tmp;
-  b_elStorage[24] = (elStorage->K12[0] + integrationFactor) + O2;
+  b_elStorage[0] = elStorage->K11[0] + elStorage->S11[0] * c_c_tmp;
+  b_elStorage[24] = (elStorage->K12[0] + S12_idx_0) + H12_idx_0;
   b_elStorage[48] = (elStorage->K13[0] + S13_idx_0) + H13_idx_0;
-  O3dot = elStorage->K14[0] + ycm;
-  b_elStorage[72] = O3dot + H14_idx_0;
+  d_elStorage_tmp = elStorage->K14[0] + S14_idx_0;
+  b_elStorage[72] = d_elStorage_tmp + H14_idx_0;
   b_elStorage[96] = K15_idx_0;
   b_elStorage[120] = K16_idx_0;
-  b_elStorage[2] = (elStorage->K12[0] + integrationFactor) - O2;
-  b_elStorage[26] = elStorage->K22[0] + elStorage->S22[0] * c_c_tmp;
-  O1dot = elStorage->K23[0] + O1;
-  b_elStorage[50] = O1dot + H23_idx_0;
-  O3 += elStorage->K24[0];
-  b_elStorage[74] = O3 + H24_idx_0;
-  O2 = elStorage->K25[0] + O2dot;
-  b_elStorage[98] = O2 + H25_idx_0;
-  O1 = elStorage->K26[0] + S26_idx_0;
-  b_elStorage[122] = O1 + H26_idx_0;
+  b_elStorage[2] = (elStorage->K12[0] + S12_idx_0) - H12_idx_0;
+  b_elStorage[26] = elStorage->K22[0] + elStorage->S22[0] * b_c_tmp;
+  e_elStorage_tmp = elStorage->K23[0] + S23_idx_0;
+  b_elStorage[50] = e_elStorage_tmp + H23_idx_0;
+  f_elStorage_tmp = elStorage->K24[0] + S24_idx_0;
+  b_elStorage[74] = f_elStorage_tmp + H24_idx_0;
+  g_elStorage_tmp = elStorage->K25[0] + S25_idx_0;
+  b_elStorage[98] = g_elStorage_tmp + H25_idx_0;
+  b_elStorage_tmp = elStorage->K26[0] + S26_idx_0;
+  b_elStorage[122] = b_elStorage_tmp + H26_idx_0;
   b_elStorage[4] = (elStorage->K13[0] + S13_idx_0) - H13_idx_0;
-  b_elStorage[28] = O1dot - H23_idx_0;
-  b_elStorage[52] = elStorage->K33[0] + elStorage->S33[0] * b_c_tmp;
-  O1dot = elStorage->K34[0] + S34_idx_0;
-  b_elStorage[76] = O1dot + H34_idx_0;
-  integrationFactor = elStorage->K35[0] + S35_idx_0;
-  b_elStorage[100] = integrationFactor + H35_idx_0;
-  ycm = elStorage->K36[0] + S36_idx_0;
-  b_elStorage[124] = ycm + H36_idx_0;
-  b_elStorage[6] = O3dot - H14_idx_0;
-  b_elStorage[30] = O3 - H24_idx_0;
-  b_elStorage[54] = O1dot - H34_idx_0;
-  b_elStorage[78] = elStorage->K44[0] + ((elStorage->S44_1[0] * c_c_tmp +
-    elStorage->S44_2[0] * b_c_tmp) + elStorage->S44_3[0] * Oel[1] * Oel[2]);
-  O3dot = elStorage->K45[0] + S45_idx_0;
-  b_elStorage[102] = O3dot + H45_idx_0;
-  O1dot = elStorage->K46[0] + S46_idx_0;
-  b_elStorage[126] = O1dot + H46_idx_0;
+  b_elStorage[28] = e_elStorage_tmp - H23_idx_0;
+  b_elStorage[52] = elStorage->K33[0] + elStorage->S33[0] * c_tmp;
+  e_elStorage_tmp = elStorage->K34[0] + S34_idx_0;
+  b_elStorage[76] = e_elStorage_tmp + H34_idx_0;
+  elStorage_tmp = elStorage->K35[0] + S35_idx_0;
+  b_elStorage[100] = elStorage_tmp + H35_idx_0;
+  c_elStorage_tmp = elStorage->K36[0] + S36_idx_0;
+  b_elStorage[124] = c_elStorage_tmp + H36_idx_0;
+  b_elStorage[6] = d_elStorage_tmp - H14_idx_0;
+  b_elStorage[30] = f_elStorage_tmp - H24_idx_0;
+  b_elStorage[54] = e_elStorage_tmp - H34_idx_0;
+  b_elStorage[78] = elStorage->K44[0] + ((elStorage->S44_1[0] * b_c_tmp +
+    elStorage->S44_2[0] * c_tmp) + elStorage->S44_3[0] * Oel[1] * Oel[2]);
+  d_elStorage_tmp = elStorage->K45[0] + S45_idx_0;
+  b_elStorage[102] = d_elStorage_tmp + H45_idx_0;
+  e_elStorage_tmp = elStorage->K46[0] + S46_idx_0;
+  b_elStorage[126] = e_elStorage_tmp + H46_idx_0;
   b_elStorage[8] = K15_idx_0;
-  b_elStorage[32] = O2 - H25_idx_0;
-  b_elStorage[56] = integrationFactor - H35_idx_0;
-  b_elStorage[80] = O3dot - H45_idx_0;
-  b_elStorage[104] = elStorage->K55[0] + elStorage->S55[0] * c_tmp;
+  b_elStorage[32] = g_elStorage_tmp - H25_idx_0;
+  b_elStorage[56] = elStorage_tmp - H35_idx_0;
+  b_elStorage[80] = d_elStorage_tmp - H45_idx_0;
+  b_elStorage[104] = elStorage->K55[0] + elStorage->S55[0] * c_c_tmp;
   b_elStorage[128] = K56_idx_0;
   b_elStorage[10] = K16_idx_0;
-  b_elStorage[34] = O1 - H26_idx_0;
-  b_elStorage[58] = ycm - H36_idx_0;
-  b_elStorage[82] = O1dot - H46_idx_0;
+  b_elStorage[34] = b_elStorage_tmp - H26_idx_0;
+  b_elStorage[58] = c_elStorage_tmp - H36_idx_0;
+  b_elStorage[82] = e_elStorage_tmp - H46_idx_0;
   b_elStorage[106] = K56_idx_0;
-  b_elStorage[130] = elStorage->K66[0] + elStorage->S66[0] * c_tmp;
-  b_elStorage[1] = elStorage->K11[1] + elStorage->S11[1] * c_tmp;
+  b_elStorage[130] = elStorage->K66[0] + elStorage->S66[0] * c_c_tmp;
+  b_elStorage[1] = elStorage->K11[1] + elStorage->S11[1] * c_c_tmp;
   b_elStorage[25] = (elStorage->K12[1] + S12_idx_1) + H12_idx_1;
   b_elStorage[49] = (elStorage->K13[1] + S13_idx_1) + H13_idx_1;
-  O3dot = elStorage->K14[1] + S14_idx_1;
-  b_elStorage[73] = O3dot + H14_idx_1;
+  d_elStorage_tmp = elStorage->K14[1] + S14_idx_1;
+  b_elStorage[73] = d_elStorage_tmp + H14_idx_1;
   b_elStorage[97] = K15_idx_1;
   b_elStorage[121] = K16_idx_1;
   b_elStorage[3] = (elStorage->K12[2] + S12_idx_2) - H12_idx_2;
-  b_elStorage[27] = elStorage->K22[1] + elStorage->S22[1] * c_c_tmp;
-  O1dot = elStorage->K23[1] + S23_idx_1;
-  b_elStorage[51] = O1dot + H23_idx_1;
-  O3 = elStorage->K24[1] + S24_idx_1;
-  b_elStorage[75] = O3 + H24_idx_1;
-  O2 = elStorage->K25[1] + S25_idx_1;
-  b_elStorage[99] = O2 + H25_idx_1;
-  O1 = elStorage->K26[1] + S26_idx_1;
-  b_elStorage[123] = O1 + H26_idx_1;
+  b_elStorage[27] = elStorage->K22[1] + elStorage->S22[1] * b_c_tmp;
+  e_elStorage_tmp = elStorage->K23[1] + S23_idx_1;
+  b_elStorage[51] = e_elStorage_tmp + H23_idx_1;
+  f_elStorage_tmp = elStorage->K24[1] + S24_idx_1;
+  b_elStorage[75] = f_elStorage_tmp + H24_idx_1;
+  g_elStorage_tmp = elStorage->K25[1] + S25_idx_1;
+  b_elStorage[99] = g_elStorage_tmp + H25_idx_1;
+  b_elStorage_tmp = elStorage->K26[1] + S26_idx_1;
+  b_elStorage[123] = b_elStorage_tmp + H26_idx_1;
   b_elStorage[5] = (elStorage->K13[2] + S13_idx_2) - H13_idx_2;
-  integrationFactor = elStorage->K23[2] + S23_idx_2;
-  b_elStorage[29] = integrationFactor - H23_idx_2;
-  b_elStorage[53] = elStorage->K33[1] + elStorage->S33[1] * b_c_tmp;
-  ycm = elStorage->K34[1] + S34_idx_1;
-  b_elStorage[77] = ycm + H34_idx_1;
-  rhoA = elStorage->K35[1] + S35_idx_1;
-  b_elStorage[101] = rhoA + H35_idx_1;
-  zcm = elStorage->K36[1] + S36_idx_1;
-  b_elStorage[125] = zcm + H36_idx_1;
+  elStorage_tmp = elStorage->K23[2] + S23_idx_2;
+  b_elStorage[29] = elStorage_tmp - H23_idx_2;
+  b_elStorage[53] = elStorage->K33[1] + elStorage->S33[1] * c_tmp;
+  c_elStorage_tmp = elStorage->K34[1] + S34_idx_1;
+  b_elStorage[77] = c_elStorage_tmp + H34_idx_1;
+  Oel_tmp = elStorage->K35[1] + S35_idx_1;
+  b_elStorage[101] = Oel_tmp + H35_idx_1;
+  f_tmp = elStorage->K36[1] + S36_idx_1;
+  b_elStorage[125] = f_tmp + H36_idx_1;
   c_f = elStorage->K14[2] + S14_idx_2;
   b_elStorage[7] = c_f - H14_idx_2;
   b_f = elStorage->K24[2] + S24_idx_2;
   b_elStorage[31] = b_f - H24_idx_2;
   f = elStorage->K34[2] + S34_idx_2;
   b_elStorage[55] = f - H34_idx_2;
-  b_elStorage[79] = elStorage->K44[1] + ((elStorage->S44_1[1] * c_c_tmp +
-    elStorage->S44_2[1] * b_c_tmp) + elStorage->S44_3[1] * Oel[1] * Oel[2]);
-  e_f_tmp = elStorage->K45[1] + S45_idx_1;
-  b_elStorage[103] = e_f_tmp + H45_idx_1;
-  d_f_tmp = elStorage->K46[1] + S46_idx_1;
-  b_elStorage[127] = d_f_tmp + H46_idx_1;
+  b_elStorage[79] = elStorage->K44[1] + ((elStorage->S44_1[1] * b_c_tmp +
+    elStorage->S44_2[1] * c_tmp) + elStorage->S44_3[1] * Oel[1] * Oel[2]);
+  d_f_tmp = elStorage->K45[1] + S45_idx_1;
+  b_elStorage[103] = d_f_tmp + H45_idx_1;
+  c_f_tmp = elStorage->K46[1] + S46_idx_1;
+  b_elStorage[127] = c_f_tmp + H46_idx_1;
   b_elStorage[9] = K15_idx_2;
-  c_f_tmp = elStorage->K25[2] + S25_idx_2;
-  b_elStorage[33] = c_f_tmp - H25_idx_2;
-  b_f_tmp = elStorage->K35[2] + S35_idx_2;
-  b_elStorage[57] = b_f_tmp - H35_idx_2;
-  f_tmp = elStorage->K45[2] + S45_idx_2;
-  b_elStorage[81] = f_tmp - H45_idx_2;
-  b_elStorage[105] = elStorage->K55[1] + elStorage->S55[1] * c_tmp;
+  b_f_tmp = elStorage->K25[2] + S25_idx_2;
+  b_elStorage[33] = b_f_tmp - H25_idx_2;
+  valGP_idx_2 = elStorage->K35[2] + S35_idx_2;
+  b_elStorage[57] = valGP_idx_2 - H35_idx_2;
+  valGP_idx_1 = elStorage->K45[2] + S45_idx_2;
+  b_elStorage[81] = valGP_idx_1 - H45_idx_2;
+  b_elStorage[105] = elStorage->K55[1] + elStorage->S55[1] * c_c_tmp;
   b_elStorage[129] = K56_idx_1;
   b_elStorage[11] = K16_idx_2;
-  K56_idx_0 = elStorage->K26[2] + S26_idx_2;
-  b_elStorage[35] = K56_idx_0 - H26_idx_2;
-  K16_idx_0 = elStorage->K36[2] + S36_idx_2;
-  b_elStorage[59] = K16_idx_0 - H36_idx_2;
-  K15_idx_0 = elStorage->K46[2] + S46_idx_2;
-  b_elStorage[83] = K15_idx_0 - H46_idx_2;
+  valGP_idx_0 = elStorage->K26[2] + S26_idx_2;
+  b_elStorage[35] = valGP_idx_0 - H26_idx_2;
+  b_valGP = elStorage->K36[2] + S36_idx_2;
+  b_elStorage[59] = b_valGP - H36_idx_2;
+  valGP = elStorage->K46[2] + S46_idx_2;
+  b_elStorage[83] = valGP - H46_idx_2;
   b_elStorage[107] = K56_idx_2;
-  b_elStorage[131] = elStorage->K66[1] + elStorage->S66[1] * c_tmp;
-  b_elStorage[12] = elStorage->K11[2] + elStorage->S11[2] * c_tmp;
+  b_elStorage[131] = elStorage->K66[1] + elStorage->S66[1] * c_c_tmp;
+  b_elStorage[12] = elStorage->K11[2] + elStorage->S11[2] * c_c_tmp;
   b_elStorage[36] = (elStorage->K12[2] + S12_idx_2) + H12_idx_2;
   b_elStorage[60] = (elStorage->K13[2] + S13_idx_2) + H13_idx_2;
   b_elStorage[84] = c_f + H14_idx_2;
   b_elStorage[108] = K15_idx_2;
   b_elStorage[132] = K16_idx_2;
   b_elStorage[14] = (elStorage->K12[1] + S12_idx_1) - H12_idx_1;
-  b_elStorage[38] = elStorage->K22[2] + elStorage->S22[2] * c_c_tmp;
-  b_elStorage[62] = integrationFactor + H23_idx_2;
+  b_elStorage[38] = elStorage->K22[2] + elStorage->S22[2] * b_c_tmp;
+  b_elStorage[62] = elStorage_tmp + H23_idx_2;
   b_elStorage[86] = b_f + H24_idx_2;
-  b_elStorage[110] = c_f_tmp + H25_idx_2;
-  b_elStorage[134] = K56_idx_0 + H26_idx_2;
+  b_elStorage[110] = b_f_tmp + H25_idx_2;
+  b_elStorage[134] = valGP_idx_0 + H26_idx_2;
   b_elStorage[16] = (elStorage->K13[1] + S13_idx_1) - H13_idx_1;
-  b_elStorage[40] = O1dot - H23_idx_1;
-  b_elStorage[64] = elStorage->K33[2] + elStorage->S33[2] * b_c_tmp;
+  b_elStorage[40] = e_elStorage_tmp - H23_idx_1;
+  b_elStorage[64] = elStorage->K33[2] + elStorage->S33[2] * c_tmp;
   b_elStorage[88] = f + H34_idx_2;
-  b_elStorage[112] = b_f_tmp + H35_idx_2;
-  b_elStorage[136] = K16_idx_0 + H36_idx_2;
-  b_elStorage[18] = O3dot - H14_idx_1;
-  b_elStorage[42] = O3 - H24_idx_1;
-  b_elStorage[66] = ycm - H34_idx_1;
-  b_elStorage[90] = elStorage->K44[2] + ((elStorage->S44_1[2] * c_c_tmp +
-    elStorage->S44_2[2] * b_c_tmp) + elStorage->S44_3[2] * Oel[1] * Oel[2]);
-  b_elStorage[114] = f_tmp + H45_idx_2;
-  b_elStorage[138] = K15_idx_0 + H46_idx_2;
+  b_elStorage[112] = valGP_idx_2 + H35_idx_2;
+  b_elStorage[136] = b_valGP + H36_idx_2;
+  b_elStorage[18] = d_elStorage_tmp - H14_idx_1;
+  b_elStorage[42] = f_elStorage_tmp - H24_idx_1;
+  b_elStorage[66] = c_elStorage_tmp - H34_idx_1;
+  b_elStorage[90] = elStorage->K44[2] + ((elStorage->S44_1[2] * b_c_tmp +
+    elStorage->S44_2[2] * c_tmp) + elStorage->S44_3[2] * Oel[1] * Oel[2]);
+  b_elStorage[114] = valGP_idx_1 + H45_idx_2;
+  b_elStorage[138] = valGP + H46_idx_2;
   b_elStorage[20] = K15_idx_1;
-  b_elStorage[44] = O2 - H25_idx_1;
-  b_elStorage[68] = rhoA - H35_idx_1;
-  b_elStorage[92] = e_f_tmp - H45_idx_1;
-  b_elStorage[116] = elStorage->K55[2] + elStorage->S55[2] * c_tmp;
+  b_elStorage[44] = g_elStorage_tmp - H25_idx_1;
+  b_elStorage[68] = Oel_tmp - H35_idx_1;
+  b_elStorage[92] = d_f_tmp - H45_idx_1;
+  b_elStorage[116] = elStorage->K55[2] + elStorage->S55[2] * c_c_tmp;
   b_elStorage[140] = K56_idx_2;
   b_elStorage[22] = K16_idx_1;
-  b_elStorage[46] = O1 - H26_idx_1;
-  b_elStorage[70] = zcm - H36_idx_1;
-  b_elStorage[94] = d_f_tmp - H46_idx_1;
+  b_elStorage[46] = b_elStorage_tmp - H26_idx_1;
+  b_elStorage[70] = f_tmp - H36_idx_1;
+  b_elStorage[94] = c_f_tmp - H46_idx_1;
   b_elStorage[118] = K56_idx_1;
-  b_elStorage[142] = elStorage->K66[2] + elStorage->S66[2] * c_tmp;
-  b_elStorage[13] = elStorage->K11[3] + elStorage->S11[3] * c_tmp;
+  b_elStorage[142] = elStorage->K66[2] + elStorage->S66[2] * c_c_tmp;
+  b_elStorage[13] = elStorage->K11[3] + elStorage->S11[3] * c_c_tmp;
   b_elStorage[37] = (elStorage->K12[3] + S12_idx_3) + H12_idx_3;
   b_elStorage[61] = (elStorage->K13[3] + S13_idx_3) + H13_idx_3;
-  O3dot = elStorage->K14[3] + S14_idx_3;
-  b_elStorage[85] = O3dot + H14_idx_3;
+  d_elStorage_tmp = elStorage->K14[3] + S14_idx_3;
+  b_elStorage[85] = d_elStorage_tmp + H14_idx_3;
   b_elStorage[109] = K15_idx_3;
   b_elStorage[133] = K16_idx_3;
   b_elStorage[15] = (elStorage->K12[3] + S12_idx_3) - H12_idx_3;
-  b_elStorage[39] = elStorage->K22[3] + elStorage->S22[3] * c_c_tmp;
-  O1dot = elStorage->K23[3] + S23_idx_3;
-  b_elStorage[63] = O1dot + H23_idx_3;
-  O3 = elStorage->K24[3] + S24_idx_3;
-  b_elStorage[87] = O3 + H24_idx_3;
-  O2 = elStorage->K25[3] + S25_idx_3;
-  b_elStorage[111] = O2 + H25_idx_3;
-  O1 = elStorage->K26[3] + S26_idx_3;
-  b_elStorage[135] = O1 + H26_idx_3;
+  b_elStorage[39] = elStorage->K22[3] + elStorage->S22[3] * b_c_tmp;
+  e_elStorage_tmp = elStorage->K23[3] + S23_idx_3;
+  b_elStorage[63] = e_elStorage_tmp + H23_idx_3;
+  f_elStorage_tmp = elStorage->K24[3] + S24_idx_3;
+  b_elStorage[87] = f_elStorage_tmp + H24_idx_3;
+  g_elStorage_tmp = elStorage->K25[3] + S25_idx_3;
+  b_elStorage[111] = g_elStorage_tmp + H25_idx_3;
+  b_elStorage_tmp = elStorage->K26[3] + S26_idx_3;
+  b_elStorage[135] = b_elStorage_tmp + H26_idx_3;
   b_elStorage[17] = (elStorage->K13[3] + S13_idx_3) - H13_idx_3;
-  b_elStorage[41] = O1dot - H23_idx_3;
-  b_elStorage[65] = elStorage->K33[3] + elStorage->S33[3] * b_c_tmp;
-  O1dot = elStorage->K34[3] + S34_idx_3;
-  b_elStorage[89] = O1dot + H34_idx_3;
-  integrationFactor = elStorage->K35[3] + S35_idx_3;
-  b_elStorage[113] = integrationFactor + H35_idx_3;
-  ycm = elStorage->K36[3] + S36_idx_3;
-  b_elStorage[137] = ycm + H36_idx_3;
-  b_elStorage[19] = O3dot - H14_idx_3;
-  b_elStorage[43] = O3 - H24_idx_3;
-  b_elStorage[67] = O1dot - H34_idx_3;
-  b_elStorage[91] = elStorage->K44[3] + ((elStorage->S44_1[3] * c_c_tmp +
-    elStorage->S44_2[3] * b_c_tmp) + elStorage->S44_3[3] * Oel[1] * Oel[2]);
-  O3dot = elStorage->K45[3] + S45_idx_3;
-  b_elStorage[115] = O3dot + H45_idx_3;
-  O1dot = elStorage->K46[3] + S46_idx_3;
-  b_elStorage[139] = O1dot + H46_idx_3;
+  b_elStorage[41] = e_elStorage_tmp - H23_idx_3;
+  b_elStorage[65] = elStorage->K33[3] + elStorage->S33[3] * c_tmp;
+  e_elStorage_tmp = elStorage->K34[3] + S34_idx_3;
+  b_elStorage[89] = e_elStorage_tmp + H34_idx_3;
+  elStorage_tmp = elStorage->K35[3] + S35_idx_3;
+  b_elStorage[113] = elStorage_tmp + H35_idx_3;
+  c_elStorage_tmp = elStorage->K36[3] + S36_idx_3;
+  b_elStorage[137] = c_elStorage_tmp + H36_idx_3;
+  b_elStorage[19] = d_elStorage_tmp - H14_idx_3;
+  b_elStorage[43] = f_elStorage_tmp - H24_idx_3;
+  b_elStorage[67] = e_elStorage_tmp - H34_idx_3;
+  b_elStorage[91] = elStorage->K44[3] + ((elStorage->S44_1[3] * b_c_tmp +
+    elStorage->S44_2[3] * c_tmp) + elStorage->S44_3[3] * Oel[1] * Oel[2]);
+  d_elStorage_tmp = elStorage->K45[3] + S45_idx_3;
+  b_elStorage[115] = d_elStorage_tmp + H45_idx_3;
+  e_elStorage_tmp = elStorage->K46[3] + S46_idx_3;
+  b_elStorage[139] = e_elStorage_tmp + H46_idx_3;
   b_elStorage[21] = K15_idx_3;
-  b_elStorage[45] = O2 - H25_idx_3;
-  b_elStorage[69] = integrationFactor - H35_idx_3;
-  b_elStorage[93] = O3dot - H45_idx_3;
-  b_elStorage[117] = elStorage->K55[3] + elStorage->S55[3] * c_tmp;
+  b_elStorage[45] = g_elStorage_tmp - H25_idx_3;
+  b_elStorage[69] = elStorage_tmp - H35_idx_3;
+  b_elStorage[93] = d_elStorage_tmp - H45_idx_3;
+  b_elStorage[117] = elStorage->K55[3] + elStorage->S55[3] * c_c_tmp;
   b_elStorage[141] = K56_idx_3;
   b_elStorage[23] = K16_idx_3;
-  b_elStorage[47] = O1 - H26_idx_3;
-  b_elStorage[71] = ycm - H36_idx_3;
-  b_elStorage[95] = O1dot - H46_idx_3;
+  b_elStorage[47] = b_elStorage_tmp - H26_idx_3;
+  b_elStorage[71] = c_elStorage_tmp - H36_idx_3;
+  b_elStorage[95] = e_elStorage_tmp - H46_idx_3;
   b_elStorage[119] = K56_idx_3;
-  b_elStorage[143] = elStorage->K66[3] + elStorage->S66[3] * c_tmp;
-  mapMatrixNonSym(b_elStorage, Khate);
+  b_elStorage[143] = elStorage->K66[3] + elStorage->S66[3] * c_c_tmp;
+  mapMatrixNonSym(b_elStorage, Ke);
 
   //  Declare type
   // compile Coriolis/damping matrix
@@ -4946,21 +5002,21 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   reshapes_f6[19] = 0.0;
   reshapes_f6[23] = 0.0;
   for (i = 0; i < 12; i++) {
-    b_i = i << 1;
-    b_elStorage[12 * i] = reshapes_f1[b_i];
-    b_elStorage[12 * i + 2] = reshapes_f2[b_i];
+    reshapes_f1_tmp = i << 1;
+    b_elStorage[12 * i] = reshapes_f1[reshapes_f1_tmp];
+    b_elStorage[12 * i + 2] = reshapes_f2[reshapes_f1_tmp];
     b_elStorage[12 * i + 4] = reshapes_f3_data[2 * i];
     b_elStorage[12 * i + 6] = reshapes_f4_data[2 * i];
-    b_elStorage[12 * i + 8] = reshapes_f5[b_i];
-    b_elStorage[12 * i + 10] = reshapes_f6[b_i];
-    b_i++;
-    b_elStorage[12 * i + 1] = reshapes_f1[b_i];
-    b_elStorage[12 * i + 3] = reshapes_f2[b_i];
+    b_elStorage[12 * i + 8] = reshapes_f5[reshapes_f1_tmp];
+    b_elStorage[12 * i + 10] = reshapes_f6[reshapes_f1_tmp];
+    reshapes_f1_tmp++;
+    b_elStorage[12 * i + 1] = reshapes_f1[reshapes_f1_tmp];
+    b_elStorage[12 * i + 3] = reshapes_f2[reshapes_f1_tmp];
     reshapes_f1_data_tmp = 2 * i + 1;
     b_elStorage[12 * i + 5] = reshapes_f3_data[reshapes_f1_data_tmp];
     b_elStorage[12 * i + 7] = reshapes_f4_data[reshapes_f1_data_tmp];
-    b_elStorage[12 * i + 9] = reshapes_f5[b_i];
-    b_elStorage[12 * i + 11] = reshapes_f6[b_i];
+    b_elStorage[12 * i + 9] = reshapes_f5[reshapes_f1_tmp];
+    b_elStorage[12 * i + 11] = reshapes_f6[reshapes_f1_tmp];
   }
 
   b_mapMatrixNonSym(b_elStorage, Ce);
@@ -5127,8 +5183,8 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   //  positive rotation
   sparse(lambda, lambda_d, lambda_colidx, lambda_rowidx);
   for (i = 0; i < 12; i++) {
-    for (b_i = 0; b_i < 12; b_i++) {
-      b_elStorage[b_i + 12 * i] = lambda[i + 12 * b_i];
+    for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+      b_elStorage[reshapes_f1_tmp + 12 * i] = lambda[i + 12 * reshapes_f1_tmp];
     }
   }
 
@@ -5142,9 +5198,9 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   b_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Ce,
                   b_elStorage);
   c_sparse_mtimes(b_elStorage, lambda_d, lambda_colidx, lambda_rowidx, Ce);
-  b_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Khate,
+  b_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Ke,
                   b_elStorage);
-  c_sparse_mtimes(b_elStorage, lambda_d, lambda_colidx, lambda_rowidx, Khate);
+  c_sparse_mtimes(b_elStorage, lambda_d, lambda_colidx, lambda_rowidx, Ke);
   Ftemp_data[0] = F1_data_idx_0;
   Ftemp_data[2] = F2_data_idx_0;
   Ftemp_data[4] = F3_data_idx_0;
@@ -5163,16 +5219,17 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
   emxFree_int32_T(&lambda_rowidx);
   emxFree_int32_T(&lambda_colidx);
   emxFree_real_T(&lambda_d);
-  std::memset(&Fhate[0], 0, 12U * sizeof(double));
+  std::memset(&Fel_data[0], 0, 12U * sizeof(double));
 
   //
   //  %declare map
   for (b_i = 0; b_i < 12; b_i++) {
-    Fhate[iv1[b_i] - 1] = Ftemp_data[b_i];
+    Fel_data[iv1[b_i] - 1] = Ftemp_data[b_i];
   }
 
   //  %------------------------------------------------------------------------- 
-  d_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Fhate, Fe);
+  d_sparse_mtimes(lambdaTran_d, lambdaTran_colidx, lambdaTran_rowidx, Fel_data,
+                  Fe);
 
   //
   // concentrated mass
@@ -5199,76 +5256,76 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
     Me[143] += input->concMass[7];
 
     // modify Ce for concentrated mass
-    H46_idx_3 = 2.0 * input->concMass[0] * Omega;
-    Ce[12] -= H46_idx_3;
-    Ce[1] += H46_idx_3;
-    H46_idx_3 = 2.0 * input->concMass[0] * 0.0;
-    Ce[24] += H46_idx_3;
-    Ce[2] -= H46_idx_3;
-    Ce[25] -= H46_idx_3;
-    Ce[14] += H46_idx_3;
-    H46_idx_3 = 2.0 * input->concMass[4] * Omega;
-    Ce[90] -= H46_idx_3;
-    Ce[79] += H46_idx_3;
-    H46_idx_3 = 2.0 * input->concMass[4] * 0.0;
-    Ce[102] += H46_idx_3;
-    Ce[80] -= H46_idx_3;
-    Ce[103] -= H46_idx_3;
-    Ce[92] += H46_idx_3;
+    valGP_idx_0 = 2.0 * input->concMass[0] * Omega;
+    Ce[12] -= valGP_idx_0;
+    Ce[1] += valGP_idx_0;
+    valGP_idx_0 = 2.0 * input->concMass[0] * 0.0;
+    Ce[24] += valGP_idx_0;
+    Ce[2] -= valGP_idx_0;
+    Ce[25] -= valGP_idx_0;
+    Ce[14] += valGP_idx_0;
+    valGP_idx_0 = 2.0 * input->concMass[4] * Omega;
+    Ce[90] -= valGP_idx_0;
+    Ce[79] += valGP_idx_0;
+    valGP_idx_0 = 2.0 * input->concMass[4] * 0.0;
+    Ce[102] += valGP_idx_0;
+    Ce[80] -= valGP_idx_0;
+    Ce[103] -= valGP_idx_0;
+    Ce[92] += valGP_idx_0;
 
     // modify Ke for concentrated mass
-    H46_idx_3 = Omega * Omega;
-    K56_idx_0 = input->concMass[0] * H46_idx_3;
-    Khate[0] -= K56_idx_0;
-    K15_idx_0 = input->concMass[0] * 0.0 * 0.0;
-    K16_idx_0 = input->concMass[0] * OmegaDot;
-    Khate[12] = (Khate[12] + K15_idx_0) - K16_idx_0;
-    Khate[1] = (Khate[1] + K15_idx_0) + K16_idx_0;
-    K15_idx_0 = input->concMass[0] * 0.0 * Omega;
-    Khate[24] = (Khate[24] + K15_idx_0) + input->concMass[0] * 0.0;
-    Khate[2] = (Khate[2] + K15_idx_0) - input->concMass[0] * 0.0;
-    Khate[25] = (Khate[25] + K15_idx_0) - input->concMass[0] * 0.0;
-    Khate[14] = (Khate[14] + K15_idx_0) + input->concMass[0] * 0.0;
-    Khate[13] -= K56_idx_0;
-    Khate[26] -= input->concMass[0] * 0.0;
-    K56_idx_0 = input->concMass[4] * H46_idx_3;
-    Khate[78] -= K56_idx_0;
-    K15_idx_0 = input->concMass[4] * 0.0 * 0.0;
-    K16_idx_0 = input->concMass[4] * OmegaDot;
-    Khate[90] = (Khate[90] + K15_idx_0) - K16_idx_0;
-    Khate[79] = (Khate[79] + K15_idx_0) + K16_idx_0;
-    K15_idx_0 = input->concMass[4] * 0.0 * Omega;
-    Khate[102] = (Khate[102] + K15_idx_0) + input->concMass[4] * 0.0;
-    Khate[80] = (Khate[80] + K15_idx_0) - input->concMass[4] * 0.0;
-    Khate[103] = (Khate[103] + K15_idx_0) - input->concMass[4] * 0.0;
-    Khate[92] = (Khate[92] + K15_idx_0) + input->concMass[4] * 0.0;
-    Khate[91] -= K56_idx_0;
-    Khate[104] -= input->concMass[4] * 0.0;
+    valGP_idx_0 = Omega * Omega;
+    Oel_tmp = input->concMass[0] * valGP_idx_0;
+    Ke[0] -= Oel_tmp;
+    valGP = input->concMass[0] * 0.0 * 0.0;
+    b_valGP = input->concMass[0] * OmegaDot;
+    Ke[12] = (Ke[12] + valGP) - b_valGP;
+    Ke[1] = (Ke[1] + valGP) + b_valGP;
+    valGP = input->concMass[0] * 0.0 * Omega;
+    Ke[24] = (Ke[24] + valGP) + input->concMass[0] * 0.0;
+    Ke[2] = (Ke[2] + valGP) - input->concMass[0] * 0.0;
+    Ke[25] = (Ke[25] + valGP) - input->concMass[0] * 0.0;
+    Ke[14] = (Ke[14] + valGP) + input->concMass[0] * 0.0;
+    Ke[13] -= Oel_tmp;
+    Ke[26] -= input->concMass[0] * 0.0;
+    Oel_tmp = input->concMass[4] * valGP_idx_0;
+    Ke[78] -= Oel_tmp;
+    valGP = input->concMass[4] * 0.0 * 0.0;
+    b_valGP = input->concMass[4] * OmegaDot;
+    Ke[90] = (Ke[90] + valGP) - b_valGP;
+    Ke[79] = (Ke[79] + valGP) + b_valGP;
+    valGP = input->concMass[4] * 0.0 * Omega;
+    Ke[102] = (Ke[102] + valGP) + input->concMass[4] * 0.0;
+    Ke[80] = (Ke[80] + valGP) - input->concMass[4] * 0.0;
+    Ke[103] = (Ke[103] + valGP) - input->concMass[4] * 0.0;
+    Ke[92] = (Ke[92] + valGP) + input->concMass[4] * 0.0;
+    Ke[91] -= Oel_tmp;
+    Ke[104] -= input->concMass[4] * 0.0;
   }
 
   // modify Fe for  concentrated load
   if (concMassFlag) {
-    H46_idx_3 = Omega * Omega;
-    K56_idx_0 = 0.0 * Omega * input->z.data[0];
-    Fe[0] = ((Fe[0] + input->concMass[0] * ((input->x.data[0] * H46_idx_3 - 0.0 *
-                input->y.data[0]) - K56_idx_0)) + input->concMass[0] *
+    valGP_idx_0 = Omega * Omega;
+    Oel_tmp = 0.0 * Omega * input->z.data[0];
+    Fe[0] = ((Fe[0] + input->concMass[0] * ((input->x.data[0] * valGP_idx_0 -
+                0.0 * input->y.data[0]) - Oel_tmp)) + input->concMass[0] *
              (input->y.data[0] * OmegaDot - input->z.data[0] * 0.0)) -
       input->concMass[0] * a_temp[0];
-    Fe[1] = ((Fe[1] + input->concMass[0] * ((input->y.data[0] * H46_idx_3 -
-                K56_idx_0) - 0.0 * input->x.data[0])) + input->concMass[0] *
+    Fe[1] = ((Fe[1] + input->concMass[0] * ((input->y.data[0] * valGP_idx_0 -
+                Oel_tmp) - 0.0 * input->x.data[0])) + input->concMass[0] *
              (input->z.data[0] * 0.0 - input->x.data[0] * OmegaDot)) -
       input->concMass[0] * a_temp[1];
     Fe[2] = ((Fe[2] + input->concMass[0] * ((input->z.data[0] * 0.0 - Omega *
                 0.0 * input->x.data[0]) - Omega * 0.0 * input->y.data[0])) +
              input->concMass[0] * (input->x.data[0] * 0.0 - input->y.data[0] *
               0.0)) - input->concMass[0] * a_temp[2];
-    K56_idx_0 = 0.0 * Omega * input->z.data[1];
-    Fe[6] = ((Fe[6] + input->concMass[4] * ((input->x.data[1] * H46_idx_3 - 0.0 *
-                input->y.data[1]) - K56_idx_0)) + input->concMass[4] *
+    Oel_tmp = 0.0 * Omega * input->z.data[1];
+    Fe[6] = ((Fe[6] + input->concMass[4] * ((input->x.data[1] * valGP_idx_0 -
+                0.0 * input->y.data[1]) - Oel_tmp)) + input->concMass[4] *
              (input->y.data[1] * OmegaDot - input->z.data[1] * 0.0)) -
       input->concMass[4] * a_temp[0];
-    Fe[7] = ((Fe[7] + input->concMass[4] * ((input->y.data[1] * H46_idx_3 -
-                K56_idx_0) - 0.0 * input->x.data[1])) + input->concMass[4] *
+    Fe[7] = ((Fe[7] + input->concMass[4] * ((input->y.data[1] * valGP_idx_0 -
+                Oel_tmp) - 0.0 * input->x.data[1])) + input->concMass[4] *
              (input->z.data[1] * 0.0 - input->x.data[1] * OmegaDot)) -
       input->concMass[4] * a_temp[1];
     Fe[8] = ((Fe[8] + input->concMass[4] * ((input->z.data[1] * 0.0 - Omega *
@@ -5293,17 +5350,17 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
             + dispddot_data[i];
         }
 
-        mtimes(Me, b_data, Fhate);
+        mtimes(Me, b_data, y);
         for (i = 0; i < 12; i++) {
           b_data[i] = (1000.0 * input->disp.data[i] + dispdot_data[i]) + 0.0 *
             dispddot_data[i];
         }
 
-        mtimes(Ce, b_data, FhatLessConc);
+        mtimes(Ce, b_data, Ftemp_data);
         std::memcpy(&b_data[0], &input->disp.data[0], 12U * sizeof(double));
-        mtimes(Khate, b_data, Ftemp_data);
-        for (i = 0; i < 12; i++) {
-          Fhate[i] = ((Fe[i] + Fhate[i]) + FhatLessConc[i]) - Ftemp_data[i];
+        mtimes(Ke, b_data, Fel_data);
+        for (b_i = 0; b_i < 12; b_i++) {
+          Fhate[b_i] = ((Fe[b_i] + y[b_i]) + Ftemp_data[b_i]) - Fel_data[b_i];
         }
       } else {
         if (0 <= dispddot_size_idx_1 - 1) {
@@ -5313,15 +5370,16 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
 
         if (dispddot_size_idx_1 == 1) {
           for (i = 0; i < 12; i++) {
-            c_tmp = 0.0;
-            for (b_i = 0; b_i < 12; b_i++) {
-              c_tmp += Me[i + 12 * b_i] * b_data[b_i];
+            elStorage_tmp = 0.0;
+            for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+              elStorage_tmp += Me[i + 12 * reshapes_f1_tmp] *
+                b_data[reshapes_f1_tmp];
             }
 
-            Fhate[i] = c_tmp;
+            y[i] = elStorage_tmp;
           }
         } else {
-          mtimes(Me, b_data, Fhate);
+          mtimes(Me, b_data, y);
         }
 
         if (0 <= dispdot_size_idx_1 - 1) {
@@ -5331,21 +5389,22 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
 
         if (dispdot_size_idx_1 == 1) {
           for (i = 0; i < 12; i++) {
-            c_tmp = 0.0;
-            for (b_i = 0; b_i < 12; b_i++) {
-              c_tmp += Ce[i + 12 * b_i] * b_data[b_i];
+            elStorage_tmp = 0.0;
+            for (reshapes_f1_tmp = 0; reshapes_f1_tmp < 12; reshapes_f1_tmp++) {
+              elStorage_tmp += Ce[i + 12 * reshapes_f1_tmp] *
+                b_data[reshapes_f1_tmp];
             }
 
-            FhatLessConc[i] = c_tmp;
+            Ftemp_data[i] = elStorage_tmp;
           }
         } else {
-          mtimes(Ce, b_data, FhatLessConc);
+          mtimes(Ce, b_data, Ftemp_data);
         }
 
         std::memcpy(&b_data[0], &input->disp.data[0], 12U * sizeof(double));
-        mtimes(Khate, b_data, Ftemp_data);
-        for (i = 0; i < 12; i++) {
-          Fhate[i] = ((Fe[i] - Fhate[i]) - FhatLessConc[i]) - Ftemp_data[i];
+        mtimes(Ke, b_data, Fel_data);
+        for (b_i = 0; b_i < 12; b_i++) {
+          Fhate[b_i] = ((Fe[b_i] - y[b_i]) - Ftemp_data[b_i]) - Fel_data[b_i];
         }
       }
     } else {
@@ -5356,31 +5415,33 @@ void calculateTimoshenkoElementNL(const n_struct_T *input, const f_struct_T
             + dispddot_data[i];
         }
 
-        mtimes(Me, b_data, Fhate);
+        mtimes(Me, b_data, y);
         for (i = 0; i < 12; i++) {
           b_data[i] = (1000.0 * input->disp.data[i] + dispdot_data[i]) + 0.0 *
             dispddot_data[i];
         }
 
-        mtimes(Ce, b_data, FhatLessConc);
-        for (i = 0; i < 12; i++) {
-          Fhate[i] = (Fe[i] + Fhate[i]) + FhatLessConc[i];
+        mtimes(Ce, b_data, Ftemp_data);
+        for (b_i = 0; b_i < 12; b_i++) {
+          Fhate[b_i] = (Fe[b_i] + y[b_i]) + Ftemp_data[b_i];
         }
       }
     }
 
     for (i = 0; i < 144; i++) {
-      Khate[i] = (Khate[i] + 1.0E+6 * Me[i]) + 1000.0 * Ce[i];
+      Khate[i] = (Ke[i] + 1.0E+6 * Me[i]) + 1000.0 * Ce[i];
     }
 
-    // ........................................................
     std::memcpy(&FhatLessConc[0], &Fhate[0], 12U * sizeof(double));
+
+    // ........................................................
+    std::memcpy(&Ke[0], &Khate[0], 144U * sizeof(double));
     std::memcpy(&Fe[0], &Fhate[0], 12U * sizeof(double));
   }
 
   // ----- assign output block ----------------
   std::memset(&output->FhatLessConc[0], 0, 12U * sizeof(double));
-  std::memcpy(&output->Ke[0], &Khate[0], 144U * sizeof(double));
+  std::memcpy(&output->Ke[0], &Ke[0], 144U * sizeof(double));
   std::memcpy(&output->Fe[0], &Fe[0], 12U * sizeof(double));
   output->Me.size[0] = 1;
   output->Me.size[1] = 1;

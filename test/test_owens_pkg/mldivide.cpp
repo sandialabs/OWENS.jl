@@ -4,7 +4,7 @@
 // File: mldivide.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 07-Apr-2020 17:47:29
+// C/C++ source code generated on  : 08-Apr-2020 17:30:34
 //
 
 // Include Files
@@ -32,7 +32,7 @@ void b_mldivide(const emxArray_real_T *A, emxArray_real_T *B)
   emxArray_real_T *b_B;
   int i;
   int mn;
-  int loop_ub;
+  int j;
   int rankA;
   int m;
   double wj;
@@ -45,8 +45,8 @@ void b_mldivide(const emxArray_real_T *A, emxArray_real_T *B)
     i = B->size[0];
     B->size[0] = A->size[1];
     emxEnsureCapacity_real_T(B, i);
-    loop_ub = A->size[1];
-    for (i = 0; i < loop_ub; i++) {
+    j = A->size[1];
+    for (i = 0; i < j; i++) {
       B->data[i] = 0.0;
     }
   } else if (A->size[0] == A->size[1]) {
@@ -55,39 +55,39 @@ void b_mldivide(const emxArray_real_T *A, emxArray_real_T *B)
     b_A->size[0] = A->size[0];
     b_A->size[1] = A->size[1];
     emxEnsureCapacity_real_T(b_A, i);
-    loop_ub = A->size[0] * A->size[1];
-    for (i = 0; i < loop_ub; i++) {
+    j = A->size[0] * A->size[1];
+    for (i = 0; i < j; i++) {
       b_A->data[i] = A->data[i];
     }
 
-    xgetrf(A->size[1], A->size[1], b_A, A->size[1], jpvt, &loop_ub);
+    xgetrf(A->size[1], A->size[1], b_A, A->size[1], jpvt, &j);
     i = A->size[1];
-    for (loop_ub = 0; loop_ub <= i - 2; loop_ub++) {
-      m = jpvt->data[loop_ub];
-      if (m != loop_ub + 1) {
-        wj = B->data[loop_ub];
-        B->data[loop_ub] = B->data[m - 1];
+    for (j = 0; j <= i - 2; j++) {
+      m = jpvt->data[j];
+      if (m != j + 1) {
+        wj = B->data[j];
+        B->data[j] = B->data[m - 1];
         B->data[m - 1] = wj;
       }
     }
 
-    for (loop_ub = 0; loop_ub < mn; loop_ub++) {
-      m = mn * loop_ub;
-      if (B->data[loop_ub] != 0.0) {
-        i = loop_ub + 2;
+    for (j = 0; j < mn; j++) {
+      m = mn * j;
+      if (B->data[j] != 0.0) {
+        i = j + 2;
         for (b_i = i; b_i <= mn; b_i++) {
-          B->data[b_i - 1] -= B->data[loop_ub] * b_A->data[(b_i + m) - 1];
+          B->data[b_i - 1] -= B->data[j] * b_A->data[(b_i + m) - 1];
         }
       }
     }
 
-    for (loop_ub = mn; loop_ub >= 1; loop_ub--) {
-      m = mn * (loop_ub - 1);
-      wj = B->data[loop_ub - 1];
+    for (j = mn; j >= 1; j--) {
+      m = mn * (j - 1);
+      wj = B->data[j - 1];
       if (wj != 0.0) {
-        B->data[loop_ub - 1] = wj / b_A->data[(loop_ub + m) - 1];
-        for (b_i = 0; b_i <= loop_ub - 2; b_i++) {
-          B->data[b_i] -= B->data[loop_ub - 1] * b_A->data[b_i + m];
+        B->data[j - 1] = wj / b_A->data[(j + m) - 1];
+        for (b_i = 0; b_i <= j - 2; b_i++) {
+          B->data[b_i] -= B->data[j - 1] * b_A->data[b_i + m];
         }
       }
     }
@@ -96,8 +96,8 @@ void b_mldivide(const emxArray_real_T *A, emxArray_real_T *B)
     b_A->size[0] = A->size[0];
     b_A->size[1] = A->size[1];
     emxEnsureCapacity_real_T(b_A, i);
-    loop_ub = A->size[0] * A->size[1];
-    for (i = 0; i < loop_ub; i++) {
+    j = A->size[0] * A->size[1];
+    for (i = 0; i < j; i++) {
       b_A->data[i] = A->data[i];
     }
 
@@ -106,42 +106,40 @@ void b_mldivide(const emxArray_real_T *A, emxArray_real_T *B)
     i = b_B->size[0];
     b_B->size[0] = B->size[0];
     emxEnsureCapacity_real_T(b_B, i);
-    loop_ub = B->size[0];
-    for (i = 0; i < loop_ub; i++) {
+    j = B->size[0];
+    for (i = 0; i < j; i++) {
       b_B->data[i] = B->data[i];
     }
 
     i = B->size[0];
     B->size[0] = b_A->size[1];
     emxEnsureCapacity_real_T(B, i);
-    loop_ub = b_A->size[1];
-    for (i = 0; i < loop_ub; i++) {
+    j = b_A->size[1];
+    for (i = 0; i < j; i++) {
       B->data[i] = 0.0;
     }
 
     m = b_A->size[0];
-    loop_ub = b_A->size[0];
+    j = b_A->size[0];
     mn = b_A->size[1];
-    if (loop_ub < mn) {
-      mn = loop_ub;
+    if (j < mn) {
+      mn = j;
     }
 
-    for (loop_ub = 0; loop_ub < mn; loop_ub++) {
-      if (tau->data[loop_ub] != 0.0) {
-        wj = b_B->data[loop_ub];
-        i = loop_ub + 2;
+    for (j = 0; j < mn; j++) {
+      if (tau->data[j] != 0.0) {
+        wj = b_B->data[j];
+        i = j + 2;
         for (b_i = i; b_i <= m; b_i++) {
-          wj += b_A->data[(b_i + b_A->size[0] * loop_ub) - 1] * b_B->data[b_i -
-            1];
+          wj += b_A->data[(b_i + b_A->size[0] * j) - 1] * b_B->data[b_i - 1];
         }
 
-        wj *= tau->data[loop_ub];
+        wj *= tau->data[j];
         if (wj != 0.0) {
-          b_B->data[loop_ub] -= wj;
-          i = loop_ub + 2;
+          b_B->data[j] -= wj;
+          i = j + 2;
           for (b_i = i; b_i <= m; b_i++) {
-            b_B->data[b_i - 1] -= b_A->data[(b_i + b_A->size[0] * loop_ub) - 1] *
-              wj;
+            b_B->data[b_i - 1] -= b_A->data[(b_i + b_A->size[0] * j) - 1] * wj;
           }
         }
       }
@@ -151,12 +149,12 @@ void b_mldivide(const emxArray_real_T *A, emxArray_real_T *B)
       B->data[jpvt->data[b_i] - 1] = b_B->data[b_i];
     }
 
-    for (loop_ub = rankA; loop_ub >= 1; loop_ub--) {
-      i = jpvt->data[loop_ub - 1];
-      B->data[i - 1] /= b_A->data[(loop_ub + b_A->size[0] * (loop_ub - 1)) - 1];
-      for (b_i = 0; b_i <= loop_ub - 2; b_i++) {
-        B->data[jpvt->data[b_i] - 1] -= B->data[jpvt->data[loop_ub - 1] - 1] *
-          b_A->data[b_i + b_A->size[0] * (loop_ub - 1)];
+    for (j = rankA; j >= 1; j--) {
+      i = jpvt->data[j - 1];
+      B->data[i - 1] /= b_A->data[(j + b_A->size[0] * (j - 1)) - 1];
+      for (b_i = 0; b_i <= j - 2; b_i++) {
+        B->data[jpvt->data[b_i] - 1] -= B->data[jpvt->data[j - 1] - 1] *
+          b_A->data[b_i + b_A->size[0] * (j - 1)];
       }
     }
   }
