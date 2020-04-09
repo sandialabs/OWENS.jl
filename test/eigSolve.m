@@ -43,20 +43,22 @@ sysMat = [zeros(len), eye(len);   %constructs state space form (with mass matrix
 % sysMat2 = [zeroslen, eyelen;      %construct state space form and lets eigs invert mass matrix
 %     -K, -C];
 % sysMat2 = sparse(sysMat2);
-%
+
 % MMat2 = [eyelen,zeroslen;zeroslen,M];
 % MMat2 = sparse(MMat2);
 %%% end
 
 
 %%% if(flag==1)
-[eigVec0,eigVal0] = eig(sysMat,'vector');		  %full eigenvalue solve
+[eigVec,eigVal] = eig(sysMat);%,'vector');		  %full eigenvalue solve
+% [eigVec0,eigVal0] = eig(sysMat2,MMat2,'vector');		  %full eigenvalue solve
 
 % residual0 = sysMat*eigVec0 - eigVec0*diag(eigVal0);
-
-[sorted_eigVal,eigsortidx] = sort(eigVal0,'ComparisonMethod','abs');
-eigVec = eigVec0(:,eigsortidx);
-eigVal = diag(sorted_eigVal); % return to diag
+% residual0 = sysMat2*eigVec0 - MMat2*eigVec0*diag(eigVal0);
+% fprintf('%e\n',real(residual0(1)))
+% [sorted_eigVal,eigsortidx] = sort(eigVal0,'ComparisonMethod','abs');
+% eigVec = eigVec0(:,eigsortidx);
+% eigVal = diag(sorted_eigVal); % return to diag
 % residual = sysMat*eigVec - eigVec*eigVal;
 % output = max(max(real(residual)));
 % fprintf('%e\n',output)

@@ -59,7 +59,7 @@ if(strcmp(analysisType,'S')) %STATIC ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-
+    
 elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     Omega = varargin{3};              %initialization of rotor speed (Hz)
     model.spinUpOn = varargin{4};     %flag for pre-stressed modal analysis
@@ -78,7 +78,7 @@ elseif(strcmp(analysisType,'M')) %MODAL ANALYSIS
     %    else
     model.airDensity = 1.2041;
     %    end
-
+    
 elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
     model.delta_t = varargin{3};  % time step size
     model.numTS = varargin{4};    % number of time steps
@@ -105,40 +105,41 @@ elseif(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')) %TRANSIENT ANALYSI
             model.OmegaInit = Omegaocp(1);
         end
     end
-
-elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
-    model.delta_t = varargin{3}; %time step size
-    model.numTS = varargin{4};   %number of time steps
-    model.numModesForROM = varargin{5}; %number of lower system modes to include in ROM
-    model.nlOn = varargin{6};    %flag for nonlinear elastic calculation
-    turbineOpFlag = varargin{7};
-    if(turbineOpFlag == 1) %generator start up operation mode
-        model.turbineStartup = turbineOpFlag;
-        model.OmegaInit = varargin{8}; %initial rotor speed
-    elseif(turbineOpFlag == 2) % self starting operation mode
-        model.turbineStartup = turbineOpFlag;
-        model.OmegaInit = varargin{8}; %initial rotor speed (Hz)
-        model.OmegaGenStart = varargin{9}; %rotor speed at which generator activates (Hz)
-    else                         %specified rotor speed profile
-        model.turbineStartup = 0;
-        if(length(varargin) == 7)
-            model.usingRotorSpeedFunction = true; %set flag to use user specified rotor speed function
-            [~,model.OmegaInit,~] = getRotorPosSpeedAccelAtTime(-1.0,0.0,0);
-        else
-            %this option uses a discretely specified rotor speed profile
-            model.usingRotorSpeedFunction = false; %set flag to not use user specified rotor speed function
-            model.tocp = varargin{8}; %time points for rotor speed provfile
-            Omegaocp = varargin{9}; %rotor speed value at time points (Hz)
-            model.Omegaocp = Omegaocp;
-            model.OmegaInit = Omegaocp(1);
-        end
-    end
+    
+    % elseif(strcmp(analysisType,'ROM')) %REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
+    %     model.delta_t = varargin{3}; %time step size
+    %     model.numTS = varargin{4};   %number of time steps
+    %     model.numModesForROM = varargin{5}; %number of lower system modes to include in ROM
+    %     model.nlOn = varargin{6};    %flag for nonlinear elastic calculation
+    %     turbineOpFlag = varargin{7};
+    %     if(turbineOpFlag == 1) %generator start up operation mode
+    %         model.turbineStartup = turbineOpFlag;
+    %         model.OmegaInit = varargin{8}; %initial rotor speed
+    %     elseif(turbineOpFlag == 2) % self starting operation mode
+    %         model.turbineStartup = turbineOpFlag;
+    %         model.OmegaInit = varargin{8}; %initial rotor speed (Hz)
+    %         model.OmegaGenStart = varargin{9}; %rotor speed at which generator activates (Hz)
+    %     else                         %specified rotor speed profile
+    %         model.turbineStartup = 0;
+    %         if(length(varargin) == 7)
+    %             model.usingRotorSpeedFunction = true; %set flag to use user specified rotor speed function
+    %             [~,model.OmegaInit,~] = getRotorPosSpeedAccelAtTime(-1.0,0.0,0);
+    %         else
+    %             %this option uses a discretely specified rotor speed profile
+    %             model.usingRotorSpeedFunction = false; %set flag to not use user specified rotor speed function
+    %             model.tocp = varargin{8}; %time points for rotor speed provfile
+    %             Omegaocp = varargin{9}; %rotor speed value at time points (Hz)
+    %             model.Omegaocp = Omegaocp;
+    %             model.OmegaInit = Omegaocp(1);
+    %         end
+    %     end
 elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     Omega = varargin{3};   %rotor speed (Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
     model.guessFreq = varargin{5}; %``guess'' modal frequency
     model.aeroElasticOn = true;
-
+    model.nlOn = true;
+    
     if(length(varargin)>5)   %air density initialization
         model.airDensity = varargin{6};
     else
@@ -149,12 +150,13 @@ elseif(strcmp(analysisType,'F'))  %MANUAL FLUTTER ANALYSIS
     else
         model.numModesToExtract = 20;
     end
-
+    
 elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
     omegaArray = varargin{3};    %array of rotor speed values(Hz)
     model.spinUpOn = varargin{4}; %flag for pre-stressed modal analysis
     model.aeroElasticOn = true;
-
+    model.nlOn = true;
+    
     if(length(varargin)>4)    %air density initializatio
         model.airDensity = varargin{5};
     else
@@ -165,7 +167,7 @@ elseif(strcmp(analysisType,'FA')) %AUTOMATED FLUTTER ANALYSIS
     else
         model.numModesToExtract = 20;
     end
-
+    
 else
     error('Analysis type not recognized.');
 end
@@ -234,25 +236,25 @@ model.hydroOn = false;
 model.platformTurbineConnectionNodeNumber = 1;
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %for transient analysis...
-
+    
     [model.initCond] = readInitCond(initcondfilename); %read initial conditions
-
+    
     if(aeroFlag)
         model.aeroLoadsOn = true;
     else
         model.aeroLoadsOn = false;
     end
-
+    
     %     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename); %reads drive shaft properties
     model.driveTrainOn = false;          %set drive shaft unactive
-
+    
     model.driveShaftProps.k = 0.0;       %set drive shat properties to 0
     model.driveShaftProps.c = 0.0;
     model.JgearBox =0.0;
-
+    
     model.gearRatio = 1.0;             %set gear ratio and efficiency to 1
     model.gearBoxEfficiency = 1.0;
-
+    
     if(real(str2double(generatorfilename))==1.0)
         model.useGeneratorFunction = true;
         model.generatorProps = 0.0;
@@ -260,7 +262,7 @@ if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'R
         model.useGeneratorFunction = false;
         [model.generatorProps] = readGeneratorProps(generatorfilename); %reads generator properties
     end
-
+    
 end
 [model.outFilename] = generateOutputFilename(inputfile,analysisType); %generates an output filename for analysis results %TODO: map to the output location instead of input
 
@@ -277,7 +279,7 @@ if(strcmp(analysisType,'S')) %EXECUTE STATIC ANALYSIS
     if(length(varargin)<=4 || ~model.nlOn)                %sets initial guess for nonlinear calculations
         displInitGuess = zeros(mesh.numNodes*6,1);
     end
-
+    
     OmegaStart = 0.0;
     staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart);
 end
@@ -292,10 +294,9 @@ if(strcmp(analysisType,'M') || strcmp(analysisType,'F')) %EXECUTE MODAL OR MANUA
 end
 
 if(strcmp(analysisType,'FA')) %EXECUTE AUTOMATED FLUTTER ANALYSIS
-    %     displ = zeros(mesh.numNodes*6,1);
-    %     OmegaStart = 0.0;
-    %     [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart);
-    error('Auto Flutter not fully implemented');
+    displ = zeros(mesh.numNodes*6,1);
+    OmegaStart = 0.0;
+    [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart);
 end
 
 if(strcmp(analysisType,'TNB')||strcmp(analysisType,'TD')||strcmp(analysisType,'ROM')) %EXECUTE TRANSIENT ANALYSIS
@@ -343,14 +344,14 @@ dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained); %c
 redVectorMap = zeros(numReducedDof,1);
 
 for i=1:numReducedDof
-
+    
     if(ismember(i,bcdoflist))              %creates a map of unconstrained reduced DOFs
         redVectorMap(i) = -1.0;
     else
         index = find(ismember(dofList,i));
         redVectorMap(i) = index;
     end
-
+    
 end
 
 end

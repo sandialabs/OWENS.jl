@@ -38,51 +38,51 @@ if(abs(imag(val)) < 1.0e-4)     %if imaginary part of eigenvalue is numeric zero
     damp = 0.0;
 end
 
-if(~strcmp(analysisType,'FA'))  %for all but automated flutter analysis
-    %          [len,numModeShapes] = size(vec);
-    [dispReduc] = constructReducedDispVecFromEigVec(vec,reducedDOFList,BC); %construct mode shape vector with boundary conditinos
-    dispOrig = jointTransform*dispReduc; %transform from reduced DOF list to full DOF list
-    lenOrig=length(dispOrig);
-    
-    sortedModes0=zeros(lenOrig/numDOFPerNode,numDOFPerNode);
-    sortedModes = complex(sortedModes0,0);
-    for i=1:lenOrig/numDOFPerNode     %construct matrix of nodal DOF values from full DOF eigenvector
-        for j=1:numDOFPerNode
-            sortedModes(i,j) = dispOrig((i-1)*6+j);
-        end
+% if(~strcmp(analysisType,'FA'))  %for all but automated flutter analysis
+%          [len,numModeShapes] = size(vec);
+[dispReduc] = constructReducedDispVecFromEigVec(vec,reducedDOFList,BC); %construct mode shape vector with boundary conditinos
+dispOrig = jointTransform*dispReduc; %transform from reduced DOF list to full DOF list
+lenOrig=length(dispOrig);
+
+sortedModes0=zeros(lenOrig/numDOFPerNode,numDOFPerNode);
+sortedModes = complex(sortedModes0,0);
+for i=1:lenOrig/numDOFPerNode     %construct matrix of nodal DOF values from full DOF eigenvector
+    for j=1:numDOFPerNode
+        sortedModes(i,j) = dispOrig((i-1)*6+j);
     end
-    
-    phase1 = real(sortedModes);  %phase 1 is real part of modeshape (0 deg in phase)
-    phase2 = imag(sortedModes);  %phase 2 is imag part of modeshape (90 deg out of phase)
-    
-    max1=max(max(abs(phase1))); %find maximum values for modeshape normalization
-    max2=max(max(abs(phase2)));
-    
-    
-    if(max1>max2)
-        maxOverall = max1;
-    else
-        maxOverall = max2;
-    end
-    
-    if(maxOverall == 0)
-        maxOverall = 1;
-    end
-    
-    phase1 = phase1./maxOverall;  %normalize modeshapes
-    phase2 = phase2./maxOverall;
-    
-    if(abs(min(min(phase1))+1)<1.0e-4 || abs(min(min(phase2))+1)<1.0e-4)
-        phase1 = -1*phase1;
-        phase2 = -1*phase2;
-        
-    end
-    
-else  %return null mode shapes if mode shapes not requested
-    phase1 = [];
-    phase2 = [];
-    sortedModes = [];
 end
+
+phase1 = real(sortedModes);  %phase 1 is real part of modeshape (0 deg in phase)
+phase2 = imag(sortedModes);  %phase 2 is imag part of modeshape (90 deg out of phase)
+
+max1=max(max(abs(phase1))); %find maximum values for modeshape normalization
+max2=max(max(abs(phase2)));
+
+
+if(max1>max2)
+    maxOverall = max1;
+else
+    maxOverall = max2;
+end
+
+if(maxOverall == 0)
+    maxOverall = 1;
+end
+
+phase1 = phase1./maxOverall;  %normalize modeshapes
+phase2 = phase2./maxOverall;
+
+if(abs(min(min(phase1))+1)<1.0e-4 || abs(min(min(phase2))+1)<1.0e-4)
+    phase1 = -1*phase1;
+    phase2 = -1*phase2;
+    
+end
+
+% else  %return null mode shapes if mode shapes not requested
+%     phase1 = [];
+%     phase2 = [];
+%     sortedModes = [];
+% end
 
 end
 

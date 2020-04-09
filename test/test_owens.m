@@ -1,5 +1,5 @@
 
-function test_owens(test_transient,test_modal)
+function test_owens(test_transient,test_modal,test_flutter)
 
 fprintf('%s\n','Starting')
 tic
@@ -66,13 +66,14 @@ OWENSfileRoot = bmOwens;
 operatingRPM = 7.2; % rpm
 Nrpm = 10;    % number of rpm stations
 maxRPM = 10;
-Nmodes = 40;  % number of modes to calculate
+Nmodes = 4;  % number of modes to calculate/extract: TODO: Since we can only use eig, push this change through
 timeStep = 2e-3;
 timeSim = 0.1;       % [sec]
 n_t = timeSim/timeStep; % length of time vector
 timeArray = [0 timeSim+1];
 rpmArray  = [operatingRPM operatingRPM];
 omegaArrayHz = rpmArray ./ 60;
+omegaArrayHz2 = [0.1,7.1,8.1]/60;
 
 if test_transient
     [freq,damp]=owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz);
@@ -81,5 +82,10 @@ end
 if test_modal
     [freq,damp]=owens([fname '.owens'],'M', 0.5*maxRPM*2*pi/60, false, Nmodes);
 end
+
+if test_flutter
+    [freq,damp]=owens([fname '.owens'],'FA', omegaArrayHz2, true, 1.2041, Nmodes);
+end
+
 fprintf('%s\n','Function Finished')
 end

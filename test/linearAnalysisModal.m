@@ -174,10 +174,10 @@ for i=1:len
     imagCompSign(i) = sign(imag(eigVal(i,i)));
 end
 
-%write output
-t_modal = toc;
-disp('Elapsed time for modal analysis(s):');
-disp(t_modal);
+% %write output
+% t_modal = toc;
+% disp('Elapsed time for modal analysis(s):');
+% disp(t_modal);
 
 if(~strcmp(model.analysisType,'FA'))
     fidout=fopen(model.outFilename,'w');
