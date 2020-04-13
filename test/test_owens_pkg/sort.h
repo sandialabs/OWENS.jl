@@ -4,7 +4,7 @@
 // File: sort.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef SORT_H
 #define SORT_H
@@ -16,7 +16,6 @@
 #include "test_owens_types.h"
 
 // Function Declarations
-extern void b_sort(emxArray_creal_T *x, emxArray_int32_T *idx);
 extern void sort(emxArray_real_T *x);
 
 #endif

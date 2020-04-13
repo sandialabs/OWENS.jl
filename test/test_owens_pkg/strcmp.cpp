@@ -4,7 +4,7 @@
 // File: strcmp.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -209,6 +209,79 @@ boolean_T k_strcmp(const char a_data[], const int a_size[2])
   }
 
   return b_bool;
+}
+
+//
+// Arguments    : const char a_data[]
+// Return Type  : boolean_T
+//
+boolean_T l_strcmp(const char a_data[])
+{
+  boolean_T b_bool;
+  int kstr;
+  int exitg1;
+  static const char b_cv[2] = { 'N', 'R' };
+
+  b_bool = false;
+  kstr = 0;
+  do {
+    exitg1 = 0;
+    if (kstr < 2) {
+      if (a_data[kstr] != b_cv[kstr]) {
+        exitg1 = 1;
+      } else {
+        kstr++;
+      }
+    } else {
+      b_bool = true;
+      exitg1 = 1;
+    }
+  } while (exitg1 == 0);
+
+  return b_bool;
+}
+
+//
+// Arguments    : const char a_data[]
+// Return Type  : boolean_T
+//
+boolean_T m_strcmp(const char a_data[])
+{
+  boolean_T b_bool;
+  int kstr;
+  int exitg1;
+  static const char b_cv[2] = { 'D', 'I' };
+
+  b_bool = false;
+  kstr = 0;
+  do {
+    exitg1 = 0;
+    if (kstr < 2) {
+      if (a_data[kstr] != b_cv[kstr]) {
+        exitg1 = 1;
+      } else {
+        kstr++;
+      }
+    } else {
+      b_bool = true;
+      exitg1 = 1;
+    }
+  } while (exitg1 == 0);
+
+  return b_bool;
+}
+
+//
+// Arguments    : const char a[2]
+// Return Type  : boolean_T
+//
+boolean_T n_strcmp(const char a[2])
+{
+  int ret;
+  static const char b[2] = { 'F', 'A' };
+
+  ret = memcmp(&a[0], &b[0], 2);
+  return ret == 0;
 }
 
 //

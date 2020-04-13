@@ -35,6 +35,7 @@ model.turbineStartup = 0;           %initialization of turbine startup,
 model.aeroElasticOn = false;        % aeroElastic flags, and air density
 model.aeroForceOn = true;
 model.airDensity = 0;
+model.guessFreq = 0;
 model.gravityOn = true;             %flag to activate gravity loading in structural dynamics/static simulations
 model.generatorOn = false; %Initialize only, gets changed later on
 model.OmegaGenStart = 0.0; %Initialize only, gets changed later on

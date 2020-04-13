@@ -4,7 +4,7 @@
 // File: applyBCModal.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -48,7 +48,6 @@ void applyBCModal(const emxArray_real_T *K, double numpBC, const emxArray_real_T
   int nz;
   int k;
   emxArray_uint32_T *indVec;
-  int b_i;
   emxInit_boolean_T(&x, 1);
 
   //       output:
@@ -86,10 +85,10 @@ void applyBCModal(const emxArray_real_T *K, double numpBC, const emxArray_real_T
   }
 
   i = bcMap->size[0];
-  for (b_i = 0; b_i < i; b_i++) {
-    if (bcMap->data[b_i] != -1.0) {
+  for (vlen = 0; vlen < i; vlen++) {
+    if (bcMap->data[vlen] != -1.0) {
       indVec->data[static_cast<int>(b_index) - 1] = static_cast<unsigned int>
-        ((b_i + 1));
+        ((vlen + 1));
       b_index++;
     }
   }

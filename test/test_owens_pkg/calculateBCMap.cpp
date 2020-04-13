@@ -4,7 +4,7 @@
 // File: calculateBCMap.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -51,19 +51,19 @@ void calculateBCMap(double numpBC, const emxArray_real_T *pBC, const
 {
   emxArray_real_T *constrainedDof;
   int i;
-  int k;
   int b_i;
   double b_index;
   double a;
   boolean_T tf;
+  int k;
   boolean_T exitg1;
   double absx;
   int exponent;
   emxInit_real_T(&constrainedDof, 1);
   i = static_cast<int>(numpBC);
-  k = constrainedDof->size[0];
+  b_i = constrainedDof->size[0];
   constrainedDof->size[0] = i;
-  emxEnsureCapacity_real_T(constrainedDof, k);
+  emxEnsureCapacity_real_T(constrainedDof, b_i);
   for (b_i = 0; b_i < i; b_i++) {
     constrainedDof->data[b_i] = (pBC->data[b_i] - 1.0) * 6.0 + pBC->data[b_i +
       pBC->size[0]];

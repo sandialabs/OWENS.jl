@@ -4,7 +4,7 @@
 // File: elementPostProcess.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -14,7 +14,6 @@
 #include "rt_nonfinite.h"
 #include "strcmp.h"
 #include "test_owens.h"
-#include "test_owens_emxutil.h"
 #include <cstring>
 #include <string.h>
 
@@ -66,7 +65,7 @@
 //                const emxArray_real_T *el_roll
 //                const c_emxArray_struct_T *elStorage
 //                const b_struct_T *timeInt
-//                const i_struct_T dispData
+//                const j_struct_T dispData
 //                const emxArray_real_T *displ_iter
 //                const double rbData[9]
 //                double Omega
@@ -82,7 +81,7 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   emxArray_struct_T *el_props, const emxArray_real_T *el_elLen, const
   emxArray_real_T *el_psi, const emxArray_real_T *el_theta, const
   emxArray_real_T *el_roll, const c_emxArray_struct_T *elStorage, const
-  b_struct_T *timeInt, const i_struct_T dispData, const emxArray_real_T
+  b_struct_T *timeInt, const j_struct_T dispData, const emxArray_real_T
   *displ_iter, const double rbData[9], double Omega, double OmegaDot, const
   double CN2H[9], double Fpp[12])
 {
@@ -97,28 +96,21 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   char elInput_analysisType_data[3];
   int j;
   double d;
-  int i;
+  int elx_tmp;
   double elx_data[2];
-  double elInput_displ_iter_data[12];
   double ely_data[2];
-  emxArray_real_T *b_r;
-  int k;
-  int aoffset;
   double b_mesh_conn[2];
+  int k;
   double elInput_concMass[8];
-  int elInput_accelVec_size_idx_0;
-  int elInput_accelVec_size_idx_1;
+  int aoffset;
   int elInput_omegaVec_size_idx_0;
   int elInput_omegaVec_size_idx_1;
   double elInput_accelVec_data[9];
   double elInput_omegaVec_data[9];
   double elInput_omegaDotVec_data[9];
-  p_struct_T expl_temp;
-  o_struct_T b_expl_temp;
-  double elOutput_FhatLessConc[12];
+  q_struct_T expl_temp;
+  p_struct_T b_expl_temp;
   double elOutput_Ke[144];
-  double b_data[12];
-  double FhatEl1PP[12];
 
   // some initializations
   elInput_z_data[0] = 0.0;
@@ -151,20 +143,20 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   // unpack connectivity list, nodal terms, etc.
   for (j = 0; j < 2; j++) {
     d = mesh_conn->data[elInput_xloc_idx_1_tmp + mesh_conn->size[0] * j];
-    i = static_cast<int>(d) - 1;
-    elx_data[j] = mesh_x->data[i];
-    ely_data[j] = mesh_y->data[i];
-    elInput_z_data[j] = mesh_z->data[i];
+    elx_tmp = static_cast<int>(d) - 1;
+    elx_data[j] = mesh_x->data[elx_tmp];
+    ely_data[j] = mesh_y->data[elx_tmp];
+    elInput_z_data[j] = mesh_z->data[elx_tmp];
     for (k = 0; k < 6; k++) {
       // get element cooridnates
       if (c_strcmp(model_analysisType) || b_strcmp(model_analysisType)) {
-        i = static_cast<int>(((d - 1.0) * 6.0 + (static_cast<double>(k) + 1.0)))
-          - 1;
-        aoffset = static_cast<int>(b_index) - 1;
-        eldisp_data[aoffset] = dispData.displ_s->data[i];
-        elInput_dispdot_data[aoffset] = dispData.displdot_s->data[i];
-        elInput_dispddot_data[aoffset] = dispData.displddot_s->data[i];
-        eldispiter_data[aoffset] = displ_iter->data[i];
+        aoffset = static_cast<int>(((d - 1.0) * 6.0 + (static_cast<double>(k) +
+          1.0))) - 1;
+        elx_tmp = static_cast<int>(b_index) - 1;
+        eldisp_data[elx_tmp] = dispData.displ_s->data[aoffset];
+        elInput_dispdot_data[elx_tmp] = dispData.displdot_s->data[aoffset];
+        elInput_dispddot_data[elx_tmp] = dispData.displddot_s->data[aoffset];
+        eldispiter_data[elx_tmp] = displ_iter->data[aoffset];
       }
 
       b_index++;
@@ -173,42 +165,25 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
 
   // specific to TNB and ROM
   // specific to TNB and ROM
-  if (c_strcmp(model_analysisType) || b_strcmp(model_analysisType)) {
-    std::memcpy(&elInput_displ_iter_data[0], &eldispiter_data[0], 12U * sizeof
-                (double));
-  } else {
+  if ((!c_strcmp(model_analysisType)) && (!b_strcmp(model_analysisType))) {
     // if(strcmp(analysisType,'S'))
-    std::memcpy(&elInput_displ_iter_data[0], &eldisp_data[0], 12U * sizeof
-                (double));
     std::memcpy(&eldispiter_data[0], &eldisp_data[0], 12U * sizeof(double));
 
     //  else
     //      error('analysisType not supported, choose another')
   }
 
-  emxInit_real_T(&b_r, 2);
-
   // get concentrated terms associated with element
-  i = b_r->size[0] * b_r->size[1];
-  b_r->size[0] = model_joint->size[0];
-  b_r->size[1] = 8;
-  emxEnsureCapacity_real_T(b_r, i);
-  aoffset = model_joint->size[0] * model_joint->size[1];
-  for (i = 0; i < aoffset; i++) {
-    b_r->data[i] = model_joint->data[i];
-  }
-
   b_mesh_conn[0] = mesh_conn->data[elInput_xloc_idx_1_tmp];
   b_mesh_conn[1] = mesh_conn->data[elInput_xloc_idx_1_tmp + mesh_conn->size[0]];
-  ConcMassAssociatedWithElement(b_mesh_conn, b_r, elInput_concMass);
-  emxFree_real_T(&b_r);
+  ConcMassAssociatedWithElement(b_mesh_conn, model_joint, elInput_concMass);
   if (c_strcmp(model_analysisType) || b_strcmp(model_analysisType)) {
-    elInput_accelVec_size_idx_0 = 1;
-    elInput_accelVec_size_idx_1 = 3;
+    j = 1;
+    k = 3;
     elInput_omegaVec_size_idx_0 = 1;
     elInput_omegaVec_size_idx_1 = 3;
-    i = 1;
-    aoffset = 3;
+    aoffset = 1;
+    elx_tmp = 3;
     elInput_accelVec_data[0] = rbData[0];
     elInput_omegaVec_data[0] = rbData[3];
     elInput_omegaDotVec_data[0] = rbData[6];
@@ -220,12 +195,12 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
     elInput_omegaDotVec_data[2] = rbData[8];
   } else {
     // if(strcmp(analysisType,'S'))
-    elInput_accelVec_size_idx_0 = 3;
-    elInput_accelVec_size_idx_1 = 1;
+    j = 3;
+    k = 1;
     elInput_omegaVec_size_idx_0 = 3;
     elInput_omegaVec_size_idx_1 = 1;
-    i = 3;
-    aoffset = 1;
+    aoffset = 3;
+    elx_tmp = 1;
     elInput_accelVec_data[0] = 0.0;
     elInput_omegaVec_data[0] = 0.0;
     elInput_omegaDotVec_data[0] = 0.0;
@@ -250,9 +225,9 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   std::memcpy(&expl_temp.CN2H[0], &CN2H[0], 9U * sizeof(double));
   expl_temp.OmegaDot = OmegaDot;
   expl_temp.Omega = Omega;
-  expl_temp.omegaDotVec.size[0] = i;
-  expl_temp.omegaDotVec.size[1] = aoffset;
-  aoffset *= i;
+  expl_temp.omegaDotVec.size[0] = aoffset;
+  expl_temp.omegaDotVec.size[1] = elx_tmp;
+  aoffset *= elx_tmp;
   if (0 <= aoffset - 1) {
     std::memcpy(&expl_temp.omegaDotVec.data[0], &elInput_omegaDotVec_data[0],
                 aoffset * sizeof(double));
@@ -266,9 +241,9 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
                 sizeof(double));
   }
 
-  expl_temp.accelVec.size[0] = elInput_accelVec_size_idx_0;
-  expl_temp.accelVec.size[1] = elInput_accelVec_size_idx_1;
-  aoffset = elInput_accelVec_size_idx_0 * elInput_accelVec_size_idx_1;
+  expl_temp.accelVec.size[0] = j;
+  expl_temp.accelVec.size[1] = k;
+  aoffset = j * k;
   if (0 <= aoffset - 1) {
     std::memcpy(&expl_temp.accelVec.data[0], &elInput_accelVec_data[0], aoffset *
                 sizeof(double));
@@ -303,8 +278,8 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   expl_temp.dispdot.size[1] = 12;
   expl_temp.disp.size[0] = 1;
   expl_temp.disp.size[1] = 12;
-  std::memcpy(&expl_temp.displ_iter.data[0], &elInput_displ_iter_data[0], 12U *
-              sizeof(double));
+  std::memcpy(&expl_temp.displ_iter.data[0], &eldispiter_data[0], 12U * sizeof
+              (double));
   std::memcpy(&expl_temp.dispddot.data[0], &elInput_dispddot_data[0], 12U *
               sizeof(double));
   std::memcpy(&expl_temp.dispdot.data[0], &elInput_dispdot_data[0], 12U * sizeof
@@ -340,28 +315,27 @@ void elementPostProcess(double elementNumber, const char model_analysisType[3],
   expl_temp.elementOrder = 1.0;
   b_calculateTimoshenkoElementNL(&expl_temp, &elStorage->data[static_cast<int>
     (elementNumber) - 1], &b_expl_temp);
-  std::memcpy(&elOutput_FhatLessConc[0], &b_expl_temp.FhatLessConc[0], 12U *
-              sizeof(double));
+  std::memcpy(&eldisp_data[0], &b_expl_temp.FhatLessConc[0], 12U * sizeof(double));
   std::memcpy(&elOutput_Ke[0], &b_expl_temp.Ke[0], 144U * sizeof(double));
 
   // post process for reaction force
-  for (i = 0; i < 12; i++) {
-    b_data[i] = eldispiter_data[i];
-    FhatEl1PP[i] = 0.0;
+  for (elx_tmp = 0; elx_tmp < 12; elx_tmp++) {
+    elInput_dispdot_data[elx_tmp] = eldispiter_data[elx_tmp];
+    Fpp[elx_tmp] = 0.0;
   }
 
   for (k = 0; k < 12; k++) {
     aoffset = k * 12;
-    for (i = 0; i < 12; i++) {
-      FhatEl1PP[i] += b_data[k] * elOutput_Ke[aoffset + i];
+    for (elx_tmp = 0; elx_tmp < 12; elx_tmp++) {
+      Fpp[elx_tmp] += elInput_dispdot_data[k] * elOutput_Ke[aoffset + elx_tmp];
     }
   }
 
   // if(strcmp(analysisType,'TNB')||strcmp(analysisType,'ROM')||strcmp(analysisType,'S')) 
   //  else
   //      error('analysisType not supported, choose another')
-  for (i = 0; i < 12; i++) {
-    Fpp[i] = FhatEl1PP[i] - elOutput_FhatLessConc[i];
+  for (elx_tmp = 0; elx_tmp < 12; elx_tmp++) {
+    Fpp[elx_tmp] -= eldisp_data[elx_tmp];
   }
 
   // ----------------------------------------------------------------------

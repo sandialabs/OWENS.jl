@@ -73,7 +73,7 @@ n_t = timeSim/timeStep; % length of time vector
 timeArray = [0 timeSim+1];
 rpmArray  = [operatingRPM operatingRPM];
 omegaArrayHz = rpmArray ./ 60;
-omegaArrayHz2 = [0.1,7.1,8.1]/60;
+omegaArrayHz2 = [7.1]/60;
 
 if test_transient
     [freq,damp]=owens([fname '.owens'],'TNB', timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz);

@@ -4,7 +4,7 @@
 // File: calculateTimoshenkoElementInitialRun.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -142,7 +142,7 @@ static void calculateElementMass(double rhoA, double rhoIyy, double rhoIzz,
 //                const double input_z[2]
 //                boolean_T input_concMassFlag
 //                const double input_concMass[8]
-//                f_struct_T *elStorage
+//                g_struct_T *elStorage
 // Return Type  : void
 //
 void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
@@ -154,7 +154,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   double input_sectionProps_zcm[2], const double input_sectionProps_ycm[2],
   double input_sweepAngle, double input_coneAngle, double input_rollAngle, const
   double input_x[2], const double input_y[2], const double input_z[2], boolean_T
-  input_concMassFlag, const double input_concMass[8], f_struct_T *elStorage)
+  input_concMassFlag, const double input_concMass[8], g_struct_T *elStorage)
 {
   double K11_idx_0;
   double K12_idx_0;
@@ -449,7 +449,6 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   double integrationFactor;
   double GA;
   double K14_tmp;
-  double K44_tmp;
   double K12_tmp_tmp;
   double K11_tmp;
   double K55_tmp;
@@ -466,7 +465,6 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   double rhoJ;
   double EA_tmp;
   double K16_tmp;
-  double valGP;
   double b_EA_tmp;
   double M15_tmp_tmp;
   double M16_tmp_tmp;
@@ -488,14 +486,11 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   double e_EA_tmp;
   double lamSlimTran[9];
   double d_EA;
-  double b_valGP[3];
   double e_EA;
-  int i1;
   double b_lamSlimTran[9];
   double f_EA;
+  int elementItens_tmp;
   double g_EA;
-  double elementMOI[9];
-  int elementMOI_tmp;
   double f_EA_tmp;
   double h_EA;
   double i_EA;
@@ -970,7 +965,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     K24_idx_3 += rhoIzz_tmp;
     K33_idx_3 += K12_tmp_tmp * p_N_x_data[1] * integrationFactor;
     K34_idx_3 += K14_tmp;
-    valGP = N_data[0] * input_sectionProps_GJ[0] + N_data[1] *
+    K12_tmp_tmp = N_data[0] * input_sectionProps_GJ[0] + N_data[1] *
       input_sectionProps_GJ[1];
 
     // This function is a general routine to calculate an element matrix
@@ -981,25 +976,25 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     // Element calculation functions---------------------------------
     // This function interpolates a value using distinct values at valNode
     // and the corresponding shape function N.
-    K44_tmp = valGP * p_N_x_data[0];
-    K44_idx_0 += K44_tmp * p_N_x_data[0] * integrationFactor;
-    EA_tmp = 0.0 * p_N_x_data[0] * N_data[0] * integrationFactor;
-    K45_idx_0 += EA_tmp;
-    K46_idx_0 += EA_tmp;
-    K44_idx_2 += K44_tmp * p_N_x_data[1] * integrationFactor;
-    EA_tmp = 0.0 * p_N_x_data[0] * N_data[1] * integrationFactor;
-    K45_idx_2 += EA_tmp;
-    K46_idx_2 += EA_tmp;
-    K44_tmp = valGP * p_N_x_data[1];
-    K44_idx_1 += K44_tmp * p_N_x_data[0] * integrationFactor;
-    EA_tmp = 0.0 * p_N_x_data[1] * N_data[0] * integrationFactor;
-    K45_idx_1 += EA_tmp;
-    K46_idx_1 += EA_tmp;
-    K44_idx_3 += K44_tmp * p_N_x_data[1] * integrationFactor;
-    EA_tmp = 0.0 * p_N_x_data[1] * N_data[1] * integrationFactor;
-    K45_idx_3 += EA_tmp;
-    K46_idx_3 += EA_tmp;
-    valGP = N_data[0] * input_sectionProps_EIyy[0] + N_data[1] *
+    Jac = K12_tmp_tmp * p_N_x_data[0];
+    K44_idx_0 += Jac * p_N_x_data[0] * integrationFactor;
+    GA = 0.0 * p_N_x_data[0] * N_data[0] * integrationFactor;
+    K45_idx_0 += GA;
+    K46_idx_0 += GA;
+    K44_idx_2 += Jac * p_N_x_data[1] * integrationFactor;
+    GA = 0.0 * p_N_x_data[0] * N_data[1] * integrationFactor;
+    K45_idx_2 += GA;
+    K46_idx_2 += GA;
+    Jac = K12_tmp_tmp * p_N_x_data[1];
+    K44_idx_1 += Jac * p_N_x_data[0] * integrationFactor;
+    GA = 0.0 * p_N_x_data[1] * N_data[0] * integrationFactor;
+    K45_idx_1 += GA;
+    K46_idx_1 += GA;
+    K44_idx_3 += Jac * p_N_x_data[1] * integrationFactor;
+    GA = 0.0 * p_N_x_data[1] * N_data[1] * integrationFactor;
+    K45_idx_3 += GA;
+    K46_idx_3 += GA;
+    K12_tmp_tmp = N_data[0] * input_sectionProps_EIyy[0] + N_data[1] *
       input_sectionProps_EIyy[1];
 
     // This function is a general routine to calculate an element matrix
@@ -1008,17 +1003,17 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     // Element calculation functions---------------------------------
     // This function interpolates a value using distinct values at valNode
     // and the corresponding shape function N.
-    K55_tmp = valGP * p_N_x_data[0];
+    K55_tmp = K12_tmp_tmp * p_N_x_data[0];
     K55_idx_0 += K55_tmp * p_N_x_data[0] * integrationFactor;
     K56_idx_0 += K11_tmp;
     K55_idx_2 += K55_tmp * p_N_x_data[1] * integrationFactor;
     K56_idx_2 += K16_tmp;
-    K55_tmp = valGP * p_N_x_data[1];
+    K55_tmp = K12_tmp_tmp * p_N_x_data[1];
     K55_idx_1 += K55_tmp * p_N_x_data[0] * integrationFactor;
     K56_idx_1 += rhoIyy_tmp;
     K55_idx_3 += K55_tmp * p_N_x_data[1] * integrationFactor;
     K56_idx_3 += rhoIzz_tmp;
-    valGP = N_data[0] * input_sectionProps_EIzz[0] + N_data[1] *
+    K12_tmp_tmp = N_data[0] * input_sectionProps_EIzz[0] + N_data[1] *
       input_sectionProps_EIzz[1];
 
     // This function is a general routine to calculate an element matrix
@@ -1036,7 +1031,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     // Element calculation functions---------------------------------
     // This function is a general routine to calculate an element matrix
     // Element calculation functions---------------------------------
-    K44_tmp = -rhoA * zcm;
+    K14_tmp = -rhoA * zcm;
 
     // This function is a general routine to calculate an element matrix
     // Element calculation functions---------------------------------
@@ -1062,31 +1057,31 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     // and the corresponding shape function N.
     // This function interpolates a value using distinct values at valNode
     // and the corresponding shape function N.
-    rhoIyy_tmp = valGP * p_N_x_data[0];
-    K66_idx_0 += rhoIyy_tmp * p_N_x_data[0] * integrationFactor;
-    rhoIzz_tmp = rhoA * N_data[0];
-    K16_tmp = rhoIzz_tmp * N_data[0] * integrationFactor;
+    Jac = K12_tmp_tmp * p_N_x_data[0];
+    K66_idx_0 += Jac * p_N_x_data[0] * integrationFactor;
+    GA = rhoA * N_data[0];
+    K16_tmp = GA * N_data[0] * integrationFactor;
     M11_idx_0 += K16_tmp;
     M15_tmp_tmp = EA_tmp * N_data[0];
     M15_idx_0 += M15_tmp_tmp * N_data[0] * integrationFactor;
     M16_tmp_tmp = b_EA_tmp * N_data[0];
     M16_idx_0 += M16_tmp_tmp * N_data[0] * integrationFactor;
     M22_idx_0 += K16_tmp;
-    M24_tmp_tmp = K44_tmp * N_data[0];
+    M24_tmp_tmp = K14_tmp * N_data[0];
     M24_idx_0 += M24_tmp_tmp * N_data[0] * integrationFactor;
     M33_idx_0 += K16_tmp;
     M34_tmp_tmp = rhoIyz_tmp * N_data[0];
     M34_idx_0 += M34_tmp_tmp * N_data[0] * integrationFactor;
-    K11_tmp = rhoJ * N_data[0];
-    M44_idx_0 += K11_tmp * N_data[0] * integrationFactor;
-    K55_tmp = rhoIyy * N_data[0];
-    M55_idx_0 += K55_tmp * N_data[0] * integrationFactor;
-    K12_tmp_tmp = -rhoIyz * N_data[0];
-    M56_idx_0 += K12_tmp_tmp * N_data[0] * integrationFactor;
-    K14_tmp = rhoIzz * N_data[0];
-    M66_idx_0 += K14_tmp * N_data[0] * integrationFactor;
-    K66_idx_2 += rhoIyy_tmp * p_N_x_data[1] * integrationFactor;
-    M11_tmp = rhoIzz_tmp * N_data[1] * integrationFactor;
+    rhoIyy_tmp = rhoJ * N_data[0];
+    M44_idx_0 += rhoIyy_tmp * N_data[0] * integrationFactor;
+    rhoIzz_tmp = rhoIyy * N_data[0];
+    M55_idx_0 += rhoIzz_tmp * N_data[0] * integrationFactor;
+    K11_tmp = -rhoIyz * N_data[0];
+    M56_idx_0 += K11_tmp * N_data[0] * integrationFactor;
+    K55_tmp = rhoIzz * N_data[0];
+    M66_idx_0 += K55_tmp * N_data[0] * integrationFactor;
+    K66_idx_2 += Jac * p_N_x_data[1] * integrationFactor;
+    M11_tmp = GA * N_data[1] * integrationFactor;
     M11_idx_2 += M11_tmp;
     M15_idx_2 += M15_tmp_tmp * N_data[1] * integrationFactor;
     M16_idx_2 += M16_tmp_tmp * N_data[1] * integrationFactor;
@@ -1094,35 +1089,35 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     M24_idx_2 += M24_tmp_tmp * N_data[1] * integrationFactor;
     M33_idx_2 += M11_tmp;
     M34_idx_2 += M34_tmp_tmp * N_data[1] * integrationFactor;
-    M44_idx_2 += K11_tmp * N_data[1] * integrationFactor;
-    M55_idx_2 += K55_tmp * N_data[1] * integrationFactor;
-    M56_idx_2 += K12_tmp_tmp * N_data[1] * integrationFactor;
-    M66_idx_2 += K14_tmp * N_data[1] * integrationFactor;
-    rhoIyy_tmp = valGP * p_N_x_data[1];
-    K66_idx_1 += rhoIyy_tmp * p_N_x_data[0] * integrationFactor;
-    rhoIzz_tmp = rhoA * N_data[1];
-    b_M11_tmp = rhoIzz_tmp * N_data[0] * integrationFactor;
+    M44_idx_2 += rhoIyy_tmp * N_data[1] * integrationFactor;
+    M55_idx_2 += rhoIzz_tmp * N_data[1] * integrationFactor;
+    M56_idx_2 += K11_tmp * N_data[1] * integrationFactor;
+    M66_idx_2 += K55_tmp * N_data[1] * integrationFactor;
+    Jac = K12_tmp_tmp * p_N_x_data[1];
+    K66_idx_1 += Jac * p_N_x_data[0] * integrationFactor;
+    GA = rhoA * N_data[1];
+    b_M11_tmp = GA * N_data[0] * integrationFactor;
     M11_idx_1 += b_M11_tmp;
     b_M15_tmp_tmp = EA_tmp * N_data[1];
     M15_idx_1 += b_M15_tmp_tmp * N_data[0] * integrationFactor;
     b_M16_tmp_tmp = b_EA_tmp * N_data[1];
     M16_idx_1 += b_M16_tmp_tmp * N_data[0] * integrationFactor;
     M22_idx_1 += b_M11_tmp;
-    b_M24_tmp_tmp = K44_tmp * N_data[1];
+    b_M24_tmp_tmp = K14_tmp * N_data[1];
     M24_idx_1 += b_M24_tmp_tmp * N_data[0] * integrationFactor;
     M33_idx_1 += b_M11_tmp;
     b_M34_tmp_tmp = rhoIyz_tmp * N_data[1];
     M34_idx_1 += b_M34_tmp_tmp * N_data[0] * integrationFactor;
-    K11_tmp = rhoJ * N_data[1];
-    M44_idx_1 += K11_tmp * N_data[0] * integrationFactor;
-    K55_tmp = rhoIyy * N_data[1];
-    M55_idx_1 += K55_tmp * N_data[0] * integrationFactor;
-    K12_tmp_tmp = -rhoIyz * N_data[1];
-    M56_idx_1 += K12_tmp_tmp * N_data[0] * integrationFactor;
-    K14_tmp = rhoIzz * N_data[1];
-    M66_idx_1 += K14_tmp * N_data[0] * integrationFactor;
-    K66_idx_3 += rhoIyy_tmp * p_N_x_data[1] * integrationFactor;
-    c_M11_tmp = rhoIzz_tmp * N_data[1] * integrationFactor;
+    rhoIyy_tmp = rhoJ * N_data[1];
+    M44_idx_1 += rhoIyy_tmp * N_data[0] * integrationFactor;
+    rhoIzz_tmp = rhoIyy * N_data[1];
+    M55_idx_1 += rhoIzz_tmp * N_data[0] * integrationFactor;
+    K11_tmp = -rhoIyz * N_data[1];
+    M56_idx_1 += K11_tmp * N_data[0] * integrationFactor;
+    K55_tmp = rhoIzz * N_data[1];
+    M66_idx_1 += K55_tmp * N_data[0] * integrationFactor;
+    K66_idx_3 += Jac * p_N_x_data[1] * integrationFactor;
+    c_M11_tmp = GA * N_data[1] * integrationFactor;
     M11_idx_3 += c_M11_tmp;
     M15_idx_3 += b_M15_tmp_tmp * N_data[1] * integrationFactor;
     M16_idx_3 += b_M16_tmp_tmp * N_data[1] * integrationFactor;
@@ -1130,16 +1125,16 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     M24_idx_3 += b_M24_tmp_tmp * N_data[1] * integrationFactor;
     M33_idx_3 += c_M11_tmp;
     M34_idx_3 += b_M34_tmp_tmp * N_data[1] * integrationFactor;
-    M44_idx_3 += K11_tmp * N_data[1] * integrationFactor;
-    M55_idx_3 += K55_tmp * N_data[1] * integrationFactor;
-    M56_idx_3 += K12_tmp_tmp * N_data[1] * integrationFactor;
-    M66_idx_3 += K14_tmp * N_data[1] * integrationFactor;
-    valGP = N_data[0] * input_x[0] + N_data[1] * input_x[1];
-    rhoIyy_tmp = N_data[0] * input_y[0] + N_data[1] * input_y[1];
-    rhoIzz_tmp = N_data[0] * input_z[0] + N_data[1] * input_z[1];
+    M44_idx_3 += rhoIyy_tmp * N_data[1] * integrationFactor;
+    M55_idx_3 += rhoIzz_tmp * N_data[1] * integrationFactor;
+    M56_idx_3 += K11_tmp * N_data[1] * integrationFactor;
+    M66_idx_3 += K55_tmp * N_data[1] * integrationFactor;
+    K12_tmp_tmp = N_data[0] * input_x[0] + N_data[1] * input_x[1];
+    Jac = N_data[0] * input_y[0] + N_data[1] * input_y[1];
+    GA = N_data[0] * input_z[0] + N_data[1] * input_z[1];
     for (b_i = 0; b_i < 3; b_i++) {
-      posLocal[b_i] = (lambda[b_i] * valGP + lambda[b_i + 12] * rhoIyy_tmp) +
-        lambda[b_i + 24] * rhoIzz_tmp;
+      posLocal[b_i] = (lambda[b_i] * K12_tmp_tmp + lambda[b_i + 12] * Jac) +
+        lambda[b_i + 24] * GA;
     }
 
     //         g=9.81; %gravitational acceleration [m/s^2]
@@ -1237,7 +1232,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
 
     // This function is a general routine to calculate an element matrix
     // Element calculation functions---------------------------------
-    i_EA = K44_tmp * 2.0;
+    i_EA = K14_tmp * 2.0;
 
     // This function is a general routine to calculate an element matrix
     // Element calculation functions---------------------------------
@@ -1342,31 +1337,31 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     S16_idx_0 += S16_tmp * N_data[0] * integrationFactor;
     S22_idx_0 += S11_tmp_tmp * N_data[0] * integrationFactor;
     S23_idx_0 += K16_tmp;
-    rhoIyy_tmp = k_EA * N_data[0];
-    S24_1_idx_0 += rhoIyy_tmp * N_data[0] * integrationFactor;
+    Jac = k_EA * N_data[0];
+    S24_1_idx_0 += Jac * N_data[0] * integrationFactor;
     S24_2_idx_0 += M34_tmp_tmp * N_data[0] * integrationFactor;
     S25_idx_0 += M15_tmp_tmp * N_data[0] * integrationFactor;
     S26_idx_0 += M16_tmp_tmp * N_data[0] * integrationFactor;
     S33_idx_0 += S11_tmp_tmp * N_data[0] * integrationFactor;
-    rhoIzz_tmp = l_EA * N_data[0];
-    S34_1_idx_0 += rhoIzz_tmp * N_data[0] * integrationFactor;
+    GA = l_EA * N_data[0];
+    S34_1_idx_0 += GA * N_data[0] * integrationFactor;
     S34_2_idx_0 += M24_tmp_tmp * N_data[0] * integrationFactor;
     S35_idx_0 += M15_tmp_tmp * N_data[0] * integrationFactor;
     S36_idx_0 += M16_tmp_tmp * N_data[0] * integrationFactor;
-    K11_tmp = m_EA * N_data[0];
-    S44_1_idx_0 += K11_tmp * N_data[0] * integrationFactor;
-    K55_tmp = n_EA * N_data[0];
-    S44_2_idx_0 += K55_tmp * N_data[0] * integrationFactor;
-    K12_tmp_tmp = o_EA * N_data[0];
-    S44_3_idx_0 += K12_tmp_tmp * N_data[0] * integrationFactor;
-    K14_tmp = rhoIyz * N_data[0];
-    K44_tmp = K14_tmp * N_data[0] * integrationFactor;
-    S45_1_idx_0 += K44_tmp;
-    K16_tmp = -rhoIyy * N_data[0];
-    S45_2_idx_0 += K16_tmp * N_data[0] * integrationFactor;
-    S46_1_idx_0 += K44_tmp;
-    valGP = -rhoIzz * N_data[0];
-    S46_2_idx_0 += valGP * N_data[0] * integrationFactor;
+    rhoIyy_tmp = m_EA * N_data[0];
+    S44_1_idx_0 += rhoIyy_tmp * N_data[0] * integrationFactor;
+    rhoIzz_tmp = n_EA * N_data[0];
+    S44_2_idx_0 += rhoIzz_tmp * N_data[0] * integrationFactor;
+    K11_tmp = o_EA * N_data[0];
+    S44_3_idx_0 += K11_tmp * N_data[0] * integrationFactor;
+    K55_tmp = rhoIyz * N_data[0];
+    K12_tmp_tmp = K55_tmp * N_data[0] * integrationFactor;
+    S45_1_idx_0 += K12_tmp_tmp;
+    K14_tmp = -rhoIyy * N_data[0];
+    S45_2_idx_0 += K14_tmp * N_data[0] * integrationFactor;
+    S46_1_idx_0 += K12_tmp_tmp;
+    K16_tmp = -rhoIzz * N_data[0];
+    S46_2_idx_0 += K16_tmp * N_data[0] * integrationFactor;
     EA_tmp = p_EA * N_data[0];
     S55_idx_0 += EA_tmp * N_data[0] * integrationFactor;
     rhoIyz_tmp = q_EA * N_data[0];
@@ -1397,23 +1392,23 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     S16_idx_2 += S16_tmp * N_data[1] * integrationFactor;
     S22_idx_2 += S11_tmp_tmp * N_data[1] * integrationFactor;
     S23_idx_2 += M11_tmp;
-    S24_1_idx_2 += rhoIyy_tmp * N_data[1] * integrationFactor;
+    S24_1_idx_2 += Jac * N_data[1] * integrationFactor;
     S24_2_idx_2 += M34_tmp_tmp * N_data[1] * integrationFactor;
     S25_idx_2 += M15_tmp_tmp * N_data[1] * integrationFactor;
     S26_idx_2 += M16_tmp_tmp * N_data[1] * integrationFactor;
     S33_idx_2 += S11_tmp_tmp * N_data[1] * integrationFactor;
-    S34_1_idx_2 += rhoIzz_tmp * N_data[1] * integrationFactor;
+    S34_1_idx_2 += GA * N_data[1] * integrationFactor;
     S34_2_idx_2 += M24_tmp_tmp * N_data[1] * integrationFactor;
     S35_idx_2 += M15_tmp_tmp * N_data[1] * integrationFactor;
     S36_idx_2 += M16_tmp_tmp * N_data[1] * integrationFactor;
-    S44_1_idx_2 += K11_tmp * N_data[1] * integrationFactor;
-    S44_2_idx_2 += K55_tmp * N_data[1] * integrationFactor;
-    S44_3_idx_2 += K12_tmp_tmp * N_data[1] * integrationFactor;
-    K44_tmp = K14_tmp * N_data[1] * integrationFactor;
-    S45_1_idx_2 += K44_tmp;
-    S45_2_idx_2 += K16_tmp * N_data[1] * integrationFactor;
-    S46_1_idx_2 += K44_tmp;
-    S46_2_idx_2 += valGP * N_data[1] * integrationFactor;
+    S44_1_idx_2 += rhoIyy_tmp * N_data[1] * integrationFactor;
+    S44_2_idx_2 += rhoIzz_tmp * N_data[1] * integrationFactor;
+    S44_3_idx_2 += K11_tmp * N_data[1] * integrationFactor;
+    K12_tmp_tmp = K55_tmp * N_data[1] * integrationFactor;
+    S45_1_idx_2 += K12_tmp_tmp;
+    S45_2_idx_2 += K14_tmp * N_data[1] * integrationFactor;
+    S46_1_idx_2 += K12_tmp_tmp;
+    S46_2_idx_2 += K16_tmp * N_data[1] * integrationFactor;
     S55_idx_2 += EA_tmp * N_data[1] * integrationFactor;
     S56_idx_2 += rhoIyz_tmp * N_data[1] * integrationFactor;
     S66_idx_2 += S66_tmp * N_data[1] * integrationFactor;
@@ -1456,31 +1451,31 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     S16_idx_1 += S16_tmp * N_data[0] * integrationFactor;
     S22_idx_1 += S11_tmp_tmp * N_data[0] * integrationFactor;
     S23_idx_1 += b_M11_tmp;
-    rhoIyy_tmp = k_EA * N_data[1];
-    S24_1_idx_1 += rhoIyy_tmp * N_data[0] * integrationFactor;
+    Jac = k_EA * N_data[1];
+    S24_1_idx_1 += Jac * N_data[0] * integrationFactor;
     S24_2_idx_1 += b_M34_tmp_tmp * N_data[0] * integrationFactor;
     S25_idx_1 += b_M15_tmp_tmp * N_data[0] * integrationFactor;
     S26_idx_1 += b_M16_tmp_tmp * N_data[0] * integrationFactor;
     S33_idx_1 += S11_tmp_tmp * N_data[0] * integrationFactor;
-    rhoIzz_tmp = l_EA * N_data[1];
-    S34_1_idx_1 += rhoIzz_tmp * N_data[0] * integrationFactor;
+    GA = l_EA * N_data[1];
+    S34_1_idx_1 += GA * N_data[0] * integrationFactor;
     S34_2_idx_1 += b_M24_tmp_tmp * N_data[0] * integrationFactor;
     S35_idx_1 += b_M15_tmp_tmp * N_data[0] * integrationFactor;
     S36_idx_1 += b_M16_tmp_tmp * N_data[0] * integrationFactor;
-    K11_tmp = m_EA * N_data[1];
-    S44_1_idx_1 += K11_tmp * N_data[0] * integrationFactor;
-    K55_tmp = n_EA * N_data[1];
-    S44_2_idx_1 += K55_tmp * N_data[0] * integrationFactor;
-    K12_tmp_tmp = o_EA * N_data[1];
-    S44_3_idx_1 += K12_tmp_tmp * N_data[0] * integrationFactor;
-    K14_tmp = rhoIyz * N_data[1];
-    K44_tmp = K14_tmp * N_data[0] * integrationFactor;
-    S45_1_idx_1 += K44_tmp;
-    K16_tmp = -rhoIyy * N_data[1];
-    S45_2_idx_1 += K16_tmp * N_data[0] * integrationFactor;
-    S46_1_idx_1 += K44_tmp;
-    valGP = -rhoIzz * N_data[1];
-    S46_2_idx_1 += valGP * N_data[0] * integrationFactor;
+    rhoIyy_tmp = m_EA * N_data[1];
+    S44_1_idx_1 += rhoIyy_tmp * N_data[0] * integrationFactor;
+    rhoIzz_tmp = n_EA * N_data[1];
+    S44_2_idx_1 += rhoIzz_tmp * N_data[0] * integrationFactor;
+    K11_tmp = o_EA * N_data[1];
+    S44_3_idx_1 += K11_tmp * N_data[0] * integrationFactor;
+    K55_tmp = rhoIyz * N_data[1];
+    K12_tmp_tmp = K55_tmp * N_data[0] * integrationFactor;
+    S45_1_idx_1 += K12_tmp_tmp;
+    K14_tmp = -rhoIyy * N_data[1];
+    S45_2_idx_1 += K14_tmp * N_data[0] * integrationFactor;
+    S46_1_idx_1 += K12_tmp_tmp;
+    K16_tmp = -rhoIzz * N_data[1];
+    S46_2_idx_1 += K16_tmp * N_data[0] * integrationFactor;
     EA_tmp = p_EA * N_data[1];
     S55_idx_1 += EA_tmp * N_data[0] * integrationFactor;
     rhoIyz_tmp = q_EA * N_data[1];
@@ -1511,23 +1506,23 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
     S16_idx_3 += S16_tmp * N_data[1] * integrationFactor;
     S22_idx_3 += S11_tmp_tmp * N_data[1] * integrationFactor;
     S23_idx_3 += c_M11_tmp;
-    S24_1_idx_3 += rhoIyy_tmp * N_data[1] * integrationFactor;
+    S24_1_idx_3 += Jac * N_data[1] * integrationFactor;
     S24_2_idx_3 += b_M34_tmp_tmp * N_data[1] * integrationFactor;
     S25_idx_3 += b_M15_tmp_tmp * N_data[1] * integrationFactor;
     S26_idx_3 += b_M16_tmp_tmp * N_data[1] * integrationFactor;
     S33_idx_3 += S11_tmp_tmp * N_data[1] * integrationFactor;
-    S34_1_idx_3 += rhoIzz_tmp * N_data[1] * integrationFactor;
+    S34_1_idx_3 += GA * N_data[1] * integrationFactor;
     S34_2_idx_3 += b_M24_tmp_tmp * N_data[1] * integrationFactor;
     S35_idx_3 += b_M15_tmp_tmp * N_data[1] * integrationFactor;
     S36_idx_3 += b_M16_tmp_tmp * N_data[1] * integrationFactor;
-    S44_1_idx_3 += K11_tmp * N_data[1] * integrationFactor;
-    S44_2_idx_3 += K55_tmp * N_data[1] * integrationFactor;
-    S44_3_idx_3 += K12_tmp_tmp * N_data[1] * integrationFactor;
-    K44_tmp = K14_tmp * N_data[1] * integrationFactor;
-    S45_1_idx_3 += K44_tmp;
-    S45_2_idx_3 += K16_tmp * N_data[1] * integrationFactor;
-    S46_1_idx_3 += K44_tmp;
-    S46_2_idx_3 += valGP * N_data[1] * integrationFactor;
+    S44_1_idx_3 += rhoIyy_tmp * N_data[1] * integrationFactor;
+    S44_2_idx_3 += rhoIzz_tmp * N_data[1] * integrationFactor;
+    S44_3_idx_3 += K11_tmp * N_data[1] * integrationFactor;
+    K12_tmp_tmp = K55_tmp * N_data[1] * integrationFactor;
+    S45_1_idx_3 += K12_tmp_tmp;
+    S45_2_idx_3 += K14_tmp * N_data[1] * integrationFactor;
+    S46_1_idx_3 += K12_tmp_tmp;
+    S46_2_idx_3 += K16_tmp * N_data[1] * integrationFactor;
     S55_idx_3 += EA_tmp * N_data[1] * integrationFactor;
     S56_idx_3 += rhoIyz_tmp * N_data[1] * integrationFactor;
     S66_idx_3 += S66_tmp * N_data[1] * integrationFactor;
@@ -1555,8 +1550,8 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   // This function is a general routine to calculate an element matrix
   // Element calculation functions---------------------------------
   K14_tmp = GA * p_N_x_data[0];
-  K44_tmp = K14_tmp * p_N_x_data[0] * integrationFactor;
-  elStorage->K22[0] = K22_idx_0 + K44_tmp;
+  Jac = K14_tmp * p_N_x_data[0] * integrationFactor;
+  elStorage->K22[0] = K22_idx_0 + Jac;
   K12_tmp_tmp = K14_tmp * p_N_x_data[1] * integrationFactor;
   elStorage->K22[2] = K22_idx_2 + K12_tmp_tmp;
   K11_tmp = GA * p_N_x_data[1];
@@ -1576,7 +1571,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
 
   // This function is a general routine to calculate an element matrix
   // Element calculation functions---------------------------------
-  elStorage->K33[0] = K33_idx_0 + K44_tmp;
+  elStorage->K33[0] = K33_idx_0 + Jac;
   elStorage->K33[2] = K33_idx_2 + K12_tmp_tmp;
   elStorage->K33[1] = K33_idx_1 + K55_tmp;
   elStorage->K33[3] = K33_idx_3 + rhoIzz_tmp;
@@ -1591,8 +1586,8 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
   // This function is a general routine to calculate an element matrix
   // Element calculation functions---------------------------------
   K14_tmp = GA * N_data[0];
-  K44_tmp = K14_tmp * N_data[0] * integrationFactor;
-  elStorage->K55[0] = K55_idx_0 + K44_tmp;
+  Jac = K14_tmp * N_data[0] * integrationFactor;
+  elStorage->K55[0] = K55_idx_0 + Jac;
   K14_tmp = K14_tmp * N_data[1] * integrationFactor;
   elStorage->K55[2] = K55_idx_2 + K14_tmp;
   K12_tmp_tmp = GA * N_data[1];
@@ -1603,7 +1598,7 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
 
   // This function is a general routine to calculate an element matrix
   // Element calculation functions---------------------------------
-  elStorage->K66[0] = K66_idx_0 + K44_tmp;
+  elStorage->K66[0] = K66_idx_0 + Jac;
   elStorage->K66[2] = K66_idx_2 + K14_tmp;
   elStorage->K66[1] = K66_idx_1 + K11_tmp;
   elStorage->K66[3] = K66_idx_3 + K12_tmp_tmp;
@@ -1884,74 +1879,76 @@ void c_calculateTimoshenkoElementIni(const double input_xloc[2], const double
 
   for (b_i = 0; b_i < 3; b_i++) {
     K14_tmp = lamSlimTran[b_i + 3];
-    K44_tmp = lamSlimTran[b_i + 6];
-    for (i1 = 0; i1 < 3; i1++) {
-      b_lamSlimTran[b_i + 3 * i1] = (lamSlimTran[b_i] * elementItens[3 * i1] +
-        K14_tmp * elementItens[3 * i1 + 1]) + K44_tmp * elementItens[3 * i1 + 2];
+    Jac = lamSlimTran[b_i + 6];
+    for (i = 0; i < 3; i++) {
+      b_lamSlimTran[b_i + 3 * i] = (lamSlimTran[b_i] * elementItens[3 * i] +
+        K14_tmp * elementItens[3 * i + 1]) + Jac * elementItens[3 * i + 2];
     }
-
-    K14_tmp = b_lamSlimTran[b_i + 3];
-    K44_tmp = b_lamSlimTran[b_i + 6];
-    K12_tmp_tmp = 0.0;
-    for (i1 = 0; i1 < 3; i1++) {
-      elementMOI_tmp = b_i + 3 * i1;
-      elementMOI[elementMOI_tmp] = (b_lamSlimTran[b_i] * lambda[12 * i1] +
-        K14_tmp * lambda[12 * i1 + 1]) + K44_tmp * lambda[12 * i1 + 2];
-      K12_tmp_tmp += lamSlimTran[elementMOI_tmp] * elxm[i1];
-    }
-
-    b_valGP[b_i] = K12_tmp_tmp;
   }
 
-  elxm[0] = b_valGP[0];
-  elxm[1] = b_valGP[1];
-  elxm[2] = b_valGP[2];
+  for (b_i = 0; b_i < 3; b_i++) {
+    K14_tmp = b_lamSlimTran[b_i + 3];
+    Jac = b_lamSlimTran[b_i + 6];
+    K12_tmp_tmp = 0.0;
+    for (i = 0; i < 3; i++) {
+      elementItens_tmp = b_i + 3 * i;
+      elementItens[elementItens_tmp] = (b_lamSlimTran[b_i] * lambda[12 * i] +
+        K14_tmp * lambda[12 * i + 1]) + Jac * lambda[12 * i + 2];
+      K12_tmp_tmp += lamSlimTran[elementItens_tmp] * elxm[i];
+    }
+
+    posLocal[b_i] = K12_tmp_tmp;
+  }
+
+  elxm[0] = posLocal[0];
+  elxm[1] = posLocal[1];
+  elxm[2] = posLocal[2];
 
   //
   //
   if (input_concMassFlag) {
     // modify element mass, moi, and xm to account for concentrated terms
     elementMass += input_concMass[0] + input_concMass[4];
-    rhoIyy_tmp = input_z[0] * input_z[0];
-    rhoIzz_tmp = input_z[1] * input_z[1];
-    K11_tmp = input_y[0] * input_y[0];
-    K55_tmp = input_y[1] * input_y[1];
-    elementMOI[0] = (((elementMOI[0] + input_concMass[0] * (K11_tmp + rhoIyy_tmp))
-                      + input_concMass[4] * (K55_tmp + rhoIzz_tmp)) +
-                     input_concMass[1]) + input_concMass[5];
-    K12_tmp_tmp = input_x[0] * input_x[0];
-    K14_tmp = input_x[1] * input_x[1];
-    elementMOI[4] = (((elementMOI[4] + input_concMass[0] * (K12_tmp_tmp +
-      rhoIyy_tmp)) + input_concMass[4] * (K14_tmp + rhoIzz_tmp)) +
-                     input_concMass[2]) + input_concMass[6];
-    elementMOI[8] = (((elementMOI[8] + input_concMass[0] * (K12_tmp_tmp +
-      K11_tmp)) + input_concMass[4] * (K14_tmp + K55_tmp)) + input_concMass[3])
-      + input_concMass[7];
-    rhoIyy_tmp = input_concMass[0] * input_x[0];
-    rhoIzz_tmp = input_concMass[4] * input_x[1];
-    K11_tmp = rhoIyy_tmp * input_y[0];
-    K55_tmp = rhoIzz_tmp * input_y[1];
-    elementMOI[3] = (elementMOI[3] - K11_tmp) - K55_tmp;
-    K12_tmp_tmp = rhoIyy_tmp * input_z[0];
-    K14_tmp = rhoIzz_tmp * input_z[1];
-    elementMOI[6] = (elementMOI[6] - K12_tmp_tmp) - K14_tmp;
-    elementMOI[1] = (elementMOI[1] - K11_tmp) - K55_tmp;
-    K44_tmp = input_concMass[0] * input_y[0];
-    K11_tmp = K44_tmp * input_z[0];
-    EA_tmp = input_concMass[4] * input_y[1];
-    K55_tmp = EA_tmp * input_z[1];
-    elementMOI[7] = (elementMOI[7] - K11_tmp) - K55_tmp;
-    elementMOI[2] = (elementMOI[2] - K12_tmp_tmp) - K14_tmp;
-    elementMOI[5] = (elementMOI[5] - K11_tmp) - K55_tmp;
-    elxm[0] = (b_valGP[0] + rhoIyy_tmp) + rhoIzz_tmp;
-    elxm[1] = (b_valGP[1] + K44_tmp) + EA_tmp;
-    elxm[2] = (b_valGP[2] + input_concMass[0] * input_z[0]) + input_concMass[4] *
-      input_z[1];
+    Jac = input_z[0] * input_z[0];
+    rhoIyy_tmp = input_z[1] * input_z[1];
+    rhoIzz_tmp = input_y[0] * input_y[0];
+    K11_tmp = input_y[1] * input_y[1];
+    elementItens[0] = (((elementItens[0] + input_concMass[0] * (rhoIzz_tmp + Jac))
+                        + input_concMass[4] * (K11_tmp + rhoIyy_tmp)) +
+                       input_concMass[1]) + input_concMass[5];
+    K55_tmp = input_x[0] * input_x[0];
+    K12_tmp_tmp = input_x[1] * input_x[1];
+    elementItens[4] = (((elementItens[4] + input_concMass[0] * (K55_tmp + Jac))
+                        + input_concMass[4] * (K12_tmp_tmp + rhoIyy_tmp)) +
+                       input_concMass[2]) + input_concMass[6];
+    elementItens[8] = (((elementItens[8] + input_concMass[0] * (K55_tmp +
+      rhoIzz_tmp)) + input_concMass[4] * (K12_tmp_tmp + K11_tmp)) +
+                       input_concMass[3]) + input_concMass[7];
+    Jac = input_concMass[0] * input_x[0];
+    rhoIyy_tmp = input_concMass[4] * input_x[1];
+    rhoIzz_tmp = Jac * input_y[0];
+    K11_tmp = rhoIyy_tmp * input_y[1];
+    elementItens[3] = (elementItens[3] - rhoIzz_tmp) - K11_tmp;
+    K55_tmp = Jac * input_z[0];
+    K12_tmp_tmp = rhoIyy_tmp * input_z[1];
+    elementItens[6] = (elementItens[6] - K55_tmp) - K12_tmp_tmp;
+    elementItens[1] = (elementItens[1] - rhoIzz_tmp) - K11_tmp;
+    GA = input_concMass[0] * input_y[0];
+    rhoIzz_tmp = GA * input_z[0];
+    K14_tmp = input_concMass[4] * input_y[1];
+    K11_tmp = K14_tmp * input_z[1];
+    elementItens[7] = (elementItens[7] - rhoIzz_tmp) - K11_tmp;
+    elementItens[2] = (elementItens[2] - K55_tmp) - K12_tmp_tmp;
+    elementItens[5] = (elementItens[5] - rhoIzz_tmp) - K11_tmp;
+    elxm[0] = (posLocal[0] + Jac) + rhoIyy_tmp;
+    elxm[1] = (posLocal[1] + GA) + K14_tmp;
+    elxm[2] = (posLocal[2] + input_concMass[0] * input_z[0]) + input_concMass[4]
+      * input_z[1];
   }
 
   // store element mass properties
   elStorage->mel = elementMass;
-  std::memcpy(&elStorage->moiel[0], &elementMOI[0], 9U * sizeof(double));
+  std::memcpy(&elStorage->moiel[0], &elementItens[0], 9U * sizeof(double));
   elStorage->xmel[0] = elxm[0];
   elStorage->xmel[1] = elxm[1];
   elStorage->xmel[2] = elxm[2];

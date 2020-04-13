@@ -4,7 +4,7 @@
 // File: transientExec.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef TRANSIENTEXEC_H
 #define TRANSIENTEXEC_H
@@ -22,7 +22,7 @@ extern void transientExec(const char model_analysisType[3], const double
   model_RayleighBeta, double model_BC_numpBC, const emxArray_real_T
   *model_BC_pBC, const emxArray_real_T *model_joint, const char
   model_outFilename_data[], const int model_outFilename_size[2], const
-  emxArray_real_T *model_jointTransform, const g_struct_T mesh, const h_struct_T
+  emxArray_real_T *model_jointTransform, const h_struct_T mesh, const i_struct_T
   el);
 
 #endif

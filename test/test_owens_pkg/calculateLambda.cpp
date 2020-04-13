@@ -4,7 +4,7 @@
 // File: calculateLambda.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -57,7 +57,6 @@ void calculateLambda(double theta1, double theta2, double theta3, double lambda
   double fac2;
   double dcm[9];
   int i;
-  double d;
   int lambda_tmp;
   int b_lambda_tmp;
   int c_lambda_tmp;
@@ -107,24 +106,24 @@ void calculateLambda(double theta1, double theta2, double theta3, double lambda
   dcm[8] = ct3 * ct2;
   std::memset(&lambda[0], 0, 144U * sizeof(double));
   for (i = 0; i < 3; i++) {
-    d = dcm[3 * i];
-    lambda[12 * i] = d;
+    ct1 = dcm[3 * i];
+    lambda[12 * i] = ct1;
     lambda_tmp = 12 * (i + 3);
-    lambda[lambda_tmp + 3] = d;
+    lambda[lambda_tmp + 3] = ct1;
     b_lambda_tmp = 12 * (i + 6);
-    lambda[b_lambda_tmp + 6] = d;
+    lambda[b_lambda_tmp + 6] = ct1;
     c_lambda_tmp = 12 * (i + 9);
-    lambda[c_lambda_tmp + 9] = d;
-    d = dcm[3 * i + 1];
-    lambda[12 * i + 1] = d;
-    lambda[lambda_tmp + 4] = d;
-    lambda[b_lambda_tmp + 7] = d;
-    lambda[c_lambda_tmp + 10] = d;
-    d = dcm[3 * i + 2];
-    lambda[12 * i + 2] = d;
-    lambda[lambda_tmp + 5] = d;
-    lambda[b_lambda_tmp + 8] = d;
-    lambda[c_lambda_tmp + 11] = d;
+    lambda[c_lambda_tmp + 9] = ct1;
+    ct1 = dcm[3 * i + 1];
+    lambda[12 * i + 1] = ct1;
+    lambda[lambda_tmp + 4] = ct1;
+    lambda[b_lambda_tmp + 7] = ct1;
+    lambda[c_lambda_tmp + 10] = ct1;
+    ct1 = dcm[3 * i + 2];
+    lambda[12 * i + 2] = ct1;
+    lambda[lambda_tmp + 5] = ct1;
+    lambda[b_lambda_tmp + 8] = ct1;
+    lambda[c_lambda_tmp + 11] = ct1;
   }
 }
 

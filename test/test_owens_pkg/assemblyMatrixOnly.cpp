@@ -4,7 +4,7 @@
 // File: assemblyMatrixOnly.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -45,12 +45,9 @@ void assemblyMatrixOnly(const double Ke[144], const double conn[2],
   int count;
   double dofList_data[12];
   int i;
-  int b_i;
   int j;
-  int i1;
   double tmp_data[144];
   int b_tmp_data[12];
-  int i2;
   int c_tmp_data[12];
 
   //       output:
@@ -65,22 +62,22 @@ void assemblyMatrixOnly(const double Ke[144], const double conn[2],
     }
   }
 
-  for (b_i = 0; b_i < 12; b_i++) {
-    for (i1 = 0; i1 < 12; i1++) {
-      tmp_data[i1 + 12 * b_i] = Kg->data[(static_cast<int>(dofList_data[i1]) +
-        Kg->size[0] * (static_cast<int>(dofList_data[b_i]) - 1)) - 1];
+  for (count = 0; count < 12; count++) {
+    for (i = 0; i < 12; i++) {
+      tmp_data[i + 12 * count] = Kg->data[(static_cast<int>(dofList_data[i]) +
+        Kg->size[0] * (static_cast<int>(dofList_data[count]) - 1)) - 1];
     }
 
-    i1 = static_cast<int>(dofList_data[b_i]) - 1;
-    b_tmp_data[b_i] = i1;
-    c_tmp_data[b_i] = i1;
+    i = static_cast<int>(dofList_data[count]) - 1;
+    b_tmp_data[count] = i;
+    c_tmp_data[count] = i;
   }
 
-  for (b_i = 0; b_i < 12; b_i++) {
-    for (i1 = 0; i1 < 12; i1++) {
-      i2 = i1 + 12 * b_i;
-      Kg->data[b_tmp_data[i1] + Kg->size[0] * c_tmp_data[b_i]] = tmp_data[i2] +
-        Ke[i2];
+  for (count = 0; count < 12; count++) {
+    for (i = 0; i < 12; i++) {
+      j = i + 12 * count;
+      Kg->data[b_tmp_data[i] + Kg->size[0] * c_tmp_data[count]] = tmp_data[j] +
+        Ke[j];
     }
   }
 
@@ -125,9 +122,7 @@ void b_assemblyMatrixOnly(const double Ke_data[], const int Ke_size[2], const
   int count;
   double dofList_data[12];
   int i;
-  int b_i;
   int j;
-  int i1;
   double tmp_data[144];
   int b_tmp_data[12];
   int c_tmp_data[12];
@@ -144,21 +139,21 @@ void b_assemblyMatrixOnly(const double Ke_data[], const int Ke_size[2], const
     }
   }
 
-  for (b_i = 0; b_i < 12; b_i++) {
-    for (i1 = 0; i1 < 12; i1++) {
-      tmp_data[i1 + 12 * b_i] = Kg->data[(static_cast<int>(dofList_data[i1]) +
-        Kg->size[0] * (static_cast<int>(dofList_data[b_i]) - 1)) - 1];
+  for (count = 0; count < 12; count++) {
+    for (i = 0; i < 12; i++) {
+      tmp_data[i + 12 * count] = Kg->data[(static_cast<int>(dofList_data[i]) +
+        Kg->size[0] * (static_cast<int>(dofList_data[count]) - 1)) - 1];
     }
 
-    i1 = static_cast<int>(dofList_data[b_i]) - 1;
-    b_tmp_data[b_i] = i1;
-    c_tmp_data[b_i] = i1;
+    i = static_cast<int>(dofList_data[count]) - 1;
+    b_tmp_data[count] = i;
+    c_tmp_data[count] = i;
   }
 
-  for (b_i = 0; b_i < 12; b_i++) {
-    for (i1 = 0; i1 < 12; i1++) {
-      Kg->data[b_tmp_data[i1] + Kg->size[0] * c_tmp_data[b_i]] = tmp_data[i1 +
-        12 * b_i] + Ke_data[i1 + Ke_size[0] * b_i];
+  for (count = 0; count < 12; count++) {
+    for (i = 0; i < 12; i++) {
+      Kg->data[b_tmp_data[i] + Kg->size[0] * c_tmp_data[count]] = tmp_data[i +
+        12 * count] + Ke_data[i + Ke_size[0] * count];
     }
   }
 

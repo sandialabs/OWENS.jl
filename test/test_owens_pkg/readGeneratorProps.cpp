@@ -4,7 +4,7 @@
 // File: readGeneratorProps.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -39,22 +39,21 @@ double readGeneratorProps(const emxArray_char_T *generatorfilename)
 {
   double genprops;
   boolean_T b_bool;
-  int kstr;
-  signed char fileid;
   int fid;
+  signed char fileid;
   int exitg1;
   static const char b_cv[3] = { 'a', 'l', 'l' };
 
   b_bool = false;
   if ((generatorfilename->size[0] == 1) && (generatorfilename->size[1] == 3)) {
-    kstr = 0;
+    fid = 0;
     do {
       exitg1 = 0;
-      if (kstr < 3) {
-        if (generatorfilename->data[kstr] != b_cv[kstr]) {
+      if (fid < 3) {
+        if (generatorfilename->data[fid] != b_cv[fid]) {
           exitg1 = 1;
         } else {
-          kstr++;
+          fid++;
         }
       } else {
         b_bool = true;

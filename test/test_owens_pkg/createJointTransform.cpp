@@ -4,7 +4,7 @@
 // File: createJointTransform.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -78,7 +78,6 @@ static void b_getNodeMaps(double masterNodeNum, double slaveNodeNum, const
   double dDOF_tmp;
   int i;
   double aMap[6];
-  int n;
   double aMap2_data[1];
   int b_i;
 
@@ -102,12 +101,12 @@ static void b_getNodeMaps(double masterNodeNum, double slaveNodeNum, const
 
   // determine global active DOFs associated with slave node
   if ((slaveActiveDof_size[0] == 0) || (slaveActiveDof_size[1] == 0)) {
-    n = 0;
+    i = 0;
   } else {
-    n = 1;
+    i = 1;
   }
 
-  if (0 <= n - 1) {
+  if (0 <= i - 1) {
     aMap2_data[0] = 0.0;
   }
 
@@ -115,14 +114,14 @@ static void b_getNodeMaps(double masterNodeNum, double slaveNodeNum, const
     aMap2_data[0] = dDOF_tmp + slaveActiveDof_data[0];
   }
 
-  if (n != 0) {
+  if (i != 0) {
     // create overall map of active DOFs associated with this joint
-    aDOF_size[0] = n + 6;
+    aDOF_size[0] = i + 6;
     for (b_i = 0; b_i < 6; b_i++) {
       aDOF_data[b_i] = aMap[b_i];
     }
 
-    if (0 <= n - 1) {
+    if (0 <= i - 1) {
       aDOF_data[6] = aMap2_data[0];
     }
   } else {
@@ -256,7 +255,7 @@ static void c_getNodeMaps(const double Rdd[25], const double Rda[30], double
   int j;
   signed char ipiv[5];
   int mmj_tmp;
-  int b_j;
+  int b;
   signed char p[5];
   int jj;
   int jy;
@@ -280,12 +279,12 @@ static void c_getNodeMaps(const double Rdd[25], const double Rda[30], double
 
   for (j = 0; j < 4; j++) {
     mmj_tmp = 3 - j;
-    b_j = j * 6;
+    b = j * 6;
     jj = j * 6;
-    jp1j = b_j + 2;
+    jp1j = b + 2;
     iy = 5 - j;
     jy = 0;
-    ix = b_j;
+    ix = b;
     smax = std::abs(x[jj]);
     for (k = 2; k <= iy; k++) {
       ix++;
@@ -316,9 +315,9 @@ static void c_getNodeMaps(const double Rdd[25], const double Rda[30], double
       }
     }
 
-    jy = b_j + 5;
+    jy = b + 5;
     iy = jj;
-    for (b_j = 0; b_j <= mmj_tmp; b_j++) {
+    for (b = 0; b <= mmj_tmp; b++) {
       smax = x[jy];
       if (x[jy] != 0.0) {
         ix = jj + 1;
@@ -368,14 +367,14 @@ static void c_getNodeMaps(const double Rdd[25], const double Rda[30], double
   }
 
   for (k = 0; k < 5; k++) {
-    b_j = 5 * (p[k] - 1);
-    y[k + b_j] = 1.0;
+    b = 5 * (p[k] - 1);
+    y[k + b] = 1.0;
     for (j = k + 1; j < 6; j++) {
-      i = (j + b_j) - 1;
+      i = (j + b) - 1;
       if (y[i] != 0.0) {
         i1 = j + 1;
         for (ix = i1; ix < 6; ix++) {
-          jy = (ix + b_j) - 1;
+          jy = (ix + b) - 1;
           y[jy] -= y[i] * x[(ix + 5 * (j - 1)) - 1];
         }
       }
@@ -390,8 +389,8 @@ static void c_getNodeMaps(const double Rdd[25], const double Rda[30], double
       if (y[i] != 0.0) {
         y[i] /= x[k + iy];
         for (ix = 0; ix < k; ix++) {
-          b_j = ix + jy;
-          y[b_j] -= y[i] * x[ix + iy];
+          b = ix + jy;
+          y[b] -= y[i] * x[ix + iy];
         }
       }
     }
@@ -484,30 +483,21 @@ static void createTda(double jointType, double slaveNodeNum, double
 {
   double d;
   double Lambda[144];
-  double slaveActiveDof0_data[1];
+  double slaveActiveDof5_data[1];
   int slaveActiveDof5_size[2];
   int i;
-  double slaveActiveDof1_data[1];
-  double slaveActiveDof4_data[1];
-  double activeDof2[6];
-  double b_dv[3];
   double activeDof3[6];
+  double b_dv[3];
   double b_dv1[6];
   double dv2[6];
-  double dDOF[6];
-  double slaveActiveDof5_data[1];
-  int k;
-  double slaveDof2[5];
+  int b_i;
+  double slaveDof3[5];
   static const signed char b_iv[5] = { 1, 2, 3, 4, 6 };
 
   static const signed char b_iv1[5] = { 1, 2, 3, 5, 6 };
 
-  int b_i;
-  double slaveDof3[5];
-  double slaveActiveDof2_data[1];
-  double slaveActiveDof3_data[1];
-  int globalConstraintEqMatrix3_tmp;
-  double b_dDOF[3];
+  int Rda4_tmp;
+  double dDOF[3];
   double Rda5[36];
   signed char b_I[9];
   static const signed char Tda[36] = { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
@@ -522,31 +512,24 @@ static void createTda(double jointType, double slaveNodeNum, double
   static const signed char b_Tda[27] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-  double globalConstraintEqMatrix2[60];
   static const signed char b_a[60] = { -1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1,
     0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0, 0, 0, 0, 0, 1, 0,
     0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
   signed char i1;
   double Rdd4[25];
-  double dv3[5];
   double c_Tda[30];
-  double c_dDOF[5];
+  double b_dDOF[5];
   signed char c_I[9];
-  double Rda2[30];
-  double globalConstraintEqMatrix3[60];
   static const signed char c_a[60] = { -1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 1, 0, 0, 0, 0, 0, 1, 0,
     0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 };
 
+  int globalConstraintEqMatrix4_tmp;
   static const signed char iv2[24] = { 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0,
     0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 };
 
-  double Rda3[30];
-  double Rdd2[25];
   double d_Tda[36];
-  int globalConstraintEqMatrix2_tmp;
-  double Rdd3[25];
   static const signed char iv3[24] = { 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0,
     0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0 };
 
@@ -574,7 +557,7 @@ static void createTda(double jointType, double slaveNodeNum, double
     // active DOF list at joint
     // slave DOF list at joint
     // determine local active DOFs associated with slave node
-    c_determineActiveDofsFromSlaveN(slaveActiveDof0_data, slaveActiveDof5_size);
+    c_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
 
     // from constraint equation for fixed joint
     for (i = 0; i < 6; i++) {
@@ -582,8 +565,8 @@ static void createTda(double jointType, double slaveNodeNum, double
       dv2[i] = static_cast<double>(i) + 1.0;
     }
 
-    getNodeMaps(masterNodeNum, slaveNodeNum, b_dv1, dv2, slaveActiveDof0_data,
-                slaveActiveDof5_size, dDOF, aDOF_data, aDOF_size);
+    getNodeMaps(masterNodeNum, slaveNodeNum, b_dv1, dv2, slaveActiveDof5_data,
+                slaveActiveDof5_size, activeDof3, aDOF_data, aDOF_size);
     Tda_size[0] = 6;
     Tda_size[1] = 6;
     for (i = 0; i < 36; i++) {
@@ -592,14 +575,14 @@ static void createTda(double jointType, double slaveNodeNum, double
 
     dDOF_size[0] = 6;
     for (i = 0; i < 6; i++) {
-      dDOF_data[i] = dDOF[i];
+      dDOF_data[i] = activeDof3[i];
     }
   } else if (jointType == 1.0) {
     // for pinned joint type
     // active DOF list at joint
     // slave DOF list at joint
     // determine local active DOFs associated with slave node
-    d_determineActiveDofsFromSlaveN(slaveActiveDof1_data, slaveActiveDof5_size);
+    d_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
 
     // from constraint equation for pinned joint
     b_dv[0] = 1.0;
@@ -609,8 +592,8 @@ static void createTda(double jointType, double slaveNodeNum, double
       b_dv1[i] = static_cast<double>(i) + 1.0;
     }
 
-    b_getNodeMaps(masterNodeNum, slaveNodeNum, b_dv, b_dv1, slaveActiveDof1_data,
-                  slaveActiveDof5_size, b_dDOF, aDOF_data, aDOF_size);
+    b_getNodeMaps(masterNodeNum, slaveNodeNum, b_dv, b_dv1, slaveActiveDof5_data,
+                  slaveActiveDof5_size, dDOF, aDOF_data, aDOF_size);
     Tda_size[0] = 3;
     Tda_size[1] = 9;
     for (i = 0; i < 27; i++) {
@@ -618,23 +601,23 @@ static void createTda(double jointType, double slaveNodeNum, double
     }
 
     dDOF_size[0] = 3;
-    dDOF_data[0] = b_dDOF[0];
-    dDOF_data[1] = b_dDOF[1];
-    dDOF_data[2] = b_dDOF[2];
+    dDOF_data[0] = dDOF[0];
+    dDOF_data[1] = dDOF[1];
+    dDOF_data[2] = dDOF[2];
   } else if (jointType == 2.0) {
     // hinge axis along localy "2" frame of joint
     d = std::abs(psi);
     if ((std::abs(d - 90.0) < 0.001) || (std::abs(d - 270.0) < 0.001)) {
       for (i = 0; i < 6; i++) {
-        activeDof2[i] = static_cast<double>(i) + 1.0;
+        activeDof3[i] = static_cast<double>(i) + 1.0;
       }
 
       for (i = 0; i < 5; i++) {
-        slaveDof2[i] = b_iv1[i];
+        slaveDof3[i] = b_iv1[i];
       }
 
       // determine local active DOFs associated with slave node
-      e_determineActiveDofsFromSlaveN(slaveActiveDof2_data, slaveActiveDof5_size);
+      e_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
       for (i = 0; i < 9; i++) {
         b_I[i] = 0;
       }
@@ -644,51 +627,51 @@ static void createTda(double jointType, double slaveNodeNum, double
       b_I[8] = 1;
       for (i = 0; i < 3; i++) {
         i1 = b_I[3 * i];
-        globalConstraintEqMatrix2[5 * i] = -static_cast<double>(i1);
-        k = 5 * (i + 3);
-        globalConstraintEqMatrix2[k] = 0.0;
-        globalConstraintEqMatrix3_tmp = 5 * (i + 6);
-        globalConstraintEqMatrix2[globalConstraintEqMatrix3_tmp] = i1;
-        globalConstraintEqMatrix2_tmp = 5 * (i + 9);
-        globalConstraintEqMatrix2[globalConstraintEqMatrix2_tmp] = 0.0;
+        globalConstraintEqMatrix4[5 * i] = -static_cast<double>(i1);
+        globalConstraintEqMatrix4_tmp = 5 * (i + 3);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp] = 0.0;
+        b_i = 5 * (i + 6);
+        globalConstraintEqMatrix4[b_i] = i1;
+        Rda4_tmp = 5 * (i + 9);
+        globalConstraintEqMatrix4[Rda4_tmp] = 0.0;
         i1 = b_I[3 * i + 1];
-        globalConstraintEqMatrix2[5 * i + 1] = -static_cast<double>(i1);
-        globalConstraintEqMatrix2[k + 1] = 0.0;
-        globalConstraintEqMatrix2[globalConstraintEqMatrix3_tmp + 1] = i1;
-        globalConstraintEqMatrix2[globalConstraintEqMatrix2_tmp + 1] = 0.0;
+        globalConstraintEqMatrix4[5 * i + 1] = -static_cast<double>(i1);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 1] = 0.0;
+        globalConstraintEqMatrix4[b_i + 1] = i1;
+        globalConstraintEqMatrix4[Rda4_tmp + 1] = 0.0;
         i1 = b_I[3 * i + 2];
-        globalConstraintEqMatrix2[5 * i + 2] = -static_cast<double>(i1);
-        globalConstraintEqMatrix2[k + 2] = 0.0;
-        globalConstraintEqMatrix2[globalConstraintEqMatrix3_tmp + 2] = i1;
-        globalConstraintEqMatrix2[globalConstraintEqMatrix2_tmp + 2] = 0.0;
+        globalConstraintEqMatrix4[5 * i + 2] = -static_cast<double>(i1);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 2] = 0.0;
+        globalConstraintEqMatrix4[b_i + 2] = i1;
+        globalConstraintEqMatrix4[Rda4_tmp + 2] = 0.0;
       }
 
       for (i = 0; i < 12; i++) {
-        k = i << 1;
-        globalConstraintEqMatrix2[5 * i + 3] = iv2[k];
-        globalConstraintEqMatrix2[5 * i + 4] = iv2[k + 1];
+        globalConstraintEqMatrix4_tmp = i << 1;
+        globalConstraintEqMatrix4[5 * i + 3] = iv2[globalConstraintEqMatrix4_tmp];
+        globalConstraintEqMatrix4[5 * i + 4] = iv2[globalConstraintEqMatrix4_tmp
+          + 1];
       }
     } else {
       for (i = 0; i < 6; i++) {
-        activeDof2[i] = static_cast<double>(i) + 1.0;
+        activeDof3[i] = static_cast<double>(i) + 1.0;
       }
 
       for (i = 0; i < 5; i++) {
-        slaveDof2[i] = b_iv[i];
+        slaveDof3[i] = b_iv[i];
       }
 
       // determine local active DOFs associated with slave node
-      f_determineActiveDofsFromSlaveN(slaveActiveDof2_data, slaveActiveDof5_size);
+      f_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
       for (i = 0; i < 5; i++) {
-        for (k = 0; k < 12; k++) {
+        for (b_i = 0; b_i < 12; b_i++) {
           d = 0.0;
-          for (globalConstraintEqMatrix3_tmp = 0; globalConstraintEqMatrix3_tmp <
-               12; globalConstraintEqMatrix3_tmp++) {
-            d += static_cast<double>(b_a[i + 5 * globalConstraintEqMatrix3_tmp])
-              * Lambda[globalConstraintEqMatrix3_tmp + 12 * k];
+          for (Rda4_tmp = 0; Rda4_tmp < 12; Rda4_tmp++) {
+            d += static_cast<double>(b_a[i + 5 * Rda4_tmp]) * Lambda[Rda4_tmp +
+              12 * b_i];
           }
 
-          globalConstraintEqMatrix2[i + 5 * k] = d;
+          globalConstraintEqMatrix4[i + 5 * b_i] = d;
         }
       }
     }
@@ -696,35 +679,35 @@ static void createTda(double jointType, double slaveNodeNum, double
     // extract Rda from globalConstraintEqMatrix2
     for (b_i = 0; b_i < 6; b_i++) {
       for (i = 0; i < 5; i++) {
-        Rda2[i + 5 * b_i] = globalConstraintEqMatrix2[i + 5 * (static_cast<int>
-          (activeDof2[b_i]) - 1)];
+        Rda4[i + 5 * b_i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
+          (activeDof3[b_i]) - 1)];
       }
     }
 
     if ((slaveActiveDof5_size[0] != 0) && (slaveActiveDof5_size[1] != 0)) {
       for (i = 0; i < 5; i++) {
-        Rda2[i] = globalConstraintEqMatrix2[i + 5 * (static_cast<int>
-          ((slaveActiveDof2_data[0] + 6.0)) - 1)];
+        Rda4[i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
+          ((slaveActiveDof5_data[0] + 6.0)) - 1)];
       }
     }
 
     // extract Rdd from globalConstraintEqMatrix2
     for (b_i = 0; b_i < 5; b_i++) {
       for (i = 0; i < 5; i++) {
-        Rdd2[i + 5 * b_i] = globalConstraintEqMatrix2[i + 5 * (static_cast<int>
-          (slaveDof2[b_i]) + 5)];
+        Rdd4[i + 5 * b_i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
+          (slaveDof3[b_i]) + 5)];
       }
     }
 
-    c_getNodeMaps(Rdd2, Rda2, masterNodeNum, slaveNodeNum, slaveDof2, activeDof2,
-                  slaveActiveDof2_data, slaveActiveDof5_size, c_Tda, c_dDOF,
+    c_getNodeMaps(Rdd4, Rda4, masterNodeNum, slaveNodeNum, slaveDof3, activeDof3,
+                  slaveActiveDof5_data, slaveActiveDof5_size, c_Tda, b_dDOF,
                   aDOF_data, aDOF_size);
     Tda_size[0] = 5;
     Tda_size[1] = 6;
     std::memcpy(&Tda_data[0], &c_Tda[0], 30U * sizeof(double));
     dDOF_size[0] = 5;
     for (i = 0; i < 5; i++) {
-      dDOF_data[i] = c_dDOF[i];
+      dDOF_data[i] = b_dDOF[i];
     }
   } else if (jointType == 3.0) {
     // hinge axis along local "1" frame of joint
@@ -739,7 +722,7 @@ static void createTda(double jointType, double slaveNodeNum, double
       }
 
       // determine local active DOFs associated with slave node
-      g_determineActiveDofsFromSlaveN(slaveActiveDof3_data, slaveActiveDof5_size);
+      g_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
       for (i = 0; i < 9; i++) {
         b_I[i] = 0;
       }
@@ -751,36 +734,36 @@ static void createTda(double jointType, double slaveNodeNum, double
         c_I[i] = 0;
       }
 
-      for (k = 0; k < 3; k++) {
-        c_I[k + 3 * k] = 1;
-        globalConstraintEqMatrix3[5 * k] = -static_cast<double>(b_I[3 * k]);
-        globalConstraintEqMatrix3_tmp = 5 * (k + 3);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp] = 0.0;
-        globalConstraintEqMatrix3[5 * k + 1] = -static_cast<double>(b_I[3 * k +
-          1]);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 1] = 0.0;
-        globalConstraintEqMatrix3[5 * k + 2] = -static_cast<double>(b_I[3 * k +
-          2]);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 2] = 0.0;
+      for (b_i = 0; b_i < 3; b_i++) {
+        c_I[b_i + 3 * b_i] = 1;
+        globalConstraintEqMatrix4[5 * b_i] = -static_cast<double>(b_I[3 * b_i]);
+        globalConstraintEqMatrix4_tmp = 5 * (b_i + 3);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp] = 0.0;
+        globalConstraintEqMatrix4[5 * b_i + 1] = -static_cast<double>(b_I[3 *
+          b_i + 1]);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 1] = 0.0;
+        globalConstraintEqMatrix4[5 * b_i + 2] = -static_cast<double>(b_I[3 *
+          b_i + 2]);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 2] = 0.0;
       }
 
       for (i = 0; i < 3; i++) {
-        globalConstraintEqMatrix3_tmp = 5 * (i + 6);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp] = c_I[3 * i];
-        k = 5 * (i + 9);
-        globalConstraintEqMatrix3[k] = 0.0;
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 1] = c_I[3 * i
+        globalConstraintEqMatrix4_tmp = 5 * (i + 6);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp] = c_I[3 * i];
+        b_i = 5 * (i + 9);
+        globalConstraintEqMatrix4[b_i] = 0.0;
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 1] = c_I[3 * i
           + 1];
-        globalConstraintEqMatrix3[k + 1] = 0.0;
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 2] = c_I[3 * i
+        globalConstraintEqMatrix4[b_i + 1] = 0.0;
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 2] = c_I[3 * i
           + 2];
-        globalConstraintEqMatrix3[k + 2] = 0.0;
+        globalConstraintEqMatrix4[b_i + 2] = 0.0;
       }
 
       for (i = 0; i < 12; i++) {
-        globalConstraintEqMatrix3_tmp = i << 1;
-        globalConstraintEqMatrix3[5 * i + 3] = iv3[globalConstraintEqMatrix3_tmp];
-        globalConstraintEqMatrix3[5 * i + 4] = iv3[globalConstraintEqMatrix3_tmp
+        globalConstraintEqMatrix4_tmp = i << 1;
+        globalConstraintEqMatrix4[5 * i + 3] = iv3[globalConstraintEqMatrix4_tmp];
+        globalConstraintEqMatrix4[5 * i + 4] = iv3[globalConstraintEqMatrix4_tmp
           + 1];
       }
     } else if ((std::abs(std::abs(psi) - 90.0) < 0.001) || (std::abs(std::abs
@@ -794,7 +777,7 @@ static void createTda(double jointType, double slaveNodeNum, double
       }
 
       // determine local active DOFs associated with slave node
-      f_determineActiveDofsFromSlaveN(slaveActiveDof3_data, slaveActiveDof5_size);
+      f_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
       for (i = 0; i < 9; i++) {
         b_I[i] = 0;
       }
@@ -806,36 +789,36 @@ static void createTda(double jointType, double slaveNodeNum, double
         c_I[i] = 0;
       }
 
-      for (k = 0; k < 3; k++) {
-        c_I[k + 3 * k] = 1;
-        globalConstraintEqMatrix3[5 * k] = -static_cast<double>(b_I[3 * k]);
-        globalConstraintEqMatrix3_tmp = 5 * (k + 3);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp] = 0.0;
-        globalConstraintEqMatrix3[5 * k + 1] = -static_cast<double>(b_I[3 * k +
-          1]);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 1] = 0.0;
-        globalConstraintEqMatrix3[5 * k + 2] = -static_cast<double>(b_I[3 * k +
-          2]);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 2] = 0.0;
+      for (b_i = 0; b_i < 3; b_i++) {
+        c_I[b_i + 3 * b_i] = 1;
+        globalConstraintEqMatrix4[5 * b_i] = -static_cast<double>(b_I[3 * b_i]);
+        globalConstraintEqMatrix4_tmp = 5 * (b_i + 3);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp] = 0.0;
+        globalConstraintEqMatrix4[5 * b_i + 1] = -static_cast<double>(b_I[3 *
+          b_i + 1]);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 1] = 0.0;
+        globalConstraintEqMatrix4[5 * b_i + 2] = -static_cast<double>(b_I[3 *
+          b_i + 2]);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 2] = 0.0;
       }
 
       for (i = 0; i < 3; i++) {
-        globalConstraintEqMatrix3_tmp = 5 * (i + 6);
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp] = c_I[3 * i];
-        k = 5 * (i + 9);
-        globalConstraintEqMatrix3[k] = 0.0;
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 1] = c_I[3 * i
+        globalConstraintEqMatrix4_tmp = 5 * (i + 6);
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp] = c_I[3 * i];
+        b_i = 5 * (i + 9);
+        globalConstraintEqMatrix4[b_i] = 0.0;
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 1] = c_I[3 * i
           + 1];
-        globalConstraintEqMatrix3[k + 1] = 0.0;
-        globalConstraintEqMatrix3[globalConstraintEqMatrix3_tmp + 2] = c_I[3 * i
+        globalConstraintEqMatrix4[b_i + 1] = 0.0;
+        globalConstraintEqMatrix4[globalConstraintEqMatrix4_tmp + 2] = c_I[3 * i
           + 2];
-        globalConstraintEqMatrix3[k + 2] = 0.0;
+        globalConstraintEqMatrix4[b_i + 2] = 0.0;
       }
 
       for (i = 0; i < 12; i++) {
-        globalConstraintEqMatrix3_tmp = i << 1;
-        globalConstraintEqMatrix3[5 * i + 3] = iv4[globalConstraintEqMatrix3_tmp];
-        globalConstraintEqMatrix3[5 * i + 4] = iv4[globalConstraintEqMatrix3_tmp
+        globalConstraintEqMatrix4_tmp = i << 1;
+        globalConstraintEqMatrix4[5 * i + 3] = iv4[globalConstraintEqMatrix4_tmp];
+        globalConstraintEqMatrix4[5 * i + 4] = iv4[globalConstraintEqMatrix4_tmp
           + 1];
       }
     } else {
@@ -848,17 +831,16 @@ static void createTda(double jointType, double slaveNodeNum, double
       }
 
       // determine local active DOFs associated with slave node
-      e_determineActiveDofsFromSlaveN(slaveActiveDof3_data, slaveActiveDof5_size);
+      e_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
       for (i = 0; i < 5; i++) {
-        for (k = 0; k < 12; k++) {
+        for (b_i = 0; b_i < 12; b_i++) {
           d = 0.0;
-          for (globalConstraintEqMatrix3_tmp = 0; globalConstraintEqMatrix3_tmp <
-               12; globalConstraintEqMatrix3_tmp++) {
-            d += static_cast<double>(c_a[i + 5 * globalConstraintEqMatrix3_tmp])
-              * Lambda[globalConstraintEqMatrix3_tmp + 12 * k];
+          for (Rda4_tmp = 0; Rda4_tmp < 12; Rda4_tmp++) {
+            d += static_cast<double>(c_a[i + 5 * Rda4_tmp]) * Lambda[Rda4_tmp +
+              12 * b_i];
           }
 
-          globalConstraintEqMatrix3[i + 5 * k] = d;
+          globalConstraintEqMatrix4[i + 5 * b_i] = d;
         }
       }
     }
@@ -866,65 +848,64 @@ static void createTda(double jointType, double slaveNodeNum, double
     // extract Rda from globalConstraintEqMatrix3
     for (b_i = 0; b_i < 6; b_i++) {
       for (i = 0; i < 5; i++) {
-        Rda3[i + 5 * b_i] = globalConstraintEqMatrix3[i + 5 * (static_cast<int>
+        Rda4[i + 5 * b_i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
           (activeDof3[b_i]) - 1)];
       }
     }
 
     if ((slaveActiveDof5_size[0] != 0) && (slaveActiveDof5_size[1] != 0)) {
       for (i = 0; i < 5; i++) {
-        Rda3[i] = globalConstraintEqMatrix3[i + 5 * (static_cast<int>
-          ((slaveActiveDof3_data[0] + 6.0)) - 1)];
+        Rda4[i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
+          ((slaveActiveDof5_data[0] + 6.0)) - 1)];
       }
     }
 
     // extract Rdd from globalConstraintEqMatrix3
     for (b_i = 0; b_i < 5; b_i++) {
       for (i = 0; i < 5; i++) {
-        Rdd3[i + 5 * b_i] = globalConstraintEqMatrix3[i + 5 * (static_cast<int>
+        Rdd4[i + 5 * b_i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
           (slaveDof3[b_i]) + 5)];
       }
     }
 
-    c_getNodeMaps(Rdd3, Rda3, masterNodeNum, slaveNodeNum, slaveDof3, activeDof3,
-                  slaveActiveDof3_data, slaveActiveDof5_size, c_Tda, c_dDOF,
+    c_getNodeMaps(Rdd4, Rda4, masterNodeNum, slaveNodeNum, slaveDof3, activeDof3,
+                  slaveActiveDof5_data, slaveActiveDof5_size, c_Tda, b_dDOF,
                   aDOF_data, aDOF_size);
     Tda_size[0] = 5;
     Tda_size[1] = 6;
     std::memcpy(&Tda_data[0], &c_Tda[0], 30U * sizeof(double));
     dDOF_size[0] = 5;
     for (i = 0; i < 5; i++) {
-      dDOF_data[i] = c_dDOF[i];
+      dDOF_data[i] = b_dDOF[i];
     }
   } else if (jointType == 4.0) {
     // hinge axis along local "3" frame of joint
     // determine local active DOFs associated with slave node
-    g_determineActiveDofsFromSlaveN(slaveActiveDof4_data, slaveActiveDof5_size);
+    g_determineActiveDofsFromSlaveN(slaveActiveDof5_data, slaveActiveDof5_size);
     for (i = 0; i < 5; i++) {
-      for (k = 0; k < 12; k++) {
+      for (b_i = 0; b_i < 12; b_i++) {
         d = 0.0;
-        for (globalConstraintEqMatrix3_tmp = 0; globalConstraintEqMatrix3_tmp <
-             12; globalConstraintEqMatrix3_tmp++) {
-          d += static_cast<double>(a[i + 5 * globalConstraintEqMatrix3_tmp]) *
-            Lambda[globalConstraintEqMatrix3_tmp + 12 * k];
+        for (Rda4_tmp = 0; Rda4_tmp < 12; Rda4_tmp++) {
+          d += static_cast<double>(a[i + 5 * Rda4_tmp]) * Lambda[Rda4_tmp + 12 *
+            b_i];
         }
 
-        globalConstraintEqMatrix4[i + 5 * k] = d;
+        globalConstraintEqMatrix4[i + 5 * b_i] = d;
       }
     }
 
     // extract Rda from globalConstraintEqMatrix4
     for (b_i = 0; b_i < 6; b_i++) {
       for (i = 0; i < 5; i++) {
-        k = i + 5 * b_i;
-        Rda4[k] = globalConstraintEqMatrix4[k];
+        Rda4_tmp = i + 5 * b_i;
+        Rda4[Rda4_tmp] = globalConstraintEqMatrix4[Rda4_tmp];
       }
     }
 
     if ((slaveActiveDof5_size[0] != 0) && (slaveActiveDof5_size[1] != 0)) {
       for (i = 0; i < 5; i++) {
         Rda4[i] = globalConstraintEqMatrix4[i + 5 * (static_cast<int>
-          ((slaveActiveDof4_data[0] + 6.0)) - 1)];
+          ((slaveActiveDof5_data[0] + 6.0)) - 1)];
       }
     }
 
@@ -934,22 +915,22 @@ static void createTda(double jointType, double slaveNodeNum, double
         Rdd4[i + 5 * b_i] = globalConstraintEqMatrix4[i + 5 * (b_i + 6)];
       }
 
-      dv3[b_i] = static_cast<double>(b_i) + 1.0;
+      slaveDof3[b_i] = static_cast<double>(b_i) + 1.0;
     }
 
     for (i = 0; i < 6; i++) {
       b_dv1[i] = static_cast<double>(i) + 1.0;
     }
 
-    c_getNodeMaps(Rdd4, Rda4, masterNodeNum, slaveNodeNum, dv3, b_dv1,
-                  slaveActiveDof4_data, slaveActiveDof5_size, c_Tda, c_dDOF,
+    c_getNodeMaps(Rdd4, Rda4, masterNodeNum, slaveNodeNum, slaveDof3, b_dv1,
+                  slaveActiveDof5_data, slaveActiveDof5_size, c_Tda, b_dDOF,
                   aDOF_data, aDOF_size);
     Tda_size[0] = 5;
     Tda_size[1] = 6;
     std::memcpy(&Tda_data[0], &c_Tda[0], 30U * sizeof(double));
     dDOF_size[0] = 5;
     for (i = 0; i < 5; i++) {
-      dDOF_data[i] = c_dDOF[i];
+      dDOF_data[i] = b_dDOF[i];
     }
   } else {
     if (jointType == 5.0) {
@@ -979,14 +960,14 @@ static void createTda(double jointType, double slaveNodeNum, double
       }
 
       d_getNodeMaps(Rda5, masterNodeNum, slaveNodeNum, b_dv1, dv2,
-                    slaveActiveDof5_data, slaveActiveDof5_size, d_Tda, dDOF,
-                    aDOF_data, aDOF_size);
+                    slaveActiveDof5_data, slaveActiveDof5_size, d_Tda,
+                    activeDof3, aDOF_data, aDOF_size);
       Tda_size[0] = 6;
       Tda_size[1] = 6;
       std::memcpy(&Tda_data[0], &d_Tda[0], 36U * sizeof(double));
       dDOF_size[0] = 6;
       for (i = 0; i < 6; i++) {
-        dDOF_data[i] = dDOF[i];
+        dDOF_data[i] = activeDof3[i];
       }
     }
   }
@@ -1125,8 +1106,8 @@ static void d_getNodeMaps(const double Rda[36], double masterNodeNum, double
 {
   int i;
   int b_i;
-  int n;
   double d;
+  int i1;
   double aMap2_data[1];
   double aMap[6];
 
@@ -1137,8 +1118,8 @@ static void d_getNodeMaps(const double Rda[36], double masterNodeNum, double
   for (i = 0; i < 6; i++) {
     for (b_i = 0; b_i < 6; b_i++) {
       d = 0.0;
-      for (n = 0; n < 6; n++) {
-        d += static_cast<double>(iv[i + 6 * n]) * Rda[n + 6 * b_i];
+      for (i1 = 0; i1 < 6; i1++) {
+        d += static_cast<double>(iv[i + 6 * i1]) * Rda[i1 + 6 * b_i];
       }
 
       Tda[i + 6 * b_i] = d;
@@ -1153,12 +1134,12 @@ static void d_getNodeMaps(const double Rda[36], double masterNodeNum, double
 
   // determine global active DOFs associated with slave node
   if ((slaveActiveDof_size[0] == 0) || (slaveActiveDof_size[1] == 0)) {
-    n = 0;
+    i = 0;
   } else {
-    n = 1;
+    i = 1;
   }
 
-  if (0 <= n - 1) {
+  if (0 <= i - 1) {
     aMap2_data[0] = 0.0;
   }
 
@@ -1166,14 +1147,14 @@ static void d_getNodeMaps(const double Rda[36], double masterNodeNum, double
     aMap2_data[0] = (slaveNodeNum - 1.0) * 6.0 + slaveActiveDof_data[0];
   }
 
-  if (n != 0) {
+  if (i != 0) {
     // create overall map of active DOFs associated with this joint
-    aDOF_size[0] = n + 6;
+    aDOF_size[0] = i + 6;
     for (b_i = 0; b_i < 6; b_i++) {
       aDOF_data[b_i] = aMap[b_i];
     }
 
-    if (0 <= n - 1) {
+    if (0 <= i - 1) {
       aDOF_data[6] = aMap2_data[0];
     }
   } else {
@@ -1494,7 +1475,6 @@ static void getNodeMaps(double masterNodeNum, double slaveNodeNum, const double
   aDOF_size[1])
 {
   int i;
-  int n;
   double aMap[6];
   double aMap2_data[1];
   int b_i;
@@ -1513,12 +1493,12 @@ static void getNodeMaps(double masterNodeNum, double slaveNodeNum, const double
 
   // determine global active DOFs associated with slave node
   if ((slaveActiveDof_size[0] == 0) || (slaveActiveDof_size[1] == 0)) {
-    n = 0;
+    i = 0;
   } else {
-    n = 1;
+    i = 1;
   }
 
-  if (0 <= n - 1) {
+  if (0 <= i - 1) {
     aMap2_data[0] = 0.0;
   }
 
@@ -1526,14 +1506,14 @@ static void getNodeMaps(double masterNodeNum, double slaveNodeNum, const double
     aMap2_data[0] = (slaveNodeNum - 1.0) * 6.0 + slaveActiveDof_data[0];
   }
 
-  if (n != 0) {
+  if (i != 0) {
     // create overall map of active DOFs associated with this joint
-    aDOF_size[0] = n + 6;
+    aDOF_size[0] = i + 6;
     for (b_i = 0; b_i < 6; b_i++) {
       aDOF_data[b_i] = aMap[b_i];
     }
 
-    if (0 <= n - 1) {
+    if (0 <= i - 1) {
       aDOF_data[6] = aMap2_data[0];
     }
   } else {
@@ -1583,7 +1563,6 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
   double absx;
   int nz;
   int j;
-  emxArray_real_T *jointTransform;
   int i1;
   int i2;
   signed char con[5];
@@ -1608,8 +1587,6 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
   double aDOF_data[7];
   int aDOF_size[1];
   int i3;
-  int m;
-  double s;
   int c_exponent;
   boolean_T exitg1;
 
@@ -1810,19 +1787,17 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
     }
   }
 
-  emxInit_real_T(&jointTransform, 2);
-
   // calculate number of active DOFs in the model
   // initialize joint transformation matrix
   i = static_cast<int>(adNumDof);
-  i1 = jointTransform->size[0] * jointTransform->size[1];
-  jointTransform->size[0] = i;
+  i1 = output_jointTransform->size[0] * output_jointTransform->size[1];
+  output_jointTransform->size[0] = i;
   i2 = static_cast<int>((adNumDof - dependentCount));
-  jointTransform->size[1] = i2;
-  emxEnsureCapacity_real_T(jointTransform, i1);
+  output_jointTransform->size[1] = i2;
+  emxEnsureCapacity_real_T(output_jointTransform, i1);
   nz = i * i2;
   for (i = 0; i < nz; i++) {
-    jointTransform->data[i] = 0.0;
+    output_jointTransform->data[i] = 0.0;
   }
 
   // form reduced DOF vector which maps original DOF numbering to reduced DOF
@@ -1855,9 +1830,9 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
       }
     }
 
-    na = tf->size[1];
+    j = tf->size[1];
     nz = tf->data[0];
-    for (k = 2; k <= na; k++) {
+    for (k = 2; k <= j; k++) {
       nz += tf->data[k - 1];
     }
 
@@ -1902,9 +1877,9 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
       }
     }
 
-    na = tf->size[1];
+    j = tf->size[1];
     nz = tf->data[0];
-    for (k = 2; k <= na; k++) {
+    for (k = 2; k <= j; k++) {
       nz += tf->data[k - 1];
     }
 
@@ -1922,8 +1897,8 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
   // but here the original DOF ordering is retained
   for (b_i = 0; b_i < i2; b_i++) {
     // loop over number of active DOFs
-    jointTransform->data[(static_cast<int>(reducedDOF->data[b_i]) +
-                          jointTransform->size[0] * b_i) - 1] = 1.0;
+    output_jointTransform->data[(static_cast<int>(reducedDOF->data[b_i]) +
+      output_jointTransform->size[0] * b_i) - 1] = 1.0;
 
     // mapping of active DOFs in full DOF list to reduced DOF list
   }
@@ -1960,11 +1935,11 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
       }
     }
 
-    for (m = 0; m < i1; m++) {
+    for (exponent = 0; exponent < i1; exponent++) {
       // loop over global active DOFs associated with joint
       for (k = 0; k < i3; k++) {
         // loop over global dependent DOFs associated with joint
-        s = aDOF_data[m];
+        adNumDof = aDOF_data[exponent];
         na = reducedDOF->size[1];
         i2 = tf->size[0] * tf->size[1];
         tf->size[0] = 1;
@@ -1976,7 +1951,7 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
         }
 
         for (j = 0; j < na; j++) {
-          absx = std::abs(s / 2.0);
+          absx = std::abs(adNumDof / 2.0);
           if ((!rtIsInf(absx)) && (!rtIsNaN(absx))) {
             if (absx <= 2.2250738585072014E-308) {
               absx = 4.94065645841247E-324;
@@ -1988,30 +1963,31 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
             absx = rtNaN;
           }
 
-          if (std::abs(s - static_cast<double>(reducedDOF->data[j])) < absx) {
+          if (std::abs(adNumDof - static_cast<double>(reducedDOF->data[j])) <
+              absx) {
             tf->data[j] = true;
           }
         }
 
         i2 = tf->size[1];
         nz = 0;
-        na = ii->size[0] * ii->size[1];
+        j = ii->size[0] * ii->size[1];
         ii->size[0] = 1;
         ii->size[1] = tf->size[1];
-        emxEnsureCapacity_int32_T(ii, na);
-        na = 0;
+        emxEnsureCapacity_int32_T(ii, j);
+        j = 0;
         exitg1 = false;
-        while ((!exitg1) && (na <= i2 - 1)) {
-          if (tf->data[na]) {
+        while ((!exitg1) && (j <= i2 - 1)) {
+          if (tf->data[j]) {
             nz++;
-            ii->data[nz - 1] = na + 1;
+            ii->data[nz - 1] = j + 1;
             if (nz >= i2) {
               exitg1 = true;
             } else {
-              na++;
+              j++;
             }
           } else {
-            na++;
+            j++;
           }
         }
 
@@ -2042,9 +2018,9 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
 
         nz = b_r->size[0];
         for (i2 = 0; i2 < nz; i2++) {
-          jointTransform->data[(static_cast<int>(dDOF_data[k]) +
-                                jointTransform->size[0] * (b_r->data[i2] - 1)) -
-            1] = Tda_data[k + Tda_size[0] * m];
+          output_jointTransform->data[(static_cast<int>(dDOF_data[k]) +
+            output_jointTransform->size[0] * (b_r->data[i2] - 1)) - 1] =
+            Tda_data[k + Tda_size[0] * exponent];
         }
 
         // map local joint transformation matrix (Tda) to entries in global transformation matrix (jointTransform) 
@@ -2055,16 +2031,6 @@ void createJointTransform(const emxArray_real_T *joint, double numNodes,
   emxFree_int32_T(&ii);
   emxFree_boolean_T(&tf);
   emxFree_int32_T(&b_r);
-  i = output_jointTransform->size[0] * output_jointTransform->size[1];
-  output_jointTransform->size[0] = jointTransform->size[0];
-  output_jointTransform->size[1] = jointTransform->size[1];
-  emxEnsureCapacity_real_T(output_jointTransform, i);
-  nz = jointTransform->size[0] * jointTransform->size[1];
-  for (i = 0; i < nz; i++) {
-    output_jointTransform->data[i] = jointTransform->data[i];
-  }
-
-  emxFree_real_T(&jointTransform);
   i = output_reducedDOF->size[0] * output_reducedDOF->size[1];
   output_reducedDOF->size[0] = 1;
   output_reducedDOF->size[1] = reducedDOF->size[1];

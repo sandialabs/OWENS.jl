@@ -4,7 +4,7 @@
 // File: findElementsAssociatedWithNodeNumber.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -14,7 +14,6 @@
 #include "test_owens.h"
 #include "test_owens_emxutil.h"
 #include <cmath>
-#include <cstring>
 #include <math.h>
 #include <string.h>
 
@@ -51,24 +50,21 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
   unsigned int b_index;
   int i;
   emxArray_boolean_T *tf;
-  int b_i;
+  int exponent;
   int i1;
-  boolean_T x[2];
+  boolean_T res[2];
   int idx;
   double absx;
   boolean_T b;
   boolean_T b1;
   int j;
   double b_r;
-  emxArray_int32_T *c_r;
-  int exponent;
+  emxArray_int32_T *res1;
   int b_exponent;
+  int c_exponent;
   double d;
   boolean_T exitg1;
-  emxArray_int32_T *res1;
-  int c_exponent;
   signed char ii_data[2];
-  signed char localNodeNumber_data[2];
   double s;
   int d_exponent;
 
@@ -106,19 +102,19 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
     }
 
     for (j = 0; j <= i; j++) {
-      frexp(0.5, &exponent);
+      frexp(0.5, &b_exponent);
       if (std::abs(1.0 - jointData->data[j + jointData->size[0] * 2]) <
           1.1102230246251565E-16) {
         tf->data[j] = true;
       }
     }
 
-    emxInit_int32_T(&c_r, 1);
+    emxInit_int32_T(&res1, 1);
 
     // search joint data slave nodes for node number
     // if it is, change it to the corresponding master node
-    e_eml_find(tf, c_r);
-    if (c_r->size[0] != 0) {
+    e_eml_find(tf, res1);
+    if (res1->size[0] != 0) {
       nodeNum = jointData->data[(jointData->size[0] + jointData->size[0]) - 1];
     }
 
@@ -137,8 +133,8 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
         if (absx <= 2.2250738585072014E-308) {
           b_r = 4.94065645841247E-324;
         } else {
-          frexp(absx, &c_exponent);
-          b_r = std::ldexp(1.0, c_exponent - 53);
+          frexp(absx, &exponent);
+          b_r = std::ldexp(1.0, exponent - 53);
         }
       } else {
         b_r = rtNaN;
@@ -151,20 +147,10 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
       }
     }
 
-    emxInit_int32_T(&res1, 1);
-    e_eml_find(tf, c_r);
-    i = res1->size[0];
-    res1->size[0] = c_r->size[0];
-    emxEnsureCapacity_int32_T(res1, i);
-    idx = c_r->size[0];
-    emxFree_boolean_T(&tf);
-    for (i = 0; i < idx; i++) {
-      res1->data[i] = c_r->data[i];
-    }
-
-    emxFree_int32_T(&c_r);
+    e_eml_find(tf, res1);
 
     // search joint data master nodes for node number
+    emxFree_boolean_T(&tf);
     if (res1->size[0] != 0) {
       i = elList->size[0] * elList->size[1];
       elList->size[0] = 1;
@@ -192,10 +178,10 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
       for (j = 0; j < i; j++) {
         // loop over joints
         i1 = conn->size[0];
-        for (b_i = 0; b_i < i1; b_i++) {
+        for (exponent = 0; exponent < i1; exponent++) {
           s = jointData->data[(res1->data[j] + jointData->size[0] * 2) - 1];
-          x[0] = false;
-          x[1] = false;
+          res[0] = false;
+          res[1] = false;
           absx = std::abs(s / 2.0);
           b = !rtIsInf(absx);
           b1 = !rtIsNaN(absx);
@@ -210,10 +196,10 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
             b_r = rtNaN;
           }
 
-          d = conn->data[b_i];
+          d = conn->data[exponent];
           if ((std::abs(s - d) < b_r) || (rtIsInf(d) && rtIsInf(s) && ((d > 0.0)
                 == (s > 0.0)))) {
-            x[0] = true;
+            res[0] = true;
           }
 
           if (b && b1) {
@@ -227,45 +213,40 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
             b_r = rtNaN;
           }
 
-          d = conn->data[b_i + conn->size[0]];
+          d = conn->data[exponent + conn->size[0]];
           if ((std::abs(s - d) < b_r) || (rtIsInf(d) && rtIsInf(s) && ((d > 0.0)
                 == (s > 0.0)))) {
-            x[1] = true;
+            res[1] = true;
           }
 
           // finds indices of nodeNum in connectivity of element i
           idx = 0;
-          exponent = 0;
+          b_exponent = 0;
           exitg1 = false;
-          while ((!exitg1) && (exponent < 2)) {
-            if (x[exponent]) {
+          while ((!exitg1) && (b_exponent < 2)) {
+            if (res[b_exponent]) {
               idx++;
-              ii_data[idx - 1] = static_cast<signed char>((exponent + 1));
+              ii_data[idx - 1] = static_cast<signed char>((b_exponent + 1));
               if (idx >= 2) {
                 exitg1 = true;
               } else {
-                exponent++;
+                b_exponent++;
               }
             } else {
-              exponent++;
+              b_exponent++;
             }
           }
 
+          // finds the local node number of element i that corresponds to nodeNum 
           if (1 > idx) {
             idx = 0;
           }
 
-          if (0 <= idx - 1) {
-            std::memcpy(&localNodeNumber_data[0], &ii_data[0], idx * sizeof
-                        (signed char));
-          }
-
-          // finds the local node number of element i that corresponds to nodeNum 
           if (idx != 0) {
             // assigns to an elementList and localNode list
             idx = static_cast<int>(b_index) - 1;
-            elList->data[idx] = static_cast<double>(b_i) + 1.0;
-            localNode->data[idx] = localNodeNumber_data[0];
+            elList->data[idx] = static_cast<double>(exponent) + 1.0;
+            localNode->data[idx] = ii_data[0];
             b_index++;
           }
         }
@@ -276,10 +257,10 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
   }
 
   i = conn->size[0];
-  for (b_i = 0; b_i < i; b_i++) {
+  for (exponent = 0; exponent < i; exponent++) {
     // loop over elements
-    x[0] = false;
-    x[1] = false;
+    res[0] = false;
+    res[1] = false;
     absx = std::abs(nodeNum / 2.0);
     b = !rtIsInf(absx);
     b1 = !rtIsNaN(absx);
@@ -287,69 +268,64 @@ void c_findElementsAssociatedWithNod(double nodeNum, const emxArray_real_T *conn
       if (absx <= 2.2250738585072014E-308) {
         b_r = 4.94065645841247E-324;
       } else {
-        frexp(absx, &b_exponent);
-        b_r = std::ldexp(1.0, b_exponent - 53);
+        frexp(absx, &c_exponent);
+        b_r = std::ldexp(1.0, c_exponent - 53);
       }
     } else {
       b_r = rtNaN;
     }
 
-    d = conn->data[b_i];
+    d = conn->data[exponent];
     if ((std::abs(nodeNum - d) < b_r) || (rtIsInf(d) && rtIsInf(nodeNum) && ((d >
            0.0) == (nodeNum > 0.0)))) {
-      x[0] = true;
+      res[0] = true;
     }
 
     if (b && b1) {
       if (absx <= 2.2250738585072014E-308) {
         b_r = 4.94065645841247E-324;
       } else {
-        frexp(absx, &b_exponent);
-        b_r = std::ldexp(1.0, b_exponent - 53);
+        frexp(absx, &c_exponent);
+        b_r = std::ldexp(1.0, c_exponent - 53);
       }
     } else {
       b_r = rtNaN;
     }
 
-    d = conn->data[b_i + conn->size[0]];
+    d = conn->data[exponent + conn->size[0]];
     if ((std::abs(nodeNum - d) < b_r) || (rtIsInf(d) && rtIsInf(nodeNum) && ((d >
            0.0) == (nodeNum > 0.0)))) {
-      x[1] = true;
+      res[1] = true;
     }
 
     // finds indices of nodeNum in connectivity of element i
     idx = 0;
-    exponent = 0;
+    b_exponent = 0;
     exitg1 = false;
-    while ((!exitg1) && (exponent < 2)) {
-      if (x[exponent]) {
+    while ((!exitg1) && (b_exponent < 2)) {
+      if (res[b_exponent]) {
         idx++;
-        ii_data[idx - 1] = static_cast<signed char>((exponent + 1));
+        ii_data[idx - 1] = static_cast<signed char>((b_exponent + 1));
         if (idx >= 2) {
           exitg1 = true;
         } else {
-          exponent++;
+          b_exponent++;
         }
       } else {
-        exponent++;
+        b_exponent++;
       }
     }
 
+    // finds the local node number of element i that corresponds to nodeNum
     if (1 > idx) {
       idx = 0;
     }
 
-    if (0 <= idx - 1) {
-      std::memcpy(&localNodeNumber_data[0], &ii_data[0], idx * sizeof(signed
-        char));
-    }
-
-    // finds the local node number of element i that corresponds to nodeNum
     if (idx != 0) {
       // assigns to an elementList and localNode list
       idx = static_cast<int>(b_index) - 1;
-      elList->data[idx] = static_cast<double>(b_i) + 1.0;
-      localNode->data[idx] = localNodeNumber_data[0];
+      elList->data[idx] = static_cast<double>(exponent) + 1.0;
+      localNode->data[idx] = ii_data[0];
       b_index++;
     }
   }

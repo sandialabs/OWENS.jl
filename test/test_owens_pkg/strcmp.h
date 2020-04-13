@@ -4,7 +4,7 @@
 // File: strcmp.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef STRCMP_H
 #define STRCMP_H
@@ -26,6 +26,9 @@ extern boolean_T h_strcmp(const char a_data[], const int a_size[2]);
 extern boolean_T i_strcmp(const char a_data[], const int a_size[2]);
 extern boolean_T j_strcmp(const char a_data[], const int a_size[2]);
 extern boolean_T k_strcmp(const char a_data[], const int a_size[2]);
+extern boolean_T l_strcmp(const char a_data[]);
+extern boolean_T m_strcmp(const char a_data[]);
+extern boolean_T n_strcmp(const char a[2]);
 
 #endif
 

@@ -4,7 +4,7 @@
 // File: modalExec.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -59,7 +59,7 @@
 //                const emxArray_real_T *mesh_y
 //                const emxArray_real_T *mesh_z
 //                const emxArray_real_T *mesh_conn
-//                const h_struct_T el
+//                const i_struct_T el
 //                const emxArray_real_T *displ
 //                emxArray_real_T *freq
 //                emxArray_real_T *damp
@@ -73,7 +73,7 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
                *model_jointTransform, const emxArray_real_T
                *model_reducedDOFList, double mesh_numEl, const emxArray_real_T
                *mesh_x, const emxArray_real_T *mesh_y, const emxArray_real_T
-               *mesh_z, const emxArray_real_T *mesh_conn, const h_struct_T el,
+               *mesh_z, const emxArray_real_T *mesh_conn, const i_struct_T el,
                const emxArray_real_T *displ, emxArray_real_T *freq,
                emxArray_real_T *damp)
 {

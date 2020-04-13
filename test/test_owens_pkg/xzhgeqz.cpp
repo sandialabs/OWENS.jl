@@ -4,7 +4,7 @@
 // File: xzhgeqz.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -34,8 +34,8 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
 {
   boolean_T compz;
   int n;
-  int x;
-  int j;
+  int ifirst;
+  int loop_ub;
   double eshift_re;
   double eshift_im;
   creal_T ctemp;
@@ -45,7 +45,7 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
   double sumsq;
   double b_atol;
   boolean_T firstNonZero;
-  int b_j;
+  int j;
   double ascale;
   int jp1;
   double bscale;
@@ -53,7 +53,6 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
   boolean_T guard1 = false;
   boolean_T guard2 = false;
   double temp2;
-  int ifirst;
   int istart;
   int ilast;
   int ilastm1;
@@ -83,22 +82,22 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
   }
 
   n = A->size[0];
-  x = alpha1->size[0];
+  ifirst = alpha1->size[0];
   alpha1->size[0] = A->size[0];
-  emxEnsureCapacity_creal_T(alpha1, x);
-  j = A->size[0];
-  for (x = 0; x < j; x++) {
-    alpha1->data[x].re = 0.0;
-    alpha1->data[x].im = 0.0;
+  emxEnsureCapacity_creal_T(alpha1, ifirst);
+  loop_ub = A->size[0];
+  for (ifirst = 0; ifirst < loop_ub; ifirst++) {
+    alpha1->data[ifirst].re = 0.0;
+    alpha1->data[ifirst].im = 0.0;
   }
 
-  x = beta1->size[0];
+  ifirst = beta1->size[0];
   beta1->size[0] = A->size[0];
-  emxEnsureCapacity_creal_T(beta1, x);
-  j = A->size[0];
-  for (x = 0; x < j; x++) {
-    beta1->data[x].re = 1.0;
-    beta1->data[x].im = 0.0;
+  emxEnsureCapacity_creal_T(beta1, ifirst);
+  loop_ub = A->size[0];
+  for (ifirst = 0; ifirst < loop_ub; ifirst++) {
+    beta1->data[ifirst].re = 1.0;
+    beta1->data[ifirst].im = 0.0;
   }
 
   eshift_re = 0.0;
@@ -110,15 +109,15 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
     scale = 0.0;
     sumsq = 0.0;
     firstNonZero = true;
-    for (b_j = ilo; b_j <= ihi; b_j++) {
-      x = b_j + 1;
-      if (ihi < b_j + 1) {
-        x = ihi;
+    for (j = ilo; j <= ihi; j++) {
+      ifirst = j + 1;
+      if (ihi < j + 1) {
+        ifirst = ihi;
       }
 
-      for (jp1 = ilo; jp1 <= x; jp1++) {
-        reAij = A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].re;
-        imAij = A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].im;
+      for (jp1 = ilo; jp1 <= ifirst; jp1++) {
+        reAij = A->data[(jp1 + A->size[0] * (j - 1)) - 1].re;
+        imAij = A->data[(jp1 + A->size[0] * (j - 1)) - 1].im;
         if (reAij != 0.0) {
           anorm = std::abs(reAij);
           if (firstNonZero) {
@@ -170,9 +169,9 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
   ascale = 1.0 / reAij;
   bscale = 1.0 / std::sqrt(static_cast<double>(A->size[0]));
   firstNonZero = true;
-  x = ihi + 1;
-  for (b_j = x; b_j <= n; b_j++) {
-    alpha1->data[b_j - 1] = A->data[(b_j + A->size[0] * (b_j - 1)) - 1];
+  ifirst = ihi + 1;
+  for (j = ifirst; j <= n; j++) {
+    alpha1->data[j - 1] = A->data[(j + A->size[0] * (j - 1)) - 1];
   }
 
   guard1 = false;
@@ -209,53 +208,52 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
           goto60 = true;
           b_guard1 = true;
         } else {
-          b_j = ilastm1;
+          j = ilastm1;
           guard3 = false;
           exitg2 = false;
-          while ((!exitg2) && (b_j + 1 >= ilo)) {
-            if (b_j + 1 == ilo) {
+          while ((!exitg2) && (j + 1 >= ilo)) {
+            if (j + 1 == ilo) {
               guard3 = true;
               exitg2 = true;
-            } else if (std::abs(A->data[b_j + A->size[0] * (b_j - 1)].re) + std::
-                       abs(A->data[b_j + A->size[0] * (b_j - 1)].im) <= b_atol)
-            {
-              A->data[b_j + A->size[0] * (b_j - 1)].re = 0.0;
-              A->data[b_j + A->size[0] * (b_j - 1)].im = 0.0;
+            } else if (std::abs(A->data[j + A->size[0] * (j - 1)].re) + std::abs
+                       (A->data[j + A->size[0] * (j - 1)].im) <= b_atol) {
+              A->data[j + A->size[0] * (j - 1)].re = 0.0;
+              A->data[j + A->size[0] * (j - 1)].im = 0.0;
               guard3 = true;
               exitg2 = true;
             } else {
-              b_j--;
+              j--;
               guard3 = false;
             }
           }
 
           if (guard3) {
-            ifirst = b_j + 1;
+            ifirst = j + 1;
             goto70 = true;
           }
 
           if (goto70) {
             b_guard1 = true;
           } else {
-            j = alpha1->size[0];
-            for (x = 0; x < j; x++) {
-              alpha1->data[x].re = rtNaN;
-              alpha1->data[x].im = 0.0;
+            loop_ub = alpha1->size[0];
+            for (ifirst = 0; ifirst < loop_ub; ifirst++) {
+              alpha1->data[ifirst].re = rtNaN;
+              alpha1->data[ifirst].im = 0.0;
             }
 
-            j = beta1->size[0];
-            for (x = 0; x < j; x++) {
-              beta1->data[x].re = rtNaN;
-              beta1->data[x].im = 0.0;
+            loop_ub = beta1->size[0];
+            for (ifirst = 0; ifirst < loop_ub; ifirst++) {
+              beta1->data[ifirst].re = rtNaN;
+              beta1->data[ifirst].im = 0.0;
             }
 
             if (compz) {
-              j = Z->size[1];
-              for (x = 0; x < j; x++) {
+              loop_ub = Z->size[1];
+              for (ifirst = 0; ifirst < loop_ub; ifirst++) {
                 jp1 = Z->size[0];
                 for (jm1 = 0; jm1 < jp1; jm1++) {
-                  Z->data[jm1 + Z->size[0] * x].re = rtNaN;
-                  Z->data[jm1 + Z->size[0] * x].im = 0.0;
+                  Z->data[jm1 + Z->size[0] * ifirst].re = rtNaN;
+                  Z->data[jm1 + Z->size[0] * ifirst].im = 0.0;
                 }
               }
             }
@@ -387,18 +385,18 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
                 shift.im = eshift_im;
               }
 
-              b_j = ilastm1;
+              j = ilastm1;
               jp1 = ilastm1 + 1;
               exitg2 = false;
-              while ((!exitg2) && (b_j + 1 > ifirst)) {
-                istart = b_j + 1;
-                ctemp.re = ascale * A->data[b_j + A->size[0] * b_j].re -
-                  shift.re * bscale;
-                ctemp.im = ascale * A->data[b_j + A->size[0] * b_j].im -
-                  shift.im * bscale;
+              while ((!exitg2) && (j + 1 > ifirst)) {
+                istart = j + 1;
+                ctemp.re = ascale * A->data[j + A->size[0] * j].re - shift.re *
+                  bscale;
+                ctemp.im = ascale * A->data[j + A->size[0] * j].im - shift.im *
+                  bscale;
                 anorm = std::abs(ctemp.re) + std::abs(ctemp.im);
-                temp2 = ascale * (std::abs(A->data[jp1 + A->size[0] * b_j].re) +
-                                  std::abs(A->data[jp1 + A->size[0] * b_j].im));
+                temp2 = ascale * (std::abs(A->data[jp1 + A->size[0] * j].re) +
+                                  std::abs(A->data[jp1 + A->size[0] * j].im));
                 reAij = anorm;
                 if (temp2 > anorm) {
                   reAij = temp2;
@@ -409,14 +407,14 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
                   temp2 /= reAij;
                 }
 
-                if ((std::abs(A->data[b_j + A->size[0] * (b_j - 1)].re) + std::
-                     abs(A->data[b_j + A->size[0] * (b_j - 1)].im)) * temp2 <=
-                    anorm * b_atol) {
+                if ((std::abs(A->data[j + A->size[0] * (j - 1)].re) + std::abs
+                     (A->data[j + A->size[0] * (j - 1)].im)) * temp2 <= anorm *
+                    b_atol) {
                   goto90 = true;
                   exitg2 = true;
                 } else {
-                  jp1 = b_j;
-                  b_j--;
+                  jp1 = j;
+                  j--;
                 }
               }
 
@@ -434,90 +432,90 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
               b_ascale.im = ascale * A->data[istart + A->size[0] * (istart - 1)]
                 .im;
               b_xzlartg(ctemp, b_ascale, &anorm, &shift);
-              b_j = istart;
+              j = istart;
               jm1 = istart - 2;
-              while (b_j < ilast + 1) {
-                if (b_j > istart) {
-                  xzlartg(A->data[(b_j + A->size[0] * jm1) - 1], A->data[b_j +
-                          A->size[0] * jm1], &anorm, &shift, &A->data[(b_j +
+              while (j < ilast + 1) {
+                if (j > istart) {
+                  xzlartg(A->data[(j + A->size[0] * jm1) - 1], A->data[j +
+                          A->size[0] * jm1], &anorm, &shift, &A->data[(j +
                            A->size[0] * jm1) - 1]);
-                  A->data[b_j + A->size[0] * jm1].re = 0.0;
-                  A->data[b_j + A->size[0] * jm1].im = 0.0;
+                  A->data[j + A->size[0] * jm1].re = 0.0;
+                  A->data[j + A->size[0] * jm1].im = 0.0;
                 }
 
-                for (j = b_j; j <= ilastm; j++) {
-                  ad22_re = anorm * A->data[(b_j + A->size[0] * (j - 1)) - 1].re
-                    + (shift.re * A->data[b_j + A->size[0] * (j - 1)].re -
-                       shift.im * A->data[b_j + A->size[0] * (j - 1)].im);
-                  ad22_im = anorm * A->data[(b_j + A->size[0] * (j - 1)) - 1].im
-                    + (shift.re * A->data[b_j + A->size[0] * (j - 1)].im +
-                       shift.im * A->data[b_j + A->size[0] * (j - 1)].re);
-                  reAij = A->data[(b_j + A->size[0] * (j - 1)) - 1].im;
-                  scale = A->data[(b_j + A->size[0] * (j - 1)) - 1].re;
-                  A->data[b_j + A->size[0] * (j - 1)].re = anorm * A->data[b_j +
-                    A->size[0] * (j - 1)].re - (shift.re * A->data[(b_j +
-                    A->size[0] * (j - 1)) - 1].re + shift.im * A->data[(b_j +
-                    A->size[0] * (j - 1)) - 1].im);
-                  A->data[b_j + A->size[0] * (j - 1)].im = anorm * A->data[b_j +
-                    A->size[0] * (j - 1)].im - (shift.re * reAij - shift.im *
-                    scale);
-                  A->data[(b_j + A->size[0] * (j - 1)) - 1].re = ad22_re;
-                  A->data[(b_j + A->size[0] * (j - 1)) - 1].im = ad22_im;
+                for (loop_ub = j; loop_ub <= ilastm; loop_ub++) {
+                  ad22_re = anorm * A->data[(j + A->size[0] * (loop_ub - 1)) - 1]
+                    .re + (shift.re * A->data[j + A->size[0] * (loop_ub - 1)].re
+                           - shift.im * A->data[j + A->size[0] * (loop_ub - 1)].
+                           im);
+                  ad22_im = anorm * A->data[(j + A->size[0] * (loop_ub - 1)) - 1]
+                    .im + (shift.re * A->data[j + A->size[0] * (loop_ub - 1)].im
+                           + shift.im * A->data[j + A->size[0] * (loop_ub - 1)].
+                           re);
+                  reAij = A->data[(j + A->size[0] * (loop_ub - 1)) - 1].im;
+                  scale = A->data[(j + A->size[0] * (loop_ub - 1)) - 1].re;
+                  A->data[j + A->size[0] * (loop_ub - 1)].re = anorm * A->data[j
+                    + A->size[0] * (loop_ub - 1)].re - (shift.re * A->data[(j +
+                    A->size[0] * (loop_ub - 1)) - 1].re + shift.im * A->data[(j
+                    + A->size[0] * (loop_ub - 1)) - 1].im);
+                  A->data[j + A->size[0] * (loop_ub - 1)].im = anorm * A->data[j
+                    + A->size[0] * (loop_ub - 1)].im - (shift.re * reAij -
+                    shift.im * scale);
+                  A->data[(j + A->size[0] * (loop_ub - 1)) - 1].re = ad22_re;
+                  A->data[(j + A->size[0] * (loop_ub - 1)) - 1].im = ad22_im;
                 }
 
                 shift.re = -shift.re;
                 shift.im = -shift.im;
-                x = b_j;
-                if (ilast + 1 < b_j + 2) {
-                  x = ilast - 1;
+                loop_ub = j;
+                if (ilast + 1 < j + 2) {
+                  loop_ub = ilast - 1;
                 }
 
-                for (jp1 = ifrstm; jp1 <= x + 2; jp1++) {
-                  ad22_re = anorm * A->data[(jp1 + A->size[0] * b_j) - 1].re +
-                    (shift.re * A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].re -
-                     shift.im * A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].im);
-                  ad22_im = anorm * A->data[(jp1 + A->size[0] * b_j) - 1].im +
-                    (shift.re * A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].im +
-                     shift.im * A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].re);
-                  reAij = A->data[(jp1 + A->size[0] * b_j) - 1].im;
-                  scale = A->data[(jp1 + A->size[0] * b_j) - 1].re;
-                  A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].re = anorm *
-                    A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].re - (shift.re *
-                    A->data[(jp1 + A->size[0] * b_j) - 1].re + shift.im *
-                    A->data[(jp1 + A->size[0] * b_j) - 1].im);
-                  A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].im = anorm *
-                    A->data[(jp1 + A->size[0] * (b_j - 1)) - 1].im - (shift.re *
+                for (jp1 = ifrstm; jp1 <= loop_ub + 2; jp1++) {
+                  ad22_re = anorm * A->data[(jp1 + A->size[0] * j) - 1].re +
+                    (shift.re * A->data[(jp1 + A->size[0] * (j - 1)) - 1].re -
+                     shift.im * A->data[(jp1 + A->size[0] * (j - 1)) - 1].im);
+                  ad22_im = anorm * A->data[(jp1 + A->size[0] * j) - 1].im +
+                    (shift.re * A->data[(jp1 + A->size[0] * (j - 1)) - 1].im +
+                     shift.im * A->data[(jp1 + A->size[0] * (j - 1)) - 1].re);
+                  reAij = A->data[(jp1 + A->size[0] * j) - 1].im;
+                  scale = A->data[(jp1 + A->size[0] * j) - 1].re;
+                  A->data[(jp1 + A->size[0] * (j - 1)) - 1].re = anorm * A->
+                    data[(jp1 + A->size[0] * (j - 1)) - 1].re - (shift.re *
+                    A->data[(jp1 + A->size[0] * j) - 1].re + shift.im * A->data
+                    [(jp1 + A->size[0] * j) - 1].im);
+                  A->data[(jp1 + A->size[0] * (j - 1)) - 1].im = anorm * A->
+                    data[(jp1 + A->size[0] * (j - 1)) - 1].im - (shift.re *
                     reAij - shift.im * scale);
-                  A->data[(jp1 + A->size[0] * b_j) - 1].re = ad22_re;
-                  A->data[(jp1 + A->size[0] * b_j) - 1].im = ad22_im;
+                  A->data[(jp1 + A->size[0] * j) - 1].re = ad22_re;
+                  A->data[(jp1 + A->size[0] * j) - 1].im = ad22_im;
                 }
 
                 if (compz) {
                   for (jp1 = 1; jp1 <= n; jp1++) {
-                    ad22_re = anorm * Z->data[(jp1 + Z->size[0] * b_j) - 1].re +
-                      (shift.re * Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].re
-                       - shift.im * Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].
-                       im);
-                    ad22_im = anorm * Z->data[(jp1 + Z->size[0] * b_j) - 1].im +
-                      (shift.re * Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].im
-                       + shift.im * Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].
-                       re);
-                    reAij = Z->data[(jp1 + Z->size[0] * b_j) - 1].im;
-                    scale = Z->data[(jp1 + Z->size[0] * b_j) - 1].re;
-                    Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].re = anorm *
-                      Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].re - (shift.re
-                      * Z->data[(jp1 + Z->size[0] * b_j) - 1].re + shift.im *
-                      Z->data[(jp1 + Z->size[0] * b_j) - 1].im);
-                    Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].im = anorm *
-                      Z->data[(jp1 + Z->size[0] * (b_j - 1)) - 1].im - (shift.re
-                      * reAij - shift.im * scale);
-                    Z->data[(jp1 + Z->size[0] * b_j) - 1].re = ad22_re;
-                    Z->data[(jp1 + Z->size[0] * b_j) - 1].im = ad22_im;
+                    ad22_re = anorm * Z->data[(jp1 + Z->size[0] * j) - 1].re +
+                      (shift.re * Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].re -
+                       shift.im * Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].im);
+                    ad22_im = anorm * Z->data[(jp1 + Z->size[0] * j) - 1].im +
+                      (shift.re * Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].im +
+                       shift.im * Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].re);
+                    reAij = Z->data[(jp1 + Z->size[0] * j) - 1].im;
+                    scale = Z->data[(jp1 + Z->size[0] * j) - 1].re;
+                    Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].re = anorm *
+                      Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].re - (shift.re *
+                      Z->data[(jp1 + Z->size[0] * j) - 1].re + shift.im *
+                      Z->data[(jp1 + Z->size[0] * j) - 1].im);
+                    Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].im = anorm *
+                      Z->data[(jp1 + Z->size[0] * (j - 1)) - 1].im - (shift.re *
+                      reAij - shift.im * scale);
+                    Z->data[(jp1 + Z->size[0] * j) - 1].re = ad22_re;
+                    Z->data[(jp1 + Z->size[0] * j) - 1].im = ad22_im;
                   }
                 }
 
-                jm1 = b_j - 1;
-                b_j++;
+                jm1 = j - 1;
+                j++;
               }
             }
 
@@ -544,12 +542,12 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
       }
 
       if (compz) {
-        j = Z->size[1];
-        for (x = 0; x < j; x++) {
+        loop_ub = Z->size[1];
+        for (ifirst = 0; ifirst < loop_ub; ifirst++) {
           jp1 = Z->size[0];
           for (jm1 = 0; jm1 < jp1; jm1++) {
-            Z->data[jm1 + Z->size[0] * x].re = rtNaN;
-            Z->data[jm1 + Z->size[0] * x].im = 0.0;
+            Z->data[jm1 + Z->size[0] * ifirst].re = rtNaN;
+            Z->data[jm1 + Z->size[0] * ifirst].im = 0.0;
           }
         }
       }
@@ -559,8 +557,8 @@ void xzhgeqz(emxArray_creal_T *A, int ilo, int ihi, emxArray_creal_T *Z, int
   }
 
   if (guard1) {
-    for (b_j = 0; b_j <= ilo - 2; b_j++) {
-      alpha1->data[b_j] = A->data[b_j + A->size[0] * b_j];
+    for (j = 0; j <= ilo - 2; j++) {
+      alpha1->data[j] = A->data[j + A->size[0] * j];
     }
   }
 }

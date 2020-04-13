@@ -4,7 +4,7 @@
 // File: readJointData.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -51,7 +51,7 @@ void readJointData(const emxArray_char_T *inputfile, emxArray_real_T *joint)
   FILE * filestar;
   int st;
   int i;
-  int idx;
+  int i1;
   int loop_ub;
   unsigned int count;
   emxArray_char_T *line;
@@ -61,8 +61,8 @@ void readJointData(const emxArray_char_T *inputfile, emxArray_real_T *joint)
   emxArray_int32_T *ii;
   emxArray_char_T *b_line;
   int nx;
+  int idx;
   boolean_T exitg2;
-  int k;
   unsigned int u;
   double temp[8];
   unsigned int u1;
@@ -118,10 +118,10 @@ void readJointData(const emxArray_char_T *inputfile, emxArray_real_T *joint)
 
   cfclose(static_cast<double>(fid));
   i = static_cast<int>(file_length);
-  idx = joint->size[0] * joint->size[1];
+  i1 = joint->size[0] * joint->size[1];
   joint->size[0] = i;
   joint->size[1] = 8;
-  emxEnsureCapacity_real_T(joint, idx);
+  emxEnsureCapacity_real_T(joint, i1);
   loop_ub = i << 3;
   for (i = 0; i < loop_ub; i++) {
     joint->data[i] = 0.0;
@@ -183,8 +183,8 @@ void readJointData(const emxArray_char_T *inputfile, emxArray_real_T *joint)
       loop_ub = line->size[0];
       for (i = 0; i < loop_ub; i++) {
         kstr = line->size[1];
-        for (idx = 0; idx < kstr; idx++) {
-          x->data[idx + x->size[0] * i] = (line->data[i + line->size[0] * idx] ==
+        for (i1 = 0; i1 < kstr; i1++) {
+          x->data[i1 + x->size[0] * i] = (line->data[i + line->size[0] * i1] ==
             '\x09');
         }
       }
@@ -252,28 +252,28 @@ void readJointData(const emxArray_char_T *inputfile, emxArray_real_T *joint)
 
       //  Extract the data from the beginning to the last delimiter
       i = delimiter_idx->size[1];
-      for (k = 0; k <= i - 2; k++) {
-        u = delimiter_idx->data[k];
-        u1 = delimiter_idx->data[k + 1];
+      for (kstr = 0; kstr <= i - 2; kstr++) {
+        u = delimiter_idx->data[kstr];
+        u1 = delimiter_idx->data[kstr + 1];
         if (static_cast<double>(u) + 1.0 > static_cast<double>(u1) - 1.0) {
-          idx = 0;
-          kstr = 0;
+          i1 = 0;
+          nx = 0;
         } else {
-          idx = static_cast<int>(u);
-          kstr = static_cast<int>((static_cast<double>(u1) - 1.0));
+          i1 = static_cast<int>(u);
+          nx = static_cast<int>((static_cast<double>(u1) - 1.0));
         }
 
-        nx = b_line->size[0] * b_line->size[1];
+        idx = b_line->size[0] * b_line->size[1];
         b_line->size[0] = 1;
-        loop_ub = kstr - idx;
+        loop_ub = nx - i1;
         b_line->size[1] = loop_ub;
-        emxEnsureCapacity_char_T(b_line, nx);
-        for (kstr = 0; kstr < loop_ub; kstr++) {
-          b_line->data[kstr] = line->data[idx + kstr];
+        emxEnsureCapacity_char_T(b_line, idx);
+        for (nx = 0; nx < loop_ub; nx++) {
+          b_line->data[nx] = line->data[i1 + nx];
         }
 
         dc = c_str2double(b_line);
-        lineinfo->data[k] = dc.re;
+        lineinfo->data[kstr] = dc.re;
       }
 
       // reads in mass, stiffness, orientation of element attached to master joint 

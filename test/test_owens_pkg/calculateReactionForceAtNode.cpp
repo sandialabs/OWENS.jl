@@ -4,7 +4,7 @@
 // File: calculateReactionForceAtNode.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -65,7 +65,7 @@
 //                const emxArray_real_T *el_roll
 //                const c_emxArray_struct_T *elStorage
 //                const b_struct_T *timeInt
-//                const i_struct_T dispData
+//                const j_struct_T dispData
 //                const emxArray_real_T *displ_iter
 //                double Omega
 //                double OmegaDot
@@ -80,7 +80,7 @@ void calculateReactionForceAtNode(const char model_analysisType[3], double
   emxArray_struct_T *el_props, const emxArray_real_T *el_elLen, const
   emxArray_real_T *el_psi, const emxArray_real_T *el_theta, const
   emxArray_real_T *el_roll, const c_emxArray_struct_T *elStorage, const
-  b_struct_T *timeInt, const i_struct_T dispData, const emxArray_real_T
+  b_struct_T *timeInt, const j_struct_T dispData, const emxArray_real_T
   *displ_iter, double Omega, double OmegaDot, const double CN2H[9], double
   cummulativeForce[6])
 {

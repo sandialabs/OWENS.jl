@@ -4,7 +4,7 @@
 // File: test_owens_types.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef TEST_OWENS_TYPES_H
 #define TEST_OWENS_TYPES_H
@@ -30,7 +30,7 @@ struct b_struct_T
   double a8;
 };
 
-struct d_struct_T
+struct e_struct_T
 {
   double ac[2];
   double twist[2];
@@ -83,7 +83,7 @@ struct s5oXUELIgdfYl3uJD5eSioC_tag
   boolean_T modalFlag;
   b_struct_T timeInt;
   double xloc[2];
-  d_struct_T sectionProps;
+  e_struct_T sectionProps;
   double sweepAngle;
   double coneAngle;
   double rollAngle;
@@ -118,7 +118,7 @@ struct s5oXUELIgdfYl3uJD5eSioC_tag
   double CN2H[9];
 };
 
-typedef s5oXUELIgdfYl3uJD5eSioC_tag n_struct_T;
+typedef s5oXUELIgdfYl3uJD5eSioC_tag o_struct_T;
 struct emxArray_real_T_12x12
 {
   double data[144];
@@ -134,7 +134,7 @@ struct soak0T2LBhvoGwKUbBxyXmH_tag
   emxArray_real_T_12x12 Ce;
 };
 
-typedef soak0T2LBhvoGwKUbBxyXmH_tag o_struct_T;
+typedef soak0T2LBhvoGwKUbBxyXmH_tag p_struct_T;
 struct emxArray_char_T_1x3
 {
   char data[3];
@@ -153,7 +153,7 @@ struct sOEAe0pL1P7QsnkyxNjo8cH_tag
   boolean_T modalFlag;
   b_struct_T timeInt;
   double xloc[2];
-  d_struct_T sectionProps;
+  e_struct_T sectionProps;
   double sweepAngle;
   double coneAngle;
   double rollAngle;
@@ -194,43 +194,30 @@ struct sOEAe0pL1P7QsnkyxNjo8cH_tag
   boolean_T firstIteration;
 };
 
-typedef sOEAe0pL1P7QsnkyxNjo8cH_tag p_struct_T;
-struct emxArray_boolean_T
+typedef sOEAe0pL1P7QsnkyxNjo8cH_tag q_struct_T;
+struct emxArray_real_T_60
 {
-  boolean_T *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
+  double data[60];
+  int size[1];
 };
 
-struct emxArray_int32_T
+struct emxArray_real_T_60x12
 {
-  int *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
+  double data[720];
+  int size[2];
 };
 
-struct emxArray_char_T
+struct sjd27qDtc428idbHnJzvpKF_tag
 {
-  char *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
+  double numBlades;
+  emxArray_real_T_60 bladeNum;
+  emxArray_real_T_60 h;
+  emxArray_real_T_60 nodeNum;
+  emxArray_real_T_60 elementNum;
+  emxArray_real_T_60x12 remaining;
 };
 
-struct emxArray_struct_T
-{
-  d_struct_T *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
-};
-
+typedef sjd27qDtc428idbHnJzvpKF_tag r_struct_T;
 struct emxArray_real_T
 {
   double *data;
@@ -240,7 +227,28 @@ struct emxArray_real_T
   boolean_T canFreeData;
 };
 
-struct g_struct_T
+struct sgIsDuxxBd5cAyrhqZQjvKB_tag
+{
+  double numpBC;
+  emxArray_real_T *pBC;
+  double numsBC;
+  double nummBC;
+  emxArray_real_T *isConstrained;
+  emxArray_real_T *map;
+  emxArray_real_T *redVectorMap;
+};
+
+typedef sgIsDuxxBd5cAyrhqZQjvKB_tag s_struct_T;
+struct emxArray_struct_T
+{
+  e_struct_T *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
+struct h_struct_T
 {
   emxArray_real_T *nodeNum;
   double numEl;
@@ -252,7 +260,25 @@ struct g_struct_T
   emxArray_real_T *conn;
 };
 
-struct h_struct_T
+struct emxArray_char_T
+{
+  char *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
+struct emxArray_boolean_T
+{
+  boolean_T *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
+struct i_struct_T
 {
   emxArray_struct_T *props;
   emxArray_real_T *elLen;
@@ -260,6 +286,15 @@ struct h_struct_T
   emxArray_real_T *theta;
   emxArray_real_T *roll;
   emxArray_boolean_T *rotationalEffects;
+};
+
+struct emxArray_uint32_T
+{
+  unsigned int *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
 };
 
 struct emxArray_int8_T
@@ -271,7 +306,7 @@ struct emxArray_int8_T
   boolean_T canFreeData;
 };
 
-struct e_struct_T
+struct f_struct_T
 {
   double eps_xx_0[4];
   double eps_xx_z[4];
@@ -284,14 +319,14 @@ struct e_struct_T
 
 struct b_emxArray_struct_T
 {
-  e_struct_T *data;
+  f_struct_T *data;
   int *size;
   int allocatedSize;
   int numDimensions;
   boolean_T canFreeData;
 };
 
-struct f_struct_T
+struct g_struct_T
 {
   double K11[4];
   double K12[4];
@@ -375,21 +410,21 @@ struct f_struct_T
 
 struct c_emxArray_struct_T
 {
-  f_struct_T *data;
+  g_struct_T *data;
   int *size;
   int allocatedSize;
   int numDimensions;
   boolean_T canFreeData;
 };
 
-struct i_struct_T
+struct j_struct_T
 {
   emxArray_real_T *displ_s;
   emxArray_real_T *displdot_s;
   emxArray_real_T *displddot_s;
 };
 
-struct j_struct_T
+struct k_struct_T
 {
   b_emxArray_struct_T *elStrain;
   emxArray_real_T *displ_sp1;
@@ -397,7 +432,7 @@ struct j_struct_T
   emxArray_real_T *displdot_sp1;
 };
 
-struct k_struct_T
+struct l_struct_T
 {
   double NElem;
   double FlipN;
@@ -427,14 +462,14 @@ struct k_struct_T
 
 struct d_emxArray_struct_T
 {
-  k_struct_T *data;
+  l_struct_T *data;
   int *size;
   int allocatedSize;
   int numDimensions;
   boolean_T canFreeData;
 };
 
-struct m_struct_T
+struct n_struct_T
 {
   double NElem;
   double TtoC;
@@ -458,14 +493,14 @@ struct m_struct_T
 
 struct f_emxArray_struct_T
 {
-  m_struct_T *data;
+  n_struct_T *data;
   int *size;
   int allocatedSize;
   int numDimensions;
   boolean_T canFreeData;
 };
 
-struct l_struct_T
+struct m_struct_T
 {
   emxArray_real_T *N;
   emxArray_real_T *T;
@@ -474,7 +509,16 @@ struct l_struct_T
 
 struct e_emxArray_struct_T
 {
-  l_struct_T *data;
+  m_struct_T *data;
+  int *size;
+  int allocatedSize;
+  int numDimensions;
+  boolean_T canFreeData;
+};
+
+struct emxArray_int32_T
+{
+  int *data;
   int *size;
   int allocatedSize;
   int numDimensions;
@@ -488,6 +532,24 @@ struct coder_internal_sparse
   emxArray_int32_T *rowidx;
 };
 
+struct emxArray_char_T_1x76
+{
+  char data[76];
+  int size[2];
+};
+
+struct d_struct_T
+{
+  char iterationType[2];
+  boolean_T adaptiveLoadSteppingFlag;
+  double tolerance;
+  double maxIterations;
+  double maxNumLoadSteps;
+  double minLoadStepDelta;
+  double minLoadStep;
+  double prescribedLoadStep;
+};
+
 struct emxArray_creal_T
 {
   creal_T *data;
@@ -497,14 +559,39 @@ struct emxArray_creal_T
   boolean_T canFreeData;
 };
 
-struct emxArray_uint32_T
+struct stQEoBnY9NZL2taFdkfL4xB_tag
 {
-  unsigned int *data;
-  int *size;
-  int allocatedSize;
-  int numDimensions;
-  boolean_T canFreeData;
+  char analysisType[2];
+  double turbineStartup;
+  boolean_T aeroElasticOn;
+  boolean_T aeroForceOn;
+  double airDensity;
+  double guessFreq;
+  boolean_T gravityOn;
+  boolean_T generatorOn;
+  double OmegaGenStart;
+  boolean_T omegaControl;
+  double totalNumDof;
+  d_struct_T nlParams;
+  boolean_T spinUpOn;
+  boolean_T nlOn;
+  double numModesToExtract;
+  emxArray_char_T *aeroloadfile;
+  emxArray_char_T *owensfile;
+  double RayleighAlpha;
+  double RayleighBeta;
+  double elementOrder;
+  r_struct_T bladeData;
+  s_struct_T BC;
+  emxArray_real_T *joint;
+  boolean_T hydroOn;
+  double c_platformTurbineConnectionNode;
+  emxArray_char_T_1x76 outFilename;
+  emxArray_real_T *jointTransform;
+  emxArray_real_T *reducedDOFList;
 };
+
+typedef stQEoBnY9NZL2taFdkfL4xB_tag t_struct_T;
 
 #endif
 

@@ -4,7 +4,7 @@
 // File: repmat.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef REPMAT_H
 #define REPMAT_H
@@ -16,9 +16,9 @@
 #include "test_owens_types.h"
 
 // Function Declarations
-extern void b_repmat(const m_struct_T *a, int varargin_2, f_emxArray_struct_T *b);
-extern void c_repmat(const l_struct_T a, int varargin_2, e_emxArray_struct_T *b);
-extern void repmat(const k_struct_T *a, int varargin_2, d_emxArray_struct_T *b);
+extern void b_repmat(const n_struct_T *a, int varargin_2, f_emxArray_struct_T *b);
+extern void c_repmat(const m_struct_T a, int varargin_2, e_emxArray_struct_T *b);
+extern void repmat(const l_struct_T *a, int varargin_2, d_emxArray_struct_T *b);
 
 #endif
 

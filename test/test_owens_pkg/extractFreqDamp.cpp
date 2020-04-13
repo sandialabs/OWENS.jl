@@ -4,7 +4,7 @@
 // File: extractFreqDamp.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -39,7 +39,7 @@ static void c_constructReducedDispVecFromEi(const emxArray_creal_T *vec1, const
 {
   emxArray_real_T *bcdoflist;
   int i;
-  int k;
+  int loop_ub;
   int b_i;
   double b_index;
   double a;
@@ -51,12 +51,12 @@ static void c_constructReducedDispVecFromEi(const emxArray_creal_T *vec1, const
   emxInit_real_T(&bcdoflist, 2);
   i = bcdoflist->size[0] * bcdoflist->size[1];
   bcdoflist->size[0] = 1;
-  k = static_cast<int>(BC_numpBC);
-  bcdoflist->size[1] = k;
+  loop_ub = static_cast<int>(BC_numpBC);
+  bcdoflist->size[1] = loop_ub;
   emxEnsureCapacity_real_T(bcdoflist, i);
 
   // form pBC DOF list
-  for (b_i = 0; b_i < k; b_i++) {
+  for (b_i = 0; b_i < loop_ub; b_i++) {
     bcdoflist->data[b_i] = 0.0;
     bcdoflist->data[b_i] = (BC_pBC->data[b_i] - 1.0) * 6.0 + BC_pBC->data[b_i +
       BC_pBC->size[0]];
@@ -66,8 +66,8 @@ static void c_constructReducedDispVecFromEi(const emxArray_creal_T *vec1, const
   i = vec1Red->size[0];
   vec1Red->size[0] = reducedDOFList->size[1];
   emxEnsureCapacity_creal_T(vec1Red, i);
-  k = reducedDOFList->size[1];
-  for (i = 0; i < k; i++) {
+  loop_ub = reducedDOFList->size[1];
+  for (i = 0; i < loop_ub; i++) {
     vec1Red->data[i].re = 0.0;
     vec1Red->data[i].im = 0.0;
   }
@@ -76,10 +76,10 @@ static void c_constructReducedDispVecFromEi(const emxArray_creal_T *vec1, const
   for (b_i = 0; b_i < i; b_i++) {
     a = reducedDOFList->data[b_i];
     tf = false;
-    k = 0;
+    loop_ub = 0;
     exitg1 = false;
-    while ((!exitg1) && (k <= bcdoflist->size[1] - 1)) {
-      b = bcdoflist->data[k];
+    while ((!exitg1) && (loop_ub <= bcdoflist->size[1] - 1)) {
+      b = bcdoflist->data[loop_ub];
       absx = std::abs(b / 2.0);
       if ((!rtIsInf(absx)) && (!rtIsNaN(absx))) {
         if (absx <= 2.2250738585072014E-308) {
@@ -92,12 +92,12 @@ static void c_constructReducedDispVecFromEi(const emxArray_creal_T *vec1, const
         absx = rtNaN;
       }
 
-      if ((std::abs(bcdoflist->data[k] - a) < absx) || (rtIsInf(a) && rtIsInf(b)
-           && ((a > 0.0) == (bcdoflist->data[k] > 0.0)))) {
+      if ((std::abs(bcdoflist->data[loop_ub] - a) < absx) || (rtIsInf(a) &&
+           rtIsInf(b) && ((a > 0.0) == (bcdoflist->data[loop_ub] > 0.0)))) {
         tf = true;
         exitg1 = true;
       } else {
-        k++;
+        loop_ub++;
       }
     }
 
@@ -165,44 +165,40 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
                      *phase1, emxArray_real_T *phase2, emxArray_creal_T
                      *sortedModes)
 {
-  double freq_tmp;
-  emxArray_creal_T *b;
+  double max2;
+  emxArray_creal_T *dispReduc;
   emxArray_creal_T *b_jointTransform;
   int i;
   int nx;
   emxArray_creal_T *dispOrig;
-  emxArray_int8_T *sortedModes0;
-  int k;
-  int i1;
-  int b_i;
+  emxArray_real_T *sortedModes0;
+  int loop_ub;
   int j;
-  emxArray_real_T *varargin_1;
   double maxval[6];
   boolean_T exitg1;
   double max1;
-  double u0;
-  double max2;
-  double maxOverall;
+  double d;
   boolean_T guard1 = false;
-  freq_tmp = std::abs(val.im);
-  *freq = freq_tmp / 6.2831853071795862;
+  max2 = std::abs(val.im);
+  *freq = max2 / 6.2831853071795862;
 
   // damped frequency for state space system
-  *damp = -val.re / freq_tmp;
+  *damp = -val.re / max2;
 
   // modal damping
-  if (freq_tmp < 0.0001) {
+  if (max2 < 0.0001) {
     // if imaginary part of eigenvalue is numeric zero treat as spring-mass system 
     *freq = std::sqrt(std::abs(val.re)) / 6.2831853071795862;
     *damp = 0.0;
   }
 
-  emxInit_creal_T(&b, 1);
+  emxInit_creal_T(&dispReduc, 1);
   emxInit_creal_T(&b_jointTransform, 2);
 
-  // for all but automated flutter analysis
+  //  if(~strcmp(analysisType,'FA'))  %for all but automated flutter analysis
   //           [len,numModeShapes] = size(vec);
-  c_constructReducedDispVecFromEi(vec, reducedDOFList, BC_numpBC, BC_pBC, b);
+  c_constructReducedDispVecFromEi(vec, reducedDOFList, BC_numpBC, BC_pBC,
+    dispReduc);
 
   // construct mode shape vector with boundary conditinos
   i = b_jointTransform->size[0] * b_jointTransform->size[1];
@@ -223,30 +219,30 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
   for (i = 0; i < nx; i++) {
     dispOrig->data[i].re = 0.0;
     dispOrig->data[i].im = 0.0;
-    k = b_jointTransform->size[1];
-    for (i1 = 0; i1 < k; i1++) {
+    loop_ub = b_jointTransform->size[1];
+    for (j = 0; j < loop_ub; j++) {
       dispOrig->data[i].re += b_jointTransform->data[i + b_jointTransform->size
-        [0] * i1].re * b->data[i1].re - b_jointTransform->data[i +
-        b_jointTransform->size[0] * i1].im * b->data[i1].im;
+        [0] * j].re * dispReduc->data[j].re - b_jointTransform->data[i +
+        b_jointTransform->size[0] * j].im * dispReduc->data[j].im;
       dispOrig->data[i].im += b_jointTransform->data[i + b_jointTransform->size
-        [0] * i1].re * b->data[i1].im + b_jointTransform->data[i +
-        b_jointTransform->size[0] * i1].im * b->data[i1].re;
+        [0] * j].re * dispReduc->data[j].im + b_jointTransform->data[i +
+        b_jointTransform->size[0] * j].im * dispReduc->data[j].re;
     }
   }
 
   emxFree_creal_T(&b_jointTransform);
-  emxFree_creal_T(&b);
-  emxInit_int8_T(&sortedModes0, 2);
+  emxFree_creal_T(&dispReduc);
+  emxInit_real_T(&sortedModes0, 2);
 
   // transform from reduced DOF list to full DOF list
   i = sortedModes0->size[0] * sortedModes0->size[1];
   sortedModes0->size[0] = static_cast<int>((static_cast<double>(dispOrig->size[0])
     / 6.0));
   sortedModes0->size[1] = 6;
-  emxEnsureCapacity_int8_T(sortedModes0, i);
+  emxEnsureCapacity_real_T(sortedModes0, i);
   nx = static_cast<int>((static_cast<double>(dispOrig->size[0]) / 6.0)) * 6;
   for (i = 0; i < nx; i++) {
-    sortedModes0->data[i] = 0;
+    sortedModes0->data[i] = 0.0;
   }
 
   i = sortedModes->size[0] * sortedModes->size[1];
@@ -259,13 +255,12 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
     sortedModes->data[i].im = 0.0;
   }
 
-  emxFree_int8_T(&sortedModes0);
   i = static_cast<int>((static_cast<double>(dispOrig->size[0]) / 6.0));
-  for (b_i = 0; b_i < i; b_i++) {
+  for (loop_ub = 0; loop_ub < i; loop_ub++) {
     // construct matrix of nodal DOF values from full DOF eigenvector
     for (j = 0; j < 6; j++) {
-      sortedModes->data[b_i + sortedModes->size[0] * j] = dispOrig->data[
-        static_cast<int>((static_cast<unsigned int>((b_i * 6)) + j))];
+      sortedModes->data[loop_ub + sortedModes->size[0] * j] = dispOrig->data[
+        static_cast<int>((static_cast<unsigned int>((loop_ub * 6)) + j))];
     }
   }
 
@@ -289,26 +284,23 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
     phase2->data[i] = sortedModes->data[i].im;
   }
 
-  emxInit_real_T(&varargin_1, 2);
-
   // phase 2 is imag part of modeshape (90 deg out of phase)
   nx = phase1->size[0] * 6;
-  i = varargin_1->size[0] * varargin_1->size[1];
-  varargin_1->size[0] = phase1->size[0];
-  varargin_1->size[1] = 6;
-  emxEnsureCapacity_real_T(varargin_1, i);
-  for (k = 0; k < nx; k++) {
-    varargin_1->data[k] = std::abs(phase1->data[k]);
+  i = sortedModes0->size[0] * sortedModes0->size[1];
+  sortedModes0->size[0] = phase1->size[0];
+  sortedModes0->size[1] = 6;
+  emxEnsureCapacity_real_T(sortedModes0, i);
+  for (loop_ub = 0; loop_ub < nx; loop_ub++) {
+    sortedModes0->data[loop_ub] = std::abs(phase1->data[loop_ub]);
   }
 
-  nx = varargin_1->size[0];
+  nx = sortedModes0->size[0];
   for (j = 0; j < 6; j++) {
-    maxval[j] = varargin_1->data[varargin_1->size[0] * j];
-    for (b_i = 2; b_i <= nx; b_i++) {
-      freq_tmp = varargin_1->data[(b_i + varargin_1->size[0] * j) - 1];
-      if ((!rtIsNaN(freq_tmp)) && (rtIsNaN(maxval[j]) || (maxval[j] < freq_tmp)))
-      {
-        maxval[j] = freq_tmp;
+    maxval[j] = sortedModes0->data[sortedModes0->size[0] * j];
+    for (loop_ub = 2; loop_ub <= nx; loop_ub++) {
+      max2 = sortedModes0->data[(loop_ub + sortedModes0->size[0] * j) - 1];
+      if ((!rtIsNaN(max2)) && (rtIsNaN(maxval[j]) || (maxval[j] < max2))) {
+        maxval[j] = max2;
       }
     }
   }
@@ -317,14 +309,14 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
     nx = 1;
   } else {
     nx = 0;
-    k = 2;
+    loop_ub = 2;
     exitg1 = false;
-    while ((!exitg1) && (k <= 6)) {
-      if (!rtIsNaN(maxval[k - 1])) {
-        nx = k;
+    while ((!exitg1) && (loop_ub <= 6)) {
+      if (!rtIsNaN(maxval[loop_ub - 1])) {
+        nx = loop_ub;
         exitg1 = true;
       } else {
-        k++;
+        loop_ub++;
       }
     }
   }
@@ -332,53 +324,50 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
   if (nx == 0) {
     max1 = maxval[0];
   } else {
-    freq_tmp = maxval[nx - 1];
+    max1 = maxval[nx - 1];
     i = nx + 1;
-    for (k = i; k < 7; k++) {
-      u0 = maxval[k - 1];
-      if (freq_tmp < u0) {
-        freq_tmp = u0;
+    for (loop_ub = i; loop_ub < 7; loop_ub++) {
+      d = maxval[loop_ub - 1];
+      if (max1 < d) {
+        max1 = d;
       }
     }
-
-    max1 = freq_tmp;
   }
 
   // find maximum values for modeshape normalization
   nx = phase2->size[0] * 6;
-  i = varargin_1->size[0] * varargin_1->size[1];
-  varargin_1->size[0] = phase2->size[0];
-  varargin_1->size[1] = 6;
-  emxEnsureCapacity_real_T(varargin_1, i);
-  for (k = 0; k < nx; k++) {
-    varargin_1->data[k] = std::abs(phase2->data[k]);
+  i = sortedModes0->size[0] * sortedModes0->size[1];
+  sortedModes0->size[0] = phase2->size[0];
+  sortedModes0->size[1] = 6;
+  emxEnsureCapacity_real_T(sortedModes0, i);
+  for (loop_ub = 0; loop_ub < nx; loop_ub++) {
+    sortedModes0->data[loop_ub] = std::abs(phase2->data[loop_ub]);
   }
 
-  nx = varargin_1->size[0];
+  nx = sortedModes0->size[0];
   for (j = 0; j < 6; j++) {
-    maxval[j] = varargin_1->data[varargin_1->size[0] * j];
-    for (b_i = 2; b_i <= nx; b_i++) {
-      freq_tmp = varargin_1->data[(b_i + varargin_1->size[0] * j) - 1];
-      if ((!rtIsNaN(freq_tmp)) && (rtIsNaN(maxval[j]) || (maxval[j] < freq_tmp)))
-      {
-        maxval[j] = freq_tmp;
+    maxval[j] = sortedModes0->data[sortedModes0->size[0] * j];
+    for (loop_ub = 2; loop_ub <= nx; loop_ub++) {
+      max2 = sortedModes0->data[(loop_ub + sortedModes0->size[0] * j) - 1];
+      if ((!rtIsNaN(max2)) && (rtIsNaN(maxval[j]) || (maxval[j] < max2))) {
+        maxval[j] = max2;
       }
     }
   }
 
-  emxFree_real_T(&varargin_1);
+  emxFree_real_T(&sortedModes0);
   if (!rtIsNaN(maxval[0])) {
     nx = 1;
   } else {
     nx = 0;
-    k = 2;
+    loop_ub = 2;
     exitg1 = false;
-    while ((!exitg1) && (k <= 6)) {
-      if (!rtIsNaN(maxval[k - 1])) {
-        nx = k;
+    while ((!exitg1) && (loop_ub <= 6)) {
+      if (!rtIsNaN(maxval[loop_ub - 1])) {
+        nx = loop_ub;
         exitg1 = true;
       } else {
-        k++;
+        loop_ub++;
       }
     }
   }
@@ -386,26 +375,22 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
   if (nx == 0) {
     max2 = maxval[0];
   } else {
-    freq_tmp = maxval[nx - 1];
+    max2 = maxval[nx - 1];
     i = nx + 1;
-    for (k = i; k < 7; k++) {
-      u0 = maxval[k - 1];
-      if (freq_tmp < u0) {
-        freq_tmp = u0;
+    for (loop_ub = i; loop_ub < 7; loop_ub++) {
+      d = maxval[loop_ub - 1];
+      if (max2 < d) {
+        max2 = d;
       }
     }
-
-    max2 = freq_tmp;
   }
 
   if ((max1 > max2) || rtIsNaN(max2)) {
-    maxOverall = max1;
-  } else {
-    maxOverall = max2;
+    max2 = max1;
   }
 
-  if (maxOverall == 0.0) {
-    maxOverall = 1.0;
+  if (max2 == 0.0) {
+    max2 = 1.0;
   }
 
   nx = phase1->size[0] * phase1->size[1];
@@ -413,7 +398,7 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
   phase1->size[1] = 6;
   emxEnsureCapacity_real_T(phase1, i);
   for (i = 0; i < nx; i++) {
-    phase1->data[i] /= maxOverall;
+    phase1->data[i] /= max2;
   }
 
   // normalize modeshapes
@@ -422,17 +407,16 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
   phase2->size[1] = 6;
   emxEnsureCapacity_real_T(phase2, i);
   for (i = 0; i < nx; i++) {
-    phase2->data[i] /= maxOverall;
+    phase2->data[i] /= max2;
   }
 
   nx = phase1->size[0];
   for (j = 0; j < 6; j++) {
     maxval[j] = phase1->data[phase1->size[0] * j];
-    for (b_i = 2; b_i <= nx; b_i++) {
-      freq_tmp = phase1->data[(b_i + phase1->size[0] * j) - 1];
-      if ((!rtIsNaN(freq_tmp)) && (rtIsNaN(maxval[j]) || (maxval[j] > freq_tmp)))
-      {
-        maxval[j] = freq_tmp;
+    for (loop_ub = 2; loop_ub <= nx; loop_ub++) {
+      max2 = phase1->data[(loop_ub + phase1->size[0] * j) - 1];
+      if ((!rtIsNaN(max2)) && (rtIsNaN(maxval[j]) || (maxval[j] > max2))) {
+        maxval[j] = max2;
       }
     }
   }
@@ -441,43 +425,42 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
     nx = 1;
   } else {
     nx = 0;
-    k = 2;
+    loop_ub = 2;
     exitg1 = false;
-    while ((!exitg1) && (k <= 6)) {
-      if (!rtIsNaN(maxval[k - 1])) {
-        nx = k;
+    while ((!exitg1) && (loop_ub <= 6)) {
+      if (!rtIsNaN(maxval[loop_ub - 1])) {
+        nx = loop_ub;
         exitg1 = true;
       } else {
-        k++;
+        loop_ub++;
       }
     }
   }
 
   if (nx == 0) {
-    freq_tmp = maxval[0];
+    max2 = maxval[0];
   } else {
-    freq_tmp = maxval[nx - 1];
+    max2 = maxval[nx - 1];
     i = nx + 1;
-    for (k = i; k < 7; k++) {
-      u0 = maxval[k - 1];
-      if (freq_tmp > u0) {
-        freq_tmp = u0;
+    for (loop_ub = i; loop_ub < 7; loop_ub++) {
+      d = maxval[loop_ub - 1];
+      if (max2 > d) {
+        max2 = d;
       }
     }
   }
 
   guard1 = false;
-  if (std::abs(freq_tmp + 1.0) < 0.0001) {
+  if (std::abs(max2 + 1.0) < 0.0001) {
     guard1 = true;
   } else {
     nx = phase2->size[0];
     for (j = 0; j < 6; j++) {
       maxval[j] = phase2->data[phase2->size[0] * j];
-      for (b_i = 2; b_i <= nx; b_i++) {
-        freq_tmp = phase2->data[(b_i + phase2->size[0] * j) - 1];
-        if ((!rtIsNaN(freq_tmp)) && (rtIsNaN(maxval[j]) || (maxval[j] > freq_tmp)))
-        {
-          maxval[j] = freq_tmp;
+      for (loop_ub = 2; loop_ub <= nx; loop_ub++) {
+        max2 = phase2->data[(loop_ub + phase2->size[0] * j) - 1];
+        if ((!rtIsNaN(max2)) && (rtIsNaN(maxval[j]) || (maxval[j] > max2))) {
+          maxval[j] = max2;
         }
       }
     }
@@ -486,32 +469,32 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
       nx = 1;
     } else {
       nx = 0;
-      k = 2;
+      loop_ub = 2;
       exitg1 = false;
-      while ((!exitg1) && (k <= 6)) {
-        if (!rtIsNaN(maxval[k - 1])) {
-          nx = k;
+      while ((!exitg1) && (loop_ub <= 6)) {
+        if (!rtIsNaN(maxval[loop_ub - 1])) {
+          nx = loop_ub;
           exitg1 = true;
         } else {
-          k++;
+          loop_ub++;
         }
       }
     }
 
     if (nx == 0) {
-      freq_tmp = maxval[0];
+      max2 = maxval[0];
     } else {
-      freq_tmp = maxval[nx - 1];
+      max2 = maxval[nx - 1];
       i = nx + 1;
-      for (k = i; k < 7; k++) {
-        u0 = maxval[k - 1];
-        if (freq_tmp > u0) {
-          freq_tmp = u0;
+      for (loop_ub = i; loop_ub < 7; loop_ub++) {
+        d = maxval[loop_ub - 1];
+        if (max2 > d) {
+          max2 = d;
         }
       }
     }
 
-    if (std::abs(freq_tmp + 1.0) < 0.0001) {
+    if (std::abs(max2 + 1.0) < 0.0001) {
       guard1 = true;
     }
   }
@@ -533,6 +516,12 @@ void extractFreqDamp(const creal_T val, const emxArray_creal_T *vec, const
       phase2->data[i] = -phase2->data[i];
     }
   }
+
+  //  else  %return null mode shapes if mode shapes not requested
+  //      phase1 = [];
+  //      phase2 = [];
+  //      sortedModes = [];
+  //  end
 }
 
 //

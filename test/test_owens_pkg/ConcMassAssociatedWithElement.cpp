@@ -4,7 +4,7 @@
 // File: ConcMassAssociatedWithElement.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -71,10 +71,9 @@ void ConcMassAssociatedWithElement(const double conn[2], const emxArray_real_T
   emxArray_boolean_T *node1flag;
   emxArray_boolean_T *node2flag;
   int i;
-  int j;
+  int loop_ub;
   int i1;
   double absx;
-  int b_i;
   int exponent;
   int b_exponent;
   node1 = conn[0];
@@ -94,15 +93,15 @@ void ConcMassAssociatedWithElement(const double conn[2], const emxArray_real_T
   emxInit_boolean_T(&node2flag, 1);
   if (joint->size[0] > 0) {
     i = joint->size[0] - 1;
-    j = joint->size[0];
+    loop_ub = joint->size[0];
     i1 = node1flag->size[0];
-    node1flag->size[0] = j;
+    node1flag->size[0] = loop_ub;
     emxEnsureCapacity_boolean_T(node1flag, i1);
-    for (i1 = 0; i1 < j; i1++) {
+    for (i1 = 0; i1 < loop_ub; i1++) {
       node1flag->data[i1] = false;
     }
 
-    for (j = 0; j <= i; j++) {
+    for (loop_ub = 0; loop_ub <= i; loop_ub++) {
       absx = std::abs(node1 / 2.0);
       if ((!rtIsInf(absx)) && (!rtIsNaN(absx))) {
         if (absx <= 2.2250738585072014E-308) {
@@ -115,24 +114,24 @@ void ConcMassAssociatedWithElement(const double conn[2], const emxArray_real_T
         absx = rtNaN;
       }
 
-      if ((std::abs(node1 - joint->data[j + joint->size[0]]) < absx) || (rtIsInf
-           (joint->data[j + joint->size[0]]) && rtIsInf(node1) && ((joint->
-             data[j + joint->size[0]] > 0.0) == (node1 > 0.0)))) {
-        node1flag->data[j] = true;
+      if ((std::abs(node1 - joint->data[loop_ub + joint->size[0]]) < absx) ||
+          (rtIsInf(joint->data[loop_ub + joint->size[0]]) && rtIsInf(node1) &&
+           ((joint->data[loop_ub + joint->size[0]] > 0.0) == (node1 > 0.0)))) {
+        node1flag->data[loop_ub] = true;
       }
     }
 
     // see if nodes are associated with a joint constraint as a master node
     i = joint->size[0] - 1;
-    j = joint->size[0];
+    loop_ub = joint->size[0];
     i1 = node2flag->size[0];
-    node2flag->size[0] = j;
+    node2flag->size[0] = loop_ub;
     emxEnsureCapacity_boolean_T(node2flag, i1);
-    for (i1 = 0; i1 < j; i1++) {
+    for (i1 = 0; i1 < loop_ub; i1++) {
       node2flag->data[i1] = false;
     }
 
-    for (j = 0; j <= i; j++) {
+    for (loop_ub = 0; loop_ub <= i; loop_ub++) {
       absx = std::abs(node2 / 2.0);
       if ((!rtIsInf(absx)) && (!rtIsNaN(absx))) {
         if (absx <= 2.2250738585072014E-308) {
@@ -145,10 +144,10 @@ void ConcMassAssociatedWithElement(const double conn[2], const emxArray_real_T
         absx = rtNaN;
       }
 
-      if ((std::abs(node2 - joint->data[j + joint->size[0]]) < absx) || (rtIsInf
-           (joint->data[j + joint->size[0]]) && rtIsInf(node2) && ((joint->
-             data[j + joint->size[0]] > 0.0) == (node2 > 0.0)))) {
-        node2flag->data[j] = true;
+      if ((std::abs(node2 - joint->data[loop_ub + joint->size[0]]) < absx) ||
+          (rtIsInf(joint->data[loop_ub + joint->size[0]]) && rtIsInf(node2) &&
+           ((joint->data[loop_ub + joint->size[0]] > 0.0) == (node2 > 0.0)))) {
+        node2flag->data[loop_ub] = true;
       }
     }
   } else {
@@ -163,10 +162,10 @@ void ConcMassAssociatedWithElement(const double conn[2], const emxArray_real_T
   }
 
   i = joint->size[0];
-  for (b_i = 0; b_i < i; b_i++) {
+  for (loop_ub = 0; loop_ub < i; loop_ub++) {
     // if nodes are associated with joint constraint, use (if any) mass and stiffness specification from the joint file 
-    if (node1flag->data[b_i]) {
-      mass1 += joint->data[b_i + joint->size[0] * 4];
+    if (node1flag->data[loop_ub]) {
+      mass1 += joint->data[loop_ub + joint->size[0] * 4];
 
       //              stiff1x = stiff1x + joint(i,6);
       //              stiff1y = stiff1y + joint(i,6);
@@ -178,8 +177,8 @@ void ConcMassAssociatedWithElement(const double conn[2], const emxArray_real_T
       //              modJoint(i,6)=0.0;
     }
 
-    if (node2flag->data[b_i]) {
-      mass2 += joint->data[b_i + joint->size[0] * 4];
+    if (node2flag->data[loop_ub]) {
+      mass2 += joint->data[loop_ub + joint->size[0] * 4];
 
       //              stiff2x = stiff2x + joint(i,6);
       //              stiff2y = stiff2y + joint(i,6);

@@ -4,7 +4,7 @@
 // File: mapCactusLoadsFile.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -122,14 +122,13 @@ static void readBldFile(const emxArray_char_T *bldFn, double
   double numBlades;
   int k;
   boolean_T exitg1;
-  double ex;
   int i1;
   double d;
-  int strutStartIndex;
   int b_i;
   int loop_ub;
   double numNodesPerBlade;
   int i2;
+  double d1;
   double a;
   double b_a_data[60];
   importCactusFile(bldFn, a_data, a_size);
@@ -163,16 +162,14 @@ static void readBldFile(const emxArray_char_T *bldFn, double
     if (idx == 0) {
       numBlades = a_data[0];
     } else {
-      ex = a_data[idx - 1];
+      numBlades = a_data[idx - 1];
       i1 = idx + 1;
       for (k = i1; k <= i; k++) {
         d = a_data[k - 1];
-        if (ex < d) {
-          ex = d;
+        if (numBlades < d) {
+          numBlades = d;
         }
       }
-
-      numBlades = ex;
     }
   }
 
@@ -182,20 +179,20 @@ static void readBldFile(const emxArray_char_T *bldFn, double
   //  else
   //  %     numStruts = abs(numStruts);
   //  end
-  strutStartIndex = -1;
+  idx = -1;
   b_i = 0;
   exitg1 = false;
   while ((!exitg1) && (b_i <= a_size[0] - 1)) {
     if (rtIsNaN(a_data[b_i + a_size[0] * 15])) {
-      strutStartIndex = b_i;
+      idx = b_i;
       exitg1 = true;
     } else {
       b_i++;
     }
   }
 
-  if (strutStartIndex + 1 == 0) {
-    strutStartIndex = a_size[0];
+  if (idx + 1 == 0) {
+    idx = a_size[0];
   } else {
     //      strutDataBlock = a(strutStartIndex:end,:);
     //      [strutEntries, ~] = size(strutDataBlock);
@@ -203,10 +200,10 @@ static void readBldFile(const emxArray_char_T *bldFn, double
     //      numElPerStrut = numNodesPerStrut - 1;
   }
 
-  if (1 > strutStartIndex) {
+  if (1 > idx) {
     loop_ub = -1;
   } else {
-    loop_ub = strutStartIndex - 1;
+    loop_ub = idx - 1;
   }
 
   numNodesPerBlade = static_cast<double>((loop_ub + 1)) / numBlades;
@@ -242,13 +239,13 @@ static void readBldFile(const emxArray_char_T *bldFn, double
 
   for (b_i = 0; b_i < i; b_i++) {
     d = ((static_cast<double>(b_i) + 1.0) - 1.0) * numNodesPerBlade + 1.0;
-    ex = (static_cast<double>(b_i) + 1.0) * numNodesPerBlade;
-    if (d > ex) {
+    d1 = (static_cast<double>(b_i) + 1.0) * numNodesPerBlade;
+    if (d > d1) {
       i1 = 0;
       i2 = 0;
     } else {
       i1 = static_cast<int>(d) - 1;
-      i2 = static_cast<int>(ex);
+      i2 = static_cast<int>(d1);
     }
 
     idx = static_cast<int>(((static_cast<double>(b_i) + 1.0) * numNodesPerBlade));
@@ -264,7 +261,7 @@ static void readBldFile(const emxArray_char_T *bldFn, double
         b_a_data[i1];
     }
 
-    if (d > ex) {
+    if (d > d1) {
       i1 = 0;
       i2 = 0;
     } else {
@@ -283,7 +280,7 @@ static void readBldFile(const emxArray_char_T *bldFn, double
         b_a_data[i1];
     }
 
-    if (d > ex) {
+    if (d > d1) {
       i1 = 0;
       idx = 0;
     } else {
@@ -350,7 +347,6 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxArray_char_T *ortFn, const emxArray_char_T *meshFn, double time_data[], int
   time_size[1], emxArray_real_T *ForceValHist, emxArray_real_T *ForceDof)
 {
-  emxArray_real_T *cactusGeom_RefR;
   d_emxArray_struct_T *cactusGeom_blade;
   emxArray_real_T *data;
   emxArray_real_T *RefR;
@@ -359,25 +355,23 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxArray_real_T *c_expl_temp;
   f_emxArray_struct_T *d_expl_temp;
   int cactusGeom_NBlade;
-  int e_expl_temp;
-  int i;
+  int m;
   int n;
+  int i;
   double numAeroEl;
   int b_i;
   double numAeroTS;
-  double NperSpan_tmp;
+  double node2;
   int i1;
   double uloc_data[2002];
-  double b_NperSpan_tmp;
   emxArray_int8_T *init_bladeForce_N;
-  int m;
   double NperSpan_data[2002];
   double TperSpan_data[2002];
   int i2;
   double M25perSpan_data[2002];
   emxArray_int8_T *init_bladeForce_T;
   emxArray_int8_T *init_bladeForce_M25;
-  l_struct_T f_expl_temp;
+  m_struct_T e_expl_temp;
   e_emxArray_struct_T *bladeForce;
   unsigned int b_index;
   emxArray_real_T *spanLocNorm;
@@ -386,7 +380,6 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxArray_real_T *structuralSpanLocNorm;
   emxArray_real_T *structuralNodeNumbers;
   emxArray_real_T *structuralElNumbers;
-  double bladeData_numBlades;
   double bladeData_bladeNum_data[60];
   int bladeData_bladeNum_size[1];
   double bladeData_h_data[60];
@@ -400,7 +393,7 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxArray_int8_T *init_structuralLoad_N;
   emxArray_int8_T *init_structuralLoad_T;
   emxArray_int8_T *init_structuralLoad_M25;
-  l_struct_T g_expl_temp;
+  m_struct_T f_expl_temp;
   e_emxArray_struct_T *structuralLoad;
   emxArray_real_T *b_spanLocNorm;
   emxArray_real_T *b_bladeForce;
@@ -410,19 +403,11 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxArray_real_T *mesh_y;
   emxArray_real_T *mesh_z;
   emxArray_struct_T *el_props;
-  emxArray_real_T *el_psi;
-  emxArray_real_T *el_theta;
-  emxArray_real_T *el_roll;
-  emxArray_real_T *h_expl_temp;
-  emxArray_boolean_T *i_expl_temp;
-  double mesh_numEl;
-  double j_expl_temp;
-  double a;
+  emxArray_real_T *g_expl_temp;
+  emxArray_boolean_T *h_expl_temp;
   boolean_T exitg1;
-  emxArray_real_T *Fg;
-  double node1;
   emxArray_boolean_T *x;
-  double node2;
+  double b_node2;
   double dofList[12];
   double elInput_xloc[2];
   double elInput_sectionProps_twist[2];
@@ -430,7 +415,6 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   double elInput_extDistF3Node[2];
   double elInput_extDistF4Node[2];
   double output_Fe[12];
-  emxInit_real_T(&cactusGeom_RefR, 1);
   emxInit_struct_T3(&cactusGeom_blade, 2);
   emxInit_real_T(&data, 2);
   emxInit_real_T(&RefR, 1);
@@ -438,24 +422,17 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxInit_real_T(&b_expl_temp, 1);
   emxInit_real_T(&c_expl_temp, 1);
   emxInit_struct_T5(&d_expl_temp, 2);
-  readCactusGeom(geomFn, &cactusGeom_NBlade, &e_expl_temp, expl_temp,
-                 b_expl_temp, c_expl_temp, cactusGeom_RefR, cactusGeom_blade,
-                 d_expl_temp);
+  readCactusGeom(geomFn, &cactusGeom_NBlade, &m, expl_temp, b_expl_temp,
+                 c_expl_temp, RefR, cactusGeom_blade, d_expl_temp);
   b_importCactusFile(loadsFn, data);
 
   // define these from params file
   //      RefAR = cactusGeom.RefAR*ft2m*ft2m;
-  i = RefR->size[0];
-  RefR->size[0] = cactusGeom_RefR->size[0];
-  emxEnsureCapacity_real_T(RefR, i);
-  n = cactusGeom_RefR->size[0];
+  n = RefR->size[0];
   emxFree_struct_T5(&d_expl_temp);
-  emxFree_real_T(&c_expl_temp);
   for (i = 0; i < n; i++) {
-    RefR->data[i] = cactusGeom_RefR->data[i] * 0.30478512648582745;
+    RefR->data[i] *= 0.30478512648582745;
   }
-
-  emxFree_real_T(&cactusGeom_RefR);
 
   // m/s
   numAeroEl = 0.0;
@@ -466,14 +443,14 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   numAeroTS = static_cast<double>(data->size[0]) / numAeroEl;
 
   //  time = zeros(len/numAeroEl,1);
-  NperSpan_tmp = rt_roundd_snf(numAeroEl);
-  if (NperSpan_tmp < 2.147483648E+9) {
-    if (NperSpan_tmp >= -2.147483648E+9) {
-      i = static_cast<int>(NperSpan_tmp);
+  node2 = rt_roundd_snf(numAeroEl);
+  if (node2 < 2.147483648E+9) {
+    if (node2 >= -2.147483648E+9) {
+      i = static_cast<int>(node2);
     } else {
       i = MIN_int32_T;
     }
-  } else if (NperSpan_tmp >= 2.147483648E+9) {
+  } else if (node2 >= 2.147483648E+9) {
     i = MAX_int32_T;
   } else {
     i = 0;
@@ -510,17 +487,17 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   //      Fz = Fx;
   i = data->size[0];
   for (b_i = 0; b_i < i; b_i++) {
-    b_NperSpan_tmp = uloc_data[b_i] * uloc_data[b_i];
+    numAeroEl = uloc_data[b_i] * uloc_data[b_i];
     m = static_cast<int>(data->data[b_i + data->size[0] * 2]) - 1;
     n = static_cast<int>(data->data[b_i + data->size[0] * 3]) - 1;
-    NperSpan_tmp = cactusGeom_blade->data[m].ECtoR->data[n] * RefR->data[0];
+    node2 = cactusGeom_blade->data[m].ECtoR->data[n] * RefR->data[0];
     NperSpan_data[b_i] = data->data[b_i + data->size[0] * 16] * 0.5 * 1.225 *
-      b_NperSpan_tmp * NperSpan_tmp;
+      numAeroEl * node2;
     TperSpan_data[b_i] = data->data[b_i + data->size[0] * 17] * 0.5 * 1.225 *
-      b_NperSpan_tmp * NperSpan_tmp;
+      numAeroEl * node2;
     M25perSpan_data[b_i] = data->data[b_i + data->size[0] * 14] * 0.5 * 1.225 *
-      b_NperSpan_tmp * NperSpan_tmp * cactusGeom_blade->data[m].ECtoR->data[n] *
-      RefR->data[0];
+      numAeroEl * node2 * cactusGeom_blade->data[m].ECtoR->data[n] * RefR->data
+      [0];
   }
 
   emxFree_real_T(&data);
@@ -556,41 +533,41 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
     init_bladeForce_M25->data[i1] = 0;
   }
 
-  emxInitStruct_struct_T4(&f_expl_temp);
-  i1 = f_expl_temp.M25->size[0] * f_expl_temp.M25->size[1];
-  f_expl_temp.M25->size[0] = init_bladeForce_M25->size[0];
-  f_expl_temp.M25->size[1] = init_bladeForce_M25->size[1];
-  emxEnsureCapacity_real_T(f_expl_temp.M25, i1);
+  emxInitStruct_struct_T4(&e_expl_temp);
+  i1 = e_expl_temp.M25->size[0] * e_expl_temp.M25->size[1];
+  e_expl_temp.M25->size[0] = init_bladeForce_M25->size[0];
+  e_expl_temp.M25->size[1] = init_bladeForce_M25->size[1];
+  emxEnsureCapacity_real_T(e_expl_temp.M25, i1);
   n = init_bladeForce_M25->size[0] * init_bladeForce_M25->size[1];
   for (i1 = 0; i1 < n; i1++) {
-    f_expl_temp.M25->data[i1] = init_bladeForce_M25->data[i1];
+    e_expl_temp.M25->data[i1] = init_bladeForce_M25->data[i1];
   }
 
   emxFree_int8_T(&init_bladeForce_M25);
-  i1 = f_expl_temp.T->size[0] * f_expl_temp.T->size[1];
-  f_expl_temp.T->size[0] = init_bladeForce_T->size[0];
-  f_expl_temp.T->size[1] = init_bladeForce_T->size[1];
-  emxEnsureCapacity_real_T(f_expl_temp.T, i1);
+  i1 = e_expl_temp.T->size[0] * e_expl_temp.T->size[1];
+  e_expl_temp.T->size[0] = init_bladeForce_T->size[0];
+  e_expl_temp.T->size[1] = init_bladeForce_T->size[1];
+  emxEnsureCapacity_real_T(e_expl_temp.T, i1);
   n = init_bladeForce_T->size[0] * init_bladeForce_T->size[1];
   for (i1 = 0; i1 < n; i1++) {
-    f_expl_temp.T->data[i1] = init_bladeForce_T->data[i1];
+    e_expl_temp.T->data[i1] = init_bladeForce_T->data[i1];
   }
 
   emxFree_int8_T(&init_bladeForce_T);
-  i1 = f_expl_temp.N->size[0] * f_expl_temp.N->size[1];
-  f_expl_temp.N->size[0] = init_bladeForce_N->size[0];
-  f_expl_temp.N->size[1] = init_bladeForce_N->size[1];
-  emxEnsureCapacity_real_T(f_expl_temp.N, i1);
+  i1 = e_expl_temp.N->size[0] * e_expl_temp.N->size[1];
+  e_expl_temp.N->size[0] = init_bladeForce_N->size[0];
+  e_expl_temp.N->size[1] = init_bladeForce_N->size[1];
+  emxEnsureCapacity_real_T(e_expl_temp.N, i1);
   n = init_bladeForce_N->size[0] * init_bladeForce_N->size[1];
   for (i1 = 0; i1 < n; i1++) {
-    f_expl_temp.N->data[i1] = init_bladeForce_N->data[i1];
+    e_expl_temp.N->data[i1] = init_bladeForce_N->data[i1];
   }
 
   emxFree_int8_T(&init_bladeForce_N);
   emxInit_struct_T4(&bladeForce, 2);
-  c_repmat(f_expl_temp, cactusGeom_NBlade, bladeForce);
+  c_repmat(e_expl_temp, cactusGeom_NBlade, bladeForce);
   b_index = 1U;
-  emxFreeStruct_struct_T5(&f_expl_temp);
+  emxFreeStruct_struct_T5(&e_expl_temp);
   for (b_i = 0; b_i < i; b_i++) {
     for (j = 0; j < cactusGeom_NBlade; j++) {
       i1 = static_cast<int>(cactusGeom_blade->data[j].NElem);
@@ -629,22 +606,20 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   }
 
   for (b_i = 0; b_i < cactusGeom_NBlade; b_i++) {
-    b_NperSpan_tmp = cactusGeom_blade->data[b_i].QCy->data[static_cast<int>
+    numAeroEl = cactusGeom_blade->data[b_i].QCy->data[static_cast<int>
       ((cactusGeom_blade->data[0].NElem + 1.0)) - 1] * RefR->data[0];
     n = spanLocNorm->size[1];
     for (i1 = 0; i1 < n; i1++) {
       spanLocNorm->data[b_i + spanLocNorm->size[0] * i1] =
-        cactusGeom_blade->data[b_i].PEy->data[i1] * RefR->data[0] /
-        b_NperSpan_tmp;
+        cactusGeom_blade->data[b_i].PEy->data[i1] * RefR->data[0] / numAeroEl;
     }
   }
 
-  emxFree_real_T(&RefR);
   emxFree_struct_T3(&cactusGeom_blade);
   emxInit_real_T(&structuralSpanLocNorm, 2);
   emxInit_real_T(&structuralNodeNumbers, 2);
   emxInit_real_T(&structuralElNumbers, 2);
-  readBldFile(bldFn, &bladeData_numBlades, bladeData_bladeNum_data,
+  readBldFile(bldFn, &numAeroEl, bladeData_bladeNum_data,
               bladeData_bladeNum_size, bladeData_h_data, bladeData_h_size,
               bladeData_nodeNum_data, bladeData_nodeNum_size,
               bladeData_elementNum_data, bladeData_elementNum_size,
@@ -715,40 +690,40 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
     init_structuralLoad_M25->data[i1] = 0;
   }
 
-  emxInitStruct_struct_T4(&g_expl_temp);
-  i1 = g_expl_temp.M25->size[0] * g_expl_temp.M25->size[1];
-  g_expl_temp.M25->size[0] = init_structuralLoad_M25->size[0];
-  g_expl_temp.M25->size[1] = init_structuralLoad_M25->size[1];
-  emxEnsureCapacity_real_T(g_expl_temp.M25, i1);
+  emxInitStruct_struct_T4(&f_expl_temp);
+  i1 = f_expl_temp.M25->size[0] * f_expl_temp.M25->size[1];
+  f_expl_temp.M25->size[0] = init_structuralLoad_M25->size[0];
+  f_expl_temp.M25->size[1] = init_structuralLoad_M25->size[1];
+  emxEnsureCapacity_real_T(f_expl_temp.M25, i1);
   n = init_structuralLoad_M25->size[0] * init_structuralLoad_M25->size[1];
   for (i1 = 0; i1 < n; i1++) {
-    g_expl_temp.M25->data[i1] = init_structuralLoad_M25->data[i1];
+    f_expl_temp.M25->data[i1] = init_structuralLoad_M25->data[i1];
   }
 
   emxFree_int8_T(&init_structuralLoad_M25);
-  i1 = g_expl_temp.T->size[0] * g_expl_temp.T->size[1];
-  g_expl_temp.T->size[0] = init_structuralLoad_T->size[0];
-  g_expl_temp.T->size[1] = init_structuralLoad_T->size[1];
-  emxEnsureCapacity_real_T(g_expl_temp.T, i1);
+  i1 = f_expl_temp.T->size[0] * f_expl_temp.T->size[1];
+  f_expl_temp.T->size[0] = init_structuralLoad_T->size[0];
+  f_expl_temp.T->size[1] = init_structuralLoad_T->size[1];
+  emxEnsureCapacity_real_T(f_expl_temp.T, i1);
   n = init_structuralLoad_T->size[0] * init_structuralLoad_T->size[1];
   for (i1 = 0; i1 < n; i1++) {
-    g_expl_temp.T->data[i1] = init_structuralLoad_T->data[i1];
+    f_expl_temp.T->data[i1] = init_structuralLoad_T->data[i1];
   }
 
   emxFree_int8_T(&init_structuralLoad_T);
-  i1 = g_expl_temp.N->size[0] * g_expl_temp.N->size[1];
-  g_expl_temp.N->size[0] = init_structuralLoad_N->size[0];
-  g_expl_temp.N->size[1] = init_structuralLoad_N->size[1];
-  emxEnsureCapacity_real_T(g_expl_temp.N, i1);
+  i1 = f_expl_temp.N->size[0] * f_expl_temp.N->size[1];
+  f_expl_temp.N->size[0] = init_structuralLoad_N->size[0];
+  f_expl_temp.N->size[1] = init_structuralLoad_N->size[1];
+  emxEnsureCapacity_real_T(f_expl_temp.N, i1);
   n = init_structuralLoad_N->size[0] * init_structuralLoad_N->size[1];
   for (i1 = 0; i1 < n; i1++) {
-    g_expl_temp.N->data[i1] = init_structuralLoad_N->data[i1];
+    f_expl_temp.N->data[i1] = init_structuralLoad_N->data[i1];
   }
 
   emxFree_int8_T(&init_structuralLoad_N);
   emxInit_struct_T4(&structuralLoad, 2);
-  c_repmat(g_expl_temp, cactusGeom_NBlade, structuralLoad);
-  emxFreeStruct_struct_T5(&g_expl_temp);
+  c_repmat(f_expl_temp, cactusGeom_NBlade, structuralLoad);
+  emxFreeStruct_struct_T5(&f_expl_temp);
   emxInit_real_T(&b_spanLocNorm, 2);
   emxInit_real_T(&b_bladeForce, 2);
   emxInit_real_T(&b_structuralSpanLocNorm, 2);
@@ -872,27 +847,23 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   emxFree_real_T(&b_structuralSpanLocNorm);
   emxFree_real_T(&b_bladeForce);
   emxFree_real_T(&structuralSpanLocNorm);
-  emxFree_real_T(&spanLocNorm);
   emxFree_struct_T4(&bladeForce);
   emxInit_real_T(&mesh_x, 1);
   emxInit_real_T(&mesh_y, 1);
   emxInit_real_T(&mesh_z, 1);
   emxInit_struct_T(&el_props, 2);
-  emxInit_real_T(&el_psi, 1);
-  emxInit_real_T(&el_theta, 1);
-  emxInit_real_T(&el_roll, 1);
-  emxInit_real_T(&h_expl_temp, 2);
-  emxInit_boolean_T(&i_expl_temp, 2);
+  emxInit_real_T(&g_expl_temp, 2);
+  emxInit_boolean_T(&h_expl_temp, 2);
 
   // integrate over elements
   // read element data in
-  b_readMesh(meshFn, expl_temp, &mesh_numEl, &j_expl_temp, mesh_x, mesh_y,
-             mesh_z, b_expl_temp, h_expl_temp);
-  b_readElementData(mesh_numEl, elFn, ortFn, bladeData_nodeNum_data,
+  b_readMesh(meshFn, expl_temp, &numAeroEl, &node2, mesh_x, mesh_y, mesh_z,
+             b_expl_temp, g_expl_temp);
+  b_readElementData(numAeroEl, elFn, ortFn, bladeData_nodeNum_data,
                     bladeData_nodeNum_size, bladeData_elementNum_data,
                     bladeData_elementNum_size, bladeData_remaining_data,
-                    bladeData_remaining_size, el_props, expl_temp, el_psi,
-                    el_theta, el_roll, i_expl_temp);
+                    bladeData_remaining_size, el_props, expl_temp, c_expl_temp,
+                    RefR, b_expl_temp, h_expl_temp);
 
   //      [~,~,timeLen] = size(aeroDistLoadsArrayTime);
   m = structuralNodeNumbers->size[0];
@@ -901,21 +872,20 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   b_spanLocNorm->size[0] = 1;
   b_spanLocNorm->size[1] = structuralNodeNumbers->size[1];
   emxEnsureCapacity_real_T(b_spanLocNorm, i1);
-  emxFree_boolean_T(&i_expl_temp);
-  emxFree_real_T(&h_expl_temp);
-  emxFree_real_T(&b_expl_temp);
+  emxFree_boolean_T(&h_expl_temp);
+  emxFree_real_T(&g_expl_temp);
   emxFree_real_T(&expl_temp);
   if (structuralNodeNumbers->size[1] >= 1) {
     for (j = 0; j < n; j++) {
       b_spanLocNorm->data[j] = structuralNodeNumbers->data
         [structuralNodeNumbers->size[0] * j];
       for (b_i = 2; b_i <= m; b_i++) {
-        a = b_spanLocNorm->data[j];
-        b_NperSpan_tmp = structuralNodeNumbers->data[(b_i +
+        numAeroTS = b_spanLocNorm->data[j];
+        numAeroEl = structuralNodeNumbers->data[(b_i +
           structuralNodeNumbers->size[0] * j) - 1];
-        if ((!rtIsNaN(b_NperSpan_tmp)) && (rtIsNaN(a) || (a < b_NperSpan_tmp)))
-        {
-          b_spanLocNorm->data[j] = b_NperSpan_tmp;
+        if ((!rtIsNaN(numAeroEl)) && (rtIsNaN(numAeroTS) || (numAeroTS <
+              numAeroEl))) {
+          b_spanLocNorm->data[j] = numAeroEl;
         }
       }
     }
@@ -924,13 +894,13 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   n = b_spanLocNorm->size[1];
   if (b_spanLocNorm->size[1] <= 2) {
     if (b_spanLocNorm->size[1] == 1) {
-      b_NperSpan_tmp = b_spanLocNorm->data[0];
+      numAeroEl = b_spanLocNorm->data[0];
     } else if ((b_spanLocNorm->data[0] < b_spanLocNorm->data[1]) || (rtIsNaN
                 (b_spanLocNorm->data[0]) && (!rtIsNaN(b_spanLocNorm->data[1]))))
     {
-      b_NperSpan_tmp = b_spanLocNorm->data[1];
+      numAeroEl = b_spanLocNorm->data[1];
     } else {
-      b_NperSpan_tmp = b_spanLocNorm->data[0];
+      numAeroEl = b_spanLocNorm->data[0];
     }
   } else {
     if (!rtIsNaN(b_spanLocNorm->data[0])) {
@@ -950,28 +920,27 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
     }
 
     if (m == 0) {
-      b_NperSpan_tmp = b_spanLocNorm->data[0];
+      numAeroEl = b_spanLocNorm->data[0];
     } else {
-      b_NperSpan_tmp = b_spanLocNorm->data[m - 1];
+      numAeroEl = b_spanLocNorm->data[m - 1];
       i1 = m + 1;
       for (k = i1; k <= n; k++) {
-        NperSpan_tmp = b_spanLocNorm->data[k - 1];
-        if (b_NperSpan_tmp < NperSpan_tmp) {
-          b_NperSpan_tmp = NperSpan_tmp;
+        node2 = b_spanLocNorm->data[k - 1];
+        if (numAeroEl < node2) {
+          numAeroEl = node2;
         }
       }
     }
   }
 
-  emxInit_real_T(&Fg, 2);
-  i1 = static_cast<int>((b_NperSpan_tmp * 6.0));
-  i2 = Fg->size[0] * Fg->size[1];
-  Fg->size[0] = i1;
-  Fg->size[1] = i;
-  emxEnsureCapacity_real_T(Fg, i2);
+  i1 = static_cast<int>((numAeroEl * 6.0));
+  i2 = spanLocNorm->size[0] * spanLocNorm->size[1];
+  spanLocNorm->size[0] = i1;
+  spanLocNorm->size[1] = i;
+  emxEnsureCapacity_real_T(spanLocNorm, i2);
   n = i1 * i;
   for (i1 = 0; i1 < n; i1++) {
-    Fg->data[i1] = 0.0;
+    spanLocNorm->data[i1] = 0.0;
   }
 
   for (b_i = 0; b_i < i; b_i++) {
@@ -981,25 +950,25 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
         // get element data
         //  orientation angle,xloc,sectionProps,element order]
         // get dof map
-        node1 = structuralNodeNumbers->data[j + structuralNodeNumbers->size[0] *
-          k];
+        numAeroEl = structuralNodeNumbers->data[j + structuralNodeNumbers->size
+          [0] * k];
         node2 = structuralNodeNumbers->data[j + structuralNodeNumbers->size[0] *
           (k + 1)];
-        b_NperSpan_tmp = (node1 - 1.0) * 6.0;
-        NperSpan_tmp = (node2 - 1.0) * 6.0;
+        numAeroTS = (numAeroEl - 1.0) * 6.0;
+        b_node2 = (node2 - 1.0) * 6.0;
         for (i2 = 0; i2 < 6; i2++) {
-          dofList[i2] = b_NperSpan_tmp + (static_cast<double>(i2) + 1.0);
-          dofList[i2 + 6] = NperSpan_tmp + (static_cast<double>(i2) + 1.0);
+          dofList[i2] = numAeroTS + (static_cast<double>(i2) + 1.0);
+          dofList[i2 + 6] = b_node2 + (static_cast<double>(i2) + 1.0);
         }
 
         n = static_cast<int>(node2) - 1;
-        m = static_cast<int>(node1) - 1;
-        a = mesh_x->data[n] - mesh_x->data[m];
-        b_NperSpan_tmp = mesh_y->data[n] - mesh_y->data[m];
-        NperSpan_tmp = mesh_z->data[n] - mesh_z->data[m];
+        m = static_cast<int>(numAeroEl) - 1;
+        numAeroTS = mesh_x->data[n] - mesh_x->data[m];
+        numAeroEl = mesh_y->data[n] - mesh_y->data[m];
+        node2 = mesh_z->data[n] - mesh_z->data[m];
         elInput_xloc[0] = 0.0;
-        elInput_xloc[1] = std::sqrt((a * a + b_NperSpan_tmp * b_NperSpan_tmp) +
-          NperSpan_tmp * NperSpan_tmp);
+        elInput_xloc[1] = std::sqrt((numAeroTS * numAeroTS + numAeroEl *
+          numAeroEl) + node2 * node2);
         n = static_cast<int>(structuralElNumbers->data[j +
                              structuralElNumbers->size[0] * k]) - 1;
         elInput_sectionProps_twist[0] = el_props->data[n].twist[0];
@@ -1017,39 +986,39 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
         elInput_extDistF4Node[1] = -structuralLoad->data[j].M25->data[b_i +
           structuralLoad->data[j].M25->size[0] * (k + 1)];
         calculateLoadVecFromDistForce(elInput_xloc, elInput_sectionProps_twist,
-          el_psi->data[n], el_theta->data[n], el_roll->data[n],
+          c_expl_temp->data[n], RefR->data[n], b_expl_temp->data[n],
           elInput_extDistF2Node, elInput_extDistF3Node, elInput_extDistF4Node,
           output_Fe);
 
         // asssembly
         for (m = 0; m < 12; m++) {
           n = static_cast<int>(dofList[m]) - 1;
-          Fg->data[n + Fg->size[0] * b_i] += output_Fe[m];
+          spanLocNorm->data[n + spanLocNorm->size[0] * b_i] += output_Fe[m];
         }
       }
     }
   }
 
+  emxFree_real_T(&c_expl_temp);
+  emxFree_real_T(&b_expl_temp);
   emxFree_real_T(&structuralElNumbers);
-  emxFree_real_T(&el_roll);
-  emxFree_real_T(&el_theta);
-  emxFree_real_T(&el_psi);
   emxFree_struct_T(&el_props);
   emxFree_real_T(&mesh_z);
   emxFree_real_T(&mesh_y);
   emxFree_real_T(&mesh_x);
   emxFree_struct_T4(&structuralLoad);
+  emxFree_real_T(&RefR);
   emxInit_boolean_T(&x, 1);
 
   // reduce Fg to nonzero components
   // assumes any loaded DOF will never be identically zero throughout time
   // history
-  n = Fg->size[0];
+  n = spanLocNorm->size[0];
   i = x->size[0];
-  x->size[0] = Fg->size[0];
+  x->size[0] = spanLocNorm->size[0];
   emxEnsureCapacity_boolean_T(x, i);
   for (i = 0; i < n; i++) {
-    x->data[i] = (Fg->data[i] != 0.0);
+    x->data[i] = (spanLocNorm->data[i] != 0.0);
   }
 
   m = x->size[0];
@@ -1064,19 +1033,19 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
 
   i = ForceValHist->size[0] * ForceValHist->size[1];
   ForceValHist->size[0] = n;
-  ForceValHist->size[1] = Fg->size[1];
+  ForceValHist->size[1] = spanLocNorm->size[1];
   emxEnsureCapacity_real_T(ForceValHist, i);
-  n *= Fg->size[1];
+  n *= spanLocNorm->size[1];
   for (i = 0; i < n; i++) {
     ForceValHist->data[i] = 0.0;
   }
 
-  n = Fg->size[0];
+  n = spanLocNorm->size[0];
   i = x->size[0];
-  x->size[0] = Fg->size[0];
+  x->size[0] = spanLocNorm->size[0];
   emxEnsureCapacity_boolean_T(x, i);
   for (i = 0; i < n; i++) {
-    x->data[i] = (Fg->data[i] != 0.0);
+    x->data[i] = (spanLocNorm->data[i] != 0.0);
   }
 
   m = x->size[0];
@@ -1109,12 +1078,12 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
       b_spanLocNorm->data[j] = structuralNodeNumbers->data
         [structuralNodeNumbers->size[0] * j];
       for (b_i = 2; b_i <= m; b_i++) {
-        a = b_spanLocNorm->data[j];
-        b_NperSpan_tmp = structuralNodeNumbers->data[(b_i +
+        numAeroTS = b_spanLocNorm->data[j];
+        numAeroEl = structuralNodeNumbers->data[(b_i +
           structuralNodeNumbers->size[0] * j) - 1];
-        if ((!rtIsNaN(b_NperSpan_tmp)) && (rtIsNaN(a) || (a < b_NperSpan_tmp)))
-        {
-          b_spanLocNorm->data[j] = b_NperSpan_tmp;
+        if ((!rtIsNaN(numAeroEl)) && (rtIsNaN(numAeroTS) || (numAeroTS <
+              numAeroEl))) {
+          b_spanLocNorm->data[j] = numAeroEl;
         }
       }
     }
@@ -1124,13 +1093,13 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   n = b_spanLocNorm->size[1];
   if (b_spanLocNorm->size[1] <= 2) {
     if (b_spanLocNorm->size[1] == 1) {
-      b_NperSpan_tmp = b_spanLocNorm->data[0];
+      numAeroEl = b_spanLocNorm->data[0];
     } else if ((b_spanLocNorm->data[0] < b_spanLocNorm->data[1]) || (rtIsNaN
                 (b_spanLocNorm->data[0]) && (!rtIsNaN(b_spanLocNorm->data[1]))))
     {
-      b_NperSpan_tmp = b_spanLocNorm->data[1];
+      numAeroEl = b_spanLocNorm->data[1];
     } else {
-      b_NperSpan_tmp = b_spanLocNorm->data[0];
+      numAeroEl = b_spanLocNorm->data[0];
     }
   } else {
     if (!rtIsNaN(b_spanLocNorm->data[0])) {
@@ -1150,36 +1119,38 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
     }
 
     if (m == 0) {
-      b_NperSpan_tmp = b_spanLocNorm->data[0];
+      numAeroEl = b_spanLocNorm->data[0];
     } else {
-      b_NperSpan_tmp = b_spanLocNorm->data[m - 1];
+      numAeroEl = b_spanLocNorm->data[m - 1];
       i = m + 1;
       for (k = i; k <= n; k++) {
-        NperSpan_tmp = b_spanLocNorm->data[k - 1];
-        if (b_NperSpan_tmp < NperSpan_tmp) {
-          b_NperSpan_tmp = NperSpan_tmp;
+        node2 = b_spanLocNorm->data[k - 1];
+        if (numAeroEl < node2) {
+          numAeroEl = node2;
         }
       }
     }
   }
 
-  i = static_cast<int>((b_NperSpan_tmp * 6.0));
+  i = static_cast<int>((numAeroEl * 6.0));
   for (b_i = 0; b_i < i; b_i++) {
-    n = Fg->size[1];
+    n = spanLocNorm->size[1];
     i1 = b_spanLocNorm->size[0] * b_spanLocNorm->size[1];
     b_spanLocNorm->size[0] = 1;
-    b_spanLocNorm->size[1] = Fg->size[1];
+    b_spanLocNorm->size[1] = spanLocNorm->size[1];
     emxEnsureCapacity_real_T(b_spanLocNorm, i1);
     for (i1 = 0; i1 < n; i1++) {
-      b_spanLocNorm->data[i1] = Fg->data[b_i + Fg->size[0] * i1];
+      b_spanLocNorm->data[i1] = spanLocNorm->data[b_i + spanLocNorm->size[0] *
+        i1];
     }
 
     c_eml_find(b_spanLocNorm, bladeData_bladeNum_size, bladeData_remaining_size);
     if (bladeData_remaining_size[1] != 0) {
-      n = Fg->size[1];
+      n = spanLocNorm->size[1];
       for (i1 = 0; i1 < n; i1++) {
         ForceValHist->data[(static_cast<int>(b_index) + ForceValHist->size[0] *
-                            i1) - 1] = Fg->data[b_i + Fg->size[0] * i1];
+                            i1) - 1] = spanLocNorm->data[b_i + spanLocNorm->
+          size[0] * i1];
       }
 
       ForceDof->data[static_cast<int>(b_index) - 1] = static_cast<double>(b_i) +
@@ -1189,7 +1160,7 @@ void mapCactusLoadsFile(const emxArray_char_T *geomFn, const emxArray_char_T
   }
 
   emxFree_real_T(&b_spanLocNorm);
-  emxFree_real_T(&Fg);
+  emxFree_real_T(&spanLocNorm);
 }
 
 //

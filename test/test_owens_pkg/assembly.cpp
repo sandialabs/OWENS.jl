@@ -4,7 +4,7 @@
 // File: assembly.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -51,8 +51,6 @@ void assembly(const double Ke[144], const double Fe[12], const double conn[2],
   int i;
   int j;
   int b_i;
-  int m;
-  int i1;
 
   //       output:
   //       Kg             = global system matrix with assembled element
@@ -69,11 +67,11 @@ void assembly(const double Ke[144], const double Fe[12], const double conn[2],
 
   // Assemble element i into global system
   for (j = 0; j < 12; j++) {
-    b_i = static_cast<int>(dofList_data[j]) - 1;
-    Fg->data[b_i] += Fe[j];
-    for (m = 0; m < 12; m++) {
-      i1 = static_cast<int>(dofList_data[m]) - 1;
-      Kg->data[b_i + Kg->size[0] * i1] += Ke[j + 12 * m];
+    count = static_cast<int>(dofList_data[j]) - 1;
+    Fg->data[count] += Fe[j];
+    for (i = 0; i < 12; i++) {
+      b_i = static_cast<int>(dofList_data[i]) - 1;
+      Kg->data[count + Kg->size[0] * b_i] += Ke[j + 12 * i];
     }
   }
 }

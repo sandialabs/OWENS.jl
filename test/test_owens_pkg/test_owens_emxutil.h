@@ -4,7 +4,7 @@
 // File: test_owens_emxutil.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef TEST_OWENS_EMXUTIL_H
 #define TEST_OWENS_EMXUTIL_H
@@ -18,9 +18,9 @@
 // Function Declarations
 extern void c_emxFreeStruct_coder_internal_(coder_internal_sparse *pStruct);
 extern void c_emxInitStruct_coder_internal_(coder_internal_sparse *pStruct);
-extern void emxCopyStruct_struct_T(k_struct_T *dst, const k_struct_T *src);
-extern void emxCopyStruct_struct_T1(m_struct_T *dst, const m_struct_T *src);
-extern void emxCopyStruct_struct_T2(l_struct_T *dst, const l_struct_T *src);
+extern void emxCopyStruct_struct_T(l_struct_T *dst, const l_struct_T *src);
+extern void emxCopyStruct_struct_T1(n_struct_T *dst, const n_struct_T *src);
+extern void emxCopyStruct_struct_T2(m_struct_T *dst, const m_struct_T *src);
 extern void emxEnsureCapacity_boolean_T(emxArray_boolean_T *emxArray, int
   oldNumel);
 extern void emxEnsureCapacity_char_T(emxArray_char_T *emxArray, int oldNumel);
@@ -40,13 +40,14 @@ extern void emxEnsureCapacity_struct_T4(e_emxArray_struct_T *emxArray, int
 extern void emxEnsureCapacity_struct_T5(c_emxArray_struct_T *emxArray, int
   oldNumel);
 extern void emxEnsureCapacity_uint32_T(emxArray_uint32_T *emxArray, int oldNumel);
-extern void emxFreeStruct_struct_T(g_struct_T *pStruct);
-extern void emxFreeStruct_struct_T1(h_struct_T *pStruct);
-extern void emxFreeStruct_struct_T2(i_struct_T *pStruct);
-extern void emxFreeStruct_struct_T3(j_struct_T *pStruct);
-extern void emxFreeStruct_struct_T4(k_struct_T *pStruct);
-extern void emxFreeStruct_struct_T5(l_struct_T *pStruct);
-extern void emxFreeStruct_struct_T6(m_struct_T *pStruct);
+extern void emxFreeStruct_struct_T(h_struct_T *pStruct);
+extern void emxFreeStruct_struct_T1(i_struct_T *pStruct);
+extern void emxFreeStruct_struct_T2(j_struct_T *pStruct);
+extern void emxFreeStruct_struct_T3(k_struct_T *pStruct);
+extern void emxFreeStruct_struct_T4(l_struct_T *pStruct);
+extern void emxFreeStruct_struct_T5(m_struct_T *pStruct);
+extern void emxFreeStruct_struct_T6(n_struct_T *pStruct);
+extern void emxFreeStruct_struct_T7(t_struct_T *pStruct);
 extern void emxFree_boolean_T(emxArray_boolean_T **pEmxArray);
 extern void emxFree_char_T(emxArray_char_T **pEmxArray);
 extern void emxFree_creal_T(emxArray_creal_T **pEmxArray);
@@ -60,13 +61,14 @@ extern void emxFree_struct_T3(d_emxArray_struct_T **pEmxArray);
 extern void emxFree_struct_T4(e_emxArray_struct_T **pEmxArray);
 extern void emxFree_struct_T5(f_emxArray_struct_T **pEmxArray);
 extern void emxFree_uint32_T(emxArray_uint32_T **pEmxArray);
-extern void emxInitStruct_struct_T(g_struct_T *pStruct);
-extern void emxInitStruct_struct_T1(h_struct_T *pStruct);
-extern void emxInitStruct_struct_T2(i_struct_T *pStruct);
-extern void emxInitStruct_struct_T3(j_struct_T *pStruct);
-extern void emxInitStruct_struct_T4(l_struct_T *pStruct);
-extern void emxInitStruct_struct_T5(k_struct_T *pStruct);
-extern void emxInitStruct_struct_T6(m_struct_T *pStruct);
+extern void emxInitStruct_struct_T(h_struct_T *pStruct);
+extern void emxInitStruct_struct_T1(i_struct_T *pStruct);
+extern void emxInitStruct_struct_T2(j_struct_T *pStruct);
+extern void emxInitStruct_struct_T3(k_struct_T *pStruct);
+extern void emxInitStruct_struct_T4(m_struct_T *pStruct);
+extern void emxInitStruct_struct_T5(l_struct_T *pStruct);
+extern void emxInitStruct_struct_T6(n_struct_T *pStruct);
+extern void emxInitStruct_struct_T7(t_struct_T *pStruct);
 extern void emxInit_boolean_T(emxArray_boolean_T **pEmxArray, int numDimensions);
 extern void emxInit_char_T(emxArray_char_T **pEmxArray, int numDimensions);
 extern void emxInit_creal_T(emxArray_creal_T **pEmxArray, int numDimensions);

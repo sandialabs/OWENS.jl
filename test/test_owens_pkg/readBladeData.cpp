@@ -4,7 +4,7 @@
 // File: readBladeData.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -61,11 +61,7 @@ void readBladeData(const emxArray_char_T *filename, double *bladeData_numBlades,
   int idx;
   int k;
   boolean_T exitg1;
-  double ex;
-  int i1;
   double d;
-  int strutStartIndex;
-  int b_i;
   importCactusFile(filename, a_data, a_size);
   i = a_size[0];
   if (a_size[0] <= 2) {
@@ -97,16 +93,14 @@ void readBladeData(const emxArray_char_T *filename, double *bladeData_numBlades,
     if (idx == 0) {
       *bladeData_numBlades = a_data[0];
     } else {
-      ex = a_data[idx - 1];
-      i1 = idx + 1;
-      for (k = i1; k <= i; k++) {
+      *bladeData_numBlades = a_data[idx - 1];
+      idx++;
+      for (k = idx; k <= i; k++) {
         d = a_data[k - 1];
-        if (ex < d) {
-          ex = d;
+        if (*bladeData_numBlades < d) {
+          *bladeData_numBlades = d;
         }
       }
-
-      *bladeData_numBlades = ex;
     }
   }
 
@@ -116,20 +110,20 @@ void readBladeData(const emxArray_char_T *filename, double *bladeData_numBlades,
   //      else
   //          numStruts = abs(numStruts);
   //      end
-  strutStartIndex = -1;
-  b_i = 0;
+  idx = -1;
+  k = 0;
   exitg1 = false;
-  while ((!exitg1) && (b_i <= a_size[0] - 1)) {
-    if (rtIsNaN(a_data[b_i + a_size[0] * 15])) {
-      strutStartIndex = b_i;
+  while ((!exitg1) && (k <= a_size[0] - 1)) {
+    if (rtIsNaN(a_data[k + a_size[0] * 15])) {
+      idx = k;
       exitg1 = true;
     } else {
-      b_i++;
+      k++;
     }
   }
 
-  if (strutStartIndex + 1 == 0) {
-    strutStartIndex = a_size[0];
+  if (idx + 1 == 0) {
+    idx = a_size[0];
   } else {
     //          strutDataBlock = a(strutStartIndex:end,:);
     //          [strutEntries, ~] = size(strutDataBlock);
@@ -137,34 +131,33 @@ void readBladeData(const emxArray_char_T *filename, double *bladeData_numBlades,
     //          numElPerStrut = numNodesPerStrut - 1;
   }
 
-  if (1 > strutStartIndex) {
-    idx = -1;
+  if (1 > idx) {
+    k = -1;
   } else {
-    idx = strutStartIndex - 1;
+    k = idx - 1;
   }
 
   // assign data to bladeData object %TODO: Should not be loading this file in multiple times 
-  bladeData_bladeNum_size[0] = idx + 1;
-  bladeData_h_size[0] = idx + 1;
-  bladeData_nodeNum_size[0] = idx + 1;
-  bladeData_elementNum_size[0] = idx + 1;
-  if (0 <= idx) {
-    std::memcpy(&bladeData_bladeNum_data[0], &a_data[0], (idx + 1) * sizeof
-                (double));
+  bladeData_bladeNum_size[0] = k + 1;
+  bladeData_h_size[0] = k + 1;
+  bladeData_nodeNum_size[0] = k + 1;
+  bladeData_elementNum_size[0] = k + 1;
+  if (0 <= k) {
+    std::memcpy(&bladeData_bladeNum_data[0], &a_data[0], (k + 1) * sizeof(double));
   }
 
-  for (i = 0; i <= idx; i++) {
+  for (i = 0; i <= k; i++) {
     bladeData_h_data[i] = a_data[i + a_size[0]];
     bladeData_nodeNum_data[i] = a_data[i + a_size[0] * 2];
     bladeData_elementNum_data[i] = a_data[i + a_size[0] * 3];
   }
 
-  bladeData_remaining_size[0] = idx + 1;
+  bladeData_remaining_size[0] = k + 1;
   bladeData_remaining_size[1] = 12;
   for (i = 0; i < 12; i++) {
-    for (i1 = 0; i1 <= idx; i1++) {
-      bladeData_remaining_data[i1 + bladeData_remaining_size[0] * i] = a_data[i1
-        + a_size[0] * (i + 4)];
+    for (idx = 0; idx <= k; idx++) {
+      bladeData_remaining_data[idx + bladeData_remaining_size[0] * i] =
+        a_data[idx + a_size[0] * (i + 4)];
     }
   }
 }

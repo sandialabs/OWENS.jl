@@ -4,7 +4,7 @@
 // File: owens.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 #ifndef OWENS_H
 #define OWENS_H
@@ -17,6 +17,8 @@
 
 // Function Declarations
 extern void b_owens(emxArray_real_T *freq, emxArray_real_T *damp);
+extern void c_owens(double freq_data[], int freq_size[2], double damp_data[],
+                    int damp_size[2]);
 extern void owens(const double varargin_7[2], double *freq, double *damp);
 
 #endif

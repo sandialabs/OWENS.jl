@@ -4,7 +4,7 @@
 // File: repmat.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 08-Apr-2020 17:30:34
+// C/C++ source code generated on  : 13-Apr-2020 09:25:21
 //
 
 // Include Files
@@ -17,12 +17,12 @@
 // Function Definitions
 
 //
-// Arguments    : const m_struct_T *a
+// Arguments    : const n_struct_T *a
 //                int varargin_2
 //                f_emxArray_struct_T *b
 // Return Type  : void
 //
-void b_repmat(const m_struct_T *a, int varargin_2, f_emxArray_struct_T *b)
+void b_repmat(const n_struct_T *a, int varargin_2, f_emxArray_struct_T *b)
 {
   int i;
   i = b->size[0] * b->size[1];
@@ -35,12 +35,12 @@ void b_repmat(const m_struct_T *a, int varargin_2, f_emxArray_struct_T *b)
 }
 
 //
-// Arguments    : const l_struct_T a
+// Arguments    : const m_struct_T a
 //                int varargin_2
 //                e_emxArray_struct_T *b
 // Return Type  : void
 //
-void c_repmat(const l_struct_T a, int varargin_2, e_emxArray_struct_T *b)
+void c_repmat(const m_struct_T a, int varargin_2, e_emxArray_struct_T *b)
 {
   int i;
   i = b->size[0] * b->size[1];
@@ -53,12 +53,12 @@ void c_repmat(const l_struct_T a, int varargin_2, e_emxArray_struct_T *b)
 }
 
 //
-// Arguments    : const k_struct_T *a
+// Arguments    : const l_struct_T *a
 //                int varargin_2
 //                d_emxArray_struct_T *b
 // Return Type  : void
 //
-void repmat(const k_struct_T *a, int varargin_2, d_emxArray_struct_T *b)
+void repmat(const l_struct_T *a, int varargin_2, d_emxArray_struct_T *b)
 {
   int i;
   i = b->size[0] * b->size[1];
