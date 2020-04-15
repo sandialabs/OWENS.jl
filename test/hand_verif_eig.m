@@ -129,7 +129,7 @@ hold on
 plot(abs(eigVec1(5:8,1)))
 hold on
 plot(abs(eigVec2(:,1)))
-% legend('Truth','Eigs Dual1','Eigs Dual12','Eigs single1','Eigs single2','Polyeig')
+legend('Truth','Eigs Dual1','Eigs Dual12','Eigs single1','Eigs single2','Polyeig')
 end
 
 function [n_mismatch] = checkequal(first,second)
