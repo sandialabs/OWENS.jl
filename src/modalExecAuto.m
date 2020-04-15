@@ -36,7 +36,7 @@ for j=1:length(omegaArray) %loops over rotor speeds of interest
         model.aeroElasticOn = false;
         model.aeroForceOn = true;
         [displ,~,staticAnalysisSuccessful]=staticAnalysis(model,mesh,el,displ,Omega,OmegaStart,elStorage); %performs static analysis about specified operating condition
-%         save displnl displ
+        %         save displnl displ
     else
         staticAnalysisSuccessful = true;
     end
@@ -101,8 +101,12 @@ freq = convergedFreq;
 damp = convergedDamp;
 
 % save flutterRun freq damp omegaArray %save frequency, damping, and rotor speed array to .mat file
+fidout=fopen([model.outFilename(1:end-4) '_FLUTTER.out'],'w');
 
-
+for i = 1:length(freq)
+    fprintf(fidout,'%e,%e\n',freq(i),damp(i));
+end
+fclose(fidout);
 
 end
 
