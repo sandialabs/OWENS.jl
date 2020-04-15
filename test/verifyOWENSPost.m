@@ -1,7 +1,8 @@
 tic()
 verify_transient = false;
 verify_modal = false;
-verify_flutter = true;
+plot_modal = true;
+verify_flutter = false;
 
 test_owens(verify_transient,verify_modal,verify_flutter);
 
@@ -19,6 +20,45 @@ if verify_modal
     else
         fprintf('%s\n','MODAL TESTS PASSED')
     end
+end
+
+if plot_modal
+    disp('Plotting Modes')
+    Ndof = 10;
+    savePlot = true;
+    
+    bmOwens = './input_files_test/_15mTower_transient_dvawt_c_2_lcdt';
+    n_comparisons = 4;
+    outnameC = cell(1,n_comparisons);
+    outnameC{1} = './input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_CPP.out';
+    outnameC{2} = './input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION_EIGS.out';
+    outnameC{3} = './input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out';
+    outnameC{4} = './input_files_test/SORTED_EIG_VERIF_TEMP.out';
+    
+    for ii = 1:n_comparisons
+        outname = outnameC{ii};
+        disp(outname);
+        if 1 % run to pause through plots
+            for df = 1:2:Ndof
+                viz([bmOwens '.mesh'],outname,df,10)
+                set(gcf,'visible','off')
+                if savePlot % save the plot
+                    saveas(gcf,[outname(1:end-4) '_MODE' num2str(df) '.pdf'])
+                    close gcf
+                else % flip through the plots visually
+                    pause
+                end
+            end
+        else % generate all the plots and then view them
+            for df = 1:Ndof
+                df_act = Ndof-df+1;
+                viz([bmOwens '.mesh'],outname,df_act,10)
+                title(['DOF: ' num2str(df_act)])
+            end
+        end
+    end
+    
+    
 end
 
 if verify_transient
