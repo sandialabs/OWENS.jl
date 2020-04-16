@@ -32,8 +32,9 @@ MMat2 = [eyelen,zeroslen;zeroslen,M];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% split matrices eig %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+tic
 [eigVec0,eigVal0] = eig(sysMat2,MMat2,'vector');		  %full eigenvalue solve
+toc
 [eigVal0,eigsortidx] = sort(eigVal0,'ComparisonMethod','abs');
 eigVec0 = eigVec0(:,eigsortidx);
 
@@ -58,8 +59,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% single matrix eig %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+tic
 [eigVec1,eigVal1] = eig(sysMat,'vector');		  %full eigenvalue solve
+toc
 [eigVal1,eigsortidx] = sort(eigVal1,'ComparisonMethod','abs');
 eigVec1 = eigVec1(:,eigsortidx);
 
@@ -84,8 +86,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% polyeig %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+tic
 [eigVec2,eigVal2] = polyeig(K,C,M);
+toc
 [eigVal2,eigsortidx] = sort(eigVal2,'ComparisonMethod','abs');
 eigVec2 = eigVec2(:,eigsortidx);
 

@@ -2,7 +2,7 @@
 // File: eigSolve.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 15-Apr-2020 13:31:03
+// C/C++ source code generated on  : 16-Apr-2020 09:21:06
 //
 
 // Include Files
@@ -621,6 +621,10 @@ void eigSolve(const emxArray_real_T *M, const emxArray_real_T *C, const
 
   // ,'vector');		  %full eigenvalue solve
   //  [eigVec0,eigVal0] = eig(sysMat2,MMat2,'vector');		  %full eigenvalue solve 
+  //  [eigVec2,eigVal2] = polyeig(K,C,M);
+  //  [eigVal2,eigsortidx] = sort(eigVal2,'ComparisonMethod','abs');
+  //  eigVec2 = [eigVec2(:,eigsortidx);eigVec2(:,eigsortidx)];
+  //  eigVal2 = diag(eigVal2);
   //  residual0 = sysMat*eigVec0 - eigVec0*diag(eigVal0);
   //  residual0 = sysMat2*eigVec0 - MMat2*eigVec0*diag(eigVal0);
   //  fprintf('%e\n',real(residual0(1)))

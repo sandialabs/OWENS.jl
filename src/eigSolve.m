@@ -31,32 +31,29 @@ function [eigVec,eigVal] = eigSolve(M,C,K)%,numModes,flag)
 %         disp('Solving with standard state space approach ...');
 
 len=length(M);
-% eyelen = eye(len);
-% zeroslen = zeros(len);
+eyelen = eye(len);
+zeroslen = zeros(len);
 
 %%% if(flag == 1)
-sysMat = [zeros(len), eye(len);   %constructs state space form (with mass matrix inverted)
-    -M\K, -M\C];
+% sysMat = [zeros(len), eye(len);   %constructs state space form (with mass matrix inverted)
+%     -M\K, -M\C];
 %%% end
 
 %%% if(flag == 2)
-% sysMat2 = [zeroslen, eyelen;      %construct state space form and lets eigs invert mass matrix
-%     -K, -C];
+sysMat2 = [zeroslen, eyelen;      %construct state space form and lets eigs invert mass matrix
+    -K, -C];
 % sysMat2 = sparse(sysMat2);
 
-% MMat2 = [eyelen,zeroslen;zeroslen,M];
+MMat2 = [eyelen,zeroslen;zeroslen,M];
 % MMat2 = sparse(MMat2);
 %%% end
 
 
 %%% if(flag==1)
-[eigVec,eigVal] = eig(sysMat);%,'vector');		  %full eigenvalue solve
-% [eigVec0,eigVal0] = eig(sysMat2,MMat2,'vector');		  %full eigenvalue solve
+% [eigVec,eigVal] = eig(sysMat);%,'vector');		  %full eigenvalue solve
+[eigVec,eigVal] = eig(sysMat2,MMat2);%,'vector');		  %full eigenvalue solve
 
-[eigVec2,eigVal2] = polyeig(K,C,M);
-[eigVal2,eigsortidx] = sort(eigVal2,'ComparisonMethod','abs');
-eigVec2 = [eigVec2(:,eigsortidx);eigVec2(:,eigsortidx)];
-eigVal2 = diag(eigVal2);
+
 
 
 % residual0 = sysMat*eigVec0 - eigVec0*diag(eigVal0);
