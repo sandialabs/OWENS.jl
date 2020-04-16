@@ -58,7 +58,7 @@ static void main_test_owens();
 static void main_test_owens()
 {
   // Call the entry-point 'test_owens'.
-  test_owens(true, true, true);
+  test_owens(false, true, false);
 }
 
 //

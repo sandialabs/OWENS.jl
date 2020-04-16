@@ -2,7 +2,7 @@
 // File: eigSolve.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 16-Apr-2020 09:21:06
+// C/C++ source code generated on  : 16-Apr-2020 10:41:25
 //
 
 // Include Files
@@ -79,12 +79,6 @@ void eigSolve(const emxArray_real_T *M, const emxArray_real_T *C, const
   double scale;
   double absxk;
   double t;
-
-  //      if(meirovitchFlag)
-  //          disp('Solving with Meirovitch approach ...');
-  //          [eigVec,eigVal] = eigSolveMeirovitch(M,C,K,flag);
-  //      else
-  //          disp('Solving with standard state space approach ...');
   if ((M->size[0] == 0) || (M->size[1] == 0)) {
     input_sizes_idx_1 = 0;
   } else {
@@ -98,9 +92,10 @@ void eigSolve(const emxArray_real_T *M, const emxArray_real_T *C, const
   emxInit_int8_T(&result, 2);
   emxInit_real_T(&varargin_2, 2);
 
-  //  eyelen = eye(len);
-  //  zeroslen = zeros(len);
-  // %% if(flag == 1)
+  //  sysMat = zeros(828,828);
+  //  sysMat(1:414,415:828) = eye(414);
+  //  sysMat(415:828,1:414) = -M\K;
+  //  sysMat(415:828,415:828) = -M\C;
   // constructs state space form (with mass matrix inverted)
   i = varargin_2->size[0] * varargin_2->size[1];
   varargin_2->size[0] = input_sizes_idx_1;
@@ -258,16 +253,6 @@ void eigSolve(const emxArray_real_T *M, const emxArray_real_T *C, const
   }
 
   emxInit_real_T(&A, 2);
-
-  // %% end
-  // %% if(flag == 2)
-  //  sysMat2 = [zeroslen, eyelen;      %construct state space form and lets eigs invert mass matrix 
-  //      -K, -C];
-  //  sysMat2 = sparse(sysMat2);
-  //  MMat2 = [eyelen,zeroslen;zeroslen,M];
-  //  MMat2 = sparse(MMat2);
-  // %% end
-  // %% if(flag==1)
   i = A->size[0] * A->size[1];
   A->size[0] = input_sizes_idx_0 + sizes_idx_1;
   A->size[1] = lastcol;
@@ -619,114 +604,12 @@ void eigSolve(const emxArray_real_T *M, const emxArray_real_T *C, const
   emxFree_real_T(&varargin_1);
   emxFree_real_T(&varargin_2);
 
-  // ,'vector');		  %full eigenvalue solve
-  //  [eigVec0,eigVal0] = eig(sysMat2,MMat2,'vector');		  %full eigenvalue solve 
-  //  [eigVec2,eigVal2] = polyeig(K,C,M);
-  //  [eigVal2,eigsortidx] = sort(eigVal2,'ComparisonMethod','abs');
-  //  eigVec2 = [eigVec2(:,eigsortidx);eigVec2(:,eigsortidx)];
-  //  eigVal2 = diag(eigVal2);
-  //  residual0 = sysMat*eigVec0 - eigVec0*diag(eigVal0);
-  //  residual0 = sysMat2*eigVec0 - MMat2*eigVec0*diag(eigVal0);
-  //  fprintf('%e\n',real(residual0(1)))
-  //  [sorted_eigVal,eigsortidx] = sort(eigVal0,'ComparisonMethod','abs');
-  //  eigVec = eigVec0(:,eigsortidx);
-  //  eigVal = diag(sorted_eigVal); % return to diag
-  //  residual = sysMat*eigVec - eigVec*eigVal;
-  //  output = max(max(real(residual)));
-  //  fprintf('%e\n',output)
-  // %% end
-  // %% if(flag==2)
-  //  [eigVec,eigVal] = eigs(sysMat2,MMat2,828,'SM');  %subest of modes for eigenvalue solve 
-  //  test = sysMat2*eigVec - MMat2*eigVec*eigVal;
-  //  output = max(max(real(test)));
-  //  fprintf('%e\n',output)
-  // %% end
+  // full eigenvalue solve.  Tried splitting the mass matrix out, was about equivalent in matlab, but nearly 2x the time in c++, also tried polyeig, also 2x the time.  EIGS not supported for C++ translation. 
   // %% if(flag==3)
   //      sysMat=inv(M)*K;                      %eigenvalue solve on spring mass system only 
   //      [eigVec,eigVal] = eig(sysMat);
   //      [eigVec] = sortEigOutput(diag(eigVal),eigVec,numModes); %eigenvalues/vectors sorted in ascending frequency before returning 
   // %% end
-  //  function [eigVec,eigVal] = eigSolveMeirovitch(M,C,K,flag)
-  //      	[len,dum] = size(M);
-  //
-  //      %Force symmetry and skewsymmetry
-  //      K=0.5*(K+K');
-  //      M=0.5*(M+M');
-  //      for i=1:len
-  //         for j=1:i
-  //             if(i~=j)
-  //             C(i,j) = -C(j,i);
-  //             end
-  //         end
-  //      end
-  //
-  //      Mstar = [M, zeros(len);
-  //               zeros(len), K];
-  //
-  //      Gstar = [C, K;-K,zeros(len)];
-  //
-  //      Rstar = chol(Mstar);
-  //      invRstar = inv(Rstar);
-  //
-  //      Kstar = Gstar'*(inv(Mstar))*Gstar;
-  //      Kstar = 0.5*(Kstar+Kstar');
-  //
-  //  % 	sysMat = [zeros(len), eye(len);
-  //  % 			  -(M^-1)*K, -(M^-1)*C];
-  //
-  //      sysMat = invRstar'*Kstar*invRstar;
-  //      %force symmetry of system matrix
-  //      sysMat = 0.5*(sysMat'+sysMat);
-  //
-  //      if(flag==1)
-  //          [eigVec,eigVal] = eig(sysMat);
-  //      end
-  //      if(flag==2)
-  //           sysMat=sparse(sysMat);
-  //          [eigVec,eigVal] = eigs(sysMat,20,'SM');
-  //      end
-  //
-  //
-  //      %sort and reconstruct typical vectors from meirovitch solve
-  //      [len,dum]=size(eigVal);
-  //      for i=1:len
-  //         valtemp(i)=eigVal(i,i);
-  //      end
-  //
-  //      [valtemp,map,posIndex] = bubbleSort(valtemp);
-  //
-  //      len = 20;
-  //      for i=1:len
-  //          vecNew(:,i)=eigVec(:,map(i));
-  //      end
-  //
-  //
-  //      for i=1:len
-  //  %         eigVec(:,i) = inv(Rstar)*eigVec(:,i);
-  //         vecNew(:,i) = invRstar*vecNew(:,i);
-  //      end
-  //
-  //      eigVec=vecNew;
-  //
-  //      for i=1:len
-  //      eigValNew(i,i)=valtemp(i);
-  //      end
-  //      eigVal = eigValNew;
-  //
-  //      for i=1:len/2
-  //          index1=(i-1)*2+1;
-  //          index2=(i-1)*2+2;
-  //
-  //          vec1 = eigVec(:,index1);
-  //          vec2 = eigVec(:,index2);
-  //
-  //          temp1 = vec1 + 1i.*vec2;
-  //          temp2 = vec1 - 1i.*vec2;
-  //
-  //          eigVec(:,index1) = temp1;
-  //          eigVec(:,index2) = temp2;
-  //      end
-  //  end
 }
 
 //

@@ -2,7 +2,7 @@
 // File: modalExecAuto.h
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 16-Apr-2020 09:21:06
+// C/C++ source code generated on  : 16-Apr-2020 10:41:25
 //
 #ifndef MODALEXECAUTO_H
 #define MODALEXECAUTO_H
@@ -21,8 +21,7 @@ extern void modalExecAuto(const char model_analysisType[2], const char
   *model_joint, const char model_outFilename_data[], const int
   model_outFilename_size[2], const emxArray_real_T *model_jointTransform, const
   emxArray_real_T *model_reducedDOFList, const h_struct_T mesh, const i_struct_T
-  el, const emxArray_real_T *displ, double freq_data[], int freq_size[2], double
-  damp_data[], int damp_size[2]);
+  el, const emxArray_real_T *displ, emxArray_real_T *freq, emxArray_real_T *damp);
 
 #endif
 

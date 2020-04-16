@@ -162,13 +162,13 @@ end
 
 %extract frequency, damping, mode shapes from eigenvalues and vectors
 [~,len] = size(eigVal);
-freq = zeros(len);
-damp = zeros(len);
+freq = zeros(1,len);
+damp = zeros(1,len);
 phase1 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
 phase2 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
 sortedModes0 = zeros(length(displ)/numDOFPerNode,numDOFPerNode,len);
 sortedModes = complex(sortedModes0,0);
-imagCompSign = zeros(len);
+imagCompSign = zeros(1,len);
 for i=1:len
     [freq(i),damp(i),phase1(:,:,i),phase2(:,:,i),sortedModes(:,:,i)] = extractFreqDamp(eigVal(i,i),eigVec(:,i),numDOFPerNode,model.jointTransform,model.reducedDOFList,model.BC,model.analysisType);
     imagCompSign(i) = sign(imag(eigVal(i,i)));

@@ -2,7 +2,7 @@
 // File: owens.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 16-Apr-2020 09:21:06
+// C/C++ source code generated on  : 16-Apr-2020 10:41:25
 //
 
 // Include Files
@@ -1110,6 +1110,7 @@ void c_owens(double freq_data[], int freq_size[2], double damp_data[], int
   t_struct_T c_expl_temp;
   h_struct_T d_expl_temp;
   i_struct_T e_expl_temp;
+  emxArray_real_T *damp;
 
   // input file initialization
   // anaysis type intialization
@@ -1567,7 +1568,6 @@ void c_owens(double freq_data[], int freq_size[2], double damp_data[], int
     c_expl_temp.reducedDOFList->data[i] = jnt_struct_reducedDOF->data[i];
   }
 
-  emxFree_real_T(&jnt_struct_reducedDOF);
   i = c_expl_temp.jointTransform->size[0] * c_expl_temp.jointTransform->size[1];
   c_expl_temp.jointTransform->size[0] = jnt_struct_jointTransform->size[0];
   c_expl_temp.jointTransform->size[1] = jnt_struct_jointTransform->size[1];
@@ -1736,17 +1736,34 @@ void c_owens(double freq_data[], int freq_size[2], double damp_data[], int
   }
 
   emxFree_struct_T(&el_props);
+  emxInit_real_T(&damp, 2);
   modalExecAuto(c_expl_temp.analysisType, c_expl_temp.nlParams.iterationType,
                 model_RayleighAlpha, model_RayleighBeta, bladeData_numBlades,
                 c_expl_temp.BC.pBC, c_expl_temp.BC.map, c_expl_temp.joint,
                 c_expl_temp.outFilename.data, c_expl_temp.outFilename.size,
                 c_expl_temp.jointTransform, c_expl_temp.reducedDOFList,
-                d_expl_temp, e_expl_temp, delimiter_idx, freq_data, freq_size,
-                damp_data, damp_size);
+                d_expl_temp, e_expl_temp, delimiter_idx, jnt_struct_reducedDOF,
+                damp);
+  freq_size[0] = 1;
+  freq_size[1] = jnt_struct_reducedDOF->size[1];
+  loop_ub = jnt_struct_reducedDOF->size[0] * jnt_struct_reducedDOF->size[1];
   emxFreeStruct_struct_T1(&e_expl_temp);
   emxFreeStruct_struct_T(&d_expl_temp);
   emxFreeStruct_struct_T7(&c_expl_temp);
   emxFree_real_T(&delimiter_idx);
+  for (i = 0; i < loop_ub; i++) {
+    freq_data[i] = jnt_struct_reducedDOF->data[i];
+  }
+
+  emxFree_real_T(&jnt_struct_reducedDOF);
+  damp_size[0] = 1;
+  damp_size[1] = damp->size[1];
+  loop_ub = damp->size[0] * damp->size[1];
+  for (i = 0; i < loop_ub; i++) {
+    damp_data[i] = damp->data[i];
+  }
+
+  emxFree_real_T(&damp);
 }
 
 //

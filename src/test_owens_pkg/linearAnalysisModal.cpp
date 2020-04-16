@@ -2,7 +2,7 @@
 // File: linearAnalysisModal.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 16-Apr-2020 09:21:06
+// C/C++ source code generated on  : 16-Apr-2020 10:41:25
 //
 
 // Include Files
@@ -138,10 +138,10 @@ void b_linearAnalysisModal(const char model_analysisType[2], boolean_T
   emxArray_creal_T *r4;
   emxArray_creal_T *b_eigVec;
   emxArray_real_T *b_freq;
-  emxArray_real_T *b_damp;
-  emxArray_real_T *b_imagCompSign;
   emxArray_char_T b_model_outFilename_data;
   signed char fileid;
+  emxArray_real_T *b_damp;
+  emxArray_real_T *b_imagCompSign;
   emxInit_real_T(&Kg, 2);
   tic();
 
@@ -311,29 +311,6 @@ void b_linearAnalysisModal(const char model_analysisType[2], boolean_T
   // model.numModesToExtract,solveFlag);
   // save eigVectors eigVec %save eigenvector for later use (if needed) TODO: Doesn't appear to be used 
   // extract frequency, damping, mode shapes from eigenvalues and vectors
-  i = freq->size[0] * freq->size[1];
-  freq->size[0] = eigVal->size[1];
-  freq->size[1] = eigVal->size[1];
-  emxEnsureCapacity_real_T(freq, i);
-  loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
-  emxFree_real_T(&b_r1);
-  emxFree_real_T(&b_r);
-  emxFree_real_T(&Cg);
-  emxFree_real_T(&Mg);
-  emxFree_real_T(&Kg);
-  for (i = 0; i < loop_ub_tmp; i++) {
-    freq->data[i] = 0.0;
-  }
-
-  i = damp->size[0] * damp->size[1];
-  damp->size[0] = eigVal->size[1];
-  damp->size[1] = eigVal->size[1];
-  emxEnsureCapacity_real_T(damp, i);
-  loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    damp->data[i] = 0.0;
-  }
-
   i = phase1->size[0] * phase1->size[1] * phase1->size[2];
   phase1->size[0] = static_cast<int>((static_cast<double>(displ->size[0]) / 6.0));
   phase1->size[1] = 6;
@@ -341,6 +318,11 @@ void b_linearAnalysisModal(const char model_analysisType[2], boolean_T
   emxEnsureCapacity_real_T(phase1, i);
   loop_ub_tmp = static_cast<int>((static_cast<double>(displ->size[0]) / 6.0)) *
     6 * eigVal->size[1];
+  emxFree_real_T(&b_r1);
+  emxFree_real_T(&b_r);
+  emxFree_real_T(&Cg);
+  emxFree_real_T(&Mg);
+  emxFree_real_T(&Kg);
   for (i = 0; i < loop_ub_tmp; i++) {
     phase1->data[i] = 0.0;
   }
@@ -356,16 +338,19 @@ void b_linearAnalysisModal(const char model_analysisType[2], boolean_T
     phase2->data[i] = 0.0;
   }
 
-  i = imagCompSign->size[0] * imagCompSign->size[1];
-  imagCompSign->size[0] = eigVal->size[1];
-  imagCompSign->size[1] = eigVal->size[1];
-  emxEnsureCapacity_real_T(imagCompSign, i);
-  loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    imagCompSign->data[i] = 0.0;
-  }
-
   i = eigVal->size[1];
+  i1 = freq->size[0] * freq->size[1];
+  freq->size[0] = 1;
+  freq->size[1] = eigVal->size[1];
+  emxEnsureCapacity_real_T(freq, i1);
+  i1 = damp->size[0] * damp->size[1];
+  damp->size[0] = 1;
+  damp->size[1] = eigVal->size[1];
+  emxEnsureCapacity_real_T(damp, i1);
+  i1 = imagCompSign->size[0] * imagCompSign->size[1];
+  imagCompSign->size[0] = 1;
+  imagCompSign->size[1] = eigVal->size[1];
+  emxEnsureCapacity_real_T(imagCompSign, i1);
   emxInit_real_T(&b_r2, 2);
   emxInit_real_T(&r3, 2);
   emxInit_creal_T(&r4, 2);
@@ -424,47 +409,47 @@ void b_linearAnalysisModal(const char model_analysisType[2], boolean_T
   //  disp(t_modal);
   if (!n_strcmp(model_analysisType)) {
     emxInit_real_T(&b_freq, 2);
-    emxInit_real_T(&b_damp, 2);
-    emxInit_real_T(&b_imagCompSign, 2);
     b_model_outFilename_data.data = const_cast<char *>(&model_outFilename_data[0]);
     b_model_outFilename_data.size = const_cast<int *>(&model_outFilename_size[0]);
     b_model_outFilename_data.allocatedSize = -1;
     b_model_outFilename_data.numDimensions = 2;
     b_model_outFilename_data.canFreeData = false;
     fileid = c_cfopen(&b_model_outFilename_data, "wb");
-    writeOutput(freq, damp, phase1, phase2, imagCompSign, static_cast<double>
-                (fileid), b_freq, b_damp, b_imagCompSign);
-    i = freq->size[0] * freq->size[1];
-    freq->size[0] = 1;
-    freq->size[1] = b_freq->size[1];
-    emxEnsureCapacity_real_T(freq, i);
-    loop_ub_tmp = b_freq->size[0] * b_freq->size[1];
-    for (i = 0; i < loop_ub_tmp; i++) {
-      freq->data[i] = b_freq->data[i];
+    i = b_freq->size[0] * b_freq->size[1];
+    b_freq->size[0] = 1;
+    b_freq->size[1] = freq->size[1];
+    emxEnsureCapacity_real_T(b_freq, i);
+    loop_ub_tmp = freq->size[0] * freq->size[1] - 1;
+    for (i = 0; i <= loop_ub_tmp; i++) {
+      b_freq->data[i] = freq->data[i];
     }
 
-    emxFree_real_T(&b_freq);
-    i = damp->size[0] * damp->size[1];
-    damp->size[0] = 1;
-    damp->size[1] = b_damp->size[1];
-    emxEnsureCapacity_real_T(damp, i);
-    loop_ub_tmp = b_damp->size[0] * b_damp->size[1];
-    for (i = 0; i < loop_ub_tmp; i++) {
-      damp->data[i] = b_damp->data[i];
+    emxInit_real_T(&b_damp, 2);
+    i = b_damp->size[0] * b_damp->size[1];
+    b_damp->size[0] = 1;
+    b_damp->size[1] = damp->size[1];
+    emxEnsureCapacity_real_T(b_damp, i);
+    loop_ub_tmp = damp->size[0] * damp->size[1] - 1;
+    for (i = 0; i <= loop_ub_tmp; i++) {
+      b_damp->data[i] = damp->data[i];
     }
 
-    emxFree_real_T(&b_damp);
-    i = imagCompSign->size[0] * imagCompSign->size[1];
-    imagCompSign->size[0] = 1;
-    imagCompSign->size[1] = b_imagCompSign->size[1];
-    emxEnsureCapacity_real_T(imagCompSign, i);
-    loop_ub_tmp = b_imagCompSign->size[0] * b_imagCompSign->size[1];
-    for (i = 0; i < loop_ub_tmp; i++) {
-      imagCompSign->data[i] = b_imagCompSign->data[i];
+    emxInit_real_T(&b_imagCompSign, 2);
+    i = b_imagCompSign->size[0] * b_imagCompSign->size[1];
+    b_imagCompSign->size[0] = 1;
+    b_imagCompSign->size[1] = imagCompSign->size[1];
+    emxEnsureCapacity_real_T(b_imagCompSign, i);
+    loop_ub_tmp = imagCompSign->size[0] * imagCompSign->size[1] - 1;
+    for (i = 0; i <= loop_ub_tmp; i++) {
+      b_imagCompSign->data[i] = imagCompSign->data[i];
     }
 
-    emxFree_real_T(&b_imagCompSign);
+    writeOutput(b_freq, b_damp, phase1, phase2, b_imagCompSign, static_cast<
+                double>(fileid), freq, damp, imagCompSign);
     cfclose(static_cast<double>(fileid));
+    emxFree_real_T(&b_imagCompSign);
+    emxFree_real_T(&b_damp);
+    emxFree_real_T(&b_freq);
   }
 }
 
@@ -575,10 +560,10 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   emxArray_creal_T *r4;
   emxArray_creal_T *b_eigVec;
   emxArray_real_T *b_freq;
-  emxArray_real_T *b_damp;
-  emxArray_real_T *b_imagCompSign;
   emxArray_char_T b_model_outFilename_data;
   signed char fileid;
+  emxArray_real_T *b_damp;
+  emxArray_real_T *b_imagCompSign;
   emxInit_real_T(&Kg, 2);
   tic();
 
@@ -736,29 +721,6 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   // model.numModesToExtract,solveFlag);
   // save eigVectors eigVec %save eigenvector for later use (if needed) TODO: Doesn't appear to be used 
   // extract frequency, damping, mode shapes from eigenvalues and vectors
-  i = freq->size[0] * freq->size[1];
-  freq->size[0] = eigVal->size[1];
-  freq->size[1] = eigVal->size[1];
-  emxEnsureCapacity_real_T(freq, i);
-  loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
-  emxFree_real_T(&b_r1);
-  emxFree_real_T(&b_r);
-  emxFree_real_T(&Cg);
-  emxFree_real_T(&Mg);
-  emxFree_real_T(&Kg);
-  for (i = 0; i < loop_ub_tmp; i++) {
-    freq->data[i] = 0.0;
-  }
-
-  i = damp->size[0] * damp->size[1];
-  damp->size[0] = eigVal->size[1];
-  damp->size[1] = eigVal->size[1];
-  emxEnsureCapacity_real_T(damp, i);
-  loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    damp->data[i] = 0.0;
-  }
-
   i = phase1->size[0] * phase1->size[1] * phase1->size[2];
   phase1->size[0] = static_cast<int>((static_cast<double>(displ->size[0]) / 6.0));
   phase1->size[1] = 6;
@@ -766,6 +728,11 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   emxEnsureCapacity_real_T(phase1, i);
   loop_ub_tmp = static_cast<int>((static_cast<double>(displ->size[0]) / 6.0)) *
     6 * eigVal->size[1];
+  emxFree_real_T(&b_r1);
+  emxFree_real_T(&b_r);
+  emxFree_real_T(&Cg);
+  emxFree_real_T(&Mg);
+  emxFree_real_T(&Kg);
   for (i = 0; i < loop_ub_tmp; i++) {
     phase1->data[i] = 0.0;
   }
@@ -781,16 +748,19 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
     phase2->data[i] = 0.0;
   }
 
-  i = imagCompSign->size[0] * imagCompSign->size[1];
-  imagCompSign->size[0] = eigVal->size[1];
-  imagCompSign->size[1] = eigVal->size[1];
-  emxEnsureCapacity_real_T(imagCompSign, i);
-  loop_ub_tmp = eigVal->size[1] * eigVal->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    imagCompSign->data[i] = 0.0;
-  }
-
   i = eigVal->size[1];
+  i1 = freq->size[0] * freq->size[1];
+  freq->size[0] = 1;
+  freq->size[1] = eigVal->size[1];
+  emxEnsureCapacity_real_T(freq, i1);
+  i1 = damp->size[0] * damp->size[1];
+  damp->size[0] = 1;
+  damp->size[1] = eigVal->size[1];
+  emxEnsureCapacity_real_T(damp, i1);
+  i1 = imagCompSign->size[0] * imagCompSign->size[1];
+  imagCompSign->size[0] = 1;
+  imagCompSign->size[1] = eigVal->size[1];
+  emxEnsureCapacity_real_T(imagCompSign, i1);
   emxInit_real_T(&b_r2, 2);
   emxInit_real_T(&r3, 2);
   emxInit_creal_T(&r4, 2);
@@ -843,8 +813,6 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   emxFree_creal_T(&eigVal);
   emxFree_creal_T(&eigVec);
   emxInit_real_T(&b_freq, 2);
-  emxInit_real_T(&b_damp, 2);
-  emxInit_real_T(&b_imagCompSign, 2);
 
   //  %write output
   //  t_modal = toc;
@@ -856,39 +824,41 @@ void linearAnalysisModal(double model_RayleighAlpha, double model_RayleighBeta,
   b_model_outFilename_data.numDimensions = 2;
   b_model_outFilename_data.canFreeData = false;
   fileid = c_cfopen(&b_model_outFilename_data, "wb");
-  writeOutput(freq, damp, phase1, phase2, imagCompSign, static_cast<double>
-              (fileid), b_freq, b_damp, b_imagCompSign);
-  i = freq->size[0] * freq->size[1];
-  freq->size[0] = 1;
-  freq->size[1] = b_freq->size[1];
-  emxEnsureCapacity_real_T(freq, i);
-  loop_ub_tmp = b_freq->size[0] * b_freq->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    freq->data[i] = b_freq->data[i];
+  i = b_freq->size[0] * b_freq->size[1];
+  b_freq->size[0] = 1;
+  b_freq->size[1] = freq->size[1];
+  emxEnsureCapacity_real_T(b_freq, i);
+  loop_ub_tmp = freq->size[0] * freq->size[1] - 1;
+  for (i = 0; i <= loop_ub_tmp; i++) {
+    b_freq->data[i] = freq->data[i];
   }
 
-  emxFree_real_T(&b_freq);
-  i = damp->size[0] * damp->size[1];
-  damp->size[0] = 1;
-  damp->size[1] = b_damp->size[1];
-  emxEnsureCapacity_real_T(damp, i);
-  loop_ub_tmp = b_damp->size[0] * b_damp->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    damp->data[i] = b_damp->data[i];
+  emxInit_real_T(&b_damp, 2);
+  i = b_damp->size[0] * b_damp->size[1];
+  b_damp->size[0] = 1;
+  b_damp->size[1] = damp->size[1];
+  emxEnsureCapacity_real_T(b_damp, i);
+  loop_ub_tmp = damp->size[0] * damp->size[1] - 1;
+  for (i = 0; i <= loop_ub_tmp; i++) {
+    b_damp->data[i] = damp->data[i];
   }
 
-  emxFree_real_T(&b_damp);
-  i = imagCompSign->size[0] * imagCompSign->size[1];
-  imagCompSign->size[0] = 1;
-  imagCompSign->size[1] = b_imagCompSign->size[1];
-  emxEnsureCapacity_real_T(imagCompSign, i);
-  loop_ub_tmp = b_imagCompSign->size[0] * b_imagCompSign->size[1];
-  for (i = 0; i < loop_ub_tmp; i++) {
-    imagCompSign->data[i] = b_imagCompSign->data[i];
+  emxInit_real_T(&b_imagCompSign, 2);
+  i = b_imagCompSign->size[0] * b_imagCompSign->size[1];
+  b_imagCompSign->size[0] = 1;
+  b_imagCompSign->size[1] = imagCompSign->size[1];
+  emxEnsureCapacity_real_T(b_imagCompSign, i);
+  loop_ub_tmp = imagCompSign->size[0] * imagCompSign->size[1] - 1;
+  for (i = 0; i <= loop_ub_tmp; i++) {
+    b_imagCompSign->data[i] = imagCompSign->data[i];
   }
 
-  emxFree_real_T(&b_imagCompSign);
+  writeOutput(b_freq, b_damp, phase1, phase2, b_imagCompSign, static_cast<double>
+              (fileid), freq, damp, imagCompSign);
   cfclose(static_cast<double>(fileid));
+  emxFree_real_T(&b_imagCompSign);
+  emxFree_real_T(&b_damp);
+  emxFree_real_T(&b_freq);
 }
 
 //

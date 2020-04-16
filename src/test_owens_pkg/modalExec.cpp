@@ -2,7 +2,7 @@
 // File: modalExec.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 16-Apr-2020 09:21:06
+// C/C++ source code generated on  : 16-Apr-2020 10:41:25
 //
 
 // Include Files
@@ -81,10 +81,8 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
   int i;
   emxArray_real_T *unusedU1;
   emxArray_real_T *unusedU2;
-  emxArray_real_T *b_freq;
-  double elInput_xloc[2];
-  emxArray_real_T *b_damp;
   emxArray_real_T *unusedU3;
+  double elInput_xloc[2];
   double elInput_sectionProps_twist[2];
   double elInput_sectionProps_rhoA[2];
   double elInput_sectionProps_EIyy[2];
@@ -213,8 +211,6 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
 
   emxInit_real_T(&unusedU1, 3);
   emxInit_real_T(&unusedU2, 3);
-  emxInit_real_T(&b_freq, 2);
-  emxInit_real_T(&b_damp, 2);
   emxInit_real_T(&unusedU3, 2);
 
   // performs initial element calculations
@@ -225,33 +221,13 @@ void modalExec(double model_RayleighAlpha, double model_RayleighBeta, double
                       model_outFilename_data, model_outFilename_size,
                       model_jointTransform, model_reducedDOFList, mesh_numEl,
                       mesh_x, mesh_y, mesh_z, mesh_conn, el, displ, elStorage,
-                      b_freq, b_damp, unusedU1, unusedU2, unusedU3);
-  idx = freq->size[0] * freq->size[1];
-  freq->size[0] = b_freq->size[0];
-  freq->size[1] = b_freq->size[1];
-  emxEnsureCapacity_real_T(freq, idx);
-  loop_ub = b_freq->size[0] * b_freq->size[1];
+                      freq, damp, unusedU1, unusedU2, unusedU3);
+
+  // performs modal analysis
   emxFree_real_T(&unusedU3);
   emxFree_real_T(&unusedU2);
   emxFree_real_T(&unusedU1);
   emxFree_struct_T2(&elStorage);
-  for (idx = 0; idx < loop_ub; idx++) {
-    freq->data[idx] = b_freq->data[idx];
-  }
-
-  emxFree_real_T(&b_freq);
-  idx = damp->size[0] * damp->size[1];
-  damp->size[0] = b_damp->size[0];
-  damp->size[1] = b_damp->size[1];
-  emxEnsureCapacity_real_T(damp, idx);
-  loop_ub = b_damp->size[0] * b_damp->size[1];
-  for (idx = 0; idx < loop_ub; idx++) {
-    damp->data[idx] = b_damp->data[idx];
-  }
-
-  emxFree_real_T(&b_damp);
-
-  // performs modal analysis
 }
 
 //

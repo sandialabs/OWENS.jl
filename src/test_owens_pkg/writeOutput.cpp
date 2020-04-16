@@ -2,7 +2,7 @@
 // File: writeOutput.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 16-Apr-2020 09:21:06
+// C/C++ source code generated on  : 16-Apr-2020 10:41:25
 //
 
 // Include Files
@@ -59,26 +59,18 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
                  *imagCompSignSorted)
 {
   emxArray_real_T *b_freq;
-  int u0;
+  int l;
+  int i;
   int loop_ub;
-  int u1;
   boolean_T swapped;
   emxArray_real_T *map;
+  int b_i;
   double b_index;
+  double d;
   FILE * b_NULL;
-  FILE * c_NULL;
-  FILE * d_NULL;
-  FILE * e_NULL;
-  FILE * f_NULL;
   FILE * filestar;
-  int i;
-  FILE * g_NULL;
-  FILE * h_NULL;
-  FILE * i_NULL;
-  int i1;
-  int b_u1;
-  FILE * j_NULL;
   emxInit_real_T(&b_freq, 2);
+  l = phase1->size[0] - 1;
 
   // gets number of nodes for mode shape printing
   // bubbleSort Sorts the vector A in ascending order
@@ -100,52 +92,45 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
   //       A        = sorted vector
   //       origMap  = map of sorted vector to original ordering
   //       posIndex = index at which positive value first occurs
-  u0 = b_freq->size[0] * b_freq->size[1];
-  b_freq->size[0] = freq->size[0];
+  i = b_freq->size[0] * b_freq->size[1];
+  b_freq->size[0] = 1;
   b_freq->size[1] = freq->size[1];
-  emxEnsureCapacity_real_T(b_freq, u0);
+  emxEnsureCapacity_real_T(b_freq, i);
   loop_ub = freq->size[0] * freq->size[1];
-  for (u0 = 0; u0 < loop_ub; u0++) {
-    b_freq->data[u0] = freq->data[u0];
-  }
-
-  if ((freq->size[0] == 0) || (freq->size[1] == 0)) {
-    u1 = 0;
-  } else {
-    u0 = freq->size[0];
-    u1 = freq->size[1];
-    if (u0 > u1) {
-      u1 = u0;
-    }
+  for (i = 0; i < loop_ub; i++) {
+    b_freq->data[i] = freq->data[i];
   }
 
   swapped = true;
   emxInit_real_T(&map, 2);
-  if (u1 < 1) {
+  if (freq->size[1] < 1) {
     map->size[0] = 1;
     map->size[1] = 0;
   } else {
-    u0 = map->size[0] * map->size[1];
+    i = map->size[0] * map->size[1];
     map->size[0] = 1;
-    loop_ub = u1 - 1;
-    map->size[1] = loop_ub + 1;
-    emxEnsureCapacity_real_T(map, u0);
-    for (u0 = 0; u0 <= loop_ub; u0++) {
-      map->data[u0] = static_cast<double>(u0) + 1.0;
+    map->size[1] = static_cast<int>((static_cast<double>(freq->size[1]) - 1.0))
+      + 1;
+    emxEnsureCapacity_real_T(map, i);
+    loop_ub = static_cast<int>((static_cast<double>(freq->size[1]) - 1.0));
+    for (i = 0; i <= loop_ub; i++) {
+      map->data[i] = static_cast<double>(i) + 1.0;
     }
   }
 
   while (swapped) {
     swapped = false;
-    for (loop_ub = 0; loop_ub <= u1 - 2; loop_ub++) {
-      if (b_freq->data[loop_ub + 1] < b_freq->data[loop_ub]) {
-        b_index = b_freq->data[loop_ub];
-        b_freq->data[loop_ub] = b_freq->data[loop_ub + 1];
-        b_freq->data[loop_ub + 1] = b_index;
+    i = freq->size[1];
+    for (b_i = 0; b_i <= i - 2; b_i++) {
+      b_index = b_freq->data[b_i];
+      d = b_freq->data[b_i + 1];
+      if (d < b_index) {
+        b_freq->data[b_i] = d;
+        b_freq->data[b_i + 1] = b_index;
         swapped = true;
-        b_index = map->data[loop_ub];
-        map->data[loop_ub] = map->data[loop_ub + 1];
-        map->data[loop_ub + 1] = b_index;
+        b_index = map->data[b_i];
+        map->data[b_i] = map->data[b_i + 1];
+        map->data[b_i + 1] = b_index;
       }
     }
   }
@@ -153,95 +138,38 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
   //      posIndex = length(A)/2+1;
   //      [posIndex] = findPositiveCrossOver(A);
   // sorts frequency
-  if ((b_freq->size[0] == 0) || (b_freq->size[1] == 0)) {
-    u1 = 0;
-  } else {
-    u0 = b_freq->size[0];
-    u1 = b_freq->size[1];
-    if (u0 > u1) {
-      u1 = u0;
-    }
-  }
-
-  u0 = dampSorted->size[0] * dampSorted->size[1];
+  i = dampSorted->size[0] * dampSorted->size[1];
   dampSorted->size[0] = 1;
-  dampSorted->size[1] = u1;
-  emxEnsureCapacity_real_T(dampSorted, u0);
-  for (u0 = 0; u0 < u1; u0++) {
-    dampSorted->data[u0] = 0.0;
+  dampSorted->size[1] = b_freq->size[1];
+  emxEnsureCapacity_real_T(dampSorted, i);
+  loop_ub = b_freq->size[1];
+  for (i = 0; i < loop_ub; i++) {
+    dampSorted->data[i] = 0.0;
   }
 
-  if ((b_freq->size[0] == 0) || (b_freq->size[1] == 0)) {
-    u1 = 0;
-  } else {
-    u0 = b_freq->size[0];
-    u1 = b_freq->size[1];
-    if (u0 > u1) {
-      u1 = u0;
-    }
-  }
-
-  u0 = freqSorted->size[0] * freqSorted->size[1];
+  i = freqSorted->size[0] * freqSorted->size[1];
   freqSorted->size[0] = 1;
-  freqSorted->size[1] = u1;
-  emxEnsureCapacity_real_T(freqSorted, u0);
-  for (u0 = 0; u0 < u1; u0++) {
-    freqSorted->data[u0] = 0.0;
+  freqSorted->size[1] = b_freq->size[1];
+  emxEnsureCapacity_real_T(freqSorted, i);
+  loop_ub = b_freq->size[1];
+  for (i = 0; i < loop_ub; i++) {
+    freqSorted->data[i] = 0.0;
   }
 
-  if ((b_freq->size[0] == 0) || (b_freq->size[1] == 0)) {
-    u1 = 0;
-  } else {
-    u0 = b_freq->size[0];
-    u1 = b_freq->size[1];
-    if (u0 > u1) {
-      u1 = u0;
-    }
-  }
-
-  u0 = imagCompSignSorted->size[0] * imagCompSignSorted->size[1];
+  i = imagCompSignSorted->size[0] * imagCompSignSorted->size[1];
   imagCompSignSorted->size[0] = 1;
-  imagCompSignSorted->size[1] = u1;
-  emxEnsureCapacity_real_T(imagCompSignSorted, u0);
-  for (u0 = 0; u0 < u1; u0++) {
-    imagCompSignSorted->data[u0] = 0.0;
+  imagCompSignSorted->size[1] = b_freq->size[1];
+  emxEnsureCapacity_real_T(imagCompSignSorted, i);
+  loop_ub = b_freq->size[1];
+  for (i = 0; i < loop_ub; i++) {
+    imagCompSignSorted->data[i] = 0.0;
   }
 
   b_index = 1.0;
-  if ((b_freq->size[0] == 0) || (b_freq->size[1] == 0)) {
-    u1 = 0;
-  } else {
-    u0 = b_freq->size[0];
-    u1 = b_freq->size[1];
-    if (u0 > u1) {
-      u1 = u0;
-    }
-  }
-
-  if (0 <= u1 - 1) {
-    b_NULL = NULL;
-    c_NULL = NULL;
-    d_NULL = NULL;
-    e_NULL = NULL;
-    f_NULL = NULL;
-    i = phase1->size[0] - 1;
-    g_NULL = NULL;
-    h_NULL = NULL;
-    i_NULL = NULL;
-    i1 = phase1->size[0] - 1;
-    if ((b_freq->size[0] == 0) || (b_freq->size[1] == 0)) {
-      b_u1 = 0;
-    } else {
-      u0 = b_freq->size[0];
-      b_u1 = b_freq->size[1];
-      if (u0 > b_u1) {
-        b_u1 = u0;
-      }
-    }
-  }
-
-  for (loop_ub = 0; loop_ub < u1; loop_ub++) {
+  i = b_freq->size[1];
+  for (b_i = 0; b_i < i; b_i++) {
     // prints mode frequency, damping and in/out of phase mode shapes
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
     if (!(filestar == b_NULL)) {
       fprintf(filestar, "MODE # %0.0f \n\n", b_index);
@@ -250,33 +178,37 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == c_NULL)) {
-      fprintf(filestar, "Frequency: %e: \n", b_freq->data[loop_ub]);
+    if (!(filestar == b_NULL)) {
+      fprintf(filestar, "Frequency: %e: \n", b_freq->data[b_i]);
       if (swapped) {
         fflush(filestar);
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == d_NULL)) {
+    if (!(filestar == b_NULL)) {
       fprintf(filestar, "Damping %e: \n", damp->data[static_cast<int>(map->
-               data[loop_ub]) - 1]);
+               data[b_i]) - 1]);
       if (swapped) {
         fflush(filestar);
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == e_NULL)) {
+    if (!(filestar == b_NULL)) {
       fprintf(filestar, "0 deg Mode Shape:\n");
       if (swapped) {
         fflush(filestar);
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == f_NULL)) {
+    if (!(filestar == b_NULL)) {
       fprintf(filestar,
               "U_x          U_y          U_z          theta_x     theta_y     theta_z \n");
       if (swapped) {
@@ -284,34 +216,34 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
       }
     }
 
-    u0 = static_cast<int>(map->data[loop_ub]) - 1;
-    dampSorted->data[loop_ub] = damp->data[u0];
-    freqSorted->data[loop_ub] = b_freq->data[loop_ub];
-    imagCompSignSorted->data[loop_ub] = imagComponentSign->data[u0];
-    for (u0 = 0; u0 <= i; u0++) {
-      j_NULL = NULL;
+    loop_ub = static_cast<int>(map->data[b_i]) - 1;
+    dampSorted->data[b_i] = damp->data[loop_ub];
+    freqSorted->data[b_i] = b_freq->data[b_i];
+    imagCompSignSorted->data[b_i] = imagComponentSign->data[loop_ub];
+    for (loop_ub = 0; loop_ub <= l; loop_ub++) {
+      b_NULL = NULL;
       getfilestar(fid, &filestar, &swapped);
-      if (!(filestar == j_NULL)) {
+      if (!(filestar == b_NULL)) {
         fprintf(filestar, "%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",
-                phase1->data[u0 + phase1->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase1->data[(u0 + phase1->size[0])
-                + phase1->size[0] * 6 * (static_cast<int>(map->data[loop_ub]) -
-                 1)], phase1->data[(u0 + phase1->size[0] * 2) + phase1->size[0] *
-                6 * (static_cast<int>(map->data[loop_ub]) - 1)], phase1->data
-                [(u0 + phase1->size[0] * 3) + phase1->size[0] * 6 * (
-                 static_cast<int>(map->data[loop_ub]) - 1)], phase1->data[(u0 +
+                phase1->data[loop_ub + phase1->size[0] * 6 * (static_cast<int>
+                 (map->data[b_i]) - 1)], phase1->data[(loop_ub + phase1->size[0])
+                + phase1->size[0] * 6 * (static_cast<int>(map->data[b_i]) - 1)],
+                phase1->data[(loop_ub + phase1->size[0] * 2) + phase1->size[0] *
+                6 * (static_cast<int>(map->data[b_i]) - 1)], phase1->data
+                [(loop_ub + phase1->size[0] * 3) + phase1->size[0] * 6 * (
+                 static_cast<int>(map->data[b_i]) - 1)], phase1->data[(loop_ub +
                  phase1->size[0] * 4) + phase1->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase1->data[(u0 + phase1->size[0] *
-                 5) + phase1->size[0] * 6 * (static_cast<int>(map->data[loop_ub])
+                 (map->data[b_i]) - 1)], phase1->data[(loop_ub + phase1->size[0]
+                 * 5) + phase1->size[0] * 6 * (static_cast<int>(map->data[b_i])
                  - 1)]);
         if (swapped) {
           fflush(filestar);
         }
       }
 
-      j_NULL = NULL;
+      b_NULL = NULL;
       getfilestar(fid, &filestar, &swapped);
-      if (!(filestar == j_NULL)) {
+      if (!(filestar == b_NULL)) {
         fprintf(filestar, "\n");
         if (swapped) {
           fflush(filestar);
@@ -319,24 +251,27 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == g_NULL)) {
+    if (!(filestar == b_NULL)) {
       fprintf(filestar, "\n");
       if (swapped) {
         fflush(filestar);
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == h_NULL)) {
+    if (!(filestar == b_NULL)) {
       fprintf(filestar, "90 deg Mode Shape:\n");
       if (swapped) {
         fflush(filestar);
       }
     }
 
+    b_NULL = NULL;
     getfilestar(fid, &filestar, &swapped);
-    if (!(filestar == i_NULL)) {
+    if (!(filestar == b_NULL)) {
       fprintf(filestar,
               "U_x          U_y          U_z          theta_x     theta_y     theta_z \n");
       if (swapped) {
@@ -344,30 +279,30 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
       }
     }
 
-    for (u0 = 0; u0 <= i1; u0++) {
-      j_NULL = NULL;
+    for (loop_ub = 0; loop_ub <= l; loop_ub++) {
+      b_NULL = NULL;
       getfilestar(fid, &filestar, &swapped);
-      if (!(filestar == j_NULL)) {
+      if (!(filestar == b_NULL)) {
         fprintf(filestar, "%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",
-                phase2->data[u0 + phase2->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase2->data[(u0 + phase2->size[0])
-                + phase2->size[0] * 6 * (static_cast<int>(map->data[loop_ub]) -
-                 1)], phase2->data[(u0 + phase2->size[0] * 2) + phase2->size[0] *
-                6 * (static_cast<int>(map->data[loop_ub]) - 1)], phase2->data
-                [(u0 + phase2->size[0] * 3) + phase2->size[0] * 6 * (
-                 static_cast<int>(map->data[loop_ub]) - 1)], phase2->data[(u0 +
+                phase2->data[loop_ub + phase2->size[0] * 6 * (static_cast<int>
+                 (map->data[b_i]) - 1)], phase2->data[(loop_ub + phase2->size[0])
+                + phase2->size[0] * 6 * (static_cast<int>(map->data[b_i]) - 1)],
+                phase2->data[(loop_ub + phase2->size[0] * 2) + phase2->size[0] *
+                6 * (static_cast<int>(map->data[b_i]) - 1)], phase2->data
+                [(loop_ub + phase2->size[0] * 3) + phase2->size[0] * 6 * (
+                 static_cast<int>(map->data[b_i]) - 1)], phase2->data[(loop_ub +
                  phase2->size[0] * 4) + phase2->size[0] * 6 * (static_cast<int>
-                 (map->data[loop_ub]) - 1)], phase2->data[(u0 + phase2->size[0] *
-                 5) + phase2->size[0] * 6 * (static_cast<int>(map->data[loop_ub])
+                 (map->data[b_i]) - 1)], phase2->data[(loop_ub + phase2->size[0]
+                 * 5) + phase2->size[0] * 6 * (static_cast<int>(map->data[b_i])
                  - 1)]);
         if (swapped) {
           fflush(filestar);
         }
       }
 
-      j_NULL = NULL;
+      b_NULL = NULL;
       getfilestar(fid, &filestar, &swapped);
-      if (!(filestar == j_NULL)) {
+      if (!(filestar == b_NULL)) {
         fprintf(filestar, "\n");
         if (swapped) {
           fflush(filestar);
@@ -375,10 +310,10 @@ void writeOutput(const emxArray_real_T *freq, const emxArray_real_T *damp, const
       }
     }
 
-    if (loop_ub + 1 < b_u1) {
-      j_NULL = NULL;
+    if (b_i + 1 < b_freq->size[1]) {
+      b_NULL = NULL;
       getfilestar(fid, &filestar, &swapped);
-      if (!(filestar == j_NULL)) {
+      if (!(filestar == b_NULL)) {
         fprintf(filestar, "\n\n");
         if (swapped) {
           fflush(filestar);
