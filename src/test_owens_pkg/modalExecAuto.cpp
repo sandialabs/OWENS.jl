@@ -1,14 +1,13 @@
 //
-// Trial License - for use to evaluate programs for possible purchase as
-// an end-user only.
 // File: modalExecAuto.cpp
 //
 // MATLAB Coder version            : 4.3
-// C/C++ source code generated on  : 13-Apr-2020 09:25:21
+// C/C++ source code generated on  : 15-Apr-2020 13:31:03
 //
 
 // Include Files
 #include "modalExecAuto.h"
+#include "fileManager.h"
 #include "fminbnd.h"
 #include "initialElementCalculations.h"
 #include "linearAnalysisModal.h"
@@ -16,6 +15,7 @@
 #include "staticAnalysis.h"
 #include "test_owens.h"
 #include "test_owens_emxutil.h"
+#include <cstring>
 #include <stdio.h>
 #include <string.h>
 
@@ -90,11 +90,20 @@ void modalExecAuto(const char model_analysisType[2], const char
   emxArray_real_T *unusedU3;
   emxArray_real_T *unusedU4;
   emxArray_real_T *unusedU7;
+  int b_model_outFilename_size[2];
+  char b_model_outFilename_data[84];
   double model_guessFreq;
   double fval;
   double exitflag;
   double expl_temp;
   double b_expl_temp;
+  emxArray_char_T c_model_outFilename_data;
+  static const char b_cv[12] = { '_', 'F', 'L', 'U', 'T', 'T', 'E', 'R', '.',
+    'o', 'u', 't' };
+
+  signed char fileid;
+  FILE * b_NULL;
+  FILE * filestar;
   emxInit_struct_T2(&elStorage, 2);
   emxInit_real_T(&b_displ, 1);
   initialElementCalculations(model_joint, el.props, el.elLen, el.psi, el.theta,
@@ -251,6 +260,63 @@ void modalExecAuto(const char model_analysisType[2], const char
   emxFree_struct_T2(&elStorage);
 
   //  save flutterRun freq damp omegaArray %save frequency, damping, and rotor speed array to .mat file 
+  if (1 > model_outFilename_size[1] - 4) {
+    loop_ub = 0;
+  } else {
+    loop_ub = model_outFilename_size[1] - 4;
+  }
+
+  b_model_outFilename_size[0] = 1;
+  b_model_outFilename_size[1] = loop_ub + 12;
+  if (0 <= loop_ub - 1) {
+    std::memcpy(&b_model_outFilename_data[0], &model_outFilename_data[0],
+                loop_ub * sizeof(char));
+  }
+
+  for (i = 0; i < 12; i++) {
+    b_model_outFilename_data[i + loop_ub] = b_cv[i];
+  }
+
+  c_model_outFilename_data.data = &b_model_outFilename_data[0];
+  c_model_outFilename_data.size = &b_model_outFilename_size[0];
+  c_model_outFilename_data.allocatedSize = 84;
+  c_model_outFilename_data.numDimensions = 2;
+  c_model_outFilename_data.canFreeData = false;
+  fileid = c_cfopen(&c_model_outFilename_data, "wb");
+  b_NULL = NULL;
+  getfilestar(static_cast<double>(fileid), &filestar, &staticAnalysisSuccessful);
+  if (!(filestar == b_NULL)) {
+    fprintf(filestar, "%e,%e\n", 0.0, 0.0);
+    if (staticAnalysisSuccessful) {
+      fflush(filestar);
+    }
+  }
+
+  getfilestar(static_cast<double>(fileid), &filestar, &staticAnalysisSuccessful);
+  if (!(filestar == b_NULL)) {
+    fprintf(filestar, "%e,%e\n", freq_data[1], damp_data[1]);
+    if (staticAnalysisSuccessful) {
+      fflush(filestar);
+    }
+  }
+
+  getfilestar(static_cast<double>(fileid), &filestar, &staticAnalysisSuccessful);
+  if (!(filestar == b_NULL)) {
+    fprintf(filestar, "%e,%e\n", 0.0, 0.0);
+    if (staticAnalysisSuccessful) {
+      fflush(filestar);
+    }
+  }
+
+  getfilestar(static_cast<double>(fileid), &filestar, &staticAnalysisSuccessful);
+  if (!(filestar == b_NULL)) {
+    fprintf(filestar, "%e,%e\n", freq_data[3], damp_data[3]);
+    if (staticAnalysisSuccessful) {
+      fflush(filestar);
+    }
+  }
+
+  cfclose(static_cast<double>(fileid));
 }
 
 //

@@ -53,6 +53,12 @@ sysMat = [zeros(len), eye(len);   %constructs state space form (with mass matrix
 [eigVec,eigVal] = eig(sysMat);%,'vector');		  %full eigenvalue solve
 % [eigVec0,eigVal0] = eig(sysMat2,MMat2,'vector');		  %full eigenvalue solve
 
+[eigVec2,eigVal2] = polyeig(K,C,M);
+[eigVal2,eigsortidx] = sort(eigVal2,'ComparisonMethod','abs');
+eigVec2 = [eigVec2(:,eigsortidx);eigVec2(:,eigsortidx)];
+eigVal2 = diag(eigVal2);
+
+
 % residual0 = sysMat*eigVec0 - eigVec0*diag(eigVal0);
 % residual0 = sysMat2*eigVec0 - MMat2*eigVec0*diag(eigVal0);
 % fprintf('%e\n',real(residual0(1)))

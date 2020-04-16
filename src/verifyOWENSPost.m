@@ -5,10 +5,10 @@
 % SETUP
 
 tic()
-verify_transient = true;
+verify_transient = false;
 verify_modal = true;
-plot_modal = true;
-verify_flutter = true;
+plot_modal = false;
+verify_flutter = false;
 
 % RUN OWENS
 test_owens(verify_transient,verify_modal,verify_flutter);
@@ -117,6 +117,13 @@ if verify_flutter
     old1.damp = damp_old;
 
     NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_FLUTTER.out');
+    
+    FileInfo = dir(NEW);
+
+    if (datetime - FileInfo.date) > duration(0,1,0)
+        warning('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
+    end
+    
     new = load(NEW);
     freq_new = new(:,1);
     damp_new = new(:,2);
