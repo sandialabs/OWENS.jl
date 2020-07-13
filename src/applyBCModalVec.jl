@@ -25,7 +25,7 @@ indVec = zeros(numEq-numpBC,1);
 
 index = 1;
 for i=1:numEq
-    if(bcMap(i) ~= -1)
+    if(bcMap(i) != -1)
         indVec(index) = i;
         index = index +1;
     end

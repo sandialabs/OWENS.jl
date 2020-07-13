@@ -98,7 +98,7 @@ for i=1:length(elNum)
 end
 
 for i=1:length(elNum)
-    if (elNum(i)~=-1)
+    if (elNum(i)!=-1)
 
         sectionPropsArray(elNum(i)).b = 0.5.*[chord(nodeNum(i)) chord(nodeNum(i+1))]; #element semi chord
         sectionPropsArray(elNum(i)).a0 = [bladeData(i,12) bladeData(i+1,12)];         #element lift curve slope (needed for flutter analysis)

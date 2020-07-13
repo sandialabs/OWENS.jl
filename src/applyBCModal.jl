@@ -24,9 +24,9 @@ numEq=length(bcMap);
 # that causes problems when creating Knew
 
 index = 1;
-indVec = zeros(1,sum(bcMap ~= -1));
+indVec = zeros(1,sum(bcMap != -1));
 for i=1:numEq
-    if(bcMap(i) ~= -1)
+    if(bcMap(i) != -1)
         indVec(index) = i;
         index = index +1;
     end

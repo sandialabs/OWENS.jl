@@ -22,7 +22,7 @@ end
 
 
 
-if(strutStartIndex~=0)
+if(strutStartIndex!=0)
     strutDataBlock = a(strutStartIndex:end,:);
     [strutEntries, ~] = size(strutDataBlock);
     numNodesPerStrut = strutEntries/numStruts;
@@ -90,7 +90,7 @@ for i=1:numBlades
         index = index + 1;
     end
     
-    if(normalizedBladeRef~=-1.0)
+    if(normalizedBladeRef!=-1.0)
        clear blade{i}.area;
     #set up normalized blade ref dimension for mappiing to aero refinement
     lenx=abs(blade{i}.QCx(end)-blade{i}.QCx(1));

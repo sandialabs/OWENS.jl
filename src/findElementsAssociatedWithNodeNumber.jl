@@ -49,7 +49,7 @@ if(~isempty(jointData))
             for i=1:numEl
                 res = ismember(conn(i,:),jointNodeNumbers(j)); #finds indices of nodeNum in connectivity of element i
                 localNodeNumber = find(res); #finds the local node number of element i that corresponds to nodeNum
-                if(localNodeNumber~=0) #assigns to an elementList and localNode list
+                if(localNodeNumber!=0) #assigns to an elementList and localNode list
                     elList(index) = i;
                     localNode(index) = localNodeNumber;
                     index = index + 1;
@@ -65,7 +65,7 @@ end
 for i=1:numEl #loop over elements
     res = ismember(conn(i,:),nodeNum); #finds indices of nodeNum in connectivity of element i
     localNodeNumber = find(res); #finds the local node number of element i that corresponds to nodeNum
-    if(localNodeNumber~=0) #assigns to an elementList and localNode list
+    if(localNodeNumber!=0) #assigns to an elementList and localNode list
         elList(index) = i;
         localNode(index) = localNodeNumber;
         index = index + 1;

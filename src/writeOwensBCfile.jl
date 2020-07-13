@@ -213,7 +213,7 @@ wip(fid,[],'END of FAST input file (the word "END" must appear in the first 3 co
 wip(fid,[],'--------------------------------------------------------------------------------')
 
 
-if fid~=1, fclose(fid); end
+if fid!=1, fclose(fid); end
 end
 
 

@@ -26,7 +26,7 @@ fid = fopen(BCfile,'w');     #open boundary condition file
 # first line should list the number of BCs to follow
 totalBCs = 0; 
 for nn = 1:length(nodes)
-    totalBCs = totalBCs + numel(find(cmkValues{nn} ~=0));
+    totalBCs = totalBCs + numel(find(cmkValues{nn} !=0));
 end 
 fprintf(fid, '#i\n', totalBCs);
 

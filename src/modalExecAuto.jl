@@ -61,7 +61,7 @@ for j=1:length(omegaArray) #loops over rotor speeds of interest
             
             model.guessFreq = freqOrig(i);
             
-            if Omega~=0.0 #If zero, then the output freq is always the input freq and no need to iterate
+            if Omega!=0.0 #If zero, then the output freq is always the input freq and no need to iterate
                 options = optimset('Display','iter','TolX',1e-3);
                 #                 [finalfreq,fval,exitflag,output] = fzero(rootfun,freqOrig(i),options);
                 [finalfreq,fval,exitflag,output] = fminbnd(rootfun,0.0,freqOrig(i)*2,options);

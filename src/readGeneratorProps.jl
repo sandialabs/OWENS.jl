@@ -16,7 +16,7 @@ function [genprops] = readGeneratorProps(generatorfilename)
 #   genprops          = model object containing generator properties
 
 fid = fopen(generatorfilename); #open generator property file
-if(fid~=-1) #if file can be opened
+if(fid!=-1) #if file can be opened
     #         genprops.ratedTorque = fscanf(fid,'#f',1); #store rated torque
     #         dum = fgetl(fid);
     #         genprops.zeroTorqueGenSpeed = fscanf(fid,'#f',1); #store zero torque generator zpeed

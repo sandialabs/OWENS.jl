@@ -30,7 +30,7 @@ for i=1:(numSnapshots-1)
     tempcheck = unique(map(i+1,:));
     sizecheck= length(tempcheck);
     sizeactual= length(map(i+1,:));
-#     if(sizecheck~=sizeactual)
+#     if(sizecheck!=sizeactual)
 #         i
 #         disp('somethings wrong here');
 #         tempcheck

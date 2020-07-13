@@ -43,7 +43,7 @@ blade = struct('NElem',0.0,...
 cactusGeom.blade = repmat(blade,1,NBlade(1));
 for i=1:NBlade(1,1)
 
-    if i ~= 1
+    if i != 1
         myfgetl(fid); # skip a line
         myfgetl(fid); # skip a line
     end
@@ -131,7 +131,7 @@ cactusGeom.strut = repmat(strut,1,NStrut(1));
 
 for i=1:NStrut(1,1)
 
-    if i ~= 1
+    if i != 1
         myfgetl(fid); # skip line
         myfgetl(fid); # skip line
     end

@@ -1,6 +1,6 @@
 function [joint] = readRBarFile(filename,joint,mesh)
 fid = fopen(filename,'r');
-if(fid ~= -1)
+if(fid != -1)
     #         numRbar = fscanf(fid,'#i',1);
     #         masterNode = zeros(numRbar);
     #         slaveNode = zeros(numRbar);

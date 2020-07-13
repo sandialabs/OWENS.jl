@@ -155,8 +155,8 @@ end
 #reduce Fg to nonzero components
 #assumes any loaded DOF will never be identically zero throughout time
 #history
-ForceValHist = zeros(sum(Fg(:,1)~=0),length(Fg(1,:)));
-ForceDof = zeros(sum(Fg(:,1)~=0),1);
+ForceValHist = zeros(sum(Fg(:,1)!=0),length(Fg(1,:)));
+ForceDof = zeros(sum(Fg(:,1)!=0),1);
 index = 1;
 for i=1:max(max(structuralNodeNumbers))*6
     if(~isempty(find(Fg(i,:), 1)))
@@ -193,7 +193,7 @@ end
 
 
 
-if(strutStartIndex~=0)
+if(strutStartIndex!=0)
     #     strutDataBlock = a(strutStartIndex:end,:);
     #     [strutEntries, ~] = size(strutDataBlock);
     #     numNodesPerStrut = strutEntries/numStruts;

@@ -46,13 +46,13 @@ fprintf('#e\n',max(max(abs(residual0))));
 eigVec0 = normalizeeigenvectors(eigVec0);
 
 n_mismatch = checkequal(abs(eigVec0),abs(X_truth));
-if n_mismatch~=0
+if n_mismatch!=0
     fprintf('#s\n','MISMATCH: Eigenvectors split matrix eig');
 end
 
 
 n_mismatch = checkequal(abs(eigVal0),abs(e_truth));
-if n_mismatch~=0
+if n_mismatch!=0
     fprintf('#s\n','MISMATCH: Eigenvalues split matrix eig');
 end
 
@@ -73,13 +73,13 @@ fprintf('#e\n',max(max(abs(residual1))));
 eigVec1 = normalizeeigenvectors(eigVec1);
 
 n_mismatch = checkequal(abs(eigVec1),abs(X_truth));
-if n_mismatch~=0
+if n_mismatch!=0
     fprintf('#s\n','MISMATCH: Eigenvectors single matrix eig');
 end
 
 
 n_mismatch = checkequal(abs(eigVal1),abs(e_truth));
-if n_mismatch~=0
+if n_mismatch!=0
     fprintf('#s\n','MISMATCH: Eigenvalues single matrix eig');
 end
 
@@ -106,13 +106,13 @@ fprintf('#e\n',max(abs(residual2)));
 eigVec2 = normalizeeigenvectors(eigVec2);
 
 n_mismatch = checkequal(abs(eigVec2),abs(X_truth));
-if n_mismatch~=0
+if n_mismatch!=0
     fprintf('#s\n','MISMATCH: Eigenvectors polyeig');
 end
 
 
 n_mismatch = checkequal(abs(eigVal2),abs(e_truth));
-if n_mismatch~=0
+if n_mismatch!=0
     fprintf('#s\n','MISMATCH: Eigenvalues polyeig');
 end
 

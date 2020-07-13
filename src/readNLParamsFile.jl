@@ -21,7 +21,7 @@ nlFile = [filePrefix,'.nl'];     #create .nl file name string
 
 fid = fopen(nlFile,'r'); #attempt to open file
 
-if(fid ~= -1) #if file can be opened read it
+if(fid != -1) #if file can be opened read it
     #         iterationType = fscanf(fid,'#c',2); fgetl(fid); #read iteration type 'NR' = Newton Raphson, 'DI' = Direct Iteration
     #         tolerance = fscanf(fid,'#f',1); fgetl(fid);
     #         maxIterations    = fscanf(fid,'#i',1); fgetl(fid); #read in maximum iterations allowed per time step

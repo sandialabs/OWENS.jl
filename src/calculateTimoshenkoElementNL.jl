@@ -293,7 +293,7 @@ for i=1:numGP
     f6 = rhoA*ycm*((O1*O3*zbarlocal + O1*O2*ybarlocal)-(xbarlocal*(O2^2+O3^2)) - O3dot*ybarlocal + O2dot*zbarlocal) - disMomentgp(3);
     [F6] = calculateVec1(f6,integrationFactor,N6,F6);
 
-    if(aeroElasticOn && (bgp ~= 0)) #aeroelastic calculations
+    if(aeroElasticOn && (bgp != 0)) #aeroelastic calculations
         #This is a real valued aeroelastic representation from
         #Wright and Cooper
         #This version assumes aerodynamic center at quarter chord of

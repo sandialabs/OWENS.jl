@@ -60,7 +60,7 @@ if nargin < 3
   x = (1:length(v))';
 else 
   x = x(:);
-  if length(v)~= length(x)
+  if length(v)!= length(x)
     error('Input vectors v and x must have same length');
   end
 end

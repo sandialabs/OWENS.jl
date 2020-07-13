@@ -56,7 +56,7 @@ xAC = zeros(length(hStructural),1);
 hStructuralMid = zeros(length(hStructural),1);
 index = 1;
 for i=1:length(hStructural)
-    if(bladeData.elementNum(i) ~= -1)
+    if(bladeData.elementNum(i) != -1)
         xAC(index) = 0.5*sum(sectionPropsArray{bladeData.elementNum(i)}.aeroCenterOffset);
         hStructuralMid(index) = 0.5*(hStructural(i) + hStructural(i+1));
         index = index+1;
@@ -79,7 +79,7 @@ for i=1:numBladeEl
     FtCurrent(i) = interp1(t,Ft(i,:),time,'linear','extrap'); #normal and gangential loads at current time
     FnCurrent(i) = interp1(t,Fn(i,:),time,'linear','extrap');
 
-    if(mod(i,aeroStat-1)~=0 && i~=1)
+    if(mod(i,aeroStat-1)!=0 && i!=1)
         aeroIndex = i - floor(i/(aeroStat-1))*(aeroStat-1);
     elseif(mod(i,aeroStat-1)==0)
         aeroIndex = aeroStat-1;
