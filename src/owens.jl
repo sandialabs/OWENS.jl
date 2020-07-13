@@ -1,5 +1,6 @@
 include("readMesh.jl")
 include("readBladeData.jl")
+include("readBCdata.jl")
 mutable struct Model
     analysisType
     turbineStartup
@@ -22,6 +23,7 @@ mutable struct Model
     elementOrder
     bladeData
     nlParams
+    BC
 end
 
 mutable struct NlParams
@@ -248,11 +250,6 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
     numDofPerNode = 6
     bladeData = readBladeData(blddatafilename) #reads overall blade data file
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
-    # model.BC.numpBC = BC.numpBC
-    # model.BC.pBC = BC.pBC
-    # model.BC.numsBC = BC.numsBC
-    # model.BC.nummBC = BC.nummBC
-    # model.BC.isConstrained = BC.isConstrained
     # el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     # joint = readJointData(jntdatafilename) #read joint data file
     # model.joint = joint
@@ -269,7 +266,7 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
     model = Model(analysisType,turbineStartup,aeroElasticOn,aeroForceOn,airDensity,
         guessFreq,gravityOn,generatorOn,OmegaGenStart,omegaControl,totalNumDof,
         spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
-        RayleighBeta,elementOrder,bladeData,nlParams)
+        RayleighBeta,elementOrder,bladeData,nlParams,BC)
     #
     #
     #

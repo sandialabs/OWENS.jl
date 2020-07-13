@@ -1,4 +1,12 @@
-function [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
+mutable struct BC_struct
+    numpBC
+    pBC
+    numsBC
+    nummBC
+    isConstrained
+end
+
+function readBCdata(bcfilename,numNodes,numDofPerNode)
 #readBDdata  reads boundary condition file
 # **********************************************************************
 # *                   Part of the SNL OWENS Toolkit                    *
@@ -18,50 +26,54 @@ function [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
 #      output:
 #      BC            = object containing boundary condition data
 
-fid = fopen(bcfilename);       #open boundary condition file
-numpBC = real(str2double(myfgetl(fid)));   #read in number of boundary conditions (displacement boundary conditions)
-pBC = zeros(numpBC,3);         #initialize boundary conditions
+fid = open(bcfilename)       #open boundary condition file
+numpBC = real(parse(Int,readline(fid))) #read in number of boundary conditions (displacement boundary conditions)
+pBC = zeros(Int,numpBC,3)         #initialize boundary conditions
 for i=1:numpBC
 
-    line = myfgetl(fid);
+    line = readline(fid)
 
     # Find where all of the delimiters are
     #first two are boundary condition node number and local DOF number
     #third is boundary condition value (typically zero)
-    delimiter_idx = [0.0,find(line' == ' ')',length(line)+1];
+    delimiter_idx = [0;collect.(Int,findall(" ",line));length(line)+1]
     # Extract the data from the beginning to the last delimiter
     for k = 2:length(delimiter_idx)
-        pBC(i,k-1) = real(str2double(line(delimiter_idx(k-1)+1:delimiter_idx(k)-1)));
+        pBC[i,k-1] = Int(parse(Float64,line[delimiter_idx[k-1][1]+1:delimiter_idx[k][1]-1]))
     end
 
 end
 
-totalNumDof = numNodes*numDofPerNode;
+totalNumDof = numNodes*numDofPerNode
 
-BC = struct('numpBC',zeros,'pBC',zeros,'numsBC',zeros,'nummBC',zeros,'isConstrained',zeros(totalNumDof,1));
-BC.numpBC = numpBC;  #store boundary condition data  in boundayr condition object
-BC.pBC = pBC;
-BC.numsBC = 0;
-BC.nummBC = 0;
+numsBC = 0
+nummBC = 0
 
-fclose(fid);
+close(fid)
 
 #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
 #constrained)
 
 
 #calculate constrained dof vector
-isConstrained = zeros(totalNumDof,1);
-constDof = (BC.pBC(:,1)-1)*numDofPerNode + BC.pBC(:,2);
-index = 1;
+isConstrained = zeros(totalNumDof,1)
+constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
+index = 1
 for i=1:numNodes
     for j=1:numDofPerNode
-        if(ismember((i-1)*numDofPerNode + j,constDof))
-            isConstrained(index) = 1;
+        if ((i-1)*numDofPerNode + j in constDof)
+            isConstrained[index] = 1
         end
-        index = index + 1;
+        index = index + 1
     end
 end
-BC.isConstrained = isConstrained;
+
+BC = BC_struct(numpBC,
+    pBC,
+    numsBC,
+    nummBC,
+    isConstrained)
+
+return BC
 
 end
