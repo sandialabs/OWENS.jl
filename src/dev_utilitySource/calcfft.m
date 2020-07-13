@@ -21,7 +21,7 @@ grid on;
 xlabel('Frequency (Hz)','FontSize',15);
 set(gca,'FontSize',12);
 
-%extract peakfrequencies
+#extract peakfrequencies
 len = length(f);
 fa = f(1:len/2);
 uffta = u_fft(1:len/2);
@@ -34,27 +34,27 @@ disp(maxtab(:,1));
 end
 
 function [maxtab, mintab]=peakdet(v, delta, x)
-%PEAKDET Detect peaks in a vector
-%        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
-%        maxima and minima ("peaks") in the vector V.
-%        MAXTAB and MINTAB consists of two columns. Column 1
-%        contains indices in V, and column 2 the found values.
-%      
-%        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
-%        in MAXTAB and MINTAB are replaced with the corresponding
-%        X-values.
-%
-%        A point is considered a maximum peak if it has the maximal
-%        value, and was preceded (to the left) by a value lower by
-%        DELTA.
+#PEAKDET Detect peaks in a vector
+#        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
+#        maxima and minima ("peaks") in the vector V.
+#        MAXTAB and MINTAB consists of two columns. Column 1
+#        contains indices in V, and column 2 the found values.
+#      
+#        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
+#        in MAXTAB and MINTAB are replaced with the corresponding
+#        X-values.
+#
+#        A point is considered a maximum peak if it has the maximal
+#        value, and was preceded (to the left) by a value lower by
+#        DELTA.
 
-% Eli Billauer, 3.4.05 (Explicitly not copyrighted).
-% This function is released to the public domain; Any use is allowed.
+# Eli Billauer, 3.4.05 (Explicitly not copyrighted).
+# This function is released to the public domain; Any use is allowed.
 
 maxtab = [];
 mintab = [];
 
-v = v(:); % Just in case this wasn't a proper vector
+v = v(:); # Just in case this wasn't a proper vector
 
 if nargin < 3
   x = (1:length(v))';

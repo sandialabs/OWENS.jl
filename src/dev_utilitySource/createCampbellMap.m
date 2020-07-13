@@ -13,16 +13,16 @@ for i=1:(numSnapshots-1)
        [val,tempindex] = max(mactable(:,j));
        if(val<0.7)
            map(i+1,j) =  map(i,j); 
-%              map(i+1,map(i,j)) =  j; 
-%             map(i+1,j) = j;
+#              map(i+1,map(i,j)) =  j; 
+#             map(i+1,j) = j;
            disp('warning:');
            val
            i
            j
        else
            map(i+1,j) =  map(i,tempindex); 
-%            map(i+1,map(i,tempindex)) =  j; 
-%             map(i+1,j) =  tempindex;
+#            map(i+1,map(i,tempindex)) =  j; 
+#             map(i+1,j) =  tempindex;
        end
 
     end
@@ -30,12 +30,12 @@ for i=1:(numSnapshots-1)
     tempcheck = unique(map(i+1,:));
     sizecheck= length(tempcheck);
     sizeactual= length(map(i+1,:));
-%     if(sizecheck~=sizeactual)
-%         i
-%         disp('somethings wrong here');
-%         tempcheck
-%         map(i+1,:)
-%     end
+#     if(sizecheck~=sizeactual)
+#         i
+#         disp('somethings wrong here');
+#         tempcheck
+#         map(i+1,:)
+#     end
     
 end
 

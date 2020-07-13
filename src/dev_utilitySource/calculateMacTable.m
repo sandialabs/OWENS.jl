@@ -1,5 +1,5 @@
 function [ mac ] = calculateMacTable(file1,file2)
-%calculates a modal assurance criterion table from eigenvectors
+#calculates a modal assurance criterion table from eigenvectors
 
 
 vec1 = load(file1);

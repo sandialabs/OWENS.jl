@@ -1,23 +1,23 @@
 function [A,origMap,posIndex] = bubbleSort(A)
-%bubbleSort Sorts the vector A in ascending order
-% **********************************************************************
-% *                   Part of the SNL OWENS Toolkit                    *
-% * Developed by Sandia National Laboratories Wind Energy Technologies *
-% *             See license.txt for disclaimer information             *
-% **********************************************************************
-%   [A,origMap,posIndex] = bubbleSort(A)
-%                    
-%   This function accepts a vector A, sorts the vector in ascending order,
-%   outputting the sorted vector, a map to the original ordering, and the
-%   index at which a positive value first occurs.
-%
-%      input:
-%      A        = vector to be sorted
-%
-%      output:
-%      A        = sorted vector
-%      origMap  = map of sorted vector to original ordering
-%      posIndex = index at which positive value first occurs
+#bubbleSort Sorts the vector A in ascending order
+# **********************************************************************
+# *                   Part of the SNL OWENS Toolkit                    *
+# * Developed by Sandia National Laboratories Wind Energy Technologies *
+# *             See license.txt for disclaimer information             *
+# **********************************************************************
+#   [A,origMap,posIndex] = bubbleSort(A)
+#                    
+#   This function accepts a vector A, sorts the vector in ascending order,
+#   outputting the sorted vector, a map to the original ordering, and the
+#   index at which a positive value first occurs.
+#
+#      input:
+#      A        = vector to be sorted
+#
+#      output:
+#      A        = sorted vector
+#      origMap  = map of sorted vector to original ordering
+#      posIndex = index at which positive value first occurs
 
 Aorig=A;
     len = length(A);
@@ -40,7 +40,7 @@ Aorig=A;
     end
     end
     
-%     posIndex = length(A)/2+1;
-%     [posIndex] = findPositiveCrossOver(A);
+#     posIndex = length(A)/2+1;
+#     [posIndex] = findPositiveCrossOver(A);
 posIndex = 1;
 end

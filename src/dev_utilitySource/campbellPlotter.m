@@ -12,7 +12,7 @@ for i=2:2:numModesToPlot
        hold on;
        
        if(i==2)
-          %plot flatwise experimental data
+          #plot flatwise experimental data
 
             flatwise = importData('snl34mFlatwiseExperimental.csv');
             flatdata = flatwise.data;
@@ -24,7 +24,7 @@ for i=2:2:numModesToPlot
        end
 end
 
-%plot per rev lines
+#plot per rev lines
 numPerRevLines = 5;
 
 for i=1:numPerRevLines

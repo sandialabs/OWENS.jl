@@ -38,7 +38,7 @@ numNodesPerBlade = bladeEntries/numBlades;
 numElPerBlade = numNodesPerBlade - 1;
 
 
-%calculate maximum radius of turbine
+#calculate maximum radius of turbine
 maxRadius = 0.0;
 index = 1;
 for i=1:numBlades
@@ -54,10 +54,10 @@ refR = maxRadius;
 
 nodeNum = bladeDataBlock(:,3);
 elementNum = bladeDataBlock(:,4);
-qc= bladeDataBlock(:,5:7)/refR; %normalized by reference radius
+qc= bladeDataBlock(:,5:7)/refR; #normalized by reference radius
 nvec = bladeDataBlock(:,8:10);
 tvec = bladeDataBlock(:,11:13);
-chord = bladeDataBlock(:,14)/refR; %normalized by reference radius
+chord = bladeDataBlock(:,14)/refR; #normalized by reference radius
 airfoil = bladeDataBlock(:,15);
 
 index = 1;
@@ -66,17 +66,17 @@ for i=1:numBlades
     
     for j=1:numNodesPerBlade
         
-        blade{i}.QCx(j) = qc(index,2); %cactus x is vawtgen y
-        blade{i}.QCy(j) = qc(index,3); %cactus y is vawtgen z
-        blade{i}.QCz(j) = qc(index,1); %cactus z is vawtgen x 
+        blade{i}.QCx(j) = qc(index,2); #cactus x is vawtgen y
+        blade{i}.QCy(j) = qc(index,3); #cactus y is vawtgen z
+        blade{i}.QCz(j) = qc(index,1); #cactus z is vawtgen x 
         
-        blade{i}.nx(j) = nvec(index,2); %cactus x is vawtgen y
-        blade{i}.ny(j) = nvec(index,3); %cactus y is vawtgen z
-        blade{i}.nz(j) = nvec(index,1); %cactus z is vawtgen x 
+        blade{i}.nx(j) = nvec(index,2); #cactus x is vawtgen y
+        blade{i}.ny(j) = nvec(index,3); #cactus y is vawtgen z
+        blade{i}.nz(j) = nvec(index,1); #cactus z is vawtgen x 
         
-        blade{i}.tx(j) = tvec(index,2); %cactus x is vawtgen y
-        blade{i}.ty(j) = tvec(index,3); %cactus y is vawtgen z
-        blade{i}.tz(j) = tvec(index,1); %cactus z is vawtgen x 
+        blade{i}.tx(j) = tvec(index,2); #cactus x is vawtgen y
+        blade{i}.ty(j) = tvec(index,3); #cactus y is vawtgen z
+        blade{i}.tz(j) = tvec(index,1); #cactus z is vawtgen x 
         
         blade{i}.c(j) = chord(index);
         
@@ -92,7 +92,7 @@ for i=1:numBlades
     
     if(normalizedBladeRef~=-1.0)
        clear blade{i}.area;
-    %set up normalized blade ref dimension for mappiing to aero refinement
+    #set up normalized blade ref dimension for mappiing to aero refinement
     lenx=abs(blade{i}.QCx(end)-blade{i}.QCx(1));
     leny=abs(blade{i}.QCy(end)-blade{i}.QCy(1));
     lenz=abs(blade{i}.QCz(end)-blade{i}.QCz(1));
@@ -101,7 +101,7 @@ for i=1:numBlades
     bladeRefLength = lenarray(maxindex);
 
     for j=1:numNodesPerBlade
-%         bladeFrac(j) = abs((blade{i}.QCx(j)-blade{i}.QCx(1))^2 + (blade{i}.QCy(j)-blade{i}.QCy(1))^2 + (blade{i}.QCz(j)-blade{i}.QCz(1))^2)/bladeRefLength;
+#         bladeFrac(j) = abs((blade{i}.QCx(j)-blade{i}.QCx(1))^2 + (blade{i}.QCy(j)-blade{i}.QCy(1))^2 + (blade{i}.QCz(j)-blade{i}.QCz(1))^2)/bladeRefLength;
           if(maxindex==1)
             bladeFrac(j) = abs((blade{i}.QCx(j)-blade{i}.QCx(1)))/bladeRefLength;
           end
@@ -138,7 +138,7 @@ for i=1:numBlades
             elLen = norm(elDelta);
             blade{i}.area(j) = 0.5*(blade{i}.c(j+1) + blade{i}.c(j))*elLen;
     end
-        blade{i}.area = blade{i}.area/(refR^2); %normalize by refAr
+        blade{i}.area = blade{i}.area/(refR^2); #normalize by refAr
     end
 end
 
@@ -162,10 +162,10 @@ for i=1:numStruts
         end
         
     end
-        strut{i}.area = strut{i}.area/(refR^2); %normalize by refAr
+        strut{i}.area = strut{i}.area/(refR^2); #normalize by refAr
 end
 
-%search for coincident strut node and blade node
+#search for coincident strut node and blade node
 for i=1:numStruts
     strutEndCoord = [strut{i}.SEx(end); strut{i}.SEy(end); strut{i}.SEz(end)];
     bindex=strut{i}.bladeIndex(1);
@@ -180,8 +180,8 @@ for i=1:numStruts
 end
 
 
-%calculate projected frontal area of volume swept by turbine (assumed all
-%blades are the same
+#calculate projected frontal area of volume swept by turbine (assumed all
+#blades are the same
 A = 0;
 for i=1:(length(blade{1}.QCx)-1)
     
@@ -192,8 +192,8 @@ for i=1:(length(blade{1}.QCx)-1)
 end
 refAr = 2.0*A;
 
-%may want to correct for quarter chord vs. semi chord of the strut here, 
-%before writing
+#may want to correct for quarter chord vs. semi chord of the strut here, 
+#before writing
 
 writeCactus(outname,blade,strut,refAr,refR);
 
@@ -224,8 +224,8 @@ function writeCactus(outname,blade,strut,refAr,refR)
 end
 
 function writeCactusHeader(fid,numBlades,numStruts,refAr,refR)
-    fprintf(fid,'NBlade: %3d \n',numBlades);
-    fprintf(fid,'NStrut: %3d \n',numStruts);
+    fprintf(fid,'NBlade: #3d \n',numBlades);
+    fprintf(fid,'NStrut: #3d \n',numStruts);
     fprintf(fid,'RotN: '); printScientific(fid,[0,1,0]); fprintf(fid,'\n');
     fprintf(fid,'RotP: '); printScientific(fid,[0,0,0]); fprintf(fid,'\n');
     fprintf(fid,'RefAR: '); printScientific(fid,refAr); fprintf(fid,'\n');
@@ -235,8 +235,8 @@ end
 
 function writeCactusBlade(fid,blade,i)
     fprintf(fid,['Blade ',num2str(i),': \n']);
-    fprintf(fid,'\tNElem: %3d \n',length(blade.afNum));
-%     fprintf(fid,
+    fprintf(fid,'\tNElem: #3d \n',length(blade.afNum));
+#     fprintf(fid,
     fprintf(fid,'\tQCx: ');printScientific(fid,blade.QCx); fprintf(fid,'\n');
     fprintf(fid,'\tQCy: ');printScientific(fid,blade.QCy); fprintf(fid,'\n');
     fprintf(fid,'\tQCz: ');printScientific(fid,blade.QCz); fprintf(fid,'\n');
@@ -248,20 +248,20 @@ function writeCactusBlade(fid,blade,i)
     fprintf(fid,'\ttz: ');printScientific(fid,blade.tz); fprintf(fid,'\n');
     fprintf(fid,'\tCtoR: ');printScientific(fid,blade.c); fprintf(fid,'\n');
     fprintf(fid,'\tAreaR: ');printScientific(fid,blade.area); fprintf(fid,'\n');
-    fprintf(fid,'\tiSect: ');fprintf(fid,'%3d ',blade.afNum); fprintf(fid,'\n');
+    fprintf(fid,'\tiSect: ');fprintf(fid,'#3d ',blade.afNum); fprintf(fid,'\n');
 end
 
 function writeCactusStrut(fid,strut,i)
     fprintf(fid,['Strut ',num2str(i),': \n']);
-    fprintf(fid,'\tNElem: %3d \n',length(strut.area));
+    fprintf(fid,'\tNElem: #3d \n',length(strut.area));
     fprintf(fid,'\tSEx: ');printScientific(fid,strut.SEx); fprintf(fid,'\n');
     fprintf(fid,'\tSEy: ');printScientific(fid,strut.SEy); fprintf(fid,'\n');
     fprintf(fid,'\tSEz: ');printScientific(fid,strut.SEz); fprintf(fid,'\n');
     fprintf(fid,'\tCtoR: ');printScientific(fid,strut.c); fprintf(fid,'\n');
     fprintf(fid,'\tAreaR: ');printScientific(fid,strut.area); fprintf(fid,'\n');
     fprintf(fid,'\tTtoC: ');printScientific(fid,strut.tc(1)); fprintf(fid,'\n');
-    fprintf(fid,'\tBInd: %3d \n',strut.bladeIndex(1));
-    fprintf(fid,'\tIEnd: %3d \n',strut.bladeElConnectionIndex);
+    fprintf(fid,'\tBInd: #3d \n',strut.bladeIndex(1));
+    fprintf(fid,'\tIEnd: #3d \n',strut.bladeElConnectionIndex);
 end
 
 function plotCactusGeom(blade,strut,sf)
@@ -283,7 +283,7 @@ function plotBlade(blade,sf)
     view(3);
     axis equal;
     
-    %plot norm vecs
+    #plot norm vecs
     for j=1:length(blade.QCx)
         a0=[blade.QCx(j),blade.QCy(j),blade.QCz(j)];
         a1=[blade.QCx(j),blade.QCy(j),blade.QCz(j)] + [blade.nx(j),blade.ny(j),blade.nz(j)].*sf;
@@ -301,7 +301,7 @@ function plotStrut(strut)
 end
 
 function printScientific(fid,a)
-    A_str = sprintf('%6.5e ',a);
+    A_str = sprintf('#6.5e ',a);
     A_str = strrep(A_str, 'e+0','e+');
     A_str = strrep(A_str, 'e-0','e-');
     
