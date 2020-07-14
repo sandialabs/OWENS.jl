@@ -3,6 +3,7 @@ include("readBladeData.jl")
 include("readBCdata.jl")
 include("readElementData.jl")
 include("readJointData.jl")
+include("readNodalTerms.jl")
 mutable struct Model
     analysisType
     turbineStartup
@@ -12,6 +13,7 @@ mutable struct Model
     guessFreq
     gravityOn
     generatorOn
+    hydroOn
     OmegaGenStart
     omegaControl
     totalNumDof
@@ -23,9 +25,12 @@ mutable struct Model
     RayleighAlpha
     RayleighBeta
     elementOrder
+    joint
+    platformTurbineConnectionNodeNumber
     bladeData
     nlParams
     BC
+    nodalTerms
 end
 
 mutable struct NlParams
@@ -254,62 +259,60 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
     el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = readJointData(jntdatafilename) #read joint data file
-    # model.joint = joint
-    # # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
-    # # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
-    # [model.nodalTerms] = readNodalTerms(ndldatafilename) #read concentrated nodal terms file
-    # # [model] = readPlatformFile(model,platformFlag,platfilename)
-    # model.hydroOn = false
-    # model.platformTurbineConnectionNodeNumber = 1
-    #
-    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
-        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+    # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
+    # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
+    nodalTerms = readNodalTerms(ndldatafilename) #read concentrated nodal terms file
+    # [model] = readPlatformFile(model,platformFlag,platfilename)
+    hydroOn = false
+    platformTurbineConnectionNodeNumber = 1
 
-    model = Model(analysisType,turbineStartup,aeroElasticOn,aeroForceOn,airDensity,
-        guessFreq,gravityOn,generatorOn,OmegaGenStart,omegaControl,totalNumDof,
-        spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
-        RayleighBeta,elementOrder,bladeData,nlParams,BC)
+    # if(strcmp(analysisType,"TNB")||strcmp(analysisType,"TD")||strcmp(analysisType,"ROM")) #for transient analysis...
     #
+    #     [model.initCond] = readInitCond(initcondfilename) #read initial conditions
     #
+    #     if(aeroFlag)
+    #         model.aeroLoadsOn = true
+    #     else
+    #         model.aeroLoadsOn = false
+    #     end
     #
-    # # if(strcmp(analysisType,"TNB")||strcmp(analysisType,"TD")||strcmp(analysisType,"ROM")) #for transient analysis...
-    # #
-    # #     [model.initCond] = readInitCond(initcondfilename) #read initial conditions
-    # #
-    # #     if(aeroFlag)
-    # #         model.aeroLoadsOn = true
-    # #     else
-    # #         model.aeroLoadsOn = false
-    # #     end
-    # #
-    # #     #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
-    # #     model.driveTrainOn = false          #set drive shaft unactive
-    # #
-    # #     model.driveShaftProps.k = 0.0       #set drive shat properties to 0
-    # #     model.driveShaftProps.c = 0.0
-    # #     model.JgearBox =0.0
-    # #
-    # #     model.gearRatio = 1.0             #set gear ratio and efficiency to 1
-    # #     model.gearBoxEfficiency = 1.0
-    # #
-    # #     if(real(str2double(generatorfilename))==1.0)
-    # #         model.useGeneratorFunction = true
-    # #         model.generatorProps = 0.0
-    # #     else
-    # #         model.useGeneratorFunction = false
-    # #         [model.generatorProps] = readGeneratorProps(generatorfilename) #reads generator properties
-    # #     end
-    # #
-    # # end
-    # [model.outFilename] = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
+    #     #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
+    #     model.driveTrainOn = false          #set drive shaft unactive
     #
-    # [jnt_struct] = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    #     model.driveShaftProps.k = 0.0       #set drive shat properties to 0
+    #     model.driveShaftProps.c = 0.0
+    #     model.JgearBox =0.0
+    #
+    #     model.gearRatio = 1.0             #set gear ratio and efficiency to 1
+    #     model.gearBoxEfficiency = 1.0
+    #
+    #     if(real(str2double(generatorfilename))==1.0)
+    #         model.useGeneratorFunction = true
+    #         model.generatorProps = 0.0
+    #     else
+    #         model.useGeneratorFunction = false
+    #         [model.generatorProps] = readGeneratorProps(generatorfilename) #reads generator properties
+    #     end
+    #
+    # end
+    # outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
+    #
+    # jnt_struct = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     # model.jointTransform = jnt_struct.jointTransform
     # model.reducedDOFList = jnt_struct.reducedDOF
     # [model.BC.map] = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,jnt_struct.reducedDOF) #create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
     # numReducedDof = length(jnt_struct.jointTransform(1,:))
     # model.BC.redVectorMap = zeros(numReducedDof,1)
     # [model.BC.redVectorMap] = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,model.BC) #create a map between reduced and full DOF lists
+
+    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
+        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+
+    model = Model(analysisType,turbineStartup,aeroElasticOn,aeroForceOn,airDensity,
+        guessFreq,gravityOn,generatorOn,hydroOn,OmegaGenStart,omegaControl,totalNumDof,
+        spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
+        RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,
+        bladeData,nlParams,BC,nodalTerms)
 
 #     if(strcmp(analysisType,"S")) #EXECUTE STATIC ANALYSIS
 #         [model.nlParams] = readNLParamsFile(owensfile)
