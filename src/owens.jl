@@ -4,6 +4,7 @@ include("readBCdata.jl")
 include("readElementData.jl")
 include("readJointData.jl")
 include("readNodalTerms.jl")
+include("createJointTransform.jl")
 mutable struct Model
     analysisType
     turbineStartup
@@ -42,6 +43,24 @@ mutable struct NlParams
     minLoadStepDelta
     minLoadStep
     prescribedLoadStep
+end
+
+function generateOutputFilename(owensfilename,analysisType)
+    #This function generates an output file name depending on the analysis type
+
+    #find the last "." in owensfilename - helps to extract the prefix in the .owens
+    index = findlast(".",owensfilename)[1]
+
+    if (occursin("M",analysisType)||occursin("F",analysisType)||occursin("FA",analysisType)) #output filename (*.out) for modal/flutter analysis
+        outputfilename = string(owensfilename[1:index-1],".out")
+    elseif (occursin("S",analysisType)) #output file name (*_static.mat) for static analysis
+        outputfilename = string(owensfilename[1:index-1],"_static.mat")
+    elseif (occursin("TNB",analysisType)||occursin("TD",analysisType)||occursin("ROM",analysisType)) #output filename (*.mat) for transient analysis
+        outputfilename = string(owensfilename[1:index-1],".mat")
+    end
+
+    return outputfilename
+
 end
 
 function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract=20,displInitGuess=0.0,airDensity=1.2041)
@@ -295,9 +314,10 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
     #     end
     #
     # end
-    # outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
-    #
-    # jnt_struct = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+
+    outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
+
+    jnt_struct = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     # model.jointTransform = jnt_struct.jointTransform
     # model.reducedDOFList = jnt_struct.reducedDOF
     # [model.BC.map] = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,jnt_struct.reducedDOF) #create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
@@ -349,22 +369,7 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
 #
 # end
 #
-# function [outputfilename] = generateOutputFilename(owensfilename,analysisType)
-#     #This function generates an output file name depending on the analysis type
-#
-#     #find the last "." in owensfilename - helps to extract the prefix in the .owens
-#     index_all = find(owensfilename == ".")
-#     index = index_all(end)
-#
-#     if(strcmp(analysisType,"M")||strcmp(analysisType,"F")||strcmp(analysisType,"FA")) #output filename (*.out) for modal/flutter analysis
-#         outputfilename = [owensfilename(1:index-1),".out"]
-#     elseif(strcmp(analysisType,"S")) #output file name (*_static.mat) for static analysis
-#         outputfilename = [owensfilename(1:index-1),"_static.mat"]
-#     elseif(strcmp(analysisType,"TNB")||strcmp(analysisType,"TD")||strcmp(analysisType,"ROM")) #output filename (*.mat) for transient analysis
-#         outputfilename = [owensfilename(1:index-1),".mat"]
-#     end
-#
-# end
+
 #
 # function [redVectorMap] = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
 #     #This function creates a map of unconstrained DOFs between a full
