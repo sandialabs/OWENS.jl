@@ -4,6 +4,8 @@ mutable struct BC_struct
     numsBC
     nummBC
     isConstrained
+    map
+    redVectorMap
 end
 
 function readBCdata(bcfilename,numNodes,numDofPerNode)
@@ -72,7 +74,9 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
     pBC,
     numsBC,
     nummBC,
-    isConstrained)
+    isConstrained,
+    [],
+    [])
 
     return BC
 

@@ -1,10 +1,5 @@
 include("calculateLambda.jl")
 
-mutable struct JntTransform
-    jointTransform
-    reducedDOF
-end
-
 function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
     #This function creates a constraint transformation matrix for a single
     #joint. Tda is this matrix, dDOF contains a listing of dependent global
@@ -474,5 +469,5 @@ function createJointTransform(joint,numNodes,numDofPerNode)
         end
     end
 
-    return JntTransform(jointTransform,reducedDOF)
+    return jointTransform, reducedDOF
 end

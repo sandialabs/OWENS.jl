@@ -5,6 +5,7 @@ include("readElementData.jl")
 include("readJointData.jl")
 include("readNodalTerms.jl")
 include("createJointTransform.jl")
+include("calculateBCMap.jl")
 mutable struct Model
     analysisType
     turbineStartup
@@ -28,6 +29,8 @@ mutable struct Model
     elementOrder
     joint
     platformTurbineConnectionNodeNumber
+    jointTransform
+    reducedDOFList
     bladeData
     nlParams
     BC
@@ -61,6 +64,65 @@ function generateOutputFilename(owensfilename,analysisType)
 
     return outputfilename
 
+end
+
+function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
+    #This function searches over all DOFs in a structural model and
+    #determines and returns "dofVector" containing only unconstrained DOFs
+
+    #loop over all DOFs in the model checking if constrained by BC or not
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
+                #             dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
+                index = index + 1
+            end
+        end
+    end
+
+    dofVector = zeros(Int,index)
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
+                dofVector[index] = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
+                index = index + 1
+            end
+        end
+    end
+
+    return dofVector
+end
+
+function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
+    #This function creates a map of unconstrained DOFs between a full
+    #listing and reduced listing (aftger constraints have been applied)
+
+    bcdoflist=zeros(Int, BC.numpBC)
+
+    #create a listing of constrained DOFs from boundary condition file
+    for i=1:BC.numpBC
+        bcnodenum = BC.pBC[i,1]
+        bcdofnum = BC.pBC[i,2]
+        bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
+    end
+
+    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
+
+    redVectorMap = zeros(numReducedDof)
+
+    for i=1:numReducedDof
+
+        if (i in bcdoflist)              #creates a map of unconstrained reduced DOFs
+            redVectorMap[i] = -1.0
+        else
+            index = findall(x->x==i,dofList)[1]
+            redVectorMap[i] = index
+        end
+
+    end
+    return redVectorMap
 end
 
 function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract=20,displInitGuess=0.0,airDensity=1.2041)
@@ -317,116 +379,60 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
 
     outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
 
-    jnt_struct = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
-    # model.jointTransform = jnt_struct.jointTransform
-    # model.reducedDOFList = jnt_struct.reducedDOF
-    # [model.BC.map] = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,jnt_struct.reducedDOF) #create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
-    # numReducedDof = length(jnt_struct.jointTransform(1,:))
-    # model.BC.redVectorMap = zeros(numReducedDof,1)
-    # [model.BC.redVectorMap] = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,model.BC) #create a map between reduced and full DOF lists
+    jointTransform, reducedDOFList = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    BC.map = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,reducedDOFList) #TODO: put this before BC so the structs can be made immutable in the future. #create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
+
+    numReducedDof = length(jointTransform[1,:])
+    # BC.redVectorMap = zeros(numReducedDof,1)
+    BC.redVectorMap = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
-        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+    maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
     model = Model(analysisType,turbineStartup,aeroElasticOn,aeroForceOn,airDensity,
-        guessFreq,gravityOn,generatorOn,hydroOn,OmegaGenStart,omegaControl,totalNumDof,
-        spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
-        RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,
-        bladeData,nlParams,BC,nodalTerms)
+    guessFreq,gravityOn,generatorOn,hydroOn,OmegaGenStart,omegaControl,totalNumDof,
+    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
+    RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
+    reducedDOFList,bladeData,nlParams,BC,nodalTerms)
 
-#     if(strcmp(analysisType,"S")) #EXECUTE STATIC ANALYSIS
-#         [model.nlParams] = readNLParamsFile(owensfile)
-#         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
-#             displInitGuess = zeros(mesh.numNodes*6,1)
-#         end
-#
-#         OmegaStart = 0.0
-#         staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
-#     end
-#
-#     if(strcmp(analysisType,"M") || strcmp(analysisType,"F")) #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
-#         [model.nlParams] = readNLParamsFile(owensfile)
-#         if(length(varargin)<=5 || ~model.nlOn)
-#             displInitGuess = zeros(mesh.numNodes*6,1)
-#         end
-#         OmegaStart = 0.0
-#         [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
-#     end
-#
-#     if(strcmp(analysisType,"FA")) #EXECUTE AUTOMATED FLUTTER ANALYSIS
-#         displ = zeros(mesh.numNodes*6,1)
-#         OmegaStart = 0.0
-#         [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart)
-#     end
-#
-#     if(strcmp(analysisType,"TNB")||strcmp(analysisType,"TD")||strcmp(analysisType,"ROM")) #EXECUTE TRANSIENT ANALYSIS
-#         [model.nlParams] = readNLParamsFile(owensfile)
-#         model.analysisType = analysisType
-#         transientExec(model,mesh,el)
-#         freq = 0
-#         damp = 0
-#     end
-#
-# end
-#
+    #     if(strcmp(analysisType,"S")) #EXECUTE STATIC ANALYSIS
+    #         [model.nlParams] = readNLParamsFile(owensfile)
+    #         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
+    #             displInitGuess = zeros(mesh.numNodes*6,1)
+    #         end
+    #
+    #         OmegaStart = 0.0
+    #         staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
+    #     end
+    #
+    #     if(strcmp(analysisType,"M") || strcmp(analysisType,"F")) #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
+    #         [model.nlParams] = readNLParamsFile(owensfile)
+    #         if(length(varargin)<=5 || ~model.nlOn)
+    #             displInitGuess = zeros(mesh.numNodes*6,1)
+    #         end
+    #         OmegaStart = 0.0
+    #         [freq,damp]=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
+    #     end
+    #
+    #     if(strcmp(analysisType,"FA")) #EXECUTE AUTOMATED FLUTTER ANALYSIS
+    #         displ = zeros(mesh.numNodes*6,1)
+    #         OmegaStart = 0.0
+    #         [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart)
+    #     end
+    #
+    #     if(strcmp(analysisType,"TNB")||strcmp(analysisType,"TD")||strcmp(analysisType,"ROM")) #EXECUTE TRANSIENT ANALYSIS
+    #         [model.nlParams] = readNLParamsFile(owensfile)
+    #         model.analysisType = analysisType
+    #         transientExec(model,mesh,el)
+    #         freq = 0
+    #         damp = 0
+    #     end
+    #
+    # end
+    #
 
-#
-# function [redVectorMap] = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
-#     #This function creates a map of unconstrained DOFs between a full
-#     #listing and reduced listing (aftger constraints have been applied)
-#
-#     bcdoflist=zeros(BC.numpBC,1)
-#
-#     #create a listing of constrained DOFs from boundary condition file
-#     for i=1:BC.numpBC
-#         bcnodenum = BC.pBC(i,1)
-#         bcdofnum = BC.pBC(i,2)
-#         bcdoflist(i) = (bcnodenum-1)*numDofPerNode + bcdofnum
-#     end
-#
-#     dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
-#
-#     redVectorMap = zeros(numReducedDof,1)
-#
-#     for i=1:numReducedDof
-#
-#         if(ismember(i,bcdoflist))              #creates a map of unconstrained reduced DOFs
-#             redVectorMap(i) = -1.0
-#         else
-#             index = find(ismember(dofList,i))
-#             redVectorMap(i) = index
-#         end
-#
-#     end
-#
-# end
-#
-# function [dofVector] = calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
-#     #This function searches over all DOFs in a structural model and
-#     #determines and returns "dofVector" containing only unconstrained DOFs
-#
-#     #loop over all DOFs in the model checking if constrained by BC or not
-#     index = 1
-#     for i=1:numNodes
-#         for j=1:numDofPerNode
-#             if~(isConstrained((i-1)*numDofPerNode + j))
-#                 #             dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
-#                 index = index + 1
-#             end
-#         end
-#     end
-#
-#     dofVector = zeros(1,index)
-#     index = 1
-#     for i=1:numNodes
-#         for j=1:numDofPerNode
-#             if~(isConstrained((i-1)*numDofPerNode + j))
-#                 dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
-#                 index = index + 1
-#             end
-#         end
-#     end
-#
-#     return freq,damp
-return 1,2
+
+    #
+    #     return freq,damp
+    return 1,2
 end
