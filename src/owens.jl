@@ -1,6 +1,7 @@
 include("readMesh.jl")
 include("readBladeData.jl")
 include("readBCdata.jl")
+include("readElementData.jl")
 mutable struct Model
     analysisType
     turbineStartup
@@ -250,7 +251,7 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
     numDofPerNode = 6
     bladeData = readBladeData(blddatafilename) #reads overall blade data file
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
-    # el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
+    el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     # joint = readJointData(jntdatafilename) #read joint data file
     # model.joint = joint
     # # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
