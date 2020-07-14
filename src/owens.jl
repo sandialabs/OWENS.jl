@@ -2,6 +2,7 @@ include("readMesh.jl")
 include("readBladeData.jl")
 include("readBCdata.jl")
 include("readElementData.jl")
+include("readJointData.jl")
 mutable struct Model
     analysisType
     turbineStartup
@@ -223,11 +224,11 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
 
     aeroFlag         = real(parse(Int,line[1])) #flag for activating aerodynamic analysis
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
-    aeroloadfile = [fdirectory line[delimiter_idx[2][1]+1:end]] #.csv file containing CACTUS aerodynamic loads
+    aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
 
     line             = readline(fid) #flag to include drive shaft effects
     driveShaftFlag   = real(parse(Int,line[1:2]))
-    driveshaftfilename = [fdirectory line[3:end]] #drive shaft file name
+    driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
 
     generatorfilename = string(fdirectory, readline(fid)) #generator file name
     # rayleighDamping   = getSplitLine((fid),"	") #read in alpha/beta for rayleigh damping
@@ -252,7 +253,7 @@ function owens(owensfile,analysisType;Omega=0.0,spinUpOn=false,numModesToExtract
     bladeData = readBladeData(blddatafilename) #reads overall blade data file
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
     el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
-    # joint = readJointData(jntdatafilename) #read joint data file
+    joint = readJointData(jntdatafilename) #read joint data file
     # model.joint = joint
     # # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
     # # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name

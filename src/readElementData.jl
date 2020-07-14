@@ -25,6 +25,15 @@ mutable struct SectionPropsArray
     aeroCenterOffset
 end
 
+mutable struct El
+    props
+    elLen
+    psi
+    theta
+    roll
+    rotationalEffects
+end
+
 function readElementData(numElements,elfile,ortfile,bladeData_struct)
     #readElementData  reads element data
     # **********************************************************************
@@ -102,16 +111,16 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         a = [data1[17], data2[17]]
 
         #coupling factors
-        EIyz = [0 0]
-        alpha1 = [0 0]
-        alpha2 = [0 0]
-        alpha3 = [0 0]
-        alpha4 = [0 0]
-        alpha5 = [0 0]
-        alpha6 = [0 0]
-        rhoIyz = [0 0]
-        b = [0 0]
-        a0 = [2*pi 2*pi]
+        EIyz = [0, 0]
+        alpha1 = [0, 0]
+        alpha2 = [0, 0]
+        alpha3 = [0, 0]
+        alpha4 = [0, 0]
+        alpha5 = [0, 0]
+        alpha6 = [0, 0]
+        rhoIyz = [0, 0]
+        b = [0, 0]
+        a0 = [2*pi, 2*pi]
 
         sectionPropsArray[i] = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
 
@@ -128,19 +137,19 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     end
 
     for i=1:length(elNum)
-        if (elNum(i)!=-1)
+        if (elNum[i]!=-1)
 
-            sectionPropsArray(elNum(i)).b = 0.5.*[chord(nodeNum(i)) chord(nodeNum(i+1))] #element semi chord
-            sectionPropsArray(elNum(i)).a0 = [bladeData(i,12) bladeData(i+1,12)]         #element lift curve slope (needed for flutter analysis)
+            sectionPropsArray[elNum[i]].b = 0.5.*[chord[nodeNum[i]], chord[nodeNum[i+1]]] #element semi chord
+            sectionPropsArray[elNum[i]].a0 = [bladeData[i,12], bladeData[i+1,12]]         #element lift curve slope (needed for flutter analysis)
 
             #convert "a" to semichord fraction aft of halfchord
-            sectionPropsArray(elNum(i)).a = (sectionPropsArray(elNum(i)).a + 0.25*(2*sectionPropsArray(elNum(i)).b) - sectionPropsArray(elNum(i)).b)./sectionPropsArray(elNum(i)).b
+            sectionPropsArray[elNum[i]].a = (sectionPropsArray[elNum[i]].a + 0.25*(2*sectionPropsArray[elNum[i]].b) - sectionPropsArray[elNum[i]].b)./sectionPropsArray[elNum[i]].b
 
             #convert "ac" to semichord fraction foreward of halfchord
-            sectionPropsArray(elNum(i)).ac = (sectionPropsArray(elNum(i)).ac).*2
+            sectionPropsArray[elNum[i]].ac = (sectionPropsArray[elNum[i]].ac).*2
 
             #physical aero center offset from elastic axis
-            sectionPropsArray(elNum(i)).aeroCenterOffset = (sectionPropsArray(elNum(i)).ac).*sectionPropsArray(elNum(i)).b - sectionPropsArray(elNum(i)).a
+            sectionPropsArray[elNum[i]].aeroCenterOffset = (sectionPropsArray[elNum[i]].ac).*sectionPropsArray[elNum[i]].b - sectionPropsArray[elNum[i]].a
         end
     end
 
@@ -153,26 +162,18 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     psi = zeros(numElements)
     theta = zeros(numElements)
     roll = zeros(numElements)
-    fid = fopen(ortfile,"r")
-    temp = zeros(1,5)
+    fid = open(ortfile,"r")
     for i=1:numElements
-        temp = getSplitLine(fid,'	')
-        elLen(i)=temp(5)
-        psi(i)=temp(2)
-        theta(i)=temp(3)
-        roll(i)=temp(4)
+        temp = parse.(Float64,split(readline(fid)))
+        elLen[i]=temp[5]
+        psi[i]=temp[2]
+        theta[i]=temp[3]
+        roll[i]=temp[4]
     end
+    close(fid) #close ort file
 
     #store data in element object
-    el.props = sectionPropsArray
-    el.elLen=elLen
-    el.psi=psi
-    el.theta=theta
-    el.roll=roll
-
-    el.rotationalEffects = true(1,numElements)
-
-    fclose(fid) #close ort file
+    el = El(sectionPropsArray,elLen,psi,theta,roll,trues(numElements))
 
     return el
 
