@@ -87,19 +87,19 @@ function test_owens(test_transient,test_modal,test_flutter)
     omegaArrayHz2 = [7.1]/60
 
     if test_transient
-        freq,damp=owens([fname ".owens"],"TNB", timeStep, floor(timeSim/timeStep), false, 0, timeArray, omegaArrayHz)
+        freq,damp=owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
     end
 
     if test_modal
-        Juno.@enter owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
+        # Juno.@enter owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
         freq,damp=owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
     end
 
     if test_flutter
-        freq,damp=owens([fname ".owens"],"FA", omegaArrayHz2, true, 1.2041, Nmodes)
+        # freq,damp=owens(string(fname ".owens"),"FA", omegaArrayHz2, true, 1.2041, Nmodes)
     end
 
     println("Function Finished")
 end
 
-test_owens(false,true,false)
+test_owens(true,false,false)
