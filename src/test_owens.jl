@@ -1,7 +1,10 @@
 
 import DelimitedFiles
 import LinearAlgebra
-include("owens.jl") #TODO: organize correctly
+import FLOWMath
+using MATLAB #if this is used, must run from src location
+path,_ = splitdir(@__FILE__)
+include("$path/owens.jl") #TODO: organize correctly
 
 mutable struct PlatformProp
     fileRoot
@@ -25,7 +28,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     # *********************************************************************** #
 
     # use this benchmark file
-    bmOwens = "./input_files_test/_15mTower_transient_dvawt_c_2_lcdt"
+    bmOwens = "$path/input_files_test/_15mTower_transient_dvawt_c_2_lcdt"
     # append this name to the end of the saved files
     outFileExt = "_15mTowerExt_NOcentStiff"
 
@@ -35,7 +38,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     StiffDiag = StiffDiag_Nm_deg .* convRotStiff
 
     # filename root to save the created nodal file
-    platformProp = PlatformProp("./input_files_test/1_FourColumnSemi_2ndPass",
+    platformProp = PlatformProp("$path/input_files_test/1_FourColumnSemi_2ndPass",
     [9.8088e6 9.7811e6 1.8914e7 3.6351e9 3.6509e9 2.4362e9],
     [1.329e5 1.329e5 1.985e6 3.993e6 3.995e6 1.076e6],
     StiffDiag)
@@ -68,7 +71,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     # *********************************************************************
     # perform operations for the aerodynamic forces file generation
     # *********************************************************************
-    CACTUSfileRoot = "./input_files_test/DVAWT_2B_LCDT"
+    CACTUSfileRoot = "$path/input_files_test/DVAWT_2B_LCDT"
     OWENSfileRoot = bmOwens
 
     # *********************************************************************
@@ -81,12 +84,13 @@ function test_owens(test_transient,test_modal,test_flutter)
     timeStep = 2e-3
     timeSim = 0.1       # [sec]
     n_t = timeSim/timeStep # length of time vector
-    timeArray = [0 timeSim+1]
-    rpmArray  = [operatingRPM operatingRPM]
+    timeArray = [0, timeSim+1]
+    rpmArray  = [operatingRPM, operatingRPM]
     omegaArrayHz = rpmArray ./ 60
     omegaArrayHz2 = [7.1]/60
 
     if test_transient
+        # println("Running Transient") Juno.@enter owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
         freq,damp=owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
     end
 

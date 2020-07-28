@@ -8,12 +8,18 @@ include("createJointTransform.jl")
 include("calculateBCMap.jl")
 include("readGeneratorProps.jl")
 include("readInitCond.jl")
+
+include("transientExec.jl")
+
 mutable struct Model
     analysisType
     turbineStartup
     usingRotorSpeedFunction
     tocp
     initCond
+    numTS
+    delta_t
+    Omegaocp
     aeroElasticOn
     aeroForceOn
     aeroLoadsOn
@@ -30,6 +36,7 @@ mutable struct Model
     generatorProps
     OmegaGenStart
     omegaControl
+    OmegaInit
     totalNumDof
     spinUpOn
     nlOn
@@ -321,7 +328,7 @@ function owens(owensfile,analysisType;
 
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
     aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
-
+    owensfile = string(blddatafilename[1:end-4], ".owens") #TODO: this is redundant and confusing since it is specified at the beginning, clean up
     line             = readline(fid) #flag to include drive shaft effects
     driveShaftFlag   = real(parse(Int,line[1:2]))
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
@@ -371,7 +378,7 @@ function owens(owensfile,analysisType;
 
         initCond = readInitCond(initcondfilename) #read initial conditions
 
-        if !(occursin(".",generatorfilename)) #If there isn't a file
+        if !(occursin("[",generatorfilename)) #If there isn't a file
             useGeneratorFunction = true
             generatorProps = 0.0
         else
@@ -393,10 +400,10 @@ function owens(owensfile,analysisType;
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,
+    model = Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
     aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
     guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
-    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,totalNumDof,
+    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
     spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
     reducedDOFList,bladeData,nlParams,BC,nodalTerms,driveShaftProps)
@@ -427,8 +434,8 @@ function owens(owensfile,analysisType;
     #     end
     #
     if (occursin("TNB",analysisType)||occursin("TD",analysisType)||occursin("ROM",analysisType)) #EXECUTE TRANSIENT ANALYSIS
-        # [model.nlParams] = readNLParamsFile(owensfile)
-        # transientExec(model,mesh,el)
+        # [model.nlParams] = readNLParamsFile(owensfile) #TODO: this isn't really used, clean up
+        transientExec(model,mesh,el)
         freq = 0.0
         damp = 0.0
     end

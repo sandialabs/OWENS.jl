@@ -111,15 +111,15 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         a = [data1[17], data2[17]]
 
         #coupling factors
-        EIyz = [0, 0]
-        alpha1 = [0, 0]
-        alpha2 = [0, 0]
-        alpha3 = [0, 0]
-        alpha4 = [0, 0]
-        alpha5 = [0, 0]
-        alpha6 = [0, 0]
-        rhoIyz = [0, 0]
-        b = [0, 0]
+        EIyz = [0.0, 0.0]
+        alpha1 = [0.0, 0.0]
+        alpha2 = [0.0, 0.0]
+        alpha3 = [0.0, 0.0]
+        alpha4 = [0.0, 0.0]
+        alpha5 = [0.0, 0.0]
+        alpha6 = [0.0, 0.0]
+        rhoIyz = [0.0, 0.0]
+        b = [0.0, 0.0]
         a0 = [2*pi, 2*pi]
 
         sectionPropsArray[i] = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)

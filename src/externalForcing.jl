@@ -1,4 +1,4 @@
-function [Fexternal, Fdof] = externalForcing(time,aeroLoads)
+function externalForcing(time,aeroLoads)
 
 #owens externalForcing function for the OWENS toolkit
 # **********************************************************************
@@ -31,20 +31,22 @@ function [Fexternal, Fdof] = externalForcing(time,aeroLoads)
 
 
 #     if(time < 0.2)
-#         Fexternal = 1e6;
-#         Fdof = 20*6+1;
+#         Fexternal = 1e6
+#         Fdof = 20*6+1
 #     else
-#         Fexternal = [];
-#         Fdof = [];
+#         Fexternal = []
+#         Fdof = []
 #     end
 
-#temp = load('aeroLoads.mat');
-timeArray = aeroLoads.timeArray;
-ForceValHist = aeroLoads.ForceValHist;
-ForceDof = aeroLoads.ForceDof;
+#temp = load('aeroLoads.mat')
+timeArray = aeroLoads["timeArray"]
+ForceValHist = aeroLoads["ForceValHist"]
+ForceDof = aeroLoads["ForceDof"]
 
 
-Fexternal = interp1(timeArray,ForceValHist',time,'linear');
-Fdof = ForceDof;
+Fexternal = FLOWMath.linear(timeArray,ForceValHist',time)
+Fdof = ForceDof
+
+return Fexternal, Fdof
 
 end

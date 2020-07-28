@@ -1,721 +1,747 @@
-function transientExec(model,mesh,el)
-#transientExec performs modular transient analysis
-# **********************************************************************
-# *                   Part of the SNL OWENS Toolkit                    *
-# * Developed by Sandia National Laboratories Wind Energy Technologies *
-# *             See license.txt for disclaimer information             *
-# **********************************************************************
-#
-#   transientExec(model,mesh,el)
-#
-#   #This function is an executable function for transient analysis. It
-#   provides the interface of various external module with transient
-#   structural dynamics analysis capability.
-#
-#   input:
-#   model       = object containing model data
-#   mesh        = object containing mesh data
-#   el          = object containing element data
-#
-#
-#   output: (NONE)
 
+include("externalForcing.jl")
 
-
-## activate platform module
-#............... flags for module activation ....................
-aeroOn = false;
-#modularIteration
-moduleIteration = true;
-# Get AeroLoads
-aeroLoads = processAeroLoadsBLE(model.aeroloadfile, model.owensfile);
-
-# Declare Variable Type, are set later
-udot_j = 0.0;
-uddot_j = 0.0;
-torqueDriveShaft_j = 0.0;
-
-single_elStrain = struct('eps_xx_0',zeros(1,4),'eps_xx_z',zeros(1,4),'eps_xx_y',...
-    zeros(1,4),'gam_xz_0',zeros(1,4),'gam_xz_y',zeros(1,4),'gam_xy_0',zeros(1,4),'gam_xy_z',zeros(1,4));
-
-elStrain = repmat(single_elStrain,1,mesh.numEl);
-
-dispOut.elStrain = elStrain;
-dispOut.displ_sp1 =  zeros(492,1);
-dispOut.displddot_sp1 = zeros(492,1);
-dispOut.displdot_sp1 = zeros(492,1);
-#................................................................
-
-## Rotor mode initialization
-#..........................................................................
-OmegaInitial = model.OmegaInit; #Initial rotor speed (Hz)
-
-if(model.turbineStartup == 1) #forced start-up using generator as motor
-    disp('Running in forced starting mode.');
-    model.generatorOn = true;
-    #     Omega = OmegaInitial;
-    rotorSpeedForGenStart = 0.0;
-elseif(model.turbineStartup == 2) #self-starting mode
-    disp('Running in self-starting mode.');
-    model.generatorOn = false;
-    #     Omega = OmegaInitial;
-    rotorSpeedForGenStart = model.OmegaGenStart; #Spec rotor speed for generator startup Hz
-else
-    disp('Running in specified rotor speed mode');
-    model.generatorOn = false;
-    #     Omega = OmegaInitial;
-    rotorSpeedForGenStart = 1e6; #ensures generator always off for practical purposes
+mutable struct ElStrain
+    eps_xx_0
+    eps_xx_z
+    eps_xx_y
+    gam_xz_0
+    gam_xz_y
+    gam_xy_0
+    gam_xy_z
 end
-#..........................................................................
-# if(model.turbineStartup ==1 || model.turbineStartup==2)
-#     plotGenSpeedVsTorque([0:.01:5],model.generatorProps);
-# end
-##
-## state initialization
-numDOFPerNode = 6;
-model.totalNumDof = mesh.numNodes*numDOFPerNode;
-#......... specify initial conditions .......................
-u_s = zeros(model.totalNumDof,1);
-[u_s] = setInitialConditions(model.initCond,u_s,numDOFPerNode);
-u_sm1 = u_s;
-udot_s = u_s*0;
-uddot_s = u_s*0;
-#............................................................
 
-numTS = model.numTS;       #define number of time steps
-delta_t = model.delta_t;   #define time step size
-uHist = zeros(length(u_s),numTS+1);
-uHist(:,1) = u_s;          #store initial condition
+mutable struct DispOut
+    elStrain
+    displ_sp1
+    displddot_sp1
+    displdot_sp1
+end
 
-#initialize omega_platform, omega_platform_dot, omegaPlatHist
-# omega_platform = zeros(3,1);
-# omega_platform_dot = zeros(3,1);
-# omegaPlatHist(:,1) = omega_platform;
+mutable struct DispData
+    displ_s
+    displdot_s
+    displddot_s
+end
 
-t = zeros(1,numTS+1);
-FReactionHist = zeros(numTS+1,6);
-# strainHist(numTS+1) = struct();
-single_strainHist = struct('eps_xx_0',zeros(1,4),'eps_xx_z',zeros(1,4),'eps_xx_y',...
-    zeros(1,4),'gam_xz_0',zeros(1,4),'gam_xz_y',zeros(1,4),'gam_xy_0',zeros(1,4),'gam_xy_z',zeros(1,4));
-strainHist = repmat(single_strainHist,mesh.numEl,numTS);
-
-aziHist = zeros(1,numTS+1);
-OmegaHist = zeros(1,numTS+1);
-OmegaDotHist = zeros(1,numTS+1);
-gbHist = zeros(1,numTS+1);
-gbDotHist = zeros(1,numTS+1);
-gbDotDotHist = zeros(1,numTS+1);
-#genTorque = zeros(1,numTS+1);
-genTorque = zeros(1,numTS+1);
-genPower = zeros(1,numTS+1);
-torqueDriveShaft = zeros(1,numTS+1);
-Ywec = zeros(numTS+1,1);
-rigidDof = zeros(1,numTS+1);
-
-t(1) = 0.0; #initialize various states and variables
-gb_s = 0;
-gbDot_s = 0;
-gbDotDot_s = 0;
-azi_s = 0;
-Omega_s = OmegaInitial;
-OmegaDot_s = 0;
-genTorque_s = 0;
-torqueDriveShaft_s = 0;
-# azi_sm1 = -Omega*delta_t*2*pi;
-aziHist(1) = azi_s;
-OmegaHist(1) = Omega_s;
-OmegaDotHist(1) = OmegaDot_s;
-FReactionsm1 = zeros(6,1);
-FReactionHist(1,:) = FReactionsm1;
-FReaction_j = FReactionsm1;
-gbHist(1) = gb_s;
-gbDotHist(1) = gbDot_s;
-gbDotDotHist(1) = gbDotDot_s;
-genTorque(1) = genTorque_s;
-torqueDriveShaft(1) = torqueDriveShaft_s;
-##
-tic
+function transientExec(model,mesh,el)
+    #transientExec performs modular transient analysis
+    # **********************************************************************
+    # *                   Part of the SNL OWENS Toolkit                    *
+    # * Developed by Sandia National Laboratories Wind Energy Technologies *
+    # *             See license.txt for disclaimer information             *
+    # **********************************************************************
+    #
+    #   transientExec(model,mesh,el)
+    #
+    #   #This function is an executable function for transient analysis. It
+    #   provides the interface of various external module with transient
+    #   structural dynamics analysis capability.
+    #
+    #   input:
+    #   model       = object containing model data
+    #   mesh        = object containing mesh data
+    #   el          = object containing element data
+    #
+    #
+    #   output: (NONE)
 
 
-## structural dynamics initialization
-#..........................................................................
-if(strcmp(model.analysisType,'ROM')) #initialize reduced order model
-    error('ROM not fully implemented');
-    #     #calculate constrained dof vector
-    #     numDofPerNode = 6;
-    #     isConstrained = zeros(model.totalNumDof,1);
-    #     constDof = (model.BC.pBC(:,1)-1)*numDofPerNode + model.BC.pBC(:,2);
-    #     index = 1;
-    #     for i=1:mesh.numNodes
-    #         for j=1:numDofPerNode
-    #             if(ismember((i-1)*numDofPerNode + j,constDof))
-    #                 isConstrained(index) = 1;
+
+    ## activate platform module
+    #............... flags for module activation ....................
+    aeroOn = false
+    #modularIteration
+    moduleIteration = true
+    # Get AeroLoads
+    mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
+
+    # Declare Variable Type, are set later
+    udot_j = 0.0
+    uddot_j = 0.0
+    torqueDriveShaft_j = 0.0
+
+    elStrain = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
+
+    dispOut = DispOut(elStrain,zeros(492,492),zeros(492,492),zeros(492,492))
+    #................................................................
+
+    ## Rotor mode initialization
+    #..........................................................................
+    OmegaInitial = model.OmegaInit #Initial rotor speed (Hz)
+
+    if (model.turbineStartup == 1) #forced start-up using generator as motor
+        println("Running in forced starting mode.")
+        model.generatorOn = true  #TODO: clean this redundant/conflicting logic up
+        #     Omega = OmegaInitial
+        rotorSpeedForGenStart = 0.0
+    elseif (model.turbineStartup == 2) #self-starting mode
+        println("Running in self-starting mode.")
+        model.generatorOn = false
+        #     Omega = OmegaInitial
+        rotorSpeedForGenStart = model.OmegaGenStart #Spec rotor speed for generator startup Hz
+    else
+        println("Running in specified rotor speed mode")
+        model.generatorOn = false
+        #     Omega = OmegaInitial
+        rotorSpeedForGenStart = 1e6 #ensures generator always off for practical purposes
+    end
+    #..........................................................................
+    # if (model.turbineStartup ==1 || model.turbineStartup==2)
+    #     plotGenSpeedVsTorque([0:.01:5],model.generatorProps)
+    # end
+    ##
+    ## state initialization
+    numDOFPerNode = 6
+    model.totalNumDof = mesh.numNodes*numDOFPerNode
+    #......... specify initial conditions .......................
+    u_s = zeros(model.totalNumDof,1)
+    mat"$u_s = setInitialConditions($model.initCond,$u_s,$numDOFPerNode)"
+    u_sm1 = u_s
+    udot_s = u_s*0
+    uddot_s = u_s*0
+    #............................................................
+
+    numTS = Int(model.numTS)       #define number of time steps
+    delta_t = model.delta_t   #define time step size
+    uHist = zeros(length(u_s),numTS+1)
+    uHist[:,1] = u_s          #store initial condition
+
+    #initialize omega_platform, omega_platform_dot, omegaPlatHist
+    # omega_platform = zeros(3,1)
+    # omega_platform_dot = zeros(3,1)
+    # omegaPlatHist(:,1) = omega_platform
+
+    t = zeros(numTS+1)
+    FReactionHist = zeros(numTS+1,6)
+    # strainHist(numTS+1) = struct()
+    strainHist = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+
+    aziHist = zeros(numTS+1)
+    OmegaHist = zeros(numTS+1)
+    OmegaDotHist = zeros(numTS+1)
+    gbHist = zeros(numTS+1)
+    gbDotHist = zeros(numTS+1)
+    gbDotDotHist = zeros(numTS+1)
+    genTorque = zeros(numTS+1)
+    genPower = zeros(numTS+1)
+    torqueDriveShaft = zeros(numTS+1)
+    Ywec = zeros(numTS+1,1)
+    rigidDof = zeros(numTS+1)
+
+    t[1] = 0.0 #initialize various states and variables
+    gb_s = 0
+    gbDot_s = 0
+    gbDotDot_s = 0
+    azi_s = 0
+    Omega_s = OmegaInitial
+    OmegaDot_s = 0
+    genTorque_s = 0
+    torqueDriveShaft_s = 0
+    # azi_sm1 = -Omega*delta_t*2*pi
+    aziHist[1] = azi_s
+    OmegaHist[1] = Omega_s
+    OmegaDotHist[1] = OmegaDot_s
+    FReactionsm1 = zeros(6)
+    FReactionHist[1,:] = FReactionsm1
+    FReaction_j = FReactionsm1
+    gbHist[1] = gb_s
+    gbDotHist[1] = gbDot_s
+    gbDotDotHist[1] = gbDotDot_s
+    genTorque[1] = genTorque_s
+    torqueDriveShaft[1] = torqueDriveShaft_s
+    ##
+
+    ## structural dynamics initialization
+    #..........................................................................
+    if (occursin("ROM",model.analysisType)) #initialize reduced order model
+        error("ROM not fully implemented")
+        #     #calculate constrained dof vector
+        #     numDofPerNode = 6
+        #     isConstrained = zeros(model.totalNumDof,1)
+        #     constDof = (model.BC.pBC(:,1)-1)*numDofPerNode + model.BC.pBC(:,2)
+        #     index = 1
+        #     for i=1:mesh.numNodes
+        #         for j=1:numDofPerNode
+        #             if (ismember((i-1)*numDofPerNode + j,constDof))
+        #                 isConstrained(index) = 1
+        #             end
+        #             index = index + 1
+        #         end
+        #     end
+        #     model.BC.isConstrained = isConstrained
+        #
+        #
+        #     [rom,elStorage]=reducedOrderModel(model,mesh,el,u_s) #construct reduced order model
+        #
+        #     #set up inital values in modal space
+        #     jointTransformTrans = model.jointTransform' #'
+        #     u_sRed = jointTransformTrans*u_s(1:end)
+        #     udot_sRed = jointTransformTrans*udot_s(1:end)
+        #     uddot_sRed = jointTransformTrans*uddot_s(1:end)
+        #
+        #     BC = model.BC
+        #     [u_s2] = applyBCModalVec(u_sRed,BC.numpBC,BC.map)
+        #     [udot_s2] = applyBCModalVec(udot_sRed,BC.numpBC,BC.map)
+        #     [uddot_s2] = applyBCModalVec(uddot_sRed,BC.numpBC,BC.map)
+        #
+        #     invPhi = rom.invPhi
+        #
+        #     eta_s     = invPhi*u_s2
+        #     etadot_s  = invPhi*udot_s2
+        #     etaddot_s = invPhi*uddot_s2
+    else
+        mat"$elStorage = initialElementCalculations($model,$el,$mesh)" #perform initial element calculations for conventional structural dynamics analysis
+    end
+
+    #calculate structural/platform moi
+    mat"[$unused1,$structureMOI,$unused2]=calculateStructureMassProps($elStorage)"
+    #..........................................................................
+
+    ## Main Loop - iterate for a solution at each time step, i
+    for i=1:numTS
+
+        #     i #TODO add verbose printing
+        if (mod(i,100)==0) #print command that displays progress of time stepping
+            println("Iteration: $i")
+        end
+
+        ## check for specified rotor speed at t[i] + delta_t
+        model.omegaControl = false
+        if (model.turbineStartup == 0)
+            model.omegaControl = true
+            if (model.usingRotorSpeedFunction) #use user specified rotor speed profile function
+                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i]+delta_t,0.0,delta_t)
+                Omega_s = omegaCurrent
+            else #use discreteized rotor speed profile function
+                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i]+delta_t,model.tocp,model.Omegaocp,delta_t)
+                if (terminateSimulation)
+                    break
+                end
+                Omega_s = omegaCurrent
+                OmegaDot_s = OmegaDotCurrent
+            end
+        else
+            omegaCurrent = 0.0
+        end
+        ##
+
+        ## initialize "j" Gauss-Sidel iteration
+        u_j=u_s
+        azi_j = azi_s
+        Omega_j = Omega_s
+        OmegaDot_j = OmegaDot_s
+        gb_j = gb_s
+        gbDot_j = gbDot_s
+        gbDotDot_j = gbDotDot_s
+        genTorque_j = genTorque_s
+
+        needsAeroCalcAtThisTimestep = true
+
+        #initialize  platform module related variables only used if (model.hydroOn)
+        Ywec_j = Ywec[i,:]
+        Ywec_jLast = Ywec_j
+        # 		Accel_j = Accel
+        # 		Accel_jLast = Accel
+
+        TOL = 1e-8  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 50 #max iteration for various modules
+        numIterations = 1
+        uNorm = 1e6
+        platNorm = 1e6
+        aziNorm = 1e6
+        gbNorm = 1e6 #initialize norms for various module states
+        ##
+
+        while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
+
+            rbData = zeros(9)
+            #calculate CP2H (platform frame to hub frame transformation matrix)
+            CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
+
+            #.... inertial frame to platform transformation matrix ...........
+            if (model.hydroOn)
+                CN2P=1.0*LinearAlgebra.I(3) # temporary declaration: original CN2P below
+                #             CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4))
+            else
+                CN2P=1.0*LinearAlgebra.I(3)
+            end
+            #.........................................
+
+            CN2H = CP2H*CN2P
+
+            #         ## evaluate platform module
+            #         ##-------------------------------------
+            #         if (model.hydroOn)
+            #             # 	Accel_jLast= Accel_j
+            #             Ywec_jLast = Ywec_j;
+            #             if (model.platformTurbineYawInteraction == 0)
+            #                 FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; #'
+            #                 FReaction1 =  [-FReaction_j(1:5); 0.0];
+            #             elseif (model.platformTurbineYawInteraction == 1)
+            #                 FReaction0 = (-FReactionHist(i,1:6)');
+            #                 FReaction1 =  (-FReaction_j(1:6));
+            #             elseif (model.platformTurbineYawInteraction == 2)
+            #                 FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
+            #                 FReaction1 =  [-FReaction_j(1:5); genTorque_j];
+            #             else
+            #                 error('PlatformTurbineYawInteraction flag not recognized.');
+            #             end
+            #             [rbData,Ywec_j,_] = platformModule([t[i] t[i]+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
+            #         end
+            #         #-------------------------------------
+            ##
+
+            ## evaluate generator module
+            #----- generator module ---------------------------
+            genTorque_j = 0
+            if (model.generatorOn)
+                if (model.driveTrainOn)
+                    if (model.useGeneratorFunction)
+                        genTorqueHSS0 = userDefinedGenerator(gbDot_j*model.gearRatio)
+                    else
+                        error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio)
+                    end
+                else
+                    if (model.useGeneratorFunction)
+                        genTorqueHSS0 = userDefinedGenerator(Omega_j)
+                    else
+                        error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j)
+                    end
+                end
+                #should eventually account for Omega = gbDot*gearRatio here...
+                genTorque_j = genTorqueHSS0*model.gearRatio*model.gearBoxEfficiency #calculate generator torque on LSS side
+                #         genTorqueAppliedToTurbineRotor0 = -genTorque0
+                #         genTorqueAppliedToPlatform0 = genTorqueHSS0
+            end
+            #-------------------------------------       ##
+
+            ## evaluate drivetrain module
+            # #------ drivetrain module ---------------------------------
+            torqueDriveShaft_j = genTorque_j
+            gb_jLast = gb_j
+            if (!model.omegaControl)
+                if (model.driveTrainOn)
+                    torqueDriveShaft_j = calculateDriveShaftReactionTorque(model.driveShaftProps,
+                    azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi)
+
+                    gb_j,gbDot_j,gbDotDot_j = updateRotorRotation(model.JgearBox,0,0,
+                    -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,delta_t)
+                else
+                    gb_j = azi_j
+                    gbDot_j = Omega_j
+                    gbDotDot_j = OmegaDot_j
+                end
+            else
+                gb_j = azi_j
+                gbDot_j = omegaCurrent*2*pi
+                gbDotDot_j = 0
+            end
+            #-------------------------------------        ## rotor speed update
+            #------ update rotor speed ---------------------------------
+            azi_jLast = azi_j
+            if (model.omegaControl)
+                if (model.usingRotorSpeedFunction)
+                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i]+delta_t,azi_s,delta_t)
+                else
+                    Omega_j = Omega_s
+                    OmegaDot_j = OmegaDot_s
+                    azi_j = azi_s + Omega_j*delta_t*2*pi
+                end
+            end
+            if (!model.omegaControl)
+                Crotor = 0
+                Krotor = 0
+                azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
+                -FReaction_j[6],-torqueDriveShaft_j,
+                azi_s,Omega_s,OmegaDot_s,delta_t)
+            end
+            #-------------------------------------        ##
+
+            ## evaluate aerodynamic module (CACTUS ONE-WAY)
+            ##------== aerodynamics module ------------------------==
+            if (model.aeroLoadsOn) # TODO: this is odd since we load in the aero loads elsewhere
+                #             println('using cactus aero loads...')
+                #             #----- calculate aerodynamic loads --------------------------------
+                #             # this is place holder
+                #             [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t[i],el.props,model.totalNumDof)
+                #             # these loads will need to account for a turbine with a
+                #             # platform with different orientation than the inertial system.
+                #             FAeroDof = (1:length(u_s))
+                #             #------------------------------------------------------------------
+            else
+                FAero = []
+                FAeroDof = []
+            end
+            #-------------------------------------       ## evaluate aerodynamic module (TU DELFT)
+            ##------== aerodynamics module ------------------------==
+            if (aeroOn && needsAeroCalcAtThisTimestep)
+
+                #             [FAero,FAeroDof] = aeroModule(model,t[i] + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero)
+                #
+                #             #set aero forces flag
+                #             needsAeroCalcAtThisTimestep = false
+
+            end
+            #-------------------------------------       ##
+
+            ## compile external forcing on rotor
+            #compile forces to supply to structural dynamics solver
+            Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
+
+            if isempty(FAeroDof)
+                Fdof = Fdof_sub
+                Fexternal = Fexternal_sub
+            else
+                Fdof = [Fdof_sub, FAeroDof]
+                Fexternal = [Fexternal_sub; FAero]
+            end
+
+
+            ## evaluate structural dynamics
+            #call structural dynamics solver
+            #initialization of structural dynamics displacements, velocities, accelerations, etc.
+            #             dispData.displ_sm1 = u_sm1 #Not even used
+            dispData = DispData(u_s,udot_s,uddot_s)
+
+            #         if (occursin('ROM',model.analysisType))
+            #             dispData.displ_s = u_s
+            #             dispData.displdot_s = udot_s
+            #             dispData.displddot_s = uddot_s
+            #
+            #             dispData.eta_s     = eta_s
+            #             dispData.etadot_s  = etadot_s
+            #             dispData.etaddot_s = etaddot_s
+            #         end
+
+            if (occursin("ROM",model.analysisType))
+                error("ROM not fully implemented")
+                #             # evalulate structural dynamics using reduced order model
+                #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
+            else
+                # evalulate structural dynamics using conventional representation
+                t_in = t[i]
+                mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
+            end
+            #update last iteration displacement vector
+            u_jLast = u_j
+            u_j = dispOut["displ_sp1"]             #update current estimates of velocity, acceleration
+            # Only used for TNB, but must be declared
+            udot_j  = dispOut["displdot_sp1"]
+            uddot_j = dispOut["displddot_sp1"]
+
+
+            if (occursin("ROM",model.analysisType))
+                #             udot_j  = dispOut.displdot_sp1
+                #             uddot_j = dispOut.displddot_sp1
+                #
+                #             eta_j = dispOut.eta_sp1
+                #             etadot_j = dispOut.etadot_sp1
+                #             etaddot_j = dispOut.etaddot_sp1
+                error("ROM not fully implemented")
+            end
+            ##
+
+            ## calculate norms
+            uNorm = LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+            aziNorm = LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+
+            if (model.hydroOn)
+                platNorm = LinearAlgebra.norm(Ywec_j-Ywec_jLast)/LinearAlgebra.norm(Ywec_j) #platform module states iteration norm
+            else
+                platNorm = 0.0
+            end
+
+            if (model.driveTrainOn)
+                gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm
+            else
+                gbNorm = 0.0
+            end
+
+            if (moduleIteration == false)
+                break
+            end
+
+            numIterations = numIterations + 1
+        end #end iteration while loop
+
+        ## calculate converged generator torque/power
+        if (model.useGeneratorFunction)
+            if (model.generatorOn || (model.turbineStartup==0))
+                println("simpleGenerator not fully implemented")#[genTorquePlot] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio)
+                genTorquePlot = 0
+            else
+                genTorquePlot = 0
+            end
+        else
+            genTorquePlot = 0
+        end
+        genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*model.gearRatio
+
+
+        ## update timestepping variables and other states, store in history arrays
+        if (occursin("TD",model.analysisType))
+            u_sm1 = u_s
+            u_s = u_j
+        end
+        if (occursin("TNB",model.analysisType))
+            u_s = u_j
+            udot_s = udot_j
+            uddot_s = uddot_j
+        end
+        if (occursin("ROM",model.analysisType))
+            #         u_s = u_j
+            #         udot_s = udot_j
+            #         uddot_s = uddot_j
+            #
+            #         eta_s = eta_j
+            #         etadot_s = etadot_j
+            #         etaddot_s = etaddot_j
+            error("ROM not fully implemented")
+        end
+
+        uHist[:,i+1] = u_s
+        FReactionHist[i+1,:] = FReaction_j
+        for ii = 1:length(elStrain)
+            strainHist[ii,i] = ElStrain(elStrain[ii]["eps_xx_0"],
+                elStrain[ii]["eps_xx_z"],
+                elStrain[ii]["eps_xx_y"],
+                elStrain[ii]["gam_xz_0"],
+                elStrain[ii]["gam_xz_y"],
+                elStrain[ii]["gam_xy_0"],
+                elStrain[ii]["gam_xy_z"])
+        end
+        t[i+1] = t[i] + delta_t
+
+        azi_s = azi_j
+        Omega_s = Omega_j
+        OmegaDot_s = OmegaDot_j
+
+        genTorque_s = genTorque_j
+        torqueDriveShaft_s = torqueDriveShaft_j
+
+        aziHist[i+1] = azi_s
+        OmegaHist[i+1] = Omega_s
+        OmegaDotHist[i+1] = OmegaDot_s
+
+        gb_s = gb_j
+        gbDot_s = gbDot_j
+        gbDotDot_s = gbDotDot_j
+
+        gbHist[i+1] = gb_s
+        gbDotHist[i+1] = gbDot_s
+        gbDotDotHist[i+1] = gbDotDot_s
+
+        #genTorque[i+1] = genTorque_s
+        genTorque[i+1] = genTorquePlot
+        genPower[i+1] = genPowerPlot
+        torqueDriveShaft[i+1] = torqueDriveShaft_s
+
+        if (model.hydroOn)
+            error("Hydro Model not fully implemented")
+            #         Ywec(i+1,:) = Ywec_j
+            #         rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6)
+
+        else
+            rigidDof[i] = 0
+        end
+
+        FReactionHist[i+1,:] = FReaction_j
+        ##
+
+        ## check rotor speed for generator operation
+        if (Omega_s>= rotorSpeedForGenStart)
+            model.generatorOn = true
+        else
+            model.generatorOn = false
+        end
+        ##
+
+    end #end timestep loop
+
+    ## kill platform module process
+    if (model.hydroOn)
+        #     serverSendVector(-1.0,d_output_streamPlatform)
+        #     terminateServer(server_socketPlatform,output_socketPlatform,1)
+        #     terminateClient(input_socketPlatform,1)
+    end
+
+    ## kill aerodynamic module process
+    if (aeroOn)
+        #     serverSendVector(decodeVec(4,-1.0),d_output_streamAero)
+        #     terminateClient(input_socketAero,1) #close down client connection to forcing module
+        #     terminateServer(server_socketAero,output_socketAero,1) #close down server on this side
+    end
+
+    ##
+    #toc
+    # save aeroOutputArray
+    #save simulation data in .mat file
+    # save(model.outFilename,'t','uHist','aziHist','OmegaHist','OmegaDotHist','gbHist','gbDotHist','gbDotDotHist','FReactionHist','rigidDof','genTorque','genPower','torqueDriveShaft','strainHist')
+    # fprintf('#s\n','Output Saving Not Currently Implemented')
+
+    #Writefile
+    writefile = false
+    if !writefile
+        println("NOT WRITING Verification File")
+    end
+
+    # if writefile
+    #
+    #     if writefile
+    #         fprintf('#s\n','Writing Verification File')
+    #     end
+    #
+    #     fid = open([model.outFilename(1:end-3) 'txt'],'w+') #open/create new for writing and discard existing data
+    #
+    #     for i = 0:length(t)
+    #         if i == 0
+    #             line = ['t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist1,FReactionHist2,FReactionHist3,FReactionHist4,FReactionHist5,FReactionHist6,rigidDof,genTorque,genPower,torqueDriveShaft' sprintf('\n')']
+    #         else
+    #             line = [sprintf('#1.12e', t[i]), ',',
+    #             sprintf('#1.12e', aziHist[i]), ',',
+    #             sprintf('#1.12e', OmegaHist[i]), ',',
+    #             sprintf('#1.12e', OmegaDotHist[i]), ',',
+    #             sprintf('#1.12e', gbHist[i]), ',',
+    #             sprintf('#1.12e', gbDotHist[i]), ',',
+    #             sprintf('#1.12e', gbDotDotHist[i]), ',',
+    #             sprintf('#1.12e', FReactionHist(i,1)), ',',
+    #             sprintf('#1.12e', FReactionHist(i,2)), ',',
+    #             sprintf('#1.12e', FReactionHist(i,3)), ',',
+    #             sprintf('#1.12e', FReactionHist(i,4)), ',',
+    #             sprintf('#1.12e', FReactionHist(i,5)), ',',
+    #             sprintf('#1.12e', FReactionHist(i,6)), ',',
+    #             sprintf('#1.12e', rigidDof[i]), ',',
+    #             sprintf('#1.12e', genTorque[i]), ',',
+    #             sprintf('#1.12e', genPower[i]), ',',
+    #             sprintf('#1.12e', torqueDriveShaft[i]), sprintf('\n') ]
+    #         end
+    #         fwrite(fid,line,'char')
+    #     end
+    #
+    #     fclose(fid)
+    #
+    #     # Save uHist
+    #     fid = open([model.outFilename(1:end-4) '_uHist.txt'],'w+') #open/create new for writing and discard existing data
+    #
+    #     for i = 0:length(t)
+    #         if i == 0
+    #             line = ['t uHist' sprintf('\n')']
+    #             fwrite(fid,line,'char')
+    #         else
+    #             for ii = 1:length(uHist(:,1))-1
+    #                 line = [sprintf('#1.12e',t[i]), ' ', sprintf('#1.12e',uHist(ii,i)') ]
+    #                 fwrite(fid,line,'char')
     #             end
-    #             index = index + 1;
+    #             line = [sprintf('#1.12e',t[i]), ' ', sprintf('#1.12e',uHist(end,i)'), sprintf('\n') ]
+    #             fwrite(fid,line,'char')
+    #         end
+    #
+    #     end
+    #
+    #     close(fid)
+    #
+    #
+    #     # Save strainHist
+    #
+    #     fid = open(string(model.outFilename[1:end-4] "_strainHist.txt"),'w+') #open/create new for writing and discard existing data
+    #
+    #     for i = 0:length(t)-1
+    #         if i == 0
+    #             line = ['n_t n_elem' sprintf('\n')]
+    #             fwrite(fid,line,'char')
+    #
+    #             line = [sprintf('#1.12e',length(t)) ' ' sprintf('#1.12e',length(strainHist(:,1))) sprintf('\n')]
+    #             fwrite(fid,line,'char')
+    #         else
+    #
+    #             for j = 1:length(strainHist(:,1))
+    #                 line = ['t elem', sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #                 line = [sprintf('#1.12e',t[i]), ' ', sprintf('#1.12e',j), sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['eps_xx_0 ' sprintf('#1.12e',strainHist(j,i).eps_xx_0(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['eps_xx_0 ' sprintf('#1.12e',strainHist(j,i).eps_xx_0(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['eps_xx_z ' sprintf('#1.12e',strainHist(j,i).eps_xx_z(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['eps_xx_z ' sprintf('#1.12e',strainHist(j,i).eps_xx_z(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['eps_xx_y ' sprintf('#1.12e',strainHist(j,i).eps_xx_y(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['eps_xx_y ' sprintf('#1.12e',strainHist(j,i).eps_xx_y(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['gam_xz_0 ' sprintf('#1.12e',strainHist(j,i).gam_xz_0(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['gam_xz_0 ' sprintf('#1.12e',strainHist(j,i).gam_xz_0(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['gam_xz_y ' sprintf('#1.12e',strainHist(j,i).gam_xz_y(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['gam_xz_y ' sprintf('#1.12e',strainHist(j,i).gam_xz_y(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['gam_xy_0 ' sprintf('#1.12e',strainHist(j,i).gam_xy_0(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['gam_xy_0 ' sprintf('#1.12e',strainHist(j,i).gam_xy_0(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #                 for jj = 1:3
+    #                     line = ['gam_xy_z ' sprintf('#1.12e',strainHist(j,i).gam_xy_z(jj))]
+    #                     fwrite(fid,line,'char')
+    #                 end
+    #                 line = ['gam_xy_z ' sprintf('#1.12e',strainHist(j,i).gam_xy_z(4)) sprintf('\n')]
+    #                 fwrite(fid,line,'char')
+    #
+    #             end
     #         end
     #     end
-    #     model.BC.isConstrained = isConstrained;
     #
-    #
-    #     [rom,elStorage]=reducedOrderModel(model,mesh,el,u_s); #construct reduced order model
-    #
-    #     #set up inital values in modal space
-    #     jointTransformTrans = model.jointTransform'; #'
-    #     u_sRed = jointTransformTrans*u_s(1:end);
-    #     udot_sRed = jointTransformTrans*udot_s(1:end);
-    #     uddot_sRed = jointTransformTrans*uddot_s(1:end);
-    #
-    #     BC = model.BC;
-    #     [u_s2] = applyBCModalVec(u_sRed,BC.numpBC,BC.map);
-    #     [udot_s2] = applyBCModalVec(udot_sRed,BC.numpBC,BC.map);
-    #     [uddot_s2] = applyBCModalVec(uddot_sRed,BC.numpBC,BC.map);
-    #
-    #     invPhi = rom.invPhi;
-    #
-    #     eta_s     = invPhi*u_s2;
-    #     etadot_s  = invPhi*udot_s2;
-    #     etaddot_s = invPhi*uddot_s2;
-else
-    [elStorage] = initialElementCalculations(model,el,mesh); #perform initial element calculations for conventional structural dynamics analysis
+    #     close(fid)
+    # end
+
 end
 
-#calculate structural/platform moi
-[~,structureMOI,~]=calculateStructureMassProps(elStorage);
-#..........................................................................
+function omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)
 
-## Main Loop - iterate for a solution at each time step, i
-for i=1:numTS
-
-    #     i #TODO add verbose printing
-    if(mod(i,100)==0) #print command that displays progress of time stepping
-        fprintf('#s\n','Iteration: ')#TODO: add string conversion of i
-    end
-
-    ## check for specified rotor speed at t(i) + delta_t
-    model.omegaControl = false;
-    if(model.turbineStartup == 0)
-        model.omegaControl = true;
-        if(model.usingRotorSpeedFunction) #use user specified rotor speed profile function
-            [~,omegaCurrent,~] = getRotorPosSpeedAccelAtTime(t(i),t(i)+delta_t,0.0,delta_t);
-            Omega_s = omegaCurrent;
-        else #use discreteized rotor speed profile function
-            [omegaCurrent,OmegaDotCurrent,terminateSimulation] = omegaSpecCheck(t(i)+delta_t,model.tocp,model.Omegaocp,delta_t);
-            if(terminateSimulation)
-                break;
-            end
-            Omega_s = omegaCurrent;
-            OmegaDot_s = OmegaDotCurrent;
-        end
+    if (tocp[length(tocp)]<tCurrent)
+        println("Simulation time is greater than that specified in control points for prescribed rotor speed profile.")
+        println("Terminating simulation.")
+        terminateSimulation = true
+        OmegaCurrent = 0.0
+        OmegaDotCurrent = 0.0
     else
-        omegaCurrent = 0.0;
-    end
-    ##
-
-    ## initialize "j" Gauss-Sidel iteration
-    u_j=u_s;
-    azi_j = azi_s;
-    Omega_j = Omega_s;
-    OmegaDot_j = OmegaDot_s;
-    gb_j = gb_s;
-    gbDot_j = gbDot_s;
-    gbDotDot_j = gbDotDot_s;
-    genTorque_j = genTorque_s;
-
-    needsAeroCalcAtThisTimestep = true;
-
-    #initialize  platform module related variables only used if(model.hydroOn)
-    Ywec_j = Ywec(i,:);
-    Ywec_jLast = Ywec_j;
-    # 		Accel_j = Accel;
-    # 		Accel_jLast = Accel;
-
-    TOL = 1e-8;  #gauss-seidel iteration tolerance for various modules
-    MAXITER = 50; #max iteration for various modules
-    numIterations = 1; uNorm = 1e6; platNorm = 1e6; aziNorm = 1e6; gbNorm = 1e6; #initialize norms for various module states
-    ##
-
-    while((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-
-        rbData = zeros(1,9);
-        #calculate CP2H (platform frame to hub frame transformation matrix)
-        CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1];
-
-        #.... inertial frame to platform transformation matrix ...........
-        if(model.hydroOn)
-            CN2P=eye(3); # temporary declaration: original CN2P below
-            #             CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4));
-        else
-            CN2P=eye(3);
-        end
-        #.........................................
-
-        CN2H = CP2H*CN2P;
-
-        #         ## evaluate platform module
-        #         ##====================================================
-        #         if(model.hydroOn)
-        #             # 	Accel_jLast= Accel_j;
-        #             Ywec_jLast = Ywec_j;
-        #             if(model.platformTurbineYawInteraction == 0)
-        #                 FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; #'
-        #                 FReaction1 =  [-FReaction_j(1:5); 0.0];
-        #             elseif(model.platformTurbineYawInteraction == 1)
-        #                 FReaction0 = (-FReactionHist(i,1:6)');
-        #                 FReaction1 =  (-FReaction_j(1:6));
-        #             elseif(model.platformTurbineYawInteraction == 2)
-        #                 FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
-        #                 FReaction1 =  [-FReaction_j(1:5); genTorque_j];
-        #             else
-        #                 error('PlatformTurbineYawInteraction flag not recognized.');
-        #             end
-        #             [rbData,Ywec_j,~] = platformModule([t(i) t(i)+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
-        #         end
-        #         #====================================================
-        ##
-
-        ## evaluate generator module
-        #===== generator module ===========================
-        genTorque_j = 0;
-        if (model.generatorOn)
-            if(model.driveTrainOn)
-                if(model.useGeneratorFunction)
-                    [genTorqueHSS0] = userDefinedGenerator(gbDot_j*model.gearRatio);
-                else
-                    error('simpleGenerator not fully implemented')#[genTorqueHSS0] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
-                end
-            else
-                if(model.useGeneratorFunction)
-                    [genTorqueHSS0] = userDefinedGenerator(Omega_j);
-                else
-                    error('simpleGenerator not fully implemented')#[genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j);
-                end
-            end
-            #should eventually account for Omega = gbDot*gearRatio here...
-            genTorque_j = genTorqueHSS0*model.gearRatio*model.gearBoxEfficiency; #calculate generator torque on LSS side
-            #         genTorqueAppliedToTurbineRotor0 = -genTorque0;
-            #         genTorqueAppliedToPlatform0 = genTorqueHSS0;
-        end
-        #==================================================
-        ##
-
-        ## evaluate drivetrain module
-        # #===== drivetrain module ==========================
-        torqueDriveShaft_j = genTorque_j;
-        gb_jLast = gb_j;
-        if(~model.omegaControl)
-            if(model.driveTrainOn)
-                [torqueDriveShaft_j] = calculateDriveShaftReactionTorque(model.driveShaftProps,...
-                    azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi);
-
-                [gb_j,gbDot_j,gbDotDot_j] = updateRotorRotation(model.JgearBox,0,0,...
-                    -genTorque_j,torqueDriveShaft_j,...
-                    gb_s,gbDot_s,gbDotDot_s,delta_t);
-            else
-                gb_j = azi_j;
-                gbDot_j = Omega_j;
-                gbDotDot_j = OmegaDot_j;
-            end
-        else
-            gb_j = azi_j;
-            gbDot_j = omegaCurrent*2*pi;
-            gbDotDot_j = 0;
-        end
-        #==================================================
-
-        ## rotor speed update
-        #===== update rotor speed =========================
-        azi_jLast = azi_j;
-        if(model.omegaControl)
-            if(model.usingRotorSpeedFunction)
-                [azi_j,Omega_j,OmegaDot_j] = getRotorPosSpeedAccelAtTime(t(i),t(i)+delta_t,azi_s,delta_t);
-            else
-                Omega_j = Omega_s;
-                OmegaDot_j = OmegaDot_s;
-                azi_j = azi_s + Omega_j*delta_t*2*pi;
-            end
-        end
-        if(~model.omegaControl)
-            Crotor = 0;
-            Krotor = 0;
-            [azi_j,Omega_j,OmegaDot_j] = updateRotorRotation(structureMOI(3,3),Crotor,Krotor,...
-                -FReaction_j(6),-torqueDriveShaft_j,...
-                azi_s,Omega_s,OmegaDot_s,delta_t);
-        end
-        #===================================================
-        ##
-
-        ## evaluate aerodynamic module (CACTUS ONE-WAY)
-        ##======= aerodynamics module ======================
-        if(model.aeroLoadsOn) # TODO: this is odd since we load in the aero loads elsewhere
-            #             disp('using cactus aero loads...');
-            #             #----- calculate aerodynamic loads --------------------------------
-            #             # this is place holder
-            #             [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t(i),el.props,model.totalNumDof);
-            #             # these loads will need to account for a turbine with a
-            #             # platform with different orientation than the inertial system.
-            #             FAeroDof = (1:length(u_s));
-            #             #------------------------------------------------------------------
-        else
-            FAero = [];
-            FAeroDof = [];
-        end
-        #==================================================
-        ## evaluate aerodynamic module (TU DELFT)
-        ##======= aerodynamics module ======================
-        if(aeroOn && needsAeroCalcAtThisTimestep)
-
-            #             [FAero,FAeroDof] = aeroModule(model,t(i) + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero);
-            #
-            #             #set aero forces flag
-            #             needsAeroCalcAtThisTimestep = false;
-
-        end
-        #==================================================
-        ##
-
-        ## compile external forcing on rotor
-        #compile forces to supply to structural dynamics solver
-        [Fexternal_sub, Fdof_sub] = externalForcing(t(i)+delta_t,aeroLoads);
-        Fexternal = [Fexternal_sub; FAero];
-        Fdof = [Fdof_sub, FAeroDof];
-
-
-        ## evaluate structural dynamics
-        #call structural dynamics solver
-        #initialization of structural dynamics displacements, velocities, accelerations, etc.
-        #             dispData.displ_sm1 = u_sm1; #Not even used
-        dispData.displ_s = u_s;
-        #specific to TNB, only used if that is the case, and must be declared
-        dispData.displdot_s = udot_s;
-        dispData.displddot_s = uddot_s;
-
-        #         if(strcmp(model.analysisType,'ROM'))
-        #             dispData.displ_s = u_s;
-        #             dispData.displdot_s = udot_s;
-        #             dispData.displddot_s = uddot_s;
-        #
-        #             dispData.eta_s     = eta_s;
-        #             dispData.etadot_s  = etadot_s;
-        #             dispData.etaddot_s = etaddot_s;
-        #         end
-
-        if(strcmp(model.analysisType,'ROM'))
-            error('ROM not fully implemented')
-            #             # evalulate structural dynamics using reduced order model
-            #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t(i),delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData);
-        else
-            # evalulate structural dynamics using conventional representation
-            [dispOut,FReaction_j] = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t(i),delta_t,elStorage,Fexternal,Fdof,CN2H,rbData);
-        end
-        #update last iteration displacement vector
-        u_jLast = u_j;
-        u_j = dispOut.displ_sp1;             #update current estimates of velocity, acceleration
-        # Only used for TNB, but must be declared
-        udot_j  = dispOut.displdot_sp1;
-        uddot_j = dispOut.displddot_sp1;
-
-
-        if(strcmp(model.analysisType,'ROM'))
-            #             udot_j  = dispOut.displdot_sp1;
-            #             uddot_j = dispOut.displddot_sp1;
-            #
-            #             eta_j = dispOut.eta_sp1;
-            #             etadot_j = dispOut.etadot_sp1;
-            #             etaddot_j = dispOut.etaddot_sp1;
-            error('ROM not fully implemented')
-        end
-        ##
-
-        ## calculate norms
-        uNorm = norm(u_j-u_jLast)/norm(u_j);            #structural dynamics displacement iteration norm
-        aziNorm = norm(azi_j - azi_jLast)/norm(azi_j);  #rotor azimuth iteration norm
-
-        if(model.hydroOn)
-            platNorm = norm(Ywec_j-Ywec_jLast)/norm(Ywec_j); #platform module states iteration norm
-        else
-            platNorm = 0.0;
-        end
-
-        if(model.driveTrainOn)
-            gbNorm = norm(gb_j - gb_jLast)/norm(gb_j); #gearbox states iteration norm
-        else
-            gbNorm = 0.0;
-        end
-
-        if(moduleIteration == false)
-            break;
-        end
-
-        numIterations = numIterations + 1;
-    end #end iteration while loop
-
-    ## calculate converged generator torque/power
-    if(model.useGeneratorFunction)
-        if(model.generatorOn || (model.turbineStartup==0))
-            error('simpleGenerator not fully implemented')#[genTorquePlot] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio);
-        else
-            genTorquePlot = 0;
-        end
-    else
-        genTorquePlot = 0;
-    end
-    [genPowerPlot] = genTorquePlot*(gbDot_j*2*pi)*model.gearRatio;
-
-
-    ## update timestepping variables and other states, store in history arrays
-    if(strcmp(model.analysisType,'TD'))
-        u_sm1 = u_s;
-        u_s = u_j;
-    end
-    if(strcmp(model.analysisType,'TNB'))
-        u_s = u_j;
-        udot_s = udot_j;
-        uddot_s = uddot_j;
-    end
-    if(strcmp(model.analysisType,'ROM'))
-        #         u_s = u_j;
-        #         udot_s = udot_j;
-        #         uddot_s = uddot_j;
-        #
-        #         eta_s = eta_j;
-        #         etadot_s = etadot_j;
-        #         etaddot_s = etaddot_j;
-        error('ROM not fully implemented')
-    end
-
-    uHist(:,i+1) = u_s;
-    FReactionHist(i+1,:) = FReaction_j;
-    strainHist(:,i) = dispOut.elStrain;
-    t(i+1) = t(i) + delta_t;
-
-    azi_s = azi_j;
-    Omega_s = Omega_j;
-    OmegaDot_s = OmegaDot_j;
-
-    genTorque_s = genTorque_j;
-    torqueDriveShaft_s = torqueDriveShaft_j;
-
-    aziHist(i+1) = azi_s;
-    OmegaHist(i+1) = Omega_s;
-    OmegaDotHist(i+1) = OmegaDot_s;
-
-    gb_s = gb_j;
-    gbDot_s = gbDot_j;
-    gbDotDot_s = gbDotDot_j;
-
-    gbHist(i+1) = gb_s;
-    gbDotHist(i+1) = gbDot_s;
-    gbDotDotHist(i+1) = gbDotDot_s;
-
-    #genTorque(i+1) = genTorque_s;
-    genTorque(i+1) = genTorquePlot;
-    genPower(i+1) = genPowerPlot;
-    torqueDriveShaft(i+1) = torqueDriveShaft_s;
-
-    if(model.hydroOn)
-        error('Hydro Model not fully implemented');
-        #         Ywec(i+1,:) = Ywec_j;
-        #         rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6);
-
-    else
-        rigidDof(i) = 0;
-    end
-
-    FReactionHist(i+1,:) = FReaction_j;
-    ##
-
-    ## check rotor speed for generator operation
-    if(Omega_s>= rotorSpeedForGenStart)
-        model.generatorOn = true;
-    else
-        model.generatorOn = false;
-    end
-    ##
-
-end #end timestep loop
-
-## kill platform module process
-if(model.hydroOn)
-    #     serverSendVector(-1.0,d_output_streamPlatform);
-    #     terminateServer(server_socketPlatform,output_socketPlatform,1);
-    #     terminateClient(input_socketPlatform,1);
-end
-
-## kill aerodynamic module process
-if(aeroOn)
-    #     serverSendVector(decodeVec(4,-1.0),d_output_streamAero) ;
-    #     terminateClient(input_socketAero,1); #close down client connection to forcing module
-    #     terminateServer(server_socketAero,output_socketAero,1); #close down server on this side
-end
-
-##
-#toc
-# save aeroOutputArray
-#save simulation data in .mat file
-# save(model.outFilename,'t','uHist','aziHist','OmegaHist','OmegaDotHist','gbHist','gbDotHist','gbDotDotHist','FReactionHist','rigidDof','genTorque','genPower','torqueDriveShaft','strainHist');
-# fprintf('#s\n','Output Saving Not Currently Implemented')
-
-#Writefile
-writefile = true;
-if ~writefile
-    fprintf('#s\n','NOT WRITING Verification File')
-end
-
-if writefile
-
-    if writefile
-        fprintf('#s\n','Writing Verification File')
-    end
-
-    fid = fopen([model.outFilename(1:end-3) 'txt'],'w+'); #open/create new for writing and discard existing data
-
-    for i = 0:length(t)
-        if i == 0
-            line = ['t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist1,FReactionHist2,FReactionHist3,FReactionHist4,FReactionHist5,FReactionHist6,rigidDof,genTorque,genPower,torqueDriveShaft' sprintf('\n')'];
-        else
-            line = [sprintf('#1.12e', t(i)), ',',...
-                sprintf('#1.12e', aziHist(i)), ',',...
-                sprintf('#1.12e', OmegaHist(i)), ',',...
-                sprintf('#1.12e', OmegaDotHist(i)), ',',...
-                sprintf('#1.12e', gbHist(i)), ',',...
-                sprintf('#1.12e', gbDotHist(i)), ',',...
-                sprintf('#1.12e', gbDotDotHist(i)), ',',...
-                sprintf('#1.12e', FReactionHist(i,1)), ',',...
-                sprintf('#1.12e', FReactionHist(i,2)), ',',...
-                sprintf('#1.12e', FReactionHist(i,3)), ',',...
-                sprintf('#1.12e', FReactionHist(i,4)), ',',...
-                sprintf('#1.12e', FReactionHist(i,5)), ',',...
-                sprintf('#1.12e', FReactionHist(i,6)), ',',...
-                sprintf('#1.12e', rigidDof(i)), ',',...
-                sprintf('#1.12e', genTorque(i)), ',',...
-                sprintf('#1.12e', genPower(i)), ',',...
-                sprintf('#1.12e', torqueDriveShaft(i)), sprintf('\n') ];
-        end
-        fwrite(fid,line,'char');
-    end
-
-    fclose(fid);
-
-    # Save uHist
-    fid = fopen([model.outFilename(1:end-4) '_uHist.txt'],'w+'); #open/create new for writing and discard existing data
-
-    for i = 0:length(t)
-        if i == 0
-            line = ['t uHist' sprintf('\n')'];
-            fwrite(fid,line,'char');
-        else
-            for ii = 1:length(uHist(:,1))-1
-                line = [sprintf('#1.12e',t(i)), ' ', sprintf('#1.12e',uHist(ii,i)') ];
-                fwrite(fid,line,'char');
-            end
-            line = [sprintf('#1.12e',t(i)), ' ', sprintf('#1.12e',uHist(end,i)'), sprintf('\n') ];
-            fwrite(fid,line,'char');
-        end
-
-    end
-
-    fclose(fid);
-
-
-    # Save strainHist
-
-    fid = fopen([model.outFilename(1:end-4) '_strainHist.txt'],'w+'); #open/create new for writing and discard existing data
-
-    for i = 0:length(t)-1
-        if i == 0
-            line = ['n_t n_elem' sprintf('\n')];
-            fwrite(fid,line,'char');
-
-            line = [sprintf('#1.12e',length(t)) ' ' sprintf('#1.12e',length(strainHist(:,1))) sprintf('\n')];
-            fwrite(fid,line,'char');
-        else
-
-            for j = 1:length(strainHist(:,1))
-                line = ['t elem', sprintf('\n')];
-                fwrite(fid,line,'char');
-                line = [sprintf('#1.12e',t(i)), ' ', sprintf('#1.12e',j), sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['eps_xx_0 ' sprintf('#1.12e',strainHist(j,i).eps_xx_0(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['eps_xx_0 ' sprintf('#1.12e',strainHist(j,i).eps_xx_0(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['eps_xx_z ' sprintf('#1.12e',strainHist(j,i).eps_xx_z(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['eps_xx_z ' sprintf('#1.12e',strainHist(j,i).eps_xx_z(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['eps_xx_y ' sprintf('#1.12e',strainHist(j,i).eps_xx_y(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['eps_xx_y ' sprintf('#1.12e',strainHist(j,i).eps_xx_y(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['gam_xz_0 ' sprintf('#1.12e',strainHist(j,i).gam_xz_0(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['gam_xz_0 ' sprintf('#1.12e',strainHist(j,i).gam_xz_0(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['gam_xz_y ' sprintf('#1.12e',strainHist(j,i).gam_xz_y(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['gam_xz_y ' sprintf('#1.12e',strainHist(j,i).gam_xz_y(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['gam_xy_0 ' sprintf('#1.12e',strainHist(j,i).gam_xy_0(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['gam_xy_0 ' sprintf('#1.12e',strainHist(j,i).gam_xy_0(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-                for jj = 1:3
-                    line = ['gam_xy_z ' sprintf('#1.12e',strainHist(j,i).gam_xy_z(jj))];
-                    fwrite(fid,line,'char');
-                end
-                line = ['gam_xy_z ' sprintf('#1.12e',strainHist(j,i).gam_xy_z(4)) sprintf('\n')];
-                fwrite(fid,line,'char');
-
-            end
+        OmegaCurrent = FLOWMath.linear(tocp,Omegaocp,tCurrent) #interpolated discreteized profile for current omega
+
+        #calculate current rotor acceleration
+        dt = delta_t/2.0
+        omega_m1 = FLOWMath.linear(tocp,Omegaocp,tCurrent-dt)
+        omega_p1 = FLOWMath.linear(tocp,Omegaocp,tCurrent+dt)
+
+        OmegaDotCurrent = diff([omega_m1,omega_p1])/(dt*2)
+        OmegaDotCurrent = OmegaDotCurrent[1]
+
+        terminateSimulation = false
+        if (isnan(OmegaCurrent) || isnan(OmegaDotCurrent))
+            error("Omega calcualted a NaN. Exiting.")
         end
     end
-
-    fclose(fid);
-end
-
-end
-
-function [OmegaCurrent,OmegaDotCurrent,terminateSimulation] = omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)
-
-if(tocp(length(tocp))<tCurrent)
-    disp('Simulation time is greater than that specified in control points for prescribed rotor speed profile.');
-    disp('Terminating simulation.');
-    terminateSimulation = true;
-    OmegaCurrent = 0.0;
-    OmegaDotCurrent = 0.0;
-else
-    OmegaCurrent = interp1(tocp,Omegaocp,tCurrent); #interpolated discreteized profile for current omega
-
-    #calculate current rotor acceleration
-    dt = delta_t/2.0;
-    omega_m1 = interp1(tocp,Omegaocp,tCurrent-dt);
-    omega_p1 = interp1(tocp,Omegaocp,tCurrent+dt);
-
-    OmegaDotCurrent = diff([omega_m1,omega_p1])/(dt*2);
-
-    terminateSimulation = false;
-    if(isnan(OmegaCurrent) || isnan(OmegaDotCurrent))
-        error('Omega calcualted a NaN. Exiting.');
-    end
-end
-
+    return OmegaCurrent,OmegaDotCurrent,terminateSimulation
 end
