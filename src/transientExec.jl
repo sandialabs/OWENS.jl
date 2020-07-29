@@ -1,5 +1,6 @@
 
 include("externalForcing.jl")
+include("setInitialConditions.jl")
 
 mutable struct ElStrain
     eps_xx_0
@@ -96,7 +97,7 @@ function transientExec(model,mesh,el)
     model.totalNumDof = mesh.numNodes*numDOFPerNode
     #......... specify initial conditions .......................
     u_s = zeros(model.totalNumDof,1)
-    mat"$u_s = setInitialConditions($model.initCond,$u_s,$numDOFPerNode)"
+    u_s = setInitialConditions(model.initCond,u_s,numDOFPerNode)
     u_sm1 = u_s
     udot_s = u_s*0
     uddot_s = u_s*0
