@@ -28,16 +28,16 @@ function [Kg,Fg] = applyBC(Kg,Fg,BC,numDofPerNode)
 %APPLY BCs FOR PRIMARY VARIABLE
 
 if(BC.numpBC > 0)
-    pBC = BC.pBC;
+    pBC = double(BC.pBC);
     [numpBC,~] = size(pBC);
-    
+
     for i=1:numpBC
         nodeNumber = pBC(i,1);
         dofNumber = pBC(i,2);
         specVal = pBC(i,3);
-        
+
         eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber;
-        
+
         for j=1:numEq
             Kg(eqNumber,j) = 0.0;
             Fg(j) = Fg(j) - Kg(j,eqNumber)*specVal;
@@ -53,16 +53,16 @@ end
 % if(BC.numsBC > 0) % This does not appear to be used
 %     sBC = BC.sBC;
 %     [numsBC,~] = size(sBC);
-%     
+%
 %     for i=1:numsBC
 %         nodeNumber = sBC(i,1);
 %         dofNumber = sBC(i,2);
 %         specVal =  sBC(i,3);
-%         
+%
 %         eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber;
-%         
+%
 %         Fg(eqNumber) = Fg(eqNumber) + specVal;
-%         
+%
 %     end
 % end
 
