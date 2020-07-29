@@ -42,9 +42,11 @@ function externalForcing(time,aeroLoads)
 timeArray = aeroLoads["timeArray"]
 ForceValHist = aeroLoads["ForceValHist"]
 ForceDof = aeroLoads["ForceDof"]
+Fexternal = zeros(length(ForceDof))
 
-
-Fexternal = FLOWMath.linear(timeArray,ForceValHist',time)
+for i = 1:length(ForceDof)
+    Fexternal[i] = FLOWMath.linear(timeArray,ForceValHist[i,:],time)
+end
 Fdof = ForceDof
 
 return Fexternal, Fdof
