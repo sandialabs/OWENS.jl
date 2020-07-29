@@ -43,6 +43,7 @@ mutable struct Model
     numModesToExtract
     aeroloadfile
     owensfile
+    outFilename
     RayleighAlpha
     RayleighBeta
     elementOrder
@@ -404,7 +405,7 @@ function owens(owensfile,analysisType;
     aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
     guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
-    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,RayleighAlpha,
+    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
     reducedDOFList,bladeData,nlParams,BC,nodalTerms,driveShaftProps)
 

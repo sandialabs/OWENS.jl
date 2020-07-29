@@ -5,13 +5,13 @@
 % SETUP
 
 tic()
-verify_transient = false;
-verify_modal = true;
+verify_transient = true;
+verify_modal = false;
 plot_modal = false;
 verify_flutter = false;
 
 % RUN OWENS
-test_owens(verify_transient,verify_modal,verify_flutter);
+% test_owens(verify_transient,verify_modal,verify_flutter);
 
 bmOwens = './input_files_test/_15mTower_transient_dvawt_c_2_lcdt';
 [mesh,meshSeg] = readMeshVG([bmOwens '.mesh']); %read mesh file
