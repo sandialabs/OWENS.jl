@@ -1,6 +1,7 @@
 
 include("externalForcing.jl")
 include("setInitialConditions.jl")
+include("call_structuralDynamicsTransient.jl")
 
 mutable struct ElStrain
     eps_xx_0
@@ -422,7 +423,9 @@ function transientExec(model,mesh,el)
             else
                 # evalulate structural dynamics using conventional representation
                 t_in = t[i]
-                mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
+                # mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
+                # Juno.@enter call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+                elStrain,dispOut,FReaction_j = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
             end
             #update last iteration displacement vector
             u_jLast = u_j
@@ -504,13 +507,13 @@ function transientExec(model,mesh,el)
         uHist[:,i+1] = u_s
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
-            strainHist[ii,i] = ElStrain(elStrain[ii]["eps_xx_0"],
-                elStrain[ii]["eps_xx_z"],
-                elStrain[ii]["eps_xx_y"],
-                elStrain[ii]["gam_xz_0"],
-                elStrain[ii]["gam_xz_y"],
-                elStrain[ii]["gam_xy_0"],
-                elStrain[ii]["gam_xy_z"])
+            strainHist[ii,i] = ElStrain(elStrain[ii].eps_xx_0,
+                elStrain[ii].eps_xx_z,
+                elStrain[ii].eps_xx_y,
+                elStrain[ii].gam_xz_0,
+                elStrain[ii].gam_xz_y,
+                elStrain[ii].gam_xy_0,
+                elStrain[ii].gam_xy_z)
         end
         t[i+1] = t[i] + delta_t
 

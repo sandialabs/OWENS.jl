@@ -62,7 +62,7 @@ elInput.elementOrder = elementOrder;
 elInput.modalFlag = true;
 elInput.timeInt = timeInt;
 elInput.xloc = [0.0 el.elLen(elementNumber)];
-elInput.sectionProps = el.props{elementNumber};
+elInput.sectionProps = el.props(elementNumber);
 elInput.sweepAngle = el.psi(elementNumber);
 elInput.coneAngle = el.theta(elementNumber);
 elInput.rollAngle = el.roll(elementNumber);
@@ -167,7 +167,7 @@ end
 
 % Specific to TNB and ROM, but must be declared
 elInput.CN2H = CN2H;
-
+    
 
 elInput.airDensity = model.airDensity;
 elInput.freq = 0.0; %Is not used for this model type, but must be declared.
@@ -175,8 +175,7 @@ elInput.firstIteration = false;
 
 %calculate element stiffness matrix and force vector
 %(or effective stiffness matrix and force vector from time integration)
-
-[elOutput] = calculateTimoshenkoElementNL(elInput,elStorage{elementNumber});
+[elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(elementNumber));
 
 %post process for reaction force
 FhatEl1PP = elOutput.Ke*eldispiter';

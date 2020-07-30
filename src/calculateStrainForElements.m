@@ -4,8 +4,7 @@ function [elStrain] = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNo
 single_elStrain = struct('eps_xx_0',zeros(1,4),'eps_xx_z',zeros(1,4),'eps_xx_y',...
     zeros(1,4),'gam_xz_0',zeros(1,4),'gam_xz_y',zeros(1,4),'gam_xy_0',zeros(1,4),'gam_xy_z',zeros(1,4));
 
-% elStrain = repmat(single_elStrain,1,numEl);
-elStrain = cell(numEl,1);
+elStrain = repmat(single_elStrain,1,numEl);
 
 for i=1:numEl
     %Calculate Ke and Fe for element i
@@ -13,7 +12,7 @@ for i=1:numEl
     elInput.elementOrder = elementOrder;
     elInput.nlOn = nlflag;
     elInput.xloc = [0.0 el.elLen(i)];
-    elInput.sectionProps = el.props{i};
+    elInput.sectionProps = el.props(i);
     elInput.sweepAngle = el.psi(i);
     elInput.coneAngle = el.theta(i);
     elInput.rollAngle = el.roll(i);
@@ -30,13 +29,13 @@ for i=1:numEl
     elInput.disp = eldisp;
     temp = calculateTimoshenkoElementStrain(elInput);
 
-    elStrain{i}.eps_xx_0 = temp.eps_xx_0;
-    elStrain{i}.eps_xx_z = temp.eps_xx_z;
-    elStrain{i}.eps_xx_y = temp.eps_xx_y;
-    elStrain{i}.gam_xz_0 = temp.gam_xz_0;
-    elStrain{i}.gam_xz_y = temp.gam_xz_y;
-    elStrain{i}.gam_xy_0 = temp.gam_xy_0;
-    elStrain{i}.gam_xy_z = temp.gam_xy_z;
+    elStrain(i).eps_xx_0 = temp.eps_xx_0;
+    elStrain(i).eps_xx_z = temp.eps_xx_z;
+    elStrain(i).eps_xx_y = temp.eps_xx_y;
+    elStrain(i).gam_xz_0 = temp.gam_xz_0;
+    elStrain(i).gam_xz_y = temp.gam_xz_y;
+    elStrain(i).gam_xy_0 = temp.gam_xy_0;
+    elStrain(i).gam_xy_z = temp.gam_xy_z;
 
 end
 end
