@@ -429,10 +429,10 @@ function transientExec(model,mesh,el)
             end
             #update last iteration displacement vector
             u_jLast = u_j
-            u_j = dispOut["displ_sp1"]             #update current estimates of velocity, acceleration
+            u_j = dispOut.displ_sp1             #update current estimates of velocity, acceleration
             # Only used for TNB, but must be declared
-            udot_j  = dispOut["displdot_sp1"]
-            uddot_j = dispOut["displddot_sp1"]
+            udot_j  = dispOut.displdot_sp1
+            uddot_j = dispOut.displddot_sp1
 
 
             if (occursin("ROM",model.analysisType))

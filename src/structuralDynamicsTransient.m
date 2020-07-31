@@ -1,4 +1,4 @@
-function  [dispOut,eps_xx_0,eps_xx_z,eps_xx_y,gam_xz_0,gam_xz_y,gam_xy_0,gam_xy_z,FReaction_sp1] = structuralDynamicsTransient(analysisType,...
+function  [displ_sp1,displddot_sp1,displdot_sp1,eps_xx_0,eps_xx_z,eps_xx_y,gam_xz_0,gam_xz_y,gam_xy_0,gam_xy_z,FReaction_sp1] = structuralDynamicsTransient(analysisType,...
       turbineStartup,...
       usingRotorSpeedFunction,...
       tocp,...
@@ -849,12 +849,12 @@ end
 
 FReaction_sp1 =FReaction;
 displ_sp1 = displ_im1;
-dispOut.displ_sp1 = displ_sp1;  %store displacement vector in dispOut
+% dispOut.displ_sp1 = displ_sp1;  %store displacement vector in dispOut
 
 % Specific to TNB, but must be declared
 displddot_sp1 = timeInt.a3*(displ_sp1-dispData.displ_s) - timeInt.a4*dispData.displdot_s - timeInt.a5*dispData.displddot_s; %store velocity vector in dispOut
-dispOut.displddot_sp1 = displddot_sp1;
-dispOut.displdot_sp1 = dispData.displdot_s + timeInt.a2*dispData.displddot_s + timeInt.a1*displddot_sp1;                    %store acceleration vector in dispOut
+% dispOut.displddot_sp1 = displddot_sp1;
+displdot_sp1 = dispData.displdot_s + timeInt.a2*dispData.displddot_s + timeInt.a1*displddot_sp1;                    %store acceleration vector in dispOut
 
 
 
