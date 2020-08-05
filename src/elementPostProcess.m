@@ -74,14 +74,14 @@ elInput.aeroElasticOn = false;
 elInput.aeroForceOn = false;
 nlParams = model.nlParams;
 
-if(nlParams.adaptiveLoadSteppingFlag)
+% if(nlParams.adaptiveLoadSteppingFlag)
     elInput.loadStepPrev = 0.0;
     elInput.loadStep = 1.0;
-else
-    elInput.loadStepPrev = 0.0;
-    elInput.loadStep = nlParams.prescribedLoadStep(1);
-    fprintf('Prescribed load step: %f\n',nlParams.prescribedLoadStep(1));
-end
+% else
+%     elInput.loadStepPrev = 0.0;
+%     elInput.loadStep = nlParams.prescribedLoadStep(1);
+%     fprintf('Prescribed load step: %f\n',nlParams.prescribedLoadStep(1));
+% end
 
 elInput.maxNumLoadSteps = nlParams.maxNumLoadSteps;
 elInput.MAXIT = nlParams.maxIterations;
