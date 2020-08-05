@@ -339,7 +339,82 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     # Bogus5 = zeros(32,1);
 
     ccall((:structuralDynamicsTransient,"./codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
-    (Ptr{Cdouble}, #double displ_sp1[492]
+    (Ptr{Cdouble}, #const double K11[300]
+    Ptr{Cdouble}, #const double K12[300]
+    Ptr{Cdouble}, #const double K13[300]
+    Ptr{Cdouble}, #const double K14[300]
+    Ptr{Cdouble}, #const double K15[300]
+    Ptr{Cdouble}, #const double K16[300]
+    Ptr{Cdouble}, #const double K22[300]
+    Ptr{Cdouble}, #const double K23[300]
+    Ptr{Cdouble}, #const double K24[300]
+    Ptr{Cdouble}, #const double K25[300]
+    Ptr{Cdouble}, #const double K26[300]
+    Ptr{Cdouble}, #const double K33[300]
+    Ptr{Cdouble}, #const double K34[300]
+    Ptr{Cdouble}, #const double K35[300]
+    Ptr{Cdouble}, #const double K36[300]
+    Ptr{Cdouble}, #const double K44[300]
+    Ptr{Cdouble}, #const double K45[300]
+    Ptr{Cdouble}, #const double K46[300]
+    Ptr{Cdouble}, #const double K55[300]
+    Ptr{Cdouble}, #const double K56[300]
+    Ptr{Cdouble}, #const double K66[300]
+    Ptr{Cdouble}, #const double M11[300]
+    Ptr{Cdouble}, #const double M15[300]
+    Ptr{Cdouble}, #const double M16[300]
+    Ptr{Cdouble}, #const double M22[300]
+    Ptr{Cdouble}, #const double M24[300]
+    Ptr{Cdouble}, #const double M33[300]
+    Ptr{Cdouble}, #const double M34[300]
+    Ptr{Cdouble}, #const double M44[300]
+    Ptr{Cdouble}, #const double M55[300]
+    Ptr{Cdouble}, #const double M56[300]
+    Ptr{Cdouble}, #const double M66[300]
+    Ptr{Cdouble}, #const double S11[300]
+    Ptr{Cdouble}, #const double S12[300]
+    Ptr{Cdouble}, #const double S13[300]
+    Ptr{Cdouble}, #const double S15[300]
+    Ptr{Cdouble}, #const double S16[300]
+    Ptr{Cdouble}, #const double S22[300]
+    Ptr{Cdouble}, #const double S23[300]
+    Ptr{Cdouble}, #const double S25[300]
+    Ptr{Cdouble}, #const double S26[300]
+    Ptr{Cdouble}, #const double S33[300]
+    Ptr{Cdouble}, #const double S35[300]
+    Ptr{Cdouble}, #const double S36[300]
+    Ptr{Cdouble}, #const double S55[300]
+    Ptr{Cdouble}, #const double S56[300]
+    Ptr{Cdouble}, #const double S66[300]
+    Ptr{Cdouble}, #const double S14_1[300]
+    Ptr{Cdouble}, #const double S14_2[300]
+    Ptr{Cdouble}, #const double S24_1[300]
+    Ptr{Cdouble}, #const double S24_2[300]
+    Ptr{Cdouble}, #const double S34_1[300]
+    Ptr{Cdouble}, #const double S34_2[300]
+    Ptr{Cdouble}, #const double S45_1[300]
+    Ptr{Cdouble}, #const double S45_2[300]
+    Ptr{Cdouble}, #const double S46_1[300]
+    Ptr{Cdouble}, #const double S46_2[300]
+    Ptr{Cdouble}, #const double S44_1[300]
+    Ptr{Cdouble}, #const double S44_2[300]
+    Ptr{Cdouble}, #const double S44_3[300]
+    Ptr{Cdouble}, #const double C12[300]
+    Ptr{Cdouble}, #const double C13[300]
+    Ptr{Cdouble}, #const double C23[300]
+    Ptr{Cdouble}, #const double C24[300]
+    Ptr{Cdouble}, #const double C25[300]
+    Ptr{Cdouble}, #const double C26[300]
+    Ptr{Cdouble}, #const double C34[300]
+    Ptr{Cdouble}, #const double C35[300]
+    Ptr{Cdouble}, #const double C36[300]
+    Ptr{Cdouble}, #const double C14_1[300]
+    Ptr{Cdouble}, #const double C14_2[300]
+    Ptr{Cdouble}, #const double C45_1[300]
+    Ptr{Cdouble}, #const double C45_2[300]
+    Ptr{Cdouble}, #const double C46_1[300]
+    Ptr{Cdouble}, #const double C46_2[300]
+    Ptr{Cdouble}, #double displ_sp1[492]
     Ptr{Cdouble}, #double displddot_sp1[492]
     Ptr{Cdouble}, #double displdot_sp1[492]
     Ptr{Cdouble}, #double eps_xx_0[300]
@@ -350,6 +425,81 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     Ptr{Cdouble}, #double gam_xy_0[300]
     Ptr{Cdouble}, #double gam_xy_z[300]
     Ptr{Cdouble}), #double FReaction_sp1[6]
+    K11,
+    K12,
+    K13,
+    K14,
+    K15,
+    K16,
+    K22,
+    K23,
+    K24,
+    K25,
+    K26,
+    K33,
+    K34,
+    K35,
+    K36,
+    K44,
+    K45,
+    K46,
+    K55,
+    K56,
+    K66,
+    M11,
+    M15,
+    M16,
+    M22,
+    M24,
+    M33,
+    M34,
+    M44,
+    M55,
+    M56,
+    M66,
+    S11,
+    S12,
+    S13,
+    S15,
+    S16,
+    S22,
+    S23,
+    S25,
+    S26,
+    S33,
+    S35,
+    S36,
+    S55,
+    S56,
+    S66,
+    S14_1,
+    S14_2,
+    S24_1,
+    S24_2,
+    S34_1,
+    S34_2,
+    S45_1,
+    S45_2,
+    S46_1,
+    S46_2,
+    S44_1,
+    S44_2,
+    S44_3,
+    C12,
+    C13,
+    C23,
+    C24,
+    C25,
+    C26,
+    C34,
+    C35,
+    C36,
+    C14_1,
+    C14_2,
+    C45_1,
+    C45_2,
+    C46_1,
+    C46_2,
     displ_sp1,
     displddot_sp1,
     displdot_sp1,
