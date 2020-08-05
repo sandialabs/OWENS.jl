@@ -271,7 +271,7 @@ C46_2)
       % Omega,...
       % OmegaDot)
       %Reconstruct Model
-      fprintf('Line 190 Call Successfull \n');
+      
 
       % rotationalEffects = [true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true];
       % joint = [1	4	25	0	0	0	-179.786567000000	-32.9422450000000
@@ -5372,12 +5372,12 @@ C46_2)
       model.joint = joint;
       model.jointTransform = jointTransform;
 
-      fprintf('Line 231 model struct Successfull \n');
+      
 
       bladeData.nodeNum = 0.0;
       model.bladeData = bladeData; %Struct
 
-      fprintf('Line 241 bladeData struct Successfull \n');
+      
 
       nlParams.adaptiveLoadSteppingFlag = false;
       nlParams.maxNumLoadSteps = maxNumLoadSteps;
@@ -5385,13 +5385,13 @@ C46_2)
       nlParams.maxIterations = maxIterations;
       model.nlParams = nlParams; %Struct
 
-      fprintf('Line 253 nlParams struct Successfull \n');
+      
 
       BC.numpBC = numpBC;
       BC.pBC = pBC;
       model.BC = BC; %Struct
 
-      fprintf('Line 264 BC struct Successfull \n');
+      
 
       nodalTerms.concLoad = [];
       nodalTerms.concStiff = [];
@@ -5401,10 +5401,10 @@ C46_2)
       nodalTerms.concDampGen = [];
       model.nodalTerms = nodalTerms; %Struct
 
-      fprintf('Line 274 nodalTerms struct Successfull \n');
+      
 
 
-      fprintf('Line 280 driveShaftProps struct Successfull \n');
+      
 
       % Reconstruct mesh structure
 
@@ -5414,7 +5414,7 @@ C46_2)
       mesh.z = z;
       mesh.conn = conn;
 
-      fprintf('Line 293 mesh struct Successfull \n');
+      
 
       %Reconstruct el
       single_sectionPropsArray = struct('ac',zeros(1,2),...
@@ -5472,7 +5472,7 @@ C46_2)
       end
       el.props = props; %struct
 
-      fprintf('Line 351 props struct Successfull \n');
+      
 
       el.elLen = elLen;
       el.psi = psi;
@@ -5480,14 +5480,14 @@ C46_2)
       el.roll = roll;
       el.rotationalEffects = rotationalEffects;
 
-      fprintf('Line 359 el struct Successfull \n');
+      
 
       % Reconstruct dispData
       dispData.displ_s = displ_s;
       dispData.displdot_s = displdot_s;
       dispData.displddot_s = displddot_s;
 
-      fprintf('Line 366 dispData struct Successfull \n');
+      
 
       % Reconstruct elStorage
       single_elStorage = struct('K11', zeros(2,2),...
@@ -5652,7 +5652,7 @@ C46_2)
             elStorage(jj).xmel(:) = xmel(jj,:);
       end
 
-      fprintf('Line 531 elStorage Successfull \n');%structuralDynamicsTransient perform transient analysis
+      
       % **********************************************************************
       % *                   Part of the SNL OWENS Toolkit                    *
       % * Developed by Sandia National Laboratories Wind Energy Technologies *
@@ -5687,8 +5687,8 @@ C46_2)
 
       %-------- get model information -----------
       conin = conn(1,:);
-      fprintf('%1.1e\n', conin(1));
-      fprintf('%1.1e\n', conin(2));
+      
+      
       numEl = mesh.numEl;
       x = mesh.x;
       y = mesh.y;
@@ -5697,7 +5697,7 @@ C46_2)
       numNodes = length(x);
       elementOrder = model.elementOrder;
       BC = model.BC;
-      fprintf('Line 613 Run Successfull \n');
+      
       numNodesPerEl = elementOrder + 1;
       numDOFPerNode = 6;
       totalNumDOF = numNodes * numDOFPerNode;
@@ -5705,7 +5705,7 @@ C46_2)
       nodalTerms = model.nodalTerms;
       nodalTermsCopy = nodalTerms;
       %-----------------------------------------
-      fprintf('Line 621 Run Successfull \n');
+      
       %initialize displacements, tolerance, uNorm, iteration count for nonlinear
       %iteration
       unorm = 1e6;
@@ -5726,7 +5726,7 @@ C46_2)
       % else
       %      iterationType = 'LINEAR';
       % end
-      fprintf('Line 642 Run Successfull \n');
+      
       iterationType = 'DI';
       analysisType = model.analysisType;
       timeInt = struct('delta_t',0.0,...
@@ -5777,7 +5777,7 @@ C46_2)
       else
             error('analysis type not supported, choose another')
       end
-      fprintf('Line 692 Run Successfull \n');
+      
       %-----------------------------------------------
       % Initialize elInput, and DO NOT redundantly re-assign the memory in the
       % while and for loops below.
@@ -5826,7 +5826,7 @@ C46_2)
             %------- intitialization -----------------
             Kg = zeros(totalNumDOF,totalNumDOF); %initialize global stiffness and force vector
             Fg = zeros(totalNumDOF,1);
-            fprintf('Line 740 Run Successfull \n');
+            
             nodalTerms = nodalTermsCopy;
             %-------------------------------------------
 
@@ -5844,7 +5844,7 @@ C46_2)
                   else
                         elInput.firstIteration = false;
                   end
-                  fprintf('Line 724 Run Successfull \n');
+                  
                   for j=1:numNodesPerEl
 
                         %get element cooridnates
@@ -5874,15 +5874,15 @@ C46_2)
                               index = index + 1;
                         end
                   end
-                  fprintf('Line 754 Run Successfull \n');
+                  
                   %get concentrated terms associated with elemetn
                   [massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff] = ConcMassAssociatedWithElement(conn(i,:),model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad);
-                  fprintf('Line 757 Run Successfull \n');
+                  
                   elInput.concMass = massConc;
                   elInput.concStiff = stiffConc;
                   elInput.concLoad = loadConc;
                   elInput.disp = eldisp;
-                  fprintf('Line 762 Run Successfull \n');
+                  
                   % specific to 'TD', but must be declared
                   elInput.dispm1= eldisp_sm1;
 
@@ -5893,7 +5893,7 @@ C46_2)
                   elInput.x = elx;
                   elInput.y = ely;
                   elInput.z = elz;
-                  fprintf('Line 773 Run Successfull \n');
+                  
                   if(el.rotationalEffects)
                         elInput.Omega = Omega;
                         elInput.OmegaDot = OmegaDot;
@@ -5903,19 +5903,19 @@ C46_2)
                   end
 
                   elInput.displ_iter = eldispiter;
-                  fprintf('Line 783 Run Successfull \n');
+                  
                   [elOutput] = calculateTimoshenkoElementNL(elInput,elStorage(i)); %calculate timoshenko element
-                  fprintf('Line 785 Run Successfull \n');
+                  
                   conin = conn(i,:);
-                  fprintf('%1.1e\n', conin(1));
-                  fprintf('%1.1e\n', conin(2));
+                  
+                  
                   [Kg,Fg] = assembly(elOutput.Ke,elOutput.Fe,conn(i,:),numNodesPerEl,numDOFPerNode,Kg,Fg); %assemble element stiffness matrix and force vector
 
                   %         Erestotal = Erestotal + elOutput.Eres;
                   %................................................
             end %for
             %------- end element calculation and assembly ------------------
-            fprintf('Line 792 Run Successfull \n');
+            
             %%
             %----------------------------------------------------------------------
 
@@ -5933,21 +5933,21 @@ C46_2)
             %------ apply constraints on system -----------------------------------
             [Kg] = applyConstraints(Kg,model.jointTransform);
             [Fg] = applyConstraintsVec(Fg,model.jointTransform);
-            fprintf('Line 810 Run Successfull \n');
-            fprintf('%1.1e\n', jointTransform(1));
-            fprintf('%1.1e\n', numpBC(1));
-            fprintf('%1.1e\n', pBC(1));
+            
+            
+            
+            
 
             %----------------------------------------------------------------------
             %%
 
             %Apply BCs to global system
             [KgTotal,FgTotal] = applyBC(Kg,Fg,BC,numDOFPerNode);
-            fprintf('Line 817 Run Successfull \n');
+            
             solution = KgTotal\FgTotal;  %solve for displacements
-            fprintf('Line 818 Run Successfull \n');
+            
             solution = model.jointTransform*solution; %transform to full dof listing
-            fprintf('Line 819 Run Successfull \n');
+            
             if(model.nlOn)  %calculate norm between current iteration and last iteration
                   if(strcmp(iterationType,'NR'))
                         [unorm] = calcUnorm(displ_im1+solution,displ_im1);
@@ -5957,7 +5957,7 @@ C46_2)
             else
                   unorm = 0.0;
             end
-            fprintf('Line 829 Run Successfull \n');
+            
             if(strcmp(iterationType,'NR'))
                   %if newton raphson update u, udot, uddot at each iteration
                   displ_im1 = displ_im1 + solution;
@@ -5969,20 +5969,20 @@ C46_2)
             else
                   error('iteration type not supported, choose another')
             end
-            fprintf('Line 841 Run Successfull \n');
+            
             iterationCount = iterationCount + 1;
       end %While
-      fprintf('Line 844 Run Successfull \n');
+      
       %Calculate reaction at turbine base (hardwired to node number 1)
       reactionNodeNumber = platformTurbineConnectionNodeNumber;
-      fprintf('Line 847 Run Successfull \n');
+      
 
       [FReaction] = calculateReactionForceAtNode(reactionNodeNumber,model,...
       mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H);
-      fprintf('Line 848 Run Successfull \n');
+      
       %Calculate strain
       [elStrain] = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_im1,model.nlOn);
-      fprintf('Line 851 Run Successfull \n');
+      
       % Size of eps and gam are mesh.numEl x 4
       eps_xx_0 = zeros(1,300);
       eps_xx_z = zeros(1,300);
@@ -5991,7 +5991,7 @@ C46_2)
       gam_xz_y = zeros(1,300);
       gam_xy_0 = zeros(1,300);
       gam_xy_z = zeros(1,300);
-      fprintf('Line 863 Run Successfull \n');
+      
       for jj = 1:length(elStrain)
             for ii = 1:4
                   eps_xx_0(jj*4+ii-4) = elStrain(jj).eps_xx_0(ii);
@@ -6003,7 +6003,7 @@ C46_2)
                   gam_xy_z(jj*4+ii-4) = elStrain(jj).gam_xy_z(ii);
             end
       end
-      fprintf('Line 851 Run Successfull \n');
+      
       if(iterationCount>=maxIterations)
             error('Maximum iterations exceeded.');
       end
@@ -6017,7 +6017,7 @@ C46_2)
       % dispOut.displddot_sp1 = displddot_sp1;
       displdot_sp1 = dispData.displdot_s + timeInt.a2*dispData.displddot_s + timeInt.a1*displddot_sp1;                    %store acceleration vector in dispOut
 
-      fprintf('Line 881 Run Successfull \n');
+      
 
 end
 

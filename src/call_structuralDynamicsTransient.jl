@@ -1078,7 +1078,6 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     end
 
     dispOut = DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
-
     # dispOut.elStrain = elStrain
     return elStrain,dispOut,FReaction_j
 

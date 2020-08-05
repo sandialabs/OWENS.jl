@@ -1,5 +1,5 @@
 load("structDynInput.mat")
-
+tic()
 %Break Out Model
 analysisType = model.analysisType;
 turbineStartup = model.turbineStartup;
@@ -610,3 +610,5 @@ dispOut.displ_sp1 = displ_sp1;
 dispOut.displddot_sp1 = displddot_sp1;
 dispOut.displdot_sp1 = displdot_sp1;
 dispOut.elStrain = elStrain;
+
+toc()
