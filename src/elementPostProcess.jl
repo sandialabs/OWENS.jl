@@ -157,7 +157,7 @@ else #if(strcmp(analysisType,'S'))
 #     error('analysisType not supported, choose another')
 end
 
-if(el.rotationalEffects(elementNumber))
+if(el.rotationalEffects)
     elInput.Omega = Omega;
     elInput.OmegaDot = OmegaDot;
 else
@@ -167,7 +167,7 @@ end
 
 # Specific to TNB and ROM, but must be declared
 elInput.CN2H = CN2H;
-    
+
 
 elInput.airDensity = model.airDensity;
 elInput.freq = 0.0; #Is not used for this model type, but must be declared.

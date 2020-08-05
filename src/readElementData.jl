@@ -173,7 +173,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     close(fid) #close ort file
 
     #store data in element object
-    el = El(sectionPropsArray,elLen,psi,theta,roll,trues(numElements))
+    el = El(sectionPropsArray,elLen,psi,theta,roll,true)
 
     return el
 

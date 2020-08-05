@@ -83,7 +83,7 @@ nodalTerms = model.nodalTerms;
         elInput.z = elz;
         Omega = 0.0;
         elInput.accelVec = accelVec;
-        if(el.rotationalEffects(i))
+        if(el.rotationalEffects)
             elInput.Omega = Omega;
             elInput.omegaVec = omegaVec;
             elInput.omegaDotVec = omegaDotVec;

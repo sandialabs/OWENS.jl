@@ -140,7 +140,7 @@ el.psi=psi;
 el.theta=theta;
 el.roll=roll;
 
-el.rotationalEffects = true(1,numElements);
+el.rotationalEffects = true;
 
 fclose(fid); %close ort file
 end

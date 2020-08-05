@@ -339,7 +339,8 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     # Bogus5 = zeros(32,1);
 
     ccall((:structuralDynamicsTransient,"./codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
-    (Cint, #boolean_T gravityOn
+    (Cint, #const boolean_T rotationalEffects
+    Cint, #boolean_T gravityOn
     Cint, #boolean_T nlOn
     Cdouble, #double maxNumLoadSteps
     Cdouble, #double airDensity
@@ -485,6 +486,7 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     Ptr{Cdouble}, #double gam_xy_0[300]
     Ptr{Cdouble}, #double gam_xy_z[300]
     Ptr{Cdouble}), #double FReaction_sp1[6]
+    rotationalEffects,
     gravityOn,
     nlOn,
     maxNumLoadSteps,

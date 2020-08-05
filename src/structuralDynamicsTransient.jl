@@ -236,8 +236,8 @@ while(unorm>tol && iterationCount < maxIterations) #iteration loop
         elInput.x = elx;
         elInput.y = ely;
         elInput.z = elz;
-        
-        if(el.rotationalEffects(i))
+
+        if(el.rotationalEffects)
             elInput.Omega = Omega;
             elInput.OmegaDot = OmegaDot;
         else

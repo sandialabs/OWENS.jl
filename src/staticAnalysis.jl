@@ -148,7 +148,7 @@ while(~staticAnalysisComplete && loadStepCount<maxNumLoadSteps)
             elInput.omegaVec = zeros(3,1);
             elInput.omegaDotVec = zeros(3,1);
 
-            if(el.rotationalEffects(i)) #activate or deactivate rotational effects for element
+            if(el.rotationalEffects) #activate or deactivate rotational effects for element
                 elInput.Omega = Omega;
                 elInput.OmegaDot = 0.0;
             else

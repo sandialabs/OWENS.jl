@@ -1,4 +1,5 @@
-function  [displ_sp1,displddot_sp1,displdot_sp1,eps_xx_0,eps_xx_z,eps_xx_y,gam_xz_0,gam_xz_y,gam_xy_0,gam_xy_z,FReaction_sp1] = structuralDynamicsTransient(gravityOn,...
+function  [displ_sp1,displddot_sp1,displdot_sp1,eps_xx_0,eps_xx_z,eps_xx_y,gam_xz_0,gam_xz_y,gam_xy_0,gam_xy_z,FReaction_sp1] = structuralDynamicsTransient(rotationalEffects,...
+gravityOn,...
 nlOn,...
 maxNumLoadSteps,...
 airDensity,...
@@ -272,7 +273,7 @@ C46_2)
       %Reconstruct Model
       fprintf('Line 190 Call Successfull \n');
 
-      rotationalEffects = [true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true];
+      % rotationalEffects = [true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true	true];
       % joint = [1	4	25	0	0	0	-179.786567000000	-32.9422450000000
       % 2	4	48	0	0	0	0.213433000000000	-32.9422450000000
       % 3	6	71	0	0	0	-179.893125000000	-0.142541000000000
@@ -5893,7 +5894,7 @@ C46_2)
                   elInput.y = ely;
                   elInput.z = elz;
                   fprintf('Line 773 Run Successfull \n');
-                  if(el.rotationalEffects(i))
+                  if(el.rotationalEffects)
                         elInput.Omega = Omega;
                         elInput.OmegaDot = OmegaDot;
                   else

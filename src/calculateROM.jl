@@ -89,7 +89,7 @@ nodalTerms = model.nodalTerms;
         elInput.RayleighAlpha = model.RayleighAlpha;
         elInput.RayleighBeta = model.RayleighBeta;
 
-        if(el.rotationalEffects(i))
+        if(el.rotationalEffects)
             elInput.Omega = Omega;
             elInput.omegaVec = omegaVec;
             elInput.omegaDotVec = omegaDotVec;
