@@ -1,6 +1,7 @@
 
 function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
     #Break Out Model
+    # start = time()
     analysisType = model.analysisType
     turbineStartup = model.turbineStartup
     usingRotorSpeedFunction = model.usingRotorSpeedFunction
@@ -323,20 +324,14 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     displ_sp1 = zeros(model.totalNumDof)
     displddot_sp1 = zeros(model.totalNumDof)
     displdot_sp1 = zeros(model.totalNumDof)
-    eps_xx_0 = zeros(mesh.numEl,4)
-    eps_xx_z = zeros(mesh.numEl,4)
-    eps_xx_y = zeros(mesh.numEl,4)
-    gam_xz_0 = zeros(mesh.numEl,4)
-    gam_xz_y = zeros(mesh.numEl,4)
-    gam_xy_0 = zeros(mesh.numEl,4)
-    gam_xy_z = zeros(mesh.numEl,4)
+    eps_xx_0 = zeros(mesh.numEl*4)
+    eps_xx_z = zeros(mesh.numEl*4)
+    eps_xx_y = zeros(mesh.numEl*4)
+    gam_xz_0 = zeros(mesh.numEl*4)
+    gam_xz_y = zeros(mesh.numEl*4)
+    gam_xy_0 = zeros(mesh.numEl*4)
+    gam_xy_z = zeros(mesh.numEl*4)
     FReaction_j = zeros(6)
-
-    # Bogus1 = zeros(32,1);
-    # Bogus2 = zeros(32,1);
-    # Bogus3 = zeros(32,1);
-    # Bogus4 = zeros(32,1);
-    # Bogus5 = zeros(32,1);
 
     ccall((:structuralDynamicsTransient,"./codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
     (Cint, #const boolean_T rotationalEffects
@@ -512,7 +507,7 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     jointTransform,
     conn,
     joint,
-    pBC,
+    float(pBC),
     x,
     y,
     z,
@@ -633,305 +628,10 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     gam_xy_0,
     gam_xy_z,
     FReaction_j)
-
-    # ccall((:structuralDynamicsTransient,"structuralDynamicsTransient"),Cvoid,
-    # (BitArray{1}, #const boolean_T rotationalEffects[75]
-    # Ptr{Cdouble}, #const double joint[96]
-    # Ptr{Cdouble}, #const double pBC[18]
-    # Ptr{Cdouble}, #const double x[82]
-    # Ptr{Cdouble}, #const double y[82]
-    # Ptr{Cdouble}, #const double z[82]
-    # Ptr{Cdouble}, #const double ac[150]
-    # Ptr{Cdouble}, #const double twist[150]
-    # Ptr{Cdouble}, #const double rhoA[150]
-    # Ptr{Cdouble}, #const double EIyy[150]
-    # Ptr{Cdouble}, #const double EIzz[150]
-    # Ptr{Cdouble}, #const double GJ[150]
-    # Ptr{Cdouble}, #const double EA[150]
-    # Ptr{Cdouble}, #const double rhoIyy[150]
-    # Ptr{Cdouble}, #const double rhoIzz[150]
-    # Ptr{Cdouble}, #const double rhoJ[150]
-    # Ptr{Cdouble}, #const double zcm[150]
-    # Ptr{Cdouble}, #const double ycm[150]
-    # Ptr{Cdouble}, #const double a[150]
-    # Ptr{Cdouble}, #const double EIyz[150]
-    # Ptr{Cdouble}, #const double alpha1[150]
-    # Ptr{Cdouble}, #const double alpha2[150]
-    # Ptr{Cdouble}, #const double alpha3[150]
-    # Ptr{Cdouble}, #const double alpha4[150]
-    # Ptr{Cdouble}, #const double alpha5[150]
-    # Ptr{Cdouble}, #const double alpha6[150]
-    # Ptr{Cdouble}, #const double rhoIyz[150]
-    # Ptr{Cdouble}, #const double b[150]
-    # Ptr{Cdouble}, #const double a0[150]
-    # Ptr{Cdouble}, #const double aeroCenterOffset[150]
-    # Ptr{Cdouble}, #const double elLen[75]
-    # Ptr{Cdouble}, #const double psi[75]
-    # Ptr{Cdouble}, #const double theta[75]
-    # Ptr{Cdouble}, #const double roll[75]
-    # Ptr{Cdouble}, #const double displ_s[492]
-    # Ptr{Cdouble}, #const double displdot_s[492]
-    # Ptr{Cdouble}, #const double displddot_s[492]
-    # Ptr{Cdouble}, #const double K11[300]
-    # Ptr{Cdouble}, #const double K12[300]
-    # Ptr{Cdouble}, #const double K13[300]
-    # Ptr{Cdouble}, #const double K14[300]
-    # Ptr{Cdouble}, #const double K15[300]
-    # Ptr{Cdouble}, #const double K16[300]
-    # Ptr{Cdouble}, #const double K22[300]
-    # Ptr{Cdouble}, #const double K23[300]
-    # Ptr{Cdouble}, #const double K24[300]
-    # Ptr{Cdouble}, #const double K25[300]
-    # Ptr{Cdouble}, #const double K26[300]
-    # Ptr{Cdouble}, #const double K33[300]
-    # Ptr{Cdouble}, #const double K34[300]
-    # Ptr{Cdouble}, #const double K35[300]
-    # Ptr{Cdouble}, #const double K36[300]
-    # Ptr{Cdouble}, #const double K44[300]
-    # Ptr{Cdouble}, #const double K45[300]
-    # Ptr{Cdouble}, #const double K46[300]
-    # Ptr{Cdouble}, #const double K55[300]
-    # Ptr{Cdouble}, #const double K56[300]
-    # Ptr{Cdouble}, #const double K66[300]
-    # Ptr{Cdouble}, #const double M11[300]
-    # Ptr{Cdouble}, #const double M15[300]
-    # Ptr{Cdouble}, #const double M16[300]
-    # Ptr{Cdouble}, #const double M22[300]
-    # Ptr{Cdouble}, #const double M24[300]
-    # Ptr{Cdouble}, #const double M33[300]
-    # Ptr{Cdouble}, #const double M34[300]
-    # Ptr{Cdouble}, #const double M44[300]
-    # Ptr{Cdouble}, #const double M55[300]
-    # Ptr{Cdouble}, #const double M56[300]
-    # Ptr{Cdouble}, #const double M66[300]
-    # Ptr{Cdouble}, #const double S11[300]
-    # Ptr{Cdouble}, #const double S12[300]
-    # Ptr{Cdouble}, #const double S13[300]
-    # Ptr{Cdouble}, #const double S15[300]
-    # Ptr{Cdouble}, #const double S16[300]
-    # Ptr{Cdouble}, #const double S22[300]
-    # Ptr{Cdouble}, #const double S23[300]
-    # Ptr{Cdouble}, #const double S25[300]
-    # Ptr{Cdouble}, #const double S26[300]
-    # Ptr{Cdouble}, #const double S33[300]
-    # Ptr{Cdouble}, #const double S35[300]
-    # Ptr{Cdouble}, #const double S36[300]
-    # Ptr{Cdouble}, #const double S55[300]
-    # Ptr{Cdouble}, #const double S56[300]
-    # Ptr{Cdouble}, #const double S66[300]
-    # Ptr{Cdouble}, #const double S14_1[300]
-    # Ptr{Cdouble}, #const double S14_2[300]
-    # Ptr{Cdouble}, #const double S24_1[300]
-    # Ptr{Cdouble}, #const double S24_2[300]
-    # Ptr{Cdouble}, #const double S34_1[300]
-    # Ptr{Cdouble}, #const double S34_2[300]
-    # Ptr{Cdouble}, #const double S45_1[300]
-    # Ptr{Cdouble}, #const double S45_2[300]
-    # Ptr{Cdouble}, #const double S46_1[300]
-    # Ptr{Cdouble}, #const double S46_2[300]
-    # Ptr{Cdouble}, #const double S44_1[300]
-    # Ptr{Cdouble}, #const double S44_2[300]
-    # Ptr{Cdouble}, #const double S44_3[300]
-    # Ptr{Cdouble}, #const double C12[300]
-    # Ptr{Cdouble}, #const double C13[300]
-    # Ptr{Cdouble}, #const double C23[300]
-    # Ptr{Cdouble}, #const double C24[300]
-    # Ptr{Cdouble}, #const double C25[300]
-    # Ptr{Cdouble}, #const double C26[300]
-    # Ptr{Cdouble}, #const double C34[300]
-    # Ptr{Cdouble}, #const double C35[300]
-    # Ptr{Cdouble}, #const double C36[300]
-    # Ptr{Cdouble}, #const double C14_1[300]
-    # Ptr{Cdouble}, #const double C14_2[300]
-    # Ptr{Cdouble}, #const double C45_1[300]
-    # Ptr{Cdouble}, #const double C45_2[300]
-    # Ptr{Cdouble}, #const double C46_1[300]
-    # Ptr{Cdouble}, #const double C46_2[300]
-    # Ptr{Cdouble}, #const double mel[75]
-    # Ptr{Cdouble}, #const double moiel[675]
-    # Ptr{Cdouble}, #const double xmel[225]
-    # Ptr{Cdouble}, #const double Fexternal[273]
-    # Ptr{Cdouble}, #const double Fdof[273]
-    # Ptr{Cdouble}, #const double CN2H[9]
-    # Ptr{Cdouble}, #const double rbData[9]
-    # Ptr{Cdouble}, #const double jointTransform[206640]
-    # Ptr{Cdouble}, #const double conn[150]
-    # Cint, #boolean_T gravityOn
-    # Cint, #boolean_T nlOn
-    # Cdouble, #double maxNumLoadSteps
-    # Cdouble, #double airDensity
-    # Cdouble, #double RayleighAlpha
-    # Cdouble, #double RayleighBeta
-    # Cdouble, #double elementOrder
-    # Cdouble, #double delta_t
-    # Cdouble, #double c_platformTurbineConnectionNode
-    # Cdouble, #double tolerance
-    # Cdouble, #double maxIterations
-    # Cdouble, #double numpBC
-    # Cdouble, #double numEl
-    # Cdouble, #double Omega
-    # Cdouble, #double OmegaDot
-    # Ptr{Cdouble}, #double displ_sp1[492]
-    # Ptr{Cdouble}, #double displddot_sp1[492]
-    # Ptr{Cdouble}, #double displdot_sp1[492]
-    # Ptr{Cdouble}, #double eps_xx_0[300]
-    # Ptr{Cdouble}, #double eps_xx_z[300]
-    # Ptr{Cdouble}, #double eps_xx_y[300]
-    # Ptr{Cdouble}, #double gam_xz_0[300]
-    # Ptr{Cdouble}, #double gam_xz_y[300]
-    # Ptr{Cdouble}, #double gam_xy_0[300]
-    # Ptr{Cdouble}, #double gam_xy_z[300]
-    # Ptr{Cdouble}), #double FReaction_sp1[6]
-    # rotationalEffects,
-    # joint,
-    # pBC,
-    # x,
-    # y,
-    # z,
-    # ac,
-    # twist,
-    # rhoA,
-    # EIyy,
-    # EIzz,
-    # GJ,
-    # EA,
-    # rhoIyy,
-    # rhoIzz,
-    # rhoJ,
-    # zcm,
-    # ycm,
-    # a,
-    # EIyz,
-    # alpha1,
-    # alpha2,
-    # alpha3,
-    # alpha4,
-    # alpha5,
-    # alpha6,
-    # rhoIyz,
-    # b,
-    # a0,
-    # aeroCenterOffset,
-    # elLen,
-    # psi,
-    # theta,
-    # roll,
-    # displ_s,
-    # displdot_s,
-    # displddot_s,
-    # K11,
-    # K12,
-    # K13,
-    # K14,
-    # K15,
-    # K16,
-    # K22,
-    # K23,
-    # K24,
-    # K25,
-    # K26,
-    # K33,
-    # K34,
-    # K35,
-    # K36,
-    # K44,
-    # K45,
-    # K46,
-    # K55,
-    # K56,
-    # K66,
-    # M11,
-    # M15,
-    # M16,
-    # M22,
-    # M24,
-    # M33,
-    # M34,
-    # M44,
-    # M55,
-    # M56,
-    # M66,
-    # S11,
-    # S12,
-    # S13,
-    # S15,
-    # S16,
-    # S22,
-    # S23,
-    # S25,
-    # S26,
-    # S33,
-    # S35,
-    # S36,
-    # S55,
-    # S56,
-    # S66,
-    # S14_1,
-    # S14_2,
-    # S24_1,
-    # S24_2,
-    # S34_1,
-    # S34_2,
-    # S45_1,
-    # S45_2,
-    # S46_1,
-    # S46_2,
-    # S44_1,
-    # S44_2,
-    # S44_3,
-    # C12,
-    # C13,
-    # C23,
-    # C24,
-    # C25,
-    # C26,
-    # C34,
-    # C35,
-    # C36,
-    # C14_1,
-    # C14_2,
-    # C45_1,
-    # C45_2,
-    # C46_1,
-    # C46_2,
-    # mel,
-    # moiel,
-    # xmel,
-    # Fexternal,
-    # Fdof,
-    # CN2H,
-    # rbData,
-    # jointTransform,
-    # conn,
-    # gravityOn,
-    # nlOn,
-    # maxNumLoadSteps,
-    # airDensity,
-    # RayleighAlpha,
-    # RayleighBeta,
-    # elementOrder,
-    # delta_t,
-    # platformTurbineConnectionNodeNumber,
-    # tolerance,
-    # maxIterations,
-    # numpBC,
-    # numEl,
-    # Omega_j,
-    # OmegaDot_j,
-    # displ_sp1,
-    # displddot_sp1,
-    # displdot_sp1,
-    # eps_xx_0,
-    # eps_xx_z,
-    # eps_xx_y,
-    # gam_xz_0,
-    # gam_xz_y,
-    # gam_xy_0,
-    # gam_xy_z,
-    # FReaction_j)
-
+    # println(FReaction_j)
     # mat"""
-    # [$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient($gravityOn,...
+    # [$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient($rotationalEffects,...
+    # $gravityOn,...
     # $nlOn,...
     # $maxNumLoadSteps,...
     # $airDensity,...
@@ -946,7 +646,15 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     # $numEl,...
     # $Omega_j,...
     # $OmegaDot_j,...
-    # $rotationalEffects,...
+    # $mel,...
+    # $moiel,...
+    # $xmel,...
+    # $Fexternal,...
+    # $Fdof,...
+    # $CN2H,...
+    # $rbData,...
+    # $jointTransform,...
+    # $conn,...
     # $joint,...
     # $pBC,...
     # $x,...
@@ -1057,16 +765,7 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     # $C45_1,...
     # $C45_2,...
     # $C46_1,...
-    # $C46_2,...
-    # $mel,...
-    # $moiel,...
-    # $xmel,...
-    # $Fexternal,...
-    # $Fdof,...
-    # $CN2H,...
-    # $rbData,...
-    # $jointTransform,...
-    # $conn);
+    # $C46_2);
     # """
 
     # Reconstruct dispOut.elStrain
@@ -1079,6 +778,7 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
 
     dispOut = DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
     # dispOut.elStrain = elStrain
+    # println("Breakout Struct Dyn Time Elapsed: $(time() - start)")
     return elStrain,dispOut,FReaction_j
 
 end
