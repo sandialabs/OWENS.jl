@@ -352,6 +352,15 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     Cdouble, #double numEl
     Cdouble, #double Omega
     Cdouble, #double OmegaDot
+    Ptr{Cdouble}, #const double mel[75]
+    Ptr{Cdouble}, #const double moiel[675]
+    Ptr{Cdouble}, #const double xmel[225]
+    Ptr{Cdouble}, #const double Fexternal[273]
+    Ptr{Cdouble}, #const double Fdof[273]
+    Ptr{Cdouble}, #const double CN2H[9]
+    Ptr{Cdouble}, #const double rbData[9]
+    Ptr{Cdouble}, #const double jointTransform[206640]
+    Ptr{Cdouble}, #const double conn[150]
     Ptr{Cdouble}, #const double joint[96]
     Ptr{Cdouble}, #const double pBC[18]
     Ptr{Cdouble}, #const double x[82]
@@ -487,6 +496,15 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     numEl,
     Omega_j,
     OmegaDot_j,
+    mel,
+    moiel,
+    xmel,
+    Fexternal,
+    Fdof,
+    CN2H,
+    rbData,
+    jointTransform,
+    conn,
     joint,
     pBC,
     x,
