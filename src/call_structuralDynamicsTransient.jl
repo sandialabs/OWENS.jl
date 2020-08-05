@@ -339,7 +339,56 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     # Bogus5 = zeros(32,1);
 
     ccall((:structuralDynamicsTransient,"./codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
-    (Ptr{Cdouble}, #const double K11[300]
+    (Cdouble, #double maxNumLoadSteps
+    Cdouble, #double airDensity
+    Cdouble, #double RayleighAlpha
+    Cdouble, #double RayleighBeta
+    Cdouble, #double elementOrder
+    Cdouble, #double delta_t
+    Cdouble, #double c_platformTurbineConnectionNode
+    Cdouble, #double tolerance
+    Cdouble, #double maxIterations
+    Cdouble, #double numpBC
+    Cdouble, #double numEl
+    Cdouble, #double Omega
+    Cdouble, #double OmegaDot
+    Ptr{Cdouble}, #const double joint[96]
+    Ptr{Cdouble}, #const double pBC[18]
+    Ptr{Cdouble}, #const double x[82]
+    Ptr{Cdouble}, #const double y[82]
+    Ptr{Cdouble}, #const double z[82]
+    Ptr{Cdouble}, #const double ac[150]
+    Ptr{Cdouble}, #const double twist[150]
+    Ptr{Cdouble}, #const double rhoA[150]
+    Ptr{Cdouble}, #const double EIyy[150]
+    Ptr{Cdouble}, #const double EIzz[150]
+    Ptr{Cdouble}, #const double GJ[150]
+    Ptr{Cdouble}, #const double EA[150]
+    Ptr{Cdouble}, #const double rhoIyy[150]
+    Ptr{Cdouble}, #const double rhoIzz[150]
+    Ptr{Cdouble}, #const double rhoJ[150]
+    Ptr{Cdouble}, #const double zcm[150]
+    Ptr{Cdouble}, #const double ycm[150]
+    Ptr{Cdouble}, #const double a[150]
+    Ptr{Cdouble}, #const double EIyz[150]
+    Ptr{Cdouble}, #const double alpha1[150]
+    Ptr{Cdouble}, #const double alpha2[150]
+    Ptr{Cdouble}, #const double alpha3[150]
+    Ptr{Cdouble}, #const double alpha4[150]
+    Ptr{Cdouble}, #const double alpha5[150]
+    Ptr{Cdouble}, #const double alpha6[150]
+    Ptr{Cdouble}, #const double rhoIyz[150]
+    Ptr{Cdouble}, #const double b[150]
+    Ptr{Cdouble}, #const double a0[150]
+    Ptr{Cdouble}, #const double aeroCenterOffset[150]
+    Ptr{Cdouble}, #const double elLen[75]
+    Ptr{Cdouble}, #const double psi[75]
+    Ptr{Cdouble}, #const double theta[75]
+    Ptr{Cdouble}, #const double roll[75]
+    Ptr{Cdouble}, #const double displ_s[492]
+    Ptr{Cdouble}, #const double displdot_s[492]
+    Ptr{Cdouble}, #const double displddot_s[492]
+    Ptr{Cdouble}, #const double K11[300]
     Ptr{Cdouble}, #const double K12[300]
     Ptr{Cdouble}, #const double K13[300]
     Ptr{Cdouble}, #const double K14[300]
@@ -425,6 +474,55 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     Ptr{Cdouble}, #double gam_xy_0[300]
     Ptr{Cdouble}, #double gam_xy_z[300]
     Ptr{Cdouble}), #double FReaction_sp1[6]
+    maxNumLoadSteps,
+    airDensity,
+    RayleighAlpha,
+    RayleighBeta,
+    elementOrder,
+    delta_t,
+    platformTurbineConnectionNodeNumber,
+    tolerance,
+    maxIterations,
+    numpBC,
+    numEl,
+    Omega_j,
+    OmegaDot_j,
+    joint,
+    pBC,
+    x,
+    y,
+    z,
+    ac,
+    twist,
+    rhoA,
+    EIyy,
+    EIzz,
+    GJ,
+    EA,
+    rhoIyy,
+    rhoIzz,
+    rhoJ,
+    zcm,
+    ycm,
+    a,
+    EIyz,
+    alpha1,
+    alpha2,
+    alpha3,
+    alpha4,
+    alpha5,
+    alpha6,
+    rhoIyz,
+    b,
+    a0,
+    aeroCenterOffset,
+    elLen,
+    psi,
+    theta,
+    roll,
+    displ_s,
+    displdot_s,
+    displddot_s,
     K11,
     K12,
     K13,
