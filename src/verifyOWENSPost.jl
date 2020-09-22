@@ -108,30 +108,30 @@ end
 
 #FLUTTER
 if verify_flutter
-    
+
     fprintf('#s\n','FLUTTER TESTS ');
-    
+
     freq_old = [0,8796.17977509167,0,8731.33585194320]';
     damp_old = [0,5.06872269198530e-09,0,6.95419907854427e-07]';
     old1.freq = freq_old;
     old1.damp = damp_old;
 
     NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_FLUTTER.out');
-    
+
     FileInfo = dir(NEW);
 
     if (datetime - FileInfo.date) > duration(0,1,0)
         warning('Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.');
     end
-    
+
     new = load(NEW);
     freq_new = new(:,1);
     damp_new = new(:,2);
     new1.freq = freq_new;
     new1.damp = damp_new;
-    
+
     total_mismatch = comparison(old1,new1,1e-3);
-    
+
     if total_mismatch == 0
         fprintf('#s\n\n','Flutter Test PASSED')
     else

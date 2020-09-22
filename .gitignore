@@ -9,3 +9,10 @@
 *_checkpoints*
 *.dSYM
 *.zip
+*.aux
+*.log
+*.out
+*.gz
+*.bbl
+*.synctex*
+~*

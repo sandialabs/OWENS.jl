@@ -425,7 +425,7 @@ function transientExec(model,mesh,el)
                 t_in = t[i]
                 # mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
                 # Juno.@enter call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
-                elStrain,dispOut,FReaction_j = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+                elStrain,dispOut,FReaction_j = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
             end
             #update last iteration displacement vector
             u_jLast = u_j
