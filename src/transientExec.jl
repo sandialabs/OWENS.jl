@@ -26,6 +26,42 @@ mutable struct DispData
     displddot_s
 end
 
+mutable struct Slice
+    r
+    RefR
+    chord
+    twist
+    delta
+    B
+    alpha_rad
+    cl
+    cd
+    Omega
+    centerX
+    centerY
+end
+
+mutable struct Env
+    rho
+    mu
+    G_amp
+    gusttime
+    gustX0
+    N_Rev
+    idx_sub
+    wsave
+    Vinf_nominal
+    V_vert
+    V_tang
+    V_rad
+    V_twist
+    Vinf
+    V_wake_old
+    steplast
+    ntheta
+    tau
+end
+
 function transientExec(model,mesh,el)
     #transientExec performs modular transient analysis
     # **********************************************************************
@@ -56,8 +92,99 @@ function transientExec(model,mesh,el)
     #modularIteration
     moduleIteration = true
     # Get AeroLoads
-    mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
+    # mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
+    aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
+    OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
 
+    QCx=[0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00]
+    QCy=[0.00000e+00,2.44680e-01,4.89360e-01,7.34040e-01,9.78720e-01,1.22340e+00,1.46808e+00,1.71276e+00,1.95744e+00,2.20212e+00,2.44680e+00]
+    QCz=[0.00000e+00,3.76945e-01,6.77076e-01,8.73458e-01,9.77684e-01,1.00000e+00,9.44658e-01,8.13441e-01,6.09216e-01,3.25362e-01,0.00000e+00]
+    CtoR=[1.11093e-01,1.11093e-01,8.20390e-02,6.35940e-02,5.68145e-02,5.55467e-02,5.88008e-02,6.82860e-02,9.11773e-02,1.11093e-01,1.11093e-01]
+    RefR=177.2022
+    NBlade = 2
+    PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
+    NElem = 10
+
+    mat"[$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers] = readBldFile($OWENSfile_root)"
+
+    step_AC = 0
+    ntheta = 36#1/(model.OmegaInit*model.delta_t)
+    Vinf = 25 #TODO
+    rho = 1.225 #TODO
+    mu = 1.7894e-5 #TODO
+
+    H = [] #For plotting turbine
+    plotTurbine = false
+
+    mat"[$alpha_rad,$cl,$cd] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
+    ft2m = 1 / 3.281
+    RefR = RefR*ft2m
+
+    xyz = zeros(length(QCz),3)
+    xyz[:,1] = RefR*QCz
+    xyz[:,2] = RefR*QCx
+    xyz[:,3] = RefR*QCy
+
+    n_slices = length(QCz)-1
+
+    # h_ends = xyz(:,3)
+    # h_frac = (h_ends(2:end) - h_ends(1:end-1))/h_ends(end)
+    # h = (h_ends(2:end) + h_ends(1:end-1))/2
+
+    delta_xs = xyz[2:end,1] - xyz[1:end-1,1]
+    delta_zs = xyz[2:end,3] - xyz[1:end-1,3]
+
+    # element_planf_A = sqrt(delta_xs.^2+delta_zs.^2)*chord
+    # element_planf_L = sqrt(delta_xs.^2+delta_zs.^2)
+
+    delta = atan.(delta_xs./delta_zs)
+
+    r = (xyz[2:end,1]+xyz[1:end-1,1])/2
+    twist = ones(n_slices)*0*pi/180
+    chord = RefR*CtoR
+    # Single Slice
+    slice = Slice(ones(ntheta),
+        RefR,
+        0.0,
+        zeros(1,ntheta),
+        zeros(1,ntheta),
+        Float64(NBlade),
+        alpha_rad,
+        cl,
+        cd,
+        ones(1,ntheta)*model.OmegaInit*2*pi,
+        0.0,
+        0.0)
+
+    # turbine built from bottom up
+    turbine3D = fill(slice, n_slices)
+    for i = 1:n_slices
+        turbine3D[i].r = ones(1,ntheta)*r[i]
+        turbine3D[i].chord = chord[i]
+        turbine3D[i].twist = ones(1,ntheta)*twist[i]
+        turbine3D[i].delta = ones(1,ntheta)*delta[i]
+    end
+
+    env1 = Env(rho,
+        mu,
+        0.0, #m/s gust
+        0.8, #sec
+        13.0, #radaii offset back is starting point for gust
+        20,
+        zeros(1,NBlade*2),
+        zeros(1,ntheta*2),
+        Vinf,
+        zeros(1,ntheta),
+        zeros(1,ntheta),
+        zeros(1,ntheta),
+        zeros(1,ntheta),
+        ones(ntheta)*Vinf,
+        Vinf,
+        0,
+        ntheta,
+        [0.3025, 2.9500])
+
+    env = fill(env1, n_slices)
     # Declare Variable Type, are set later
     udot_j = 0.0
     uddot_j = 0.0
@@ -389,7 +516,18 @@ function transientExec(model,mesh,el)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
+            # Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
+
+            step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
+            t_used = t[i]
+            # function runme()
+            #     println("here")
+            #     println("here")
+            #     println("here")
+                # println("here")
+            mat"[$Fexternal_sub, $Fdof_sub, $env2] = mapACloads($u_j,$udot_j,$Omega_j,$t_used,$PEy,$QCy,$NElem,$NBlade,$RefR,$mesh,$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers,$el,$turbine3D,$env,$step_AC)"
+            # end
+            # Juno.@enter runme()
 
             if isempty(FAeroDof)
                 Fdof = Fdof_sub

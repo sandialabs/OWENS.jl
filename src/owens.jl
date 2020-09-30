@@ -436,6 +436,7 @@ function owens(owensfile,analysisType;
     #
     if (occursin("TNB",analysisType)||occursin("TD",analysisType)||occursin("ROM",analysisType)) #EXECUTE TRANSIENT ANALYSIS
         # [model.nlParams] = readNLParamsFile(owensfile) #TODO: this isn't really used, clean up
+        # Juno.@enter transientExec(model,mesh,el)
         transientExec(model,mesh,el)
         freq = 0.0
         damp = 0.0
