@@ -2,6 +2,7 @@
 include("externalForcing.jl")
 include("setInitialConditions.jl")
 include("call_structuralDynamicsTransient.jl")
+include("mapACloads.jl")
 
 mutable struct ElStrain
     eps_xx_0
@@ -26,41 +27,41 @@ mutable struct DispData
     displddot_s
 end
 
-mutable struct Slice
-    r
-    RefR
-    chord
-    twist
-    delta
-    B
-    alpha_rad
-    cl
-    cd
-    Omega
-    centerX
-    centerY
-end
-
-mutable struct Env
-    rho
-    mu
-    G_amp
-    gusttime
-    gustX0
-    N_Rev
-    idx_sub
-    wsave
-    Vinf_nominal
-    V_vert
-    V_tang
-    V_rad
-    V_twist
-    Vinf
-    V_wake_old
-    steplast
-    ntheta
-    tau
-end
+# mutable struct Slice
+#     r
+#     RefR
+#     chord
+#     twist
+#     delta
+#     B
+#     alpha_rad
+#     cl
+#     cd
+#     Omega
+#     centerX
+#     centerY
+# end
+#
+# mutable struct Env
+#     rho
+#     mu
+#     G_amp
+#     gusttime
+#     gustX0
+#     N_Rev
+#     idx_sub
+#     wsave
+#     Vinf_nominal
+#     V_vert
+#     V_tang
+#     V_rad
+#     V_twist
+#     Vinf
+#     V_wake_old
+#     steplast
+#     ntheta
+#     tau
+# end
 
 function transientExec(model,mesh,el)
     #transientExec performs modular transient analysis
@@ -109,14 +110,15 @@ function transientExec(model,mesh,el)
 
     step_AC = 0
     ntheta = 36#1/(model.OmegaInit*model.delta_t)
-    Vinf = 25 #TODO
+    Vinf = 25.0 #TODO
     rho = 1.225 #TODO
     mu = 1.7894e-5 #TODO
 
     H = [] #For plotting turbine
     plotTurbine = false
 
-    mat"[$alpha_rad,$cl,$cd] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
+    mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
+    af = VAWTAero.readaerodyn("./airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
     ft2m = 1 / 3.281
     RefR = RefR*ft2m
 
@@ -143,48 +145,93 @@ function transientExec(model,mesh,el)
     twist = ones(n_slices)*0*pi/180
     chord = RefR*CtoR
     # Single Slice
-    slice = Slice(ones(ntheta),
-        RefR,
-        0.0,
-        zeros(1,ntheta),
-        zeros(1,ntheta),
-        Float64(NBlade),
-        alpha_rad,
-        cl,
-        cd,
-        ones(1,ntheta)*model.OmegaInit*2*pi,
-        0.0,
-        0.0)
+    # slice = Slice(ones(ntheta),
+    #     RefR,
+    #     0.0,
+    #     zeros(1,ntheta),
+    #     zeros(1,ntheta),
+    #     Float64(NBlade),
+    #     alpha_rad,
+    #     cl,
+    #     cd,
+    #     ones(1,ntheta)*model.OmegaInit*2*pi,
+    #     0.0,
+    #     0.0)
+
+    slice = VAWTAero.Turbine(RefR,
+    zeros(ntheta),
+    zeros(1),
+    zeros(ntheta),
+    zeros(ntheta),
+    zeros(ntheta),
+    2,
+    1.0,
+    af,
+    ntheta,
+    false,
+    0.0,
+    0.0)
 
     # turbine built from bottom up
     turbine3D = fill(slice, n_slices)
     for i = 1:n_slices
-        turbine3D[i].r = ones(1,ntheta)*r[i]
-        turbine3D[i].chord = chord[i]
-        turbine3D[i].twist = ones(1,ntheta)*twist[i]
-        turbine3D[i].delta = ones(1,ntheta)*delta[i]
+        turbine3D[i].r[:] .= ones(ntheta)*r[i]
+        turbine3D[i].chord[:] .= chord[i]
+        turbine3D[i].twist[:] .= ones(ntheta)*twist[i]
+        turbine3D[i].delta[:] .= ones(ntheta)*delta[i]
     end
 
-    env1 = Env(rho,
-        mu,
-        0.0, #m/s gust
-        0.8, #sec
-        13.0, #radaii offset back is starting point for gust
-        20,
-        zeros(1,NBlade*2),
-        zeros(1,ntheta*2),
-        Vinf,
-        zeros(1,ntheta),
-        zeros(1,ntheta),
-        zeros(1,ntheta),
-        zeros(1,ntheta),
-        ones(ntheta)*Vinf,
-        Vinf,
-        0,
-        ntheta,
-        [0.3025, 2.9500])
+    # env1 = Env(rho,
+    #     mu,
+    #     0.0, #m/s gust
+    #     0.8, #sec
+    #     13.0, #radaii offset back is starting point for gust
+    #     20,
+    #     zeros(1,NBlade*2),
+    #     zeros(1,ntheta*2),
+    #     Vinf,
+    #     zeros(1,ntheta),
+    #     zeros(1,ntheta),
+    #     zeros(1,ntheta),
+    #     zeros(1,ntheta),
+    #     ones(ntheta)*Vinf,
+    #     Vinf,
+    #     0,
+    #     ntheta,
+    #     [0.3025, 2.9500])
+
+    env1 = VAWTAero.Environment(rho,
+    mu,
+    ones(ntheta).*Vinf,
+    "AC", #TODO: use this to unify the DMS and AC steady methods, like in the unsteady method
+    "None",
+    false, #TODO: generalize this name since it is now being used as an option on the solution method for both AC and DMS, not just DMS anymore
+    Vinf,
+    zeros(ntheta))
 
     env = fill(env1, n_slices)
+
+    if env1.AModel == "AC"
+        N_aw = ntheta*2 #Number of either "a" (DMS induction factor) or w (u and v induction factors)
+    elseif env1.AModel == "DMS"
+        N_aw = ntheta
+    else
+        error("Aeromodel not recognized, choose AC or DMS")
+    end
+
+    us_param = VAWTAero.UnsteadyParams(true,
+    0,
+    0.0,
+    0.0,
+    0.0,
+    zeros(Int,1),
+    0.0,
+    [0.3,3.0],
+    zeros(Int,2*2),
+    zeros(N_aw),
+    zeros(1))
+
+
     # Declare Variable Type, are set later
     udot_j = 0.0
     uddot_j = 0.0
@@ -331,9 +378,9 @@ function transientExec(model,mesh,el)
     for i=1:numTS
 
         #     i #TODO add verbose printing
-        if (mod(i,100)==0) #print command that displays progress of time stepping
-            println("Iteration: $i")
-        end
+        # if (mod(i,100)==0) #print command that displays progress of time stepping
+        println("Time Step: $i")
+        # end
 
         ## check for specified rotor speed at t[i] + delta_t
         model.omegaControl = false
@@ -373,8 +420,8 @@ function transientExec(model,mesh,el)
         # 		Accel_j = Accel
         # 		Accel_jLast = Accel
 
-        TOL = 1e-8  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 50 #max iteration for various modules
+        TOL = 9e-7  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 4 #max iteration for various modules
         numIterations = 1
         uNorm = 1e6
         platNorm = 1e6
@@ -383,7 +430,7 @@ function transientExec(model,mesh,el)
         ##
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-
+            println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
             CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
@@ -525,7 +572,8 @@ function transientExec(model,mesh,el)
             #     println("here")
             #     println("here")
                 # println("here")
-            mat"[$Fexternal_sub, $Fdof_sub, $env2] = mapACloads($u_j,$udot_j,$Omega_j,$t_used,$PEy,$QCy,$NElem,$NBlade,$RefR,$mesh,$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers,$el,$turbine3D,$env,$step_AC)"
+            # Juno.@enter mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
+            Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
             # end
             # Juno.@enter runme()
 
@@ -605,6 +653,9 @@ function transientExec(model,mesh,el)
             end
 
             numIterations = numIterations + 1
+            if numIterations==MAXITER
+                @warn "Maximum Iterations Met"
+            end
         end #end iteration while loop
 
         ## calculate converged generator torque/power

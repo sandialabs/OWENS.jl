@@ -2,6 +2,7 @@
 import DelimitedFiles
 import LinearAlgebra
 import FLOWMath
+import VAWTAero
 using MATLAB #if this is used, must run from src location
 path,_ = splitdir(@__FILE__)
 include("$path/owens.jl") #TODO: organize correctly

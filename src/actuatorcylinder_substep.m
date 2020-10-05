@@ -1,6 +1,6 @@
 
-function [Rp, Tp, Zp, Mp,env] = actuatorcylinder_substep(turbines, env,step_AC)
-ntheta = env.ntheta;
+function [Rp, Tp, Zp, Mp,env] = actuatorcylinder_substep(turbines, env,us_param,step_AC,alpha_rad,cl_af,cd_af)
+ntheta = turbines.ntheta;
 % list comprehensions
 centerX = zeros(1,length(turbines));
 centerY = zeros(1,length(turbines));
@@ -8,7 +8,7 @@ radii = zeros(1,length(turbines));
 for i = 1:length(turbines)
     centerX(i) = turbines(i).centerX;
     centerY(i) = turbines(i).centerY;
-    radii(i) = turbines(i).RefR;
+    radii(i) = turbines(i).R;
 end
 
 % assemble global matrices
@@ -16,18 +16,18 @@ end
 
 % setup
 
-wsave = env.wsave;
+wsave = us_param.awsave;
 circ_step_num = floor((step_AC-1)/ntheta*turbines.B);
 circular_step = step_AC-circ_step_num*ntheta/turbines.B; %env.circular_step;
-V_wake_old = env.V_wake_old;
+V_wake_old = us_param.V_wake_old;
 Vinf_nominal = env.Vinf_nominal;
-tau = env.tau;
+tau = us_param.tau;
 
 
 Vinf_used = zeros(1,turbines.B);
-gustT = env.gusttime * Vinf_nominal / turbines.RefR;
-dt = 1/(mean(turbines.Omega) * ntheta / (2*pi));
-dt_norm = dt*Vinf_nominal/turbines.RefR;
+gustT = us_param.gusttime * Vinf_nominal / turbines.R;
+dt = 1/(mean(turbines.omega) * ntheta / (2*pi));
+dt_norm = dt*Vinf_nominal/turbines.R;
 % IECGustFactor = 0;
 %TODO: add check that ntheta is divisible by nblades and 2
 % for step = 1:ntheta*env.N_Rev %
@@ -39,12 +39,12 @@ idx = (i-1)*ntheta+1:i*ntheta;
 % end
 
 ele_x = sin(double((step_AC:ntheta/turbines.B:step_AC+ntheta-ntheta/turbines.B+1)/ntheta*2*pi));
-tr = double(step_AC)*double(dt_norm) - ele_x - double(env.gustX0);
+tr = double(step_AC)*double(dt_norm) - ele_x - double(us_param.gustX0);
 
 for bld_i = 1:turbines.B
     if (tr(bld_i) >= 0) && (tr(bld_i)<=gustT)
 
-        IECGustFactor = 1.0 - 0.37 * env.G_amp/Vinf_nominal * sin(3*pi*tr(bld_i)/gustT)  * (1.0 - cos(2*pi*tr(bld_i)/gustT));
+        IECGustFactor = 1.0 - 0.37 * us_param.G_amp/Vinf_nominal * sin(3*pi*tr(bld_i)/gustT)  * (1.0 - cos(2*pi*tr(bld_i)/gustT));
         Vinf_used(bld_i) = Vinf_nominal*IECGustFactor;
 
     else
@@ -54,7 +54,7 @@ end
 
 
 env.Vinf(idx_sub(1:turbines.B)) = Vinf_used;
-f_residual = @(wsub) frozen_residual(wsub,wsave,idx_sub, [Ax(idx, idx); Ay(idx, idx)], theta, 1.0, (turbines), env);
+f_residual = @(wsub) frozen_residual(wsub,wsave,idx_sub, [Ax(idx, idx); Ay(idx, idx)], theta, 1.0, (turbines), env,alpha_rad,cl_af,cd_af);
 
 options = optimoptions('fsolve','Display','off','Algorithm','levenberg-marquardt');
 % tic
@@ -66,11 +66,11 @@ wnew = wsave;
 wnew(idx_sub) = w;
 u = wnew(idx);
 v = wnew(ntheta + idx);
-[~, ~, ~, ~, ~, ~, ~, ~, a_new] = radialforce(u, v, theta, turbines(i), env);
+[~, ~, ~, ~, ~, ~, ~, ~, a_new] = radialforce(u, v, theta, turbines(i), env,alpha_rad,cl_af,cd_af);
 %      constants, radius, average wake velocity
 
-tau_near = tau(1)*turbines.RefR/V_wake_old;
-tau_far = tau(2)*turbines.RefR/V_wake_old;
+tau_near = tau(1)*turbines.R/V_wake_old;
+tau_far = tau(2)*turbines.R/V_wake_old;
 
 V_wake_old = V_wake_old*exp(double(-dt/tau_far))+(mean(Vinf_used)*(1-2*a_new))*(1-exp(double(-dt/tau_far)));
 
@@ -85,7 +85,7 @@ wsave = w_filtered;
 idx = 1:ntheta;
 u = w_filtered(idx);
 v = w_filtered(ntheta + idx);
-[~, ~, ~, ~, Rp_temp, Tp_temp, Zp_temp, ~, ~] = radialforce(u, v, theta, turbines(i), env);
+[~, ~, ~, ~, Rp_temp, Tp_temp, Zp_temp, ~, ~] = radialforce(u, v, theta, turbines(i), env,alpha_rad,cl_af,cd_af);
 
 idx_sub_blade = circshift(idx_sub(1:turbines.B),circ_step_num);
 Rp = Rp_temp(idx_sub_blade(1:turbines.B))';
@@ -98,7 +98,7 @@ Mp = zeros(1,length(Zp)); %TODO
 
 % env.circular_step = circular_step;
 if env.steplast ~= step_AC
-    env.wsave = wsave;
+    us_param.awsave = wsave;
     env.V_wake_old = V_wake_old;
     env.steplast = step_AC;
 end
@@ -350,7 +350,7 @@ end
 
 % ------- Force Coefficients ---------
 
-function [q, ka, CT, CP, Rp, Tp, Zp, Qrev, a] = radialforce(uvec, vvec, thetavec, turbine, env) %Used
+function [q, ka, CT, CP, Rp, Tp, Zp, Qrev, a] = radialforce(uvec, vvec, thetavec, turbine, env,alpha_rad,cl_af,cd_af) %Used
 % u, v, theta - arrays of size ntheta
 % r, chord, twist, Vinf, Omega, rho, mu - scalars
 
@@ -359,8 +359,8 @@ r = turbine.r;
 chord = turbine.chord;
 twist = turbine.twist;
 delta = turbine.delta;
-B = turbine.B;
-Omega = turbine.Omega;
+B = double(turbine.B);
+Omega = turbine.omega;
 
 Vinf = env.Vinf;
 rho = env.rho;
@@ -385,8 +385,8 @@ alpha = phi - twist;
 % cl = turbine.af.cl(alpha);
 % cd = turbine.af.cd(alpha);
 %     cl, cd = turbine.af(alpha);
-cl = interp1(turbine.alpha_rad, turbine.cl, alpha,'makima');
-cd = interp1(turbine.alpha_rad, turbine.cd, alpha,'makima');
+cl = interp1(alpha_rad, cl_af, alpha,'makima');
+cd = interp1(alpha_rad, cd_af, alpha,'makima');
 
 % rotate force coefficients
 cn = cl.*cos(phi) + cd.*sin(phi);
@@ -420,7 +420,7 @@ end
 
 % power coefficient
 H = 1.0;  % per unit height
-Sref = 2*turbine.RefR*H;
+Sref = 2*turbine.R*H;
 Q = r.*Tp;
 Qrev = B*pInt(thetavec, Q)/(2*pi);
 P = Qrev * mean(abs(Omega));
@@ -448,7 +448,7 @@ for i = 1:length(turbines)
     u = w(idx);
     v = w(ntheta*nturbines + idx);
 
-    [q(idx), ka, ~, ~, ~, ~, ~, ~]= radialforce(u, v, theta, turbines(i), env);
+    [q(idx), ka, ~, ~, ~, ~, ~, ~]= radialforce(u, v, theta, turbines(i), env,alpha_rad,cl_af,cd_af);
 end
 
 if nturbines == 1  % if only one turbine use the k from the analysis;
@@ -463,7 +463,7 @@ kmult = [kmult; kmult];
 output = (A*q').*kmult - w';
 end
 
-function output = frozen_residual(wsub,w,idx_sub, A, theta, k, turbines, env) %Used
+function output = frozen_residual(wsub,w,idx_sub, A, theta, k, turbines, env,alpha_rad,cl_af,cd_af) %Used
 w(idx_sub) = wsub; %Reconstruct the full induced velocities matrix
 % setup
 ntheta = length(theta);
@@ -477,7 +477,7 @@ for i = 1:length(turbines)
     u = w(idx);
     v = w(ntheta*nturbines + idx);
 
-    [q, ka, ~, ~, ~, ~, ~, ~]= radialforce(u, v, theta, turbines(i), env);
+    [q, ka, ~, ~, ~, ~, ~, ~]= radialforce(u, v, theta, turbines(i), env,alpha_rad,cl_af,cd_af);
 
 end
 
@@ -490,7 +490,11 @@ kmult = repmat(k, ntheta,1);
 kmult = reshape(kmult,[ntheta*nturbines,1]);
 kmult = [kmult; kmult];
 
-output = (A*q').*kmult - w';
+disp(size(A))
+disp(size(q))
+disp(size(kmult))
+disp(size(w))
+output = (A*q(1,:)').*kmult - w';
 end
 
 

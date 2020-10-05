@@ -1,4 +1,4 @@
-function [output] = calculateLoadVecFromDistForce(input)
+function [Fe] = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
 %calculateTimoshenkoElementNL performs nonlinear element calculations
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -15,20 +15,6 @@ function [output] = calculateLoadVecFromDistForce(input)
 %
 %      output:
 %      output     = object containing element data
-
-%-------- assign input block ----------------
-elementOrder   = input.elementOrder;
-x              = input.x;
-xloc           = input.xloc;
-
-sectionProps   = input.sectionProps;
-sweepAngle     = input.sweepAngle;
-coneAngle      = input.coneAngle;
-rollAngle      = input.rollAngle;
-
-extDistF2Node = input.extDistF2Node;
-extDistF3Node = input.extDistF3Node;
-extDistF4Node = input.extDistF4Node;
 
 %--------------------------------------------
 numGP = 4;   %number of gauss points for full integration
@@ -47,7 +33,7 @@ F6 = F1;
 
 %Sort displacement vector
 %Written for 2 node element with 6 dof per node
-twistAvg = rollAngle + 0.5*(sectionProps.twist(1) + sectionProps.twist(2));
+twistAvg = rollAngle + 0.5*(twist(1) + twist(2));
 lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0);
 
 %Integration loop
@@ -61,7 +47,7 @@ for i=1:numGP
     N5 = N;
     N6 = N;
     integrationFactor = Jac * weight(i);
-    
+
     %..... interpolate for value at quad point .....
     extDistF1 = 0;
     extDistF2 = interpolateVal(extDistF2Node,N2);
@@ -69,7 +55,7 @@ for i=1:numGP
     extDistF4 = interpolateVal(extDistF4Node,N4);
     extDistF5 = 0;
     extDistF6 = 0;
-    
+
     %distributed/body force load calculations
     [F1] = calculateVec1(extDistF1,integrationFactor,N1,F1);
     [F2] = calculateVec1(extDistF2,integrationFactor,N2,F2);
@@ -77,8 +63,8 @@ for i=1:numGP
     [F4] = calculateVec1(extDistF4,integrationFactor,N4,F4);
     [F5] = calculateVec1(extDistF5,integrationFactor,N5,F5);
     [F6] = calculateVec1(extDistF6,integrationFactor,N6,F6);
-    
-    
+
+
 end %END OF INTEGRATION LOOP
 
 %---------------------------------------------
@@ -92,8 +78,6 @@ lambdaTran = lambda';
 lambdaTran = sparse(lambdaTran);
 Fe = lambdaTran*Fe;
 
-%----- assign output block ----------------
-output.Fe = Fe;
 %------------------------------------------
 
 end
@@ -134,6 +118,3 @@ end
 
 end
 % %-------------------------------------------------------------------------
-
-
-
