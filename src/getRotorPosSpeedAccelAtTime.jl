@@ -38,11 +38,15 @@ function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
 
     #calculate rotor azimuth using trapezoidal rule
     rotorAzimuth = trapezoidalRule(aziInit,userDefinedRotorSpeedProfile[t0],rotorSpeed,time-t0)
-    
+
     return rotorAzimuth,rotorSpeed,rotorAcceleration
 end
 
 #simple trapezoidal rule integration
 function trapezoidalRule(aziInit,rotorSpeedStart,rotorSpeedEnd,dt)
     return (aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi))
+end
+
+function userDefinedRotorSpeedProfile(time)
+    return 0.5 #this is what was originally in the file...
 end

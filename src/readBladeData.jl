@@ -59,6 +59,17 @@ function readBladeData(filename)
     end
 
     bladeDataBlock = a[1:strutStartIndex-1,:]
+    bladeEntries, _ = size(bladeDataBlock)
+    numNodesPerBlade = round(Int,bladeEntries/numBlades)
+
+    structuralSpanLocNorm = zeros(numBlades,numNodesPerBlade)
+    structuralNodeNumbers = zeros(numBlades,numNodesPerBlade)
+    structuralElNumbers = zeros(numBlades,numNodesPerBlade)
+    for i=1:numBlades
+        structuralSpanLocNorm[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,2]./bladeDataBlock[i*numNodesPerBlade,2]
+        structuralNodeNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3]
+        structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
+    end
 
     bladeData = BladeData(numBlades,  #assign data to bladeData object #TODO: Should not be loading this file in multiple times
     bladeDataBlock[:,1],
@@ -67,6 +78,6 @@ function readBladeData(filename)
     bladeDataBlock[:,4],
     bladeDataBlock[:,5:end])
 
-    return bladeData
+    return bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers
 
 end

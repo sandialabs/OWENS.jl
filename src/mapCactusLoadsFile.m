@@ -140,8 +140,7 @@ for i=1:numAeroTS
             elInput.extDistF3Node = -[structuralLoad(j).N(i,k),   structuralLoad(j).N(i,k+1)];
             elInput.extDistF4Node = -[structuralLoad(j).M25(i,k), structuralLoad(j).M25(i,k+1)];
 
-            [output] = calculateLoadVecFromDistForce(elInput);
-            Fe = output.Fe;
+            Fe = calculateLoadVecFromDistForce(elInput.elementOrder,elInput.x,elInput.xloc,elInput.sectionProps.twist,elInput.sweepAngle,elInput.coneAngle,elInput.rollAngle,elInput.extDistF2Node,elInput.extDistF3Node,elInput.extDistF4Node);
 
             %asssembly
             for m = 1:length(dofList)

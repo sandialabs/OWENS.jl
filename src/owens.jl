@@ -335,7 +335,6 @@ function owens(owensfile,analysisType;
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
 
     generatorfilename = string(fdirectory, readline(fid)) #generator file name
-    # rayleighDamping   = getSplitLine((fid),"	") #read in alpha/beta for rayleigh damping
     line = readline(fid)
     rayleighDamping = split(line)
 
@@ -354,7 +353,7 @@ function owens(owensfile,analysisType;
     #--------------------------------------------
     mesh = readMesh(meshfilename) #read mesh file
     numDofPerNode = 6
-    bladeData = readBladeData(blddatafilename) #reads overall blade data file
+    bladeData,_,_,_ = readBladeData(blddatafilename) #reads overall blade data file
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
     el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = readJointData(jntdatafilename) #read joint data file

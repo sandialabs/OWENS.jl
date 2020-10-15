@@ -76,7 +76,7 @@ for k = 1:length(turbine3D)
     # turbine3D[k].ntheta = envout["ntheta"]
     # env[k].tau = envout["tau"]
 
-    Q, Rp, Tp, Zp, Vinf_used, alpha, cl, cd, Vloc, Re = VAWTAero.unsteady_step(turbine3D[k],env[k],us_param,step_AC)
+    Q, Rp, Tp, Zp, Vinf_used, alpha, cl, cd, Vloc, Re = VAWTAero.Unsteady_Step(turbine3D[k],env[k],us_param,step_AC)
     Mp = zeros(length(Zp)) #TODO: fix moment CALCS in VAWTAero
 
 

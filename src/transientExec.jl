@@ -3,6 +3,7 @@ include("externalForcing.jl")
 include("setInitialConditions.jl")
 include("call_structuralDynamicsTransient.jl")
 include("mapACloads.jl")
+include("calculateStructureMassProps.jl")
 
 mutable struct ElStrain
     eps_xx_0
@@ -90,10 +91,14 @@ function transientExec(model,mesh,el)
     ## activate platform module
     #............... flags for module activation ....................
     aeroOn = false
+    CACTUS = true
+    println("CACTUS AERO: $CACTUS")
     #modularIteration
     moduleIteration = true
     # Get AeroLoads
-    # mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
+    if CACTUS
+        mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
+    end
     aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
     OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
 
@@ -106,7 +111,8 @@ function transientExec(model,mesh,el)
     PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
     NElem = 10
 
-    mat"[$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers] = readBldFile($OWENSfile_root)"
+    bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = readBladeData(string(OWENSfile_root, ".bld"))
+    # mat"[$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers] = readBldFile($OWENSfile_root)"
 
     step_AC = 0
     ntheta = 36#1/(model.OmegaInit*model.delta_t)
@@ -117,7 +123,7 @@ function transientExec(model,mesh,el)
     H = [] #For plotting turbine
     plotTurbine = false
 
-    mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
+    # mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
     af = VAWTAero.readaerodyn("./airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
     ft2m = 1 / 3.281
     RefR = RefR*ft2m
@@ -371,7 +377,7 @@ function transientExec(model,mesh,el)
     end
 
     #calculate structural/platform moi
-    mat"[$unused1,$structureMOI,$unused2]=calculateStructureMassProps($elStorage)"
+    _,structureMOI,_=calculateStructureMassProps(elStorage)
     #..........................................................................
 
     ## Main Loop - iterate for a solution at each time step, i
@@ -563,19 +569,23 @@ function transientExec(model,mesh,el)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            # Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
+            if CACTUS
+                Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
+            else
+                step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
+                t_used = t[i]
+                # function runme()
+                #     println("here")
+                #     println("here")
+                #     println("here")
+                    # println("here")
+                # Juno.@enter mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
 
-            step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
-            t_used = t[i]
-            # function runme()
-            #     println("here")
-            #     println("here")
-            #     println("here")
-                # println("here")
-            # Juno.@enter mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
-            Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
-            # end
-            # Juno.@enter runme()
+                Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
+
+                # end
+                # Juno.@enter runme()
+            end
 
             if isempty(FAeroDof)
                 Fdof = Fdof_sub
@@ -611,7 +621,9 @@ function transientExec(model,mesh,el)
                 t_in = t[i]
                 # mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
                 # Juno.@enter call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+                start = time()
                 elStrain,dispOut,FReaction_j = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
+                println("$(time()-start)")
             end
             #update last iteration displacement vector
             u_jLast = u_j
@@ -809,4 +821,8 @@ function omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)
         end
     end
     return OmegaCurrent,OmegaDotCurrent,terminateSimulation
+end
+
+function userDefinedGenerator(input)
+    return 0.0 #this is what was in the original file...
 end
