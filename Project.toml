@@ -1,0 +1,13 @@
+name = "OWENS"
+uuid = "03421c14-dcbe-41a4-ba06-dba1a4553bb7"
+authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

@@ -1,0 +1,35 @@
+Title: Offshore Wind Energy Simulator (OWENS)
+SCR: 1617.1
+Type: Commercial Software
+
+The Department of Energy (DOE), by memo dated 10/15/2020 has granted National Technology and Engineering Solutions of Sandia, LLC (NTESS) permission to assert its copyright in the materials entitled "Offshore Wind Energy Simulator (OWENS)".
+
+In accordance with the DOE's permission:
+
+Any copy of  “Offshore Wind Energy Simulator (OWENS)” should be marked:
+
+“Copyright [year first published] National Technology & Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, there is a non-exclusive license for use of this work by or on behalf of the U.S. Government. Export of this data may require a license from the United States Government.”
+
+At a minimum for software, this copyright notice should be on the package containing the program. Preferably, the copyright notice should also be incorporated into the source code and be displayed on at least the first screen that comes up when the software is run.  For non-software, this copyright notice should be on either the inside of the cover page or the first page of the document. In addition, the following complete language should also be included with the copyright notice:
+
+                                           NOTICE:
+For five (5) years from 10/15/2020, the United States Government is granted for itself and others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide license in this data to reproduce, prepare derivative works, and perform publicly and display publicly, by or on behalf of the Government. There is provision for the possible extension of the term of this license. Subsequent to that period or any extension granted, the United States Government is granted for itself and others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide license in this data to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so. The specific term of the license can be identified by inquiry made to National Technology and Engineering Solutions of Sandia, LLC or DOE.
+NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR NATIONAL TECHNOLOGY AND ENGINEERING SOLUTIONS OF SANDIA, LLC, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+Any licensee of "Offshore Wind Energy Simulator (OWENS)" has the obligation and responsibility to abide by the applicable export control laws, regulations, and general prohibitions relating to the export of technical data. Failure to obtain an export control license or other authority from the Government may result in criminal liability under U.S. laws.
+                                             (End of Notice)
+
+"Offshore Wind Energy Simulator (OWENS)" has been assigned SCR# <<1617.1.
+
+This number is an internal tracking number and is a useful reference when contacting the Legal Technology Transfer Center, Licensing and IP Management or Business Development (BuDS).
+
+"Offshore Wind Energy Simulator (OWENS)"  has been assigned Export Control Classification Number (ECCN) EAR 99, and as such has specific license requirements. This classification does not relieve any licensee of this software of the obligation and responsibility to abide by the applicable export control laws, regulations, and general prohibitions relating to the export of technical data.
+
+Thank you for your attention in this regard.  Should you have any questions or concerns, please do not hesitate to contact me.
+
+Copyright Administrator
+IP Management, BCI, & Business Dev.
+Sandia National Laboratories
+P.O. Box 5800/MS 0114
+Albuquerque, NM 87185-0114
+Fax: (505) 844-8011
+copyrightadmin@sandia.gov

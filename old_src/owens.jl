@@ -165,59 +165,24 @@ function owens(owensfile,analysisType;
     spinUpOn=false,
     numModesToExtract=20,
     displInitGuess=0.0, #TODO: clean this up, is overwritten below
-    airDensity=1.2041)
-
-    #spinUpOn flag for pre-stressed modal analysis
-    #lowest freq modes extracted first
-    # displInitGuess sets initial guess for nonlinear calculations
-    # tocp #time points for rotor speed provfile
-    #owens Startup function for the OWENS toolkit
-    # **********************************************************************
-    # *                   Part of the SNL OWENS toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
-    #   [freq,damp]=owens(varargin)
-    #
-    #   This function is a start up function for launching various analysis
-    #   modes of the OWENS toolkit.
-    #
-    #      input:
-    #      varargin      = input parameter list
-    #         varargin{1} is the .owens file associated with analysis
-    #         varargin{2} is a string describing analysis type
-    #                     "S" = static analysis
-    #                     "M" = modal analysis
-    #                     "TNB" = transient analysis with Newmark-Beta time
-    #                     integration
-    #                     "ROM" = reduced order model transient analysis
-    #      output:
-    #      freq         = array of modal frequencies (when applicable to
-    #                     analysis type)
-    #      damp         = array of modal damping (when applicable to analysis
-    #                     type)
-    #      displ        = array containing converged solution for static
-    #                     displacement
-
-    aeroElasticOn = false        # aeroElastic flags, and air density,
-    aeroForceOn = true
-    airDensity = 0
-    guessFreq = 0          #``guess"" modal frequency
-    gravityOn = true             #flag to activate gravity loading in structural dynamics/static simulations,
-    generatorOn = false #Initialize only, gets changed later on,
-    OmegaGenStart = 0.0 #Initialize only, gets changed later on,
-    omegaControl = false #Initialize only, gets changed later on,
-    totalNumDof = 0.0 #Initialize only, gets changed later on,
-
-    # nlParams
-    iterationType = "NR"
-    adaptiveLoadSteppingFlag = true
-    tolerance = 1.0000e-06
-    maxIterations = 50
-    maxNumLoadSteps = 20
-    minLoadStepDelta = 0.0500
-    minLoadStep = 0.0500
-    prescribedLoadStep = 0.0
+    airDensity=1.2041,
+    aeroElasticOn = false,        # aeroElastic flags, and air density,
+    aeroForceOn = true,
+    airDensity = 0,
+    guessFreq = 0,          #``guess"" modal frequency
+    gravityOn = true,             #flag to activate gravity loading in structural dynamics/static simulations,
+    generatorOn = false, #Initialize only, gets changed later on,
+    OmegaGenStart = 0.0, #Initialize only, gets changed later on,
+    omegaControl = false, #Initialize only, gets changed later on,
+    totalNumDof = 0.0, #Initialize only, gets changed later on,
+    iterationType = "NR", # nlParams
+    adaptiveLoadSteppingFlag = true,
+    tolerance = 1.0000e-06,
+    maxIterations = 50,
+    maxNumLoadSteps = 20,
+    minLoadStepDelta = 0.0500,
+    minLoadStep = 0.0500,
+    prescribedLoadStep = 0.0]
 
     # if(occursin("S",analysisType)) #STATIC ANALYSIS
     #     Omega = varargin{3}            #initialization of rotor speed (Hz)
