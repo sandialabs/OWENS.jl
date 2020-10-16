@@ -333,7 +333,7 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     gam_xy_z = zeros(mesh.numEl*4)
     FReaction_j = zeros(6)
 
-    ccall((:structuralDynamicsTransient,"./codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
+    ccall((:structuralDynamicsTransient,"/Users/kevmoor/Documents/coderepos/OWENS.jl/src/Matlab_Cxx/codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
     (Cint, #const boolean_T rotationalEffects
     Cint, #boolean_T gravityOn
     Cint, #boolean_T nlOn

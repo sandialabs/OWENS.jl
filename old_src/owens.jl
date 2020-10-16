@@ -1,3 +1,8 @@
+import DelimitedFiles
+import LinearAlgebra
+import FLOWMath
+import VAWTAero
+using MATLAB #if this is used, must run from src location
 include("readMesh.jl")
 include("readBladeData.jl")
 include("readBCdata.jl")
@@ -168,11 +173,9 @@ function owens(owensfile,analysisType;
     airDensity=1.2041,
     aeroElasticOn = false,        # aeroElastic flags, and air density,
     aeroForceOn = true,
-    airDensity = 0,
     guessFreq = 0,          #``guess"" modal frequency
     gravityOn = true,             #flag to activate gravity loading in structural dynamics/static simulations,
     generatorOn = false, #Initialize only, gets changed later on,
-    OmegaGenStart = 0.0, #Initialize only, gets changed later on,
     omegaControl = false, #Initialize only, gets changed later on,
     totalNumDof = 0.0, #Initialize only, gets changed later on,
     iterationType = "NR", # nlParams
@@ -182,7 +185,7 @@ function owens(owensfile,analysisType;
     maxNumLoadSteps = 20,
     minLoadStepDelta = 0.0500,
     minLoadStep = 0.0500,
-    prescribedLoadStep = 0.0]
+    prescribedLoadStep = 0.0)
 
     # if(occursin("S",analysisType)) #STATIC ANALYSIS
     #     Omega = varargin{3}            #initialization of rotor speed (Hz)

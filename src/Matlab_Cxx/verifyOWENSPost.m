@@ -13,15 +13,15 @@ verify_flutter = false;
 % RUN OWENS
 % test_owens(verify_transient,verify_modal,verify_flutter);
 
-bmOwens = './input_files_test/_15mTower_transient_dvawt_c_2_lcdt';
+bmOwens = './old_src/input_files_test/_15mTower_transient_dvawt_c_2_lcdt';
 [mesh,meshSeg] = readMeshVG([bmOwens '.mesh']); %read mesh file
 tol1 = 1e-5;
 
 %MODAL
 
 if verify_modal
-    OLD = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out');
-    NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.out');
+    OLD = ('./old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out');
+    NEW = ('./old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.out');
 
     FileInfo = dir(NEW);
 
@@ -74,10 +74,10 @@ if plot_modal
 
     n_comparisons = 4;
     outnameC = cell(1,n_comparisons);
-    outnameC{1} = './input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_CPP.out';
-    outnameC{2} = './input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION_EIGS.out';
-    outnameC{3} = './input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out';
-    outnameC{4} = './input_files_test/SORTED_EIG_VERIF_TEMP.out';
+    outnameC{1} = './old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_CPP.out';
+    outnameC{2} = './old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION_EIGS.out';
+    outnameC{3} = './old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out';
+    outnameC{4} = './old_src/input_files_test/SORTED_EIG_VERIF_TEMP.out';
 
     for ii = 1:n_comparisons
         outname = outnameC{ii};
@@ -116,7 +116,7 @@ if verify_flutter
     old1.freq = freq_old;
     old1.damp = damp_old;
 
-    NEW = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_FLUTTER.out');
+    NEW = ('./old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_FLUTTER.out');
 
     FileInfo = dir(NEW);
 
@@ -146,8 +146,8 @@ if verify_transient
 
     n_t = 50;
 
-    OLD = ('./input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff0.txt');
-    NEW = ('./input_files_test/_15mTower_transient_dvawt_c_2_lcdt.txt');
+    OLD = ('./old_src/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff0.txt');
+    NEW = ('./old_src/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.txt');
 
     FileInfo = dir(NEW);
 

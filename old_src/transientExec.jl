@@ -124,7 +124,8 @@ function transientExec(model,mesh,el)
     plotTurbine = false
 
     # mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
-    af = VAWTAero.readaerodyn("./airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
+    path,_ = splitdir(@__FILE__)
+    af = VAWTAero.readaerodyn("$path/../test/airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
     ft2m = 1 / 3.281
     RefR = RefR*ft2m
 
@@ -569,6 +570,7 @@ function transientExec(model,mesh,el)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
+            println("starting Aero Loads")
             if CACTUS
                 Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
             else
@@ -611,7 +613,7 @@ function transientExec(model,mesh,el)
             #             dispData.etadot_s  = etadot_s
             #             dispData.etaddot_s = etaddot_s
             #         end
-
+            println("starting struct dyn")
             if (occursin("ROM",model.analysisType))
                 error("ROM not fully implemented")
                 #             # evalulate structural dynamics using reduced order model
@@ -632,7 +634,7 @@ function transientExec(model,mesh,el)
             udot_j  = dispOut.displdot_sp1
             uddot_j = dispOut.displddot_sp1
 
-
+            println("ran structdyn")
             if (occursin("ROM",model.analysisType))
                 #             udot_j  = dispOut.displdot_sp1
                 #             uddot_j = dispOut.displddot_sp1

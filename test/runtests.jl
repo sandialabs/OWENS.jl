@@ -2,5 +2,6 @@ using OWENS
 using Test
 
 @testset "OWENS.jl" begin
-    # Write your tests here.
+    atol = 1e-6
+    @test isapprox(1.0,1.0;atol)
 end

@@ -1,4 +1,3 @@
-include("calculateLambdaSlim.jl")
 function calculateLambda(theta1,theta2,theta3)
     #calculateLambda Calculates transformation matrix from element to hub frame
     # **********************************************************************
@@ -26,7 +25,15 @@ function calculateLambda(theta1,theta2,theta3)
 
     # dcm that is created is [dcm] = [M1(theta3)][M2(theta2)][M3(theta1)]
 
-    dcm = calculateLambdaSlim(theta1,theta2,theta3)
+    ct1 = cos(theta1); st1=sin(theta1);
+    ct2 = cos(theta2); st2=sin(theta2);
+    ct3 = cos(theta3); st3=sin(theta3);
+
+    fac1 = st3*st2
+    fac2 = ct3*st2
+    dcm = [ct2*ct1           ct2*st1          -st2
+        fac1*ct1-ct3*st1  fac1*st1+ct3*ct1  st3*ct2
+        fac2*ct1+st3*st1  fac2*st1-st3*ct1  ct3*ct2]
 
 
     lambda = zeros(12,12)
