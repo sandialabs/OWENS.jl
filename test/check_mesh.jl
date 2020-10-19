@@ -1,12 +1,12 @@
 # using PyPlot
 # close("all")
 using Test
+import OWENS
 path,_ = splitdir(@__FILE__)
-include("$(path)/../old_src/readMesh.jl")
-include("$(path)/../old_src/create_mesh.jl")
-mesh = readMesh("$(path)/../old_src/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh")
+# include("$(path)/../src/OWENS.jl")
+mesh = OWENS.readMesh("$(path)/data/unit_test_5MW.mesh")
 
-mymesh = create_mesh() #use defaults
+mymesh = OWENS.create_mesh() #use defaults
 
 # Test
 tol = 1e-6
