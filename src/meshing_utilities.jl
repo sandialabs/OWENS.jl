@@ -17,7 +17,9 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     strut_mout_ratio = 0.1, #distance from top/bottom
     ntelem = 20, #tower elements
     nbelem = 20, #blade elements
-    nselem = 2) #strut elements
+    nselem = 2,  #strut elements
+    bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+    bshapez = zeros(nbelem+1)) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 
     v_space_t = (Ht+Hb)/(ntelem)
     v_space_b = (Hb)/(nbelem)
@@ -25,7 +27,7 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     ####################################
     ##------------Tower--------------##
     ####################################
-    function discretize_z(Ht,Hb,nelem; offset=0)
+    function discretize_z(Ht,Hb,strut_mout_ratio,nelem; offset=0)
         mesh_z_inner = collect(LinRange(0,Ht+Hb,nelem+1))
         # Insert Bottom Blade Mount Point
         bot_tower_bld_idx = round(Int,Ht/v_space_t+1.0+length(mesh_z_inner)-nelem)-1
@@ -52,7 +54,7 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
         top_tower_blade_idx = length(mesh_z_inner)
         return mesh_z_inner, bot_tower_bld_idx+offset, bot_tower_strut_idx+offset, top_tower_strut_idx+offset, top_tower_blade_idx+offset
     end
-    mesh_z, bot_tower_bld_idx, bot_tower_strut_idx, top_tower_strut_idx, top_tower_blade_idx = discretize_z(Ht,Hb,ntelem)
+    mesh_z, bot_tower_bld_idx, bot_tower_strut_idx, top_tower_strut_idx, top_tower_blade_idx = discretize_z(Ht,Hb,strut_mout_ratio,ntelem)
     # Create the x and y components
     mesh_x = zero(mesh_z)
     mesh_y = zero(mesh_z)
@@ -67,14 +69,21 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     ####################################
 
     #connection points on tower already exist, as do the strut connection points if we reuse the tower z discretization as the blade discretization
-    bld_Z, bot_lbld_tower_idx, bot_lbld_strut_idx, top_lbld_strut_idx, top_lbld_tower_idx = discretize_z(0.0,Hb,nbelem; offset = length(mesh_z))
+    bld_Z, bot_lbld_tower_idx, bot_lbld_strut_idx, top_lbld_strut_idx, top_lbld_tower_idx = discretize_z(0.0,Hb,strut_mout_ratio,nbelem; offset = length(mesh_z))
 
     bot_rbld_tower_idx = bot_lbld_tower_idx + nbelem+1+nstrut
     bot_rbld_strut_idx = bot_lbld_strut_idx + nbelem+1+nstrut
     top_rbld_strut_idx = top_lbld_strut_idx + nbelem+1+nstrut
     top_rbld_tower_idx = top_lbld_tower_idx + nbelem+1+nstrut
-    # bld_Z = mesh_z[bot_tower_bld_idx:end].-Ht
-    bld_X = R.*(1.0.-4.0.*(bld_Z/Hb.-.5).^2)
+
+    if bshapex == zeros(nbelem+1)
+        bld_X = R.*(1.0.-4.0.*(bld_Z/Hb.-.5).^2)
+    else
+        # Ensure the blade shape conforms to the turbine height and radius specs
+        bshapex = R .* bshapex./maximum(bshapex)
+        bshapez = Hb .* bshapez./maximum(bshapez)
+        bld_X = FLOWMath.akima(bshapez,bshapex,bld_Z)
+    end
     bld_Y = zero(bld_X)
     bld_Z .+= Ht
 
