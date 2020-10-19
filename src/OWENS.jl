@@ -3,8 +3,8 @@ module OWENS
 import DelimitedFiles
 import LinearAlgebra
 import FLOWMath
-import VAWTAero
-using MATLAB #if this is used, must run from src location
+# import VAWTAero
+# using MATLAB #if this is used, must run from src location
 
 export Unsteady #, UnsteadyROM
 

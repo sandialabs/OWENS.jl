@@ -1,7 +1,12 @@
 name = "OWENS"
-uuid = "03421c14-dcbe-41a4-ba06-dba1a4553bb7"
+uuid = "51d15398-4eaf-40f9-a029-79ae1c4a3867"
 authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
 version = "0.1.0"
+
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+FLOWMath = "6cb5d3fb-0fe8-4cc2-bd89-9fe0b19a99d3"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
 julia = "1"
