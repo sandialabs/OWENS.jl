@@ -3,11 +3,10 @@ import LinearAlgebra
 import FLOWMath
 import VAWTAero
 using MATLAB #if this is used, must run from src location
-include("readMesh.jl")
+include("../src/meshing_utilities.jl")
 include("readBladeData.jl")
 include("readBCdata.jl")
 include("readElementData.jl")
-include("readJointData.jl")
 include("readNodalTerms.jl")
 include("createJointTransform.jl")
 include("calculateBCMap.jl")
@@ -324,7 +323,7 @@ function owens(owensfile,analysisType;
     bladeData,_,_,_ = readBladeData(blddatafilename) #reads overall blade data file
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
     el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
-    joint = readJointData(jntdatafilename) #read joint data file
+    joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
     # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
     # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
     nodalTerms = readNodalTerms(ndldatafilename) #read concentrated nodal terms file

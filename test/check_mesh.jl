@@ -1,10 +1,13 @@
 # using PyPlot
 # close("all")
 using Test
-import OWENS
+# import OWENS
 path,_ = splitdir(@__FILE__)
-# include("$(path)/../src/OWENS.jl")
+include("$(path)/../src/OWENS.jl")
 mesh = OWENS.readMesh("$(path)/data/unit_test_5MW.mesh")
+joint = DelimitedFiles.readdlm("$(path)/data/unit_test_5MW.jnt",'\t',skipstart = 0)
+
+isapprox(joint,joint2,atol = 1e-6)
 
 mymesh = OWENS.create_mesh() #use defaults
 
