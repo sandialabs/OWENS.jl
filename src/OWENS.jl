@@ -1,5 +1,6 @@
 module OWENS
 
+import Statistics
 import DelimitedFiles
 import LinearAlgebra
 import FLOWMath

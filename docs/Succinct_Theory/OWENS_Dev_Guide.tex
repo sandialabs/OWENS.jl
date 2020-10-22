@@ -68,10 +68,11 @@ The Offshore Wind Energy Simulator (OWENS) Code is a floating turbine-platform c
 Module (With Source Link) & Code Theory & Frame of Reference & Coupling Method and I/O \\
 \hline
 \href{https://github.com/old-NWTC/InflowWind}{Turbulent Inflow} & N & Y & Y  \\
-Aerodynamics & N & Y & Y \\
-Turbine Structures & Y & Y & Y \\
+\href{https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl}{Aerodynamics} & N & Y & Y \\
+\href{https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl}{Turbine Structures} & Y & Y & Y \\
 Platform Structures & N & Y & Y \\
-Composites & N & Y & Y \\
+\href{https://gitlab.sandia.gov/8821-vawt-tools/PreComp.jl}{Sectional Properties}& N & Y & Y \\
+\href{https://github.com/byuflowlab/Composites.jl}{Composites} & N & Y & Y \\
 Hydrodynamics & N & Y & Y \\
 Mooring & N & Y & Y \\
 \hline
@@ -80,7 +81,7 @@ Mooring & N & Y & Y \\
 \end{center}
 \end{table}
 
-Code theory for the non-covered modules used can be found in the following locations: aerodynamics is actuator cylinder~\cite{ac} and/or double multiple streamtube~\cite{DMS}, with the possibility for CACTUS~\cite{cactus}.  Turbine structures is covered in the document as well as~\cite{owens2013theoretical}. Inflow, platform structures, hydrodynamics, and mooring are the respective openFAST modules~\cite{openFAST}.  Composite properties is NuMAD~\cite{numad}.  (Also include links to where the code and code theory can be found.)
+Code theory for the non-covered modules used can be found in the following locations: aerodynamics is actuator cylinder~\cite{ac} and/or double multiple streamtube~\cite{DMS}, with the possibility for CACTUS~\cite{cactus}.  Turbine structures is covered in the document as well as~\cite{owens2013theoretical}. Inflow, platform structures, hydrodynamics, and mooring are the respective openFAST modules~\cite{openFAST}.  Composite properties is PreComp~\cite{precomp}.  (Also include links to where the code and code theory can be found.)
 
 %\begin{equation}
 %\label{e:tau_1}
@@ -242,7 +243,9 @@ Note: CACTUS, does not fully follow this scheme and differs from the global fram
 
 Rotating Frame of Reference, 6 DOF where 1 = turbine vertical force, 2 = turbine 2D slice tangential force, 3 = turbine 2D slice normal force, 4 = blade M25 twisting moment, 5 = blade curvature twisting moment, 6 = blade sweep moment.
 
-Mesh matches the global frame of reference?
+The Mesh matches the global frame of reference of x, y, and z.  Psi, Theta, and Twist correspond to??  And the aerodynamic/local twist is incorporated by?  Element length is the length along the element.
+
+The mesh itself is comprised only of components.  For example, a tower, two blades, and four struts.  The element number is sequential. There are overlapping points where each component connects.  The mesh has a connectivity vector, which has rows corresponding to each element, column 1 corresponds to the "master" node, and column 2 corresponds to the "slave" node.  The element connection in the mesh is only intra-component.  I.e. there is no connectivity between components - that is defined in the joint matrix, which has columns for: Joint Number,   Joint Master Node, Joint Slave Node, Joint Type, Joint Mass, Not Used, PsiD, ThetaD.  The D indicates angle in degrees.  Joint types are: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis).  The Psi and Theta are of the slave node (or its closest neighbor of the same component due to the gaps in element mesh connectivity). The not used column is just filled with zeros and apparently was planned for something and didn't get cleaned up.  The "flapwise" normal vector of an element is forced to be away from the machine for consistency.  During the meshing process, the component type need to be known in order to get this right: Mesh Type: 0-blade 1-tower 2-strut.
 
 \subsection{Platform Structures}
 \subsection{Composites}
@@ -255,6 +258,9 @@ Mesh matches the global frame of reference?
 Direct: Aero module supplies an x-y-z and time coordinate, inflow returns x-y-z velocity.  This is repeated for all blade discrete points as per the aero formulation.
 \subsection{Aero - Turbine Structure}
 Loose Iteration: Structure provides blade local radius, twist, sweep, and 6 DOF velocities, aero returns forces, moments. This is iterated on until convergence.  It is preferred to change this to a N-dimensional root solver and pass gradients to the root solver to increase performance.
+
+Specifically, from the meshing process, the starting and ending node numbers for the blades are known and the aerodynamic loads mapped to the elements between those nodes.
+
 \subsection{Turbine Structure - Platform Structure}
 Same as Aero-Structure
 \subsection{Hydro - Platform Structure - Mooring}
@@ -267,6 +273,6 @@ Direct: Controllers provide reactionary inputs to control inputs in real time ba
 \section*{Acknowledgments}
 This work has been funded by the United States Department of Energy (DOE) Advanced Research Projects Agency – Energy (ARPA-e) under the ATLANTIS program. The views or opinions expressed herein do not necessarily state or reflect those of the United States Government, any agency thereof, or any of their contractors.
 
-\bibliography{ac_sources}
+\bibliography{../../../VAWTAero.jl/doc/paper/ac_sources}
 
 \end{document}

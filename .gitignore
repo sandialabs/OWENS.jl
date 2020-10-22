@@ -12,6 +12,7 @@
 *.aux
 *.log
 *.out
+*.blg
 *.gz
 *.bbl
 *.synctex*

@@ -1,8 +1,8 @@
 # OWENS (Offshore Wind ENergy Simulator)
 
-[![pipeline status](https://gitlab.sandia.gov/8821-vawt-tools/OWENS/badges/master/pipeline.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS/-/commits/master)
+[![pipeline status](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/badges/master/pipeline.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/-/commits/master)
 
-[![coverage report](https://gitlab.sandia.gov/8821-vawt-tools/OWENS/badges/master/coverage.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS/-/commits/master)
+[![coverage report](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/badges/master/coverage.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/-/commits/master)
 
 Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, there is a non-exclusive license for use of this work by or on behalf of the U.S. Government. Export of this data may require a license from the United States Government.
 
