@@ -1,33 +1,9 @@
 
-include("externalForcing.jl")
-include("setInitialConditions.jl")
 include("call_structuralDynamicsTransient.jl")
 include("mapACloads.jl")
 include("calculateStructureMassProps.jl")
 
-mutable struct ElStrain
-    eps_xx_0
-    eps_xx_z
-    eps_xx_y
-    gam_xz_0
-    gam_xz_y
-    gam_xy_0
-    gam_xy_z
-end
-
-mutable struct DispOut
-    elStrain
-    displ_sp1
-    displddot_sp1
-    displdot_sp1
-end
-
-mutable struct DispData
-    displ_s
-    displdot_s
-    displddot_s
-end
-
+#These are from the matlab version of the actuator cylinder
 # mutable struct Slice
 #     r
 #     RefR
@@ -827,4 +803,150 @@ end
 
 function userDefinedGenerator(input)
     return 0.0 #this is what was in the original file...
+end
+
+function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
+    #getRotorPosSpeedAccelAtTime uses user defined function to get rotor pos.
+    # **********************************************************************
+    # *                   Part of the SNL OWENS Toolkit                    *
+    # * Developed by Sandia National Laboratories Wind Energy Technologies *
+    # *             See license.txt for disclaimer information             *
+    # **********************************************************************
+    #   [rotorAzimuth,rotorSpeed,rotorAcceleration] = getRotorPosSpeedAccelAtTime(t0,time,aziInit)
+    #
+    #   This function uses the user defined function rotorSpeedProfile() to get
+    #   the azimuth, speed, and acceleration of the rotor.
+    #
+    #   input:
+    #   t0      = time at which azimuth integration is beginning
+    #   time    = current time that position, velocity, and acceleration are
+    #             being requested
+    #   aziInit = initial rotor azimuth angle integration will begin at
+    #
+    #   output:
+    #   rotorAzimuth = azimuth position of rotor (rad) at time
+    #   rotorSpeed   = rotor speed (Hz) at time
+    #   rotorAcceleration = rotor acceleration (Hz/s) at time
+
+
+    rotorSpeed = userDefinedRotorSpeedProfile(time) #get rotgor speed at time
+
+    dt = 0.01#some small delta t used in estimating rotor acceleration
+    if ((time-dt) < 0)
+        dt = delta_t/2
+    end
+
+    omega_p1 = userDefinedRotorSpeedProfile(time+dt) #get rotor speed slightly before and after time
+    omega_m1 = userDefinedRotorSpeedProfile(time-dt)
+    #--------------------------------------------------------------------------
+
+    #estimate rotor acceleration with difference calculation
+    rotorAcceleration = diff([omega_m1,omega_p1])/(2*dt)
+
+    #calculate rotor azimuth using trapezoidal rule
+    rotorAzimuth = trapezoidalRule(aziInit,userDefinedRotorSpeedProfile[t0],rotorSpeed,time-t0)
+
+    return rotorAzimuth,rotorSpeed,rotorAcceleration
+end
+
+#simple trapezoidal rule integration
+function trapezoidalRule(aziInit,rotorSpeedStart,rotorSpeedEnd,dt)
+    return (aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi))
+end
+
+function userDefinedRotorSpeedProfile(time)
+    return 0.5 #this is what was originally in the file...
+end
+
+function setInitialConditions(initCond,u,numDOFPerNode)
+    #setInitialConditions sets initial conditions
+    # **********************************************************************
+    # *                   Part of the SNL OWENS Toolkit                    *
+    # * Developed by Sandia National Laboratories Wind Energy Technologies *
+    # *             See license.txt for disclaimer information             *
+    # **********************************************************************
+    #   [u] =  setInitialConditions(initCond,u,numDOFPerNode)
+    #
+    #   This function reads initial conditions from file
+    #
+    #   input:
+    #   initCond      = array containing initial conditions
+    #                     initCond(i,1) = node number for init cond i
+    #                     initCond(i,2) = local DOF number for init cond i
+    #                     initCond(i,3) = value for init cond i
+    #   u             = displacement vector
+    #   numDOFPerNode = number of degrees of freedom per node
+    #
+    #   output:
+    #    u             = displacement vector modified for initial conditions
+
+    len=size(initCond) #get number of specified initial conditions
+    #unspecified initial conditions are assumed to
+    #be zero
+
+    for i=1:len[1] #loop over initial conditions
+        if (initCond[i,2]>numDOFPerNode) #error check
+            error("setInitalConditios:: DOF greater than numDOFPerNode")
+        end
+        index = (initCond[i,1]-1)*numDOFPerNode + initCond[i,2] #calculate global DOF number for initial condition
+        u[index] = initCond[i,3] #specify initial condition using global DOF number
+    end
+
+    return u
+
+end
+
+function externalForcing(time,aeroLoads)
+
+#owens externalForcing function for the OWENS toolkit
+# **********************************************************************
+# *                   Part of the SNL OWENS toolkit                    *
+# * Developed by Sandia National Laboratories Wind Energy Technologies *
+# *             See license.txt for disclaimer information             *
+# **********************************************************************
+#   [Fexternal, Fdof] = externalForcing(time,aeroLoads)
+#
+#   This function specifies external forcing for a transient analysis.
+#   Fexternal is a vector of loads and Fdof is a corresponding vector of
+#   degrees of freedom the concentrated loads in Fexternal correspond to.
+#   The input time allows for arbitrary time varying loads
+#   The global degree of freedom number corresponding with the local degree
+#   of freedom of a node may be calculated by:
+#   globalDOFNumber = (nodeNumber-1)*6 + localDOFnumber
+#   The localDOFnumber may range from 1 to 6 such that 1 corresponds to a
+#   force in "x direction" of the co-rotating hub frame. 2 and 3
+#   corresponds to a force in the "y" and "z directions" respectively. 4,
+#   5, and 6 correspond to a moment about the "x", "y", and "z" directions
+#   respectively.
+
+#
+#      input:
+#      time         = simulation time
+#
+#      output:
+#      Fexternal     = vector of external loads (forces/moments)
+#      Fdof          = vector of corresponding DOF numbers to apply loads to
+
+
+#     if(time < 0.2)
+#         Fexternal = 1e6
+#         Fdof = 20*6+1
+#     else
+#         Fexternal = []
+#         Fdof = []
+#     end
+
+#temp = load('aeroLoads.mat')
+timeArray = aeroLoads["timeArray"]
+ForceValHist = aeroLoads["ForceValHist"]
+ForceDof = aeroLoads["ForceDof"]
+Fexternal = zeros(length(ForceDof))
+
+for i = 1:length(ForceDof)
+    Fexternal[i] = FLOWMath.linear(timeArray,ForceValHist[i,:],time)
+end
+Fdof = ForceDof
+
+return Fexternal, Fdof
+
 end

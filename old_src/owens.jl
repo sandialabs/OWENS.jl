@@ -7,149 +7,8 @@ include("../src/meshing_utilities.jl")
 include("../src/structs.jl")
 include("../src/file_reading.jl")
 include("createJointTransform.jl")
-include("calculateBCMap.jl")
 
 include("transientExec.jl")
-
-mutable struct Model
-    analysisType
-    turbineStartup
-    usingRotorSpeedFunction
-    tocp
-    initCond
-    numTS
-    delta_t
-    Omegaocp
-    aeroElasticOn
-    aeroForceOn
-    aeroLoadsOn
-    driveTrainOn
-    airDensity
-    guessFreq
-    gravityOn
-    generatorOn
-    hydroOn
-    JgearBox
-    gearRatio
-    gearBoxEfficiency
-    useGeneratorFunction
-    generatorProps
-    OmegaGenStart
-    omegaControl
-    OmegaInit
-    totalNumDof
-    spinUpOn
-    nlOn
-    numModesToExtract
-    aeroloadfile
-    owensfile
-    outFilename
-    RayleighAlpha
-    RayleighBeta
-    elementOrder
-    joint
-    platformTurbineConnectionNodeNumber
-    jointTransform
-    reducedDOFList
-    bladeData
-    nlParams
-    BC
-    nodalTerms
-    driveShaftProps
-end
-
-mutable struct NlParams
-    iterationType
-    adaptiveLoadSteppingFlag
-    tolerance
-    maxIterations
-    maxNumLoadSteps
-    minLoadStepDelta
-    minLoadStep
-    prescribedLoadStep
-end
-
-mutable struct DriveShaftProps
-    k
-    c
-end
-
-function generateOutputFilename(owensfilename,analysisType)
-    #This function generates an output file name depending on the analysis type
-
-    #find the last "." in owensfilename - helps to extract the prefix in the .owens
-    index = findlast(".",owensfilename)[1]
-
-    if (occursin("M",analysisType)||occursin("F",analysisType)||occursin("FA",analysisType)) #output filename (*.out) for modal/flutter analysis
-        outputfilename = string(owensfilename[1:index-1],".out")
-    elseif (occursin("S",analysisType)) #output file name (*_static.mat) for static analysis
-        outputfilename = string(owensfilename[1:index-1],"_static.mat")
-    elseif (occursin("TNB",analysisType)||occursin("TD",analysisType)||occursin("ROM",analysisType)) #output filename (*.mat) for transient analysis
-        outputfilename = string(owensfilename[1:index-1],".mat")
-    end
-
-    return outputfilename
-
-end
-
-function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
-    #This function searches over all DOFs in a structural model and
-    #determines and returns "dofVector" containing only unconstrained DOFs
-
-    #loop over all DOFs in the model checking if constrained by BC or not
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
-                #             dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
-                index = index + 1
-            end
-        end
-    end
-
-    dofVector = zeros(Int,index)
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
-                dofVector[index] = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
-                index = index + 1
-            end
-        end
-    end
-
-    return dofVector
-end
-
-function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
-    #This function creates a map of unconstrained DOFs between a full
-    #listing and reduced listing (aftger constraints have been applied)
-
-    bcdoflist=zeros(Int, BC.numpBC)
-
-    #create a listing of constrained DOFs from boundary condition file
-    for i=1:BC.numpBC
-        bcnodenum = BC.pBC[i,1]
-        bcdofnum = BC.pBC[i,2]
-        bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
-    end
-
-    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
-
-    redVectorMap = zeros(numReducedDof)
-
-    for i=1:numReducedDof
-
-        if (i in bcdoflist)              #creates a map of unconstrained reduced DOFs
-            redVectorMap[i] = -1.0
-        else
-            index = findall(x->x==i,dofList)[1]
-            redVectorMap[i] = index
-        end
-
-    end
-    return redVectorMap
-end
 
 function owens(owensfile,analysisType;
     delta_t=0.01,
@@ -410,4 +269,130 @@ function owens(owensfile,analysisType;
 
 
     return freq,damp
+end
+
+
+
+function calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
+    #calculateBCMap   calculates a boundary condition map
+    # **********************************************************************
+    # *                   Part of the SNL OWENS Toolkit                    *
+    # * Developed by Sandia National Laboratories Wind Energy Technologies *
+    # *             See license.txt for disclaimer information             *
+    # **********************************************************************
+    #   [bcMap] = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
+    #
+    #   This function creates a boundary condition map between full and reduced
+    #   dof listing as a result of constraints.
+    #
+    #      input:
+    #      numpBC            = number of boundary conditions
+    #      pBC               = array of boundary  condition data
+    #      numDofPerNode     = number of degrees of freedom per node
+    #      reducedDofList    = array of reduced DOF numbering
+    #
+    #      output:
+    #      elStorage         = map for boundary conditions between full and
+    #                          reduced dof list
+
+
+    constrainedDof = zeros(numpBC)
+    for i=1:numpBC
+        constrainedDof[i] = (pBC[i,1]-1)*numDofPerNode + pBC[i,2]  #creates an array of constrained DOFs
+    end
+    constrainedDof = sort(constrainedDof)
+
+    reducedDOFCount = length(reducedDofList)
+
+    bcMap = zeros(reducedDOFCount)
+    index = 1
+    for i=1:reducedDOFCount
+        if reducedDofList[i] in constrainedDof  #searches reduced DOF for constrained DOFs
+            bcMap[i] = -1
+        else
+            bcMap[i] = index
+            index = index + 1
+        end
+    end
+
+    return bcMap
+
+end
+
+
+function generateOutputFilename(owensfilename,analysisType)
+    #This function generates an output file name depending on the analysis type
+
+    #find the last "." in owensfilename - helps to extract the prefix in the .owens
+    index = findlast(".",owensfilename)[1]
+
+    if (occursin("M",analysisType)||occursin("F",analysisType)||occursin("FA",analysisType)) #output filename (*.out) for modal/flutter analysis
+        outputfilename = string(owensfilename[1:index-1],".out")
+    elseif (occursin("S",analysisType)) #output file name (*_static.mat) for static analysis
+        outputfilename = string(owensfilename[1:index-1],"_static.mat")
+    elseif (occursin("TNB",analysisType)||occursin("TD",analysisType)||occursin("ROM",analysisType)) #output filename (*.mat) for transient analysis
+        outputfilename = string(owensfilename[1:index-1],".mat")
+    end
+
+    return outputfilename
+
+end
+
+function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
+    #This function searches over all DOFs in a structural model and
+    #determines and returns "dofVector" containing only unconstrained DOFs
+
+    #loop over all DOFs in the model checking if constrained by BC or not
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
+                #             dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
+                index = index + 1
+            end
+        end
+    end
+
+    dofVector = zeros(Int,index)
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
+                dofVector[index] = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
+                index = index + 1
+            end
+        end
+    end
+
+    return dofVector
+end
+
+function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
+    #This function creates a map of unconstrained DOFs between a full
+    #listing and reduced listing (aftger constraints have been applied)
+
+    bcdoflist=zeros(Int, BC.numpBC)
+
+    #create a listing of constrained DOFs from boundary condition file
+    for i=1:BC.numpBC
+        bcnodenum = BC.pBC[i,1]
+        bcdofnum = BC.pBC[i,2]
+        bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
+    end
+
+    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
+
+    redVectorMap = zeros(numReducedDof)
+
+    for i=1:numReducedDof
+
+        if (i in bcdoflist)              #creates a map of unconstrained reduced DOFs
+            redVectorMap[i] = -1.0
+        else
+            index = findall(x->x==i,dofList)[1]
+            redVectorMap[i] = index
+        end
+
+    end
+    return redVectorMap
 end
