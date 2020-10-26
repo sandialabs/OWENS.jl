@@ -4,14 +4,10 @@ import FLOWMath
 import VAWTAero
 using MATLAB #if this is used, must run from src location
 include("../src/meshing_utilities.jl")
-include("readBladeData.jl")
-include("readBCdata.jl")
-include("readElementData.jl")
-include("readNodalTerms.jl")
+include("../src/structs.jl")
+include("../src/file_reading.jl")
 include("createJointTransform.jl")
 include("calculateBCMap.jl")
-include("readGeneratorProps.jl")
-include("readInitCond.jl")
 
 include("transientExec.jl")
 

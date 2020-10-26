@@ -21,6 +21,8 @@ include("Steady.jl")
 include("Unsteady.jl")
 include("UnsteadyROM.jl")
 include("meshing_utilities.jl")
+include("file_reading.jl")
+include("structs.jl")
 
 
 

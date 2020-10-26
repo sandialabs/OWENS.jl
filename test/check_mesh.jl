@@ -8,7 +8,7 @@ path,_ = splitdir(@__FILE__)
 mesh = OWENS.readMesh("$(path)/data/unit_test_5MW.mesh")
 joint = DelimitedFiles.readdlm("$(path)/data/unit_test_5MW.jnt",'\t',skipstart = 0)
 
-#TODO: ort file, nodal file, and blade file
+#TODO: ort file, nodal file, element file, initial conditions, and blade file
 
 # Use the SNL5MW as the baseline check
 #The 15 is subtracted off at the end of the line
