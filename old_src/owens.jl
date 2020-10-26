@@ -6,7 +6,7 @@ using MATLAB #if this is used, must run from src location
 include("../src/meshing_utilities.jl")
 include("../src/structs.jl")
 include("../src/file_reading.jl")
-include("createJointTransform.jl")
+include("../src/structural_utilities.jl")
 
 include("transientExec.jl")
 
@@ -275,11 +275,6 @@ end
 
 function calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
     #calculateBCMap   calculates a boundary condition map
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [bcMap] = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
     #
     #   This function creates a boundary condition map between full and reduced

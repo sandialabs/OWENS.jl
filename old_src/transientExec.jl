@@ -1,7 +1,5 @@
 
 include("call_structuralDynamicsTransient.jl")
-include("mapACloads.jl")
-include("calculateStructureMassProps.jl")
 
 #These are from the matlab version of the actuator cylinder
 # mutable struct Slice
@@ -42,11 +40,6 @@ include("calculateStructureMassProps.jl")
 
 function transientExec(model,mesh,el)
     #transientExec performs modular transient analysis
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #
     #   transientExec(model,mesh,el)
     #
@@ -556,7 +549,7 @@ function transientExec(model,mesh,el)
                 #     println("here")
                 #     println("here")
                 #     println("here")
-                    # println("here")
+                # println("here")
                 # Juno.@enter mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
 
                 Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
@@ -687,12 +680,12 @@ function transientExec(model,mesh,el)
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
             strainHist[ii,i] = ElStrain(elStrain[ii].eps_xx_0,
-                elStrain[ii].eps_xx_z,
-                elStrain[ii].eps_xx_y,
-                elStrain[ii].gam_xz_0,
-                elStrain[ii].gam_xz_y,
-                elStrain[ii].gam_xy_0,
-                elStrain[ii].gam_xy_z)
+            elStrain[ii].eps_xx_z,
+            elStrain[ii].eps_xx_y,
+            elStrain[ii].gam_xz_0,
+            elStrain[ii].gam_xz_y,
+            elStrain[ii].gam_xy_0,
+            elStrain[ii].gam_xy_z)
         end
         t[i+1] = t[i] + delta_t
 
@@ -807,11 +800,6 @@ end
 
 function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
     #getRotorPosSpeedAccelAtTime uses user defined function to get rotor pos.
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [rotorAzimuth,rotorSpeed,rotorAcceleration] = getRotorPosSpeedAccelAtTime(t0,time,aziInit)
     #
     #   This function uses the user defined function rotorSpeedProfile() to get
@@ -860,11 +848,6 @@ end
 
 function setInitialConditions(initCond,u,numDOFPerNode)
     #setInitialConditions sets initial conditions
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [u] =  setInitialConditions(initCond,u,numDOFPerNode)
     #
     #   This function reads initial conditions from file
@@ -898,55 +881,174 @@ end
 
 function externalForcing(time,aeroLoads)
 
-#owens externalForcing function for the OWENS toolkit
-# **********************************************************************
-# *                   Part of the SNL OWENS toolkit                    *
-# * Developed by Sandia National Laboratories Wind Energy Technologies *
-# *             See license.txt for disclaimer information             *
-# **********************************************************************
-#   [Fexternal, Fdof] = externalForcing(time,aeroLoads)
-#
-#   This function specifies external forcing for a transient analysis.
-#   Fexternal is a vector of loads and Fdof is a corresponding vector of
-#   degrees of freedom the concentrated loads in Fexternal correspond to.
-#   The input time allows for arbitrary time varying loads
-#   The global degree of freedom number corresponding with the local degree
-#   of freedom of a node may be calculated by:
-#   globalDOFNumber = (nodeNumber-1)*6 + localDOFnumber
-#   The localDOFnumber may range from 1 to 6 such that 1 corresponds to a
-#   force in "x direction" of the co-rotating hub frame. 2 and 3
-#   corresponds to a force in the "y" and "z directions" respectively. 4,
-#   5, and 6 correspond to a moment about the "x", "y", and "z" directions
-#   respectively.
+    #owens externalForcing function for the OWENS toolkit
+    # **********************************************************************
+    # *                   Part of the SNL OWENS toolkit                    *
+    # * Developed by Sandia National Laboratories Wind Energy Technologies *
+    # *             See license.txt for disclaimer information             *
+    # **********************************************************************
+    #   [Fexternal, Fdof] = externalForcing(time,aeroLoads)
+    #
+    #   This function specifies external forcing for a transient analysis.
+    #   Fexternal is a vector of loads and Fdof is a corresponding vector of
+    #   degrees of freedom the concentrated loads in Fexternal correspond to.
+    #   The input time allows for arbitrary time varying loads
+    #   The global degree of freedom number corresponding with the local degree
+    #   of freedom of a node may be calculated by:
+    #   globalDOFNumber = (nodeNumber-1)*6 + localDOFnumber
+    #   The localDOFnumber may range from 1 to 6 such that 1 corresponds to a
+    #   force in "x direction" of the co-rotating hub frame. 2 and 3
+    #   corresponds to a force in the "y" and "z directions" respectively. 4,
+    #   5, and 6 correspond to a moment about the "x", "y", and "z" directions
+    #   respectively.
 
-#
-#      input:
-#      time         = simulation time
-#
-#      output:
-#      Fexternal     = vector of external loads (forces/moments)
-#      Fdof          = vector of corresponding DOF numbers to apply loads to
+    #
+    #      input:
+    #      time         = simulation time
+    #
+    #      output:
+    #      Fexternal     = vector of external loads (forces/moments)
+    #      Fdof          = vector of corresponding DOF numbers to apply loads to
 
 
-#     if(time < 0.2)
-#         Fexternal = 1e6
-#         Fdof = 20*6+1
-#     else
-#         Fexternal = []
-#         Fdof = []
-#     end
+    #     if(time < 0.2)
+    #         Fexternal = 1e6
+    #         Fdof = 20*6+1
+    #     else
+    #         Fexternal = []
+    #         Fdof = []
+    #     end
 
-#temp = load('aeroLoads.mat')
-timeArray = aeroLoads["timeArray"]
-ForceValHist = aeroLoads["ForceValHist"]
-ForceDof = aeroLoads["ForceDof"]
-Fexternal = zeros(length(ForceDof))
+    #temp = load('aeroLoads.mat')
+    timeArray = aeroLoads["timeArray"]
+    ForceValHist = aeroLoads["ForceValHist"]
+    ForceDof = aeroLoads["ForceDof"]
+    Fexternal = zeros(length(ForceDof))
 
-for i = 1:length(ForceDof)
-    Fexternal[i] = FLOWMath.linear(timeArray,ForceValHist[i,:],time)
+    for i = 1:length(ForceDof)
+        Fexternal[i] = FLOWMath.linear(timeArray,ForceValHist[i,:],time)
+    end
+    Fdof = ForceDof
+
+    return Fexternal, Fdof
+
 end
-Fdof = ForceDof
 
-return Fexternal, Fdof
+function calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
+    #calculateDriveShaftReactionTorque calculates reaction torque of driveshaft
+    #   [torque] = calculateDriveShaftReactionTorque(driveShaftProps,...
+    #                thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
+    #
+    #   This function calculates reaction torque of driveshaft
+    #
+    #   input:
+    #   driveShaftProps      = object containing driveshaft properties
+    #   thetaRotor           = azimuth position of rotor/rotor shaft (rad)
+    #   thetaGB              = azimuth position of gearbox shaft (rad)
+    #   thetaDotRotor        = angular velocity of rotor/rotor shaft (rad/s)
+    #   thetaDotGB           = angular velocity of gearbox shaft (rad/s)
+    #
+    #   output:
+    #   torque   = reaction torque of drive shaft
+
+
+    k = driveShaftProps.k  #drive shaft stiffness
+    c = driveShaftProps.c  #drive shaft damping
+
+    return k*(thetaRotor-thetaGB) + c*(thetaDotRotor-thetaDotGB)
+
+end
+
+function updateRotorRotation(Irotor,Crotor,Krotor,
+    shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s,
+    delta_t)
+    #updateRotorRotation updates rotor rotation
+    #
+    #   [azi_sp1,Omega_sp1,OmegaDot_sp1] = updateRotorRotation(Irotor,Crotor,Krotor,...
+    #                                  shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s,...
+    #                                  delta_t)
+    #
+    #   This function updates the rotor rotation given rotor properties and external
+    #   torques
+    #
+    #   input:
+    #   Irotor      = rotor inertia
+    #   Crotor      = arbitrary rotor damping
+    #   Krotor      = arbitrary rotor stiffness
+    #   shaftTorque = torque from external forces on rotor
+    #   genTorque   = torque from generator
+    #   azi_s       = rotor azimuth (rad) at beginning of time step
+    #   Omega_s     = rotor speed (Hz) at beginning of time step
+    #   OmegaDot_s  = rotor acceleration (Hz/s) at beginning of time step
+    #   delta_t     = time step
+    #
+    #   output:
+    #   azi_sp1       = rotor azimuth (rad) at end of time step
+    #   Omega_sp1     = rotor speed (Hz/s) at end of time step
+    #   OmegaDot_sp1  = rotor acceleration (Hz/s) at end of time step
+    #
+    Frotor = shaftTorque + genTorque #calculate effective torque on rotor
+    Omega_s = Omega_s*2*pi #conversion form Hz to rad/s, etc.
+    OmegaDot_s = OmegaDot_s*2*pi
+    azi_sp1,Omega_sp1,OmegaDot_sp1 = timeIntegrateSubSystem(Irotor,Krotor,Crotor,Frotor, #time integrate using Newmark-Beta
+    delta_t,azi_s,Omega_s,OmegaDot_s)
+
+    Omega_sp1 = Omega_sp1/(2*pi) #convert to Hz, etc.
+    OmegaDot_sp1 = OmegaDot_sp1/(2*pi)
+
+    return azi_sp1,Omega_sp1,OmegaDot_sp1
+
+end
+
+
+function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
+    #timeIntegrateSubSystem integrates a system using Newmark-Beta method
+    #
+    #   [unp1,udotnp1,uddotnp1] = timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
+    #
+    #   #This function perform integration of a system using the Newmark-Beta
+    #   method(constant-average acceleration sceheme).
+    #
+    #   input:
+    #   M        = system mass matrix
+    #   K        = system sttiffness matrix
+    #   C        = system damping matrix
+    #   F        = system force vector
+    #   delta_t  = time step
+    #   u        = displacement at beginning of time step
+    #   udot     = velocity at beginning of time step
+    #   uddot    = acceleration at beginning of time step
+    #
+    #
+    #   output:
+    #   unp1        = displacement at end of time step
+    #   udotnp1     = velocity at end of time step
+    #   uddotnp1    = acceleration at end of time step
+    #
+    alpha = 0.5 #constant avg accel scheme
+    gamma = 0.5
+    beta = 0.5*gamma
+
+    a1 = alpha*delta_t
+    a2 = (1.0-alpha)*delta_t
+    a3 = 1.0/(beta*delta_t*delta_t)
+    a4 = a3*delta_t
+    a5 = 1.0/gamma-1.0
+    a6 = alpha/(beta*delta_t)
+    a7 = alpha/beta - 1.0
+    a8 = delta_t*(alpha/gamma-1.0)
+
+    A = a3*u + a4*udot + a5*uddot
+    B = a6*u + a7*udot + a8*uddot
+
+    Khat = K + a3.*M + a6.*C
+    Fhat = F + M*(A') + C*(B')
+
+    unp1 = Khat\Fhat
+
+    uddotnp1 = a3*(unp1-u) - a4*udot - a5*uddot
+    udotnp1 =  udot + a2*uddot + a1*uddotnp1
+
+    return unp1,udotnp1,uddotnp1
 
 end
