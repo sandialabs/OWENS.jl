@@ -719,3 +719,106 @@ function createJointTransform(joint,numNodes,numDofPerNode)
 
     return jointTransform, reducedDOF
 end
+
+
+function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
+    #This function searches over all DOFs in a structural model and
+    #determines and returns "dofVector" containing only unconstrained DOFs
+
+    #loop over all DOFs in the model checking if constrained by BC or not
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
+                #             dofVector(index) = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
+                index = index + 1
+            end
+        end
+    end
+
+    dofVector = zeros(Int,index)
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if (isConstrained[(i-1)*numDofPerNode + j]) == 0
+                dofVector[index] = (i-1)*numDofPerNode + j #DOF vector only contains unconstrained DOFs
+                index = index + 1
+            end
+        end
+    end
+
+    return dofVector
+end
+
+function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
+    #This function creates a map of unconstrained DOFs between a full
+    #listing and reduced listing (aftger constraints have been applied)
+
+    bcdoflist=zeros(Int, BC.numpBC)
+
+    #create a listing of constrained DOFs from boundary condition file
+    for i=1:BC.numpBC
+        bcnodenum = BC.pBC[i,1]
+        bcdofnum = BC.pBC[i,2]
+        bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
+    end
+
+    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
+
+    redVectorMap = zeros(numReducedDof)
+
+    for i=1:numReducedDof
+
+        if (i in bcdoflist)              #creates a map of unconstrained reduced DOFs
+            redVectorMap[i] = -1.0
+        else
+            index = findall(x->x==i,dofList)[1]
+            redVectorMap[i] = index
+        end
+
+    end
+    return redVectorMap
+end
+
+
+
+function calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
+    #calculateBCMap   calculates a boundary condition map
+    #   [bcMap] = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
+    #
+    #   This function creates a boundary condition map between full and reduced
+    #   dof listing as a result of constraints.
+    #
+    #      input:
+    #      numpBC            = number of boundary conditions
+    #      pBC               = array of boundary  condition data
+    #      numDofPerNode     = number of degrees of freedom per node
+    #      reducedDofList    = array of reduced DOF numbering
+    #
+    #      output:
+    #      elStorage         = map for boundary conditions between full and
+    #                          reduced dof list
+
+
+    constrainedDof = zeros(numpBC)
+    for i=1:numpBC
+        constrainedDof[i] = (pBC[i,1]-1)*numDofPerNode + pBC[i,2]  #creates an array of constrained DOFs
+    end
+    constrainedDof = sort(constrainedDof)
+
+    reducedDOFCount = length(reducedDofList)
+
+    bcMap = zeros(reducedDOFCount)
+    index = 1
+    for i=1:reducedDOFCount
+        if reducedDofList[i] in constrainedDof  #searches reduced DOF for constrained DOFs
+            bcMap[i] = -1
+        else
+            bcMap[i] = index
+            index = index + 1
+        end
+    end
+
+    return bcMap
+
+end
