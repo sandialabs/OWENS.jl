@@ -13,6 +13,30 @@ The theory manual can be found in the docs folder along with the validation pape
 Additionally, there is a lessons learned document regarding Matlab to C++ "automatic" translation.
 The test cases are the base material for the validation paper(s).
 
+## Getting started
+
+1. **Clone repository**: TODO
+
+2. **Install Julia and Julia packages**: TODO
+
+3. **Install Python and Python packages**: The `environment.yml` file lists the working Python version and packages.
+To set up your system, you can use the following steps. If you are an adept Python user, you can certainly figure out other ways to do this.
+
+	1. **Install Anaconda**: Anaconda is a tool for managing Python packages and installations (it can also handle non-Python packages). You can download an install from https://www.anaconda.com/products/individual.
+
+	2. **Create a dedicated conda environment & install depedencies**: From your terminal, call the following to create a dedicated [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) with the necessary dependecies.
+
+	```bash
+	conda env create -f environment.yml
+	```
+
+	3. **Activate conda environment**: Whenever you want to do work on this project, activate the `OWENS` conda environment.
+
+	```bash
+	conda activate OWENS
+	```
+
+4. **TODO**: TODO
 
 ## Software License
 
