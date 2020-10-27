@@ -70,7 +70,7 @@ def calcImpedance(data, Bf=None):
                   - data.hydrostatic_stiffness / data.omega )
     return Zi
 
-class platform():
+class tlp_platform():
     """
     TLP platform object with methods for
     
@@ -358,7 +358,7 @@ class platform():
         return data
     
             
-p = platform(r_spar=2, draft=30, height=5, width=2, length=10, num=0, ofst=1)
+p = tlp_platform(r_spar=2, draft=30, height=5, width=2, length=10, num=0, ofst=1)
 p.make_mesh(
     mshRefFactor=1,
     # clcurv=360/200, 
