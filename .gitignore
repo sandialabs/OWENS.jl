@@ -19,3 +19,5 @@
 ~*
 *.h5
 /Manifest.toml
+*.fdb_latexmk
+*.fls
