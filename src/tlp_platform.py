@@ -358,7 +358,7 @@ class tlp_platform():
         return data
     
             
-p = tlp_platform(r_spar=2, draft=30, height=5, width=2, length=10, num=0, ofst=1)
+p = tlp_platform(r_spar=2,draft=30, height=5, width=2, length=10, num=3, ofst=1)
 p.make_mesh(
     mshRefFactor=1,
     # clcurv=360/200, 
