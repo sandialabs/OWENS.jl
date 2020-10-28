@@ -159,7 +159,7 @@ class tlp_platform():
                                  radius=self.r_spar,
                                  angle=2*np.pi,
                                  char_length=1)
-        if num is not 0:
+        if num != 0:
             pontoons = pontoonArray(geom=self.geom, 
                                     draft=-1*self.draft, 
                                     height=self.height, 
