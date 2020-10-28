@@ -1,0 +1,16 @@
+Parameter,Initial Value(s),Lower Bound(s),Upper Bound(s),Scaling,Design Variable(s)?,Description
+,,,,,,
+#Turbine Geometry,,,,,,
+r_turb,0,,,1,TRUE,
+h_turb,0,,,1,TRUE,
+,,,,,,
+# Platform Geometry,,,,,,
+r_spar,8,,,1,TRUE,spar radius meters
+T_spar,20,,,1,TRUE,spar T meters
+,,,,,,
+# Sea State,,,,,,
+depth,110,,,1,FALSE,we can even use only part of an array as a design variable
+DLC5_1_Hm0,6,,,1,FALSE,all values can also be input as generic Julia code
+DLC5_1_Tp,6,,,1,FALSE,
+DLC5_2_Hm0,4,,,1,FALSE,
+DLC5_2_Tp,8,,,1,FALSE,

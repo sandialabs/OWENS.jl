@@ -5,6 +5,7 @@ import DelimitedFiles
 import LinearAlgebra
 import FLOWMath
 import VAWTAero
+import OptimizationParameters
 using MATLAB
 
 export Unsteady #, UnsteadyROM
