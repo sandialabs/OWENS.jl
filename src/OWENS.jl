@@ -1,5 +1,6 @@
 module OWENS
 
+using PyCall
 import Statistics
 import DelimitedFiles
 import LinearAlgebra
@@ -27,6 +28,18 @@ include("structural_utilities.jl")
 include("file_reading.jl")
 include("structs.jl")
 
+# ------------ GLOBAL VARIABLES ------------------------------------------------
+const module_path = splitdir(@__FILE__)[1]          # Path to this module
+
+# ------------ LOAD airfoilprep.py ---------------------------------------------
+path_hydro = module_path                    # Path to tlp_platform.py
+hydro = PyNULL()                                    # tlp_platform module
+
+function __init__()
+    imp = pyimport("imp")
+    (file, filename, data) = imp.find_module("tlp_platform", [path_hydro])
+    copy!(hydro, imp.load_module("tlp_platform", file, filename, data))
+end
 
 function owens(owensfile,analysisType;
     delta_t=0.01,

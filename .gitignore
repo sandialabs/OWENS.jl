@@ -24,3 +24,5 @@
 *.vtk
 *.stl
 *.geo
+*.pyc
+*pycache*
