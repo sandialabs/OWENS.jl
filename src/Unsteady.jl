@@ -343,7 +343,8 @@ function Unsteady(model,mesh,el)
         #     etadot_s  = invPhi*udot_s2
         #     etaddot_s = invPhi*uddot_s2
     else
-        mat"$elStorage = initialElementCalculations($model,$el,$mesh)" #perform initial element calculations for conventional structural dynamics analysis
+        # mat"$elStorage = initialElementCalculations($model,$el,$mesh)" #perform initial element calculations for conventional structural dynamics analysis
+        elStorage = initialElementCalculations(model,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
     #calculate structural/platform moi

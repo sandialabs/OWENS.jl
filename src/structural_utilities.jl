@@ -189,9 +189,9 @@ structureMass = 0.0 #initialize structure mass and moment of inertia
 structureMOI = zeros(3,3)
 temp = zeros(3,1)
 for i=1:numElements #sum over elemetns contribution to mass and moment of inertia
-    structureMass = structureMass + elStorage[i]["mel"]
-    structureMOI = structureMOI + elStorage[i]["moiel"]
-    temp = temp + elStorage[i]["xmel"]
+    structureMass = structureMass + elStorage[i].mel
+    structureMOI = structureMOI + elStorage[i].moiel
+    temp = temp + elStorage[i].xmel
 end
 
 structureMassCenter = temp./structureMass #calculate mass center

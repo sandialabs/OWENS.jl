@@ -1,4 +1,4 @@
-function [elStorage] = calculateTimoshenkoElementInitialRun(input)
+function [elStorage] = calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,x,y,z,concMassFlag,concMass,Omega) %initial element calculations for storage%calculateTimoshenkoElementInitialRun(input)
 %calculateTimoshenkoElementInitialRun performs initial element calculations
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -17,19 +17,19 @@ function [elStorage] = calculateTimoshenkoElementInitialRun(input)
 %      elStorage  = object containing stored element data
 %
 %-------- assign input block ----------------
-elementOrder   = input.elementOrder;
-x              = input.x;
-y              = input.y;
-z              = input.z;
-xloc           = input.xloc;
-
-sectionProps   = input.sectionProps;
-sweepAngle     = input.sweepAngle;
-coneAngle      = input.coneAngle;
-rollAngle      = input.rollAngle;
-
-concMass = input.concMass;
-concMassFlag = input.concMassFlag;
+% elementOrder   = input.elementOrder;
+% x              = input.x;
+% y              = input.y;
+% z              = input.z;
+% xloc           = input.xloc;
+%
+% sectionProps   = input.sectionProps;
+% sweepAngle     = input.sweepAngle;
+% coneAngle      = input.coneAngle;
+% rollAngle      = input.rollAngle;
+%
+% concMass = input.concMass;
+% concMassFlag = input.concMassFlag;
 
 % CN2H           = eye(3,3);
 
