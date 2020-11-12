@@ -19,3 +19,10 @@
 ~*
 *.h5
 /Manifest.toml
+*.fdb_latexmk
+*.fls
+*.vtk
+*.stl
+*.geo
+*.pyc
+*pycache*
