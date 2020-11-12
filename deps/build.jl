@@ -8,7 +8,7 @@ import Conda
 Conda.add_channel("conda-forge")
 Conda.add("python==3.8")
 Conda.add("capytaine==1.2")
-Conda.add("numpy==1.19.2")
+Conda.add("numpy")
 Conda.pip_interop(true)
 Conda.pip("install", "pygmsh==6.1.0")
 Conda.pip("install", "meshmagick @ https://github.com/LHEEA/meshmagick/archive/2.0.tar.gz")

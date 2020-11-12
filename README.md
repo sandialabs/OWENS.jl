@@ -14,32 +14,26 @@ Additionally, there is a lessons learned document regarding Matlab to C++ "autom
 The test cases are the base material for the validation paper(s).
 
 ## Getting started
+1. Get access to repository and set up ssh keys
+	Create a ssh key via:
 
-1. **Clone repository**: TODO
+```bash
+ssh-keygen -t rsa -m PEM -C username@sandia.gov
+```
+	Copy the id_rsa.pub key found in ~./ssh into your GitLab profile public key
 
-2. **Install Julia and Julia packages**: TODO
+2. Install Julia such that it is on your system path so it can be called via "julia" in the terminal (for mac this is as simple as: brew install julia)
 
-3. **Install Python and Python packages**: The `environment.yml` file lists the working Python version and packages.
-To set up your system, you can use the following steps. If you are an adept Python user, you can certainly figure out other ways to do this.
+3. Install the dependencies and OWENS, then build and test using the following command in the terminal:
 
-	1. **Install Anaconda**: Anaconda is a tool for managing Python packages and installations (it can also handle non-Python packages). You can download an install from https://www.anaconda.com/products/individual.
-
-	2. **Create a dedicated conda environment & install depedencies**: From your terminal, call the following to create a dedicated [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) with the necessary dependecies.
-
-	```bash
-	conda env create -f environment.yml
-	```
-
-	3. **Activate conda environment**: Whenever you want to do work on this project, activate the `OWENS` conda environment.
-
-	```bash
-	conda activate OWENS
-	```
-
-4. **TODO**: TODO
+```bash
+julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git")); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
+```
 
 ## Software License
 
 Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
 Under the terms of Contract DE-NA0003525 with NTESS, there is a non-exclusive license for use of this work by or on behalf of the U.S. Government.
 Export of this data may require a license from the United States Government.
+
+See Copyright.txt file for more information
