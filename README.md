@@ -24,6 +24,12 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 
 2. Install Julia such that it is on your system path so it can be called via "julia" in the terminal (for mac this is as simple as: brew install julia)
 
+2.5 If on mac, add the following to your .bash_profile and/or .apmrc if using atom.  There is a mac specific issue with python backend libraries that this fixes
+
+```bash
+export LD_LIBRARY_PATH=~/.julia/conda/3/lib:$LD_LIBRARY_PATH
+```
+
 3. Install the dependencies and OWENS, then build and test using the following command in the terminal:
 
 ```bash
