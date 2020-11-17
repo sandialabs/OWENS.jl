@@ -6,15 +6,22 @@ import Conda
 
 # Conda.runconda(`env create -f environment.yml`)
 Conda.add_channel("conda-forge")
-Conda.add("python==3.8")
+# Conda.add("python==3.8")
 Conda.add("capytaine==1.2")
 Conda.add("numpy==1.19.2")
 Conda.pip_interop(true)
 Conda.pip("install", "pygmsh==6.1.0")
 Conda.pip("install", "meshmagick @ https://github.com/LHEEA/meshmagick/archive/2.0.tar.gz")
 
-println("Linking PyCall to the Conda Environment")
-using Pkg
-Pkg.add("PyCall")
-ENV["PYTHON"] = "$(Conda.ROOTENV)"
-Pkg.build("PyCall")
+# # Resolve mkl error
+Conda.add("nomkl")
+try
+    Conda.rm("mkl")
+catch
+end
+#
+# println("Linking PyCall to the Conda Environment")
+# using Pkg
+# Pkg.add("PyCall")
+# ENV["PYTHON"] = "$(Conda.ROOTENV)"
+# Pkg.build("PyCall")

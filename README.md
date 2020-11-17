@@ -13,33 +13,68 @@ The theory manual can be found in the docs folder along with the validation pape
 Additionally, there is a lessons learned document regarding Matlab to C++ "automatic" translation.
 The test cases are the base material for the validation paper(s).
 
-## Getting started
+## Using the Package (not developing)
+1. Get access to repository and set up ssh keys
+	Create a ssh key via:
 
-1. **Clone repository**: TODO
+```bash
+ssh-keygen -t rsa -m PEM -C username@sandia.gov
+```
+	Copy the id_rsa.pub key found in ~./ssh into your GitLab profile public key
 
-2. **Install Julia and Julia packages**: TODO
+2. Install Julia such that it is on your system path so it can be called via "julia" in the terminal (for mac this is as simple as: brew install julia)
 
-3. **Install Python and Python packages**: The `environment.yml` file lists the working Python version and packages.
-To set up your system, you can use the following steps. If you are an adept Python user, you can certainly figure out other ways to do this.
+3. Install the dependencies and OWENS, then build and test using the following command in the terminal:
 
-	1. **Install Anaconda**: Anaconda is a tool for managing Python packages and installations (it can also handle non-Python packages). You can download an install from https://www.anaconda.com/products/individual.
+```bash
+julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git")); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
+```
 
-	2. **Create a dedicated conda environment & install depedencies**: From your terminal, call the following to create a dedicated [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) with the necessary dependecies.
+4. Run your desired cases by: TODO:
 
-	```bash
-	conda env create -f environment.yml
-	```
+Also see example: TODO:
 
-	3. **Activate conda environment**: Whenever you want to do work on this project, activate the `OWENS` conda environment.
+## Developing (not just using the final package)
 
-	```bash
-	conda activate OWENS
-	```
+1. Follow steps 1 and 2 from above to get access to the repo and julia running
 
-4. **TODO**: TODO
+2. Clone this repository (into a convenient location of your choice) and enter it
+
+```bash
+git clone git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git
+cd ./OWENS.jl
+```
+
+3. Start Julia and Enter Development Mode
+
+```bash
+julia
+```
+```julia
+] activate .
+```
+
+4. Build the package (uses the Manifest.toml so you have the exact same build as everyone else)
+```julia
+(OWENS) pkg> build
+```
+
+5. Run tests to verify it built correctly
+```julia
+(OWENS) pkg> test
+```
+
+6. Make changes/additions to you heart's desire (following general best practices of course!)
+To exit the package manager (but retain the OWENS environment), press backspace.  From this julia console, you'll be able to run any file e.g. include("./test/runtests.jl") with the OWENS environment active.  You can run OWENS with the OWENS environment deactivated via either 1) Installing it as a backend package, or 2) adding all of the dependencies to your base julia environment (the environment that we were in before activating the current directory in step 3.).  
+
+If you'd like a more interactive IDE and Matlab-like debugger, consider Juno.  Here are setup instructions: http://docs.junolab.org/stable/man/installation/
+
+There are a TON of questions already answered via a simple google search about Julia code development etc, but also feel free to reach out to the developers of this repository for julia specific help.  
 
 ## Software License
 
 Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
 Under the terms of Contract DE-NA0003525 with NTESS, there is a non-exclusive license for use of this work by or on behalf of the U.S. Government.
 Export of this data may require a license from the United States Government.
+
+See Copyright.txt file for more information
