@@ -30,6 +30,12 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git")); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
 ```
 
+Note: if on mac and you're having python problems, try adding the following to your .bash_profile and restart your terminal:
+
+```shell
+export LD_LIBRARY_PATH=~/.julia/conda/3/lib:$LD_LIBRARY_PATH
+```
+
 4. Run your desired cases by: TODO:
 
 Also see example: TODO:

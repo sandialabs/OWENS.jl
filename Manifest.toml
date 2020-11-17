@@ -447,7 +447,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[VAWTAero]]
 deps = ["DelimitedFiles", "Dierckx", "FLOWMath", "HDF5", "LsqFit", "NLsolve", "QuadGK", "Statistics"]
-git-tree-sha1 = "163eb9f8e776ab7d9babf895c60708bc012e863f"
+git-tree-sha1 = "b73113232a662496c4b494d751fc04c026966502"
 repo-rev = "master"
 repo-url = "git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git"
 uuid = "513c2d6f-fecb-4566-aa46-de6170e5ba6d"

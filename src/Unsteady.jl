@@ -267,7 +267,14 @@ function Unsteady(model,mesh,el)
     t = zeros(numTS+1)
     FReactionHist = zeros(numTS+1,6)
     # strainHist(numTS+1) = struct()
-    strainHist = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+    # strainHist = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+    eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
+    eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
+    eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
+    gam_xz_0_hist = zeros(4,mesh.numEl,numTS)
+    gam_xz_y_hist = zeros(4,mesh.numEl,numTS)
+    gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
+    gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
 
     aziHist = zeros(numTS+1)
     OmegaHist = zeros(numTS+1)
@@ -680,13 +687,13 @@ function Unsteady(model,mesh,el)
         uHist[:,i+1] = u_s
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
-            strainHist[ii,i] = ElStrain(elStrain[ii].eps_xx_0,
-            elStrain[ii].eps_xx_z,
-            elStrain[ii].eps_xx_y,
-            elStrain[ii].gam_xz_0,
-            elStrain[ii].gam_xz_y,
-            elStrain[ii].gam_xy_0,
-            elStrain[ii].gam_xy_z)
+            eps_xx_0_hist[:,ii,i] = elStrain[ii].eps_xx_0
+            eps_xx_z_hist[:,ii,i] = elStrain[ii].eps_xx_z
+            eps_xx_y_hist[:,ii,i] = elStrain[ii].eps_xx_y
+            gam_xz_0_hist[:,ii,i] = elStrain[ii].gam_xz_0
+            gam_xz_y_hist[:,ii,i] = elStrain[ii].gam_xz_y
+            gam_xy_0_hist[:,ii,i] = elStrain[ii].gam_xy_0
+            gam_xy_z_hist[:,ii,i] = elStrain[ii].gam_xy_z
         end
         t[i+1] = t[i] + delta_t
 
@@ -763,7 +770,33 @@ function Unsteady(model,mesh,el)
         println("NOT WRITING Verification File")
     else
         println("WRITING Verification File")
-        mat"write_verification($model,$t,$aziHist,$OmegaHist,$OmegaDotHist,$gbHist,$gbDotHist,$gbDotDotHist,$FReactionHist,$rigidDof,$genTorque,$genPower,$torqueDriveShaft,$uHist,$strainHist)"
+        # mat"write_verification($model,$t,$aziHist,$OmegaHist,$OmegaDotHist,$gbHist,$gbDotHist,$gbDotDotHist,$FReactionHist,$rigidDof,$genTorque,$genPower,$torqueDriveShaft,$uHist,$strainHist)"
+
+        filename = string(model.outFilename[1:end-3], "h5")
+        HDF5.h5open(filename, "w") do file
+            # HDF5.write(file,"model",model)
+            HDF5.write(file,"t",t)
+            HDF5.write(file,"aziHist",aziHist)
+            HDF5.write(file,"OmegaHist",OmegaHist)
+            HDF5.write(file,"OmegaDotHist",OmegaDotHist)
+            HDF5.write(file,"gbHist",gbHist)
+            HDF5.write(file,"gbDotHist",gbDotHist)
+            HDF5.write(file,"gbDotDotHist",gbDotDotHist)
+            HDF5.write(file,"FReactionHist",FReactionHist)
+            HDF5.write(file,"rigidDof",rigidDof)
+            HDF5.write(file,"genTorque",genTorque)
+            HDF5.write(file,"genPower",genPower)
+            HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
+            HDF5.write(file,"uHist",uHist)
+            HDF5.write(file,"eps_xx_0_hist",eps_xx_0_hist)
+            HDF5.write(file,"eps_xx_z_hist",eps_xx_z_hist)
+            HDF5.write(file,"eps_xx_y_hist",eps_xx_y_hist)
+            HDF5.write(file,"gam_xz_0_hist",gam_xz_0_hist)
+            HDF5.write(file,"gam_xz_y_hist",gam_xz_y_hist)
+            HDF5.write(file,"gam_xy_0_hist",gam_xy_0_hist)
+            HDF5.write(file,"gam_xy_z_hist",gam_xy_z_hist)
+        end
+
     end
 
 end
