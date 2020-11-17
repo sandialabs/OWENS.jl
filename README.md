@@ -13,7 +13,7 @@ The theory manual can be found in the docs folder along with the validation pape
 Additionally, there is a lessons learned document regarding Matlab to C++ "automatic" translation.
 The test cases are the base material for the validation paper(s).
 
-## Using the Package (not developing)
+## Using the Package (without developing)
 1. Get access to repository and set up ssh keys
 	Create a ssh key via:
 
@@ -22,9 +22,9 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 ```
 	Copy the id_rsa.pub key found in ~./ssh into your GitLab profile public key
 
-2. Install Julia such that it is on your system path so it can be called via "julia" in the terminal (for mac this is as simple as: brew install julia)
+2. Install Julia such that it is on your system path so it can be called via "julia" in the terminal (see https://julialang.org/downloads/platform/ for platform specific instructions, for mac this is as simple as: brew cask install julia)
 
-3. Install the dependencies and OWENS, then build and test using the following command in the terminal:
+3. Install the custom dependencies and OWENS, then build and test using the following command in the terminal:
 
 ```bash
 julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git")); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
@@ -58,6 +58,7 @@ julia
 ```julia
 (OWENS) pkg> build
 ```
+Note: If you're installing julia for the first time, there are quite a few dependencies of dependencies and it will take some time to install it all
 
 5. Run tests to verify it built correctly
 ```julia
