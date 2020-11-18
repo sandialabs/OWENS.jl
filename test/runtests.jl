@@ -1,5 +1,5 @@
+path,_ = splitdir(@__FILE__)
 using OWENS
-# path,_ = splitdir(@__FILE__)
 # include("$(path)/../src/OWENS.jl")
 using Test
 
@@ -9,7 +9,11 @@ using Test
 end
 
 @testset "Mesh Check" begin
-    include("./check_mesh.jl")
+    include("$path/check_mesh.jl")
+end
+
+@testset "_15mTower_transient_dvawt_c_2_lcdt" begin
+    include("$path/test_owens.jl")
 end
 
 @testset "Run Hydro" begin

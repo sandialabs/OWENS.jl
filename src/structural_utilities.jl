@@ -149,7 +149,7 @@ function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,stru
             extDistF3Node = -[structuralLoad_N[j,k],   structuralLoad_N[j,k+1]]
             extDistF4Node = -[structuralLoad_M25[j,k], structuralLoad_M25[j,k+1]]
 
-            mat"[$Fe] = calculateLoadVecFromDistForce($elementOrder,$x,$xloc,$twist,$sweepAngle,$coneAngle,$rollAngle,$extDistF2Node,$extDistF3Node,$extDistF4Node)"
+            Fe = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
 
             #asssembly
             for m = 1:length(dofList)

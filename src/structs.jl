@@ -39,6 +39,65 @@ mutable struct BladeData
     remaining
 end
 
+mutable struct CactusGeom
+    NBlade
+    NStrut
+    RotN
+    RotP
+    RefAR
+    RefR
+    blade
+    strut
+end
+
+mutable struct Blade
+    NElem
+    FlipN
+    QCx
+    QCy
+    QCz
+    tx
+    ty
+    tz
+    CtoR
+    PEx
+    PEy
+    PEz
+    tEx
+    tEy
+    tEz
+    nEx
+    nEy
+    nEz
+    sEx
+    sEy
+    sEz
+    ECtoR
+    EAreaR
+    iSect
+end
+
+mutable struct Strut
+    NElem
+    TtoC
+    MCx
+    MCy
+    MCz
+    CtoR
+    PEx
+    PEy
+    PEz
+    sEx
+    sEy
+    sEz
+    ECtoR
+    EAreaR
+    BIndS
+    EIndS
+    BIndE
+    EIndE
+end
+
 mutable struct SectionPropsArray
     ac
     twist

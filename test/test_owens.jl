@@ -1,11 +1,7 @@
-path,_ = splitdir(@__FILE__)
+path = splitdir(@__FILE__)[1]
 
-
-mat_path = string(path,"/../src/Matlab_Cxx")
-using MATLAB
-mat"addpath($mat_path)"
-# import OWENS
-include("$path/../src/OWENS.jl")
+import OWENS
+# include("$path/../src/OWENS.jl")
 using Test
 import HDF5
 

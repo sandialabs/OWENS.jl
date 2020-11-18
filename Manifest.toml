@@ -211,12 +211,6 @@ git-tree-sha1 = "51b1db0732bbdcfabb60e36095cc3ed9c0016932"
 uuid = "5ced341a-0733-55b8-9ab6-a4889d929147"
 version = "1.9.2+2"
 
-[[MATLAB]]
-deps = ["Libdl", "SparseArrays", "Test"]
-git-tree-sha1 = "89ab46e322f9216728961119f7131038f5e4d22b"
-uuid = "10e44e05-a98a-55b3-a45b-ba969058deb6"
-version = "0.7.3"
-
 [[MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "6a8a2a625ab0dea913aba95c11370589e0239ff0"
