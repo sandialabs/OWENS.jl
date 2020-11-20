@@ -237,16 +237,6 @@ function calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,cone
 
 end
 
-function interpolateVal(valNode,N)
-    #This function interpolates a value using distinct values at valNode
-    #and the corresponding shape function N.
-    valGP = 0.0
-    for i=1:length(N)
-        valGP = valGP + N[i]*valNode[i]
-    end
-    return valGP
-end
-
 #Element calculation functions
 function calculateVec1(f,integrationFactor,N,F)
     #This function is a general routine to calculate an element vector
