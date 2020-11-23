@@ -1,11 +1,9 @@
-path,_ = splitdir(@__FILE__)
+path = splitdir(@__FILE__)[1]
 
-
-mat_path = string(path,"/../src/Matlab_Cxx")
-using MATLAB #if this is used, must run from src location
-mat"addpath($mat_path)"
-# import OWENS
-include("$path/../src/OWENS.jl")
+import OWENS
+# include("$path/../src/OWENS.jl")
+using Test
+import HDF5
 
 mutable struct PlatformProp
     fileRoot
@@ -108,5 +106,82 @@ function test_owens(test_transient,test_modal,test_flutter)
     println("Function Finished")
 end
 
-test_owens(true,false,false)
-mat"verifyOWENSPost"
+verify_transient = true
+test_owens(verify_transient,false,false)
+# mat"verifyOWENSPost"
+
+if verify_transient
+
+    tol = 1e-5
+    n_t = 50
+    old_filename = "$path/data/input_files_test/UNIT_TEST_15mTower_transient_dvawt_c_2_lcdt.h5"
+    new_filename = "$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.h5"
+
+    if (time() - mtime(new_filename)) > 10000 #milliseconds
+        println("Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.")
+    end
+
+    old_t = HDF5.h5read(old_filename,"t")
+    old_aziHist = HDF5.h5read(old_filename,"aziHist")
+    old_OmegaHist = HDF5.h5read(old_filename,"OmegaHist")
+    old_OmegaDotHist = HDF5.h5read(old_filename,"OmegaDotHist")
+    old_gbHist = HDF5.h5read(old_filename,"gbHist")
+    old_gbDotHist = HDF5.h5read(old_filename,"gbDotHist")
+    old_gbDotDotHist = HDF5.h5read(old_filename,"gbDotDotHist")
+    old_FReactionHist = HDF5.h5read(old_filename,"FReactionHist")
+    old_rigidDof = HDF5.h5read(old_filename,"rigidDof")
+    old_genTorque = HDF5.h5read(old_filename,"genTorque")
+    old_genPower = HDF5.h5read(old_filename,"genPower")
+    old_torqueDriveShaft = HDF5.h5read(old_filename,"torqueDriveShaft")
+    old_uHist = HDF5.h5read(old_filename,"uHist")
+    old_eps_xx_0_hist = HDF5.h5read(old_filename,"eps_xx_0_hist")
+    old_eps_xx_z_hist = HDF5.h5read(old_filename,"eps_xx_z_hist")
+    old_eps_xx_y_hist = HDF5.h5read(old_filename,"eps_xx_y_hist")
+    old_gam_xz_0_hist = HDF5.h5read(old_filename,"gam_xz_0_hist")
+    old_gam_xz_y_hist = HDF5.h5read(old_filename,"gam_xz_y_hist")
+    old_gam_xy_0_hist = HDF5.h5read(old_filename,"gam_xy_0_hist")
+    old_gam_xy_z_hist = HDF5.h5read(old_filename,"gam_xy_z_hist")
+
+    t = HDF5.h5read(new_filename,"t")
+    aziHist = HDF5.h5read(new_filename,"aziHist")
+    OmegaHist = HDF5.h5read(new_filename,"OmegaHist")
+    OmegaDotHist = HDF5.h5read(new_filename,"OmegaDotHist")
+    gbHist = HDF5.h5read(new_filename,"gbHist")
+    gbDotHist = HDF5.h5read(new_filename,"gbDotHist")
+    gbDotDotHist = HDF5.h5read(new_filename,"gbDotDotHist")
+    FReactionHist = HDF5.h5read(new_filename,"FReactionHist")
+    rigidDof = HDF5.h5read(new_filename,"rigidDof")
+    genTorque = HDF5.h5read(new_filename,"genTorque")
+    genPower = HDF5.h5read(new_filename,"genPower")
+    torqueDriveShaft = HDF5.h5read(new_filename,"torqueDriveShaft")
+    uHist = HDF5.h5read(new_filename,"uHist")
+    eps_xx_0_hist = HDF5.h5read(new_filename,"eps_xx_0_hist")
+    eps_xx_z_hist = HDF5.h5read(new_filename,"eps_xx_z_hist")
+    eps_xx_y_hist = HDF5.h5read(new_filename,"eps_xx_y_hist")
+    gam_xz_0_hist = HDF5.h5read(new_filename,"gam_xz_0_hist")
+    gam_xz_y_hist = HDF5.h5read(new_filename,"gam_xz_y_hist")
+    gam_xy_0_hist = HDF5.h5read(new_filename,"gam_xy_0_hist")
+    gam_xy_z_hist = HDF5.h5read(new_filename,"gam_xy_z_hist")
+
+    @test isapprox(old_t,t,atol = tol)
+    @test isapprox(old_aziHist,aziHist,atol = tol)
+    @test isapprox(old_OmegaHist,OmegaHist,atol = tol)
+    @test isapprox(old_OmegaDotHist,OmegaDotHist,atol = tol)
+    @test isapprox(old_gbHist,gbHist,atol = tol)
+    @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
+    @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
+    @test isapprox(old_FReactionHist,FReactionHist,atol = tol)
+    @test isapprox(old_rigidDof,rigidDof,atol = tol)
+    @test isapprox(old_genTorque,genTorque,atol = tol)
+    @test isapprox(old_genPower,genPower,atol = tol)
+    @test isapprox(old_torqueDriveShaft,torqueDriveShaft,atol = tol)
+    @test isapprox(old_uHist,uHist,atol = tol)
+    @test isapprox(old_eps_xx_0_hist,eps_xx_0_hist,atol = tol)
+    @test isapprox(old_eps_xx_z_hist,eps_xx_z_hist,atol = tol)
+    @test isapprox(old_eps_xx_y_hist,eps_xx_y_hist,atol = tol)
+    @test isapprox(old_gam_xz_0_hist,gam_xz_0_hist,atol = tol)
+    @test isapprox(old_gam_xz_y_hist,gam_xz_y_hist,atol = tol)
+    @test isapprox(old_gam_xy_0_hist,gam_xy_0_hist,atol = tol)
+    @test isapprox(old_gam_xy_z_hist,gam_xy_z_hist,atol = tol)
+
+end

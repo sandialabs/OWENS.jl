@@ -1,11 +1,6 @@
 
 function readMesh(filename)
     #readMesh  reads mesh file and stores data in mesh object
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [mesh] = readMesh(filename)
     #
     #   This function reads the mesh file and stores data in the mesh object.
@@ -70,11 +65,6 @@ end
 
 function readBCdata(bcfilename,numNodes,numDofPerNode)
     #readBDdata  reads boundary condition file
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
     #
     #   This function reads the boundray condition file and stores data in the
@@ -145,11 +135,6 @@ end
 
 function readBladeData(filename)
     #readBladeDAta reads blade data
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [bladeData] = readBladeData(filename)
     #
     #   This function reads blade data from file
@@ -219,11 +204,6 @@ end
 
 function readElementData(numElements,elfile,ortfile,bladeData_struct)
     #readElementData  reads element data
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [el] = readElementData(numElements,elfile,ortfile,bldfile
     #
     #   This function reads element data and stores data in the element data
@@ -364,11 +344,6 @@ end
 
 function readGeneratorProps(generatorfilename)
     #readGeneratorProps reads generator properties from file
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [genprops] = readGeneratorProps(generatorfilename)
     #
     #   This function reads generator properties from file.
@@ -382,31 +357,26 @@ function readGeneratorProps(generatorfilename)
 
     # fid = fopen(generatorfilename) #open generator property file
     # if(fid!=-1) #if file can be opened
-        #         genprops.ratedTorque = fscanf(fid,'#f',1) #store rated torque
-        #         dum = fgetl(fid)
-        #         genprops.zeroTorqueGenSpeed = fscanf(fid,'#f',1) #store zero torque generator zpeed
-        #         dum = fgetl(fid)
-        #         genprops.pulloutRatio = fscanf(fid,'#f',1) #store pullout ratio
-        #         dum = fgetl(fid)
-        #         genprops.ratedGenSlipPerc= fscanf(fid,'#f',1) #store rated generator slip percentage
-        #         dum = fgetl(fid)
-        #
-        #         fclose(fid) #close generator propery file
-        genprops = 0.0
-        println("GENERATOR NOT FULLY ENABLED")
+    #         genprops.ratedTorque = fscanf(fid,'#f',1) #store rated torque
+    #         dum = fgetl(fid)
+    #         genprops.zeroTorqueGenSpeed = fscanf(fid,'#f',1) #store zero torque generator zpeed
+    #         dum = fgetl(fid)
+    #         genprops.pulloutRatio = fscanf(fid,'#f',1) #store pullout ratio
+    #         dum = fgetl(fid)
+    #         genprops.ratedGenSlipPerc= fscanf(fid,'#f',1) #store rated generator slip percentage
+    #         dum = fgetl(fid)
+    #
+    #         fclose(fid) #close generator propery file
+    genprops = 0.0
+    println("GENERATOR NOT FULLY ENABLED")
 
-        genprops = 0.0 #if generator property file does not exist, set object to null
+    genprops = 0.0 #if generator property file does not exist, set object to null
 
     return genprops
 end
 
 function readInitCond(filename)
     #readInitCond reads initial conditions
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [initCond] = readInitCond(filename)
     #
     #   This function reads initial conditions from file
@@ -439,11 +409,6 @@ end
 
 function readNodalTerms(filename)
     #readNodalTerms reads concentrated nodal terms file
-    # **********************************************************************
-    # *                   Part of the SNL OWENS Toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [nodalTerms] = readNodalTerms(filename)
     #
     #   This function reads the nodal terms file and stores data in the nodal
@@ -546,4 +511,78 @@ function readNodalTerms(filename)
 
     return nodalTerms
 
+end
+
+function readCactusGeom(geom_fn)
+
+    data = DelimitedFiles.readdlm(geom_fn,skipstart = 0)
+
+    NBlade = Int(data[1,2])
+    NStrut = Int(data[2,2])
+    RotN = Float64.(data[3,2:4])
+    RotP = Float64.(data[4,2:4])
+    RefAR = Float64(data[5,2])
+    RefR = Float64(data[6,2])
+
+    blade = Array{Blade, 1}(undef, NBlade)
+
+    idx = 9
+    for bld_idx = 1:NBlade
+
+        NElem = Int(data[idx+0,2])
+        FlipN = Int(data[idx+1,2])
+        QCx = Float64.(data[idx+2,2:NElem+2])
+        QCy = Float64.(data[idx+3,2:NElem+2])
+        QCz = Float64.(data[idx+4,2:NElem+2])
+        tx = Float64.(data[idx+5,2:NElem+2])
+        ty = Float64.(data[idx+6,2:NElem+2])
+        tz = Float64.(data[idx+7,2:NElem+2])
+        CtoR = Float64.(data[idx+8,2:NElem+2])
+        PEx = Float64.(data[idx+9,2:NElem+1])
+        PEy = Float64.(data[idx+10,2:NElem+1])
+        PEz = Float64.(data[idx+11,2:NElem+1])
+        tEx = Float64.(data[idx+12,2:NElem+1])
+        tEy = Float64.(data[idx+13,2:NElem+1])
+        tEz = Float64.(data[idx+14,2:NElem+1])
+        nEx = Float64.(data[idx+15,2:NElem+1])
+        nEy = Float64.(data[idx+16,2:NElem+1])
+        nEz = Float64.(data[idx+17,2:NElem+1])
+        sEx = Float64.(data[idx+18,2:NElem+1])
+        sEy = Float64.(data[idx+19,2:NElem+1])
+        sEz = Float64.(data[idx+20,2:NElem+1])
+        ECtoR = Float64.(data[idx+21,2:NElem+1])
+        EAreaR = Float64.(data[idx+22,2:NElem+1])
+        iSect = Float64.(data[idx+23,2:NElem+1])
+        idx += 25
+        blade[bld_idx] = Blade(NElem,FlipN,QCx,QCy,QCz,tx,ty,tz,CtoR,PEx,PEy,PEz,tEx,tEy,tEz,nEx,nEy,nEz,sEx,sEy,sEz,ECtoR,EAreaR,iSect)
+    end
+
+    strut = Array{Strut, 1}(undef, NStrut)
+
+    for strut_idx = 1:NStrut
+
+        NElem = Int(data[idx+0,2])
+        TtoC = Float64(data[idx+1,2])
+        MCx = Float64.(data[idx+2,2:NElem+2])
+        MCy = Float64.(data[idx+3,2:NElem+2])
+        MCz = Float64.(data[idx+4,2:NElem+2])
+        CtoR = Float64.(data[idx+5,2:NElem+2])
+        PEx = Float64.(data[idx+6,2:NElem+1])
+        PEy = Float64.(data[idx+7,2:NElem+1])
+        PEz = Float64.(data[idx+8,2:NElem+1])
+        sEx = Float64.(data[idx+9,2:NElem+1])
+        sEy = Float64.(data[idx+10,2:NElem+1])
+        sEz = Float64.(data[idx+11,2:NElem+1])
+        ECtoR = Float64.(data[idx+12,2:NElem+1])
+        EAreaR = Float64.(data[idx+13,2:NElem+1])
+        BIndS = Int(data[idx+14,2])
+        EIndS = Int(data[idx+15,2])
+        BIndE = Int(data[idx+16,2])
+        EIndE = Int(data[idx+17,2])
+
+        idx += 19
+        strut[strut_idx] = Strut(NElem,TtoC,MCx,MCy,MCz,CtoR,PEx,PEy,PEz,sEx,sEy,sEz,ECtoR,EAreaR,BIndS,EIndS,BIndE,EIndE)
+    end
+
+    return CactusGeom(NBlade,NStrut,RotN,RotP,RefAR,RefR,blade,strut)
 end
