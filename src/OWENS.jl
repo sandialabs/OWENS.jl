@@ -7,7 +7,7 @@ import LinearAlgebra
 import FLOWMath
 import VAWTAero
 import OptimizationParameters
-using MATLAB
+import HDF5
 
 export Unsteady #, UnsteadyROM
 export owens #TODO: do this right
@@ -24,6 +24,7 @@ include("Steady.jl")
 include("Unsteady.jl")
 include("UnsteadyROM.jl")
 include("meshing_utilities.jl")
+include("aero_utilities.jl")
 include("structural_utilities.jl")
 include("file_reading.jl")
 include("structs.jl")

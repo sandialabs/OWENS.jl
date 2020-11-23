@@ -19,6 +19,7 @@ try
     Conda.rm("mkl")
 catch
 end
+Conda.update()
 #
 # println("Linking PyCall to the Conda Environment")
 # using Pkg

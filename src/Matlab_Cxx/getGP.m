@@ -41,7 +41,7 @@ elseif(numGP == 4)
     xi(2) = -sqrt((3.0-2*sqrt(6.0/5.0))/7.0);
     xi(3) = sqrt((3.0+2*sqrt(6.0/5.0))/7.0);
     xi(4) = -sqrt((3.0+2*sqrt(6.0/5.0))/7.0);
-    
+
     weight(1) = (18+sqrt(30))/36;
     weight(2) = (18+sqrt(30))/36;
     weight(3) = (18-sqrt(30))/36;

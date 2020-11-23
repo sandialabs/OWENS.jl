@@ -39,6 +39,65 @@ mutable struct BladeData
     remaining
 end
 
+mutable struct CactusGeom
+    NBlade
+    NStrut
+    RotN
+    RotP
+    RefAR
+    RefR
+    blade
+    strut
+end
+
+mutable struct Blade
+    NElem
+    FlipN
+    QCx
+    QCy
+    QCz
+    tx
+    ty
+    tz
+    CtoR
+    PEx
+    PEy
+    PEz
+    tEx
+    tEy
+    tEz
+    nEx
+    nEy
+    nEz
+    sEx
+    sEy
+    sEz
+    ECtoR
+    EAreaR
+    iSect
+end
+
+mutable struct Strut
+    NElem
+    TtoC
+    MCx
+    MCy
+    MCz
+    CtoR
+    PEx
+    PEy
+    PEz
+    sEx
+    sEy
+    sEz
+    ECtoR
+    EAreaR
+    BIndS
+    EIndS
+    BIndE
+    EIndE
+end
+
 mutable struct SectionPropsArray
     ac
     twist
@@ -73,6 +132,87 @@ mutable struct El
     theta
     roll
     rotationalEffects
+end
+
+mutable struct ElStorage
+      K11
+      K12
+      K13
+      K14
+      K15
+      K16
+      K22
+      K23
+      K24
+      K25
+      K26
+      K33
+      K34
+      K35
+      K36
+      K44
+      K45
+      K46
+      K55
+      K56
+      K66
+      M11
+      M15
+      M16
+      M22
+      M24
+      M33
+      M34
+      M44
+      M55
+      M56
+      M66
+      S11
+      S12
+      S13
+      S15
+      S16
+      S22
+      S23
+      S25
+      S26
+      S33
+      S35
+      S36
+      S55
+      S56
+      S66
+      S14_1
+      S14_2
+      S24_1
+      S24_2
+      S34_1
+      S34_2
+      S45_1
+      S45_2
+      S46_1
+      S46_2
+      S44_1
+      S44_2
+      S44_3
+      C12
+      C13
+      C23
+      C24
+      C25
+      C26
+      C34
+      C35
+      C36
+      C14_1
+      C14_2
+      C45_1
+      C45_2
+      C46_1
+      C46_2
+      mel
+      moiel
+      xmel
 end
 
 mutable struct NodalTerms

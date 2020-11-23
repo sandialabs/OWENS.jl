@@ -1,209 +1,209 @@
 function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
 
-N_blade_nodes = length(structuralSpanLocNorm[1,:])+1
-# Initialize bladeForce
-bladeForce_N = zeros(NBlade,NElem)
-bladeForce_T = zeros(NBlade,NElem)
-bladeForce_M25 = zeros(NBlade,NElem)
+    N_blade_nodes = length(structuralSpanLocNorm[1,:])+1
+    # Initialize bladeForce
+    bladeForce_N = zeros(NBlade,NElem)
+    bladeForce_T = zeros(NBlade,NElem)
+    bladeForce_M25 = zeros(NBlade,NElem)
 
-for k = 1:length(turbine3D)
-    #TODO: Incorporate deflections and changes in omega ->
-    #r,twist,delta,omega all need to be vectors aligning with the ntheta
-    #discretizations of the cylinder
+    for k = 1:length(turbine3D)
+        #TODO: Incorporate deflections and changes in omega ->
+        #r,twist,delta,omega all need to be vectors aligning with the ntheta
+        #discretizations of the cylinder
 
-    #TODO: ensure that the deflections aren't compounding after a
-    #revolution.  They may be wrong
+        #TODO: ensure that the deflections aren't compounding after a
+        #revolution.  They may be wrong
 
-    #TODO: Verify units everywhere
+        #TODO: Verify units everywhere
 
-    circ_step_num = floor((step_AC-1)/turbine3D[k].ntheta*turbine3D[k].B)
-    circular_step = step_AC-circ_step_num*turbine3D[k].ntheta/turbine3D[k].B
-    idx_sub = Int.(collect(circular_step:turbine3D[k].ntheta/turbine3D[k].B:turbine3D[k].ntheta-turbine3D[k].ntheta/turbine3D[k].B+1+circular_step))
+        circ_step_num = floor((step_AC-1)/turbine3D[k].ntheta*turbine3D[k].B)
+        circular_step = step_AC-circ_step_num*turbine3D[k].ntheta/turbine3D[k].B
+        idx_sub = Int.(collect(circular_step:turbine3D[k].ntheta/turbine3D[k].B:turbine3D[k].ntheta-turbine3D[k].ntheta/turbine3D[k].B+1+circular_step))
 
-    #TODO: this is hard coded for 2 blades, need to simplify
-    # Interpolate the deformations onto the aero model for the current step
-    norm_disp_h = LinRange(0,1,N_blade_nodes)
-    # 1 = Z deformation - not modeled in 2D AC method
-    # 2 = Tangential deformation - no real effect on AC model
-    offset = 3
-    turbine3D[k].r[idx_sub[1]] = turbine3D[k].r[idx_sub[1]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    turbine3D[k].r[idx_sub[2]] = turbine3D[k].r[idx_sub[2]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    offset = 4
-    turbine3D[k].twist[idx_sub[1]] = turbine3D[k].twist[idx_sub[1]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    turbine3D[k].twist[idx_sub[2]] = turbine3D[k].twist[idx_sub[2]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    offset = 5
-    turbine3D[k].delta[idx_sub[1]] = turbine3D[k].delta[idx_sub[1]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    turbine3D[k].delta[idx_sub[2]] = turbine3D[k].delta[idx_sub[2]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    # 6 = Sweep deformation, not modeled in AC method - assuming it is small so that it doesn't spill over into the next step/theta discretization
+        #TODO: this is hard coded for 2 blades, need to simplify
+        # Interpolate the deformations onto the aero model for the current step
+        norm_disp_h = LinRange(0,1,N_blade_nodes)
+        # 1 = Z deformation - not modeled in 2D AC method
+        # 2 = Tangential deformation - no real effect on AC model
+        offset = 3
+        turbine3D[k].r[idx_sub[1]] = turbine3D[k].r[idx_sub[1]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        turbine3D[k].r[idx_sub[2]] = turbine3D[k].r[idx_sub[2]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        offset = 4
+        turbine3D[k].twist[idx_sub[1]] = turbine3D[k].twist[idx_sub[1]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        turbine3D[k].twist[idx_sub[2]] = turbine3D[k].twist[idx_sub[2]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        offset = 5
+        turbine3D[k].delta[idx_sub[1]] = turbine3D[k].delta[idx_sub[1]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        turbine3D[k].delta[idx_sub[2]] = turbine3D[k].delta[idx_sub[2]] + FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        # 6 = Sweep deformation, not modeled in AC method - assuming it is small so that it doesn't spill over into the next step/theta discretization
 
-    turbine3D[k].omega[:] .= Omega_j
+        turbine3D[k].omega[:] .= Omega_j
 
-    # Interpolate deformation induced velocities onto the aero model for the most current step
-    offset = 1
-    env[k].V_vert[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    env[k].V_vert[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    offset = 2
-    env[k].V_tang[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    env[k].V_tang[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    offset = 3
-    env[k].V_rad[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    env[k].V_rad[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    offset = 4
-    env[k].V_twist[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    env[k].V_twist[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
-    # 5 = Change in delta angle, not modeled in 2D AC method
-    # 6 = Change in sweep angle, not modeled in 2D AC method
+        # Interpolate deformation induced velocities onto the aero model for the most current step
+        offset = 1
+        env[k].V_vert[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        env[k].V_vert[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        offset = 2
+        env[k].V_tang[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        env[k].V_tang[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        offset = 3
+        env[k].V_rad[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        env[k].V_rad[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        offset = 4
+        env[k].V_twist[idx_sub[1]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes+offset:6:N_blade_nodes+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        env[k].V_twist[idx_sub[2]] = FLOWMath.akima(norm_disp_h,u_jLast[N_blade_nodes*2+offset:6:N_blade_nodes*2+N_blade_nodes*6-6+offset],k/length(turbine3D))
+        # 5 = Change in delta angle, not modeled in 2D AC method
+        # 6 = Change in sweep angle, not modeled in 2D AC method
 
-    # envin = env[k]
-    # turbine_in = turbine3D[k]
-    # mat"[$Rp, $Tp, $Zp, $Mp, $envout] = actuatorcylinder_substep($turbine_in, $envin,$us_param, $step_AC,$alpha_rad,$cl_af,$cd_af)"
-    # env[k].rho = envout["rho"]
-    # env[k].mu = envout["mu"]
-    # env[k].G_amp = envout["G_amp"]
-    # env[k].gusttime = envout["gusttime"]
-    # env[k].gustX0 = envout["gustX0"]
-    # env[k].N_Rev = envout["N_Rev"]
-    # env[k].idx_sub = envout["idx_sub"]
-    # env[k].wsave = envout["wsave"]
-    # env[k].Vinf_nominal = envout["Vinf_nominal"]
-    # env[k].V_vert = envout["V_vert"]
-    # env[k].V_tang = envout["V_tang"]
-    # env[k].V_rad = envout["V_rad"]
-    # env[k].V_twist = envout["V_twist"]
-    # env[k].Vinf = envout["Vinf"]
-    # env[k].V_wake_old = envout["V_wake_old"]
-    # env[k].steplast = envout["steplast"]
-    # turbine3D[k].ntheta = envout["ntheta"]
-    # env[k].tau = envout["tau"]
+        # envin = env[k]
+        # turbine_in = turbine3D[k]
+        # mat"[$Rp, $Tp, $Zp, $Mp, $envout] = actuatorcylinder_substep($turbine_in, $envin,$us_param, $step_AC,$alpha_rad,$cl_af,$cd_af)"
+        # env[k].rho = envout["rho"]
+        # env[k].mu = envout["mu"]
+        # env[k].G_amp = envout["G_amp"]
+        # env[k].gusttime = envout["gusttime"]
+        # env[k].gustX0 = envout["gustX0"]
+        # env[k].N_Rev = envout["N_Rev"]
+        # env[k].idx_sub = envout["idx_sub"]
+        # env[k].wsave = envout["wsave"]
+        # env[k].Vinf_nominal = envout["Vinf_nominal"]
+        # env[k].V_vert = envout["V_vert"]
+        # env[k].V_tang = envout["V_tang"]
+        # env[k].V_rad = envout["V_rad"]
+        # env[k].V_twist = envout["V_twist"]
+        # env[k].Vinf = envout["Vinf"]
+        # env[k].V_wake_old = envout["V_wake_old"]
+        # env[k].steplast = envout["steplast"]
+        # turbine3D[k].ntheta = envout["ntheta"]
+        # env[k].tau = envout["tau"]
 
-    Q, Rp, Tp, Zp, Vinf_used, alpha, cl, cd, Vloc, Re = VAWTAero.Unsteady_Step(turbine3D[k],env[k],us_param,step_AC)
-    Mp = zeros(length(Zp)) #TODO: fix moment CALCS in VAWTAero
+        Q, Rp, Tp, Zp, Vinf_used, alpha, cl, cd, Vloc, Re = VAWTAero.Unsteady_Step(turbine3D[k],env[k],us_param,step_AC)
+        Mp = zeros(length(Zp)) #TODO: fix moment CALCS in VAWTAero
 
 
 
-    for j=1:NBlade
-        delta = turbine3D[k].delta[idx_sub[j]]
-        bladeForce_N[j,k] = -Rp[j]*cos(delta) + -Zp[j]*sin(delta)
-        bladeForce_T[j,k] = -Tp[j] #TODO: fix RPI's difficulty to converge when running in reverse (may have to change RPI indexing)
-        bladeForce_M25[j,k] = Mp[j]
+        for j=1:NBlade
+            delta = turbine3D[k].delta[idx_sub[j]]
+            bladeForce_N[j,k] = -Rp[j]*cos(delta) + -Zp[j]*sin(delta)
+            bladeForce_T[j,k] = -Tp[j] #TODO: fix RPI's difficulty to converge when running in reverse (may have to change RPI indexing)
+            bladeForce_M25[j,k] = Mp[j]
+        end
     end
-end
 
 
 
-# scatter(t,bladeForce[1].T[floor(blade[j].NElem/2)])
-# hold on
-# pause[0.001)
-#define these from params file
-ft2m = 1 / 3.281
+    # scatter(t,bladeForce[1].T[floor(blade[j].NElem/2)])
+    # hold on
+    # pause[0.001)
+    #define these from params file
+    ft2m = 1 / 3.281
 
-#     RefAR = cactusGeom.RefAR*ft2m*ft2m
-RefR = RefR*ft2m
+    #     RefAR = cactusGeom.RefAR*ft2m*ft2m
+    RefR = RefR*ft2m
 
-spanLocNorm = zeros(NBlade,NElem)
-for i=1:NBlade
-    spanLocNorm[i,:] = PEy[1:NElem[1,1],1].*RefR[1,1]/(QCy[NElem[1,1]+1,1]*RefR[1,1])
-end
+    spanLocNorm = zeros(NBlade,NElem)
+    for i=1:NBlade
+        spanLocNorm[i,:] = PEy[1:NElem[1,1],1].*RefR[1,1]/(QCy[NElem[1,1]+1,1]*RefR[1,1])
+    end
 
-#Initialize structuralLoad
+    #Initialize structuralLoad
 
     structuralLoad_N = zeros(NBlade,length(structuralElNumbers[1,:]))
     structuralLoad_T = zeros(NBlade,length(structuralElNumbers[1,:]))
     structuralLoad_M25 = zeros(NBlade,length(structuralElNumbers[1,:]))
 
-for i=1:NBlade
-    structuralLoad_N[i,:] = FLOWMath.linear(spanLocNorm[i,:],bladeForce_N[i,:],structuralSpanLocNorm[i,:])
-    structuralLoad_T[i,:] = FLOWMath.linear(spanLocNorm[i,:],bladeForce_T[i,:],structuralSpanLocNorm[i,:])
-    structuralLoad_M25[i,:]= FLOWMath.linear(spanLocNorm[i,:],bladeForce_M25[i,:],structuralSpanLocNorm[i,:])
-end
-
-_,numNodesPerBlade = size(structuralNodeNumbers)
-
-#integrate over elements
-
-#read element data in
-
-numDofPerNode = 6
-#     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
-Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6))
-for j = 1:NBlade
-    for k = 1:numNodesPerBlade-1
-        #get element data
-        # orientation angle,xloc,sectionProps,element order]
-        elNum = Int(structuralElNumbers[j,k])
-        #get dof map
-        node1 = Int(structuralNodeNumbers[j,k])
-        node2 = Int(structuralNodeNumbers[j,k+1])
-        dofList = [(node1-1)*numDofPerNode.+(1:6), (node2-1)*numDofPerNode.+(1:6)]
-
-        elementOrder = 1
-        x = [mesh.x[node1], mesh.x[node2]]
-        elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
-        xloc = [0 elLength]
-        twist = el.props[elNum].twist
-        sweepAngle = el.psi[elNum]
-        coneAngle = el.theta[elNum]
-        rollAngle = el.roll[elNum]
-
-        extDistF2Node =  [structuralLoad_T[j,k],   structuralLoad_T[j,k+1]]
-        extDistF3Node = -[structuralLoad_N[j,k],   structuralLoad_N[j,k+1]]
-        extDistF4Node = -[structuralLoad_M25[j,k], structuralLoad_M25[j,k+1]]
-
-        mat"[$Fe] = calculateLoadVecFromDistForce($elementOrder,$x,$xloc,$twist,$sweepAngle,$coneAngle,$rollAngle,$extDistF2Node,$extDistF3Node,$extDistF4Node)"
-
-        #asssembly
-        for m = 1:length(dofList)
-            Fg[dofList[m]] =  Fg[dofList[m]].+Fe[m]
-        end
-
+    for i=1:NBlade
+        structuralLoad_N[i,:] = FLOWMath.linear(spanLocNorm[i,:],bladeForce_N[i,:],structuralSpanLocNorm[i,:])
+        structuralLoad_T[i,:] = FLOWMath.linear(spanLocNorm[i,:],bladeForce_T[i,:],structuralSpanLocNorm[i,:])
+        structuralLoad_M25[i,:]= FLOWMath.linear(spanLocNorm[i,:],bladeForce_M25[i,:],structuralSpanLocNorm[i,:])
     end
-end
 
-ForceDof = Float64.(1:length(Fg))
+    _,numNodesPerBlade = size(structuralNodeNumbers)
 
-return Fg,ForceDof,env
+    #integrate over elements
+
+    #read element data in
+
+    numDofPerNode = 6
+    #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
+    Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6))
+    for j = 1:NBlade
+        for k = 1:numNodesPerBlade-1
+            #get element data
+            # orientation angle,xloc,sectionProps,element order]
+            elNum = Int(structuralElNumbers[j,k])
+            #get dof map
+            node1 = Int(structuralNodeNumbers[j,k])
+            node2 = Int(structuralNodeNumbers[j,k+1])
+            dofList = [(node1-1)*numDofPerNode.+(1:6), (node2-1)*numDofPerNode.+(1:6)]
+
+            elementOrder = 1
+            x = [mesh.x[node1], mesh.x[node2]]
+            elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
+            xloc = [0 elLength]
+            twist = el.props[elNum].twist
+            sweepAngle = el.psi[elNum]
+            coneAngle = el.theta[elNum]
+            rollAngle = el.roll[elNum]
+
+            extDistF2Node =  [structuralLoad_T[j,k],   structuralLoad_T[j,k+1]]
+            extDistF3Node = -[structuralLoad_N[j,k],   structuralLoad_N[j,k+1]]
+            extDistF4Node = -[structuralLoad_M25[j,k], structuralLoad_M25[j,k+1]]
+
+            Fe = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
+
+            #asssembly
+            for m = 1:length(dofList)
+                Fg[dofList[m]] =  Fg[dofList[m]].+Fe[m]
+            end
+
+        end
+    end
+
+    ForceDof = Float64.(1:length(Fg))
+
+    return Fg,ForceDof,env
 
 end
 
 
 function calculateStructureMassProps(elStorage)
-#calculateStructureMassProps   calculates mass properties of mesh
-#   [structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage)
-#
-#   This function caclulates structural mass properties of the finite
-#   element mesh (mass, moment of inertia, mass center) about the origin of
-#   the mesh coordinate system.
-#
-#      input:
-#      elStorage    = object containing arrays of stored element
-#                     information
-#
-#      output:
-#      structureMass       = mass of structure
-#      structureMOI        = moment of inertia tensor of structgure
-#      structureMassCenter = center of mass of structure
+    #calculateStructureMassProps   calculates mass properties of mesh
+    #   [structureMass,structureMOI,structureMassCenter]=calculateStructureMassProps(elStorage)
+    #
+    #   This function caclulates structural mass properties of the finite
+    #   element mesh (mass, moment of inertia, mass center) about the origin of
+    #   the mesh coordinate system.
+    #
+    #      input:
+    #      elStorage    = object containing arrays of stored element
+    #                     information
+    #
+    #      output:
+    #      structureMass       = mass of structure
+    #      structureMOI        = moment of inertia tensor of structgure
+    #      structureMassCenter = center of mass of structure
 
-numElements = length(elStorage) #get number of elements
+    numElements = length(elStorage) #get number of elements
 
-structureMass = 0.0 #initialize structure mass and moment of inertia
-structureMOI = zeros(3,3)
-temp = zeros(3,1)
-for i=1:numElements #sum over elemetns contribution to mass and moment of inertia
-    structureMass = structureMass + elStorage[i]["mel"]
-    structureMOI = structureMOI + elStorage[i]["moiel"]
-    temp = temp + elStorage[i]["xmel"]
-end
+    structureMass = 0.0 #initialize structure mass and moment of inertia
+    structureMOI = zeros(3,3)
+    temp = zeros(3,1)
+    for i=1:numElements #sum over elemetns contribution to mass and moment of inertia
+        structureMass = structureMass + elStorage[i].mel
+        structureMOI = structureMOI + elStorage[i].moiel
+        temp = temp + elStorage[i].xmel
+    end
 
-structureMassCenter = temp./structureMass #calculate mass center
+    structureMassCenter = temp./structureMass #calculate mass center
 
-#modify moment of inertia to be about structure mass center
-x = structureMassCenter[1]
-y = structureMassCenter[2]
-z = structureMassCenter[3]
+    #modify moment of inertia to be about structure mass center
+    x = structureMassCenter[1]
+    y = structureMassCenter[2]
+    z = structureMassCenter[3]
 
-structureMOI = structureMOI - structureMass*[(y^2+z^2) -x*y -x*z
-                                                -x*y (x^2+z^2) -y*z
-                                                -x*z -y*z (x^2+y^2)]
+    structureMOI = structureMOI - structureMass*[(y^2+z^2) -x*y -x*z
+    -x*y (x^2+z^2) -y*z
+    -x*z -y*z (x^2+y^2)]
 
 
     return structureMass,structureMOI,structureMassCenter
@@ -239,8 +239,8 @@ function calculateLambda(theta1,theta2,theta3)
     fac1 = st3*st2
     fac2 = ct3*st2
     dcm = [ct2*ct1           ct2*st1          -st2
-        fac1*ct1-ct3*st1  fac1*st1+ct3*ct1  st3*ct2
-        fac2*ct1+st3*st1  fac2*st1-st3*ct1  ct3*ct2]
+    fac1*ct1-ct3*st1  fac1*st1+ct3*ct1  st3*ct2
+    fac2*ct1+st3*st1  fac2*st1-st3*ct1  ct3*ct2]
 
 
     lambda = zeros(12,12)
@@ -285,7 +285,7 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
 
         Tda,dDOF,aDOF = getNodeMaps(Rdd0,Rda0,masterNodeNum,slaveNodeNum,slaveDof0,activeDof0,slaveActiveDof0)
 
-    elseif(jointType == 1) #for pinned joint type
+    elseif (jointType == 1) #for pinned joint type
         activeDof1 = [1 2 3 4 5 6] #active DOF list at joint
         slaveDof1 = [1 2 3] #slave DOF list at joint
 
@@ -299,7 +299,7 @@ function createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint)
 
     elseif (jointType == 2)     #hinge axis along localy "2" frame of joint
 
-        if((abs(abs(psi)-90))<1.0e-3 || (abs(abs(psi)-270))<1.0e-3)
+        if ((abs(abs(psi)-90))<1.0e-3 || (abs(abs(psi)-270))<1.0e-3)
             activeDof2 = [1 2 3 4 5 6]
             slaveDof2  = [1 2 3 5 6]
 
@@ -485,7 +485,7 @@ function getNodeMaps(Rdd,Rda,masterNodeNum,slaveNodeNum,slaveDof,activeDof,slave
         aMap2[i] = (slaveNodeNum-1)*6 + slaveActiveDof[i]
     end
 
-    if(!isempty(aMap2)) #create overall map of active DOFs associated with this joint
+    if (!isempty(aMap2)) #create overall map of active DOFs associated with this joint
         aDOF = [aMap;aMap2]
     else
         aDOF = aMap
@@ -621,7 +621,7 @@ function extractdaInfo(joint,numNodes,numDofPerNode)
         if (joint[i,4]==4) #for a single axis hinge joint along a local "3" axis of a joint
             if ((abs(abs(joint[i,8])-90))<1.0e-3 || (abs(abs(joint[i,8])-270))<1.0e-3)
                 con = [1 2 3 5 6]
-                if((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)
+                if ((abs(abs(joint(i,7))-90))<1.0e-3 || (abs(abs(joint(i,7))-270))<1.0e-3)
                     con = [1 2 3 4 6]
                 end
             else
@@ -820,5 +820,431 @@ function calculateBCMap(numpBC,pBC,numDofPerNode,reducedDofList)
     end
 
     return bcMap
+
+end
+
+
+function calculateShapeFunctions(elementOrder,xi,x)
+    #calculateShapeFunctions Calculates Lagrange shape functions
+    #   [N,p_N_x,Jac] = calculateShapeFunctions(elementOrder,xi,x)
+    #
+    #   This function calculates the Lagrange shape function, shape
+    #   function derivative, and Jacobian to map between the local element
+    #   domain and physical length of the element. The shape function
+    #   derivative is defined with respect to the physical length domain. The
+    #   shape functions may be linear or quadratic in order.
+    #
+    #      input:
+    #      elementOrder = order of element: 1 linear, 2 quadratic
+    #      xi           = guass point values to evaluate shape functions at
+    #      x            = nodal coordinates in physical length domain
+    #
+    #      output:
+    #      N            = shape function value at specified gauss points
+    #      p_N_x        = shape function derivative w.r.t physical length
+    #                     domain at specified gauss points
+    #      Jac          = Jacobian for mat between local element domain and
+    #                     physical length domain.
+
+    # N shape function
+    # p_N_xi partial derivative of shape function w.r.t. xi
+
+    #Linear interpolation functions
+    N = zeros(elementOrder+1)
+    p_N_xi = zeros(elementOrder+1)
+    if elementOrder == 1
+        N[1] = 0.5*(1.0 - xi)
+        N[2] = 0.5*(1.0 + xi)
+
+        p_N_xi[1] = -0.5
+        p_N_xi[2] = 0.5
+    end
+
+    #Quadratic interpolation functions
+    if elementOrder == 2
+        N[1] = 0.5*(xi-1.0)*xi
+        N[2] = 1.0-xi^2
+        N[3] = 0.5*(xi+1.0)*xi
+
+        p_N_xi[1] = xi - 0.5
+        p_N_xi[2] = -2.0*xi
+        p_N_xi[3] = xi + 0.5
+    end
+
+    numNodesPerEl = length(N)
+    Jac=0.0
+    for i=1:numNodesPerEl
+        Jac = Jac + p_N_xi[i]*x[i]
+    end
+
+    p_N_x = zeros(numNodesPerEl)
+    for i=1:numNodesPerEl
+        p_N_x[i] = p_N_xi[i]/Jac
+    end
+    return N,p_N_x,Jac
+end
+
+
+function interpolateVal(valNode,N)
+    valGP = 0.0
+    for i=1:length(N)
+        valGP = valGP + N[i]*valNode[i]
+    end
+    return valGP
+end
+
+#Element calculation functions---------------------------------
+
+function calculateElement1(EA,integrationFactor,N1,N2,K)
+    #This function is a general routine to calculate an element matrix
+    len1 = length(N1)
+    len2 = length(N2)
+    for i=1:len1
+        for j=1:len2
+            K[i,j] = K[i,j] + EA*N1[i]*N2[j]*integrationFactor
+        end
+    end
+    return K
+end
+
+# function [F] = calculateVec1(f,integrationFactor,N,F)
+# #This function is a general routine to calculate an element vector
+#     len=length(N)
+#     for i=1:len
+#         F(i) = F(i) + f*N(i)*integrationFactor
+#     end
+#
+# end
+
+function getGP(numGP)
+    #getGP Defines Gauss point information for numerical integration
+    #   [xi,weight] = getGP(numGP)
+    #
+    #   This function defines gauss point coordinates in a local element frame
+    #   and the associated weights for Gaussian quadrature numerical
+    #   integration.
+    #
+    #      input:
+    #      numGP        = number of quad points used for integration
+    #
+    #      output:
+    #      xi           = list of quad point coordinates in local element frame
+    #      weight       = associated weights for quad point coordinate
+
+    #define Gauss integration points
+    xi = zeros(numGP)
+    weight = zeros(numGP)
+    if (numGP == 1)
+        xi[1] = 0
+        weight[1] = 2.0
+    elseif (numGP == 2)
+        xi[1] = -sqrt(1/3)
+        xi[2] = sqrt(1/3)
+        weight[1] = 1.0
+        weight[2] = 1.0
+    elseif (numGP == 3)
+        xi[1] = -sqrt(3.0/5.0)
+        xi[2] = 0.0
+        xi[3] = sqrt(3.0/5.0)
+        weight[1] = 5.0/9.0
+        weight[2] = 8.0/9.0
+        weight[3] = 5.0/9.0
+    elseif (numGP == 4)
+        xi[1] = sqrt((3.0-2*sqrt(6.0/5.0))/7.0)
+        xi[2] = -sqrt((3.0-2*sqrt(6.0/5.0))/7.0)
+        xi[3] = sqrt((3.0+2*sqrt(6.0/5.0))/7.0)
+        xi[4] = -sqrt((3.0+2*sqrt(6.0/5.0))/7.0)
+
+        weight[1] = (18+sqrt(30))/36.0
+        weight[2] = (18+sqrt(30))/36.0
+        weight[3] = (18-sqrt(30))/36.0
+        weight[4] = (18-sqrt(30))/36.0
+    end
+    return xi, weight
+end
+
+function calculateElementMass(rhoA,rhoIyy,rhoIzz,rhoIyz,rhoJ,ycm,zcm,x,y,z,integrationFactor,M,Itens,xm)
+    #This function calculates element mass properties.
+    M = M + rhoA*integrationFactor
+    y = y + ycm
+    z = z + zcm
+
+    #Total MOI = parallel axis theorem + local MOI
+    Itens = Itens + rhoA.*integrationFactor.*[(y^2+z^2)  -x*y  -x*z
+    -x*y  (x^2+z^2) -y*z
+    -x*z -y*z (x^2+y^2)] + integrationFactor.*[rhoJ 0 0
+                                                0 rhoIyy rhoIyz
+                                                0 rhoIyz rhoIzz]
+
+    xm[1] =  xm[1] + x*rhoA*integrationFactor
+    xm[2] =  xm[2] + y*rhoA*integrationFactor
+    xm[3] =  xm[3] + z*rhoA*integrationFactor
+
+    return M,Itens,xm
+end
+
+
+function ConcMassAssociatedWithElement(conn,joint,nodalMassTerms,nodalStiffnessTerms,nodalLoads)
+    #ConcMassAssociatedWithElement gets concentrated terms associated w/ el
+    #   [mass,stiff,load,modJoint,modNodalMassTerms,...
+    #    modNodalStiffnessTerms,modNodalLoads] = ...
+    #     ConcMassAssociatedWithElement(conn,joint,nodalMassTerms,...
+    #     nodalStiffnessTerms,nodalLoads)
+    #
+    #   This function compiles concentrated mass, stiffness, and load
+    #   associated with a node from both ndl and joint files. The mod*
+    #   variables are passed back with these terms removed to prevent
+    #   duplicate application of shared nodal terms between elements
+    #
+    #      input:
+    #      conn                = connectivity list for element
+    #      joint               = joint array for nodal terms
+    #      nodalMassTerms      = listing of concentrated nodal mass terms
+    #      nodalStiffnessTerms = listing of concentrated nodal stiffness terms
+    #      nodalLoads          = listing of concentrated nodal loads terms
+    #
+    #
+    #      output:
+    #      mass                = array of concentrated mass associated with element
+    #      stiff               = array of concentrated stiffness associated with
+    #                            element
+    #      load                = array of concentrated loads associated with element
+    #      modJoint            = modified joint object removing nodal terms that
+    #                            have/will be applied to the element calculations
+    #      modNodalMassTerms   = modified nodal mass object removing nodal terms that
+    #                            have/will be applied to the element calculations
+    #      modalStiffnessTerms = modified nodal stiffness object removing nodal terms that
+    #                            have/will be applied to the element calculations
+    #      modNodalLoads       = modified nodal loads object removing nodal terms that
+    #                            have/will be applied to the element calculations
+
+    node1 = conn[1] #define node #1 and node #2
+    node2 = conn[2]
+
+    mass1=0  #initialize concentrated mass amd moi for nodes
+    mass2=0
+    moix1=0
+    moiy1=0
+    moiz1=0
+    moix2=0
+    moiy2=0
+    moiz2=0
+
+    stiff1x=0 #initialize concentrated stifness for nodes
+    stiff2x=0
+    stiff1y=0
+    stiff2y=0
+    stiff1z=0
+    stiff2z=0
+    stiff1mx=0
+    stiff2mx=0
+    stiff1my=0
+    stiff2my=0
+    stiff1mz=0
+    stiff2mz=0
+
+    f1x = 0   #initialize concentrated loads/moments
+    f2x = 0
+    f1y = 0
+    f2y = 0
+    f1z = 0
+    f2z = 0
+    m1x =0
+    m2x =0
+    m1y =0
+    m2y =0
+    m1z =0
+    m2z =0
+
+    modJoint = joint                         #create copies of joint, and nodal mass, stiffness, loads arrays
+    modNodalMassTerms = nodalMassTerms
+    modNodalStiffnessTerms = nodalStiffnessTerms
+    modNodalLoads = nodalLoads
+
+    numJoints,_=size(joint)    #get number of joints in model
+
+    if numJoints > 0
+        node1flag=joint[:,2].==node1  #see if nodes are associated with a joint constraint as a master node
+        node2flag=joint[:,2].==node2
+    else
+        node1flag = false
+        node2flag = false
+        mass1 = 0.0
+        mass2 = 0.0
+    end
+
+    for i=1:numJoints           #if nodes are associated with joint constraint, use (if any) mass and stiffness specification from the joint file
+        if node1flag[i]==1
+            mass1 = mass1+joint[i,5]
+            #             stiff1x = stiff1x + joint[i,6]
+            #             stiff1y = stiff1y + joint[i,6]
+            #             stiff1z = stiff1z + joint[i,6]
+            #             stiff1mx = stiff1mx + joint[i,6]
+            #             stiff1my = stiff1my + joint[i,6]
+            #             stiff1mz = stiff1mz + joint[i,6]
+            #             modJoint(i,5)=0.0
+            #             modJoint(i,6)=0.0
+        end
+        if node2flag[i]==1
+            mass2 = mass2+joint[i,5]
+            #             stiff2x = stiff2x + joint[i,6]
+            #             stiff2y = stiff2y + joint[i,6]
+            #             stiff2z = stiff2z + joint[i,6]
+            #             stiff2mx = stiff2mx + joint[i,6]
+            #             stiff2my = stiff2my + joint[i,6]
+            #             stiff2mz = stiff2mz + joint[i,6]
+            #             modJoint(i,5)=0.0
+            #             modJoint(i,6)=0.0
+        end
+    end
+
+    #apply concentrated mass/stiffness from NDL file
+
+    for i=1:length(nodalMassTerms)   #if node is specified in nodal mass terms file add to mass properties for this node
+        node1flagM=nodalMassTerms[i].nodeNum.==node1
+        node2flagM=nodalMassTerms[i].nodeNum.==node2
+        if node1flagM==1
+            if nodalMassTerms[i].dof == 1
+                mass1 = mass1+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+            if nodalMassTerms[i].dof == 4
+                moix1 = moix1+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+            if nodalMassTerms[i].dof == 5
+                moiy1 = moiy1+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+            if nodalMassTerms[i].dof == 6
+                moiz1 = moiz1+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+        end
+        if node2flagM==1
+            mass2 = mass2+nodalMassTerms[i].val
+            modNodalMassTerms[i].val = 0.0
+
+            if nodalMassTerms[i].dof == 4
+                moix2 = moix2+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+            if nodalMassTerms[i].dof == 5
+                moiy2 = moiy2+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+            if nodalMassTerms[i].dof == 6
+                moiz2 = moiz2+nodalMassTerms[i].val
+                modNodalMassTerms[i].val = 0.0
+            end
+        end
+    end
+
+
+
+    for i=1:length(nodalStiffnessTerms)     #if node is specified in nodal stiffness terms file add to stiffness properties for this node
+        node1flagK=nodalStiffnessTerms[i].nodeNum.==node1
+        node2flagK=nodalStiffnessTerms[i].nodeNum.==node2
+        if node1flagK==1
+            if nodalStiffnessTerms[i].dof==1
+                stiff1x = stiff1x+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==2
+                stiff1y = stiff1y+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==3
+                stiff1z = stiff1z+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==4
+                stiff1mx = stiff1mx+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==5
+                stiff1my = stiff1my+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==6
+                stiff1mz = stiff1mz+nodalStiffnessTerms[i].val
+            else
+                error("DOF not valid for  concentrated stiffness term.")
+            end
+            modNodalStiffnessTerms[i].val = 0.0
+        end
+        if node2flagK==1
+            if nodalStiffnessTerms[i].dof==1
+                stiff2x = stiff2x+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==2
+                stiff2y = stiff2y+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==3
+                stiff2z = stiff2z+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==4
+                stiff2mx = stiff2mx+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==5
+                stiff2my = stiff2my+nodalStiffnessTerms[i].val
+            elseif nodalStiffnessTerms[i].dof==6
+                stiff2mz = stiff2mz+nodalStiffnessTerms[i].val
+            else
+                error("DOF not valid for  concentrated stiffness term.")
+            end
+            modNodalStiffnessTerms[i].val = 0.0
+        end
+    end
+
+    for i=1:length(nodalLoads)  #if node is specified in nodal forces terms file add to concentrated force for this node
+        node1flagF=nodalLoads[i].nodeNum.==node1
+        node2flagF=nodalLoads[i].nodeNum.==node2
+        if node1flagF==1
+            if nodalLoads[i].dof==1
+                f1x = f1x+nodalLoads[i].val
+            elseif nodalLoads[i].dof==2
+                f1y = f1y+nodalLoads[i].val
+            elseif nodalLoads[i].dof==3
+                f1z = f1z+nodalLoads[i].val
+            elseif nodalLoads[i].dof==4
+                m1x = m1x+nodalLoads[i].val
+            elseif nodalLoads[i].dof==5
+                m1y = m1y+nodalLoads[i].val
+            elseif nodalLoads[i].dof==6
+                m1z = m1z+nodalLoads[i].val
+            else
+                error("DOF not valid for  concentrated stiffness term.")
+            end
+            modNodalLoads[i].val = 0.0
+        end
+        if node2flagF==1
+            if nodalLoads[i].dof==1
+                f2x = f2x+nodalLoads[i].val
+            elseif nodalLoads[i].dof==2
+                f2y = f2y+nodalLoads[i].val
+            elseif nodalLoads[i].dof==3
+                f2z = f2z+nodalLoads[i].val
+            elseif nodalLoads[i].dof==4
+                m2x = m2x+nodalLoads[i].val
+            elseif nodalLoads[i].dof==5
+                m2y = m2y+nodalLoads[i].val
+            elseif nodalLoads[i].dof==6
+                m2z = m2z+nodalLoads[i].val
+            else
+                error("DOF not valid for  concentrated stiffness term.")
+            end
+            modNodalLoads[i].val = 0.0
+        end
+    end
+
+
+    #compile nodal concentrated terms into mass, stiffness, and load arrays
+    mass = [mass1 mass2
+    moix1 moix2
+    moiy1 moiy2
+    moiz1 moiz2]
+
+    stiff = [stiff1x stiff2x
+    stiff1y stiff2y
+    stiff1z stiff2z
+    stiff1mx stiff2mx
+    stiff1my stiff2my
+    stiff1mz stiff2mz]
+
+    load = [f1x f2x
+    f1y f2y
+    f1z f2z
+    m1x m2x
+    m1y m2y
+    m1z m2z]
+
+    return mass,stiff,load,modJoint,modNodalMassTerms,modNodalStiffnessTerms,modNodalLoads
 
 end

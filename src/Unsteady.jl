@@ -59,153 +59,165 @@ function Unsteady(model,mesh,el)
 
     ## activate platform module
     #............... flags for module activation ....................
-    aeroOn = false
-    CACTUS = true
+    aeroOn = false #TODO: clean this up 
+    CACTUS = true #TODO: not hardcoded
     println("CACTUS AERO: $CACTUS")
     #modularIteration
     moduleIteration = true
     # Get AeroLoads
     if CACTUS
-        mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
-    end
-    aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
-    OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
+        # mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
+        aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
+        OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
 
-    QCx=[0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00]
-    QCy=[0.00000e+00,2.44680e-01,4.89360e-01,7.34040e-01,9.78720e-01,1.22340e+00,1.46808e+00,1.71276e+00,1.95744e+00,2.20212e+00,2.44680e+00]
-    QCz=[0.00000e+00,3.76945e-01,6.77076e-01,8.73458e-01,9.77684e-01,1.00000e+00,9.44658e-01,8.13441e-01,6.09216e-01,3.25362e-01,0.00000e+00]
-    CtoR=[1.11093e-01,1.11093e-01,8.20390e-02,6.35940e-02,5.68145e-02,5.55467e-02,5.88008e-02,6.82860e-02,9.11773e-02,1.11093e-01,1.11093e-01]
-    RefR=177.2022
-    NBlade = 2
-    PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
-    NElem = 10
+        d1 = string(aeroLoadsFile_root, ".geom")
+        d2 = string(aeroLoadsFile_root, "_ElementData.csv")
+        d3 = string(OWENSfile_root, ".bld")
+        d4 = string(OWENSfile_root, ".el")
+        d5 = string(OWENSfile_root, ".ort")
+        d6 = string(OWENSfile_root, ".mesh")
 
-    bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = readBladeData(string(OWENSfile_root, ".bld"))
-    # mat"[$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers] = readBldFile($OWENSfile_root)"
+        # mat"[$aerotimeArray1,$aeroForceValHist1,$aeroForceDof1] = mapCactusLoadsFile($d1,$d2,$d3,$d4,$d5,$d6)"
+        aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(d1,d2,d3,d4,d5,d6)
 
-    step_AC = 0
-    ntheta = 36#1/(model.OmegaInit*model.delta_t)
-    Vinf = 25.0 #TODO
-    rho = 1.225 #TODO
-    mu = 1.7894e-5 #TODO
-
-    H = [] #For plotting turbine
-    plotTurbine = false
-
-    # mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
-    path,_ = splitdir(@__FILE__)
-    af = VAWTAero.readaerodyn("$path/../test/airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
-    ft2m = 1 / 3.281
-    RefR = RefR*ft2m
-
-    xyz = zeros(length(QCz),3)
-    xyz[:,1] = RefR*QCz
-    xyz[:,2] = RefR*QCx
-    xyz[:,3] = RefR*QCy
-
-    n_slices = length(QCz)-1
-
-    # h_ends = xyz(:,3)
-    # h_frac = (h_ends(2:end) - h_ends(1:end-1))/h_ends(end)
-    # h = (h_ends(2:end) + h_ends(1:end-1))/2
-
-    delta_xs = xyz[2:end,1] - xyz[1:end-1,1]
-    delta_zs = xyz[2:end,3] - xyz[1:end-1,3]
-
-    # element_planf_A = sqrt(delta_xs.^2+delta_zs.^2)*chord
-    # element_planf_L = sqrt(delta_xs.^2+delta_zs.^2)
-
-    delta = atan.(delta_xs./delta_zs)
-
-    r = (xyz[2:end,1]+xyz[1:end-1,1])/2
-    twist = ones(n_slices)*0*pi/180
-    chord = RefR*CtoR
-    # Single Slice
-    # slice = Slice(ones(ntheta),
-    #     RefR,
-    #     0.0,
-    #     zeros(1,ntheta),
-    #     zeros(1,ntheta),
-    #     Float64(NBlade),
-    #     alpha_rad,
-    #     cl,
-    #     cd,
-    #     ones(1,ntheta)*model.OmegaInit*2*pi,
-    #     0.0,
-    #     0.0)
-
-    slice = VAWTAero.Turbine(RefR,
-    zeros(ntheta),
-    zeros(1),
-    zeros(ntheta),
-    zeros(ntheta),
-    zeros(ntheta),
-    2,
-    1.0,
-    af,
-    ntheta,
-    false,
-    0.0,
-    0.0)
-
-    # turbine built from bottom up
-    turbine3D = fill(slice, n_slices)
-    for i = 1:n_slices
-        turbine3D[i].r[:] .= ones(ntheta)*r[i]
-        turbine3D[i].chord[:] .= chord[i]
-        turbine3D[i].twist[:] .= ones(ntheta)*twist[i]
-        turbine3D[i].delta[:] .= ones(ntheta)*delta[i]
-    end
-
-    # env1 = Env(rho,
-    #     mu,
-    #     0.0, #m/s gust
-    #     0.8, #sec
-    #     13.0, #radaii offset back is starting point for gust
-    #     20,
-    #     zeros(1,NBlade*2),
-    #     zeros(1,ntheta*2),
-    #     Vinf,
-    #     zeros(1,ntheta),
-    #     zeros(1,ntheta),
-    #     zeros(1,ntheta),
-    #     zeros(1,ntheta),
-    #     ones(ntheta)*Vinf,
-    #     Vinf,
-    #     0,
-    #     ntheta,
-    #     [0.3025, 2.9500])
-
-    env1 = VAWTAero.Environment(rho,
-    mu,
-    ones(ntheta).*Vinf,
-    "AC", #TODO: use this to unify the DMS and AC steady methods, like in the unsteady method
-    "None",
-    false, #TODO: generalize this name since it is now being used as an option on the solution method for both AC and DMS, not just DMS anymore
-    Vinf,
-    zeros(ntheta))
-
-    env = fill(env1, n_slices)
-
-    if env1.AModel == "AC"
-        N_aw = ntheta*2 #Number of either "a" (DMS induction factor) or w (u and v induction factors)
-    elseif env1.AModel == "DMS"
-        N_aw = ntheta
     else
-        error("Aeromodel not recognized, choose AC or DMS")
-    end
+        #TODO: not hard coded
+        QCx=[0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00]
+        QCy=[0.00000e+00,2.44680e-01,4.89360e-01,7.34040e-01,9.78720e-01,1.22340e+00,1.46808e+00,1.71276e+00,1.95744e+00,2.20212e+00,2.44680e+00]
+        QCz=[0.00000e+00,3.76945e-01,6.77076e-01,8.73458e-01,9.77684e-01,1.00000e+00,9.44658e-01,8.13441e-01,6.09216e-01,3.25362e-01,0.00000e+00]
+        CtoR=[1.11093e-01,1.11093e-01,8.20390e-02,6.35940e-02,5.68145e-02,5.55467e-02,5.88008e-02,6.82860e-02,9.11773e-02,1.11093e-01,1.11093e-01]
+        RefR=177.2022
+        NBlade = 2
+        PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
+        NElem = 10
 
-    us_param = VAWTAero.UnsteadyParams(true,
-    0,
-    0.0,
-    0.0,
-    0.0,
-    zeros(Int,1),
-    0.0,
-    [0.3,3.0],
-    zeros(Int,2*2),
-    zeros(N_aw),
-    zeros(1))
+        bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = readBladeData(string(OWENSfile_root, ".bld"))
+        # mat"[$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers] = readBldFile($OWENSfile_root)"
+
+        step_AC = 0
+        ntheta = 36#1/(model.OmegaInit*model.delta_t)
+        Vinf = 25.0 #TODO
+        rho = 1.225 #TODO
+        mu = 1.7894e-5 #TODO
+
+        H = [] #For plotting turbine
+        plotTurbine = false
+
+        # mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
+        path,_ = splitdir(@__FILE__)
+        af = VAWTAero.readaerodyn("$path/../test/airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
+        ft2m = 1 / 3.281
+        RefR = RefR*ft2m
+
+        xyz = zeros(length(QCz),3)
+        xyz[:,1] = RefR*QCz
+        xyz[:,2] = RefR*QCx
+        xyz[:,3] = RefR*QCy
+
+        n_slices = length(QCz)-1
+
+        # h_ends = xyz(:,3)
+        # h_frac = (h_ends(2:end) - h_ends(1:end-1))/h_ends(end)
+        # h = (h_ends(2:end) + h_ends(1:end-1))/2
+
+        delta_xs = xyz[2:end,1] - xyz[1:end-1,1]
+        delta_zs = xyz[2:end,3] - xyz[1:end-1,3]
+
+        # element_planf_A = sqrt(delta_xs.^2+delta_zs.^2)*chord
+        # element_planf_L = sqrt(delta_xs.^2+delta_zs.^2)
+
+        delta = atan.(delta_xs./delta_zs)
+
+        r = (xyz[2:end,1]+xyz[1:end-1,1])/2
+        twist = ones(n_slices)*0*pi/180
+        chord = RefR*CtoR
+        # Single Slice
+        # slice = Slice(ones(ntheta),
+        #     RefR,
+        #     0.0,
+        #     zeros(1,ntheta),
+        #     zeros(1,ntheta),
+        #     Float64(NBlade),
+        #     alpha_rad,
+        #     cl,
+        #     cd,
+        #     ones(1,ntheta)*model.OmegaInit*2*pi,
+        #     0.0,
+        #     0.0)
+
+        slice = VAWTAero.Turbine(RefR,
+        zeros(ntheta),
+        zeros(1),
+        zeros(ntheta),
+        zeros(ntheta),
+        zeros(ntheta),
+        2,
+        1.0,
+        af,
+        ntheta,
+        false,
+        0.0,
+        0.0)
+
+        # turbine built from bottom up
+        turbine3D = fill(slice, n_slices)
+        for i = 1:n_slices
+            turbine3D[i].r[:] .= ones(ntheta)*r[i]
+            turbine3D[i].chord[:] .= chord[i]
+            turbine3D[i].twist[:] .= ones(ntheta)*twist[i]
+            turbine3D[i].delta[:] .= ones(ntheta)*delta[i]
+        end
+
+        # env1 = Env(rho,
+        #     mu,
+        #     0.0, #m/s gust
+        #     0.8, #sec
+        #     13.0, #radaii offset back is starting point for gust
+        #     20,
+        #     zeros(1,NBlade*2),
+        #     zeros(1,ntheta*2),
+        #     Vinf,
+        #     zeros(1,ntheta),
+        #     zeros(1,ntheta),
+        #     zeros(1,ntheta),
+        #     zeros(1,ntheta),
+        #     ones(ntheta)*Vinf,
+        #     Vinf,
+        #     0,
+        #     ntheta,
+        #     [0.3025, 2.9500])
+
+        env1 = VAWTAero.Environment(rho,
+        mu,
+        ones(ntheta).*Vinf,
+        "AC", #TODO: use this to unify the DMS and AC steady methods, like in the unsteady method
+        "None",
+        false, #TODO: generalize this name since it is now being used as an option on the solution method for both AC and DMS, not just DMS anymore
+        Vinf,
+        zeros(ntheta))
+
+        env = fill(env1, n_slices)
+
+        if env1.AModel == "AC"
+            N_aw = ntheta*2 #Number of either "a" (DMS induction factor) or w (u and v induction factors)
+        elseif env1.AModel == "DMS"
+            N_aw = ntheta
+        else
+            error("Aeromodel not recognized, choose AC or DMS")
+        end
+
+        us_param = VAWTAero.UnsteadyParams(true,
+        0,
+        0.0,
+        0.0,
+        0.0,
+        zeros(Int,1),
+        0.0,
+        [0.3,3.0],
+        zeros(Int,2*2),
+        zeros(N_aw),
+        zeros(1))
+    end
 
 
     # Declare Variable Type, are set later
@@ -267,7 +279,14 @@ function Unsteady(model,mesh,el)
     t = zeros(numTS+1)
     FReactionHist = zeros(numTS+1,6)
     # strainHist(numTS+1) = struct()
-    strainHist = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+    # strainHist = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+    eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
+    eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
+    eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
+    gam_xz_0_hist = zeros(4,mesh.numEl,numTS)
+    gam_xz_y_hist = zeros(4,mesh.numEl,numTS)
+    gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
+    gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
 
     aziHist = zeros(numTS+1)
     OmegaHist = zeros(numTS+1)
@@ -343,7 +362,8 @@ function Unsteady(model,mesh,el)
         #     etadot_s  = invPhi*udot_s2
         #     etaddot_s = invPhi*uddot_s2
     else
-        mat"$elStorage = initialElementCalculations($model,$el,$mesh)" #perform initial element calculations for conventional structural dynamics analysis
+        # mat"$elStorage = initialElementCalculations($model,$el,$mesh)" #perform initial element calculations for conventional structural dynamics analysis
+        elStorage = initialElementCalculations(model,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
     #calculate structural/platform moi
@@ -541,7 +561,7 @@ function Unsteady(model,mesh,el)
             #compile forces to supply to structural dynamics solver
             println("starting Aero Loads")
             if CACTUS
-                Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aeroLoads)
+                Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
             else
                 step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
                 t_used = t[i]
@@ -679,13 +699,13 @@ function Unsteady(model,mesh,el)
         uHist[:,i+1] = u_s
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
-            strainHist[ii,i] = ElStrain(elStrain[ii].eps_xx_0,
-            elStrain[ii].eps_xx_z,
-            elStrain[ii].eps_xx_y,
-            elStrain[ii].gam_xz_0,
-            elStrain[ii].gam_xz_y,
-            elStrain[ii].gam_xy_0,
-            elStrain[ii].gam_xy_z)
+            eps_xx_0_hist[:,ii,i] = elStrain[ii].eps_xx_0
+            eps_xx_z_hist[:,ii,i] = elStrain[ii].eps_xx_z
+            eps_xx_y_hist[:,ii,i] = elStrain[ii].eps_xx_y
+            gam_xz_0_hist[:,ii,i] = elStrain[ii].gam_xz_0
+            gam_xz_y_hist[:,ii,i] = elStrain[ii].gam_xz_y
+            gam_xy_0_hist[:,ii,i] = elStrain[ii].gam_xy_0
+            gam_xy_z_hist[:,ii,i] = elStrain[ii].gam_xy_z
         end
         t[i+1] = t[i] + delta_t
 
@@ -762,7 +782,33 @@ function Unsteady(model,mesh,el)
         println("NOT WRITING Verification File")
     else
         println("WRITING Verification File")
-        mat"write_verification($model,$t,$aziHist,$OmegaHist,$OmegaDotHist,$gbHist,$gbDotHist,$gbDotDotHist,$FReactionHist,$rigidDof,$genTorque,$genPower,$torqueDriveShaft,$uHist,$strainHist)"
+        # mat"write_verification($model,$t,$aziHist,$OmegaHist,$OmegaDotHist,$gbHist,$gbDotHist,$gbDotDotHist,$FReactionHist,$rigidDof,$genTorque,$genPower,$torqueDriveShaft,$uHist,$strainHist)"
+
+        filename = string(model.outFilename[1:end-3], "h5")
+        HDF5.h5open(filename, "w") do file
+            # HDF5.write(file,"model",model)
+            HDF5.write(file,"t",t)
+            HDF5.write(file,"aziHist",aziHist)
+            HDF5.write(file,"OmegaHist",OmegaHist)
+            HDF5.write(file,"OmegaDotHist",OmegaDotHist)
+            HDF5.write(file,"gbHist",gbHist)
+            HDF5.write(file,"gbDotHist",gbDotHist)
+            HDF5.write(file,"gbDotDotHist",gbDotDotHist)
+            HDF5.write(file,"FReactionHist",FReactionHist)
+            HDF5.write(file,"rigidDof",rigidDof)
+            HDF5.write(file,"genTorque",genTorque)
+            HDF5.write(file,"genPower",genPower)
+            HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
+            HDF5.write(file,"uHist",uHist)
+            HDF5.write(file,"eps_xx_0_hist",eps_xx_0_hist)
+            HDF5.write(file,"eps_xx_z_hist",eps_xx_z_hist)
+            HDF5.write(file,"eps_xx_y_hist",eps_xx_y_hist)
+            HDF5.write(file,"gam_xz_0_hist",gam_xz_0_hist)
+            HDF5.write(file,"gam_xz_y_hist",gam_xz_y_hist)
+            HDF5.write(file,"gam_xy_0_hist",gam_xy_0_hist)
+            HDF5.write(file,"gam_xy_z_hist",gam_xy_z_hist)
+        end
+
     end
 
 end
@@ -879,14 +925,9 @@ function setInitialConditions(initCond,u,numDOFPerNode)
 
 end
 
-function externalForcing(time,aeroLoads)
+function externalForcing(time,timeArray,ForceValHist,ForceDof)
 
     #owens externalForcing function for the OWENS toolkit
-    # **********************************************************************
-    # *                   Part of the SNL OWENS toolkit                    *
-    # * Developed by Sandia National Laboratories Wind Energy Technologies *
-    # *             See license.txt for disclaimer information             *
-    # **********************************************************************
     #   [Fexternal, Fdof] = externalForcing(time,aeroLoads)
     #
     #   This function specifies external forcing for a transient analysis.
@@ -920,9 +961,9 @@ function externalForcing(time,aeroLoads)
     #     end
 
     #temp = load('aeroLoads.mat')
-    timeArray = aeroLoads["timeArray"]
-    ForceValHist = aeroLoads["ForceValHist"]
-    ForceDof = aeroLoads["ForceDof"]
+    # timeArray = aeroLoads["timeArray"]
+    # ForceValHist = aeroLoads["ForceValHist"]
+    # ForceDof = aeroLoads["ForceDof"]
     Fexternal = zeros(length(ForceDof))
 
     for i = 1:length(ForceDof)
