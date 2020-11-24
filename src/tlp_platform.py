@@ -265,7 +265,7 @@ class tlp_platform():
 
         self.hydro = self.__getHydrodynamics(omega=omega, wave_dirs=wave_dirs)
         self.hydro['displaced_volume'] = V
-
+        return np.array(self.hydro.freq),np.array(self.hydro.T),np.array(self.hydro.Zi),np.array(self.hydro.rao)
 
     def __getHydrostatics(self):
         """
