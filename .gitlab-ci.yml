@@ -51,7 +51,7 @@
     # echo "proxy_servers:
     # http: wwwproxy.sandia.gov:80
     # https: wwwproxy.sandia.gov:80" >>condarc-julia.yml
-    - julia -e 'using Pkg; try; Pkg.add("Conda"); catch; end; using Conda; Conda.runconda(`config --set ssl_verify False`)'
+    - julia -e 'using Pkg; Pkg.add("Conda")' || julia -e 'using Conda; Conda.runconda(`config --set ssl_verify False`)'
     - julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url=pwd())); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
     # Comment out below if you do not want coverage results.
     - julia -e 'using Pkg; Pkg.add("Coverage");
