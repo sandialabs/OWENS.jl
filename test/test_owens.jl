@@ -1,7 +1,8 @@
 path = splitdir(@__FILE__)[1]
 
-import OWENS
-# include("$path/../src/OWENS.jl")
+# import OWENS
+include("$path/../src/OWENS.jl")
+include("$path/../src/file_reading.jl")
 using Test
 import HDF5
 
@@ -65,7 +66,7 @@ function test_owens(test_transient,test_modal,test_flutter)
         # set up stiffness matrix
         cmkValues[dd,dd,2] = StiffVal[dd]
     end
-    # writeOwensNDL(fname, nodes, cmkType, cmkValues) #TODO: translate this
+    writeOwensNDL(fname, nodes, cmkType, cmkValues) #TODO: make this a direct pass
 
     # *********************************************************************
     # perform operations for the aerodynamic forces file generation

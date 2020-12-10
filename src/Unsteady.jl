@@ -59,16 +59,17 @@ function Unsteady(model,mesh,el)
 
     ## activate platform module
     #............... flags for module activation ....................
-    aeroOn = false #TODO: clean this up 
+    aeroOn = false #TODO: clean this up
     CACTUS = true #TODO: not hardcoded
     println("CACTUS AERO: $CACTUS")
     #modularIteration
     moduleIteration = true
+    aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
+    OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
     # Get AeroLoads
     if CACTUS
         # mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
-        aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
-        OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
+
 
         d1 = string(aeroLoadsFile_root, ".geom")
         d2 = string(aeroLoadsFile_root, "_ElementData.csv")
@@ -416,13 +417,13 @@ function Unsteady(model,mesh,el)
         # 		Accel_j = Accel
         # 		Accel_jLast = Accel
 
-        TOL = 9e-7  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 4 #max iteration for various modules
+        TOL = 1e-5  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 50 #max iteration for various modules
         numIterations = 1
-        uNorm = 1e6
-        platNorm = 1e6
-        aziNorm = 1e6
-        gbNorm = 1e6 #initialize norms for various module states
+        uNorm = 1e5
+        platNorm = 1e5
+        aziNorm = 1e5
+        gbNorm = 1e5 #initialize norms for various module states
         ##
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
@@ -463,6 +464,36 @@ function Unsteady(model,mesh,el)
             #         end
             #         #-------------------------------------
             ##
+
+            # Freq Domain of Hydro does give stiffness and damping
+            # Should be consistent with how OrcaFlex/Hydrodyn would work for modularity
+
+            # Possible best way: Kevin run simple case to produce example reaction forces at bases for time history,
+            # then Ryan writes code that calculates new motion and sitffness/damping
+
+            # Other way: OWENS solves for motions and hydro solves for reaction forces
+
+            # Kevin look at wavec2wire (dissertation might help)
+            # rigid body motion should not be calculated within hydro
+
+            # Near term coupling is easier in time domain
+
+            # Assignments
+            # - Kevin look at wavec2wire, OrcaFlex, hydrodyn, mass and stiffness approx
+            # - Kevin give Ryan example of mass and stiffness approx how it's being used/read in
+            # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
+
+            # Hydro Coupling
+            #1) modify the mesh to include a platform cg offset #option
+            #2) modify the element properties so that this element is rigid
+            #3) ensure that this element is non-rotating - deflected solution is solved in one step (perhaps just give rotated stiffenss, forces, etc, so the node is actually rotating, as long as the mass isn't being cyntrifical)
+            #4) apply the hydro F, C, K, M to the nodal term (we have calm sea, as well as waves and currents). Mooring will also apply forces.
+            #5) use flags to turn degrees of freedom off
+
+            # Unit Testing
+            # 1) Turn all dof off and the solution should be the same
+            # 2) allow heave and the turbine should go up and down
+            # 3) no aero, but mass offset should cause the turbine to tilt slightly
 
             ## evaluate generator module
             #----- generator module ---------------------------

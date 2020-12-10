@@ -73,11 +73,78 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
 
     nodalTerms = model.nodalTerms #Struct
     concLoad = nodalTerms.concLoad
+    mysize = length(concLoad)
+    concLoadnodeNum = zeros(mysize)
+    concLoaddof = zeros(mysize)
+    concLoadval = zeros(mysize)
+    for ii = 1:mysize
+        concLoadnodeNum[ii] = concLoad[ii].nodeNum
+        concLoaddof[ii] = concLoad[ii].dof
+        concLoadval[ii] = concLoad[ii].val
+    end
+
     concStiff = nodalTerms.concStiff
+    mysize = length(concStiff)
+    concStiffnodeNum = zeros(mysize)
+    concStiffdof = zeros(mysize)
+    concStiffval = zeros(mysize)
+    for ii = 1:mysize
+        concStiffnodeNum[ii] = concStiff[ii].nodeNum
+        concStiffdof[ii] = concStiff[ii].dof
+        concStiffval[ii] = concStiff[ii].val
+    end
+
     concMass = nodalTerms.concMass
+    mysize = length(concMass)
+    concMassnodeNum = zeros(mysize)
+    concMassdof = zeros(mysize)
+    concMassval = zeros(mysize)
+    for ii = 1:mysize
+        concMassnodeNum[ii] = concMass[ii].nodeNum
+        concMassdof[ii] = concMass[ii].dof
+        concMassval[ii] = concMass[ii].val
+    end
+
     concStiffGen = nodalTerms.concStiffGen
+    mysize = length(concStiffGen)
+    StiffGennodeNum = zeros(mysize)
+    StiffGendof1 = zeros(mysize)
+    StiffGendof2 = zeros(mysize)
+    StiffGenval = zeros(mysize)
+    for ii = 1:mysize
+        StiffGennodeNum[ii] = concStiffGen[ii].nodeNum
+        StiffGendof1[ii] = concStiffGen[ii].dof1
+        StiffGendof2[ii] = concStiffGen[ii].dof2
+        StiffGenval[ii] = concStiffGen[ii].val
+    end
+
     concMassGen = nodalTerms.concMassGen
+    mysize = length(concMassGen)
+    MassGennodeNum = zeros(mysize)
+    MassGendof1 = zeros(mysize)
+    MassGendof2 = zeros(mysize)
+    MassGenval = zeros(mysize)
+    for ii = 1:mysize
+        MassGennodeNum[ii] = concMassGen[ii].nodeNum
+        MassGendof1[ii] = concMassGen[ii].dof1
+        MassGendof2[ii] = concMassGen[ii].dof2
+        MassGenval[ii] = concMassGen[ii].val
+    end
+
+
     concDampGen = nodalTerms.concDampGen
+    mysize = length(concDampGen)
+    DampGennodeNum = zeros(mysize)
+    DampGendof1 = zeros(mysize)
+    DampGendof2 = zeros(mysize)
+    DampGenval = zeros(mysize)
+    for ii = 1:mysize
+        DampGennodeNum[ii] = concDampGen[ii].nodeNum
+        DampGendof1[ii] = concDampGen[ii].dof1
+        DampGendof2[ii] = concDampGen[ii].dof2
+        DampGenval[ii] = concDampGen[ii].val
+    end
+
 
     driveShaftProps = model.driveShaftProps #Struct
     k = driveShaftProps.k
@@ -395,6 +462,27 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     Ptr{Cdouble}, #const double displ_s[492]
     Ptr{Cdouble}, #const double displdot_s[492]
     Ptr{Cdouble}, #const double displddot_s[492]
+    Ptr{Cdouble}, # concLoadnodeNum
+    Ptr{Cdouble}, # concLoaddof
+    Ptr{Cdouble}, # concLoadval
+    Ptr{Cdouble}, # concStiffnodeNum
+    Ptr{Cdouble}, # concStiffdof
+    Ptr{Cdouble}, # concStiffval
+    Ptr{Cdouble}, # concMassnodeNum
+    Ptr{Cdouble}, # concMassdof
+    Ptr{Cdouble}, # concMassval
+    Ptr{Cdouble}, # StiffGennodeNum
+    Ptr{Cdouble}, # StiffGendof1
+    Ptr{Cdouble}, # StiffGendof2
+    Ptr{Cdouble}, # StiffGenval
+    Ptr{Cdouble}, # MassGennodeNum
+    Ptr{Cdouble}, # MassGendof1
+    Ptr{Cdouble}, # MassGendof2
+    Ptr{Cdouble}, # MassGenval
+    Ptr{Cdouble}, # DampGennodeNum
+    Ptr{Cdouble}, # DampGendof1
+    Ptr{Cdouble}, # DampGendof2
+    Ptr{Cdouble}, # DampGenval
     Ptr{Cdouble}, #const double K11[300]
     Ptr{Cdouble}, #const double K12[300]
     Ptr{Cdouble}, #const double K13[300]
@@ -542,6 +630,27 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     displ_s,
     displdot_s,
     displddot_s,
+    concLoadnodeNum,
+    concLoaddof,
+    concLoadval,
+    concStiffnodeNum,
+    concStiffdof,
+    concStiffval,
+    concMassnodeNum,
+    concMassdof,
+    concMassval,
+    StiffGennodeNum,
+    StiffGendof1,
+    StiffGendof2,
+    StiffGenval,
+    MassGennodeNum,
+    MassGendof1,
+    MassGendof2,
+    MassGenval,
+    DampGennodeNum,
+    DampGendof1,
+    DampGendof2,
+    DampGenval,
     K11,
     K12,
     K13,
@@ -628,7 +737,7 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     gam_xy_0,
     gam_xy_z,
     FReaction_j)
-    # println(FReaction_j)
+
     # mat"""
     # [$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient($rotationalEffects,...
     # $gravityOn,...
@@ -691,6 +800,27 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     # $displ_s,...
     # $displdot_s,...
     # $displddot_s,...
+    # $concLoadnodeNum,...
+    # $concLoaddof,...
+    # $concLoadval,...
+    # $concStiffnodeNum,...
+    # $concStiffdof,...
+    # $concStiffval,...
+    # $concMassnodeNum,...
+    # $concMassdof,...
+    # $concMassval,...
+    # $StiffGennodeNum,...
+    # $StiffGendof1,...
+    # $StiffGendof2,...
+    # $StiffGenval,...
+    # $MassGennodeNum,...
+    # $MassGendof1,...
+    # $MassGendof2,...
+    # $MassGenval,...
+    # $DampGennodeNum,...
+    # $DampGendof1,...
+    # $DampGendof2,...
+    # $DampGenval,...
     # $K11,...
     # $K12,...
     # $K13,...

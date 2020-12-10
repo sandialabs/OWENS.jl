@@ -224,6 +224,19 @@ mutable struct NodalTerms
     concDampGen
 end
 
+mutable struct ConcNDL
+    nodeNum
+    dof
+    val
+end
+
+mutable struct ConcNDLGen
+    nodeNum
+    dof1
+    dof2
+    val
+end
+
 mutable struct ElStrain
     eps_xx_0
     eps_xx_z

@@ -8,9 +8,9 @@ version = "2.3.0"
 
 [[ArrayInterface]]
 deps = ["LinearAlgebra", "Requires", "SparseArrays"]
-git-tree-sha1 = "bd09109dffaa3926a20178cb8432edd729be0db0"
+git-tree-sha1 = "8dda4b50619df45559e6e49d8b72b706ee213923"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "2.13.7"
+version = "2.14.3"
 
 [[Artifacts]]
 deps = ["Pkg"]
@@ -51,6 +51,14 @@ git-tree-sha1 = "8e695f735fca77e9708e795eda62afdb869cbb70"
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "0.3.4+0"
 
+[[Composites]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "25f322f1186dbd471d208a62bc0916771f42985f"
+repo-rev = "master"
+repo-url = "../Composites.jl"
+uuid = "d0d699f6-c662-11e8-0fb1-1b30104ab829"
+version = "0.1.0"
+
 [[Conda]]
 deps = ["JSON", "VersionParsing"]
 git-tree-sha1 = "c0647249d785f1d5139c0cc96db8f6b32f7ec416"
@@ -78,9 +86,9 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[Dierckx]]
 deps = ["Dierckx_jll"]
-git-tree-sha1 = "1fa89a5c6836f3fc2d1008c2314b5649db336a83"
+git-tree-sha1 = "5fefbe52e9a6e55b8f87cb89352d469bd3a3a090"
 uuid = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
-version = "0.5.0"
+version = "0.5.1"
 
 [[Dierckx_jll]]
 deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
@@ -90,9 +98,9 @@ version = "0.0.1+0"
 
 [[DiffResults]]
 deps = ["StaticArrays"]
-git-tree-sha1 = "da24935df8e0c6cf28de340b958f6aac88eaa0cc"
+git-tree-sha1 = "c18e98cba888c6c25d1c3b048e4b3380ca956805"
 uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
-version = "1.0.2"
+version = "1.0.3"
 
 [[DiffRules]]
 deps = ["NaNMath", "Random", "SpecialFunctions"]
@@ -130,15 +138,15 @@ version = "0.9.7"
 
 [[FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "04e18906acf9c7f5b934a7ec3adc82280fb1953b"
+git-tree-sha1 = "7f7216e0eb46c20ee8ddab5c8f9a262ed72587b6"
 uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
-version = "2.7.1"
+version = "2.7.2"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "NaNMath", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "1d090099fb82223abc48f7ce176d3f7696ede36d"
+git-tree-sha1 = "8de2519a83c6c1c2442c2f481dd9a8364855daf4"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.12"
+version = "0.10.14"
 
 [[HDF5]]
 deps = ["Blosc", "Compat", "HDF5_jll", "Libdl", "Mmap", "Random", "Requires"]
@@ -281,7 +289,7 @@ version = "2.0.1"
 deps = ["DataStructures", "DelimitedFiles", "StaticArrays"]
 git-tree-sha1 = "662db2f81800e3e50f2b585c3153457a3c93beec"
 repo-rev = "master"
-repo-url = "https://github.com/byuflowlab/OptimizationParameters.jl"
+repo-url = "../OptimizationParameters.jl"
 uuid = "7e4d55e1-29a6-451b-8e82-71170a6dda04"
 version = "0.1.0"
 
@@ -441,7 +449,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[VAWTAero]]
 deps = ["DelimitedFiles", "Dierckx", "FLOWMath", "HDF5", "LsqFit", "NLsolve", "QuadGK", "Statistics"]
-git-tree-sha1 = "8d992783af7914c4e142644348d9e377b0ff8ed6"
+git-tree-sha1 = "009fb834dd1023e188fa9414f5233a6e8fb4cc8d"
 repo-rev = "master"
 repo-url = "git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git"
 uuid = "513c2d6f-fecb-4566-aa46-de6170e5ba6d"

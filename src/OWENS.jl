@@ -9,6 +9,15 @@ import VAWTAero
 import OptimizationParameters
 import HDF5
 
+# ------------ GLOBAL VARIABLES ------------------------------------------------
+const module_path = splitdir(@__FILE__)[1]          # Path to this module
+
+
+using MATLAB
+mat_path = string(module_path,"/Matlab_Cxx")
+using MATLAB #if this is used, must run from src location
+mat"addpath($mat_path)"
+
 export Unsteady #, UnsteadyROM
 export owens #TODO: do this right
 
@@ -29,8 +38,6 @@ include("structural_utilities.jl")
 include("file_reading.jl")
 include("structs.jl")
 
-# ------------ GLOBAL VARIABLES ------------------------------------------------
-const module_path = splitdir(@__FILE__)[1]          # Path to this module
 
 # ------------ LOAD airfoilprep.py ---------------------------------------------
 path_hydro = module_path                    # Path to tlp_platform.py
