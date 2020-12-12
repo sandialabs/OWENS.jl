@@ -145,7 +145,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #assumes any loaded DOF will never be identically zero throughout time
     #history
     ForceValHist = zeros(sum(Fg[:,1].!=0),length(Fg[1,:]))
-    ForceDof = zeros(Int,sum(Fg[:,1].!=0),1)
+    ForceDof = zeros(sum(Fg[:,1].!=0),1)
     index = 1
     for i=1:Int(maximum(maximum(structuralNodeNumbers))*6)
         if !isempty(findall(x->x!=0,Fg[i,:]))
