@@ -91,7 +91,7 @@ function test_owens(test_transient,test_modal,test_flutter)
 
     if test_transient
         println("Running Transient")
-        # Juno.@enter owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+        # Juno.@enter OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
         freq,damp=OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
     end
 
@@ -171,7 +171,10 @@ if verify_transient
     @test isapprox(old_gbHist,gbHist,atol = tol)
     @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
     @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
-    @test isapprox(old_FReactionHist,FReactionHist,atol = tol)
+    for ii = 1:length(FReactionHist)
+        println(ii)
+        @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol = tol)
+    end
     @test isapprox(old_rigidDof,rigidDof,atol = tol)
     @test isapprox(old_genTorque,genTorque,atol = tol)
     @test isapprox(old_genPower,genPower,atol = tol)

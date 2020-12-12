@@ -148,7 +148,7 @@ for i=1:length(nodalMassTerms)   %if node is specified in nodal mass terms file 
     if(node2flagM==1)
         mass2 = mass2+nodalMassTerms(i).val;
         modNodalMassTerms(i).val = 0.0;
-        
+
         if(nodalMassTerms(i).dof == 4)
             moix2 = moix2+nodalMassTerms(i).val;
             modNodalMassTerms(i).val = 0.0;

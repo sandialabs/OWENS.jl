@@ -907,14 +907,14 @@ function calculateElement1(EA,integrationFactor,N1,N2,K)
     return K
 end
 
-# function [F] = calculateVec1(f,integrationFactor,N,F)
-# #This function is a general routine to calculate an element vector
-#     len=length(N)
-#     for i=1:len
-#         F(i) = F(i) + f*N(i)*integrationFactor
-#     end
-#
-# end
+function calculateVec1(f,integrationFactor,N,F)
+    #This function is a general routine to calculate an element vector
+    len=length(N)
+    for i=1:len
+        F[i] = F[i] + f*N[i]*integrationFactor
+    end
+    return F
+end
 
 function getGP(numGP)
     #getGP Defines Gauss point information for numerical integration
@@ -973,8 +973,8 @@ function calculateElementMass(rhoA,rhoIyy,rhoIzz,rhoIyz,rhoJ,ycm,zcm,x,y,z,integ
     Itens = Itens + rhoA.*integrationFactor.*[(y^2+z^2)  -x*y  -x*z
     -x*y  (x^2+z^2) -y*z
     -x*z -y*z (x^2+y^2)] + integrationFactor.*[rhoJ 0 0
-                                                0 rhoIyy rhoIyz
-                                                0 rhoIyz rhoIzz]
+    0 rhoIyy rhoIyz
+    0 rhoIyz rhoIzz]
 
     xm[1] =  xm[1] + x*rhoA*integrationFactor
     xm[2] =  xm[2] + y*rhoA*integrationFactor
@@ -1246,5 +1246,262 @@ function ConcMassAssociatedWithElement(conn,joint,nodalMassTerms,nodalStiffnessT
     m1z m2z]
 
     return mass,stiff,load,modJoint,modNodalMassTerms,modNodalStiffnessTerms,modNodalLoads
+
+end
+
+function assembly(Ke,Fe,conn,numNodesPerEl,numDOFPerNode,Kg,Fg)
+    #assembly Assembles element matrices into global system of equations
+    #   [Kg,Fg] = assembly(Ke,Fe,conn,numNodesPerEl,numDOFPerNode,Kg,Fg)
+    #
+    #   This function assembles the element matrix and load vector into the
+    #   global system of equations
+    #
+    #      input:
+    #      Ke             = element matrix
+    #      Fe             = element vector
+    #      conn           = element connectivity
+    #      numNodesPerEl  = number of nodes per element
+    #      numDofPerNode  = number of degrees of freedom per node
+    #      Kg             = global system matrix
+    #      Fg             = global load vector
+
+    #      output:
+    #      Kg             = global system matrix with assembled element
+    #      Fg             = global load vector with assembled element
+
+    count = 1
+    dofList = zeros(Int,numNodesPerEl*numDOFPerNode)
+    for i=1:numNodesPerEl
+        for j=1:numDOFPerNode
+            dofList[count] = (conn[i]-1)*numDOFPerNode + j
+            count = count + 1
+        end
+    end
+
+    numDOFPerEl = length(dofList)
+    #Assemble element i into global system
+    for j=1:numDOFPerEl
+        J = dofList[j]
+        Fg[J] = Fg[J] + Fe[j]
+        for m=1:numDOFPerEl
+            M = dofList[m]
+            Kg[J,M] = Kg[J,M] + Ke[j,m]
+        end
+    end
+    return Kg,Fg
+end
+
+function applyBC(Kg,Fg,BC,numDofPerNode)
+    #applyBC Applies boundary conditions to system for static analysis
+    #   [Kg,Fg] = applyBC(Kg,Fg,BC,u,iterationType,numDofPerNode)
+    #
+    #   This function applies boundary conditions to the stiffness matrix and
+    #   load vector for a static analysis.
+    #
+    #      input:
+    #      Kg            = assembled global stiffness matrix
+    #      Fg            = assembled global load vector
+    #      BC            = struct of boundary condition information
+    #      u             = global displacement vector
+    #      iterationType = for nonlinear analysis, not used in BLAST
+    #      numDofPerNode = number of degrees of freedom per node
+
+    #      output:
+    #      Kg            = global stiffness matrix with boundary conditions
+    #      Fg            = global load vector with boundary condition
+
+
+    numEq=size(Kg)[1]
+
+    #APPLY BCs FOR PRIMARY VARIABLE
+
+    if (BC.numpBC > 0)
+        pBC = BC.pBC
+        numpBC = size(pBC)[1]
+
+        for i=1:numpBC
+            nodeNumber = pBC[i,1]
+            dofNumber = pBC[i,2]
+            specVal = pBC[i,3]
+
+            eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber
+
+            for j=1:numEq
+                Kg[eqNumber,j] = 0.0
+                Fg[j] = Fg[j] - Kg[j,eqNumber]*specVal
+                Kg[j,eqNumber] = 0.0
+            end
+            Fg[eqNumber] = specVal
+            Kg[eqNumber,eqNumber] = 1.0
+        end
+    end
+
+    #APPLY BCs FOR SECONDARY VARIABLE
+
+    # if (BC.numsBC > 0) # This does not appear to be used
+    #     sBC = BC.sBC
+    #     [numsBC,~] = size(sBC)
+    #
+    #     for i=1:numsBC
+    #         nodeNumber = sBC[i,1]
+    #         dofNumber = sBC[i,2]
+    #         specVal =  sBC[i,3]
+    #
+    #         eqNumber = (nodeNumber-1)*numDofPerNode + dofNumber
+    #
+    #         Fg(eqNumber) = Fg(eqNumber) + specVal
+    #
+    #     end
+    # end
+    return Kg,Fg
+end
+
+function calculateReactionForceAtNode(nodeNum,model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
+    #calculateReactionForceAtNode calculates reaction force at a node
+    #   [cummulativeForce] = calculateReactionForceAtNode(nodeNum,model,mesh,...
+    #    el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
+    #
+    #   This function calculates the reaction force at a node by post
+    #   processing all element associated with a node through connectivity or
+    #   joint constraints.
+    #
+    #   input:
+    #   nodeNum    = node number joint constraints are desired at
+    #   model      = object containing model data
+    #   mesh       = object containing mesh data
+    #   elStorage  = object containing stored element data
+    #   el         = object containing element data
+    #   timeInt    = object containing time integration parameters
+    #   dispData   = object containing displacement data
+    #   displ_iter = converged displacement solution
+    #   rbData     = vector containing rigid body displacement, velocity, and
+    #                acceleration
+    #   Omega      = rotor speed (Hz)
+    #   OmegaDot   = rotor acceleratin (Hz)
+    #   CN2H       = transformation matrix from inertial frame to hub frame
+    #
+    #   output:
+    #   cummulativeForce  = vector containing reaction force at nodeNum
+    conn = mesh.conn  #get connectivity list
+    numDofPerNode = 6
+
+    cummulativeForce = zeros(numDofPerNode) #initialize force at node
+
+    #find elements associated with nodeNum due to mesh connectivity or
+    #constraints
+    elList,elListLocalNodeNumbers = findElementsAssociatedWithNodeNumber(nodeNum,conn,model.joint)
+
+    #process elements for nodal reaction forces and compile to find total
+    #reaction force at specified node
+    for i=1:length(elList)
+        Fpp = elementPostProcess(elList[i],model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
+        localNode = elListLocalNodeNumbers[i]
+        cummulativeForce = cummulativeForce + Fpp[(localNode-1)*numDofPerNode+1:(localNode-1)*numDofPerNode+6]
+    end
+    return cummulativeForce
+end
+
+function calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,nlflag)
+    # calculate strains
+
+    elStrain = Array{ElStrain, 1}(undef, numEl)
+
+    for i=1:numEl
+        #Calculate Ke and Fe for element i
+        index = 1
+        # elementOrder = elementOrder
+        # nlOn = nlflag
+        xloc = [0.0 el.elLen[i]]
+        sectionProps = el.props[i]
+        sweepAngle = el.psi[i]
+        coneAngle = el.theta[i]
+        rollAngle = el.roll[i]
+        aeroSweepAngle = 0.0
+
+        eldisp = zeros(1,numNodesPerEl*numDOFPerNode)
+        for j=1:numNodesPerEl       #define element coordinates and displacements associated with element
+            for k=1:numDOFPerNode
+                eldisp[index] = displ[(conn[i,j]-1)*numDOFPerNode + k]
+                index = index + 1
+            end
+        end
+
+        # disp = eldisp
+        temp = calculateTimoshenkoElementStrain(elementOrder,nlflag,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,eldisp)
+
+        elStrain[i] =  ElStrain(temp.eps_xx_0,temp.eps_xx_z,temp.eps_xx_y,temp.gam_xz_0,temp.gam_xz_y,temp.gam_xy_0,temp.gam_xy_z)
+
+    end
+    return elStrain
+end
+
+function findElementsAssociatedWithNodeNumber(nodeNum,conn,jointData)
+    #findElementsAssociatedWithNodeNumber calculates reaction force at a node
+    #   [elList,localNode] = findElementsAssociatedWithNodeNumber(nodeNum,...
+    #                        conn,jointData)
+    #
+    #   This function finds elements associated with a node number through
+    #   mesh connectivity or joint constraints
+    #
+    #   input:
+    #   nodeNum    = node number joint constraints are desired at
+    #   conn       = object containing mesh connectivity
+    #   jointData  = object containing joint informatino
+
+    #
+    #   output:
+    #   elList     = array containing a list of element numbers associated with
+    #                nodeNum
+    #   localNode  = array containing the local node number that correspond to
+    #                nodeNum in the list of associated elements
+
+    #search joint constraints
+    index = 1
+    numEl = size(conn)[1] #get number of elements in mesh
+    elList = zeros(Int,1)
+    localNode = zeros(Int,1)
+    if !isempty(jointData)
+        #first see if specified node is a slave node in a joint constraint
+        # keep this here for future translation from matlab: res2 = find(ismember(jointData(:,3),nodeNum)) #search joint data slave nodes for node number
+        #if it is, change it to the corresponding master node
+        if !isempty(findall(x->x==nodeNum,jointData[:,3]))
+            nodeNum = jointData[end,2]
+            if length(jointData)>1
+                error("Incorrect Joint Data and nodeNum, too many joints")
+            end
+        end
+
+        res1 = findall(x->x==nodeNum,jointData[:,2]) #search joint data master nodes for node number
+        if !isempty(res1)
+            jointNodeNumbers = jointData[res1[1],3]
+
+            elList = zeros(Int,length(jointNodeNumbers)*numEl)
+            localNode = zeros(Int,length(jointNodeNumbers)*numEl)
+            for j=1:length(jointNodeNumbers) #loop over joints
+                for i=1:numEl
+                    localNodeNumber = findall(x->x==jointNodeNumbers[j],conn[i,:]) #finds indices of nodeNum in connectivity of element i #finds the local node number of element i that corresponds to nodeNum
+                    if !isempty(localNodeNumber) #assigns to an elementList and localNode list
+                        elList[index] = i
+                        localNode[index] = localNodeNumber[1]
+                        index = index + 1
+                    end
+                end
+            end
+        end
+    else
+        error("empty jointData")
+    end
+
+
+    for i=1:numEl #loop over elements
+        localNodeNumber = findall(x->x==nodeNum,conn[i,:]) #finds indices of nodeNum in connectivity of element i #finds the local node number of element i that corresponds to nodeNum
+        if !isempty(localNodeNumber) #assigns to an elementList and localNode list
+            elList[index] = i
+            localNode[index] = localNodeNumber[1]
+            index = index + 1
+        end
+    end
+
+    return elList,localNode
 
 end
