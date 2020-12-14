@@ -27,7 +27,7 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 3. Install the custom dependencies and OWENS, then build and test using the following command in the terminal:
 
 ```bash
-julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git")); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
+julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/OptimizationParameters.jl"));Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@gitlab.sandia.gov:8821-vawt-tools/OWENS.jl.git")); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
 ```
 
 4. Run your desired cases by: TODO:
@@ -59,6 +59,8 @@ julia
 (OWENS) pkg> build
 ```
 Note: If you're installing julia for the first time, there are quite a few dependencies of dependencies and it will take some time to install it all
+
+Note: If any of the URL based packages don't install, try cloning them locally and then within the package manager as above run: add ./path/to/the/package
 
 5. Run tests to verify it built correctly
 ```julia

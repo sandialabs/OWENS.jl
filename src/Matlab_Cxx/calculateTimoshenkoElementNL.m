@@ -132,12 +132,11 @@ OmegaDot = 2*pi*OmegaDot;
 
 %Sort displacement vector
 %Written for 2 node element with 6 dof per node
-
 twistAvg = rollAngle + 0.5*(sectionProps.twist(1) + sectionProps.twist(2));
 lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0);
 lambdaSlim = lambda(1:3,1:3);
 
-dispLocal = lambda*disp_iter';
+dispLocal = lambda*disp_iter;
 
 uNode = [dispLocal(1) dispLocal(7)];
 vNode = [dispLocal(2) dispLocal(8)];
@@ -769,7 +768,7 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
     elseif(strcmp(iterationType,'DI')||strcmp(iterationType,'LINEAR'))   %considerations if direct iteration is used or linear analysis
         A = a3*u + a4*udot + a5*uddot;
         B = a6*u + a7*udot + a8*uddot;
-        Fhate = Fe + Me*(A') + Ce*(B');
+        Fhate = Fe + Me*(A) + Ce*(B);
     end
 
     Khate = Ke + a3.*Me + a6.*Ce;
@@ -777,7 +776,7 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
         Khate = Kehat + Khate;
     end
 
-    FhatLessConc =   Fhate - [concLoad(1,1);
+    FhatLessConc =   double(Fhate) - double([concLoad(1,1);
         concLoad(2,1);
         concLoad(3,1);
         concLoad(4,1);
@@ -788,7 +787,7 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
         concLoad(3,2);
         concLoad(4,2);
         concLoad(5,2);
-        concLoad(6,2)];
+        concLoad(6,2)]);
 
     %........................................................
 

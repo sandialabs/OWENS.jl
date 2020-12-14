@@ -20,6 +20,18 @@ mutable struct Ort
     Offset
 end
 
+mutable struct TimeInt
+    delta_t
+    a1
+    a2
+    a3
+    a4
+    a5
+    a6
+    a7
+    a8
+end
+
 mutable struct BC_struct
     numpBC
     pBC
@@ -28,6 +40,60 @@ mutable struct BC_struct
     isConstrained
     map
     redVectorMap
+end
+
+mutable struct ElInput
+    elementOrder
+    modalFlag
+    timeInt
+    xloc
+    sectionProps
+    sweepAngle
+    coneAngle
+    rollAngle
+    aeroSweepAngle
+    iterationType
+    useDisp
+    preStress
+    aeroElasticOn
+    aeroForceOn
+    loadStepPrev
+    loadStep
+    maxNumLoadSteps
+    MAXIT
+    tolerance
+    analysisType
+    disp
+    dispdot
+    dispddot
+    displ_iter
+    concMass
+    concStiff
+    concLoad
+    dispm1
+    x
+    y
+    z
+    gravityOn
+    RayleighAlpha
+    RayleighBeta
+    accelVec
+    omegaVec
+    omegaDotVec
+    Omega
+    OmegaDot
+    CN2H
+    airDensity
+    freq
+    firstIteration
+end
+
+mutable struct ElOutput
+    FhatLessConc
+    Ke
+    Fe
+    Me
+    Ce
 end
 
 mutable struct BladeData
@@ -222,6 +288,19 @@ mutable struct NodalTerms
     concStiffGen
     concMassGen
     concDampGen
+end
+
+mutable struct ConcNDL
+    nodeNum
+    dof
+    val
+end
+
+mutable struct ConcNDLGen
+    nodeNum
+    dof1
+    dof2
+    val
 end
 
 mutable struct ElStrain

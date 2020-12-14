@@ -59,16 +59,17 @@ function Unsteady(model,mesh,el)
 
     ## activate platform module
     #............... flags for module activation ....................
-    aeroOn = false #TODO: clean this up 
+    aeroOn = false #TODO: clean this up
     CACTUS = true #TODO: not hardcoded
     println("CACTUS AERO: $CACTUS")
     #modularIteration
     moduleIteration = true
+    aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
+    OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
     # Get AeroLoads
     if CACTUS
         # mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
-        aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
-        OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
+
 
         d1 = string(aeroLoadsFile_root, ".geom")
         d2 = string(aeroLoadsFile_root, "_ElementData.csv")
@@ -416,17 +417,17 @@ function Unsteady(model,mesh,el)
         # 		Accel_j = Accel
         # 		Accel_jLast = Accel
 
-        TOL = 9e-7  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 4 #max iteration for various modules
+        TOL = 1e-5  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 50 #max iteration for various modules
         numIterations = 1
-        uNorm = 1e6
-        platNorm = 1e6
-        aziNorm = 1e6
-        gbNorm = 1e6 #initialize norms for various module states
+        uNorm = 1e5
+        platNorm = 1e5
+        aziNorm = 1e5
+        gbNorm = 1e5 #initialize norms for various module states
         ##
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-            println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
+            # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
             CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
@@ -463,6 +464,36 @@ function Unsteady(model,mesh,el)
             #         end
             #         #-------------------------------------
             ##
+
+            # Freq Domain of Hydro does give stiffness and damping
+            # Should be consistent with how OrcaFlex/Hydrodyn would work for modularity
+
+            # Possible best way: Kevin run simple case to produce example reaction forces at bases for time history,
+            # then Ryan writes code that calculates new motion and sitffness/damping
+
+            # Other way: OWENS solves for motions and hydro solves for reaction forces
+
+            # Kevin look at wavec2wire (dissertation might help)
+            # rigid body motion should not be calculated within hydro
+
+            # Near term coupling is easier in time domain
+
+            # Assignments
+            # - Kevin look at wavec2wire, OrcaFlex, hydrodyn, mass and stiffness approx
+            # - Kevin give Ryan example of mass and stiffness approx how it's being used/read in
+            # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
+
+            # Hydro Coupling
+            #1) modify the mesh to include a platform cg offset #option
+            #2) modify the element properties so that this element is rigid
+            #3) ensure that this element is non-rotating - deflected solution is solved in one step (perhaps just give rotated stiffenss, forces, etc, so the node is actually rotating, as long as the mass isn't being cyntrifical)
+            #4) apply the hydro F, C, K, M to the nodal term (we have calm sea, as well as waves and currents). Mooring will also apply forces.
+            #5) use flags to turn degrees of freedom off
+
+            # Unit Testing
+            # 1) Turn all dof off and the solution should be the same
+            # 2) allow heave and the turbine should go up and down
+            # 3) no aero, but mass offset should cause the turbine to tilt slightly
 
             ## evaluate generator module
             #----- generator module ---------------------------
@@ -559,7 +590,7 @@ function Unsteady(model,mesh,el)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            println("starting Aero Loads")
+            # println("starting Aero Loads")
             if CACTUS
                 Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
             else
@@ -610,11 +641,20 @@ function Unsteady(model,mesh,el)
             else
                 # evalulate structural dynamics using conventional representation
                 t_in = t[i]
-                # mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
-                # Juno.@enter call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
-                start = time()
-                elStrain,dispOut,FReaction_j = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
-                println("$(time()-start)")
+                # mat"[$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient2($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
+                # elStrain = Array{ElStrain, 1}(undef, mesh.numEl)
+                #
+                # for jj = 1:mesh.numEl
+                #     elStrain[jj] =  ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
+                # end
+                # dispOut = DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
+
+                # start = time()
+                # elStrain,dispOut,FReaction_j,Kgmat = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
+                elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+
+                # error("stop")
+                # println("$(time()-start)")
             end
             #update last iteration displacement vector
             u_jLast = u_j
@@ -623,7 +663,7 @@ function Unsteady(model,mesh,el)
             udot_j  = dispOut.displdot_sp1
             uddot_j = dispOut.displddot_sp1
 
-            println("ran structdyn")
+            # println("ran structdyn")
             if (occursin("ROM",model.analysisType))
                 #             udot_j  = dispOut.displdot_sp1
                 #             uddot_j = dispOut.displddot_sp1
@@ -742,7 +782,7 @@ function Unsteady(model,mesh,el)
             rigidDof[i] = 0
         end
 
-        FReactionHist[i+1,:] = FReaction_j
+        # FReactionHist[i+1,:] = FReaction_j
         ##
 
         ## check rotor speed for generator operation

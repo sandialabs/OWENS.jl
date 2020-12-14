@@ -406,6 +406,31 @@ function readInitCond(filename)
     return initCond
 end
 
+function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
+    # writeOwensNDL writes a nodal input file for the OWENS Toolkit
+    #   This function writes a boundary condition file for the OWENS Toolkit
+    #      input:
+    #      fileRoot     = string containing input prefix of file name
+    #      output:     (NONE)
+    # **********************************************************************
+
+    # open the BC file to save the boundary conditions to
+    BCfile = string(fileRoot, ".ndl")    #construct file name
+
+    open(BCfile, "w") do file
+        # write out the boundary conditions into the file
+        for nn = 1:length(nodes)
+            # [row, col, val] = find(cmkValues[nn])
+            indices = findall(x->x!=0,cmkValues[:,:,nn])
+            # println(indices)
+            for ii = 1:length(indices)
+                row = indices[ii][1]
+                col = indices[ii][2]
+                write(file, "$(nodes[nn]) $(cmkType[nn]) $(row) $(col) $(cmkValues[row,col,nn])\n")
+            end
+        end
+    end
+end
 
 function readNodalTerms(filename)
     #readNodalTerms reads concentrated nodal terms file
@@ -420,96 +445,152 @@ function readNodalTerms(filename)
     #      output:
     #      nodalTerms    = object containing concentrated nodal data
 
-    concStiff=[] #initialize stiffness, load, and mass arrays to null
-    concLoad=[]
-    concMass=[]
-    concStiffGen = []
-    concMassGen = []
-    concDampGen = []
-    fid=open(filename,"r")  #open nodal terms file
-    #     index = 1
+    data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
 
-    #         while(~feof(fid))
-    #
-    #             temp = strsplit(fgetl(fid))
-    #
-    #             nodeNum(index,1) = real(str2double(temp{1}))   #read in node number
-    #             termType{index} = temp{2}  #read in concentrated term type (M=mass, K = stiffness, F = force)
-    #             if(length(temp) == 4)
-    #                 localDof{index} = real(str2double(temp{3}))
-    #                 val(index) = real(str2double(temp{4})
-    #             else
-    #                 localDof{index} = [real(str2double(temp{3})) real(str2double(temp{4}))]
-    #                 val(index) = real(str2double(temp{5}))
-    #             end
-    #             #         val(index,1) = fscanf(fid,'#f',1)       #read in value for concentrated nodal term
-    #             index = index + 1
-    #         end
-    #
-    #         fIndex = 1    #counters for concentrated nodal force, stiffness, and mass
-    #         kIndex = 1
-    #         mIndex = 1
-    #         mIndex2 = 1
-    #         kIndex2 = 1
-    #         cIndex2 = 1
-    #         for i=1:length(nodeNum)
-    #             if(strcmpi(termType{i},'F'))    #read in concentrated load data
-    #                 concLoad(fIndex).nodeNum = nodeNum(i)
-    #                 concLoad(fIndex).dof = localDof{i}
-    #                 concLoad(fIndex).val = val(i)
-    #                 fIndex = fIndex + 1
-    #             end
-    #
-    #             if(strcmpi(termType{i},'K'))    #read in concentrated stiffness data
-    #                 concStiff(kIndex).nodeNum = nodeNum(i)
-    #                 concStiff(kIndex).dof = localDof{i}
-    #                 concStiff(kIndex).val = val(i)
-    #                 kIndex = kIndex + 1
-    #             end
-    #
-    #             if(strcmpi(termType{i},'M'))   #read in concentrated mass data
-    #                 concMass(mIndex).nodeNum = nodeNum(i)
-    #                 concMass(mIndex).dof = localDof{i}
-    #                 concMass(mIndex).val = val(i)
-    #                 mIndex = mIndex + 1
-    #             end
-    #
-    #             if(strcmpi(termType{i},'M6'))   #read in concentrated mass data
-    #                 concMassGen(mIndex2).nodeNum = nodeNum(i)
-    #                 temp = localDof{i}
-    #                 concMassGen(mIndex2).dof1 = temp(1)
-    #                 concMassGen(mIndex2).dof2 = temp(2)
-    #                 concMassGen(mIndex2).val = val(i)
-    #                 mIndex2 = mIndex2 + 1
-    #             end
-    #
-    #             if(strcmpi(termType{i},'K6'))   #read in concentrated stiffness data
-    #                 concStiffGen(kIndex2).nodeNum = nodeNum(i)
-    #                 temp = localDof{i}
-    #                 concStiffGen(kIndex2).dof1 = temp(1)
-    #                 concStiffGen(kIndex2).dof2 = temp(2)
-    #                 concStiffGen(kIndex2).val = val(i)
-    #                 kIndex2 = kIndex2 + 1
-    #             end
-    #
-    #             if(strcmpi(termType{i},'C6'))   #read in concentrated damp data
-    #                 concDampGen(cIndex2).nodeNum = nodeNum(i)
-    #                 temp = localDof{i}
-    #                 concDampGen(cIndex2).dof1 = temp(1)
-    #                 concDampGen(cIndex2).dof2 = temp(2)
-    #                 concDampGen(cIndex2).val = val(i)
-    #                 cIndex2 = cIndex2 + 1
-    #             end
-    #         end
-    println("NODAL FILE NOT LOADED, CODE UNFINISHED IN readNodalTerms") #TODO
+    n_M = sum(count.(x->(x=='M'), data[:,2]))
+    n_K = sum(count.(x->(x=='K'), data[:,2]))
+    n_C = sum(count.(x->(x=='C'), data[:,2]))
+    n_F = sum(count.(x->(x=='F'), data[:,2]))
 
+    concMnodeNum = zeros(n_M)
+    concMdof1 = zeros(n_M)
+    concMdof2 = zeros(n_M)
+    concMval = zeros(n_M)
 
-    close(fid)
+    concKnodeNum = zeros(n_K)
+    concKdof1 = zeros(n_K)
+    concKdof2 = zeros(n_K)
+    concKval = zeros(n_K)
+
+    concCnodeNum = zeros(n_C)
+    concCdof1 = zeros(n_C)
+    concCdof2 = zeros(n_C)
+    concCval = zeros(n_C)
+
+    concFnodeNum = zeros(n_F)
+    concFdof1 = zeros(n_F)
+    concFdof2 = zeros(n_F)
+    concFval = zeros(n_F)
+
+    i_M = 1
+    i_K = 1
+    i_C = 1
+    i_F = 1
+    for i_data = 1:length(data[:,1])
+        if data[i_data,2][1] == 'M'
+            concMnodeNum[i_M] = data[i_data,1]
+            concMdof1[i_M] = data[i_data,3]
+            if length(data[1,:])==5 #If 6x6 general method
+                concMdof2[i_M] = data[i_data,4]
+            end
+            concMval[i_M] = data[i_data,end]
+            i_M += 1
+        elseif data[i_data,2][1] == 'K'
+            concKnodeNum[i_K] = data[i_data,1]
+            concKdof1[i_K] = data[i_data,3]
+            if length(data[1,:])==5 #If 6x6 general method
+                concKdof2[i_K] = data[i_data,4]
+            end
+            concKval[i_K] = data[i_data,end]
+            i_K += 1
+        elseif data[i_data,2][1] == 'C'
+            concCnodeNum[i_C] = data[i_data,1]
+            concCdof1[i_C] = data[i_data,3]
+            if length(data[1,:])==5 #If 6x6 general method
+                concCdof2[i_C] = data[i_data,4]
+            end
+            concCval[i_C] = data[i_data,end]
+            i_C += 1
+        elseif data[i_data,2][1] == 'F'
+            concFnodeNum[i_F] = data[i_data,1]
+            concFdof1[i_F] = data[i_data,3]
+            if length(data[1,:])==5 #If 6x6 general method
+                concFdof2[i_F] = data[i_data,4]
+            end
+            concFval[i_F] = data[i_data,end]
+            i_F += 1
+        else
+            error("Unknown Nodal Data Type")
+        end
+    end
+
+    if length(data[1,:])==5
+        @warn "General 6x6 concentrated terms are not yet coded for unsteady analysis, using only the diagonal terms and converting"
+        #TODO: implement the 6x6 terms since they will be necessary for the linearized platform since there is strong cross coupling
+        concLoad = Array{ConcNDL, 1}(undef, n_F)
+        for i_F = 1:n_F
+            if concFnodeNum[i_F] == concFdof2[i_F]
+                concLoad[i_F]= ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
+            end
+        end
+
+        concStiff = Array{ConcNDL, 1}(undef, n_K)
+        for i_K = 1:n_K
+            if concKdof1[i_K] == concKdof2[i_K]
+                concStiff[i_K] = ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
+            end
+        end
+
+        concMass = Array{ConcNDL, 1}(undef, n_M)
+        for i_M = 1:n_M
+            if concMdof1[i_M] == concMdof2[i_M]
+                concMass[i_M] = ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
+            end
+        end
+
+        concStiffGen = Array{ConcNDLGen, 1}(undef, n_K)
+        for i_K = 1:n_K
+            concStiffGen[i_K] = ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof2[i_K],concKval[i_K])
+        end
+
+        concMassGen = Array{ConcNDLGen, 1}(undef, n_M)
+        for i_M = 1:n_M
+            concMassGen[i_M] = ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof2[i_M], concMval[i_M])
+        end
+
+        concDampGen = Array{ConcNDLGen, 1}(undef, n_C)
+        for i_C = 1:n_C
+            concDampGen[i_C] = ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof2[i_C], concCval[i_C])
+        end
+
+    elseif length(data[1,:])==4
+        @warn "General 6x6 concentrated terms are not yet coded for unsteady analysis, using only the diagonal terms and converting"
+        # This portion is different in that it uses the nongeneral terms and applies them to the general just at the diagonal, TODO: once the general terms are implemented, this needs to be updated
+        concLoad = Array{ConcNDL, 1}(undef, n_F)
+        for i_F = 1:n_F
+            concLoad[i_F]= ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
+        end
+
+        concStiff = Array{ConcNDL, 1}(undef, n_K)
+        for i_K = 1:n_K
+            concStiff[i_K] = ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
+        end
+
+        concMass = Array{ConcNDL, 1}(undef, n_M)
+        for i_M = 1:n_M
+            concMass[i_M] = ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
+        end
+
+        concStiffGen = Array{ConcNDLGen, 1}(undef, n_K)
+        for i_K = 1:n_K #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
+            concStiffGen[i_K] = ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof1[i_K],concKval[i_K])
+        end
+
+        concMassGen = Array{ConcNDLGen, 1}(undef, n_M)
+        for i_M = 1:n_M #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
+            concMassGen[i_M] = ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof1[i_M], concMval[i_M])
+        end
+
+        concDampGen = Array{ConcNDLGen, 1}(undef, n_C)
+        for i_C = 1:n_C #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
+            concDampGen[i_C] = ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof1[i_C], concCval[i_C])
+        end
+    else
+        error("Wrong number of terms in the .ndl file")
+    end
 
     #store concentrated nodal term data in nodalTerms object
-    nodalTerms = NodalTerms(concLoad,concStiff,concMass,concStiffGen,concMassGen,concDampGen)
-
-    return nodalTerms
+    return NodalTerms(concLoad,concStiff,concMass,concStiffGen,concMassGen,concDampGen)
 
 end
 

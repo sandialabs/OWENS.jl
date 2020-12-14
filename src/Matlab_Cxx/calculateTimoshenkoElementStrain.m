@@ -37,7 +37,7 @@ p_disp_x = zeros(numGP,6);
 
 %Sort displacement vector
 %Written for 2 node element with 6 dof per node
-twistAvg = rollAngle + 0.5*(sectionProps.twist(1) + sectionProps.twist(2));
+twistAvg = rollAngle + 0.5*(sectionProps{1}.twist(1) + sectionProps{1}.twist(2));
 lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0);
 
 dispLocal = lambda*disp';    %'

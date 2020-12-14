@@ -25,7 +25,7 @@ breaklines=true
 
 \begin{center}
 \begin{LARGE}
-\textbf{Matlab to C++ ``Automatic" Translation \\ Journey \& Lessons Learned }\\
+\textbf{Matlab to C++ ``Automatic" Translation \\ Process \& Lessons Learned }\\
 \end{LARGE}
 \vspace{8pt}
 %Internal Use Only
@@ -33,7 +33,7 @@ breaklines=true
 
 \section{Preface}
 
-Matlab has been and will continue to be utilized for many scientific computing roles.  At some point in a project's lifetime however, the personnel using a Matlab code may need to move to a different platform for one reason or another (ease of public release, performance issues, supercomputing capability, excessive cost, etc...).  While Matlab has created a way to automatically translate Matlab code into C or C++, it has some gotchas.  I advise the reader review this lessons learned document to determine the best route for their project.  
+Matlab has been and will continue to be utilized for many scientific computing roles.  At some point in a project's lifetime however, the personnel using a Matlab code may need to move to a different platform for one reason or another (ease of public release, performance issues, supercomputing capability, excessive cost, etc...).  While Matlab has created a way to automatically translate Matlab code into C or C++, it has some gotchas.  Of particular frustration with this process is 1) It hard codes array sizes, so if the sizes of your inputs may change you need to either create a buffer in the arrays or recreate the C code each time. 2) The output C code is quite, complex does not use the original formatting or structure, reuses variables of same size instead of your intuitively-named variables, and results in illegible code that is 2x as long as the original. 3) it is restrictive in the types of functions and ways things can be implemented, so much so that a partial rewrite is required just to get the coder to create the C code.  The level of rewrite required is arguably the same level of effort as translating to a language such as Julia. Based on my experience from this process, I do not advise using the Matlab Coder for anything more complex than very simple functions, but rather to spend the same time (or less time especially in the long run) to translate to Julia and get a much better output.  The reader is advised to review this lessons learned document to determine the best route for their project. 
 
 \section{Simple C++ Automatic Translation}
 I followed this \href{https://www.mathworks.com/videos/automatically-converting-matlab-code-to-c-code-96483.html}{tutorial} for a several line example and compiled the output on the skybridge linux cluster using:

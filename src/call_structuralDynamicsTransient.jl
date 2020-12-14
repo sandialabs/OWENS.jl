@@ -73,11 +73,78 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
 
     nodalTerms = model.nodalTerms #Struct
     concLoad = nodalTerms.concLoad
+    mysize = length(concLoad)
+    concLoadnodeNum = zeros(mysize)
+    concLoaddof = zeros(mysize)
+    concLoadval = zeros(mysize)
+    for ii = 1:mysize
+        concLoadnodeNum[ii] = concLoad[ii].nodeNum
+        concLoaddof[ii] = concLoad[ii].dof
+        concLoadval[ii] = concLoad[ii].val
+    end
+
     concStiff = nodalTerms.concStiff
+    mysize = length(concStiff)
+    concStiffnodeNum = zeros(mysize)
+    concStiffdof = zeros(mysize)
+    concStiffval = zeros(mysize)
+    for ii = 1:mysize
+        concStiffnodeNum[ii] = concStiff[ii].nodeNum
+        concStiffdof[ii] = concStiff[ii].dof
+        concStiffval[ii] = concStiff[ii].val
+    end
+
     concMass = nodalTerms.concMass
+    mysize = length(concMass)
+    concMassnodeNum = zeros(mysize)
+    concMassdof = zeros(mysize)
+    concMassval = zeros(mysize)
+    for ii = 1:mysize
+        concMassnodeNum[ii] = concMass[ii].nodeNum
+        concMassdof[ii] = concMass[ii].dof
+        concMassval[ii] = concMass[ii].val
+    end
+
     concStiffGen = nodalTerms.concStiffGen
+    mysize = length(concStiffGen)
+    StiffGennodeNum = zeros(mysize)
+    StiffGendof1 = zeros(mysize)
+    StiffGendof2 = zeros(mysize)
+    StiffGenval = zeros(mysize)
+    for ii = 1:mysize
+        StiffGennodeNum[ii] = concStiffGen[ii].nodeNum
+        StiffGendof1[ii] = concStiffGen[ii].dof1
+        StiffGendof2[ii] = concStiffGen[ii].dof2
+        StiffGenval[ii] = concStiffGen[ii].val
+    end
+
     concMassGen = nodalTerms.concMassGen
+    mysize = length(concMassGen)
+    MassGennodeNum = zeros(mysize)
+    MassGendof1 = zeros(mysize)
+    MassGendof2 = zeros(mysize)
+    MassGenval = zeros(mysize)
+    for ii = 1:mysize
+        MassGennodeNum[ii] = concMassGen[ii].nodeNum
+        MassGendof1[ii] = concMassGen[ii].dof1
+        MassGendof2[ii] = concMassGen[ii].dof2
+        MassGenval[ii] = concMassGen[ii].val
+    end
+
+
     concDampGen = nodalTerms.concDampGen
+    mysize = length(concDampGen)
+    DampGennodeNum = zeros(mysize)
+    DampGendof1 = zeros(mysize)
+    DampGendof2 = zeros(mysize)
+    DampGenval = zeros(mysize)
+    for ii = 1:mysize
+        DampGennodeNum[ii] = concDampGen[ii].nodeNum
+        DampGendof1[ii] = concDampGen[ii].dof1
+        DampGendof2[ii] = concDampGen[ii].dof2
+        DampGenval[ii] = concDampGen[ii].val
+    end
+
 
     driveShaftProps = model.driveShaftProps #Struct
     k = driveShaftProps.k
@@ -333,440 +400,503 @@ function call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDo
     gam_xy_z = zeros(mesh.numEl*4)
     FReaction_j = zeros(6)
 
-    ccall((:structuralDynamicsTransient,"/Users/kevmoor/Documents/coderepos/OWENS.jl/src/Matlab_Cxx/codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
-    (Cint, #const boolean_T rotationalEffects
-    Cint, #boolean_T gravityOn
-    Cint, #boolean_T nlOn
-    Cdouble, #double maxNumLoadSteps
-    Cdouble, #double airDensity
-    Cdouble, #double RayleighAlpha
-    Cdouble, #double RayleighBeta
-    Cdouble, #double elementOrder
-    Cdouble, #double delta_t
-    Cdouble, #double c_platformTurbineConnectionNode
-    Cdouble, #double tolerance
-    Cdouble, #double maxIterations
-    Cdouble, #double numpBC
-    Cdouble, #double numEl
-    Cdouble, #double Omega
-    Cdouble, #double OmegaDot
-    Ptr{Cdouble}, #const double mel[75]
-    Ptr{Cdouble}, #const double moiel[675]
-    Ptr{Cdouble}, #const double xmel[225]
-    Ptr{Cdouble}, #const double Fexternal[273]
-    Ptr{Cdouble}, #const double Fdof[273]
-    Ptr{Cdouble}, #const double CN2H[9]
-    Ptr{Cdouble}, #const double rbData[9]
-    Ptr{Cdouble}, #const double jointTransform[206640]
-    Ptr{Cdouble}, #const double conn[150]
-    Ptr{Cdouble}, #const double joint[96]
-    Ptr{Cdouble}, #const double pBC[18]
-    Ptr{Cdouble}, #const double x[82]
-    Ptr{Cdouble}, #const double y[82]
-    Ptr{Cdouble}, #const double z[82]
-    Ptr{Cdouble}, #const double ac[150]
-    Ptr{Cdouble}, #const double twist[150]
-    Ptr{Cdouble}, #const double rhoA[150]
-    Ptr{Cdouble}, #const double EIyy[150]
-    Ptr{Cdouble}, #const double EIzz[150]
-    Ptr{Cdouble}, #const double GJ[150]
-    Ptr{Cdouble}, #const double EA[150]
-    Ptr{Cdouble}, #const double rhoIyy[150]
-    Ptr{Cdouble}, #const double rhoIzz[150]
-    Ptr{Cdouble}, #const double rhoJ[150]
-    Ptr{Cdouble}, #const double zcm[150]
-    Ptr{Cdouble}, #const double ycm[150]
-    Ptr{Cdouble}, #const double a[150]
-    Ptr{Cdouble}, #const double EIyz[150]
-    Ptr{Cdouble}, #const double alpha1[150]
-    Ptr{Cdouble}, #const double alpha2[150]
-    Ptr{Cdouble}, #const double alpha3[150]
-    Ptr{Cdouble}, #const double alpha4[150]
-    Ptr{Cdouble}, #const double alpha5[150]
-    Ptr{Cdouble}, #const double alpha6[150]
-    Ptr{Cdouble}, #const double rhoIyz[150]
-    Ptr{Cdouble}, #const double b[150]
-    Ptr{Cdouble}, #const double a0[150]
-    Ptr{Cdouble}, #const double aeroCenterOffset[150]
-    Ptr{Cdouble}, #const double elLen[75]
-    Ptr{Cdouble}, #const double psi[75]
-    Ptr{Cdouble}, #const double theta[75]
-    Ptr{Cdouble}, #const double roll[75]
-    Ptr{Cdouble}, #const double displ_s[492]
-    Ptr{Cdouble}, #const double displdot_s[492]
-    Ptr{Cdouble}, #const double displddot_s[492]
-    Ptr{Cdouble}, #const double K11[300]
-    Ptr{Cdouble}, #const double K12[300]
-    Ptr{Cdouble}, #const double K13[300]
-    Ptr{Cdouble}, #const double K14[300]
-    Ptr{Cdouble}, #const double K15[300]
-    Ptr{Cdouble}, #const double K16[300]
-    Ptr{Cdouble}, #const double K22[300]
-    Ptr{Cdouble}, #const double K23[300]
-    Ptr{Cdouble}, #const double K24[300]
-    Ptr{Cdouble}, #const double K25[300]
-    Ptr{Cdouble}, #const double K26[300]
-    Ptr{Cdouble}, #const double K33[300]
-    Ptr{Cdouble}, #const double K34[300]
-    Ptr{Cdouble}, #const double K35[300]
-    Ptr{Cdouble}, #const double K36[300]
-    Ptr{Cdouble}, #const double K44[300]
-    Ptr{Cdouble}, #const double K45[300]
-    Ptr{Cdouble}, #const double K46[300]
-    Ptr{Cdouble}, #const double K55[300]
-    Ptr{Cdouble}, #const double K56[300]
-    Ptr{Cdouble}, #const double K66[300]
-    Ptr{Cdouble}, #const double M11[300]
-    Ptr{Cdouble}, #const double M15[300]
-    Ptr{Cdouble}, #const double M16[300]
-    Ptr{Cdouble}, #const double M22[300]
-    Ptr{Cdouble}, #const double M24[300]
-    Ptr{Cdouble}, #const double M33[300]
-    Ptr{Cdouble}, #const double M34[300]
-    Ptr{Cdouble}, #const double M44[300]
-    Ptr{Cdouble}, #const double M55[300]
-    Ptr{Cdouble}, #const double M56[300]
-    Ptr{Cdouble}, #const double M66[300]
-    Ptr{Cdouble}, #const double S11[300]
-    Ptr{Cdouble}, #const double S12[300]
-    Ptr{Cdouble}, #const double S13[300]
-    Ptr{Cdouble}, #const double S15[300]
-    Ptr{Cdouble}, #const double S16[300]
-    Ptr{Cdouble}, #const double S22[300]
-    Ptr{Cdouble}, #const double S23[300]
-    Ptr{Cdouble}, #const double S25[300]
-    Ptr{Cdouble}, #const double S26[300]
-    Ptr{Cdouble}, #const double S33[300]
-    Ptr{Cdouble}, #const double S35[300]
-    Ptr{Cdouble}, #const double S36[300]
-    Ptr{Cdouble}, #const double S55[300]
-    Ptr{Cdouble}, #const double S56[300]
-    Ptr{Cdouble}, #const double S66[300]
-    Ptr{Cdouble}, #const double S14_1[300]
-    Ptr{Cdouble}, #const double S14_2[300]
-    Ptr{Cdouble}, #const double S24_1[300]
-    Ptr{Cdouble}, #const double S24_2[300]
-    Ptr{Cdouble}, #const double S34_1[300]
-    Ptr{Cdouble}, #const double S34_2[300]
-    Ptr{Cdouble}, #const double S45_1[300]
-    Ptr{Cdouble}, #const double S45_2[300]
-    Ptr{Cdouble}, #const double S46_1[300]
-    Ptr{Cdouble}, #const double S46_2[300]
-    Ptr{Cdouble}, #const double S44_1[300]
-    Ptr{Cdouble}, #const double S44_2[300]
-    Ptr{Cdouble}, #const double S44_3[300]
-    Ptr{Cdouble}, #const double C12[300]
-    Ptr{Cdouble}, #const double C13[300]
-    Ptr{Cdouble}, #const double C23[300]
-    Ptr{Cdouble}, #const double C24[300]
-    Ptr{Cdouble}, #const double C25[300]
-    Ptr{Cdouble}, #const double C26[300]
-    Ptr{Cdouble}, #const double C34[300]
-    Ptr{Cdouble}, #const double C35[300]
-    Ptr{Cdouble}, #const double C36[300]
-    Ptr{Cdouble}, #const double C14_1[300]
-    Ptr{Cdouble}, #const double C14_2[300]
-    Ptr{Cdouble}, #const double C45_1[300]
-    Ptr{Cdouble}, #const double C45_2[300]
-    Ptr{Cdouble}, #const double C46_1[300]
-    Ptr{Cdouble}, #const double C46_2[300]
-    Ptr{Cdouble}, #double displ_sp1[492]
-    Ptr{Cdouble}, #double displddot_sp1[492]
-    Ptr{Cdouble}, #double displdot_sp1[492]
-    Ptr{Cdouble}, #double eps_xx_0[300]
-    Ptr{Cdouble}, #double eps_xx_z[300]
-    Ptr{Cdouble}, #double eps_xx_y[300]
-    Ptr{Cdouble}, #double gam_xz_0[300]
-    Ptr{Cdouble}, #double gam_xz_y[300]
-    Ptr{Cdouble}, #double gam_xy_0[300]
-    Ptr{Cdouble}, #double gam_xy_z[300]
-    Ptr{Cdouble}), #double FReaction_sp1[6]
-    rotationalEffects,
-    gravityOn,
-    nlOn,
-    maxNumLoadSteps,
-    airDensity,
-    RayleighAlpha,
-    RayleighBeta,
-    elementOrder,
-    delta_t,
-    platformTurbineConnectionNodeNumber,
-    tolerance,
-    maxIterations,
-    numpBC,
-    numEl,
-    Omega_j,
-    OmegaDot_j,
-    mel,
-    moiel,
-    xmel,
-    Fexternal,
-    Fdof,
-    CN2H,
-    rbData,
-    jointTransform,
-    conn,
-    joint,
-    float(pBC),
-    x,
-    y,
-    z,
-    ac,
-    twist,
-    rhoA,
-    EIyy,
-    EIzz,
-    GJ,
-    EA,
-    rhoIyy,
-    rhoIzz,
-    rhoJ,
-    zcm,
-    ycm,
-    a,
-    EIyz,
-    alpha1,
-    alpha2,
-    alpha3,
-    alpha4,
-    alpha5,
-    alpha6,
-    rhoIyz,
-    b,
-    a0,
-    aeroCenterOffset,
-    elLen,
-    psi,
-    theta,
-    roll,
-    displ_s,
-    displdot_s,
-    displddot_s,
-    K11,
-    K12,
-    K13,
-    K14,
-    K15,
-    K16,
-    K22,
-    K23,
-    K24,
-    K25,
-    K26,
-    K33,
-    K34,
-    K35,
-    K36,
-    K44,
-    K45,
-    K46,
-    K55,
-    K56,
-    K66,
-    M11,
-    M15,
-    M16,
-    M22,
-    M24,
-    M33,
-    M34,
-    M44,
-    M55,
-    M56,
-    M66,
-    S11,
-    S12,
-    S13,
-    S15,
-    S16,
-    S22,
-    S23,
-    S25,
-    S26,
-    S33,
-    S35,
-    S36,
-    S55,
-    S56,
-    S66,
-    S14_1,
-    S14_2,
-    S24_1,
-    S24_2,
-    S34_1,
-    S34_2,
-    S45_1,
-    S45_2,
-    S46_1,
-    S46_2,
-    S44_1,
-    S44_2,
-    S44_3,
-    C12,
-    C13,
-    C23,
-    C24,
-    C25,
-    C26,
-    C34,
-    C35,
-    C36,
-    C14_1,
-    C14_2,
-    C45_1,
-    C45_2,
-    C46_1,
-    C46_2,
-    displ_sp1,
-    displddot_sp1,
-    displdot_sp1,
-    eps_xx_0,
-    eps_xx_z,
-    eps_xx_y,
-    gam_xz_0,
-    gam_xz_y,
-    gam_xy_0,
-    gam_xy_z,
-    FReaction_j)
-    # println(FReaction_j)
-    # mat"""
-    # [$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient($rotationalEffects,...
-    # $gravityOn,...
-    # $nlOn,...
-    # $maxNumLoadSteps,...
-    # $airDensity,...
-    # $RayleighAlpha,...
-    # $RayleighBeta,...
-    # $elementOrder,...
-    # $delta_t,...
-    # $platformTurbineConnectionNodeNumber,...
-    # $tolerance,...
-    # $maxIterations,...
-    # $numpBC,...
-    # $numEl,...
-    # $Omega_j,...
-    # $OmegaDot_j,...
-    # $mel,...
-    # $moiel,...
-    # $xmel,...
-    # $Fexternal,...
-    # $Fdof,...
-    # $CN2H,...
-    # $rbData,...
-    # $jointTransform,...
-    # $conn,...
-    # $joint,...
-    # $pBC,...
-    # $x,...
-    # $y,...
-    # $z,...
-    # $ac,...
-    # $twist,...
-    # $rhoA,...
-    # $EIyy,...
-    # $EIzz,...
-    # $GJ,...
-    # $EA,...
-    # $rhoIyy,...
-    # $rhoIzz,...
-    # $rhoJ,...
-    # $zcm,...
-    # $ycm,...
-    # $a,...
-    # $EIyz,...
-    # $alpha1,...
-    # $alpha2,...
-    # $alpha3,...
-    # $alpha4,...
-    # $alpha5,...
-    # $alpha6,...
-    # $rhoIyz,...
-    # $b,...
-    # $a0,...
-    # $aeroCenterOffset,...
-    # $elLen,...
-    # $psi,...
-    # $theta,...
-    # $roll,...
-    # $displ_s,...
-    # $displdot_s,...
-    # $displddot_s,...
-    # $K11,...
-    # $K12,...
-    # $K13,...
-    # $K14,...
-    # $K15,...
-    # $K16,...
-    # $K22,...
-    # $K23,...
-    # $K24,...
-    # $K25,...
-    # $K26,...
-    # $K33,...
-    # $K34,...
-    # $K35,...
-    # $K36,...
-    # $K44,...
-    # $K45,...
-    # $K46,...
-    # $K55,...
-    # $K56,...
-    # $K66,...
-    # $M11,...
-    # $M15,...
-    # $M16,...
-    # $M22,...
-    # $M24,...
-    # $M33,...
-    # $M34,...
-    # $M44,...
-    # $M55,...
-    # $M56,...
-    # $M66,...
-    # $S11,...
-    # $S12,...
-    # $S13,...
-    # $S15,...
-    # $S16,...
-    # $S22,...
-    # $S23,...
-    # $S25,...
-    # $S26,...
-    # $S33,...
-    # $S35,...
-    # $S36,...
-    # $S55,...
-    # $S56,...
-    # $S66,...
-    # $S14_1,...
-    # $S14_2,...
-    # $S24_1,...
-    # $S24_2,...
-    # $S34_1,...
-    # $S34_2,...
-    # $S45_1,...
-    # $S45_2,...
-    # $S46_1,...
-    # $S46_2,...
-    # $S44_1,...
-    # $S44_2,...
-    # $S44_3,...
-    # $C12,...
-    # $C13,...
-    # $C23,...
-    # $C24,...
-    # $C25,...
-    # $C26,...
-    # $C34,...
-    # $C35,...
-    # $C36,...
-    # $C14_1,...
-    # $C14_2,...
-    # $C45_1,...
-    # $C45_2,...
-    # $C46_1,...
-    # $C46_2);
-    # """
+    # ccall((:structuralDynamicsTransient,"/Users/kevmoor/Documents/coderepos/OWENS.jl/src/Matlab_Cxx/codegen/dll/structuralDynamicsTransient/structuralDynamicsTransient"),Cvoid,
+    # (Cint, #const boolean_T rotationalEffects
+    # Cint, #boolean_T gravityOn
+    # Cint, #boolean_T nlOn
+    # Cdouble, #double maxNumLoadSteps
+    # Cdouble, #double airDensity
+    # Cdouble, #double RayleighAlpha
+    # Cdouble, #double RayleighBeta
+    # Cdouble, #double elementOrder
+    # Cdouble, #double delta_t
+    # Cdouble, #double c_platformTurbineConnectionNode
+    # Cdouble, #double tolerance
+    # Cdouble, #double maxIterations
+    # Cdouble, #double numpBC
+    # Cdouble, #double numEl
+    # Cdouble, #double Omega
+    # Cdouble, #double OmegaDot
+    # Ptr{Cdouble}, #const double mel[75]
+    # Ptr{Cdouble}, #const double moiel[675]
+    # Ptr{Cdouble}, #const double xmel[225]
+    # Ptr{Cdouble}, #const double Fexternal[273]
+    # Ptr{Cdouble}, #const double Fdof[273]
+    # Ptr{Cdouble}, #const double CN2H[9]
+    # Ptr{Cdouble}, #const double rbData[9]
+    # Ptr{Cdouble}, #const double jointTransform[206640]
+    # Ptr{Cdouble}, #const double conn[150]
+    # Ptr{Cdouble}, #const double joint[96]
+    # Ptr{Cdouble}, #const double pBC[18]
+    # Ptr{Cdouble}, #const double x[82]
+    # Ptr{Cdouble}, #const double y[82]
+    # Ptr{Cdouble}, #const double z[82]
+    # Ptr{Cdouble}, #const double ac[150]
+    # Ptr{Cdouble}, #const double twist[150]
+    # Ptr{Cdouble}, #const double rhoA[150]
+    # Ptr{Cdouble}, #const double EIyy[150]
+    # Ptr{Cdouble}, #const double EIzz[150]
+    # Ptr{Cdouble}, #const double GJ[150]
+    # Ptr{Cdouble}, #const double EA[150]
+    # Ptr{Cdouble}, #const double rhoIyy[150]
+    # Ptr{Cdouble}, #const double rhoIzz[150]
+    # Ptr{Cdouble}, #const double rhoJ[150]
+    # Ptr{Cdouble}, #const double zcm[150]
+    # Ptr{Cdouble}, #const double ycm[150]
+    # Ptr{Cdouble}, #const double a[150]
+    # Ptr{Cdouble}, #const double EIyz[150]
+    # Ptr{Cdouble}, #const double alpha1[150]
+    # Ptr{Cdouble}, #const double alpha2[150]
+    # Ptr{Cdouble}, #const double alpha3[150]
+    # Ptr{Cdouble}, #const double alpha4[150]
+    # Ptr{Cdouble}, #const double alpha5[150]
+    # Ptr{Cdouble}, #const double alpha6[150]
+    # Ptr{Cdouble}, #const double rhoIyz[150]
+    # Ptr{Cdouble}, #const double b[150]
+    # Ptr{Cdouble}, #const double a0[150]
+    # Ptr{Cdouble}, #const double aeroCenterOffset[150]
+    # Ptr{Cdouble}, #const double elLen[75]
+    # Ptr{Cdouble}, #const double psi[75]
+    # Ptr{Cdouble}, #const double theta[75]
+    # Ptr{Cdouble}, #const double roll[75]
+    # Ptr{Cdouble}, #const double displ_s[492]
+    # Ptr{Cdouble}, #const double displdot_s[492]
+    # Ptr{Cdouble}, #const double displddot_s[492]
+    # Ptr{Cdouble}, # concLoadnodeNum
+    # Ptr{Cdouble}, # concLoaddof
+    # Ptr{Cdouble}, # concLoadval
+    # Ptr{Cdouble}, # concStiffnodeNum
+    # Ptr{Cdouble}, # concStiffdof
+    # Ptr{Cdouble}, # concStiffval
+    # Ptr{Cdouble}, # concMassnodeNum
+    # Ptr{Cdouble}, # concMassdof
+    # Ptr{Cdouble}, # concMassval
+    # Ptr{Cdouble}, # StiffGennodeNum
+    # Ptr{Cdouble}, # StiffGendof1
+    # Ptr{Cdouble}, # StiffGendof2
+    # Ptr{Cdouble}, # StiffGenval
+    # Ptr{Cdouble}, # MassGennodeNum
+    # Ptr{Cdouble}, # MassGendof1
+    # Ptr{Cdouble}, # MassGendof2
+    # Ptr{Cdouble}, # MassGenval
+    # Ptr{Cdouble}, # DampGennodeNum
+    # Ptr{Cdouble}, # DampGendof1
+    # Ptr{Cdouble}, # DampGendof2
+    # Ptr{Cdouble}, # DampGenval
+    # Ptr{Cdouble}, #const double K11[300]
+    # Ptr{Cdouble}, #const double K12[300]
+    # Ptr{Cdouble}, #const double K13[300]
+    # Ptr{Cdouble}, #const double K14[300]
+    # Ptr{Cdouble}, #const double K15[300]
+    # Ptr{Cdouble}, #const double K16[300]
+    # Ptr{Cdouble}, #const double K22[300]
+    # Ptr{Cdouble}, #const double K23[300]
+    # Ptr{Cdouble}, #const double K24[300]
+    # Ptr{Cdouble}, #const double K25[300]
+    # Ptr{Cdouble}, #const double K26[300]
+    # Ptr{Cdouble}, #const double K33[300]
+    # Ptr{Cdouble}, #const double K34[300]
+    # Ptr{Cdouble}, #const double K35[300]
+    # Ptr{Cdouble}, #const double K36[300]
+    # Ptr{Cdouble}, #const double K44[300]
+    # Ptr{Cdouble}, #const double K45[300]
+    # Ptr{Cdouble}, #const double K46[300]
+    # Ptr{Cdouble}, #const double K55[300]
+    # Ptr{Cdouble}, #const double K56[300]
+    # Ptr{Cdouble}, #const double K66[300]
+    # Ptr{Cdouble}, #const double M11[300]
+    # Ptr{Cdouble}, #const double M15[300]
+    # Ptr{Cdouble}, #const double M16[300]
+    # Ptr{Cdouble}, #const double M22[300]
+    # Ptr{Cdouble}, #const double M24[300]
+    # Ptr{Cdouble}, #const double M33[300]
+    # Ptr{Cdouble}, #const double M34[300]
+    # Ptr{Cdouble}, #const double M44[300]
+    # Ptr{Cdouble}, #const double M55[300]
+    # Ptr{Cdouble}, #const double M56[300]
+    # Ptr{Cdouble}, #const double M66[300]
+    # Ptr{Cdouble}, #const double S11[300]
+    # Ptr{Cdouble}, #const double S12[300]
+    # Ptr{Cdouble}, #const double S13[300]
+    # Ptr{Cdouble}, #const double S15[300]
+    # Ptr{Cdouble}, #const double S16[300]
+    # Ptr{Cdouble}, #const double S22[300]
+    # Ptr{Cdouble}, #const double S23[300]
+    # Ptr{Cdouble}, #const double S25[300]
+    # Ptr{Cdouble}, #const double S26[300]
+    # Ptr{Cdouble}, #const double S33[300]
+    # Ptr{Cdouble}, #const double S35[300]
+    # Ptr{Cdouble}, #const double S36[300]
+    # Ptr{Cdouble}, #const double S55[300]
+    # Ptr{Cdouble}, #const double S56[300]
+    # Ptr{Cdouble}, #const double S66[300]
+    # Ptr{Cdouble}, #const double S14_1[300]
+    # Ptr{Cdouble}, #const double S14_2[300]
+    # Ptr{Cdouble}, #const double S24_1[300]
+    # Ptr{Cdouble}, #const double S24_2[300]
+    # Ptr{Cdouble}, #const double S34_1[300]
+    # Ptr{Cdouble}, #const double S34_2[300]
+    # Ptr{Cdouble}, #const double S45_1[300]
+    # Ptr{Cdouble}, #const double S45_2[300]
+    # Ptr{Cdouble}, #const double S46_1[300]
+    # Ptr{Cdouble}, #const double S46_2[300]
+    # Ptr{Cdouble}, #const double S44_1[300]
+    # Ptr{Cdouble}, #const double S44_2[300]
+    # Ptr{Cdouble}, #const double S44_3[300]
+    # Ptr{Cdouble}, #const double C12[300]
+    # Ptr{Cdouble}, #const double C13[300]
+    # Ptr{Cdouble}, #const double C23[300]
+    # Ptr{Cdouble}, #const double C24[300]
+    # Ptr{Cdouble}, #const double C25[300]
+    # Ptr{Cdouble}, #const double C26[300]
+    # Ptr{Cdouble}, #const double C34[300]
+    # Ptr{Cdouble}, #const double C35[300]
+    # Ptr{Cdouble}, #const double C36[300]
+    # Ptr{Cdouble}, #const double C14_1[300]
+    # Ptr{Cdouble}, #const double C14_2[300]
+    # Ptr{Cdouble}, #const double C45_1[300]
+    # Ptr{Cdouble}, #const double C45_2[300]
+    # Ptr{Cdouble}, #const double C46_1[300]
+    # Ptr{Cdouble}, #const double C46_2[300]
+    # Ptr{Cdouble}, #double displ_sp1[492]
+    # Ptr{Cdouble}, #double displddot_sp1[492]
+    # Ptr{Cdouble}, #double displdot_sp1[492]
+    # Ptr{Cdouble}, #double eps_xx_0[300]
+    # Ptr{Cdouble}, #double eps_xx_z[300]
+    # Ptr{Cdouble}, #double eps_xx_y[300]
+    # Ptr{Cdouble}, #double gam_xz_0[300]
+    # Ptr{Cdouble}, #double gam_xz_y[300]
+    # Ptr{Cdouble}, #double gam_xy_0[300]
+    # Ptr{Cdouble}, #double gam_xy_z[300]
+    # Ptr{Cdouble}), #double FReaction_sp1[6]
+    # rotationalEffects,
+    # gravityOn,
+    # nlOn,
+    # maxNumLoadSteps,
+    # airDensity,
+    # RayleighAlpha,
+    # RayleighBeta,
+    # elementOrder,
+    # delta_t,
+    # platformTurbineConnectionNodeNumber,
+    # tolerance,
+    # maxIterations,
+    # numpBC,
+    # numEl,
+    # Omega_j,
+    # OmegaDot_j,
+    # mel,
+    # moiel,
+    # xmel,
+    # Fexternal,
+    # Fdof,
+    # CN2H,
+    # rbData,
+    # jointTransform,
+    # conn,
+    # joint,
+    # float(pBC),
+    # x,
+    # y,
+    # z,
+    # ac,
+    # twist,
+    # rhoA,
+    # EIyy,
+    # EIzz,
+    # GJ,
+    # EA,
+    # rhoIyy,
+    # rhoIzz,
+    # rhoJ,
+    # zcm,
+    # ycm,
+    # a,
+    # EIyz,
+    # alpha1,
+    # alpha2,
+    # alpha3,
+    # alpha4,
+    # alpha5,
+    # alpha6,
+    # rhoIyz,
+    # b,
+    # a0,
+    # aeroCenterOffset,
+    # elLen,
+    # psi,
+    # theta,
+    # roll,
+    # displ_s,
+    # displdot_s,
+    # displddot_s,
+    # concLoadnodeNum,
+    # concLoaddof,
+    # concLoadval,
+    # concStiffnodeNum,
+    # concStiffdof,
+    # concStiffval,
+    # concMassnodeNum,
+    # concMassdof,
+    # concMassval,
+    # StiffGennodeNum,
+    # StiffGendof1,
+    # StiffGendof2,
+    # StiffGenval,
+    # MassGennodeNum,
+    # MassGendof1,
+    # MassGendof2,
+    # MassGenval,
+    # DampGennodeNum,
+    # DampGendof1,
+    # DampGendof2,
+    # DampGenval,
+    # K11,
+    # K12,
+    # K13,
+    # K14,
+    # K15,
+    # K16,
+    # K22,
+    # K23,
+    # K24,
+    # K25,
+    # K26,
+    # K33,
+    # K34,
+    # K35,
+    # K36,
+    # K44,
+    # K45,
+    # K46,
+    # K55,
+    # K56,
+    # K66,
+    # M11,
+    # M15,
+    # M16,
+    # M22,
+    # M24,
+    # M33,
+    # M34,
+    # M44,
+    # M55,
+    # M56,
+    # M66,
+    # S11,
+    # S12,
+    # S13,
+    # S15,
+    # S16,
+    # S22,
+    # S23,
+    # S25,
+    # S26,
+    # S33,
+    # S35,
+    # S36,
+    # S55,
+    # S56,
+    # S66,
+    # S14_1,
+    # S14_2,
+    # S24_1,
+    # S24_2,
+    # S34_1,
+    # S34_2,
+    # S45_1,
+    # S45_2,
+    # S46_1,
+    # S46_2,
+    # S44_1,
+    # S44_2,
+    # S44_3,
+    # C12,
+    # C13,
+    # C23,
+    # C24,
+    # C25,
+    # C26,
+    # C34,
+    # C35,
+    # C36,
+    # C14_1,
+    # C14_2,
+    # C45_1,
+    # C45_2,
+    # C46_1,
+    # C46_2,
+    # displ_sp1,
+    # displddot_sp1,
+    # displdot_sp1,
+    # eps_xx_0,
+    # eps_xx_z,
+    # eps_xx_y,
+    # gam_xz_0,
+    # gam_xz_y,
+    # gam_xy_0,
+    # gam_xy_z,
+    # FReaction_j)
+
+    mat"""
+    [$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient($rotationalEffects,...
+    $gravityOn,...
+    $nlOn,...
+    $maxNumLoadSteps,...
+    $airDensity,...
+    $RayleighAlpha,...
+    $RayleighBeta,...
+    $elementOrder,...
+    $delta_t,...
+    $platformTurbineConnectionNodeNumber,...
+    $tolerance,...
+    $maxIterations,...
+    $numpBC,...
+    $numEl,...
+    $Omega_j,...
+    $OmegaDot_j,...
+    $mel,...
+    $moiel,...
+    $xmel,...
+    $Fexternal,...
+    $Fdof,...
+    $CN2H,...
+    $rbData,...
+    $jointTransform,...
+    $conn,...
+    $joint,...
+    $pBC,...
+    $x,...
+    $y,...
+    $z,...
+    $ac,...
+    $twist,...
+    $rhoA,...
+    $EIyy,...
+    $EIzz,...
+    $GJ,...
+    $EA,...
+    $rhoIyy,...
+    $rhoIzz,...
+    $rhoJ,...
+    $zcm,...
+    $ycm,...
+    $a,...
+    $EIyz,...
+    $alpha1,...
+    $alpha2,...
+    $alpha3,...
+    $alpha4,...
+    $alpha5,...
+    $alpha6,...
+    $rhoIyz,...
+    $b,...
+    $a0,...
+    $aeroCenterOffset,...
+    $elLen,...
+    $psi,...
+    $theta,...
+    $roll,...
+    $displ_s,...
+    $displdot_s,...
+    $displddot_s,...
+    $concLoadnodeNum,...
+    $concLoaddof,...
+    $concLoadval,...
+    $concStiffnodeNum,...
+    $concStiffdof,...
+    $concStiffval,...
+    $concMassnodeNum,...
+    $concMassdof,...
+    $concMassval,...
+    $StiffGennodeNum,...
+    $StiffGendof1,...
+    $StiffGendof2,...
+    $StiffGenval,...
+    $MassGennodeNum,...
+    $MassGendof1,...
+    $MassGendof2,...
+    $MassGenval,...
+    $DampGennodeNum,...
+    $DampGendof1,...
+    $DampGendof2,...
+    $DampGenval,...
+    $K11,...
+    $K12,...
+    $K13,...
+    $K14,...
+    $K15,...
+    $K16,...
+    $K22,...
+    $K23,...
+    $K24,...
+    $K25,...
+    $K26,...
+    $K33,...
+    $K34,...
+    $K35,...
+    $K36,...
+    $K44,...
+    $K45,...
+    $K46,...
+    $K55,...
+    $K56,...
+    $K66,...
+    $M11,...
+    $M15,...
+    $M16,...
+    $M22,...
+    $M24,...
+    $M33,...
+    $M34,...
+    $M44,...
+    $M55,...
+    $M56,...
+    $M66,...
+    $S11,...
+    $S12,...
+    $S13,...
+    $S15,...
+    $S16,...
+    $S22,...
+    $S23,...
+    $S25,...
+    $S26,...
+    $S33,...
+    $S35,...
+    $S36,...
+    $S55,...
+    $S56,...
+    $S66,...
+    $S14_1,...
+    $S14_2,...
+    $S24_1,...
+    $S24_2,...
+    $S34_1,...
+    $S34_2,...
+    $S45_1,...
+    $S45_2,...
+    $S46_1,...
+    $S46_2,...
+    $S44_1,...
+    $S44_2,...
+    $S44_3,...
+    $C12,...
+    $C13,...
+    $C23,...
+    $C24,...
+    $C25,...
+    $C26,...
+    $C34,...
+    $C35,...
+    $C36,...
+    $C14_1,...
+    $C14_2,...
+    $C45_1,...
+    $C45_2,...
+    $C46_1,...
+    $C46_2);
+    """
 
     # Reconstruct dispOut.elStrain
 

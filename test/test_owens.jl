@@ -1,7 +1,8 @@
 path = splitdir(@__FILE__)[1]
 
-import OWENS
-# include("$path/../src/OWENS.jl")
+# import OWENS
+include("$path/../src/OWENS.jl")
+include("$path/../src/file_reading.jl")
 using Test
 import HDF5
 
@@ -65,7 +66,7 @@ function test_owens(test_transient,test_modal,test_flutter)
         # set up stiffness matrix
         cmkValues[dd,dd,2] = StiffVal[dd]
     end
-    # writeOwensNDL(fname, nodes, cmkType, cmkValues) #TODO: translate this
+    writeOwensNDL(fname, nodes, cmkType, cmkValues) #TODO: make this a direct pass
 
     # *********************************************************************
     # perform operations for the aerodynamic forces file generation
@@ -90,7 +91,7 @@ function test_owens(test_transient,test_modal,test_flutter)
 
     if test_transient
         println("Running Transient")
-        # Juno.@enter owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+        # Juno.@enter OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
         freq,damp=OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
     end
 
@@ -170,7 +171,11 @@ if verify_transient
     @test isapprox(old_gbHist,gbHist,atol = tol)
     @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
     @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
-    @test isapprox(old_FReactionHist,FReactionHist,atol = tol)
+    for ii = 1:length(FReactionHist)
+        # println(ii)
+        local digits = floor(log10(abs(old_FReactionHist[ii]))) #this way if the tol is 1e-5, then we are actually looking at significant digits, much better than comparing 1e-5 on a 1e6 large number, that's 11 significant digits!
+        @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol=tol*10^digits)
+    end
     @test isapprox(old_rigidDof,rigidDof,atol = tol)
     @test isapprox(old_genTorque,genTorque,atol = tol)
     @test isapprox(old_genPower,genPower,atol = tol)
