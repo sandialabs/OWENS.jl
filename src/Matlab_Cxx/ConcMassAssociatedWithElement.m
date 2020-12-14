@@ -125,41 +125,41 @@ end
 
 
 for i=1:length(nodalMassTerms)   %if node is specified in nodal mass terms file add to mass properties for this node
-    node1flagM=ismember(nodalMassTerms(i).nodeNum,node1);
-    node2flagM=ismember(nodalMassTerms(i).nodeNum,node2);
+    node1flagM=ismember(nodalMassTerms{i}.nodeNum,node1);
+    node2flagM=ismember(nodalMassTerms{i}.nodeNum,node2);
     if(node1flagM==1)
-        if(nodalMassTerms(i).dof == 1)
-            mass1 = mass1+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 1)
+            mass1 = mass1+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
-        if(nodalMassTerms(i).dof == 4)
-            moix1 = moix1+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 4)
+            moix1 = moix1+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
-        if(nodalMassTerms(i).dof == 5)
-            moiy1 = moiy1+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 5)
+            moiy1 = moiy1+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
-        if(nodalMassTerms(i).dof == 6)
-            moiz1 = moiz1+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 6)
+            moiz1 = moiz1+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
     end
     if(node2flagM==1)
-        mass2 = mass2+nodalMassTerms(i).val;
-        modNodalMassTerms(i).val = 0.0;
+        mass2 = mass2+nodalMassTerms{i}.val;
+        modNodalMassTerms{i}.val = 0.0;
 
-        if(nodalMassTerms(i).dof == 4)
-            moix2 = moix2+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 4)
+            moix2 = moix2+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
-        if(nodalMassTerms(i).dof == 5)
-            moiy2 = moiy2+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 5)
+            moiy2 = moiy2+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
-        if(nodalMassTerms(i).dof == 6)
-            moiz2 = moiz2+nodalMassTerms(i).val;
-            modNodalMassTerms(i).val = 0.0;
+        if(nodalMassTerms{i}.dof == 6)
+            moiz2 = moiz2+nodalMassTerms{i}.val;
+            modNodalMassTerms{i}.val = 0.0;
         end
     end
 end
@@ -167,84 +167,84 @@ end
 
 
 for i=1:length(nodalStiffnessTerms)     %if node is specified in nodal stiffness terms file add to stiffness properties for this node
-    node1flagK=ismember(nodalStiffnessTerms(i).nodeNum,node1);
-    node2flagK=ismember(nodalStiffnessTerms(i).nodeNum,node2);
+    node1flagK=ismember(nodalStiffnessTerms{i}.nodeNum,node1);
+    node2flagK=ismember(nodalStiffnessTerms{i}.nodeNum,node2);
     if(node1flagK==1)
-        if(nodalStiffnessTerms(i).dof==1)
-            stiff1x = stiff1x+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==2)
-            stiff1y = stiff1y+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==3)
-            stiff1z = stiff1z+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==4)
-            stiff1mx = stiff1mx+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==5)
-            stiff1my = stiff1my+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==6)
-            stiff1mz = stiff1mz+nodalStiffnessTerms(i).val;
+        if(nodalStiffnessTerms{i}.dof==1)
+            stiff1x = stiff1x+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==2)
+            stiff1y = stiff1y+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==3)
+            stiff1z = stiff1z+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==4)
+            stiff1mx = stiff1mx+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==5)
+            stiff1my = stiff1my+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==6)
+            stiff1mz = stiff1mz+nodalStiffnessTerms{i}.val;
         else
             error('DOF not valid for  concentrated stiffness term.');
         end
-        modNodalStiffnessTerms(i).val = 0.0;
+        modNodalStiffnessTerms{i}.val = 0.0;
     end
     if(node2flagK==1)
-        if(nodalStiffnessTerms(i).dof==1)
-            stiff2x = stiff2x+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==2)
-            stiff2y = stiff2y+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==3)
-            stiff2z = stiff2z+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==4)
-            stiff2mx = stiff2mx+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==5)
-            stiff2my = stiff2my+nodalStiffnessTerms(i).val;
-        elseif(nodalStiffnessTerms(i).dof==6)
-            stiff2mz = stiff2mz+nodalStiffnessTerms(i).val;
+        if(nodalStiffnessTerms{i}.dof==1)
+            stiff2x = stiff2x+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==2)
+            stiff2y = stiff2y+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==3)
+            stiff2z = stiff2z+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==4)
+            stiff2mx = stiff2mx+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==5)
+            stiff2my = stiff2my+nodalStiffnessTerms{i}.val;
+        elseif(nodalStiffnessTerms{i}.dof==6)
+            stiff2mz = stiff2mz+nodalStiffnessTerms{i}.val;
         else
             error('DOF not valid for  concentrated stiffness term.');
         end
-        modNodalStiffnessTerms(i).val = 0.0;
+        modNodalStiffnessTerms{i}.val = 0.0;
     end
 end
 
 for i=1:length(nodalLoads)  %if node is specified in nodal forces terms file add to concentrated force for this node
-    node1flagF=ismember(nodalLoads(i).nodeNum,node1);
-    node2flagF=ismember(nodalLoads(i).nodeNum,node2);
+    node1flagF=ismember(nodalLoads{i}.nodeNum,node1);
+    node2flagF=ismember(nodalLoads{i}.nodeNum,node2);
     if(node1flagF==1)
-        if(nodalLoads(i).dof==1)
-            f1x = f1x+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==2)
-            f1y = f1y+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==3)
-            f1z = f1z+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==4)
-            m1x = m1x+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==5)
-            m1y = m1y+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==6)
-            m1z = m1z+nodalLoads(i).val;
+        if(nodalLoads{i}.dof==1)
+            f1x = f1x+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==2)
+            f1y = f1y+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==3)
+            f1z = f1z+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==4)
+            m1x = m1x+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==5)
+            m1y = m1y+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==6)
+            m1z = m1z+nodalLoads{i}.val;
         else
             error('DOF not valid for  concentrated stiffness term.');
         end
-        modNodalLoads(i).val = 0.0;
+        modNodalLoads{i}.val = 0.0;
     end
     if(node2flagF==1)
-        if(nodalLoads(i).dof==1)
-            f2x = f2x+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==2)
-            f2y = f2y+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==3)
-            f2z = f2z+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==4)
-            m2x = m2x+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==5)
-            m2y = m2y+nodalLoads(i).val;
-        elseif(nodalLoads(i).dof==6)
-            m2z = m2z+nodalLoads(i).val;
+        if(nodalLoads{i}.dof==1)
+            f2x = f2x+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==2)
+            f2y = f2y+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==3)
+            f2z = f2z+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==4)
+            m2x = m2x+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==5)
+            m2y = m2y+nodalLoads{i}.val;
+        elseif(nodalLoads{i}.dof==6)
+            m2z = m2z+nodalLoads{i}.val;
         else
             error('DOF not valid for  concentrated stiffness term.');
         end
-        modNodalLoads(i).val = 0.0;
+        modNodalLoads{i}.val = 0.0;
     end
 end
 

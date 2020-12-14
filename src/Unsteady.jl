@@ -427,7 +427,7 @@ function Unsteady(model,mesh,el)
         ##
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-            println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
+            # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
             CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
@@ -590,7 +590,7 @@ function Unsteady(model,mesh,el)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            println("starting Aero Loads")
+            # println("starting Aero Loads")
             if CACTUS
                 Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
             else
@@ -641,11 +641,19 @@ function Unsteady(model,mesh,el)
             else
                 # evalulate structural dynamics using conventional representation
                 t_in = t[i]
-                # mat"[$elStrain,$dispOut,$FReaction_j] = structuralDynamicsTransient2($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
-                # Juno.@enter call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+                mat"[$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient2($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
+                elStrain = Array{ElStrain, 1}(undef, mesh.numEl)
+
+                for jj = 1:mesh.numEl
+                    elStrain[jj] =  ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
+                end
+                dispOut = DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
+
                 # start = time()
-                elStrain,dispOut,FReaction_j = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
-                # elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+                # elStrain,dispOut,FReaction_j,Kgmat = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
+                # elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+
+                # error("stop")
                 # println("$(time()-start)")
             end
             #update last iteration displacement vector
@@ -655,7 +663,7 @@ function Unsteady(model,mesh,el)
             udot_j  = dispOut.displdot_sp1
             uddot_j = dispOut.displddot_sp1
 
-            println("ran structdyn")
+            # println("ran structdyn")
             if (occursin("ROM",model.analysisType))
                 #             udot_j  = dispOut.displdot_sp1
                 #             uddot_j = dispOut.displddot_sp1
@@ -774,7 +782,7 @@ function Unsteady(model,mesh,el)
             rigidDof[i] = 0
         end
 
-        FReactionHist[i+1,:] = FReaction_j
+        # FReactionHist[i+1,:] = FReaction_j
         ##
 
         ## check rotor speed for generator operation

@@ -581,9 +581,9 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     elz=zeros(numNodesPerEl,2)
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
-    eldispdot = eldisp
-    eldispddot = eldisp
-    eldispiter = eldisp
+    eldispdot = zero(eldisp)
+    eldispddot = zero(eldisp)
+    eldispiter = zero(eldisp)
     # if (model.nlOn)
     #      iterationType = model.nlParams.iterationType
     # else
@@ -612,13 +612,13 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
 
         timeInt = TimeInt(delta_t,a1,a2,a3,a4,a5,a6,a7,a8)
 
-        disp_s = dispData.displ_s
-        dispdot_s = dispData.displdot_s
-        dispddot_s = dispData.displddot_s
+        disp_s = copy(dispData.displ_s)
+        dispdot_s = copy(dispData.displdot_s)
+        dispddot_s = copy(dispData.displddot_s)
 
-        displddot_im1 = dispddot_s
-        displdot_im1 = dispdot_s
-        displ_im1 = disp_s
+        displddot_im1 = copy(dispddot_s)
+        displdot_im1 = copy(dispdot_s)
+        displ_im1 = copy(disp_s)
 
     elseif occursin("TD",analysisType)
         #------ dean integration parameters -------------
@@ -692,7 +692,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
         Kg = zeros(totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
         Fg = zeros(totalNumDOF)
 
-        nodalTerms = nodalTermsCopy
+        nodalTerms = deepcopy(nodalTermsCopy)
         #-------------------------------------------
 
         #---- element  calculation and assembly ----------------------------------
@@ -770,7 +770,8 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             elInput.displ_iter = eldispiter
 
             # Juno.@enter calculateTimoshenkoElementNL(elInput,elStorage[i]) #calculate timoshenko element
-            elOutput = calculateTimoshenkoElementNL(elInput,elStorage[i]) #calculate timoshenko element
+            in2 = elStorage[i]
+            mat"$elOutput = calculateTimoshenkoElementNL($elInput,$in2)" #calculate timoshenko element
 
             conin = conn[i,:]
 
@@ -839,10 +840,11 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     reactionNodeNumber = model.platformTurbineConnectionNodeNumber
 
 
-    FReaction = calculateReactionForceAtNode(reactionNodeNumber,model,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H)
+    mat"$FReaction = calculateReactionForceAtNode($reactionNodeNumber,$model,$mesh,$el,$elStorage,$timeInt,$dispData,$displ_im1,$rbData,$Omega,$OmegaDot,$CN2H)"
 
     #Calculate strain
-    elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_im1,model.nlOn)
+    in2 = model.nlOn
+    mat"$elStrain = calculateStrainForElements($numEl,$numNodesPerEl,$numDOFPerNode,$conn,$elementOrder,$el,$displ_im1,$in2)"
 
     if (iterationCount>=maxIterations)
         error("Maximum iterations exceeded.")
@@ -942,12 +944,12 @@ function calculateTimoshenkoElementNL(input,elStorage)
     #--------------------------------------------
     #setting for modal analysis flag
     if (occursin("M",analysisType))
-        disp_iter=disp
+        disp_iter=copy(disp)
     end
 
     #setting for initial reduced order model calculations
     if (occursin("RM0",analysisType))
-        disp_iter=disp
+        disp_iter=copy(disp)
         omegaVec = input.omegaVec
         omegaDotVec = input.omegaDotVec
         accelVec = input.accelVec
@@ -971,38 +973,38 @@ function calculateTimoshenkoElementNL(input,elStorage)
     numNodesPerEl = length(x)
 
     F1 = zeros(numNodesPerEl,1)
-    F3 = F1
-    F2 = F1
-    F4 = F1
-    F5 = F1
-    F6 = F1
+    F3 = zero(F1)
+    F2 = zero(F1)
+    F4 = zero(F1)
+    F5 = zero(F1)
+    F6 = zero(F1)
 
     SS22 = zeros(numNodesPerEl) #initialize pre-stress (stress stiffening matrices)
-    SS33 = SS22
+    SS33 = zero(SS22)
 
     #initialize nonlinear element matrices, only used if (useDisp)
     K12NL = zeros(numNodesPerEl)
-    K13NL = K12NL
-    K22NL = K12NL
-    K23NL = K12NL
-    K33NL = K12NL
-    K22NLhat = K22NL
-    K33NLhat = K33NL
-    K23NLhat = K23NL
+    K13NL = zero(K12NL)
+    K22NL = zero(K12NL)
+    K23NL = zero(K12NL)
+    K33NL = zero(K12NL)
+    K22NLhat = zero(K22NL)
+    K33NLhat = zero(K33NL)
+    K23NLhat = zero(K23NL)
 
 
     #initialize aeroelastic matrices only used if aeroElasticOn, but must declare type
     K33Aero = zeros(numNodesPerEl)
-    K34Aero = K33Aero
-    C33Aero = K33Aero
-    C34Aero = K33Aero
-    K43Aero = K33Aero
-    K44Aero = K33Aero
-    C43Aero = K33Aero
-    C44Aero = K33Aero
+    K34Aero = zero(K33Aero)
+    C33Aero = zero(K33Aero)
+    C34Aero = zero(K33Aero)
+    K43Aero = zero(K33Aero)
+    K44Aero = zero(K33Aero)
+    C43Aero = zero(K33Aero)
+    C44Aero = zero(K33Aero)
 
     C33 = zeros(numNodesPerEl,numNodesPerEl)
-    C44 = C33
+    C44 = zero(C33)
 
     #Convert frequencies from Hz to radians
     Omega = 2*pi*Omega
@@ -1067,12 +1069,12 @@ function calculateTimoshenkoElementNL(input,elStorage)
     for i=1:numGP
         #Calculate shape functions at quad point i
         N,p_N_x,Jac = calculateShapeFunctions(elementOrder,xi[i],xloc)
-        N1 = N;  p_N1_x = p_N_x
-        N2 = N;  p_N2_x = p_N_x
-        N3 = N;  p_N3_x = p_N_x
-        N4 = N;
-        N5 = N;
-        N6 = N;
+        N1 = copy(N);  p_N1_x = copy(p_N_x)
+        N2 = copy(N);  p_N2_x = copy(p_N_x)
+        N3 = copy(N);  p_N3_x = copy(p_N_x)
+        N4 = copy(N);
+        N5 = copy(N);
+        N6 = copy(N);
         integrationFactor = Jac * weight[i]
 
         #..... interpolate for value at quad point .....
@@ -1238,9 +1240,9 @@ function calculateTimoshenkoElementNL(input,elStorage)
     for i=1:numGPRI
         #Calculate shape functions at quad point i
         N,p_N_x,Jac = calculateShapeFunctions(elementOrder,xiRI[i],xloc)
-        p_N1_x = p_N_x
-        p_N2_x = p_N_x
-        p_N3_x = p_N_x
+        p_N1_x = copy(p_N_x)
+        p_N2_x = copy(p_N_x)
+        p_N3_x = copy(p_N_x)
 
         integrationFactor = Jac * weightRI[i]
 
@@ -1627,8 +1629,8 @@ function calculateTimoshenkoElementNL(input,elStorage)
 
         #..........................................................
 
-        Ke = Khate
-        Fe = Fhate
+        Ke = copy(Khate)
+        Fe = copy(Fhate)
     end
 
     if (occursin("TNB",analysisType)) #calculate effective stiffness matrix and load vector for Newmark-Beta integrator
@@ -1641,9 +1643,9 @@ function calculateTimoshenkoElementNL(input,elStorage)
         a7 = timeInt.a7
         a8 = timeInt.a8
 
-        u=disp
-        udot=dispdot
-        uddot=dispddot
+        u=copy(disp)
+        udot=copy(dispdot)
+        uddot=copy(dispddot)
         if (occursin("NR",iterationType))    #considerations if newton raphson iteration is used
             if (input.firstIteration)
                 A = a3*u + a4*udot + a5*uddot
@@ -1678,8 +1680,8 @@ function calculateTimoshenkoElementNL(input,elStorage)
 
         #........................................................
 
-        Ke = Khate
-        Fe = Fhate
+        Ke = copy(Khate)
+        Fe = copy(Fhate)
 
     end
 
@@ -1821,14 +1823,14 @@ function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sw
         #N2 = N
         #N3 = N
         #N4 = N
-        N5 = N
-        N6 = N
-        p_N1_x = p_N_x
-        p_N2_x = p_N_x
-        p_N3_x = p_N_x
-        p_N4_x = p_N_x
-        p_N5_x = p_N_x
-        p_N6_x = p_N_x
+        N5 = copy(N)
+        N6 = copy(N)
+        p_N1_x = copy(p_N_x)
+        p_N2_x = copy(p_N_x)
+        p_N3_x = copy(p_N_x)
+        p_N4_x = copy(p_N_x)
+        p_N5_x = copy(p_N_x)
+        p_N6_x = copy(p_N_x)
 
         #calculate displacement derivatives at quad point i
         uprime = interpolateVal(uNode,p_N1_x)
@@ -1894,9 +1896,9 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
 
     eldisp = zeros(numNodesPerEl*numDOFPerNode)
     eldisp_sm1 = zeros(numNodesPerEl*numDOFPerNode)
-    eldispdot = eldisp
-    eldispddot = eldisp
-    eldispiter = eldisp
+    eldispdot = zero(eldisp)
+    eldispddot = zero(eldisp)
+    eldispiter = zero(eldisp)
     disp_s = dispData.displ_s
     # not always used, but must be declared, specific to TNB and ROM
     dispdot_s = dispData.displdot_s
@@ -1970,15 +1972,15 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
         end
     end
 
-    disp = eldisp
-    dispdot = eldispdot #specific to TNB and ROM
-    dispddot = eldispddot #specific to TNB and ROM
+    disp = copy(eldisp)
+    dispdot = copy(eldispdot) #specific to TNB and ROM
+    dispddot = copy(eldispddot) #specific to TNB and ROM
 
     if (occursin("TNB",analysisType) || occursin("ROM",analysisType))
-        displ_iter = eldispiter
+        displ_iter = copy(eldispiter)
     else#if occursin("S",analysisType)
-        displ_iter = eldisp
-        eldispiter = eldisp
+        displ_iter = copy(eldisp)
+        eldispiter = copy(eldisp)
         # else
         #     error("analysisType not supported, choose another")
     end
