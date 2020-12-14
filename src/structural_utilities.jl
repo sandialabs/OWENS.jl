@@ -1394,7 +1394,8 @@ function calculateReactionForceAtNode(nodeNum,model,mesh,el,elStorage,timeInt,di
     #process elements for nodal reaction forces and compile to find total
     #reaction force at specified node
     for i=1:length(elList)
-        Fpp = elementPostProcess(elList[i],model,mesh,el,elStorage,timeInt,dispData,displ_iter,rbData,Omega,OmegaDot,CN2H)
+        in2 = elList[i]
+        mat"$Fpp = elementPostProcess($in2,$model,$mesh,$el,$elStorage,$timeInt,$dispData,$displ_iter,$rbData,$Omega,$OmegaDot,$CN2H)"
         localNode = elListLocalNodeNumbers[i]
         cummulativeForce = cummulativeForce + Fpp[(localNode-1)*numDofPerNode+1:(localNode-1)*numDofPerNode+6]
     end

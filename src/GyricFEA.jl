@@ -840,8 +840,8 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     reactionNodeNumber = model.platformTurbineConnectionNodeNumber
 
 
-    mat"$FReaction = calculateReactionForceAtNode($reactionNodeNumber,$model,$mesh,$el,$elStorage,$timeInt,$dispData,$displ_im1,$rbData,$Omega,$OmegaDot,$CN2H)"
-
+    # mat"$FReaction = calculateReactionForceAtNode($reactionNodeNumber,$model,$mesh,$el,$elStorage,$timeInt,$dispData,$displ_im1,$rbData,$Omega,$OmegaDot,$CN2H)"
+    FReaction = calculateReactionForceAtNode(reactionNodeNumber,model,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H)
     #Calculate strain
     elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_im1,model.nlOn)
     if (iterationCount>=maxIterations)

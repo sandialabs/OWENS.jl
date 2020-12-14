@@ -172,7 +172,7 @@ if verify_transient
     @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
     @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
     for ii = 1:length(FReactionHist)
-        println(ii)
+        # println(ii)
         @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol = tol)
     end
     @test isapprox(old_rigidDof,rigidDof,atol = tol)
