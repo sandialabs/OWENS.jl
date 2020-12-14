@@ -776,9 +776,9 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             conin = conn[i,:]
 
 
-            Kg,Fg = assembly(elOutput.Ke,elOutput.Fe,conn[i,:],numNodesPerEl,numDOFPerNode,Kg,Fg) #assemble element stiffness matrix and force vector
+            Kg,Fg = assembly(elOutput["Ke"],elOutput["Fe"],conn[i,:],numNodesPerEl,numDOFPerNode,Kg,Fg) #assemble element stiffness matrix and force vector
 
-            #         Erestotal = Erestotal + elOutput.Eres
+            #         Erestotal = Erestotal + elOutput["Eres"]
             #................................................
         end #for
         #------- end element calculation and assembly ------------------
@@ -844,8 +844,12 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
 
     #Calculate strain
     in2 = model.nlOn
-    mat"$elStrain = calculateStrainForElements($numEl,$numNodesPerEl,$numDOFPerNode,$conn,$elementOrder,$el,$displ_im1,$in2)"
+    mat"[$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z] = calculateStrainForElements($numEl,$numNodesPerEl,$numDOFPerNode,$conn,$elementOrder,$el,$displ_im1,$in2)"
+    elStrain = Array{ElStrain, 1}(undef, mesh.numEl)
 
+    for jj = 1:mesh.numEl
+        elStrain[jj] =  ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
+    end
     if (iterationCount>=maxIterations)
         error("Maximum iterations exceeded.")
     end
@@ -2033,10 +2037,11 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
 
     #calculate element stiffness matrix and force vector
     #(or effective stiffness matrix and force vector from time integration)
-    elOutput = calculateTimoshenkoElementNL(elInput,elStorage[elementNumber])
+    in2 = elStorage[elementNumber]
+    mat"$elOutput = calculateTimoshenkoElementNL($elInput,$in2)"
 
     #post process for reaction force
-    FhatEl1PP = elOutput.Ke*eldispiter
+    FhatEl1PP = elOutput["Ke"]*eldispiter
     if occursin("TD",analysisType)
         denom = timeInt.a4
     else #if (occursin("TNB",analysisType) || occursin("ROM",analysisType))||occursin("S",analysisType)
@@ -2044,7 +2049,7 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
         # else
         #     error("analysisType not supported, choose another")
     end
-    Fpp = (FhatEl1PP - elOutput.FhatLessConc)./denom
+    Fpp = (FhatEl1PP - elOutput["FhatLessConc"])./denom
     ###----------------------------------------------------------------------
     return Fpp
 end

@@ -1,4 +1,4 @@
-function [elStrain] = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,nlflag)
+function [eps_xx_0,eps_xx_z,eps_xx_y,gam_xz_0,gam_xz_y,gam_xy_0,gam_xy_z] = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ,nlflag)
 % calculate strains
 
 single_elStrain = struct('eps_xx_0',zeros(1,4),'eps_xx_z',zeros(1,4),'eps_xx_y',...
@@ -37,5 +37,24 @@ for i=1:numEl
     elStrain(i).gam_xy_0 = temp.gam_xy_0;
     elStrain(i).gam_xy_z = temp.gam_xy_z;
 
+end
+eps_xx_0 = zeros(1,300);
+eps_xx_z = zeros(1,300);
+eps_xx_y = zeros(1,300);
+gam_xz_0 = zeros(1,300);
+gam_xz_y = zeros(1,300);
+gam_xy_0 = zeros(1,300);
+gam_xy_z = zeros(1,300);
+
+for jj = 1:length(elStrain)
+      for ii = 1:4
+            eps_xx_0(jj*4+ii-4) = elStrain(jj).eps_xx_0(ii);
+            eps_xx_z(jj*4+ii-4) = elStrain(jj).eps_xx_z(ii);
+            eps_xx_y(jj*4+ii-4) = elStrain(jj).eps_xx_y(ii);
+            gam_xz_0(jj*4+ii-4) = elStrain(jj).gam_xz_0(ii);
+            gam_xz_y(jj*4+ii-4) = elStrain(jj).gam_xz_y(ii);
+            gam_xy_0(jj*4+ii-4) = elStrain(jj).gam_xy_0(ii);
+            gam_xy_z(jj*4+ii-4) = elStrain(jj).gam_xy_z(ii);
+      end
 end
 end

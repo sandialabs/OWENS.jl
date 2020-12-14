@@ -1,4 +1,4 @@
-function [output] = calculateTimoshenkoElementNL(input,elStorage)
+function [output] = calculateTimoshenkoElementNL2(input,elStorage)
 %calculateTimoshenkoElementNL performs nonlinear element calculations
 % **********************************************************************
 % *                   Part of the SNL OWENS Toolkit                    *
@@ -132,11 +132,11 @@ OmegaDot = 2*pi*OmegaDot;
 
 %Sort displacement vector
 %Written for 2 node element with 6 dof per node
-twistAvg = rollAngle + 0.5*(sectionProps.twist(1) + sectionProps.twist(2));
+twistAvg = rollAngle + 0.5*(sectionProps{1}.twist(1) + sectionProps{1}.twist(2));
 lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0);
 lambdaSlim = lambda(1:3,1:3);
 
-dispLocal = lambda*disp_iter;
+dispLocal = lambda*disp_iter';
 
 uNode = [dispLocal(1) dispLocal(7)];
 vNode = [dispLocal(2) dispLocal(8)];
@@ -193,10 +193,10 @@ for i=1:numGP
     integrationFactor = Jac * weight(i);
 
     %..... interpolate for value at quad point .....
-    rhoA   = interpolateVal(sectionProps.rhoA,N); %struct mass terms
+    rhoA   = interpolateVal(sectionProps{1}.rhoA,N); %struct mass terms
 
     % Only used if (useDisp || preStress)
-    EA   = interpolateVal(sectionProps.EA,N);
+    EA   = interpolateVal(sectionProps{1}.EA,N);
     uprime = interpolateVal(uNode,p_N1_x);
     vprime = interpolateVal(vNode,p_N2_x);
     wprime = interpolateVal(wNode,p_N3_x);
@@ -204,8 +204,8 @@ for i=1:numGP
 
 
     %mass center offsets
-    ycm = interpolateVal(sectionProps.ycm,N);
-    zcm = interpolateVal(sectionProps.zcm,N);
+    ycm = interpolateVal(sectionProps{1}.ycm,N);
+    zcm = interpolateVal(sectionProps{1}.zcm,N);
 
     xgp      = interpolateVal(x,N1);
     ygp      = interpolateVal(y,N1);
@@ -216,13 +216,13 @@ for i=1:numGP
     if(aeroElasticOn || aeroForceOn)
         %aerodynamic props/data
         airDensity = input.airDensity;
-        acgp     = interpolateVal(sectionProps.ac,N1);
-        a0gp     = interpolateVal([sectionProps.a0],N1);
-        bgp      = interpolateVal(sectionProps.b,N1);
-        agp      = interpolateVal(sectionProps.a,N1);
+        acgp     = interpolateVal(sectionProps{1}.ac,N1);
+        a0gp     = interpolateVal([sectionProps{1}.a0],N1);
+        bgp      = interpolateVal(sectionProps{1}.b,N1);
+        agp      = interpolateVal(sectionProps{1}.a,N1);
         radiusgp = sqrt(xgp^2+ygp^2); % radiusgp = 0 for tower
         Uinfgp   = Omega*radiusgp;
-        twistgp = interpolateVal(sectionProps.twist,N1);
+        twistgp = interpolateVal(sectionProps{1}.twist,N1);
         %.... end interpolate value at quad points ........
     else
         airDensity = 0.0; %Not used but must declare type
@@ -363,7 +363,7 @@ for i=1:numGPRI
     %..... interpolate for value at quad point .....
 
     if(useDisp || preStress)
-        EA   = interpolateVal(sectionProps.EA,N);
+        EA   = interpolateVal(sectionProps{1}.EA,N);
         uprime = interpolateVal(uNode,p_N1_x);
         vprime = interpolateVal(vNode,p_N2_x);
         wprime = interpolateVal(wNode,p_N3_x);
@@ -393,27 +393,27 @@ for i=1:numGPRI
 end %END OF REDUCED INTEGRATION LOOP
 
 %unpack stored element stiffness data
-K11 = elStorage.K11;
-K12 = elStorage.K12;
-K13 = elStorage.K13;
-K14 = elStorage.K14;
-K15 = elStorage.K15;
-K16 = elStorage.K16;
-K22 = elStorage.K22;
-K23 = elStorage.K23;
-K24 = elStorage.K24;
-K25 = elStorage.K25;
-K26 = elStorage.K26;
-K33 = elStorage.K33;
-K34 = elStorage.K34;
-K35 = elStorage.K35;
-K36 = elStorage.K36;
-K44 = elStorage.K44;
-K45 = elStorage.K45;
-K46 = elStorage.K46;
-K55 = elStorage.K55;
-K56 = elStorage.K56;
-K66 = elStorage.K66;
+K11 = elStorage{1}.K11;
+K12 = elStorage{1}.K12;
+K13 = elStorage{1}.K13;
+K14 = elStorage{1}.K14;
+K15 = elStorage{1}.K15;
+K16 = elStorage{1}.K16;
+K22 = elStorage{1}.K22;
+K23 = elStorage{1}.K23;
+K24 = elStorage{1}.K24;
+K25 = elStorage{1}.K25;
+K26 = elStorage{1}.K26;
+K33 = elStorage{1}.K33;
+K34 = elStorage{1}.K34;
+K35 = elStorage{1}.K35;
+K36 = elStorage{1}.K36;
+K44 = elStorage{1}.K44;
+K45 = elStorage{1}.K45;
+K46 = elStorage{1}.K46;
+K55 = elStorage{1}.K55;
+K56 = elStorage{1}.K56;
+K66 = elStorage{1}.K66;
 
 if(useDisp) %modify stiffness matrices to account for nonlinear effects
     K21 = K12' + 2*K12NL';
@@ -433,68 +433,68 @@ K12hat  = K12;
 K13hat  = K13;
 
 %unpack stored element mass data
-M11 = elStorage.M11;
-M15 = elStorage.M15;
-M16 = elStorage.M16;
-M22 = elStorage.M22;
-M24 = elStorage.M24;
-M33 = elStorage.M33;
-M34 = elStorage.M34;
-M44 = elStorage.M44;
-M55 = elStorage.M55;
-M56 = elStorage.M56;
-M66 = elStorage.M66;
+M11 = elStorage{1}.M11;
+M15 = elStorage{1}.M15;
+M16 = elStorage{1}.M16;
+M22 = elStorage{1}.M22;
+M24 = elStorage{1}.M24;
+M33 = elStorage{1}.M33;
+M34 = elStorage{1}.M34;
+M44 = elStorage{1}.M44;
+M55 = elStorage{1}.M55;
+M56 = elStorage{1}.M56;
+M66 = elStorage{1}.M66;
 
 %unpack and scale stored element spin softening data
-S11 = elStorage.S11.*(O2^2 + O3^2);
-S12 = elStorage.S12.*O1*O2;
-S13 = elStorage.S13.*O1*O3;
-S15 = elStorage.S15.*(O2^2+O3^2);
-S16 = elStorage.S16.*(O2^2+O3^2);
-S22 = elStorage.S22.*(O1^2 + O3^2);
-S23 = elStorage.S23.*O2*O3;
-S25 = elStorage.S25.*(O1*O2);
-S26 = elStorage.S26.*(O1*O2);
-S33 = elStorage.S33.*(O1^2+O2^2);
-S35 = elStorage.S35.*O1*O3;
-S36 = elStorage.S36.*O1*O3;
-S55 = elStorage.S55.*(O2^2+O3^2);
-S56 = elStorage.S56.*(O2^2+O3^2);
-S66 = elStorage.S66.*(O2^2+O3^2);
-S14 = elStorage.S14_1.*O1*O3 + elStorage.S14_2.*O1*O2;
-S24 = elStorage.S24_1.*(O1^2+O3^2) + elStorage.S24_2.*O2*O3;
-S34 = elStorage.S34_1.*(O1^2+O2^2) + elStorage.S34_2.*O2*O3;
-S45 = elStorage.S45_1.*O1*O3 + elStorage.S45_2.*O1*O2;
-S46 = elStorage.S46_1.*O1*O2 + elStorage.S46_2.*O1*O3;
-S44 = elStorage.S44_1.*(O1^2+O3^2) + elStorage.S44_2.*(O1^2+O2^2) + elStorage.S44_3.*O2*O3;
+S11 = elStorage{1}.S11.*(O2^2 + O3^2);
+S12 = elStorage{1}.S12.*O1*O2;
+S13 = elStorage{1}.S13.*O1*O3;
+S15 = elStorage{1}.S15.*(O2^2+O3^2);
+S16 = elStorage{1}.S16.*(O2^2+O3^2);
+S22 = elStorage{1}.S22.*(O1^2 + O3^2);
+S23 = elStorage{1}.S23.*O2*O3;
+S25 = elStorage{1}.S25.*(O1*O2);
+S26 = elStorage{1}.S26.*(O1*O2);
+S33 = elStorage{1}.S33.*(O1^2+O2^2);
+S35 = elStorage{1}.S35.*O1*O3;
+S36 = elStorage{1}.S36.*O1*O3;
+S55 = elStorage{1}.S55.*(O2^2+O3^2);
+S56 = elStorage{1}.S56.*(O2^2+O3^2);
+S66 = elStorage{1}.S66.*(O2^2+O3^2);
+S14 = elStorage{1}.S14_1.*O1*O3 + elStorage{1}.S14_2.*O1*O2;
+S24 = elStorage{1}.S24_1.*(O1^2+O3^2) + elStorage{1}.S24_2.*O2*O3;
+S34 = elStorage{1}.S34_1.*(O1^2+O2^2) + elStorage{1}.S34_2.*O2*O3;
+S45 = elStorage{1}.S45_1.*O1*O3 + elStorage{1}.S45_2.*O1*O2;
+S46 = elStorage{1}.S46_1.*O1*O2 + elStorage{1}.S46_2.*O1*O3;
+S44 = elStorage{1}.S44_1.*(O1^2+O3^2) + elStorage{1}.S44_2.*(O1^2+O2^2) + elStorage{1}.S44_3.*O2*O3;
 
 %unpack and scale stored element Corilois data
-C12 = elStorage.C12.*O3;
-C13 = elStorage.C13.*O2;
-C23 = elStorage.C23.*O1;
-C24 = elStorage.C24.*O1;
-C25 = elStorage.C25.*O3;
-C26 = elStorage.C26.*O3;
-C34 = elStorage.C34.*O1;
-C35 = elStorage.C35.*O2;
-C36 = elStorage.C36.*O2;
-C14 = elStorage.C14_1.*O2 + elStorage.C14_2.*O3;
-C45 = elStorage.C45_1.*O3 + elStorage.C45_2.*O2;
-C46 = elStorage.C46_1.*O2 + elStorage.C46_2.*O3;
+C12 = elStorage{1}.C12.*O3;
+C13 = elStorage{1}.C13.*O2;
+C23 = elStorage{1}.C23.*O1;
+C24 = elStorage{1}.C24.*O1;
+C25 = elStorage{1}.C25.*O3;
+C26 = elStorage{1}.C26.*O3;
+C34 = elStorage{1}.C34.*O1;
+C35 = elStorage{1}.C35.*O2;
+C36 = elStorage{1}.C36.*O2;
+C14 = elStorage{1}.C14_1.*O2 + elStorage{1}.C14_2.*O3;
+C45 = elStorage{1}.C45_1.*O3 + elStorage{1}.C45_2.*O2;
+C46 = elStorage{1}.C46_1.*O2 + elStorage{1}.C46_2.*O3;
 
 %unpack and scale stored element Circulatory data
-H12 = 0.5*elStorage.C12.*O3dot;
-H13 = 0.5*elStorage.C13.*O2dot;
-H23 = 0.5*elStorage.C23.*O1dot;
-H24 = 0.5*elStorage.C24.*O1dot;
-H25 = 0.5*elStorage.C25.*O3dot;
-H26 = 0.5*elStorage.C26.*O3dot;
-H34 = 0.5*elStorage.C34.*O1dot;
-H35 = 0.5*elStorage.C35.*O2dot;
-H36 = 0.5*elStorage.C36.*O2dot;
-H14 = 0.5*(elStorage.C14_1.*O2dot + elStorage.C14_2.*O3dot);
-H45 = 0.5*(elStorage.C45_1.*O3dot + elStorage.C45_2.*O2dot);
-H46 = 0.5*(elStorage.C46_1.*O2dot + elStorage.C46_2.*O3dot);
+H12 = 0.5*elStorage{1}.C12.*O3dot;
+H13 = 0.5*elStorage{1}.C13.*O2dot;
+H23 = 0.5*elStorage{1}.C23.*O1dot;
+H24 = 0.5*elStorage{1}.C24.*O1dot;
+H25 = 0.5*elStorage{1}.C25.*O3dot;
+H26 = 0.5*elStorage{1}.C26.*O3dot;
+H34 = 0.5*elStorage{1}.C34.*O1dot;
+H35 = 0.5*elStorage{1}.C35.*O2dot;
+H36 = 0.5*elStorage{1}.C36.*O2dot;
+H14 = 0.5*(elStorage{1}.C14_1.*O2dot + elStorage{1}.C14_2.*O3dot);
+H45 = 0.5*(elStorage{1}.C45_1.*O3dot + elStorage{1}.C45_2.*O2dot);
+H46 = 0.5*(elStorage{1}.C46_1.*O2dot + elStorage{1}.C46_2.*O3dot);
 
 
 %compile stiffness matrix without rotational effects
@@ -768,7 +768,7 @@ if(strcmp(input.analysisType,'TNB')) %calculate effective stiffness matrix and l
     elseif(strcmp(iterationType,'DI')||strcmp(iterationType,'LINEAR'))   %considerations if direct iteration is used or linear analysis
         A = a3*u + a4*udot + a5*uddot;
         B = a6*u + a7*udot + a8*uddot;
-        Fhate = Fe + Me*(A) + Ce*(B);
+        Fhate = Fe + Me*(A') + Ce*(B');
     end
 
     Khate = Ke + a3.*Me + a6.*Ce;
