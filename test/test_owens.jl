@@ -173,7 +173,8 @@ if verify_transient
     @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
     for ii = 1:length(FReactionHist)
         # println(ii)
-        @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol = tol)
+        local digits = floor(log10(abs(old_FReactionHist[ii]))) #this way if the tol is 1e-5, then we are actually looking at significant digits, much better than comparing 1e-5 on a 1e6 large number, that's 11 significant digits!
+        @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol=tol*10^digits)
     end
     @test isapprox(old_rigidDof,rigidDof,atol = tol)
     @test isapprox(old_genTorque,genTorque,atol = tol)

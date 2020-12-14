@@ -769,14 +769,12 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
 
             elInput.displ_iter = eldispiter
 
-            # Juno.@enter calculateTimoshenkoElementNL(elInput,elStorage[i]) #calculate timoshenko element
-            in2 = elStorage[i]
-            mat"$elOutput = calculateTimoshenkoElementNL($elInput,$in2)" #calculate timoshenko element
+            elOutput = calculateTimoshenkoElementNL(elInput,elStorage[i]) #calculate timoshenko element
 
             conin = conn[i,:]
 
 
-            Kg,Fg = assembly(elOutput["Ke"],elOutput["Fe"],conn[i,:],numNodesPerEl,numDOFPerNode,Kg,Fg) #assemble element stiffness matrix and force vector
+            Kg,Fg = assembly(elOutput.Ke,elOutput.Fe,conn[i,:],numNodesPerEl,numDOFPerNode,Kg,Fg) #assemble element stiffness matrix and force vector
 
             #         Erestotal = Erestotal + elOutput["Eres"]
             #................................................
@@ -839,8 +837,6 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     #Calculate reaction at turbine base (hardwired to node number 1)
     reactionNodeNumber = model.platformTurbineConnectionNodeNumber
 
-
-    # mat"$FReaction = calculateReactionForceAtNode($reactionNodeNumber,$model,$mesh,$el,$elStorage,$timeInt,$dispData,$displ_im1,$rbData,$Omega,$OmegaDot,$CN2H)"
     FReaction = calculateReactionForceAtNode(reactionNodeNumber,model,mesh,el,elStorage,timeInt,dispData,displ_im1,rbData,Omega,OmegaDot,CN2H)
     #Calculate strain
     elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_im1,model.nlOn)
@@ -878,6 +874,45 @@ function calcUnorm(unew,uold)
     #This function calculates a relative norm between two vectors: unew and
     #uold
     return LinearAlgebra.norm(unew-uold)/LinearAlgebra.norm(unew)
+end
+
+
+
+function mapMatrixNonSym(Ktemp)
+    ###----- function to form total stifness matrix and transform to desired
+    # DOF mapping
+
+    T = [1 0 0 0 0 0 0 0 0 0 0 0;
+    0 0 0 0 0 0 1 0 0 0 0 0;
+    0 1 0 0 0 0 0 0 0 0 0 0;
+    0 0 0 0 0 0 0 1 0 0 0 0;
+    0 0 1 0 0 0 0 0 0 0 0 0;
+    0 0 0 0 0 0 0 0 1 0 0 0;
+    0 0 0 1 0 0 0 0 0 0 0 0;
+    0 0 0 0 0 0 0 0 0 1 0 0;
+    0 0 0 0 1 0 0 0 0 0 0 0;
+    0 0 0 0 0 0 0 0 0 0 1 0;
+    0 0 0 0 0 1 0 0 0 0 0 0;
+    0 0 0 0 0 0 0 0 0 0 0 1];
+
+    #map to FEA numbering
+    Kel = T'*Ktemp*T
+
+    #declare map
+    # map = [1, 7, 2, 8, 3, 9,...
+    #       4, 10, 5, 11, 6, 12];
+    #
+    # #map to FEA numbering
+    # for i=1:a
+    #     I=map[i];
+    #     for j=1:a
+    #         J=map(j);
+    #         Kel(I,J) = Ktemp(i,j);
+    #     end
+    # end
+
+    return Kel
+
 end
 
 function calculateTimoshenkoElementNL(input,elStorage)
@@ -1683,8 +1718,6 @@ function calculateTimoshenkoElementNL(input,elStorage)
 
     end
 
-    FhatLessConc  = zeros(size(Fe))
-
     if (occursin("M",analysisType))
         FhatLessConc =   Fe - [concLoad[1,1]
         concLoad[2,1]
@@ -1723,42 +1756,6 @@ function calculateTimoshenkoElementNL(input,elStorage)
     return ElOutput(FhatLessConc,Ke,Fe,Me,Ce)
 end
 
-function mapMatrixNonSym(Ktemp)
-    ###----- function to form total stifness matrix and transform to desired
-    # DOF mapping
-
-    T = [1 0 0 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 1 0 0 0 0 0;
-    0 1 0 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 1 0 0 0 0;
-    0 0 1 0 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 1 0 0 0;
-    0 0 0 1 0 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 1 0 0;
-    0 0 0 0 1 0 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 0 1 0;
-    0 0 0 0 0 1 0 0 0 0 0 0;
-    0 0 0 0 0 0 0 0 0 0 0 1];
-
-    #map to FEA numbering
-    Kel = T'*Ktemp*T
-
-    #declare map
-    # map = [1, 7, 2, 8, 3, 9,...
-    #       4, 10, 5, 11, 6, 12];
-    #
-    # #map to FEA numbering
-    # for i=1:a
-    #     I=map[i];
-    #     for j=1:a
-    #         J=map(j);
-    #         Kel(I,J) = Ktemp(i,j);
-    #     end
-    # end
-
-    return Kel
-
-end
 
 function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sweepAngle,coneAngle,rollAngle,aeroSweepAngle,disp)
     #calculateTimoshenkoElementNL performs nonlinear element calculations
@@ -2031,11 +2028,10 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
 
     #calculate element stiffness matrix and force vector
     #(or effective stiffness matrix and force vector from time integration)
-    in2 = elStorage[elementNumber]
-    mat"$elOutput = calculateTimoshenkoElementNL($elInput,$in2)"
+    elOutput = calculateTimoshenkoElementNL(elInput,elStorage[elementNumber])
 
     #post process for reaction force
-    FhatEl1PP = elOutput["Ke"]*eldispiter
+    FhatEl1PP = elOutput.Ke*eldispiter
     if occursin("TD",analysisType)
         denom = timeInt.a4
     else #if (occursin("TNB",analysisType) || occursin("ROM",analysisType))||occursin("S",analysisType)
@@ -2043,7 +2039,7 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
         # else
         #     error("analysisType not supported, choose another")
     end
-    Fpp = (FhatEl1PP - elOutput["FhatLessConc"])./denom
+    Fpp = (FhatEl1PP - elOutput.FhatLessConc)./denom
     ###----------------------------------------------------------------------
     return Fpp
 end
