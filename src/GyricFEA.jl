@@ -843,13 +843,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     mat"$FReaction = calculateReactionForceAtNode($reactionNodeNumber,$model,$mesh,$el,$elStorage,$timeInt,$dispData,$displ_im1,$rbData,$Omega,$OmegaDot,$CN2H)"
 
     #Calculate strain
-    in2 = model.nlOn
-    mat"[$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z] = calculateStrainForElements($numEl,$numNodesPerEl,$numDOFPerNode,$conn,$elementOrder,$el,$displ_im1,$in2)"
-    elStrain = Array{ElStrain, 1}(undef, mesh.numEl)
-
-    for jj = 1:mesh.numEl
-        elStrain[jj] =  ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
-    end
+    elStrain = calculateStrainForElements(numEl,numNodesPerEl,numDOFPerNode,conn,elementOrder,el,displ_im1,model.nlOn)
     if (iterationCount>=maxIterations)
         error("Maximum iterations exceeded.")
     end
