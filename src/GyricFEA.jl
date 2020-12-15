@@ -779,6 +779,13 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             #         Erestotal = Erestotal + elOutput["Eres"]
             #................................................
         end #for
+
+        #apply general 6x6  mass, damping, and stiffness matrices to nodes
+        # Except only stiffness is used here... #TODO: is this correct?  Shouldn't the cross coupling between say mass and force (from acceleration) be included with the cross terms?
+        # The way it's coded, if a 6x6 matrix is used, the diagonals are used in the timoshenko dynamic elements, and the cross terms (without the diagonal) are applied here.
+        Kg,_,_ = applyGeneralConcentratedTerms(Kg,Kg,Kg,model.nodalTerms.concStiffGen,model.nodalTerms.concMassGen,model.nodalTerms.concDampGen)
+
+
         #------- end element calculation and assembly ------------------
 
         ##
