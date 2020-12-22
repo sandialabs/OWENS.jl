@@ -2,7 +2,7 @@ path = splitdir(@__FILE__)[1]
 
 # import OWENS
 include("$path/../src/OWENS.jl")
-include("$path/../src/file_reading.jl")
+include("$path/../src/file_io.jl")
 using Test
 import HDF5
 
@@ -92,7 +92,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     if test_transient
         println("Running Transient")
         # Juno.@enter OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
-        freq,damp=OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+        model2=OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
     end
 
     if test_modal
@@ -105,10 +105,12 @@ function test_owens(test_transient,test_modal,test_flutter)
     end
 
     println("Function Finished")
+    return model2
 end
 
 verify_transient = true
-test_owens(verify_transient,false,false)
+# Juno.@profiler test_owens(verify_transient,false,false)
+model2 = test_owens(verify_transient,false,false)
 # mat"verifyOWENSPost"
 
 if verify_transient

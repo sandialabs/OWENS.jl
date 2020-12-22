@@ -667,3 +667,21 @@ function readCactusGeom(geom_fn)
 
     return CactusGeom(NBlade,NStrut,RotN,RotP,RefAR,RefR,blade,strut)
 end
+
+function generateOutputFilename(owensfilename,analysisType)
+    #This function generates an output file name depending on the analysis type
+
+    #find the last "." in owensfilename - helps to extract the prefix in the .owens
+    index = findlast(".",owensfilename)[1]
+
+    if (analysisType=="M"||analysisType=="F"||analysisType=="FA") #output filename (*.out) for modal/flutter analysis
+        outputfilename = string(owensfilename[1:index-1],".out")
+    elseif (analysisType=="S") #output file name (*_static.mat) for static analysis
+        outputfilename = string(owensfilename[1:index-1],"_static.mat")
+    elseif (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #output filename (*.mat) for transient analysis
+        outputfilename = string(owensfilename[1:index-1],".mat")
+    end
+
+    return outputfilename
+
+end

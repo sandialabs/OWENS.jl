@@ -326,7 +326,6 @@ mutable struct DispData
     displddot_s
 end
 
-
 mutable struct Model
     analysisType
     turbineStartup
@@ -372,6 +371,80 @@ mutable struct Model
     BC
     nodalTerms
     driveShaftProps
+end
+
+# this way you can use defaults and pass in what is different, and it's mapped
+# by keyword so it doesn't have to be in order.
+function Model(;analysisType = "TNB",
+    turbineStartup = 0,
+    usingRotorSpeedFunction = false,
+    tocp = [0.0,1.1],
+    initCond = [],
+    numTS = 50.0,
+    delta_t = 2e-3,
+    Omegaocp = [7.2,7.2] ./ 60,
+    aeroElasticOn = false,
+    aeroForceOn = true, #this need to get cleaned up in the code
+    aeroLoadsOn = false, #this need to get cleaned up in the code
+    driveTrainOn = false,
+    airDensity=1.2041,
+    guessFreq = 0,
+    gravityOn = true,
+    generatorOn = false,
+    hydroOn = false,
+    JgearBox = 0.0,
+    gearRatio = 1.0,
+    gearBoxEfficiency = 1.0,
+    useGeneratorFunction = false,
+    generatorProps = 0.0,
+    OmegaGenStart = 0.0,
+    omegaControl = false,
+    OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
+    totalNumDof = 0.0,
+    spinUpOn = false,
+    nlOn = false,
+    numModesToExtract = 20,
+    aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
+    owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
+    outFilename = "none",
+    RayleighAlpha = 0.0,
+    RayleighBeta = 0.0,
+    elementOrder = 1,
+    joint = [0,0],
+    platformTurbineConnectionNodeNumber = 1,
+    jointTransform = zeros(2,2),
+    reducedDOFList = zeros(Int,2),
+    numDofPerNode = 6,
+    numNodes = 0,
+    bladeData = [],
+    nlParams = [],
+    pBC = 0,
+    BC = [],
+    nodalTerms = [],
+    driveShaftProps = DriveShaftProps(0.0,0.0),
+    iterationType = "NR", # nlParams
+    adaptiveLoadSteppingFlag = true, # nlParams
+    tolerance = 1.0000e-06,# nlParams
+    maxIterations = 50,# nlParams
+    maxNumLoadSteps = 20,# nlParams
+    minLoadStepDelta = 0.0500,# nlParams
+    minLoadStep = 0.0500,# nlParams
+    prescribedLoadStep = 0.0)# nlParams
+
+    if pBC!=0
+        BC = makeBCdata(pBC,numNodes,numDofPerNode)
+    end
+
+    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
+    maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+
+    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
+    aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
+    guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
+    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
+    RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
+    reducedDOFList,bladeData,nlParams,BC,nodalTerms,driveShaftProps)
 end
 
 mutable struct NlParams

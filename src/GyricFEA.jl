@@ -593,7 +593,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     iterationType = "DI"
     analysisType = model.analysisType
 
-    if occursin("TNB",analysisType)
+    if analysisType=="TNB"
         #------ newmark integration parameters ---------
         alpha = 0.5
         gamma = 0.5
@@ -620,7 +620,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
         displdot_im1 = copy(dispdot_s)
         displ_im1 = copy(disp_s)
 
-    elseif occursin("TD",analysisType)
+    elseif analysisType=="TD"
         #------ dean integration parameters -------------
         alpha = 0.25
 
@@ -719,18 +719,18 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
 
                 #get element nodal displacements at s and s-1 time step
                 for k=1:numDOFPerNode
-                    #                 if occursin("TD",analysisType)
+                    #                 if analysisType=="TD"
                     #                     eldisp[index] = disp_s((conn[i,j]-1)*numDOFPerNode + k)
                     #                     eldisp_sm1[index] = disp_sm1((conn[i,j]-1)*numDOFPerNode + k)
                     #                     eldispiter[index] = displ_iter((conn[i,j]-1)*numDOFPerNode + k)
                     #                 end
-                    if occursin("TNB",analysisType)
+                    if analysisType=="TNB"
                         eldispiter[index] = displ_im1[(conn[i,j]-1)*numDOFPerNode + k]
-                        if (occursin("NR",iterationType))
+                        if (iterationType=="NR")
                             eldisp[index] = displ_im1[(conn[i,j]-1)*numDOFPerNode + k]
                             eldispdot[index] = displdot_im1[(conn[i,j]-1)*numDOFPerNode + k]
                             eldispddot[index] = displddot_im1[(conn[i,j]-1)*numDOFPerNode + k]
-                        elseif (occursin("DI",iterationType)||occursin("LINEAR",iterationType))
+                        elseif (iterationType=="DI"||iterationType=="LINEAR")
                             eldisp[index] = disp_s[(conn[i,j]-1)*numDOFPerNode + k]
                             eldispdot[index] = dispdot_s[(conn[i,j]-1)*numDOFPerNode + k]
                             eldispddot[index] = dispddot_s[(conn[i,j]-1)*numDOFPerNode + k]
@@ -741,6 +741,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             end
 
             #get concentrated terms associated with elemetn
+            #TODO: verify that concentrated mass associated with elements doesn't get double counted for joints, if you just add concetrated terms to platform node, then it isn't a concern
             massConc,stiffConc,loadConc,model.joint,nodalTerms.concMass,nodalTerms.concStiff = ConcMassAssociatedWithElement(conn[i,:],model.joint,nodalTerms.concMass,nodalTerms.concStiff,nodalTerms.concLoad)
 
             elInput.concMass = massConc
@@ -794,10 +795,10 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
         ##
         #Apply external loads to structure
         for i=1:length(Fexternal)
-            if occursin("TD",analysisType)
+            if analysisType=="TD"
                 Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]*delta_t^2
             end
-            if occursin("TNB",analysisType)
+            if analysisType=="TNB"
                 Fg[Fdof[i]] = Fg[Fdof[i]] + Fexternal[i]
             end
         end
@@ -817,7 +818,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
         solution = model.jointTransform*solution #transform to full dof listing
 
         if model.nlOn  #calculate norm between current iteration and last iteration
-            if occursin("NR",iterationType)
+            if iterationType=="NR"
                 unorm = calcUnorm(displ_im1+solution,displ_im1)
             else
                 unorm = calcUnorm(solution,displ_im1)
@@ -826,13 +827,13 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             unorm = 0.0
         end
 
-        if occursin("NR",iterationType)
+        if iterationType=="NR"
             #if newton raphson update u, udot, uddot at each iteration
             displ_im1 = displ_im1 + solution
             cap_delta_displ = displ_im1 - dispData.displ_s
             displddot_im1 = timeInt.a3*(cap_delta_displ) - timeInt.a4*dispData.displdot_s - timeInt.a5*dispData.displddot_s
             displdot_im1  = -timeInt.a7*dispData.displdot_s -timeInt.a8*dispData.displddot_s + timeInt.a6*(cap_delta_displ)
-        elseif (occursin("DI",iterationType)||occursin("LINEAR",iterationType))
+        elseif (iterationType=="DI"||iterationType=="LINEAR")
             displ_im1 = solution
         else
             error("iteration type not supported, choose another")
@@ -903,7 +904,8 @@ function mapMatrixNonSym(Ktemp)
     0 0 0 0 0 0 0 0 0 0 0 1];
 
     #map to FEA numbering
-    Kel = T'*Ktemp*T
+    T2 = SparseArrays.sparse(T)
+    Kel = T2'*Ktemp*T2
 
     #declare map
     # map = [1, 7, 2, 8, 3, 9,...
@@ -973,9 +975,9 @@ function calculateTimoshenkoElementNL(input,elStorage)
     dispddot = zeros(12)#declare type
 
     #options for Dean integrator
-    if (occursin("TD",analysisType))
+    if (analysisType=="TD")
         dispm1         = input.dispm1
-    elseif (occursin("TNB",analysisType))#options for newmark beta integrator
+    elseif (analysisType=="TNB")#options for newmark beta integrator
         accelVec       = input.accelVec
         dispdot      = input.dispdot
         dispddot     = input.dispddot
@@ -983,12 +985,12 @@ function calculateTimoshenkoElementNL(input,elStorage)
 
     #--------------------------------------------
     #setting for modal analysis flag
-    if (occursin("M",analysisType))
+    if (analysisType=="M")
         disp_iter=copy(disp)
     end
 
     #setting for initial reduced order model calculations
-    if (occursin("RM0",analysisType))
+    if (analysisType=="RM0")
         disp_iter=copy(disp)
         omegaVec = input.omegaVec
         omegaDotVec = input.omegaDotVec
@@ -1012,18 +1014,18 @@ function calculateTimoshenkoElementNL(input,elStorage)
     #Initialize element sub matrices and sub vectors
     numNodesPerEl = length(x)
 
-    F1 = zeros(numNodesPerEl,1)
+    F1 = zeros(numNodesPerEl)
     F3 = zero(F1)
     F2 = zero(F1)
     F4 = zero(F1)
     F5 = zero(F1)
     F6 = zero(F1)
 
-    SS22 = zeros(numNodesPerEl) #initialize pre-stress (stress stiffening matrices)
+    SS22 = zeros(numNodesPerEl,numNodesPerEl) #initialize pre-stress (stress stiffening matrices)
     SS33 = zero(SS22)
 
     #initialize nonlinear element matrices, only used if (useDisp)
-    K12NL = zeros(numNodesPerEl)
+    K12NL = zeros(numNodesPerEl,numNodesPerEl)
     K13NL = zero(K12NL)
     K22NL = zero(K12NL)
     K23NL = zero(K12NL)
@@ -1034,7 +1036,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
 
 
     #initialize aeroelastic matrices only used if aeroElasticOn, but must declare type
-    K33Aero = zeros(numNodesPerEl)
+    K33Aero = zeros(numNodesPerEl,numNodesPerEl)
     K34Aero = zero(K33Aero)
     C33Aero = zero(K33Aero)
     C34Aero = zero(K33Aero)
@@ -1308,7 +1310,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
             #K13NLhat = K13
             #nonlinear element tangent matrix component calculations
             # T_ij = K_ij + Khat_ij
-            if (occursin("NR",iterationType))
+            if (iterationType=="NR")
                 K22NLhat = calculateElement1(EA*(uprime + vprime^2 + 0.5*wprime^2),integrationFactor,p_N2_x,p_N2_x,K22NLhat)
                 K33NLhat = calculateElement1(EA*(uprime + wprime^2 + 0.5*vprime^2),integrationFactor,p_N3_x,p_N3_x,K33NLhat)
                 K23NLhat = calculateElement1(0.5*EA*vprime*wprime,integrationFactor,p_N2_x,p_N3_x,K23NLhat)
@@ -1492,7 +1494,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
     K16' K62 K63 K64 K56' K66])
 
     Kehat = 0.0 # Declare type
-    if (useDisp && occursin("NR",iterationType))
+    if (useDisp && iterationType=="NR")
         #compile component of tangent matrix
         Kehat = mapMatrixNonSym([zm K12hat K13hat zm zm zm
         zm K22NLhat K23NLhat zm zm zm
@@ -1541,7 +1543,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
     Ce = lambdaTran*Ce*lambda
 
     Ke = lambdaTran*Ke*lambda
-    if (useDisp && occursin("NR",iterationType))
+    if (useDisp && iterationType=="NR")
         Kehat =  lambdaTran*Kehat*lambda
     end
 
@@ -1636,7 +1638,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
     # Declare Types
     Fhate = zeros(12)
     FhatLessConc = zeros(12)
-    if (occursin("TD",analysisType)) #calculate effective stiffness matrix and force vector for Dean integrator
+    if (analysisType=="TD") #calculate effective stiffness matrix and force vector for Dean integrator
 
         a1 = timeInt.a1
         a2 = timeInt.a2
@@ -1673,7 +1675,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
         Fe = copy(Fhate)
     end
 
-    if (occursin("TNB",analysisType)) #calculate effective stiffness matrix and load vector for Newmark-Beta integrator
+    if (analysisType=="TNB") #calculate effective stiffness matrix and load vector for Newmark-Beta integrator
         #     a1 = timeInt.a1
         #     a2 = timeInt.a2
         a3 = timeInt.a3
@@ -1686,7 +1688,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
         u=copy(disp)
         udot=copy(dispdot)
         uddot=copy(dispddot)
-        if (occursin("NR",iterationType))    #considerations if newton raphson iteration is used
+        if (iterationType=="NR")    #considerations if newton raphson iteration is used
             if (input.firstIteration)
                 A = a3*u + a4*udot + a5*uddot
                 B = a6*u + a7*udot + a8*uddot
@@ -1694,14 +1696,14 @@ function calculateTimoshenkoElementNL(input,elStorage)
             else
                 Fhate = Fe  - Me*uddot' - Ce*udot' - (Ke)*u'
             end
-        elseif (occursin("DI",iterationType)||occursin("LINEAR",iterationType))   #considerations if direct iteration is used or linear analysis
+        elseif (iterationType=="DI"||iterationType=="LINEAR")   #considerations if direct iteration is used or linear analysis
             A = a3*u + a4*udot + a5*uddot
             B = a6*u + a7*udot + a8*uddot
             Fhate = Fe + Me*(A) + Ce*(B)
         end
 
         Khate = Ke + a3.*Me + a6.*Ce
-        if (occursin("NR",iterationType)) #considerations if newton raphson iteration is used
+        if (iterationType=="NR") #considerations if newton raphson iteration is used
             Khate = Kehat + Khate
         end
 
@@ -1725,7 +1727,7 @@ function calculateTimoshenkoElementNL(input,elStorage)
 
     end
 
-    if (occursin("M",analysisType))
+    if (analysisType=="M")
         FhatLessConc =   Fe - [concLoad[1,1]
         concLoad[2,1]
         concLoad[3,1]
@@ -1739,24 +1741,24 @@ function calculateTimoshenkoElementNL(input,elStorage)
         concLoad[5,2]
         concLoad[6,2]]
 
-        if (occursin("DI",iterationType))
+        if (iterationType=="DI")
             Fe = Fe*input.loadStep
         end
     end
 
-    if ((occursin("M",analysisType) || occursin("S",analysisType)) && occursin("NR",iterationType)) #considerations for newton-raphson iteration
+    if ((analysisType=="M" || analysisType=="S") && iterationType=="NR") #considerations for newton-raphson iteration
         Fe = Fe*input.loadStep - Ke*disp_iter'
         Ke = Ke + Kehat
     end
 
     ###----- assign output block ----------------
 
-    if !(occursin("M",analysisType)||occursin("RM0",analysisType))
+    if !(analysisType=="M"||analysisType=="RM0")
         Me = zeros(size(Me))
         Ce = zeros(size(Ce))
     end
 
-    if !(occursin("TD",analysisType) || occursin("TNB",analysisType))
+    if !(analysisType=="TD" || analysisType=="TNB")
         FhatLessConc  = zeros(size(Fe))
     end
     ###------------------------------------------
@@ -1945,9 +1947,9 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
     MAXIT = nlParams.maxIterations
     tolerance = nlParams.tolerance
 
-    if (occursin("TNB",analysisType) || occursin("ROM",analysisType))
+    if (analysisType=="TNB" || analysisType=="ROM")
         analysisType = "TNB"
-    else#if occursin("S",analysisType)
+    else#if analysisType=="S"
         analysisType = "M"
         # else
         #     error("analysisType not supported, choose another")
@@ -1962,12 +1964,12 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
             elx[j] = x[conn[elementNumber,j]]
             ely[j] = y[conn[elementNumber,j]]
             elz[j] = z[conn[elementNumber,j]]
-            if (occursin("TNB",analysisType) || occursin("ROM",analysisType))
+            if (analysisType=="TNB" || analysisType=="ROM")
                 eldisp[index] = disp_s[(conn[elementNumber,j]-1)*numDOFPerNode + k]
                 eldispdot[index] = dispdot_s[(conn[elementNumber,j]-1)*numDOFPerNode + k]
                 eldispddot[index] = dispddot_s[(conn[elementNumber,j]-1)*numDOFPerNode + k]
                 eldispiter[index] = displ_iter[(conn[elementNumber,j]-1)*numDOFPerNode + k]
-            elseif occursin("S",analysisType)
+            elseif analysisType=="S"
                 eldisp[index] = displ_iter[(conn[elementNumber,j]-1)*numDOFPerNode + k]
             end
             index = index + 1
@@ -1978,9 +1980,9 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
     dispdot = copy(eldispdot) #specific to TNB and ROM
     dispddot = copy(eldispddot) #specific to TNB and ROM
 
-    if (occursin("TNB",analysisType) || occursin("ROM",analysisType))
+    if (analysisType=="TNB" || analysisType=="ROM")
         displ_iter = copy(eldispiter)
-    else#if occursin("S",analysisType)
+    else#if analysisType=="S"
         displ_iter = copy(eldisp)
         eldispiter = copy(eldisp)
         # else
@@ -2003,11 +2005,11 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
     RayleighAlpha = model.RayleighAlpha
     RayleighBeta = model.RayleighBeta
 
-    if (occursin("TNB",analysisType) || occursin("ROM",analysisType))
+    if (analysisType=="TNB" || analysisType=="ROM")
         accelVec = rbData[1:3]
         omegaVec = rbData[4:6]
         omegaDotVec = rbData[7:9]
-    else #if occursin("S",analysisType)
+    else #if analysisType=="S"
         accelVec = zeros(3)
         omegaVec = zeros(3)
         omegaDotVec = zeros(3)
@@ -2039,9 +2041,9 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
 
     #post process for reaction force
     FhatEl1PP = elOutput.Ke*eldispiter
-    if occursin("TD",analysisType)
+    if analysisType=="TD"
         denom = timeInt.a4
-    else #if (occursin("TNB",analysisType) || occursin("ROM",analysisType))||occursin("S",analysisType)
+    else #if (analysisType=="TNB" || analysisType=="ROM")||analysisType=="S"
         denom = 1.0
         # else
         #     error("analysisType not supported, choose another")
