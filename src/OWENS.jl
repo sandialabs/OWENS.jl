@@ -9,12 +9,14 @@ import VAWTAero
 import OptimizationParameters
 import HDF5
 import SparseArrays
+import ArnoldiMethod
+import Printf
 
 # ------------ GLOBAL VARIABLES ------------------------------------------------
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
 
 
-mat_path = string(module_path,"/Matlab_Cxx")
+# mat_path = string(module_path,"/Matlab_Cxx")
 # using MATLAB #if this is used, must run from src location
 # mat"addpath($mat_path)"
 
@@ -38,6 +40,7 @@ include("structural_utilities.jl")
 include("file_io.jl")
 include("structs.jl")
 include("depreciated.jl")
+include("visualization.jl")
 
 
 # ------------ LOAD airfoilprep.py ---------------------------------------------

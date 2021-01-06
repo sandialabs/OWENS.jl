@@ -2,7 +2,9 @@ path = splitdir(@__FILE__)[1]
 
 # import OWENS
 include("$path/../src/OWENS.jl")
-include("$path/../src/file_io.jl")
+# mat_path = string("$path/../src/","/Matlab_Cxx")
+# using MATLAB #if this is used, must run from src location
+# mat"addpath($mat_path)"
 using Test
 import HDF5
 
@@ -66,7 +68,7 @@ function test_owens(test_transient,test_modal,test_flutter)
         # set up stiffness matrix
         cmkValues[dd,dd,2] = StiffVal[dd]
     end
-    writeOwensNDL(fname, nodes, cmkType, cmkValues) #TODO: make this a direct pass
+    OWENS.writeOwensNDL(fname, nodes, cmkType, cmkValues) #TODO: make this a direct pass
 
     # *********************************************************************
     # perform operations for the aerodynamic forces file generation
@@ -92,12 +94,12 @@ function test_owens(test_transient,test_modal,test_flutter)
     if test_transient
         println("Running Transient")
         # Juno.@enter OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
-        model2=OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+        OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
     end
 
     if test_modal
         # Juno.@enter owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
-        freq,damp=OWENS.owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
+        freq,damp,phase1,phase2,imagCompSign=OWENS.owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
     end
 
     if test_flutter
@@ -105,12 +107,12 @@ function test_owens(test_transient,test_modal,test_flutter)
     end
 
     println("Function Finished")
-    return model2
 end
 
-verify_transient = true
-# Juno.@profiler test_owens(verify_transient,false,false)
-model2 = test_owens(verify_transient,false,false)
+verify_transient = false
+verify_modal = true
+# Juno.@profiler test_owens(verify_transient,verify_modal,false)
+test_owens(verify_transient,verify_modal,false)
 # mat"verifyOWENSPost"
 
 if verify_transient
@@ -192,3 +194,51 @@ if verify_transient
     @test isapprox(old_gam_xy_z_hist,gam_xy_z_hist,atol = tol)
 
 end
+
+#MODAL
+# @testset "modal" begin
+# if verify_modal
+old_filename = "$path/data/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out"
+new_filename = "$path/data/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.out"
+
+if (time() - mtime(new_filename)) > 10 #seconds
+    println("It is this many seconds old")
+    println((time() - mtime(new_filename)))
+    println("Output was not generated, cannot compare stale output, a recent change must have prevented the output from being written or read in.")
+end
+
+#Reading function
+
+numNodes = 82#mesh.numNodes
+
+freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = OWENS.readResultsModalOut(old_filename,numNodes)
+freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = OWENS.readResultsModalOut(new_filename,numNodes)
+
+tol = 1e-6
+for imode = 1:length(freq)
+    used_tol = max(tol*freq[imode],tol) #don't enforce 1e-6 precision on a 1e6 number when we want 6 digits and not 12 digits of precision, also limit it for small number errors
+    @test isapprox(freqOLD[imode],freq[imode],atol = used_tol)
+    used_tol = max(tol*damp[imode],tol)
+    @test isapprox(dampOLD[imode],damp[imode],atol = used_tol)
+end
+tol = 1e-2
+for imode = 1:length(U_x_0OLD[1,:])
+    println("mode: $imode")
+    # for inode = 1:numNodes
+    # println("node $inode")
+    @test isapprox(abs.(U_x_0OLD[:,imode]),abs.(U_x_0[:,imode]),atol = tol)
+    @test isapprox(abs.(U_y_0OLD[:,imode]),abs.(U_y_0[:,imode]),atol = tol)
+    @test isapprox(abs.(U_z_0OLD[:,imode]),abs.(U_z_0[:,imode]),atol = tol)
+    @test isapprox(abs.(theta_x_0OLD[:,imode]),abs.(theta_x_0[:,imode]),atol = tol)
+    @test isapprox(abs.(theta_y_0OLD[:,imode]),abs.(theta_y_0[:,imode]),atol = tol)
+    @test isapprox(abs.(theta_z_0OLD[:,imode]),abs.(theta_z_0[:,imode]),atol = tol)
+    @test isapprox(abs.(U_x_90OLD[:,imode]),abs.(U_x_90[:,imode]),atol = tol)
+    @test isapprox(abs.(U_y_90OLD[:,imode]),abs.(U_y_90[:,imode]),atol = tol)
+    @test isapprox(abs.(U_z_90OLD[:,imode]),abs.(U_z_90[:,imode]),atol = tol)
+    @test isapprox(abs.(theta_x_90OLD[:,imode]),abs.(theta_x_90[:,imode]),atol = tol)
+    @test isapprox(abs.(theta_y_90OLD[:,imode]),abs.(theta_y_90[:,imode]),atol = tol)
+    @test isapprox(abs.(theta_z_90OLD[:,imode]),abs.(theta_z_90[:,imode]),atol = tol)
+    # end
+end
+
+# end
