@@ -52,7 +52,7 @@ function owens(owensfile,analysisType;
     #     model.airDensity = 1.2041
     #     #    end
 
-
+    @warn "Running this way is depreciated and may be removed in future versions"
 
     if (analysisType=="TNB" || analysisType=="TD") #TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
         if usingRotorSpeedFunction
@@ -150,7 +150,9 @@ function owens(owensfile,analysisType;
 
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
     aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
-    owensfile = string(blddatafilename[1:end-4], ".owens") #TODO: this is redundant and confusing since it is specified at the beginning, clean up
+    if analysisType!="M"
+        owensfile = string(blddatafilename[1:end-4], ".owens") #TODO: this is redundant and confusing since it is specified at the beginning, clean up
+    end
     line             = readline(fid) #flag to include drive shaft effects
     driveShaftFlag   = real(parse(Int,line[1:2]))
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
@@ -230,20 +232,21 @@ function owens(owensfile,analysisType;
     #         staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
     #     end
     #
-    if ("M"==(analysisType,) || "F"==(analysisType,)) #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
-        # [model.nlParams] = readNLParamsFile(owensfile) #TODO: clean this up, is redundant
-        if (displInitGuess!=0 || !nlOn)
+    if (analysisType == "M" || analysisType == "F") #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
+        if (displInitGuess==0 || !nlOn)
             displInitGuess = zeros(mesh.numNodes*6)
         end
         OmegaStart = 0.0
-        # freq,damp=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
-        return freq,damp
+        println("starting modal mat")
+        # mat"$freq,$damp=Modal($model,$mesh,$el,$displInitGuess,$Omega,$OmegaStart)"
+        freq,damp,phase1,phase2,imagCompSign=Modal(model,mesh,el,displInitGuess,Omega,OmegaStart)
+        return freq,damp,phase1,phase2,imagCompSign
     end
     #
     #     if(analysisType=="FA") #EXECUTE AUTOMATED FLUTTER ANALYSIS
     #         displ = zeros(mesh.numNodes*6,1)
     #         OmegaStart = 0.0
-    #         [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart)
+    #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
     #     end
     #
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS

@@ -150,7 +150,7 @@ function readBladeData(filename)
 
     numBlades = maximum(bladeNum)
     #     numStruts = min(bladeNum)
-    #     if(numStruts>0)
+    #     if (numStruts>0)
     #         numStruts = 0
     #     else
     #         numStruts = abs(numStruts)
@@ -335,8 +335,10 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     end
     close(fid) #close ort file
 
+    rotationalEffects = true #TODO: vectorize this by i to make it element specific
+
     #store data in element object
-    el = El(sectionPropsArray,elLen,psi,theta,roll,true)
+    el = El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
 
     return el
 
@@ -356,7 +358,7 @@ function readGeneratorProps(generatorfilename)
 
 
     # fid = fopen(generatorfilename) #open generator property file
-    # if(fid!=-1) #if file can be opened
+    # if (fid!=-1) #if file can be opened
     #         genprops.ratedTorque = fscanf(fid,'#f',1) #store rated torque
     #         dum = fgetl(fid)
     #         genprops.zeroTorqueGenSpeed = fscanf(fid,'#f',1) #store zero torque generator zpeed
@@ -684,4 +686,173 @@ function generateOutputFilename(owensfilename,analysisType)
 
     return outputfilename
 
+end
+
+function ModalOutput(freq,damp,phase1,phase2,imagComponentSign,filename)
+    #writeOutput writes output from modal analysis
+    #   [freqSorted,dampSorted,imagCompSignSorted] = writeOutput(freq,damp,...
+    #                                                phase1,phase2,...
+    #                                                imagComponentSign,fid)
+    #
+    #   This function writes an output file for modal analysis.
+    #
+    #      input:
+    #      freq               = array of modal frequencies
+    #      damp               = array of modal damping ratios
+    #      phase1             = array of in phase mode shapes
+    #      phase2             = array of out of phase mode shapes
+    #      imagComponentSign  = array of sign of imaginary components
+    #      fid                = file identifier for output
+    #
+    #      output:
+    #      freqSorted         = array of sorted(by frequency) modal frequencies
+    #      dampSorted         = array of sorted(by frequency) modal damping ratios
+    #      imagCompSignSorted = array of sorted(by frequency) of imaginarycomponentSign array
+    println(filename)
+    fid=open(filename,"w")
+    l = size(phase1[:,:,1])[1] #gets number of nodes for mode shape printing
+
+    freq,map,posIndex = bubbleSort(freq) #sorts frequency #TODO: get rid of this
+
+    dampSorted = zeros(1,length(freq))
+    freqSorted = zeros(1,length(freq))
+    imagCompSignSorted = zeros(1,length(freq))
+    #TODO: make this file output optional
+    index = 1
+    for i=posIndex:1:posIndex+(length(freq)-1) #prints mode frequency, damping and in/out of phase mode shapes
+        Printf.@printf(fid,"MODE # %0.0f \n\n",index)
+        Printf.@printf(fid,"Frequency: %e: \n",freq[i])
+        Printf.@printf(fid,"Damping %e: \n",damp[map[i]])
+        Printf.@printf(fid,"0 deg Mode Shape:\n")
+        Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+        dampSorted[i] = damp[map[i]]
+        freqSorted[i] = freq[i]
+        imagCompSignSorted[i] = imagComponentSign[map[i]]
+
+        for j=1:l
+            Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",phase1[j,1,map[i]],phase1[j,2,map[i]],phase1[j,3,map[i]],phase1[j,4,map[i]],phase1[j,5,map[i]],phase1[j,6,map[i]])
+            Printf.@printf(fid,"\n")
+        end
+        Printf.@printf(fid,"\n")
+
+        Printf.@printf(fid,"90 deg Mode Shape:\n")
+        Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+        for j=1:l
+            Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",phase2[j,1,map[i]],phase2[j,2,map[i]],phase2[j,3,map[i]],phase2[j,4,map[i]],phase2[j,5,map[i]],phase2[j,6,map[i]])
+            Printf.@printf(fid,"\n")
+        end
+
+        if (i<posIndex+(length(freq)-1))
+            Printf.@printf(fid,"\n\n")
+        end
+
+        index = index + 1
+
+    end
+    close(fid)
+    return freqSorted,dampSorted,imagCompSignSorted
+end
+
+function bubbleSort(A)
+    #bubbleSort Sorts the vector A in ascending order
+    #   [A,origMap,posIndex] = bubbleSort(A)
+    #
+    #   This function accepts a vector A, sorts the vector in ascending order,
+    #   outputting the sorted vector, a map to the original ordering, and the
+    #   index at which a positive value first occurs.
+    #
+    #      input:
+    #      A        = vector to be sorted
+    #
+    #      output:
+    #      A        = sorted vector
+    #      origMap  = map of sorted vector to original ordering
+    #      posIndex = index at which positive value first occurs
+
+    Aorig=deepcopy(A)
+    len = length(A)
+    swapped = true
+    origMap = collect(1:len)
+    while swapped
+        swapped = false
+
+        for i=1:len-1
+            if (A[i+1] < A[i])
+                temp = A[i]
+                A[i] = A[i+1]
+                A[i+1] = temp
+                swapped = true
+
+                temp2 = origMap[i]
+                origMap[i] = origMap[i+1]
+                origMap[i+1] = temp2
+            end
+        end
+    end
+
+    #     posIndex = length(A)/2+1
+    #     [posIndex] = findPositiveCrossOver(A)
+    posIndex = 1
+
+    return A,origMap,posIndex
+
+end
+
+function readResultsModalOut(resultsFile,numNodes)
+    data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
+
+    nmodes = Int(length(data[:,1])/171) #This requires the specific formatting of the file to remain the same
+    freq = zeros(nmodes)
+    damp = zeros(nmodes)
+    U_x_0 = zeros(numNodes,nmodes)
+    U_y_0 = zeros(numNodes,nmodes)
+    U_z_0 = zeros(numNodes,nmodes)
+    theta_x_0 = zeros(numNodes,nmodes)
+    theta_y_0 = zeros(numNodes,nmodes)
+    theta_z_0 = zeros(numNodes,nmodes)
+    U_x_90 = zeros(numNodes,nmodes)
+    U_y_90 = zeros(numNodes,nmodes)
+    U_z_90 = zeros(numNodes,nmodes)
+    theta_x_90 = zeros(numNodes,nmodes)
+    theta_y_90 = zeros(numNodes,nmodes)
+    theta_z_90 = zeros(numNodes,nmodes)
+
+    i_line = 1
+    for i_mode = 1:nmodes
+        i_line = (i_mode-1)*171+1
+
+        freq[i_mode] = parse(Float64,(split(data[i_line+1,1])[2])[1:end-1])
+        damp[i_mode] = parse(Float64,(split(data[i_line+2,1])[2])[1:end-1])
+
+        # 0 degree shapes, with the max value scaled to 1
+
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
+        U_x_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
+        U_y_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
+        U_z_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
+        theta_x_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
+        theta_y_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
+        theta_z_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+
+        i_line = i_line+84 #90 degree shapes, with the max value scaled to 1
+
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
+        U_x_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
+        U_y_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
+        U_z_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
+        theta_x_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
+        theta_y_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
+        theta_z_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+    end
+    return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end
