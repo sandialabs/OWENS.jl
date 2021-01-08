@@ -32,7 +32,21 @@ bshapez=SNL5MW_bld_z) #use defaults
 
 bladeData,_,_,_ = OWENS.readBladeData("$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.bld") #reads overall blade data file
 el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.el","$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.ort",bladeData) #read element data file (also reads orientation and blade data file associated with elements)
-nodalTerms = OWENS.readNodalTerms("$(path)/data/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.ndl") #read concentrated nodal terms file
+
+nodalinputdata = [1 "M6" 1 1 9.8088e6
+1 "M6" 2 2 9.7811e6
+1 "M6" 3 3 1.8914e7
+1 "M6" 4 4 3.6351e9
+1 "M6" 5 5 3.6509e9
+1 "M6" 6 6 2.4362e9
+1 "K6" 1 1 132900.0
+1 "K6" 2 2 132900.0
+1 "K6" 3 3 1.985e6
+1 "K6" 4 4 2.2878204759573773e8
+1 "K6" 5 5 2.2889663915476388e8
+1 "K6" 6 6 6.165025875607658e7]
+
+mynodalTerms = OWENS.readNodalTerms(data = nodalinputdata)
 
 # node, dof, bc
 pBC = [1 1 0
@@ -48,7 +62,7 @@ joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 bladeData,
 pBC = pBC,
-nodalTerms,
+nodalTerms = mynodalTerms,
 numNodes = mymesh.numNodes)
 
 
@@ -141,7 +155,7 @@ mymodel = OWENS.Model(;analysisType = "M",
         platformTurbineConnectionNodeNumber = 1,
         bladeData,
         pBC = pBC,
-        nodalTerms,
+        nodalTerms = mynodalTerms,
         numNodes = mymesh.numNodes)
 
 freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENS.Modal(mymodel,mesh,el,displInitGuess,Omega,OmegaStart)

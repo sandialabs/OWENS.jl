@@ -444,7 +444,7 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
     end
 end
 
-function readNodalTerms(filename)
+function readNodalTerms(;filename="none",data=zeros(2))
     #readNodalTerms reads concentrated nodal terms file
     #   [nodalTerms] = readNodalTerms(filename)
     #
@@ -456,8 +456,9 @@ function readNodalTerms(filename)
     #
     #      output:
     #      nodalTerms    = object containing concentrated nodal data
-
-    data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
+    if filename!="none"
+        data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
+    end
 
     n_M = sum(count.(x->(x=='M'), data[:,2]))
     n_K = sum(count.(x->(x=='K'), data[:,2]))
