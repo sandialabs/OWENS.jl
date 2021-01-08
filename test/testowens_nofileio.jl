@@ -2,26 +2,32 @@
 # close("all")
 using Test
 import HDF5
+import PyPlot
 # import OWENS
 path,_ = splitdir(@__FILE__)
 include("$(path)/../src/OWENS.jl")
 #TODO: ort file, nodal file, element file, initial conditions, and blade file
+
+##############################################
+# Setup
+#############################################
 
 # Use the SNL5MW as the baseline check
 #The 15 is subtracted off at the end of the line
 SNL5MW_bld_z = [15.0, 21.61004296, 28.20951408, 28.2148, 34.81955704, 41.4296, 48.03964296, 54.63911408, 61.24915704, 67.8592, 74.46924296, 81.06871408, 87.67875704, 94.2888, 100.89884296, 107.49831408, 114.10835704, 120.7184, 127.32844296, 133.92791408, 133.9332, 140.53795704, 147.148].-15.0
 SNL5MW_bld_x = -[0.0, -10.201, -20.361, -20.368290684, -29.478, -36.575, -42.579, -47.177, -50.555, -52.809, -53.953, -54.014, -53.031, -51.024, -47.979, -43.942, -38.768, -32.91, -25.587, -17.587, -17.580079568, -8.933, 8.0917312607e-15]
 
+
 mymesh,myort,myjoint = OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
-                                    Hb = 147.148-15.0, #blade height
-                                    R = 54.014, # m bade radius
-                                    nstrut = 2,
-                                    strut_mout_ratio = 0.1, #distance from top/bottom
-                                    ntelem = 20, #tower elements
-                                    nbelem = 20, #blade elements
-                                    nselem = 2,  #strut elements
-                                    bshapex=SNL5MW_bld_x,
-                                    bshapez=SNL5MW_bld_z) #use defaults
+Hb = 147.148-15.0, #blade height
+R = 54.014, # m bade radius
+nstrut = 2,
+strut_mout_ratio = 0.1, #distance from top/bottom
+ntelem = 20, #tower elements
+nbelem = 20, #blade elements
+nselem = 2,  #strut elements
+bshapex=SNL5MW_bld_x,
+bshapez=SNL5MW_bld_z) #use defaults
 
 
 bladeData,_,_,_ = OWENS.readBladeData("$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.bld") #reads overall blade data file
@@ -36,14 +42,19 @@ pBC = [1 1 0
 1 5 0
 1 6 0]
 
-model = OWENS.Model(;outFilename = "none",
-    joint = myjoint,
-    platformTurbineConnectionNodeNumber = 1,
-    bladeData,
-    pBC = pBC,
-    nodalTerms,
-    numNodes = mymesh.numNodes)
+model = OWENS.Model(;analysisType = "TNB",
+outFilename = "none",
+joint = myjoint,
+platformTurbineConnectionNodeNumber = 1,
+bladeData,
+pBC = pBC,
+nodalTerms,
+numNodes = mymesh.numNodes)
 
+
+##############################################
+# Unsteady Test
+#############################################
 
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 rigidDof,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,
@@ -112,3 +123,142 @@ end
 @test isapprox(old_gam_xz_y_hist,gam_xz_y_hist,atol = tol)
 @test isapprox(old_gam_xy_0_hist,gam_xy_0_hist,atol = tol)
 @test isapprox(old_gam_xy_z_hist,gam_xy_z_hist,atol = tol)
+
+# if testModal
+##############################################
+# Modal Test
+#############################################
+maxRPM = 10
+Omega=0.5*maxRPM*2*pi/60
+OmegaStart = 0.0
+displInitGuess = zeros(mymesh.numNodes*6)
+meshFile = "$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh"
+mesh = OWENS.readMesh(meshFile)
+
+mymodel = OWENS.Model(;analysisType = "M",
+        outFilename = "none",
+        joint = myjoint,
+        platformTurbineConnectionNodeNumber = 1,
+        bladeData,
+        pBC = pBC,
+        nodalTerms,
+        numNodes = mymesh.numNodes)
+
+freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENS.Modal(mymodel,mesh,el,displInitGuess,Omega,OmegaStart)
+
+old_filename = "$path/data/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out"
+#Reading function
+
+numNodes = 82#mesh.numNodes
+
+freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = OWENS.readResultsModalOut(old_filename,numNodes)
+
+# if true
+#     PyPlot.close("all")
+#     println("Plotting Modes")
+#     Ndof = 10
+#     savePlot = true
+#
+#
+#     for df = 1:Ndof
+#         OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
+#         if savePlot # save the plot
+#             PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
+#         else # flip through the plots visually
+#             sleep(0.1)
+#         end
+#         PyPlot.close("all")
+#     end
+#
+#     for df = 1:Ndof
+#         OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
+#         if savePlot # save the plot
+#             PyPlot.savefig(string(old_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
+#         else # flip through the plots visually
+#             sleep(0.1)
+#         end
+#         PyPlot.close("all")
+#     end
+# println("MODAL PLOTTING COMPLETE")
+#
+# end
+
+tol = 1e-6
+for imode = 1:length(freq)
+    used_tol = max(tol*freq[imode],tol) #don't enforce 1e-6 precision on a 1e6 number when we want 6 digits and not 12 digits of precision, also limit it for small number errors
+    @test isapprox(freqOLD[imode],freq[imode],atol = used_tol)
+    used_tol = max(tol*damp[imode],tol)
+    @test isapprox(dampOLD[imode],damp[imode],atol = used_tol)
+end
+
+tol = 1e-2
+U_x_0pass = 0
+U_y_0pass = 0
+U_z_0pass = 0
+theta_x_0pass = 0
+theta_y_0pass = 0
+theta_z_0pass = 0
+U_x_90pass = 0
+U_y_90pass = 0
+U_z_90pass = 0
+theta_x_90pass = 0
+theta_y_90pass = 0
+theta_z_90pass = 0
+
+for imode = 1:length(U_x_0OLD[1,:])
+    # println("mode: $imode")
+    # for inode = 1:numNodes
+    # println("node $inode")
+    if isapprox(abs.(U_x_0OLD[:,imode]),abs.(U_x_0[:,imode]),atol = tol)
+        global U_x_0pass += 1
+    end
+    if isapprox(abs.(U_y_0OLD[:,imode]),abs.(U_y_0[:,imode]),atol = tol)
+        global U_y_0pass += 1
+    end
+    if isapprox(abs.(U_z_0OLD[:,imode]),abs.(U_z_0[:,imode]),atol = tol)
+        global U_z_0pass += 1
+    end
+    if isapprox(abs.(theta_x_0OLD[:,imode]),abs.(theta_x_0[:,imode]),atol = tol)
+        global theta_x_0pass += 1
+    end
+    if isapprox(abs.(theta_y_0OLD[:,imode]),abs.(theta_y_0[:,imode]),atol = tol)
+        global theta_y_0pass += 1
+    end
+    if isapprox(abs.(theta_z_0OLD[:,imode]),abs.(theta_z_0[:,imode]),atol = tol)
+        global theta_z_0pass += 1
+    end
+    if isapprox(abs.(U_x_90OLD[:,imode]),abs.(U_x_90[:,imode]),atol = tol)
+        global U_x_90pass += 1
+    end
+    if isapprox(abs.(U_y_90OLD[:,imode]),abs.(U_y_90[:,imode]),atol = tol)
+        global U_y_90pass += 1
+    end
+    if isapprox(abs.(U_z_90OLD[:,imode]),abs.(U_z_90[:,imode]),atol = tol)
+        global U_z_90pass += 1
+    end
+    if isapprox(abs.(theta_x_90OLD[:,imode]),abs.(theta_x_90[:,imode]),atol = tol)
+        global theta_x_90pass += 1
+    end
+    if isapprox(abs.(theta_y_90OLD[:,imode]),abs.(theta_y_90[:,imode]),atol = tol)
+        global theta_y_90pass += 1
+    end
+    if isapprox(abs.(theta_z_90OLD[:,imode]),abs.(theta_z_90[:,imode]),atol = tol)
+        global theta_z_90pass += 1
+    end
+    # end
+end
+
+# at least 70 percent of the modeshapes are identical indicates (despite the recripocity of the solutions) that the analysis is adequate
+
+@test U_x_0pass/length(U_x_0OLD[1,:])>0.70
+@test U_y_0pass/length(U_x_0OLD[1,:])>0.89
+@test U_z_0pass/length(U_x_0OLD[1,:])>0.88
+@test theta_x_0pass/length(U_x_0OLD[1,:])>0.90
+@test theta_y_0pass/length(U_x_0OLD[1,:])>0.90
+@test theta_z_0pass/length(U_x_0OLD[1,:])>0.90
+@test U_x_90pass/length(U_x_0OLD[1,:])>0.70
+@test U_y_90pass/length(U_x_0OLD[1,:])>0.70
+@test U_z_90pass/length(U_x_0OLD[1,:])>0.70
+@test theta_x_90pass/length(U_x_0OLD[1,:])>0.80
+@test theta_y_90pass/length(U_x_0OLD[1,:])>0.80
+@test theta_z_90pass/length(U_x_0OLD[1,:])>0.80

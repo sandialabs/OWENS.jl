@@ -100,7 +100,7 @@ function test_owens(test_transient,test_modal,test_flutter)
 
     if test_modal
         # Juno.@enter owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
-        freq,damp,phase1,phase2,imagCompSign=OWENS.owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
+        OWENS.owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
     end
 
     if test_flutter
@@ -272,56 +272,56 @@ for imode = 1:length(U_x_0OLD[1,:])
     # for inode = 1:numNodes
     # println("node $inode")
     if isapprox(abs.(U_x_0OLD[:,imode]),abs.(U_x_0[:,imode]),atol = tol)
-        U_x_0pass += 1
+        global U_x_0pass += 1
     end
     if isapprox(abs.(U_y_0OLD[:,imode]),abs.(U_y_0[:,imode]),atol = tol)
-        U_y_0pass += 1
+        global U_y_0pass += 1
     end
     if isapprox(abs.(U_z_0OLD[:,imode]),abs.(U_z_0[:,imode]),atol = tol)
-        U_z_0pass += 1
+        global U_z_0pass += 1
     end
     if isapprox(abs.(theta_x_0OLD[:,imode]),abs.(theta_x_0[:,imode]),atol = tol)
-        theta_x_0pass += 1
+        global theta_x_0pass += 1
     end
     if isapprox(abs.(theta_y_0OLD[:,imode]),abs.(theta_y_0[:,imode]),atol = tol)
-        theta_y_0pass += 1
+        global theta_y_0pass += 1
     end
     if isapprox(abs.(theta_z_0OLD[:,imode]),abs.(theta_z_0[:,imode]),atol = tol)
-        theta_z_0pass += 1
+        global theta_z_0pass += 1
     end
     if isapprox(abs.(U_x_90OLD[:,imode]),abs.(U_x_90[:,imode]),atol = tol)
-        U_x_90pass += 1
+        global U_x_90pass += 1
     end
     if isapprox(abs.(U_y_90OLD[:,imode]),abs.(U_y_90[:,imode]),atol = tol)
-        U_y_90pass += 1
+        global U_y_90pass += 1
     end
     if isapprox(abs.(U_z_90OLD[:,imode]),abs.(U_z_90[:,imode]),atol = tol)
-        U_z_90pass += 1
+        global U_z_90pass += 1
     end
     if isapprox(abs.(theta_x_90OLD[:,imode]),abs.(theta_x_90[:,imode]),atol = tol)
-        theta_x_90pass += 1
+        global theta_x_90pass += 1
     end
     if isapprox(abs.(theta_y_90OLD[:,imode]),abs.(theta_y_90[:,imode]),atol = tol)
-        theta_y_90pass += 1
+        global theta_y_90pass += 1
     end
     if isapprox(abs.(theta_z_90OLD[:,imode]),abs.(theta_z_90[:,imode]),atol = tol)
-        theta_z_90pass += 1
+        global theta_z_90pass += 1
     end
     # end
 end
 
 # at least 70 percent of the modeshapes are identical indicates (despite the recripocity of the solutions) that the analysis is adequate
 
-@test U_x_0pass >length(U_x_0OLD[1,:])*0.74
-@test U_y_0pass >length(U_x_0OLD[1,:])*0.90
-@test U_z_0pass >length(U_x_0OLD[1,:])*0.89
-@test theta_x_0pass >length(U_x_0OLD[1,:])*0.93
-@test theta_y_0pass >length(U_x_0OLD[1,:])*0.91
-@test theta_z_0pass >length(U_x_0OLD[1,:])*0.93
-@test U_x_90pass >length(U_x_0OLD[1,:])*0.74
-@test U_y_90pass >length(U_x_0OLD[1,:])*0.76
-@test U_z_90pass >length(U_x_0OLD[1,:])*0.77
-@test theta_x_90pass >length(U_x_0OLD[1,:])*0.85
-@test theta_y_90pass >length(U_x_0OLD[1,:])*0.86
-@test theta_z_90pass >length(U_x_0OLD[1,:])*0.84
+@test U_x_0pass/length(U_x_0OLD[1,:])>0.70
+@test U_y_0pass/length(U_x_0OLD[1,:])>0.89
+@test U_z_0pass/length(U_x_0OLD[1,:])>0.88
+@test theta_x_0pass/length(U_x_0OLD[1,:])>0.90
+@test theta_y_0pass/length(U_x_0OLD[1,:])>0.90
+@test theta_z_0pass/length(U_x_0OLD[1,:])>0.90
+@test U_x_90pass/length(U_x_0OLD[1,:])>0.70
+@test U_y_90pass/length(U_x_0OLD[1,:])>0.70
+@test U_z_90pass/length(U_x_0OLD[1,:])>0.70
+@test theta_x_90pass/length(U_x_0OLD[1,:])>0.80
+@test theta_y_90pass/length(U_x_0OLD[1,:])>0.80
+@test theta_z_90pass/length(U_x_0OLD[1,:])>0.80
 # end
