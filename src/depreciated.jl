@@ -52,7 +52,7 @@ function owens(owensfile,analysisType;
     #     model.airDensity = 1.2041
     #     #    end
 
-    @warn "Running this way is depreciated and may be removed in future versions"
+    @warn "Running serially using the OWENS.owens function is depreciated and may be removed in future versions"
 
     if (analysisType=="TNB" || analysisType=="TD") #TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
         if usingRotorSpeedFunction
