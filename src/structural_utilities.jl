@@ -750,20 +750,20 @@ function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
     return dofVector
 end
 
-function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
+function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained)
     #This function creates a map of unconstrained DOFs between a full
     #listing and reduced listing (aftger constraints have been applied)
 
-    bcdoflist=zeros(Int, BC.numpBC)
+    bcdoflist=zeros(Int, numpBC)
 
     #create a listing of constrained DOFs from boundary condition file
-    for i=1:BC.numpBC
-        bcnodenum = BC.pBC[i,1]
-        bcdofnum = BC.pBC[i,2]
+    for i=1:numpBC
+        bcnodenum = pBC[i,1]
+        bcdofnum = pBC[i,2]
         bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
     end
 
-    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
+    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained) #calculate a reduced (unconstrained) DOF vector
 
     redVectorMap = zeros(numReducedDof)
 

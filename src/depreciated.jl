@@ -209,7 +209,7 @@ function owens(owensfile,analysisType;
 
     numReducedDof = length(jointTransform[1,:])
     # BC.redVectorMap = zeros(numReducedDof,1)
-    BC.redVectorMap = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
+    BC.redVectorMap = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC.numpBC,BC.pBC,BC.isConstrained) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
@@ -237,10 +237,9 @@ function owens(owensfile,analysisType;
             displInitGuess = zeros(mesh.numNodes*6)
         end
         OmegaStart = 0.0
-        println("starting modal mat")
         # mat"$freq,$damp=Modal($model,$mesh,$el,$displInitGuess,$Omega,$OmegaStart)"
-        freq,damp,phase1,phase2,imagCompSign=Modal(model,mesh,el,displInitGuess,Omega,OmegaStart)
-        return freq,damp,phase1,phase2,imagCompSign
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el,displInitGuess,Omega,OmegaStart)
+        return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
     end
     #
     #     if(analysisType=="FA") #EXECUTE AUTOMATED FLUTTER ANALYSIS

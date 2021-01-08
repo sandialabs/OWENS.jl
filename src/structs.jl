@@ -413,7 +413,7 @@ function Model(;analysisType = "TNB",
     elementOrder = 1,
     joint = [0,0],
     platformTurbineConnectionNodeNumber = 1,
-    jointTransform = zeros(2,2),
+    jointTransform = 0.0,
     reducedDOFList = zeros(Int,2),
     numDofPerNode = 6,
     numNodes = 0,
@@ -432,8 +432,12 @@ function Model(;analysisType = "TNB",
     minLoadStep = 0.0500,# nlParams
     prescribedLoadStep = 0.0)# nlParams
 
+    if jointTransform==0.0
+        jointTransform, reducedDOFList = createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    end
+
     if pBC!=0
-        BC = makeBCdata(pBC,numNodes,numDofPerNode)
+        BC = makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     end
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,

@@ -34,11 +34,11 @@ function Modal(model,mesh,el,displ,Omega,OmegaStart)
     end
 
     if staticAnalysisSuccessful
-        freq,damp,phase1,phase2,imagCompSign= linearAnalysisModal(model,mesh,el,displ,Omega,elStorage) #performs modal analysis
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90= linearAnalysisModal(model,mesh,el,displ,Omega,elStorage) #performs modal analysis
     else
         error("Static analysis unsuccessful. Exiting")
     end
-    return freq,damp,phase1,phase2,imagCompSign
+    return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end
 
 function  linearAnalysisModal(model,mesh,el,displ,Omega,elStorage)
@@ -251,10 +251,10 @@ function  linearAnalysisModal(model,mesh,el,displ,Omega,elStorage)
     # disp(t_modal)
 
     if model.analysisType !="FA"
-        freq,damp,imagCompSign = ModalOutput(freq,damp,phase1,phase2,imagCompSign,model.outFilename)
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = ModalOutput(freq,damp,phase1,phase2,imagCompSign,model.outFilename)
     end
 
-    return freq,damp,phase1,phase2,imagCompSign
+    return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 
 end
 

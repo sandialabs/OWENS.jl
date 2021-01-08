@@ -52,7 +52,7 @@ function readMesh(filename)
     numComponents = parse(Int,temp[1])
     meshSeg = zeros(Int,numComponents)
     for i=1:numComponents
-       meshSeg[i] = parse(Int,temp[i+1])
+        meshSeg[i] = parse(Int,temp[i+1])
     end
 
     close(fid)  #close mesh file
@@ -718,49 +718,92 @@ function ModalOutput(freq,damp,phase1,phase2,imagComponentSign,filename)
     #      freqSorted         = array of sorted(by frequency) modal frequencies
     #      dampSorted         = array of sorted(by frequency) modal damping ratios
     #      imagCompSignSorted = array of sorted(by frequency) of imaginarycomponentSign array
-    println(filename)
-    fid=open(filename,"w")
-    l = size(phase1[:,:,1])[1] #gets number of nodes for mode shape printing
+    if filename!="none"
+        println(filename)
+        fid=open(filename,"w")
+    end
+    Nnodes = size(phase1[:,:,1])[1] #gets number of nodes for mode shape printing
 
     freq,map,posIndex = bubbleSort(freq) #sorts frequency #TODO: get rid of this
 
-    dampSorted = zeros(1,length(freq))
-    freqSorted = zeros(1,length(freq))
-    imagCompSignSorted = zeros(1,length(freq))
-    #TODO: make this file output optional
+    Nmodes = length(freq)
+
+    dampSorted = zeros(Nmodes)
+    freqSorted = zeros(Nmodes)
+    imagCompSignSorted = zeros(Nmodes)
+    U_x_0 = zeros(Nnodes,Nmodes)
+    U_y_0 = zeros(Nnodes,Nmodes)
+    U_z_0 = zeros(Nnodes,Nmodes)
+    theta_x_0 = zeros(Nnodes,Nmodes)
+    theta_y_0 = zeros(Nnodes,Nmodes)
+    theta_z_0 = zeros(Nnodes,Nmodes)
+    U_x_90 = zeros(Nnodes,Nmodes)
+    U_y_90 = zeros(Nnodes,Nmodes)
+    U_z_90 = zeros(Nnodes,Nmodes)
+    theta_x_90 = zeros(Nnodes,Nmodes)
+    theta_y_90 = zeros(Nnodes,Nmodes)
+    theta_z_90 = zeros(Nnodes,Nmodes)
+
     index = 1
-    for i=posIndex:1:posIndex+(length(freq)-1) #prints mode frequency, damping and in/out of phase mode shapes
-        Printf.@printf(fid,"MODE # %0.0f \n\n",index)
-        Printf.@printf(fid,"Frequency: %e: \n",freq[i])
-        Printf.@printf(fid,"Damping %e: \n",damp[map[i]])
-        Printf.@printf(fid,"0 deg Mode Shape:\n")
-        Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+    for i=posIndex:1:posIndex+(Nmodes-1) #prints mode frequency, damping and in/out of phase mode shapes
+        if filename!="none"
+            Printf.@printf(fid,"MODE # %0.0f \n\n",index)
+            Printf.@printf(fid,"Frequency: %e: \n",freq[i])
+            Printf.@printf(fid,"Damping %e: \n",damp[map[i]])
+            Printf.@printf(fid,"0 deg Mode Shape:\n")
+            Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+        end
+        for j=1:Nnodes
+            U_x_0[j,index] = phase1[j,1,map[i]]
+            U_y_0[j,index] = phase1[j,2,map[i]]
+            U_z_0[j,index] = phase1[j,3,map[i]]
+            theta_x_0[j,index] = phase1[j,4,map[i]]
+            theta_y_0[j,index] = phase1[j,5,map[i]]
+            theta_z_0[j,index] = phase1[j,6,map[i]]
+            if filename!="none"
+                Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",U_x_0[j,index],U_y_0[j,index],U_z_0[j,index],theta_x_0[j,index],theta_y_0[j,index],theta_z_0[j,index])
+                Printf.@printf(fid,"\n")
+            end
+        end
+
+        if filename!="none"
+            Printf.@printf(fid,"\n")
+
+            Printf.@printf(fid,"90 deg Mode Shape:\n")
+            Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+        end
+
+        for j=1:Nnodes
+            U_x_90[j,index] = phase2[j,1,map[i]]
+            U_y_90[j,index] = phase2[j,2,map[i]]
+            U_z_90[j,index] = phase2[j,3,map[i]]
+            theta_x_90[j,index] = phase2[j,4,map[i]]
+            theta_y_90[j,index] = phase2[j,5,map[i]]
+            theta_z_90[j,index] = phase2[j,6,map[i]]
+            if filename!="none"
+                Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",U_x_90[j,index],U_y_90[j,index],U_z_90[j,index],theta_x_90[j,index],theta_y_90[j,index],theta_z_90[j,index])
+                Printf.@printf(fid,"\n")
+            end
+        end
+
+        if (i<posIndex+(Nmodes-1)) && filename!="none"
+            Printf.@printf(fid,"\n\n")
+        end
+
+
+
         dampSorted[i] = damp[map[i]]
         freqSorted[i] = freq[i]
         imagCompSignSorted[i] = imagComponentSign[map[i]]
 
-        for j=1:l
-            Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",phase1[j,1,map[i]],phase1[j,2,map[i]],phase1[j,3,map[i]],phase1[j,4,map[i]],phase1[j,5,map[i]],phase1[j,6,map[i]])
-            Printf.@printf(fid,"\n")
-        end
-        Printf.@printf(fid,"\n")
-
-        Printf.@printf(fid,"90 deg Mode Shape:\n")
-        Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
-        for j=1:l
-            Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",phase2[j,1,map[i]],phase2[j,2,map[i]],phase2[j,3,map[i]],phase2[j,4,map[i]],phase2[j,5,map[i]],phase2[j,6,map[i]])
-            Printf.@printf(fid,"\n")
-        end
-
-        if (i<posIndex+(length(freq)-1))
-            Printf.@printf(fid,"\n\n")
-        end
-
         index = index + 1
-
     end
-    close(fid)
-    return freqSorted,dampSorted,imagCompSignSorted
+
+    if filename!="none"
+        close(fid)
+    end
+
+    return freqSorted,dampSorted,imagCompSignSorted,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end
 
 function bubbleSort(A)

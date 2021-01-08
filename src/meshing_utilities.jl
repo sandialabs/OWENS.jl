@@ -160,7 +160,14 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     # meshtype[idx_bot_lbld_tower:idx_top_rbld_tower] .= 0 #Blades
     meshtype[idx_bot_lstrut_tower:end] .= 2 #Struts
 
-    mymesh = Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype)
+    #TODO: this is hard coded for two blades, make arbitrary
+    meshSeg = zeros(1+2+nstrut*2) #tower, two blades, and two struts that support the two blades
+
+    meshSeg[1] = ntelem+nstrut+1
+    meshSeg[2:3] .= nbelem+nstrut
+    meshSeg[4:end] .= nselem
+
+    mymesh = Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype,meshSeg)
 
     ####################################
     ##----------Joint Matrix----------##
@@ -423,7 +430,7 @@ function calculatePsiTheta(v)
     return Psi_d,Theta_d
 end
 
-function makeBCdata(pBC,numNodes,numDofPerNode)
+function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     #readBDdata  reads boundary condition file
     #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
     #
@@ -459,13 +466,18 @@ function makeBCdata(pBC,numNodes,numDofPerNode)
         end
     end
     numpBC = length(pBC[:,1])
+
+    map = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
+    numReducedDof = length(jointTransform[1,:])
+    redVectorMap = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
+
     BC = BC_struct(numpBC,
     pBC,
     numsBC,
     nummBC,
     isConstrained,
-    [],
-    [])
+    map,
+    redVectorMap)
 
     return BC
 
