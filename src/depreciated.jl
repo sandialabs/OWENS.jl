@@ -180,7 +180,7 @@ function owens(owensfile,analysisType;
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
     # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
     # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
-    nodalTerms = readNodalTerms(ndldatafilename) #read concentrated nodal terms file
+    nodalTerms = readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
     # [model] = readPlatformFile(model,platformFlag,platfilename)
     initCond = []
 
