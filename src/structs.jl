@@ -1,5 +1,5 @@
 
-struct Mesh
+mutable struct Mesh
     nodeNum
     numEl
     numNodes
@@ -9,6 +9,7 @@ struct Mesh
     elNum
     conn
     type
+    meshSeg
 end
 
 mutable struct Ort

@@ -46,6 +46,15 @@ function readMesh(filename)
         conn[i,2] = parse(Float64,temp[4])
     end
 
+    line = readline(fid) #get blank line
+    line = readline(fid)
+    temp = split(line)
+    numComponents = parse(Int,temp[1])
+    meshSeg = zeros(Int,numComponents)
+    for i=1:numComponents
+       meshSeg[i] = parse(Int,temp[i+1])
+    end
+
     close(fid)  #close mesh file
 
     mesh = Mesh(nodeNum,
@@ -56,7 +65,8 @@ function readMesh(filename)
     z,
     elNum,
     conn,
-    zeros(Int,numEl))
+    zeros(Int,numEl),
+    meshSeg)
 
     return mesh
 
@@ -827,32 +837,32 @@ function readResultsModalOut(resultsFile,numNodes)
         # 0 degree shapes, with the max value scaled to 1
 
         temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
-        U_x_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        U_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
-        U_y_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        U_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
-        U_z_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        U_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
-        theta_x_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        theta_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
-        theta_y_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        theta_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
-        theta_z_0[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        theta_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
 
         i_line = i_line+84 #90 degree shapes, with the max value scaled to 1
 
         temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
-        U_x_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        U_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
-        U_y_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        U_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
-        U_z_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        U_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
-        theta_x_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        theta_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
-        theta_y_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        theta_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
         temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
-        theta_z_90[:,i_mode] = temp./max(maximum(abs.(temp)),eps())
+        theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end

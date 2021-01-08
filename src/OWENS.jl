@@ -11,6 +11,7 @@ import HDF5
 import SparseArrays
 import ArnoldiMethod
 import Printf
+import PyPlot
 
 # ------------ GLOBAL VARIABLES ------------------------------------------------
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
