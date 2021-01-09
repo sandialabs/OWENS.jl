@@ -50,9 +50,6 @@ function Unsteady(model,mesh,el)
         PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
         NElem = 10
 
-        bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = readBladeData(string(OWENSfile_root, ".bld"))
-        # mat"[$structuralSpanLocNorm,$structuralNodeNumbers,$structuralElNumbers] = readBldFile($OWENSfile_root)"
-
         step_AC = 0
         ntheta = 36#1/(model.OmegaInit*model.delta_t)
         Vinf = 25.0 #TODO
@@ -564,7 +561,7 @@ function Unsteady(model,mesh,el)
                 # println("here")
                 # Juno.@enter mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
 
-                Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
+                Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
 
                 # end
                 # Juno.@enter runme()

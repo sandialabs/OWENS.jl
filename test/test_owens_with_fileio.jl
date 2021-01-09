@@ -110,8 +110,9 @@ function test_owens(test_transient,test_modal,test_flutter)
     println("Function Finished")
 end
 
-verify_transient = false
+verify_transient = true
 verify_modal = true
+plotmodal = false
 # Juno.@profiler test_owens(verify_transient,verify_modal,false)
 test_owens(verify_transient,verify_modal,false)
 # mat"verifyOWENSPost"
@@ -215,7 +216,7 @@ numNodes = 82#mesh.numNodes
 freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = OWENS.readResultsModalOut(old_filename,numNodes)
 freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = OWENS.readResultsModalOut(new_filename,numNodes)
 
-if true
+if plotmodal
     PyPlot.close("all")
     println("Plotting Modes")
     Ndof = 10

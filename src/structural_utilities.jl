@@ -1,4 +1,8 @@
-function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
+function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
+
+    structuralSpanLocNorm = mesh.structuralSpanLocNorm
+    structuralNodeNumbers = mesh.structuralNodeNumbers
+    structuralElNumbers = mesh.structuralElNumbers
 
     N_blade_nodes = length(structuralSpanLocNorm[1,:])+1
     # Initialize bladeForce

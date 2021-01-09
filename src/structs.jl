@@ -10,6 +10,9 @@ mutable struct Mesh
     conn
     type
     meshSeg
+    structuralSpanLocNorm
+    structuralNodeNumbers
+    structuralElNumbers
 end
 
 mutable struct Ort
