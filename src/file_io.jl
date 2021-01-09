@@ -66,7 +66,10 @@ function readMesh(filename)
     elNum,
     conn,
     zeros(Int,numEl),
-    meshSeg)
+    meshSeg,
+    0,
+    0,
+    0)
 
     return mesh
 
@@ -298,10 +301,10 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         sectionPropsArray[i] = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
 
     end
-
+    close(fid) #close element file
 
     nodeNum = bladeData_struct.nodeNum  #node number associated with blade section
-    elNum = bladeData_struct.elementNum    #element number associated with blade sectino
+    elNum = bladeData_struct.elementNum    #element number associated with blade section
     bladeData = bladeData_struct.remaining  #blade data
 
     chord = zeros(maximum(nodeNum),1)
@@ -328,7 +331,6 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
 
 
     println("EIyz, rhoIyz deactivated")
-    close(fid) #close element file
 
     #read element orientation data
     elLen = zeros(numElements)

@@ -4,6 +4,7 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     Hb = 147.148-15.0, #blade height
     R = 54.014, # m bade radius
     nstrut = 2,
+    nblade = 2, #TODO: this isn't really used downstream, it's hard coded for two, need to change
     strut_mout_ratio = 0.1, #distance from top/bottom
     ntelem = 20, #tower elements
     nbelem = 20, #blade elements
@@ -17,9 +18,6 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     bshapex = R .* bshapex./maximum(bshapex)
     bshapez = Hb .* bshapez./maximum(bshapez)
 
-    ####################################
-    ##------------Tower--------------##
-    ####################################
     function discretize_z(Ht,Hb,strut_mout_ratio,nelem; offset=0)
         mesh_z_inner = collect(LinRange(0,Ht+Hb,nelem+1))
         # Insert Bottom Blade Mount Point
@@ -44,6 +42,9 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
         idx_top_tower_blade_inner = length(mesh_z_inner)
         return mesh_z_inner, idx_bot_tower_bld_inner+offset, idx_bot_tower_strut_inner+offset, idx_top_tower_strut_inner+offset, idx_top_tower_blade_inner+offset
     end
+    ####################################
+    ##------------Tower--------------##
+    ####################################
     mesh_z, idx_bot_tower_bld, idx_bot_tower_strut, idx_top_tower_strut, idx_top_tower_blade = discretize_z(Ht,Hb,strut_mout_ratio,ntelem)
     # Create the x and y components
     mesh_x = zero(mesh_z)
@@ -167,7 +168,25 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     meshSeg[2:3] .= nbelem+nstrut
     meshSeg[4:end] .= nselem
 
-    mymesh = Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype,meshSeg)
+    structuralSpanLocNorm = zeros(nblade,nbelem+nstrut+1)
+    structuralNodeNumbers = zeros(nblade,nbelem+nstrut+1)
+    structuralElNumbers = zeros(nblade,nbelem+nstrut+1)
+
+    # for iblade = 1:nblade
+    span_len = sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Ht).^2.0)
+    structuralSpanLocNorm[1,:] = span_len./maximum(span_len)
+    structuralSpanLocNorm[2,:] = structuralSpanLocNorm[1,:]
+
+    structuralNodeNumbers[1,:] = collect(idx_bot_lbld_tower:idx_top_lbld_tower)
+    structuralNodeNumbers[2,:] = collect(idx_bot_rbld_tower:idx_top_rbld_tower)
+
+    structuralElNumbers[1,:] = structuralNodeNumbers[1,:].-1
+    structuralElNumbers[1,end] = -1 #TODO: figure out why this is in the original OWENS setup and if it is used
+    structuralElNumbers[2,:] = structuralNodeNumbers[2,:].-2
+    structuralElNumbers[1,end] = -1
+    # end
+
+    mymesh = Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers)
 
     ####################################
     ##----------Joint Matrix----------##
@@ -243,242 +262,242 @@ function calculateElementOrientation(mesh)
     lenv = zeros(numEl)
     for i = 1:numEl #loop over elements
         n1 = Int(mesh.conn[i,1]) #n1 := node number for node 1 of element i
-        n2 = Int(mesh.conn[i,2]) #n2 := node number for node 2 of element i
+            n2 = Int(mesh.conn[i,2]) #n2 := node number for node 2 of element i
 
-        p1 = [mesh.x[n1] mesh.y[n1] mesh.z[n1]] #nodal coordinates of n1
-        p2 = [mesh.x[n2] mesh.y[n2] mesh.z[n2]] #nodal coordinates of n2
-        Offset[:,i] = p1 #set offset as position of n1
+                p1 = [mesh.x[n1] mesh.y[n1] mesh.z[n1]] #nodal coordinates of n1
+                p2 = [mesh.x[n2] mesh.y[n2] mesh.z[n2]] #nodal coordinates of n2
+                Offset[:,i] = p1 #set offset as position of n1
 
-        v=p2-p1 #define vector from p1 to p2
-        lenv[i] = LinearAlgebra.norm(v) #calculate element lengtt
+                v=p2-p1 #define vector from p1 to p2
+                lenv[i] = LinearAlgebra.norm(v) #calculate element lengtt
 
-        Psi_d[i],Theta_d[i] = calculatePsiTheta(v) #calculate elment Psi and Theta angles for orientation
-        elNum[i] = mesh.conn[i,1] #get elemetn number
+                Psi_d[i],Theta_d[i] = calculatePsiTheta(v) #calculate elment Psi and Theta angles for orientation
+                elNum[i] = mesh.conn[i,1] #get elemetn number
 
-        nVec1,nVec2,nVec3 = rigidBodyRotation(0,0,1,[Psi_d[i],Theta_d[i]],[3,2]) #tranform a local normal "flapwise" vector in the element frame to the hub frame
-        nVec = [nVec1 nVec2 nVec3]
+                nVec1,nVec2,nVec3 = rigidBodyRotation(0,0,1,[Psi_d[i],Theta_d[i]],[3,2]) #tranform a local normal "flapwise" vector in the element frame to the hub frame
+                nVec = [nVec1 nVec2 nVec3]
 
-        #for consistency, force the "flapwise" normal vector of an element to be
-        #away from the machine
+                #for consistency, force the "flapwise" normal vector of an element to be
+                #away from the machine
 
-        # Mesh Type: 0-blade 1-tower 2-strut
-        if mesh.type[i]==2
-            refVector = [0;0;1]
-        elseif mesh.type[i]==1
-            refVector = [1;0;0]
-        else
-            refVector = p1-meshCentroid
-        end
-
-        refVector = refVector./LinearAlgebra.norm(refVector)
-        dotTest = LinearAlgebra.dot(nVec,refVector)
-
-        if dotTest<0 && abs(dotTest)>1.0e-4 #if vectors are not more or less aligned the normal vector is pointed inwards, towards the turbine (twist_d by 180 degrees)
-            twist_d[i] = 180.0
-        elseif abs(dotTest)<1.0e-4
-            twist_dtemp = 90.0
-            nVec1,nVec2,nVec3 = rigidBodyRotation(0,0,1,[Psi_d[i],Theta_d[i],twist_dtemp],[3,2,1])
-            nVec = [nVec1 nVec2 nVec3]
-            dotTest2 = LinearAlgebra.dot(nVec,refVector)
-            if dotTest2<0 && abs(dotTest2)>1.0e-4 #if vectors are not more or less aligned the normal vector is pointed inwards, towards the turbine (twist_d by 180 degrees)
-                twist_d[i] = twist_dtemp+180.0
-                if abs(abs(twist_d[i])-270.0) < 1.0e-3
-                    twist_d[i] = -90.0
+                # Mesh Type: 0-blade 1-tower 2-strut
+                if mesh.type[i]==2
+                    refVector = [0;0;1]
+                elseif mesh.type[i]==1
+                    refVector = [1;0;0]
+                else
+                    refVector = p1-meshCentroid
                 end
-            else
-                twist_d[i] = twist_dtemp
+
+                refVector = refVector./LinearAlgebra.norm(refVector)
+                dotTest = LinearAlgebra.dot(nVec,refVector)
+
+                if dotTest<0 && abs(dotTest)>1.0e-4 #if vectors are not more or less aligned the normal vector is pointed inwards, towards the turbine (twist_d by 180 degrees)
+                    twist_d[i] = 180.0
+                elseif abs(dotTest)<1.0e-4
+                    twist_dtemp = 90.0
+                    nVec1,nVec2,nVec3 = rigidBodyRotation(0,0,1,[Psi_d[i],Theta_d[i],twist_dtemp],[3,2,1])
+                    nVec = [nVec1 nVec2 nVec3]
+                    dotTest2 = LinearAlgebra.dot(nVec,refVector)
+                    if dotTest2<0 && abs(dotTest2)>1.0e-4 #if vectors are not more or less aligned the normal vector is pointed inwards, towards the turbine (twist_d by 180 degrees)
+                        twist_d[i] = twist_dtemp+180.0
+                        if abs(abs(twist_d[i])-270.0) < 1.0e-3
+                            twist_d[i] = -90.0
+                        end
+                    else
+                        twist_d[i] = twist_dtemp
+                    end
+                else  #the normal vector is pointed outwards, away from the turbine (no twist_d necessary)
+                    twist_d[i] = 0.0
+                end
+
             end
-        else  #the normal vector is pointed outwards, away from the turbine (no twist_d necessary)
-            twist_d[i] = 0.0
+
+            #assign data to element orientation (Ort) object
+            return Ort(Psi_d,Theta_d,twist_d,lenv,elNum,Offset)
         end
 
-    end
+        function createGeneralTransformationMatrix(angleArray,axisArray)
+            #createGeneralTransformationMatrix  calculates general transformation matrix
+            #   [dcmTotal] = createGeneralTransformationMatrix(angleArray,axisArray)
+            #
+            #   This function calculates the transformation matrix assocaited with a
+            #   general Euler rotation sequence.
+            #
+            #      input:
+            #      angleArray      = array of angles for Euler rotation sequence
+            #      axisArray       = array of axis of rotatoins for Euler rotation
+            #                        sequences
+            #
+            #      output:
+            #      dcmTotal        = transformation matrix of specified euler rotation
+            #                        sequence
 
-    #assign data to element orientation (Ort) object
-    return Ort(Psi_d,Theta_d,twist_d,lenv,elNum,Offset)
-end
+            numRotations = length(angleArray) #get number of rotation to perform
+            dcmArray = zeros(3,3,numRotations) #initialize individual rotation direction cosine matrix arrays
 
-function createGeneralTransformationMatrix(angleArray,axisArray)
-    #createGeneralTransformationMatrix  calculates general transformation matrix
-    #   [dcmTotal] = createGeneralTransformationMatrix(angleArray,axisArray)
-    #
-    #   This function calculates the transformation matrix assocaited with a
-    #   general Euler rotation sequence.
-    #
-    #      input:
-    #      angleArray      = array of angles for Euler rotation sequence
-    #      axisArray       = array of axis of rotatoins for Euler rotation
-    #                        sequences
-    #
-    #      output:
-    #      dcmTotal        = transformation matrix of specified euler rotation
-    #                        sequence
-
-    numRotations = length(angleArray) #get number of rotation to perform
-    dcmArray = zeros(3,3,numRotations) #initialize individual rotation direction cosine matrix arrays
-
-    for i=1:numRotations #calculate individual single rotatio direction cosine matrices
-        dcmArray[:,:,i] = createSingleRotationDCM(angleArray[i],axisArray[i])
-    end
-
-    dcmTotal = dcmArray[:,:,1] #initialize dcmTotal as first rotation
-
-    #multiply consecutive rotation sequency direction cosine matrices to arrive at overall transformation matrix
-    for i=2:1:numRotations
-        dcmTotal = dcmArray[:,:,i]*dcmTotal
-    end
-
-    return dcmTotal
-
-end
-
-function createSingleRotationDCM(angleDeg,axisNum)
-    #This function creates a direction cosine matrix (dcm) associated
-    #with a rotation of angleDeg about axisNum.
-
-    angleRad = angleDeg*pi/180.0 #convert angle to radians
-
-    if axisNum == 1 #direction cosine matrix about 1 axis
-        dcm = [1.0 0.0 0.0
-        0.0 cos(angleRad) sin(angleRad)
-        0.0 -sin(angleRad) cos(angleRad)]
-    elseif axisNum == 2 #direction cosine matrix about 2 axis
-        dcm = [cos(angleRad) 0.0 -sin(angleRad)
-        0.0 1.0 0.0
-        sin(angleRad) 0.0 cos(angleRad)]
-    elseif axisNum == 3 #direction cosine matrix about 3 axis
-        dcm = [cos(angleRad) sin(angleRad) 0.0
-        -sin(angleRad) cos(angleRad) 0.0
-        0.0 0.0 1.0]
-    else  #error catch
-        error("Error: createSingleRotationDCM. Axis number must be 1, 2, or 3.")
-    end
-
-    return dcm
-
-end
-
-function rigidBodyRotation(B1,B2,B3,AngleArray,AxisArray)
-    #rigidBodyRotation rotates a vector through a rotation sequence
-    #   [H1,H2,H3] = rigidBodyRotation(B1,B2,B3,AngleArray,AxisArray)
-    #
-    #   This function performs a coordinate transformation from a local
-    #   body "B"(element) frame to a common hub frame "H" via a 3-2-3 euler
-    #   rotation sequence
-    #
-    #      input:
-    #      B1        = array containing body frame 1 coordinates of points to be
-    #                  mapped to the hub frame
-    #      B2        = array containing body frame 2 coordinates of points to be
-    #                  mapped to the hub frame
-    #      B3        = array containing body frame 3 coordinates of points to be
-    #                  mapped to the hub frame
-    #     AngleArray = Array of angles for Euler rotation sequence
-    #     AxisArray  = Array of axes for Euler rotation sequence
-    #
-    #      output:
-    #      H1        = array containg hub frame 1 coordinates of points mapped
-    #                  to the hub frame from body frame
-    #      H2        = array containg hub frame 2 coordinates of points mapped
-    #                  to the hub frame from body frame
-    #      H3        = array containg hub frame 3 coordinates of points mapped
-    #                  to the hub frame from body frame
-
-    #This function performs a coordinate transformation from a local
-    #body "B"(element) frame to a common hub frame "H" via a 3-2-3 euler
-    #rotation sequence
-
-    #That is CHtoB = [M3(SweepAngle)][M2(Theta)][M3(Psi)];
-
-    #calculate coordinate transformation matrix from element frame to
-    #hub frame (CBtoH)
-    dcm = createGeneralTransformationMatrix(AngleArray,AxisArray)
-    C = dcm'
-
-    #transform body coordinatized vector to be coordinatized in the hub
-    #frame
-    H1 = C[1,1].*B1 + C[1,2].* B2 + C[1,3].*B3
-    H2 = C[2,1].*B1 + C[2,2].* B2 + C[2,3].*B3
-    H3 = C[3,1].*B1 + C[3,2].* B2 + C[3,3].*B3
-
-    return H1,H2,H3
-end
-
-function calculatePsiTheta(v)
-    #calculatePsiTheta calculates the orienation of a single element
-    #   [Psi,Theta] = calculatePsiTheta(v)
-    #
-    #   This function calculates the orientation of a single element. A local
-    #   element frame is related to a hub frame through a transformation matrix
-    #   CHtoE (transforming a vector from an element frame E to a global frame
-    #   H) such that CHtoE = [M2(Theta)]*[M3(Psi)]. Here [M2( )] is a direction
-    #   cosine matrix about a 2 axis and [M3( )] is a direction cosine matrix
-    #   about a 3 axis.
-    #
-    #      input:
-    #      v          = vector from node 1 to node 2 of an element
-    #
-    #      output:
-    #      Psi        = "3" angle for element orientation (deg)
-    #      Theta      = "2" angle for element orientation (deg)
-    #                   see above for definition
-
-    v = v./LinearAlgebra.norm(v) #normalize vector by its length
-    Psi_d = atan(v[2],v[1])*180.0/pi #calculate sweep angle, convert to deg
-    Theta_d = -asin(v[3])*180.0/pi #calculate theta angle, convert to deg
-
-    return Psi_d,Theta_d
-end
-
-function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
-    #readBDdata  reads boundary condition file
-    #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
-    #
-    #   This function reads the boundray condition file and stores data in the
-    #   boundary condition object.
-    #
-    #      input:
-    #      bcfilename    = string containing boundary condition filename
-    #      numNodes      = number of nodes in structural model
-    #      numDofPerNode = number of degrees of freedom per node
-
-    #      output:
-    #      BC            = object containing boundary condition data
-
-    totalNumDof = numNodes*numDofPerNode
-
-    numsBC = 0
-    nummBC = 0
-
-    #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
-    #constrained)
-
-    #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof,1)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
-                isConstrained[index] = 1
+            for i=1:numRotations #calculate individual single rotatio direction cosine matrices
+                dcmArray[:,:,i] = createSingleRotationDCM(angleArray[i],axisArray[i])
             end
-            index = index + 1
+
+            dcmTotal = dcmArray[:,:,1] #initialize dcmTotal as first rotation
+
+            #multiply consecutive rotation sequency direction cosine matrices to arrive at overall transformation matrix
+            for i=2:1:numRotations
+                dcmTotal = dcmArray[:,:,i]*dcmTotal
+            end
+
+            return dcmTotal
+
         end
-    end
-    numpBC = length(pBC[:,1])
 
-    map = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
-    numReducedDof = length(jointTransform[1,:])
-    redVectorMap = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
+        function createSingleRotationDCM(angleDeg,axisNum)
+            #This function creates a direction cosine matrix (dcm) associated
+            #with a rotation of angleDeg about axisNum.
 
-    BC = BC_struct(numpBC,
-    pBC,
-    numsBC,
-    nummBC,
-    isConstrained,
-    map,
-    redVectorMap)
+            angleRad = angleDeg*pi/180.0 #convert angle to radians
 
-    return BC
+            if axisNum == 1 #direction cosine matrix about 1 axis
+                dcm = [1.0 0.0 0.0
+                0.0 cos(angleRad) sin(angleRad)
+                0.0 -sin(angleRad) cos(angleRad)]
+            elseif axisNum == 2 #direction cosine matrix about 2 axis
+                dcm = [cos(angleRad) 0.0 -sin(angleRad)
+                0.0 1.0 0.0
+                sin(angleRad) 0.0 cos(angleRad)]
+            elseif axisNum == 3 #direction cosine matrix about 3 axis
+                dcm = [cos(angleRad) sin(angleRad) 0.0
+                -sin(angleRad) cos(angleRad) 0.0
+                0.0 0.0 1.0]
+            else  #error catch
+                error("Error: createSingleRotationDCM. Axis number must be 1, 2, or 3.")
+            end
 
-end
+            return dcm
+
+        end
+
+        function rigidBodyRotation(B1,B2,B3,AngleArray,AxisArray)
+            #rigidBodyRotation rotates a vector through a rotation sequence
+            #   [H1,H2,H3] = rigidBodyRotation(B1,B2,B3,AngleArray,AxisArray)
+            #
+            #   This function performs a coordinate transformation from a local
+            #   body "B"(element) frame to a common hub frame "H" via a 3-2-3 euler
+            #   rotation sequence
+            #
+            #      input:
+            #      B1        = array containing body frame 1 coordinates of points to be
+            #                  mapped to the hub frame
+            #      B2        = array containing body frame 2 coordinates of points to be
+            #                  mapped to the hub frame
+            #      B3        = array containing body frame 3 coordinates of points to be
+            #                  mapped to the hub frame
+            #     AngleArray = Array of angles for Euler rotation sequence
+            #     AxisArray  = Array of axes for Euler rotation sequence
+            #
+            #      output:
+            #      H1        = array containg hub frame 1 coordinates of points mapped
+            #                  to the hub frame from body frame
+            #      H2        = array containg hub frame 2 coordinates of points mapped
+            #                  to the hub frame from body frame
+            #      H3        = array containg hub frame 3 coordinates of points mapped
+            #                  to the hub frame from body frame
+
+            #This function performs a coordinate transformation from a local
+            #body "B"(element) frame to a common hub frame "H" via a 3-2-3 euler
+            #rotation sequence
+
+            #That is CHtoB = [M3(SweepAngle)][M2(Theta)][M3(Psi)];
+
+            #calculate coordinate transformation matrix from element frame to
+            #hub frame (CBtoH)
+            dcm = createGeneralTransformationMatrix(AngleArray,AxisArray)
+            C = dcm'
+
+            #transform body coordinatized vector to be coordinatized in the hub
+            #frame
+            H1 = C[1,1].*B1 + C[1,2].* B2 + C[1,3].*B3
+            H2 = C[2,1].*B1 + C[2,2].* B2 + C[2,3].*B3
+            H3 = C[3,1].*B1 + C[3,2].* B2 + C[3,3].*B3
+
+            return H1,H2,H3
+        end
+
+        function calculatePsiTheta(v)
+            #calculatePsiTheta calculates the orienation of a single element
+            #   [Psi,Theta] = calculatePsiTheta(v)
+            #
+            #   This function calculates the orientation of a single element. A local
+            #   element frame is related to a hub frame through a transformation matrix
+            #   CHtoE (transforming a vector from an element frame E to a global frame
+            #   H) such that CHtoE = [M2(Theta)]*[M3(Psi)]. Here [M2( )] is a direction
+            #   cosine matrix about a 2 axis and [M3( )] is a direction cosine matrix
+            #   about a 3 axis.
+            #
+            #      input:
+            #      v          = vector from node 1 to node 2 of an element
+            #
+            #      output:
+            #      Psi        = "3" angle for element orientation (deg)
+            #      Theta      = "2" angle for element orientation (deg)
+            #                   see above for definition
+
+            v = v./LinearAlgebra.norm(v) #normalize vector by its length
+            Psi_d = atan(v[2],v[1])*180.0/pi #calculate sweep angle, convert to deg
+            Theta_d = -asin(v[3])*180.0/pi #calculate theta angle, convert to deg
+
+            return Psi_d,Theta_d
+        end
+
+        function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
+            #readBDdata  reads boundary condition file
+            #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
+            #
+            #   This function reads the boundray condition file and stores data in the
+            #   boundary condition object.
+            #
+            #      input:
+            #      bcfilename    = string containing boundary condition filename
+            #      numNodes      = number of nodes in structural model
+            #      numDofPerNode = number of degrees of freedom per node
+
+            #      output:
+            #      BC            = object containing boundary condition data
+
+            totalNumDof = numNodes*numDofPerNode
+
+            numsBC = 0
+            nummBC = 0
+
+            #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
+            #constrained)
+
+            #calculate constrained dof vector
+            isConstrained = zeros(totalNumDof,1)
+            constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
+            index = 1
+            for i=1:numNodes
+                for j=1:numDofPerNode
+                    if ((i-1)*numDofPerNode + j in constDof)
+                        isConstrained[index] = 1
+                    end
+                    index = index + 1
+                end
+            end
+            numpBC = length(pBC[:,1])
+
+            map = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
+            numReducedDof = length(jointTransform[1,:])
+            redVectorMap = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
+
+            BC = BC_struct(numpBC,
+            pBC,
+            numsBC,
+            nummBC,
+            isConstrained,
+            map,
+            redVectorMap)
+
+            return BC
+
+        end

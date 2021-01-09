@@ -6,7 +6,7 @@ import PyPlot
 # import OWENS
 path,_ = splitdir(@__FILE__)
 include("$(path)/../src/OWENS.jl")
-#TODO: ort file, nodal file, element file, initial conditions, and blade file
+#TODO:  element file, initial conditions
 
 ##############################################
 # Setup
@@ -17,6 +17,16 @@ include("$(path)/../src/OWENS.jl")
 SNL5MW_bld_z = [15.0, 21.61004296, 28.20951408, 28.2148, 34.81955704, 41.4296, 48.03964296, 54.63911408, 61.24915704, 67.8592, 74.46924296, 81.06871408, 87.67875704, 94.2888, 100.89884296, 107.49831408, 114.10835704, 120.7184, 127.32844296, 133.92791408, 133.9332, 140.53795704, 147.148].-15.0
 SNL5MW_bld_x = -[0.0, -10.201, -20.361, -20.368290684, -29.478, -36.575, -42.579, -47.177, -50.555, -52.809, -53.953, -54.014, -53.031, -51.024, -47.979, -43.942, -38.768, -32.91, -25.587, -17.587, -17.580079568, -8.933, 8.0917312607e-15]
 
+# Juno.@enter OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+# Hb = 147.148-15.0, #blade height
+# R = 54.014, # m bade radius
+# nstrut = 2,
+# strut_mout_ratio = 0.1, #distance from top/bottom
+# ntelem = 20, #tower elements
+# nbelem = 20, #blade elements
+# nselem = 2,  #strut elements
+# bshapex=SNL5MW_bld_x,
+# bshapez=SNL5MW_bld_z) #use defaults
 
 mymesh,myort,myjoint = OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
 Hb = 147.148-15.0, #blade height
