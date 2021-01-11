@@ -760,7 +760,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             elInput.y = ely
             elInput.z = elz
 
-            if (el.rotationalEffects)
+            if el.rotationalEffects[i]==1
                 elInput.Omega = Omega
                 elInput.OmegaDot = OmegaDot
             else
@@ -2017,7 +2017,7 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
         #     error("analysisType not supported, choose another")
     end
 
-    if el.rotationalEffects
+    if el.rotationalEffects[elementNumber]==1
         Omega = Omega
         OmegaDot = OmegaDot
     else

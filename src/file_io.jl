@@ -347,7 +347,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     end
     close(fid) #close ort file
 
-    rotationalEffects = true #TODO: vectorize this by i to make it element specific
+    rotationalEffects = ones(numElements) 
 
     #store data in element object
     el = El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
