@@ -169,7 +169,7 @@ function  linearAnalysisModal(model,mesh,el,displ,Omega,elStorage)
         elInput.concLoad = loadConc
         elInput.disp = eldisp
 
-        if el.rotationalEffects #TODO: vectorize this by i to make it element specific #activate or deactivate rotational effects for element
+        if el.rotationalEffects[i]==1
             elInput.Omega = Omega
             elInput.OmegaDot = 0.0
         else
