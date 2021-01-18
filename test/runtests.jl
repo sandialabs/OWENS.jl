@@ -8,7 +8,7 @@ using Test
 end
 
 @testset "_15mTower_transient_dvawt_c_2_lcdt" begin
-    include("$path/test_owens.jl")
+    include("$path/test_owens_with_fileio.jl")
 end
 
 @testset "Run Hydro" begin

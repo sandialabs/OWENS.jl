@@ -422,3 +422,51 @@ function calculatePsiTheta(v)
 
     return Psi_d,Theta_d
 end
+
+function makeBCdata(pBC,numNodes,numDofPerNode)
+    #readBDdata  reads boundary condition file
+    #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
+    #
+    #   This function reads the boundray condition file and stores data in the
+    #   boundary condition object.
+    #
+    #      input:
+    #      bcfilename    = string containing boundary condition filename
+    #      numNodes      = number of nodes in structural model
+    #      numDofPerNode = number of degrees of freedom per node
+
+    #      output:
+    #      BC            = object containing boundary condition data
+
+    totalNumDof = numNodes*numDofPerNode
+
+    numsBC = 0
+    nummBC = 0
+
+    #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
+    #constrained)
+
+    #calculate constrained dof vector
+    isConstrained = zeros(totalNumDof,1)
+    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
+    index = 1
+    for i=1:numNodes
+        for j=1:numDofPerNode
+            if ((i-1)*numDofPerNode + j in constDof)
+                isConstrained[index] = 1
+            end
+            index = index + 1
+        end
+    end
+    numpBC = length(pBC[:,1])
+    BC = BC_struct(numpBC,
+    pBC,
+    numsBC,
+    nummBC,
+    isConstrained,
+    [],
+    [])
+
+    return BC
+
+end

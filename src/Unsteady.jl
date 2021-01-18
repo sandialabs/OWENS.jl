@@ -1,43 +1,3 @@
-
-include("call_structuralDynamicsTransient.jl")
-
-#These are from the matlab version of the actuator cylinder
-# mutable struct Slice
-#     r
-#     RefR
-#     chord
-#     twist
-#     delta
-#     B
-#     alpha_rad
-#     cl
-#     cd
-#     Omega
-#     centerX
-#     centerY
-# end
-#
-# mutable struct Env
-#     rho
-#     mu
-#     G_amp
-#     gusttime
-#     gustX0
-#     N_Rev
-#     idx_sub
-#     wsave
-#     Vinf_nominal
-#     V_vert
-#     V_tang
-#     V_rad
-#     V_twist
-#     Vinf
-#     V_wake_old
-#     steplast
-#     ntheta
-#     tau
-# end
-
 function Unsteady(model,mesh,el)
     #Unsteady performs modular transient analysis
     #
@@ -54,8 +14,6 @@ function Unsteady(model,mesh,el)
     #
     #
     #   output: (NONE)
-
-
 
     ## activate platform module
     #............... flags for module activation ....................
@@ -326,7 +284,7 @@ function Unsteady(model,mesh,el)
 
     ## structural dynamics initialization
     #..........................................................................
-    if (occursin("ROM",model.analysisType)) #initialize reduced order model
+    if model.analysisType=="ROM" #initialize reduced order model
         error("ROM not fully implemented")
         #     #calculate constrained dof vector
         #     numDofPerNode = 6
@@ -371,6 +329,8 @@ function Unsteady(model,mesh,el)
     _,structureMOI,_=calculateStructureMassProps(elStorage)
     #..........................................................................
 
+    model.jointTransform, model.reducedDOFList = createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+
     ## Main Loop - iterate for a solution at each time step, i
     for i=1:numTS
 
@@ -380,9 +340,9 @@ function Unsteady(model,mesh,el)
         # end
 
         ## check for specified rotor speed at t[i] + delta_t
-        model.omegaControl = false
+        model.omegaControl = false #TODO: why hard code it here and invalidate inputs?
         if (model.turbineStartup == 0)
-            model.omegaControl = true
+            model.omegaControl = true #TODO: are we setting this back?
             if (model.usingRotorSpeedFunction) #use user specified rotor speed profile function
                 _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i]+delta_t,0.0,delta_t)
                 Omega_s = omegaCurrent
@@ -543,7 +503,7 @@ function Unsteady(model,mesh,el)
             #-------------------------------------        ## rotor speed update
             #------ update rotor speed ---------------------------------
             azi_jLast = azi_j
-            if (model.omegaControl)
+            if model.omegaControl
                 if (model.usingRotorSpeedFunction)
                     azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i]+delta_t,azi_s,delta_t)
                 else
@@ -551,13 +511,14 @@ function Unsteady(model,mesh,el)
                     OmegaDot_j = OmegaDot_s
                     azi_j = azi_s + Omega_j*delta_t*2*pi
                 end
-            end
-            if (!model.omegaControl)
+            elseif !model.omegaControl
                 Crotor = 0
                 Krotor = 0
                 azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
                 -FReaction_j[6],-torqueDriveShaft_j,
                 azi_s,Omega_s,OmegaDot_s,delta_t)
+            else
+                error("omega control option not correctly specified")
             end
             #-------------------------------------        ##
 
@@ -624,7 +585,7 @@ function Unsteady(model,mesh,el)
             #             dispData.displ_sm1 = u_sm1 #Not even used
             dispData = DispData(u_s,udot_s,uddot_s)
 
-            #         if (occursin('ROM',model.analysisType))
+            #         if model.analysisType=='ROM'
             #             dispData.displ_s = u_s
             #             dispData.displdot_s = udot_s
             #             dispData.displddot_s = uddot_s
@@ -634,7 +595,7 @@ function Unsteady(model,mesh,el)
             #             dispData.etaddot_s = etaddot_s
             #         end
             println("starting struct dyn")
-            if (occursin("ROM",model.analysisType))
+            if model.analysisType=="ROM"
                 error("ROM not fully implemented")
                 #             # evalulate structural dynamics using reduced order model
                 #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
@@ -649,12 +610,12 @@ function Unsteady(model,mesh,el)
                 # end
                 # dispOut = DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
 
-                # start = time()
+                start = time()
                 # elStrain,dispOut,FReaction_j,Kgmat = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
                 elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
 
                 # error("stop")
-                # println("$(time()-start)")
+                println("$(time()-start)")
             end
             #update last iteration displacement vector
             u_jLast = u_j
@@ -664,7 +625,7 @@ function Unsteady(model,mesh,el)
             uddot_j = dispOut.displddot_sp1
 
             # println("ran structdyn")
-            if (occursin("ROM",model.analysisType))
+            if model.analysisType=="ROM"
                 #             udot_j  = dispOut.displdot_sp1
                 #             uddot_j = dispOut.displddot_sp1
                 #
@@ -716,16 +677,16 @@ function Unsteady(model,mesh,el)
 
 
         ## update timestepping variables and other states, store in history arrays
-        if (occursin("TD",model.analysisType))
+        if model.analysisType=="TD"
             u_sm1 = u_s
             u_s = u_j
         end
-        if (occursin("TNB",model.analysisType))
+        if model.analysisType=="TNB"
             u_s = u_j
             udot_s = udot_j
             uddot_s = uddot_j
         end
-        if (occursin("ROM",model.analysisType))
+        if model.analysisType=="ROM"
             #         u_s = u_j
             #         udot_s = udot_j
             #         uddot_s = uddot_j
@@ -817,8 +778,7 @@ function Unsteady(model,mesh,el)
     # fprintf('#s\n','Output Saving Not Currently Implemented')
 
     #Writefile
-    writefile = true
-    if !writefile
+    if model.outFilename=="none"
         println("NOT WRITING Verification File")
     else
         println("WRITING Verification File")
@@ -850,7 +810,7 @@ function Unsteady(model,mesh,el)
         end
 
     end
-
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
 end
 
 function omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)

@@ -1,10 +1,10 @@
-# using PyPlot
-# close("all")
+import PyPlot
+PyPlot.close("all")
 using Test
 import DelimitedFiles
-import OWENS
+# import OWENS
 path,_ = splitdir(@__FILE__)
-# include("$(path)/../src/OWENS.jl")
+include("$(path)/../src/OWENS.jl")
 mesh = OWENS.readMesh("$(path)/data/unit_test_5MW.mesh")
 joint = DelimitedFiles.readdlm("$(path)/data/unit_test_5MW.jnt",'\t',skipstart = 0)
 
@@ -66,19 +66,29 @@ for i = 1:length(joint[:,1])
     end
 end
 
-# figure()
-# plot(mymesh.x,mymesh.z,"k.-",markersize=10.0)
-# plot(mesh.x,mesh.z,"b.")
-# axis("equal")
-#
-# figure()
-# plot(LinRange(0,1,length(mymesh.z)),mesh.z[1:length(mymesh.z)]-mymesh.z,"k.-")
-# ylabel("z")
-#
-# figure()
-# plot(LinRange(0,1,length(mymesh.z)),mesh.x[1:length(mymesh.x)]-mymesh.x,"k.-")
-# ylabel("x")
-#
-# figure()
-# plot(LinRange(0,1,length(mymesh.conn[:,2])),mesh.conn[:,2].-mymesh.conn[:,2],"k.-")
-# ylabel("connection")
+PyPlot.figure()
+PyPlot.plot(mymesh.x,mymesh.z,"k.-",markersize=10.0)
+PyPlot.plot(mesh.x,mesh.z,"b.")
+PyPlot.axis("equal")
+
+PyPlot.figure()
+PyPlot.plot(mymesh.y,mymesh.z,"k.-",markersize=10.0)
+PyPlot.plot(mesh.y,mesh.z,"b.")
+PyPlot.legend(["mymesh","originalmesh"])
+# PyPlot.axis("equal")
+
+PyPlot.figure()
+PyPlot.plot(LinRange(0,1,length(mymesh.z)),mesh.z[1:length(mymesh.z)]-mymesh.z,"k.-")
+PyPlot.ylabel("z")
+
+PyPlot.figure()
+PyPlot.plot(LinRange(0,1,length(mymesh.x)),mesh.x[1:length(mymesh.x)]-mymesh.x,"k.-")
+PyPlot.ylabel("x")
+
+PyPlot.figure()
+PyPlot.plot(LinRange(0,1,length(mymesh.y)),mesh.y[1:length(mymesh.y)]-mymesh.y,"k.-")
+PyPlot.ylabel("y")
+
+PyPlot.figure()
+PyPlot.plot(LinRange(0,1,length(mymesh.conn[:,2])),mesh.conn[:,2].-mymesh.conn[:,2],"k.-")
+PyPlot.ylabel("connection")

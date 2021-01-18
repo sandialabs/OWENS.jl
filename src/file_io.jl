@@ -515,7 +515,7 @@ function readNodalTerms(filename)
     end
 
     if length(data[1,:])==5
-        @warn "General 6x6 concentrated terms are not yet coded for unsteady analysis, using only the diagonal terms and converting"
+        @warn "General 6x6 concentrated diagonal terms are being applied to the old diagonal method with coulping (e.g. mass and force through acceleration), and no coupling is happening for the non-diagonal terms"
         #TODO: implement the 6x6 terms since they will be necessary for the linearized platform since there is strong cross coupling
         concLoad = Array{ConcNDL, 1}(undef, n_F)
         for i_F = 1:n_F
@@ -554,7 +554,7 @@ function readNodalTerms(filename)
         end
 
     elseif length(data[1,:])==4
-        @warn "General 6x6 concentrated terms are not yet coded for unsteady analysis, using only the diagonal terms and converting"
+        @warn "Only diagonal terms being used, there are no cross terms"
         # This portion is different in that it uses the nongeneral terms and applies them to the general just at the diagonal, TODO: once the general terms are implemented, this needs to be updated
         concLoad = Array{ConcNDL, 1}(undef, n_F)
         for i_F = 1:n_F
@@ -666,4 +666,22 @@ function readCactusGeom(geom_fn)
     end
 
     return CactusGeom(NBlade,NStrut,RotN,RotP,RefAR,RefR,blade,strut)
+end
+
+function generateOutputFilename(owensfilename,analysisType)
+    #This function generates an output file name depending on the analysis type
+
+    #find the last "." in owensfilename - helps to extract the prefix in the .owens
+    index = findlast(".",owensfilename)[1]
+
+    if (analysisType=="M"||analysisType=="F"||analysisType=="FA") #output filename (*.out) for modal/flutter analysis
+        outputfilename = string(owensfilename[1:index-1],".out")
+    elseif (analysisType=="S") #output file name (*_static.mat) for static analysis
+        outputfilename = string(owensfilename[1:index-1],"_static.mat")
+    elseif (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #output filename (*.mat) for transient analysis
+        outputfilename = string(owensfilename[1:index-1],".mat")
+    end
+
+    return outputfilename
+
 end
