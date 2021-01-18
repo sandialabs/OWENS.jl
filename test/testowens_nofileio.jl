@@ -43,6 +43,26 @@ bshapez=SNL5MW_bld_z) #use defaults
 bladeData,_,_,_ = OWENS.readBladeData("$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.bld") #reads overall blade data file
 el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.el","$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.ort",bladeData) #read element data file (also reads orientation and blade data file associated with elements)
 
+#Tower
+# NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
+# numadIn = readNuMadXls(NuMad_xls_file)
+# precompoutput = getPreCompOutput(numadIn)
+# sectionPropsArray_twr = getSectPropsFromPreComp(usedSpan,numadIn,precompoutput)
+
+#Blades
+NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
+numadIn = OWENS.readNuMadXls(NuMad_xls_file)
+precompoutput = OWENS.getPreCompOutput(numadIn)
+sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(mymesh.structuralSpanLocNorm[1,:],numadIn,precompoutput)
+
+#Struts
+# NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
+# numadIn = readNuMadXls(NuMad_xls_file)
+# precompoutput = getPreCompOutput(numadIn)
+# sectionPropsArray_str = getSectPropsFromPreComp(mymesh.structuralSpanLocNorm,numadIn,precompoutput)
+#TODO: this is hard coded for a two bladed, two strut design
+sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArray_bld;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+
 nodalinputdata = [1 "M6" 1 1 9.8088e6
 1 "M6" 2 2 9.7811e6
 1 "M6" 3 3 1.8914e7

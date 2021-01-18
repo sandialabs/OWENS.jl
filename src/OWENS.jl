@@ -12,6 +12,8 @@ import SparseArrays
 import ArnoldiMethod
 import Printf
 import PyPlot
+import PreComp
+import Composites
 
 # ------------ GLOBAL VARIABLES ------------------------------------------------
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
@@ -22,14 +24,14 @@ const module_path = splitdir(@__FILE__)[1]          # Path to this module
 # mat"addpath($mat_path)"
 
 export Unsteady #, UnsteadyROM
-export owens #TODO: do this right
-
-# export Modal, Flutter
+export owens
+export Modal#, Flutter
 #
 # export Steady
 #
 # export GyricFEA
 
+# "include" is basically the same as copying and pasting the code here
 include("GyricFEA.jl")
 include("Modal.jl")
 include("Steady.jl")

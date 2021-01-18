@@ -506,3 +506,335 @@ function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     return BC
 
 end
+
+
+
+# NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
+
+function getPreCompOutput(numadIn)
+    # numadIn = readNuMadXls(NuMad_xls_file)
+
+    n_stations = length(numadIn.span)
+
+    #TODO: use actual airfoil at each section, ensure square matrix via interpolation so it can be stored as a 2D matrix
+    af_xy = DelimitedFiles.readdlm("$(module_path)/../test/airfoils/e212-il.csv",',',Float64,skipstart = 9)
+
+    # Normalize the surface points and make sure that they start at the trailing edge and loop around starting on the bottom side #TODO: add a check for both of these
+    #TODO: simplify this since there is circshift happening on these points later on
+    xaf1 = reverse(af_xy[:,1])/100.0
+    yaf1 = reverse(af_xy[:,2])/100.0
+
+    xaf = zeros(n_stations,length(xaf1))
+    yaf = zeros(n_stations,length(yaf1))
+    for i = 1:n_stations
+        xaf[i,:] = xaf1[:] #break links since using in multiple areas
+        yaf[i,:] = yaf1[:]
+    end
+
+
+    plyprops = plyproperties() #TODO: enable numad input of material properties
+
+
+
+    mat = Array{Array{Composites.Material,1}}(undef,n_stations)
+    lam = Array{Composites.Laminate,1}(undef,n_stations)
+    precompinput = Array{PreComp.Input,1}(undef,n_stations)
+    precompoutput = Array{PreComp.Output,1}(undef,n_stations)
+
+    normalchord = numadIn.chord #TODO: if any sweep occurs the normal chord will need to be calculated since it isn't the regular chord anymore
+
+    sloc = numadIn.span
+    twist_d = zeros(length(numadIn.twist_d))
+    for ii = 1:length(numadIn.twist_d) #TODO: real interpolation in the reading file
+        twist_d[ii] = numadIn.twist_d[ii]
+    end
+
+    twistrate_d = PreComp.tw_rate(n_stations,sloc[1:n_stations],twist_d)
+    leloc = numadIn.xoffset
+
+    for i_station = 1:n_stations
+        # find leading edge
+        lei = argmin(abs.(xaf[i_station,:]))
+        # shift so leading edge is first
+        xpc = circshift(xaf[i_station,:],-(lei-1))
+        ypc = circshift(yaf[i_station,:],-(lei-1))
+
+        # assemble input
+        # precompinput[i_station],mat[i_station],lam[i_station] = layup(normalchord[i_station],twist_d[i_station],twistrate_d[i_station],xpc,ypc,lam_t[i_station,:],usedmaterials,webloc,plyprops,leloc[i_station],orientation)
+
+        ##################################
+        ############# Upper ##############
+        ##################################
+        xsec_nodeU = Float64.(numadIn.segments[i_station,numadIn.segments[i_station,:].>=0.0])
+
+
+        seg_idxU = (numadIn.segments[i_station,:].>0.0)[2:end]
+        n_laminaU = zeros(Int,sum(seg_idxU))
+        # idx_le = argmin(abs.(numadIn.segments[i_station,:]))-1
+        idx = 1
+        for seg_idx = 1:numadIn.n_segments
+            if seg_idxU[seg_idx] == true
+                n_laminaU[idx] = length(numadIn.skin_seq[i_station,seg_idx].seq)
+                idx += 1
+            end
+        end
+
+        n_pliesU = zeros(Int,sum(n_laminaU))
+        mat_lamU = zeros(Int,sum(n_laminaU))
+        idx = 1
+        for seg_idx = 1:numadIn.n_segments
+            if seg_idxU[seg_idx] == true
+                for seq_idx = 1:length(numadIn.skin_seq[i_station,seg_idx].seq)
+                    mat_idx = numadIn.skin_seq[i_station,seg_idx].seq[seq_idx]
+                    mat_lamU[idx] = mat_idx
+                    n_pliesU[idx] = numadIn.stack_layers[i_station,mat_idx]
+                    idx += 1
+                end
+            end
+        end
+
+        t_lamU = zeros(sum(n_laminaU)) .+ 0.001 #TODO: hook this into the optimization parameters and or the material properties
+        tht_lamU = zeros(sum(n_laminaU)) #TODO: same with this
+
+        ##################################
+        ############# Lower ##############
+        ##################################
+        xsec_nodeL = Float64.(abs.(reverse(numadIn.segments[i_station,numadIn.segments[i_station,:].<=0.0]))) #TODO: fix types and verify positive increasing is correct for precomp even on the bottom
+
+        seg_idxL = (numadIn.segments[i_station,:].<=0.0)[2:end]
+        n_laminaL = zeros(Int,sum(seg_idxL))
+        idx = 1
+        for seg_idx = 1:numadIn.n_segments
+            if seg_idxL[seg_idx] == true
+                n_laminaL[idx] = length(numadIn.skin_seq[i_station,seg_idx].seq)
+                idx += 1
+            end
+        end
+
+        n_pliesL = zeros(Int,sum(n_laminaL))
+        mat_lamL = zeros(Int,sum(n_laminaL))
+        idx = 1
+        for seg_idx = 1:numadIn.n_segments
+            if seg_idxL[seg_idx] == true
+                for seq_idx = 1:length(numadIn.skin_seq[i_station,seg_idx].seq)
+                    mat_idx = numadIn.skin_seq[i_station,seg_idx].seq[seq_idx]
+                    mat_lamL[idx] = mat_idx
+                    n_pliesL[idx] = numadIn.stack_layers[i_station,mat_idx]
+                    idx += 1
+                end
+            end
+        end
+
+        t_lamL = zeros(sum(n_laminaL)) .+ 0.001 #TODO: hook this into the optimization parameters and or the material properties
+        tht_lamL = zeros(sum(n_laminaL)) #TODO: same with this
+
+        ##################################
+        ############# Web(s) #############
+        ##################################
+
+        loc_web = zeros(numadIn.n_web)
+        n_laminaW = zeros(Int,numadIn.n_web)
+        # println("You must define shear webs at each spanwise station, just set the ply thicknesses to zero if not desired")
+        for web_idx = 1:numadIn.n_web
+            idx_loc_web= numadIn.web_dp[i_station,web_idx].seq[1]+1
+            loc_web[web_idx] = abs(numadIn.segments[i_station,idx_loc_web])
+            n_laminaW[web_idx] = length(numadIn.web_seq[i_station,web_idx].seq)
+        end
+
+        # Now ensure that there aren't any airfoil points already where the webs are located
+        xpc_filtered = [] #TODO: make this more efficient
+        ypc_filtered = [] #TODO: make this more efficient
+        for i_af = 1:length(xpc)
+            alreadyPushed = false
+            for j_web = 1:length(loc_web)
+                if !isapprox(xpc[i_af],loc_web[j_web],atol = 1e-4) && alreadyPushed == false
+                    push!(xpc_filtered,xpc[i_af])
+                    push!(ypc_filtered,ypc[i_af])
+                    alreadyPushed = true
+                end
+            end
+        end
+        xpc_filtered = Float64.(xpc_filtered)
+        ypc_filtered = Float64.(ypc_filtered)
+
+        n_pliesW = zeros(Int,sum(n_laminaW))
+        mat_lamW = zeros(Int,sum(n_laminaW))
+        idx = 1
+        for web_idx = 1:numadIn.n_web
+            for seq_idx = 1:length(numadIn.web_seq[i_station,web_idx].seq)
+                mat_idx = numadIn.web_seq[i_station,web_idx].seq[seq_idx]
+                mat_lamW[idx] = mat_idx
+                n_pliesW[idx] = numadIn.stack_layers[i_station,mat_idx]
+                idx += 1
+            end
+        end
+
+        t_lamW = zeros(sum(n_laminaW)) .+ 0.001 #TODO: hook this into the optimization parameters and or the material properties
+        tht_lamW = zeros(sum(n_laminaW)) #TODO: same with this
+
+        ##################################
+        ######## Materials Input #########
+        ##################################
+        mat_single = []
+        usedmaterials = ["highmodulus_uni","highmodulus_weave","SNL_foam","highmodulus_weave","SNL_foam","highmodulus_weave","SNL_foam","highmodulus_weave"] #TODO: hook this up to the numad materials
+        e1 = zeros(length(usedmaterials))
+        e2 = zeros(length(usedmaterials))
+        g12 = zeros(length(usedmaterials))
+        anu12 = zeros(length(usedmaterials))
+        density = zeros(length(usedmaterials))
+
+        for i_mat = 1:length(usedmaterials)
+            matnames = plyprops.names
+            idx = findall(matnames -> matnames == usedmaterials[i_mat],matnames)
+            material = plyprops.plies[idx[1]]
+            push!(mat_single,material)
+            e1[i_mat] = material.e1
+            e2[i_mat] = material.e2
+            g12[i_mat] = material.g12
+            anu12[i_mat] = material.nu12
+            density[i_mat] = material.rho
+        end
+
+        mat[i_station] = mat_single
+
+        ########################################
+        ## Create the Precomp Input Structure ##
+        ########################################
+        #TODO: fix this so it picks up all sections when the interpolation gets input
+        precompinput[i_station] = PreComp.Input(
+        normalchord[i_station],
+        -twist_d[i_station],-twistrate_d[i_station],
+        leloc[i_station],xpc_filtered,ypc_filtered, #TODO: use the actual airfoils at each section
+        e1,e2,g12,anu12,density,
+        xsec_nodeU,n_laminaU,n_pliesU,t_lamU,tht_lamU,mat_lamU,
+        xsec_nodeL,n_laminaL,n_pliesL,t_lamL,tht_lamL,mat_lamL,
+        loc_web,n_laminaW,n_pliesW,t_lamW,tht_lamW,mat_lamW)
+
+        # calculate composite properties: stiffness, mass, etc
+        #TODO: fix this so it picks up all sections when the interpolation gets input
+        precompoutput[i_station] = PreComp.properties(precompinput[i_station])
+
+    end
+
+    return precompoutput
+end
+
+function getSectPropsFromPreComp(usedUnitSpan,numadIn,precompoutput)
+    # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
+    # create spline of the precomp output to be used with the specified span array
+    len_pc = length(precompoutput)
+    ei_flap = zeros(len_pc)
+    ei_lag = zeros(len_pc)
+    gj = zeros(len_pc)
+    ea = zeros(len_pc)
+    s_fl = zeros(len_pc)
+    s_af = zeros(len_pc)
+    s_al = zeros(len_pc)
+    s_ft = zeros(len_pc)
+    s_lt = zeros(len_pc)
+    s_at = zeros(len_pc)
+    x_sc = zeros(len_pc)
+    y_sc = zeros(len_pc)
+    x_tc = zeros(len_pc)
+    y_tc = zeros(len_pc)
+    mass = zeros(len_pc)
+    flap_iner = zeros(len_pc)
+    lag_iner = zeros(len_pc)
+    tw_iner_d = zeros(len_pc)
+    x_cm = zeros(len_pc)
+    y_cm = zeros(len_pc)
+
+    # extract the values from the precomp outputs
+    for i_pc = 1:len_pc
+        ei_flap[i_pc] = precompoutput[i_pc].ei_flap
+        ei_lag[i_pc] = precompoutput[i_pc].ei_lag
+        gj[i_pc] = precompoutput[i_pc].gj
+        ea[i_pc] = precompoutput[i_pc].ea
+        s_fl[i_pc] = precompoutput[i_pc].s_fl
+        s_af[i_pc] = precompoutput[i_pc].s_af
+        s_al[i_pc] = precompoutput[i_pc].s_al
+        s_ft[i_pc] = precompoutput[i_pc].s_ft
+        s_lt[i_pc] = precompoutput[i_pc].s_lt
+        s_at[i_pc] = precompoutput[i_pc].s_at
+        x_sc[i_pc] = precompoutput[i_pc].x_sc
+        y_sc[i_pc] = precompoutput[i_pc].y_sc
+        x_tc[i_pc] = precompoutput[i_pc].x_tc
+        y_tc[i_pc] = precompoutput[i_pc].y_tc
+        mass[i_pc] = precompoutput[i_pc].mass
+        flap_iner[i_pc] = precompoutput[i_pc].flap_iner
+        lag_iner[i_pc] = precompoutput[i_pc].lag_iner
+        tw_iner_d[i_pc] = precompoutput[i_pc].tw_iner_d
+        x_cm[i_pc] = precompoutput[i_pc].x_cm
+        y_cm[i_pc] = precompoutput[i_pc].y_cm
+    end
+
+    # Now create the splines and sample them at the used span
+    origUnitSpan = numadIn.span./numadIn.span[end]
+    ei_flap_used = FLOWMath.akima(origUnitSpan,ei_flap,usedUnitSpan)
+    ei_lag_used = FLOWMath.akima(origUnitSpan,ei_lag,usedUnitSpan)
+    gj_used = FLOWMath.akima(origUnitSpan,gj,usedUnitSpan)
+    ea_used = FLOWMath.akima(origUnitSpan,ea,usedUnitSpan)
+    s_fl_used = FLOWMath.akima(origUnitSpan,s_fl,usedUnitSpan)
+    s_af_used = FLOWMath.akima(origUnitSpan,s_af,usedUnitSpan)
+    s_al_used = FLOWMath.akima(origUnitSpan,s_al,usedUnitSpan)
+    s_ft_used = FLOWMath.akima(origUnitSpan,s_ft,usedUnitSpan)
+    s_lt_used = FLOWMath.akima(origUnitSpan,s_lt,usedUnitSpan)
+    s_at_used = FLOWMath.akima(origUnitSpan,s_at,usedUnitSpan)
+    x_sc_used = FLOWMath.akima(origUnitSpan,x_sc,usedUnitSpan)
+    y_sc_used = FLOWMath.akima(origUnitSpan,y_sc,usedUnitSpan)
+    x_tc_used = FLOWMath.akima(origUnitSpan,x_tc,usedUnitSpan)
+    y_tc_used = FLOWMath.akima(origUnitSpan,y_tc,usedUnitSpan)
+    mass_used = FLOWMath.akima(origUnitSpan,mass,usedUnitSpan)
+    flap_iner_used = FLOWMath.akima(origUnitSpan,flap_iner,usedUnitSpan)
+    lag_iner_used = FLOWMath.akima(origUnitSpan,lag_iner,usedUnitSpan)
+    tw_iner_d_used = FLOWMath.akima(origUnitSpan,tw_iner_d,usedUnitSpan)
+    x_cm_used = FLOWMath.akima(origUnitSpan,x_cm,usedUnitSpan)
+    y_cm_used = FLOWMath.akima(origUnitSpan,y_cm,usedUnitSpan)
+
+    ac_used = FLOWMath.akima(origUnitSpan,numadIn.aerocenter,usedUnitSpan)
+    twist_d_used = FLOWMath.akima(origUnitSpan,numadIn.twist_d,usedUnitSpan)
+
+    sectionPropsArray = Array{OWENS.SectionPropsArray, 1}(undef, length(usedUnitSpan))
+
+    for i=1:length(usedUnitSpan)-1
+
+        #structural properties
+        ac = -([ac_used[i], ac_used[i+1]].-0.5)
+        twist_d=[twist_d_used[i], twist_d_used[i+1]] # indegrees #TODO: update all angles to be in radians unless explicitely indicated
+        rhoA = [mass_used[i], mass_used[i+1]]
+        EIyy = [ei_flap_used[i], ei_flap_used[i+1]]
+        EIzz = [ei_lag_used[i], ei_lag_used[i+1]]
+        if (minimum(abs.(EIyy .- EIzz)) < 1.0e-3)
+            EIzz = EIzz.*1.0001
+        end
+        GJ = [gj_used[i], gj_used[i+1]]
+        EA = [ea_used[i], ea_used[i+1]]
+
+        rhoIyy = [flap_iner_used[i], flap_iner_used[i+1]]
+        rhoIzz = [lag_iner_used[i], lag_iner_used[i+1]]
+        rhoJ = [flap_iner_used[i]+lag_iner_used[i+1], flap_iner_used[i]+lag_iner_used[i+1]]
+        zcm = [x_cm_used[i], x_cm_used[i+1]]
+        ycm = [y_cm_used[i], y_cm_used[i+1]]
+        a = [y_tc_used[i], y_tc_used[i+1]]
+
+        #coupling factors
+        EIyz = [0.0, 0.0]
+        alpha1 = [0.0, 0.0] #This is always 0 in the element file, and it is unclear what it is used for since I can't find it being used in the code
+        alpha2 = [0.0, 0.0]
+        alpha3 = [0.0, 0.0]
+        alpha4 = [0.0, 0.0]
+        alpha5 = [0.0, 0.0]
+        alpha6 = [0.0, 0.0]
+        rhoIyz = [0.0, 0.0]
+        b = [0.0, 0.0]
+        a0 = [2*pi, 2*pi]
+        aeroCenterOffset = [0.0, 0.0]
+
+        #TODO: not all of the precomp data is used, need to include it for a more accurate solution
+        sectionPropsArray[i] = SectionPropsArray(ac,twist_d,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
+
+    end
+    println("EIyz, rhoIyz deactivated") #TODO: why is this, especially when I believe precomp calculates them
+    return sectionPropsArray
+
+end
