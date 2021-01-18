@@ -144,16 +144,16 @@ function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,el,t
             x = [mesh.x[node1], mesh.x[node2]]
             elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
             xloc = [0 elLength]
-            twist = el.props[elNum].twist
-            sweepAngle = el.psi[elNum]
-            coneAngle = el.theta[elNum]
-            rollAngle = el.roll[elNum]
+            twist_d = el.props[elNum].twist
+            sweepAngle_d = el.psi[elNum]
+            coneAngle_d = el.theta[elNum]
+            rollAngle_d = el.roll[elNum]
 
             extDistF2Node =  [structuralLoad_T[j,k],   structuralLoad_T[j,k+1]]
             extDistF3Node = -[structuralLoad_N[j,k],   structuralLoad_N[j,k+1]]
             extDistF4Node = -[structuralLoad_M25[j,k], structuralLoad_M25[j,k+1]]
 
-            Fe = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
+            Fe = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist_d,sweepAngle_d,coneAngle_d,rollAngle_d,extDistF2Node,extDistF3Node,extDistF4Node)
 
             #asssembly
             for m = 1:length(dofList)

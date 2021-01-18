@@ -347,7 +347,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     end
     close(fid) #close ort file
 
-    rotationalEffects = ones(numElements) 
+    rotationalEffects = ones(numElements)
 
     #store data in element object
     el = El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
@@ -911,4 +911,80 @@ function readResultsModalOut(resultsFile,numNodes)
         theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+end
+
+
+"""
+readNuMadXls(Rhub, Rtip, B; precone=0.0, turbine=false,
+mach=nothing, re=nothing, rotation=nothing, tip=PrandtlTipHub())
+
+Parameters defining the rotor (apply to all sections).
+
+**Arguments**
+- `NuMad_xls_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+
+
+**Returns**
+- `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
+"""
+
+function readNuMadXls(NuMad_xls_file)
+    #TODO: add composite orientation
+    csvdata = DelimitedFiles.readdlm(NuMad_xls_file,',',skipstart = 0)
+
+    n_station = length(csvdata[4:end,1])- sum(isempty.(csvdata[4:end,1]))
+    n_web = Int(csvdata[1,6])
+    n_stack = Int(csvdata[1,8])
+    n_segments = Int(csvdata[2,8])
+    span = Float64.(csvdata[4:n_station+3,2])
+    #TODO: interpolations
+    airfoil = csvdata[4:n_station+3,3]
+    te_type = csvdata[4:n_station+3,4]
+    twist_d = Float64.(csvdata[4:n_station+3,5])
+    chord = Float64.(csvdata[4:n_station+3,6])
+    xoffset = Float64.(csvdata[4:n_station+3,7])
+    aerocenter = Float64.(csvdata[4:n_station+3,8])
+
+    # Read stack info
+    stack_idx_end = 10+n_stack-1
+    stack_mat_types = Int.(csvdata[2,10:stack_idx_end])
+    stack_layers = Int.(csvdata[4:n_station+3,10:stack_idx_end])
+
+    seg_idx_end = stack_idx_end+n_segments+1
+    segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])
+
+    DP_idx_end = seg_idx_end+n_segments+1
+    DPtypes = csvdata[4:n_station+3,seg_idx_end+1:DP_idx_end]
+
+    skin_seq = Array{Seq, 2}(undef, n_station,n_segments) #can be any number of stack nums, so we have to make non-square containers
+
+    skin_idx_end = DP_idx_end+n_segments
+
+    for sta_idx = 1:n_station
+        # sta_idx = 1
+        for seg_idx = 1:n_segments
+            # seg_idx = 1
+            str = split(csvdata[3+sta_idx,DP_idx_end+seg_idx],",")
+            skin_seq[sta_idx,seg_idx] = Seq([parse(Int,x) for x in str])
+        end
+    end
+
+    web_seq = Array{Seq, 2}(undef, n_station,n_web) #can be any number of stack nums, so we have to make non-square containers
+    web_dp = Array{Seq, 2}(undef, n_station,n_web) #this is fixed size square, but it's easier to do it this way
+
+    for web_idx = 1:n_web
+        # web_idx = 1
+        for sta_idx = 1:n_station
+            # sta_idx = 1
+            str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2-1],",")
+            if !isempty(str[1])
+                web_seq[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
+
+                str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2],",")
+                web_dp[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
+            end
+        end
+    end
+
+    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
 end
