@@ -1,4 +1,8 @@
-function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
+function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
+
+    structuralSpanLocNorm = mesh.structuralSpanLocNorm
+    structuralNodeNumbers = mesh.structuralNodeNumbers
+    structuralElNumbers = mesh.structuralElNumbers
 
     N_blade_nodes = length(structuralSpanLocNorm[1,:])+1
     # Initialize bladeForce
@@ -140,16 +144,16 @@ function mapACloads(u_jLast,udot_j,Omega_j,t,PEy,QCy,NElem,NBlade,RefR,mesh,stru
             x = [mesh.x[node1], mesh.x[node2]]
             elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
             xloc = [0 elLength]
-            twist = el.props[elNum].twist
-            sweepAngle = el.psi[elNum]
-            coneAngle = el.theta[elNum]
-            rollAngle = el.roll[elNum]
+            twist_d = el.props[elNum].twist
+            sweepAngle_d = el.psi[elNum]
+            coneAngle_d = el.theta[elNum]
+            rollAngle_d = el.roll[elNum]
 
             extDistF2Node =  [structuralLoad_T[j,k],   structuralLoad_T[j,k+1]]
             extDistF3Node = -[structuralLoad_N[j,k],   structuralLoad_N[j,k+1]]
             extDistF4Node = -[structuralLoad_M25[j,k], structuralLoad_M25[j,k+1]]
 
-            Fe = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
+            Fe = calculateLoadVecFromDistForce(elementOrder,x,xloc,twist_d,sweepAngle_d,coneAngle_d,rollAngle_d,extDistF2Node,extDistF3Node,extDistF4Node)
 
             #asssembly
             for m = 1:length(dofList)
@@ -750,20 +754,20 @@ function calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained)
     return dofVector
 end
 
-function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,BC)
+function constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained)
     #This function creates a map of unconstrained DOFs between a full
     #listing and reduced listing (aftger constraints have been applied)
 
-    bcdoflist=zeros(Int, BC.numpBC)
+    bcdoflist=zeros(Int, numpBC)
 
     #create a listing of constrained DOFs from boundary condition file
-    for i=1:BC.numpBC
-        bcnodenum = BC.pBC[i,1]
-        bcdofnum = BC.pBC[i,2]
+    for i=1:numpBC
+        bcnodenum = pBC[i,1]
+        bcdofnum = pBC[i,2]
         bcdoflist[i] = (bcnodenum-1)*numDofPerNode + bcdofnum
     end
 
-    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,BC.isConstrained) #calculate a reduced (unconstrained) DOF vector
+    dofList = calculateReducedDOFVector(numNodes,numDofPerNode,isConstrained) #calculate a reduced (unconstrained) DOF vector
 
     redVectorMap = zeros(numReducedDof)
 

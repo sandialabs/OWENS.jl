@@ -46,6 +46,15 @@ function readMesh(filename)
         conn[i,2] = parse(Float64,temp[4])
     end
 
+    line = readline(fid) #get blank line
+    line = readline(fid)
+    temp = split(line)
+    numComponents = parse(Int,temp[1])
+    meshSeg = zeros(Int,numComponents)
+    for i=1:numComponents
+        meshSeg[i] = parse(Int,temp[i+1])
+    end
+
     close(fid)  #close mesh file
 
     mesh = Mesh(nodeNum,
@@ -56,7 +65,11 @@ function readMesh(filename)
     z,
     elNum,
     conn,
-    zeros(Int,numEl))
+    zeros(Int,numEl),
+    meshSeg,
+    0,
+    0,
+    0)
 
     return mesh
 
@@ -150,7 +163,7 @@ function readBladeData(filename)
 
     numBlades = maximum(bladeNum)
     #     numStruts = min(bladeNum)
-    #     if(numStruts>0)
+    #     if (numStruts>0)
     #         numStruts = 0
     #     else
     #         numStruts = abs(numStruts)
@@ -288,10 +301,10 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         sectionPropsArray[i] = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
 
     end
-
+    close(fid) #close element file
 
     nodeNum = bladeData_struct.nodeNum  #node number associated with blade section
-    elNum = bladeData_struct.elementNum    #element number associated with blade sectino
+    elNum = bladeData_struct.elementNum    #element number associated with blade section
     bladeData = bladeData_struct.remaining  #blade data
 
     chord = zeros(maximum(nodeNum),1)
@@ -318,7 +331,6 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
 
 
     println("EIyz, rhoIyz deactivated")
-    close(fid) #close element file
 
     #read element orientation data
     elLen = zeros(numElements)
@@ -335,8 +347,10 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     end
     close(fid) #close ort file
 
+    rotationalEffects = ones(numElements)
+
     #store data in element object
-    el = El(sectionPropsArray,elLen,psi,theta,roll,true)
+    el = El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
 
     return el
 
@@ -356,7 +370,7 @@ function readGeneratorProps(generatorfilename)
 
 
     # fid = fopen(generatorfilename) #open generator property file
-    # if(fid!=-1) #if file can be opened
+    # if (fid!=-1) #if file can be opened
     #         genprops.ratedTorque = fscanf(fid,'#f',1) #store rated torque
     #         dum = fgetl(fid)
     #         genprops.zeroTorqueGenSpeed = fscanf(fid,'#f',1) #store zero torque generator zpeed
@@ -432,7 +446,7 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
     end
 end
 
-function readNodalTerms(filename)
+function readNodalTerms(;filename="none",data=zeros(2))
     #readNodalTerms reads concentrated nodal terms file
     #   [nodalTerms] = readNodalTerms(filename)
     #
@@ -444,8 +458,9 @@ function readNodalTerms(filename)
     #
     #      output:
     #      nodalTerms    = object containing concentrated nodal data
-
-    data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
+    if filename!="none"
+        data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
+    end
 
     n_M = sum(count.(x->(x=='M'), data[:,2]))
     n_K = sum(count.(x->(x=='K'), data[:,2]))
@@ -684,4 +699,292 @@ function generateOutputFilename(owensfilename,analysisType)
 
     return outputfilename
 
+end
+
+function ModalOutput(freq,damp,phase1,phase2,imagComponentSign,filename)
+    #writeOutput writes output from modal analysis
+    #   [freqSorted,dampSorted,imagCompSignSorted] = writeOutput(freq,damp,...
+    #                                                phase1,phase2,...
+    #                                                imagComponentSign,fid)
+    #
+    #   This function writes an output file for modal analysis.
+    #
+    #      input:
+    #      freq               = array of modal frequencies
+    #      damp               = array of modal damping ratios
+    #      phase1             = array of in phase mode shapes
+    #      phase2             = array of out of phase mode shapes
+    #      imagComponentSign  = array of sign of imaginary components
+    #      fid                = file identifier for output
+    #
+    #      output:
+    #      freqSorted         = array of sorted(by frequency) modal frequencies
+    #      dampSorted         = array of sorted(by frequency) modal damping ratios
+    #      imagCompSignSorted = array of sorted(by frequency) of imaginarycomponentSign array
+    if filename!="none"
+        println(filename)
+        fid=open(filename,"w")
+    end
+    Nnodes = size(phase1[:,:,1])[1] #gets number of nodes for mode shape printing
+
+    freq,map,posIndex = bubbleSort(freq) #sorts frequency #TODO: get rid of this
+
+    Nmodes = length(freq)
+
+    dampSorted = zeros(Nmodes)
+    freqSorted = zeros(Nmodes)
+    imagCompSignSorted = zeros(Nmodes)
+    U_x_0 = zeros(Nnodes,Nmodes)
+    U_y_0 = zeros(Nnodes,Nmodes)
+    U_z_0 = zeros(Nnodes,Nmodes)
+    theta_x_0 = zeros(Nnodes,Nmodes)
+    theta_y_0 = zeros(Nnodes,Nmodes)
+    theta_z_0 = zeros(Nnodes,Nmodes)
+    U_x_90 = zeros(Nnodes,Nmodes)
+    U_y_90 = zeros(Nnodes,Nmodes)
+    U_z_90 = zeros(Nnodes,Nmodes)
+    theta_x_90 = zeros(Nnodes,Nmodes)
+    theta_y_90 = zeros(Nnodes,Nmodes)
+    theta_z_90 = zeros(Nnodes,Nmodes)
+
+    index = 1
+    for i=posIndex:1:posIndex+(Nmodes-1) #prints mode frequency, damping and in/out of phase mode shapes
+        if filename!="none"
+            Printf.@printf(fid,"MODE # %0.0f \n\n",index)
+            Printf.@printf(fid,"Frequency: %e: \n",freq[i])
+            Printf.@printf(fid,"Damping %e: \n",damp[map[i]])
+            Printf.@printf(fid,"0 deg Mode Shape:\n")
+            Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+        end
+        for j=1:Nnodes
+            U_x_0[j,index] = phase1[j,1,map[i]]
+            U_y_0[j,index] = phase1[j,2,map[i]]
+            U_z_0[j,index] = phase1[j,3,map[i]]
+            theta_x_0[j,index] = phase1[j,4,map[i]]
+            theta_y_0[j,index] = phase1[j,5,map[i]]
+            theta_z_0[j,index] = phase1[j,6,map[i]]
+            if filename!="none"
+                Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",U_x_0[j,index],U_y_0[j,index],U_z_0[j,index],theta_x_0[j,index],theta_y_0[j,index],theta_z_0[j,index])
+                Printf.@printf(fid,"\n")
+            end
+        end
+
+        if filename!="none"
+            Printf.@printf(fid,"\n")
+
+            Printf.@printf(fid,"90 deg Mode Shape:\n")
+            Printf.@printf(fid,"U_x          U_y          U_z          theta_x     theta_y     theta_z \n")
+        end
+
+        for j=1:Nnodes
+            U_x_90[j,index] = phase2[j,1,map[i]]
+            U_y_90[j,index] = phase2[j,2,map[i]]
+            U_z_90[j,index] = phase2[j,3,map[i]]
+            theta_x_90[j,index] = phase2[j,4,map[i]]
+            theta_y_90[j,index] = phase2[j,5,map[i]]
+            theta_z_90[j,index] = phase2[j,6,map[i]]
+            if filename!="none"
+                Printf.@printf(fid,"%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t%8.6f \t",U_x_90[j,index],U_y_90[j,index],U_z_90[j,index],theta_x_90[j,index],theta_y_90[j,index],theta_z_90[j,index])
+                Printf.@printf(fid,"\n")
+            end
+        end
+
+        if (i<posIndex+(Nmodes-1)) && filename!="none"
+            Printf.@printf(fid,"\n\n")
+        end
+
+
+
+        dampSorted[i] = damp[map[i]]
+        freqSorted[i] = freq[i]
+        imagCompSignSorted[i] = imagComponentSign[map[i]]
+
+        index = index + 1
+    end
+
+    if filename!="none"
+        close(fid)
+    end
+
+    return freqSorted,dampSorted,imagCompSignSorted,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+end
+
+function bubbleSort(A)
+    #bubbleSort Sorts the vector A in ascending order
+    #   [A,origMap,posIndex] = bubbleSort(A)
+    #
+    #   This function accepts a vector A, sorts the vector in ascending order,
+    #   outputting the sorted vector, a map to the original ordering, and the
+    #   index at which a positive value first occurs.
+    #
+    #      input:
+    #      A        = vector to be sorted
+    #
+    #      output:
+    #      A        = sorted vector
+    #      origMap  = map of sorted vector to original ordering
+    #      posIndex = index at which positive value first occurs
+
+    Aorig=deepcopy(A)
+    len = length(A)
+    swapped = true
+    origMap = collect(1:len)
+    while swapped
+        swapped = false
+
+        for i=1:len-1
+            if (A[i+1] < A[i])
+                temp = A[i]
+                A[i] = A[i+1]
+                A[i+1] = temp
+                swapped = true
+
+                temp2 = origMap[i]
+                origMap[i] = origMap[i+1]
+                origMap[i+1] = temp2
+            end
+        end
+    end
+
+    #     posIndex = length(A)/2+1
+    #     [posIndex] = findPositiveCrossOver(A)
+    posIndex = 1
+
+    return A,origMap,posIndex
+
+end
+
+function readResultsModalOut(resultsFile,numNodes)
+    data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
+
+    nmodes = Int(length(data[:,1])/171) #This requires the specific formatting of the file to remain the same
+    freq = zeros(nmodes)
+    damp = zeros(nmodes)
+    U_x_0 = zeros(numNodes,nmodes)
+    U_y_0 = zeros(numNodes,nmodes)
+    U_z_0 = zeros(numNodes,nmodes)
+    theta_x_0 = zeros(numNodes,nmodes)
+    theta_y_0 = zeros(numNodes,nmodes)
+    theta_z_0 = zeros(numNodes,nmodes)
+    U_x_90 = zeros(numNodes,nmodes)
+    U_y_90 = zeros(numNodes,nmodes)
+    U_z_90 = zeros(numNodes,nmodes)
+    theta_x_90 = zeros(numNodes,nmodes)
+    theta_y_90 = zeros(numNodes,nmodes)
+    theta_z_90 = zeros(numNodes,nmodes)
+
+    i_line = 1
+    for i_mode = 1:nmodes
+        i_line = (i_mode-1)*171+1
+
+        freq[i_mode] = parse(Float64,(split(data[i_line+1,1])[2])[1:end-1])
+        damp[i_mode] = parse(Float64,(split(data[i_line+2,1])[2])[1:end-1])
+
+        # 0 degree shapes, with the max value scaled to 1
+
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
+        U_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
+        U_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
+        U_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
+        theta_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
+        theta_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
+        theta_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+
+        i_line = i_line+84 #90 degree shapes, with the max value scaled to 1
+
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
+        U_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
+        U_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
+        U_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
+        theta_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
+        theta_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
+        theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+    end
+    return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+end
+
+
+"""
+readNuMadXls(Rhub, Rtip, B; precone=0.0, turbine=false,
+mach=nothing, re=nothing, rotation=nothing, tip=PrandtlTipHub())
+
+Parameters defining the rotor (apply to all sections).
+
+**Arguments**
+- `NuMad_xls_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+
+
+**Returns**
+- `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
+"""
+
+function readNuMadXls(NuMad_xls_file)
+    #TODO: add composite orientation
+    csvdata = DelimitedFiles.readdlm(NuMad_xls_file,',',skipstart = 0)
+
+    n_station = length(csvdata[4:end,1])- sum(isempty.(csvdata[4:end,1]))
+    n_web = Int(csvdata[1,6])
+    n_stack = Int(csvdata[1,8])
+    n_segments = Int(csvdata[2,8])
+    span = Float64.(csvdata[4:n_station+3,2])
+    #TODO: interpolations
+    airfoil = csvdata[4:n_station+3,3]
+    te_type = csvdata[4:n_station+3,4]
+    twist_d = Float64.(csvdata[4:n_station+3,5])
+    chord = Float64.(csvdata[4:n_station+3,6])
+    xoffset = Float64.(csvdata[4:n_station+3,7])
+    aerocenter = Float64.(csvdata[4:n_station+3,8])
+
+    # Read stack info
+    stack_idx_end = 10+n_stack-1
+    stack_mat_types = Int.(csvdata[2,10:stack_idx_end])
+    stack_layers = Int.(csvdata[4:n_station+3,10:stack_idx_end])
+
+    seg_idx_end = stack_idx_end+n_segments+1
+    segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])
+
+    DP_idx_end = seg_idx_end+n_segments+1
+    DPtypes = csvdata[4:n_station+3,seg_idx_end+1:DP_idx_end]
+
+    skin_seq = Array{Seq, 2}(undef, n_station,n_segments) #can be any number of stack nums, so we have to make non-square containers
+
+    skin_idx_end = DP_idx_end+n_segments
+
+    for sta_idx = 1:n_station
+        # sta_idx = 1
+        for seg_idx = 1:n_segments
+            # seg_idx = 1
+            str = split(csvdata[3+sta_idx,DP_idx_end+seg_idx],",")
+            skin_seq[sta_idx,seg_idx] = Seq([parse(Int,x) for x in str])
+        end
+    end
+
+    web_seq = Array{Seq, 2}(undef, n_station,n_web) #can be any number of stack nums, so we have to make non-square containers
+    web_dp = Array{Seq, 2}(undef, n_station,n_web) #this is fixed size square, but it's easier to do it this way
+
+    for web_idx = 1:n_web
+        # web_idx = 1
+        for sta_idx = 1:n_station
+            # sta_idx = 1
+            str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2-1],",")
+            if !isempty(str[1])
+                web_seq[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
+
+                str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2],",")
+                web_dp[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
+            end
+        end
+    end
+
+    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
 end

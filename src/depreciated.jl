@@ -52,7 +52,7 @@ function owens(owensfile,analysisType;
     #     model.airDensity = 1.2041
     #     #    end
 
-
+    @warn "Running serially using the OWENS.owens function is depreciated and may be removed in future versions"
 
     if (analysisType=="TNB" || analysisType=="TD") #TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
         if usingRotorSpeedFunction
@@ -150,7 +150,9 @@ function owens(owensfile,analysisType;
 
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
     aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
-    owensfile = string(blddatafilename[1:end-4], ".owens") #TODO: this is redundant and confusing since it is specified at the beginning, clean up
+    if analysisType!="M"
+        owensfile = string(blddatafilename[1:end-4], ".owens") #TODO: this is redundant and confusing since it is specified at the beginning, clean up
+    end
     line             = readline(fid) #flag to include drive shaft effects
     driveShaftFlag   = real(parse(Int,line[1:2]))
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
@@ -178,7 +180,7 @@ function owens(owensfile,analysisType;
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
     # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
     # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
-    nodalTerms = readNodalTerms(ndldatafilename) #read concentrated nodal terms file
+    nodalTerms = readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
     # [model] = readPlatformFile(model,platformFlag,platfilename)
     initCond = []
 
@@ -207,7 +209,7 @@ function owens(owensfile,analysisType;
 
     numReducedDof = length(jointTransform[1,:])
     # BC.redVectorMap = zeros(numReducedDof,1)
-    BC.redVectorMap = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
+    BC.redVectorMap = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC.numpBC,BC.pBC,BC.isConstrained) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
@@ -230,20 +232,20 @@ function owens(owensfile,analysisType;
     #         staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
     #     end
     #
-    if ("M"==(analysisType,) || "F"==(analysisType,)) #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
-        # [model.nlParams] = readNLParamsFile(owensfile) #TODO: clean this up, is redundant
-        if (displInitGuess!=0 || !nlOn)
+    if (analysisType == "M" || analysisType == "F") #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
+        if (displInitGuess==0 || !nlOn)
             displInitGuess = zeros(mesh.numNodes*6)
         end
         OmegaStart = 0.0
-        # freq,damp=modalExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
-        return freq,damp
+        # mat"$freq,$damp=Modal($model,$mesh,$el,$displInitGuess,$Omega,$OmegaStart)"
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el,displInitGuess,Omega,OmegaStart)
+        return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
     end
     #
     #     if(analysisType=="FA") #EXECUTE AUTOMATED FLUTTER ANALYSIS
     #         displ = zeros(mesh.numNodes*6,1)
     #         OmegaStart = 0.0
-    #         [freq,damp]=modalExecAuto(model,mesh,el,displ,omegaArray,OmegaStart)
+    #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
     #     end
     #
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS

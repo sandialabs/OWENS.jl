@@ -187,8 +187,8 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
 
     #Sort displacement vector
     #Written for 2 node element with 6 dof per node
-    twistAvg = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
-    lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
+    twistAvg_d = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
+    lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg_d.*pi/180.0)
 
     #Integration loop
     for i=1:numGP
@@ -760,7 +760,7 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             elInput.y = ely
             elInput.z = elz
 
-            if (el.rotationalEffects)
+            if el.rotationalEffects[i]==1
                 elInput.Omega = Omega
                 elInput.OmegaDot = OmegaDot
             else
@@ -1055,8 +1055,8 @@ function calculateTimoshenkoElementNL(input,elStorage)
     #Sort displacement vector
     #Written for 2 node element with 6 dof per node
 
-    twistAvg = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
-    lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
+    twistAvg_d = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
+    lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg_d.*pi/180.0)
     lambdaSlim = lambda[1:3,1:3]
 
     dispLocal = lambda*disp_iter
@@ -1800,8 +1800,8 @@ function calculateTimoshenkoElementStrain(elementOrder,nlOn,xloc,sectionProps,sw
 
     #Sort displacement vector
     #Written for 2 node element with 6 dof per node
-    twistAvg = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
-    lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
+    twistAvg_d = rollAngle + 0.5*(sectionProps.twist[1] + sectionProps.twist[2])
+    lambda = calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg_d.*pi/180.0)
 
     dispLocal = lambda*disp'
 
@@ -2017,7 +2017,7 @@ function elementPostProcess(elementNumber,model,mesh,el,elStorage,timeInt,dispDa
         #     error("analysisType not supported, choose another")
     end
 
-    if el.rotationalEffects
+    if el.rotationalEffects[elementNumber]==1
         Omega = Omega
         OmegaDot = OmegaDot
     else
