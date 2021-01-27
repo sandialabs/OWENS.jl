@@ -203,7 +203,7 @@ function readBladeData(filename)
         structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
     end
 
-    bladeData = BladeData(numBlades,  #assign data to bladeData object #TODO: Should not be loading this file in multiple times
+    bladeData = BladeData(numBlades,  #assign data to bladeData object
     bladeDataBlock[:,1],
     bladeDataBlock[:,2],
     bladeDataBlock[:,3],
@@ -267,7 +267,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         data2=parse.(Float64,split(readline(fid)))
 
         #structural properties
-        ac = -([data1[2], data2[2]].-0.5)
+        ac = -([data1[2], data2[2]].-0.5) #TODO: why are we doing it this way???
         twist=[data1[3], data2[3]]
         rhoA = [data1[4], data2[4]]
         EIyy = [data1[5], data2[5]]
@@ -321,7 +321,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
             #convert "a" to semichord fraction aft of halfchord
             sectionPropsArray[elNum[i]].a = (sectionPropsArray[elNum[i]].a + 0.25*(2*sectionPropsArray[elNum[i]].b) - sectionPropsArray[elNum[i]].b)./sectionPropsArray[elNum[i]].b
 
-            #convert "ac" to semichord fraction foreward of halfchord
+            #convert "ac" to semichord fraction foreward of halfchord TODO: why are we doing it this way???
             sectionPropsArray[elNum[i]].ac = (sectionPropsArray[elNum[i]].ac).*2
 
             #physical aero center offset from elastic axis
@@ -948,7 +948,11 @@ function readNuMadXls(NuMad_xls_file)
     # Read stack info
     stack_idx_end = 10+n_stack-1
     stack_mat_types = Int.(csvdata[2,10:stack_idx_end])
-    stack_layers = Int.(csvdata[4:n_station+3,10:stack_idx_end])
+    stack_layers_tmp = csvdata[4:n_station+3,10:stack_idx_end]
+    if mod(stack_layers_tmp[1],1) != 0.0
+        @warn "Stack layers not integer value, rounding"
+    end
+    stack_layers = round.(Int,stack_layers_tmp)
 
     seg_idx_end = stack_idx_end+n_segments+1
     segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])

@@ -646,12 +646,17 @@ function getPreCompOutput(numadIn)
         ypc_filtered = [] #TODO: make this more efficient
         for i_af = 1:length(xpc)
             alreadyPushed = false
-            for j_web = 1:length(loc_web)
-                if !isapprox(xpc[i_af],loc_web[j_web],atol = 1e-4) && alreadyPushed == false
-                    push!(xpc_filtered,xpc[i_af])
-                    push!(ypc_filtered,ypc[i_af])
-                    alreadyPushed = true
+            if length(loc_web)>=1
+                for j_web = 1:length(loc_web)
+                    if !isapprox(xpc[i_af],loc_web[j_web],atol = 1e-4) && alreadyPushed == false
+                        push!(xpc_filtered,xpc[i_af])
+                        push!(ypc_filtered,ypc[i_af])
+                        alreadyPushed = true
+                    end
                 end
+            else
+                push!(xpc_filtered,xpc[i_af])
+                push!(ypc_filtered,ypc[i_af])
             end
         end
         xpc_filtered = Float64.(xpc_filtered)
@@ -793,8 +798,9 @@ function getSectPropsFromPreComp(usedUnitSpan,numadIn,precompoutput)
 
     ac_used = FLOWMath.akima(origUnitSpan,numadIn.aerocenter,usedUnitSpan)
     twist_d_used = FLOWMath.akima(origUnitSpan,numadIn.twist_d,usedUnitSpan)
+    chord_used = FLOWMath.akima(origUnitSpan,numadIn.chord,usedUnitSpan)
 
-    sectionPropsArray = Array{OWENS.SectionPropsArray, 1}(undef, length(usedUnitSpan))
+    sectionPropsArray = Array{OWENS.SectionPropsArray, 1}(undef, length(usedUnitSpan)-1)
 
     for i=1:length(usedUnitSpan)-1
 
@@ -834,6 +840,23 @@ function getSectPropsFromPreComp(usedUnitSpan,numadIn,precompoutput)
         sectionPropsArray[i] = SectionPropsArray(ac,twist_d,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
 
     end
+
+    #TODO: why are we doing this post-calc, why not during???
+    for i=1:length(usedUnitSpan)-1
+
+            sectionPropsArray[i].b = 0.5.*[chord_used[i], chord_used[i+1]] #element semi chord
+            # sectionPropsArray[i].a0 = [bladeData[i,12], bladeData[i+1,12]]         #element lift curve slope (needed for flutter analysis) TODO: enable coupling between actual airfoil lift slope
+
+            #convert "a" to semichord fraction aft of halfchord
+            sectionPropsArray[i].a = (sectionPropsArray[i].a .+ 0.25*2*sectionPropsArray[i].b .- sectionPropsArray[i].b)./sectionPropsArray[i].b
+
+            #convert "ac" to semichord fraction foreward of halfchord TODO: why are we doing it this way???
+            sectionPropsArray[i].ac = sectionPropsArray[i].ac.*2
+
+            #physical aero center offset from elastic axis
+            sectionPropsArray[i].aeroCenterOffset = sectionPropsArray[i].ac .* sectionPropsArray[i].b .- sectionPropsArray[i].a
+    end
+
     println("EIyz, rhoIyz deactivated") #TODO: why is this, especially when I believe precomp calculates them
     return sectionPropsArray
 

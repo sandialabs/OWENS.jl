@@ -4,7 +4,7 @@ using Test
 import HDF5
 import PyPlot
 # import OWENS
-path,_ = splitdir(@__FILE__)
+path = splitdir(@__FILE__)[1]
 include("$(path)/../src/OWENS.jl")
 #TODO:  element file, initial conditions
 
@@ -44,16 +44,31 @@ bladeData,_,_,_ = OWENS.readBladeData("$(path)/data/input_files_test/_15mTower_t
 el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.el","$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.ort",bladeData) #read element data file (also reads orientation and blade data file associated with elements)
 
 #Tower
-# NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
-# numadIn = readNuMadXls(NuMad_xls_file)
-# precompoutput = getPreCompOutput(numadIn)
-# sectionPropsArray_twr = getSectPropsFromPreComp(usedSpan,numadIn,precompoutput)
+NuMad_xls_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
+numadIn = OWENS.readNuMadXls(NuMad_xls_file)
+precompoutput = OWENS.getPreCompOutput(numadIn)
+sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(mymesh.z[1:23],numadIn,precompoutput)
 
 #Blades
-NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
+NuMad_xls_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
 numadIn = OWENS.readNuMadXls(NuMad_xls_file)
 precompoutput = OWENS.getPreCompOutput(numadIn)
 sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(mymesh.structuralSpanLocNorm[1,:],numadIn,precompoutput)
+
+PyPlot.figure()
+
+for ii = 1:length(el.props)
+    secprops = el.props[ii]
+    toplot = secprops.rhoA[1]
+    toplot0 = secprops.ycm[1]
+    PyPlot.plot(ii,toplot,"k.")
+end
+
+for ii = 1:length(sectionPropsArray_twr)-1
+    toplot = sectionPropsArray_twr[ii].rhoA[1]
+    toplot0 = sectionPropsArray_twr[ii].ycm[1]
+    PyPlot.plot(ii,toplot,"r.")
+end
 
 #Struts
 # NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
@@ -61,7 +76,7 @@ sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(mymesh.structuralSpanLocNo
 # precompoutput = getPreCompOutput(numadIn)
 # sectionPropsArray_str = getSectPropsFromPreComp(mymesh.structuralSpanLocNorm,numadIn,precompoutput)
 #TODO: this is hard coded for a two bladed, two strut design
-sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArray_bld;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+# sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArray_bld;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
 nodalinputdata = [1 "M6" 1 1 9.8088e6
 1 "M6" 2 2 9.7811e6
