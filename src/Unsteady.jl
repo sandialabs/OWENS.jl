@@ -1,4 +1,4 @@
-function Unsteady(model,mesh,el)
+function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     #Unsteady performs modular transient analysis
     #
     #   Unsteady(model,mesh,el)
@@ -609,7 +609,7 @@ function Unsteady(model,mesh,el)
 
                 start = time()
                 # elStrain,dispOut,FReaction_j,Kgmat = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData) #TODO: figure out how to pass structures
-                elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
 
                 # error("stop")
                 println("$(time()-start)")

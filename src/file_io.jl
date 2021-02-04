@@ -915,22 +915,22 @@ end
 
 
 """
-readNuMadXls(Rhub, Rtip, B; precone=0.0, turbine=false,
+readNuMadGeomCSV(Rhub, Rtip, B; precone=0.0, turbine=false,
 mach=nothing, re=nothing, rotation=nothing, tip=PrandtlTipHub())
 
 Parameters defining the rotor (apply to all sections).
 
 **Arguments**
-- `NuMad_xls_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+- `NuMad_geom_xlscsv_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
 
 
 **Returns**
 - `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
 """
 
-function readNuMadXls(NuMad_xls_file)
+function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
     #TODO: add composite orientation
-    csvdata = DelimitedFiles.readdlm(NuMad_xls_file,',',skipstart = 0)
+    csvdata = DelimitedFiles.readdlm(NuMad_geom_xlscsv_file,',',skipstart = 0)
 
     n_station = length(csvdata[4:end,1])- sum(isempty.(csvdata[4:end,1]))
     n_web = Int(csvdata[1,6])
@@ -991,4 +991,40 @@ function readNuMadXls(NuMad_xls_file)
     end
 
     return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+end
+
+function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+
+
+    csvdata = DelimitedFiles.readdlm(NuMad_geom_xlscsv_file,',',skipstart = 0)
+
+    data_start = 0
+    data_end = length(csvdata[:,1])
+    for ii = 1:length(csvdata[:,1])
+        if csvdata[ii,1]=="Material ID"
+            data_start = ii+1
+        end
+
+        if data_start!=0 && ii>data_start && !isa(csvdata[ii,1],Number) # in case they have a file with excess rows
+            println("break")
+            data_end = ii-1
+            break
+        end
+    end
+
+    names = csvdata[data_start:data_end,2]
+    e1 = Float64.(csvdata[data_start:data_end,5]) .* 1e6
+    e2 = Float64.(csvdata[data_start:data_end,6]) .* 1e6
+    g12 = Float64.(csvdata[data_start:data_end,8]) .* 1e6
+    anu = Float64.(csvdata[data_start:data_end,11])  #ratio
+    rho = Float64.(csvdata[data_start:data_end,14])  #g/cc * 1000 #kg/m3
+    xt = Float64.(csvdata[data_start:data_end,15]) .* 1e6  #pa
+    xc = Float64.(csvdata[data_start:data_end,16]) .* 1e6  #pa
+    yt = ones(length(e1)) .* 100.0e6 #made up
+    yc = ones(length(e1)) .* 100.0e6  #made up
+    s = ones(length(e1)) .* 100.0e6  #made up
+    plythickness = Float64.(csvdata[data_start:data_end,4]) #meters
+
+    return OWENS.plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness))
+
 end

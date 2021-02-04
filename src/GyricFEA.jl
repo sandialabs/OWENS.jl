@@ -521,7 +521,7 @@ function calculateTimoshenkoElementInitialRun(elementOrder,modalFlag,xloc,sectio
     elxm)
 end
 
-function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
+function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData;getLinearizedMatrices=false)
 
     #   [dispOut,FReaction_sp1] = structuralDynamicsTransient(model,mesh,el,...
     #                             dispData,Omega,OmegaDot,time,delta_t,...
@@ -687,6 +687,8 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
     0.0, #freq,
     true) #firstIteration
 
+    lin_el_matrices = Array{ElOutput, 1}(undef, numEl)
+    returnDynMatrices=false
     while (unorm>tol && iterationCount < maxIterations) #iteration loop
         #------- intitialization -----------------
         Kg = zeros(totalNumDOF,totalNumDOF) #initialize global stiffness and force vector
@@ -772,6 +774,10 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
 
             elOutput = calculateTimoshenkoElementNL(elInput,elStorage[i]) #calculate timoshenko element
 
+            if returnDynMatrices
+                lin_el_matrices[i] = calculateTimoshenkoElementNL(elInput,elStorage[i];returnDynMatrices) #calculate timoshenko element
+            end
+
             conin = conn[i,:]
 
 
@@ -825,6 +831,23 @@ function  structuralDynamicsTransient(model,mesh,el,dispData,Omega,OmegaDot,time
             end
         else
             unorm = 0.0
+        end
+
+        if returnDynMatrices==true
+            #save them to a file
+            filename = "$(module_path)/../test/data/ARCUS_linearized_matrices.mat"
+            println("Saving linearized matrices to: $filename")
+            file = MAT.matopen(filename,"w")
+            MAT.write(file,"lin_el_matrices",lin_el_matrices)
+            MAT.write(file,"mesh",mesh)
+            close(file)
+            println("Complete, exiting julia")
+            exit()
+        end
+
+        if getLinearizedMatrices && unorm<tol
+            unorm = tol+eps()
+            returnDynMatrices=true
         end
 
         if iterationType=="NR"
@@ -924,7 +947,7 @@ function mapMatrixNonSym(Ktemp)
 
 end
 
-function calculateTimoshenkoElementNL(input,elStorage)
+function calculateTimoshenkoElementNL(input,elStorage; returnDynMatrices=false)
     #calculateTimoshenkoElementNL performs nonlinear element calculations
     #   [output] = calculateTimoshenkoElementNL(input,elStorage)
     #
@@ -1550,6 +1573,9 @@ function calculateTimoshenkoElementNL(input,elStorage)
     Fe = lambdaTran*Fe
 
     ##
+    if returnDynMatrices
+        return ElOutput(0.0,Ke,Fe,Me,Ce)
+    end
 
     ##concentrated mass
     #NOTE: Concentrated mass terms would modify 4,5,6 and 10,11,12 entries

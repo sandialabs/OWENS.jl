@@ -509,31 +509,12 @@ end
 
 
 
-# NuMad_xls_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
+# NuMad_geom_xlscsv_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"
 
-function getPreCompOutput(numadIn)
-    # numadIn = readNuMadXls(NuMad_xls_file)
+function getPreCompOutput(numadIn;plyprops = plyproperties())
+    # numadIn = readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
     n_stations = length(numadIn.span)
-
-    #TODO: use actual airfoil at each section, ensure square matrix via interpolation so it can be stored as a 2D matrix
-    af_xy = DelimitedFiles.readdlm("$(module_path)/../test/airfoils/e212-il.csv",',',Float64,skipstart = 9)
-
-    # Normalize the surface points and make sure that they start at the trailing edge and loop around starting on the bottom side #TODO: add a check for both of these
-    #TODO: simplify this since there is circshift happening on these points later on
-    xaf1 = reverse(af_xy[:,1])/100.0
-    yaf1 = reverse(af_xy[:,2])/100.0
-
-    xaf = zeros(n_stations,length(xaf1))
-    yaf = zeros(n_stations,length(yaf1))
-    for i = 1:n_stations
-        xaf[i,:] = xaf1[:] #break links since using in multiple areas
-        yaf[i,:] = yaf1[:]
-    end
-
-
-    plyprops = plyproperties() #TODO: enable numad input of material properties
-
 
 
     mat = Array{Array{Composites.Material,1}}(undef,n_stations)
@@ -553,6 +534,25 @@ function getPreCompOutput(numadIn)
     leloc = numadIn.xoffset
 
     for i_station = 1:n_stations
+        #TODO: use actual airfoil at each section, ensure square matrix via interpolation so it can be stored as a 2D matrix
+        af_xy = DelimitedFiles.readdlm("$(module_path)/../test/airfoils/$(numadIn.airfoil[i_station]).csv",',',Float64,skipstart = 0)
+
+        # Normalize the surface points and make sure that they start at the trailing edge and loop around starting on the bottom side #TODO: add a check for both of these
+        #TODO: simplify this since there is circshift happening on these points later on
+        if af_xy[2,2]>af_xy[end-1,2]
+            xaf1 = reverse(af_xy[:,1])./maximum(af_xy[:,1])
+            yaf1 = reverse(af_xy[:,2])./maximum(af_xy[:,1])
+        else
+            xaf1 = af_xy[:,1]./maximum(af_xy[:,1])
+            yaf1 = af_xy[:,2]./maximum(af_xy[:,1])
+        end
+
+        xaf = zeros(n_stations,length(xaf1))
+        yaf = zeros(n_stations,length(yaf1))
+        for i = 1:n_stations
+            xaf[i,:] = xaf1[:] #break links since using in multiple areas
+            yaf[i,:] = yaf1[:]
+        end
         # find leading edge
         lei = argmin(abs.(xaf[i_station,:]))
         # shift so leading edge is first
@@ -721,7 +721,7 @@ function getPreCompOutput(numadIn)
 
     end
 
-    return precompoutput
+    return precompoutput,precompinput
 end
 
 function getSectPropsFromPreComp(usedUnitSpan,numadIn,precompoutput)
@@ -775,6 +775,7 @@ function getSectPropsFromPreComp(usedUnitSpan,numadIn,precompoutput)
 
     # Now create the splines and sample them at the used span
     origUnitSpan = numadIn.span./numadIn.span[end]
+    usedUnitSpan = usedUnitSpan./maximum(usedUnitSpan)
     ei_flap_used = FLOWMath.akima(origUnitSpan,ei_flap,usedUnitSpan)
     ei_lag_used = FLOWMath.akima(origUnitSpan,ei_lag,usedUnitSpan)
     gj_used = FLOWMath.akima(origUnitSpan,gj,usedUnitSpan)

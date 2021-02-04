@@ -14,6 +14,7 @@ import Printf
 import PyPlot
 import PreComp
 import Composites
+import MAT #for saving .mat H5 files
 
 # ------------ GLOBAL VARIABLES ------------------------------------------------
 const module_path = splitdir(@__FILE__)[1]          # Path to this module

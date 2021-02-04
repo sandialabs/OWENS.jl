@@ -548,7 +548,14 @@ function plyproperties()
     "taylor_foam",
     "SNL_foam",
     "aluminum6061",
-    "aluminum6063"]
+    "aluminum6063",
+    "CLA_5500",
+    "CBX_2400",
+    "ETLX_2400",
+    "Airex_C70_55",
+    "EBX_2400_x10",
+    "ETLX_2400_x10",
+    "Airex_C70_55_x10"]
 
     n_materials = 18
     e1  =zeros(n_materials) #pa
@@ -786,6 +793,97 @@ function plyproperties()
     yc[18]=276.0e6 #use yield for metal?
     s[18]=152.0e6
     plythickness[18]=1.0E-3
+
+    # "CLA_5500"
+    e1[19]=98.240e9 #pa
+    e2[19]=5.102e9 #pa
+    g12[19]=4.274e9 #pa
+    anu[19]=0.3 #ratio
+    rho[19]=1540.0 #g/cc * 1000 #kg/m3
+    xt[19]=875.634139e6 #pa
+    xc[19]=592.949102e6 #pa
+    yt[19]=100.0e6 #made up
+    yc[19]=100.0e6 #made up
+    s[19]=100.0e6 #made up
+    plythickness[19]=0.66E-3 #meters
+
+    # "CBX_2400"
+    e1[20]=14.931e9 #pa
+    e2[20]=14.931e9 #pa
+    g12[20]=23.890e9 #pa
+    anu[20]=0.3 #ratio
+    rho[20]=1530.0 #g/cc * 1000 #kg/m3
+    xt[20]=455.053962e6 #pa
+    xc[20]=455.053962e6 #pa
+    yt[20]=100.0e6 #made up
+    yc[20]=100.0e6 #made up
+    s[20]=100.0e6 #made up
+    plythickness[20]=0.81E-3 #meters
+
+    # "ETLX_2400"
+    e1[21]=20.333e9 #pa
+    e2[21]=9.305e9 #pa
+    g12[21]=4.756e9 #pa
+    anu[21]=0.3 #ratio
+    rho[21]=1900.0 #g/cc * 1000 #kg/m3
+    xt[21]=530.896289e6 #pa
+    xc[21]=530.896289e6 #pa
+    yt[21]=100.0e6 #made up
+    yc[21]=100.0e6 #made up
+    s[21]=100.0e6 #made up
+    plythickness[21]=0.66E-3 #meters
+
+    # "Airex_C70_55"
+    e1[22]=0.045e9 #pa
+    e2[22]=0.045e9 #pa
+    g12[22]=0.022e9 #pa
+    anu[22]=0.2 #ratio
+    rho[22]=59.0 #g/cc * 1000 #kg/m3
+    xt[22]=100.0e6 #pa #made up
+    xc[22]=100.0e6 #pa
+    yt[22]=100.0e6 #made up
+    yc[22]=100.0e6 #made up
+    s[22]=100.0e6 #made up
+    plythickness[22]=1.0E-3 #meters
+
+    # "EBX_2400_x10"
+    e1[23]=982.400e9 #pa
+    e2[23]=51.020e9 #pa
+    g12[23]=42.740e9 #pa
+    anu[23]=0.3 #ratio
+    rho[23]=15300.0 #g/cc * 1000 #kg/m3
+    xt[23]=4550.53962e6 #pa
+    xc[23]=4550.53962e6 #pa
+    yt[23]=100.0e6 #made up
+    yc[23]=100.0e6 #made up
+    s[23]=100.0e6 #made up
+    plythickness[23]=0.07E-3 #meters
+
+    # "ETLX_2400_x10"
+    e1[24]=149.310e9 #pa
+    e2[24]=149.310e9 #pa
+    g12[24]=238.900e9 #pa
+    anu[24]=0.3 #ratio
+    rho[24]=19000.0 #g/cc * 1000 #kg/m3
+    xt[24]=5308.96289e6 #pa
+    xc[24]=5308.96289e6 #pa
+    yt[24]=100.0e6 #made up
+    yc[24]=100.0e6 #made up
+    s[24]=100.0e6 #made up
+    plythickness[24]=0.08E-3 #meters
+
+    # "Airex_C70_55_x10"
+    e1[25]=203.335e9 #pa
+    e2[25]=93.051e9 #pa
+    g12[25]=47.560e9 #pa
+    anu[25]=0.2 #ratio
+    rho[25]=590.0 #g/cc * 1000 #kg/m3
+    xt[25]=100.0e6 #pa #made up
+    xc[25]=100.0e6 #pa
+    yt[25]=100.0e6 #made up
+    yc[25]=100.0e6 #made up
+    s[25]=100.0e6 #made up
+    plythickness[25]=0.07E-3 #meters
 
     return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness))
 end
