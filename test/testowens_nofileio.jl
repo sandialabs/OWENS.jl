@@ -3,6 +3,7 @@
 using Test
 import HDF5
 import PyPlot
+import DelimitedFiles
 PyPlot.close("all")
 # import OWENS
 path = splitdir(@__FILE__)[1]
@@ -48,8 +49,8 @@ el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
 numadIn = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
-NuMad_geom_xlscsv_file = "$path/test/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT.csv"
-plyprops = readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
+plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
 precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
 sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(mymesh.z[1:24],numadIn,precompoutput)
@@ -57,36 +58,77 @@ sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(mymesh.z[1:24],numadIn,pre
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
 numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
-bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld)
+
+NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+
+bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
 sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(mymesh.z[1:23],numadIn,bld_precompoutput)
 
 sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArray_bld]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
-PyPlot.figure()
+NuMad_props_xlscsv_file = "$path/data/NuMAD_Props_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+xlsprops_blade = DelimitedFiles.readdlm(NuMad_props_xlscsv_file,',',skipstart = 0)
 
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    toplot = secprops.EA[1]
-    toplot0 = secprops.ycm[1]
-    PyPlot.plot(ii,toplot,"k.")
+span_loc = Float64.(xlsprops_blade[3:23,1])
+chord = Float64.(xlsprops_blade[3:23,2])
+tw_aero = Float64.(xlsprops_blade[3:23,3])
+ei_flap = Float64.(xlsprops_blade[3:23,4])
+ei_lag = Float64.(xlsprops_blade[3:23,5])
+gj = Float64.(xlsprops_blade[3:23,6])
+ea = Float64.(xlsprops_blade[3:23,7])
+s_fl = Float64.(xlsprops_blade[3:23,8])
+s_af = Float64.(xlsprops_blade[3:23,9])
+s_al = Float64.(xlsprops_blade[3:23,10])
+s_ft = Float64.(xlsprops_blade[3:23,11])
+s_lt = Float64.(xlsprops_blade[3:23,12])
+s_at = Float64.(xlsprops_blade[3:23,13])
+x_sc = Float64.(xlsprops_blade[3:23,14])
+y_sc = Float64.(xlsprops_blade[3:23,15])
+x_tc = Float64.(xlsprops_blade[3:23,16])
+y_tc = Float64.(xlsprops_blade[3:23,17])
+mass = Float64.(xlsprops_blade[3:23,18])
+flap_iner = Float64.(xlsprops_blade[3:23,19])
+lag_iner = Float64.(xlsprops_blade[3:23,20])
+tw_iner = Float64.(xlsprops_blade[3:23,21])
+x_cm = Float64.(xlsprops_blade[3:23,22])
+y_cm = Float64.(xlsprops_blade[3:23,23])
+
+PyPlot.figure()
+# one = 1:length(el.props)
+# toplot = zeros(length(el.props))
+# for ii = 1:length(el.props)
+#     secprops = el.props[ii]
+#     toplot[ii] = secprops.rhoA[1]
+#     # toplot0 = secprops.ycm[1]
+#
+# end
+#
+# PyPlot.plot(one,toplot,"k-")
+
+two = 1:length(sectionPropsArray)
+toplot0 = zeros(length(sectionPropsArray_bld))
+for ii = 1:length(sectionPropsArray_bld)
+    # toplot = sectionPropsArray_bld[ii].rhoA[1]
+    toplot0[ii] = sectionPropsArray_bld[ii].rhoA[1]
 end
 
-for ii = 1:length(sectionPropsArray)
-    # toplot = sectionPropsArray_bld[ii].EA[1]
-    toplot0 = sectionPropsArray[ii].EA[1]
-    PyPlot.plot(ii,toplot0,"r.")
-end
+PyPlot.plot(mymesh.z[25:46]./maximum(mymesh.z[24:45]),toplot0,"r-")
+
+three = 1:length(mass)
+PyPlot.plot(span_loc,mass,"b.")
+
 
 PyPlot.figure()
 for ii = 1:length(sectionPropsArray)
-    # toplot = sectionPropsArray_bld[ii].EA[1]
-    toplot0 = (sectionPropsArray[ii].EA[1]-el.props[ii].EA[1])/el.props[ii].EA[1]
-    PyPlot.plot(ii,toplot0,"r.")
+    # toplot = sectionPropsArray_bld[ii].rhoA[1]
+    toplot0 = (sectionPropsArray[ii].rhoA[1])/el.props[ii].rhoA[1]
+    PyPlot.plot(ii,toplot0,"g.")
     # PyPlot.ylim([0,1])
 end
 
-PyPlot.figure()
-PyPlot.plot(mymesh.structuralSpanLocNorm[1,:],zero(mymesh.structuralSpanLocNorm[1,:]),"r.")
+# PyPlot.figure()
+# PyPlot.plot(mymesh.structuralSpanLocNorm[1,:],zero(mymesh.structuralSpanLocNorm[1,:]),"r.")
 
 # #Struts
 # # NuMad_geom_xlscsv_file = "$module_path/../test/data/NuMad_Geom_SNL_5MW_D_Carbon_LCDT.csv"

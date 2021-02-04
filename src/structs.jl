@@ -557,7 +557,7 @@ function plyproperties()
     "ETLX_2400_x10",
     "Airex_C70_55_x10"]
 
-    n_materials = 18
+    n_materials = 25
     e1  =zeros(n_materials) #pa
     e2  =zeros(n_materials) #pa
     g12 =zeros(n_materials) #pa

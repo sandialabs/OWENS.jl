@@ -993,7 +993,7 @@ function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
     return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
 end
 
-function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+function readNuMadMaterialsCSV(NuMad_geom_xlscsv_file)
 
 
     csvdata = DelimitedFiles.readdlm(NuMad_geom_xlscsv_file,',',skipstart = 0)
@@ -1023,7 +1023,7 @@ function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
     yt = ones(length(e1)) .* 100.0e6 #made up
     yc = ones(length(e1)) .* 100.0e6  #made up
     s = ones(length(e1)) .* 100.0e6  #made up
-    plythickness = Float64.(csvdata[data_start:data_end,4]) #meters
+    plythickness = Float64.(csvdata[data_start:data_end,4]) .* 1e-3 #meters
 
     return OWENS.plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness))
 

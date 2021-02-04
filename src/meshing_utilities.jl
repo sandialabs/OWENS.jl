@@ -534,6 +534,11 @@ function getPreCompOutput(numadIn;plyprops = plyproperties())
     leloc = numadIn.xoffset
 
     for i_station = 1:n_stations
+
+        ######################################
+        ######## Airfoil Shape Input #########
+        ######################################
+
         #TODO: use actual airfoil at each section, ensure square matrix via interpolation so it can be stored as a 2D matrix
         af_xy = DelimitedFiles.readdlm("$(module_path)/../test/airfoils/$(numadIn.airfoil[i_station]).csv",',',Float64,skipstart = 0)
 
@@ -563,6 +568,33 @@ function getPreCompOutput(numadIn;plyprops = plyproperties())
         # precompinput[i_station],mat[i_station],lam[i_station] = layup(normalchord[i_station],twist_d[i_station],twistrate_d[i_station],xpc,ypc,lam_t[i_station,:],usedmaterials,webloc,plyprops,leloc[i_station],orientation)
 
         ##################################
+        ######## Materials Input #########
+        ##################################
+        mat_single = []
+        usedmaterials = numadIn.stack_mat_types #["highmodulus_uni","highmodulus_weave","SNL_foam","highmodulus_weave","SNL_foam","highmodulus_weave","SNL_foam","highmodulus_weave"] #TODO: hook this up to the numad materials
+        e1 = zeros(length(usedmaterials))
+        e2 = zeros(length(usedmaterials))
+        g12 = zeros(length(usedmaterials))
+        anu12 = zeros(length(usedmaterials))
+        density = zeros(length(usedmaterials))
+        ply_thickness = zeros(length(usedmaterials))
+
+        for i_mat = 1:length(usedmaterials)
+            matnames = plyprops.names
+            idx = usedmaterials[i_mat] #findall(matnames -> matnames == usedmaterials[i_mat],matnames) #TODO: determine best way to modify workflow to use names instead of a blind index that potentially might not align with the materials
+            material = plyprops.plies[idx] #[idx[1]]
+            push!(mat_single,material)
+            e1[i_mat] = material.e1
+            e2[i_mat] = material.e2
+            g12[i_mat] = material.g12
+            anu12[i_mat] = material.nu12
+            density[i_mat] = material.rho
+            ply_thickness[i_mat] = material.t
+        end
+
+        mat[i_station] = mat_single
+
+        ##################################
         ############# Upper ##############
         ##################################
         xsec_nodeU = Float64.(numadIn.segments[i_station,numadIn.segments[i_station,:].>=0.0])
@@ -581,20 +613,20 @@ function getPreCompOutput(numadIn;plyprops = plyproperties())
 
         n_pliesU = zeros(Int,sum(n_laminaU))
         mat_lamU = zeros(Int,sum(n_laminaU))
+        t_lamU = zeros(sum(n_laminaU)) #TODO: hook this into the optimization parameters and or the material properties
+        tht_lamU = zeros(sum(n_laminaU)) #TODO: same with this
         idx = 1
         for seg_idx = 1:numadIn.n_segments
-            if seg_idxU[seg_idx] == true
+            if seg_idxU[seg_idx] == true # make sure we are using the upper segment
                 for seq_idx = 1:length(numadIn.skin_seq[i_station,seg_idx].seq)
                     mat_idx = numadIn.skin_seq[i_station,seg_idx].seq[seq_idx]
                     mat_lamU[idx] = mat_idx
                     n_pliesU[idx] = numadIn.stack_layers[i_station,mat_idx]
+                    t_lamU[idx] = ply_thickness[mat_idx] #n_pliesU[idx]*ply_thickness[mat_idx]
                     idx += 1
                 end
             end
         end
-
-        t_lamU = zeros(sum(n_laminaU)) .+ 0.001 #TODO: hook this into the optimization parameters and or the material properties
-        tht_lamU = zeros(sum(n_laminaU)) #TODO: same with this
 
         ##################################
         ############# Lower ##############
@@ -613,6 +645,8 @@ function getPreCompOutput(numadIn;plyprops = plyproperties())
 
         n_pliesL = zeros(Int,sum(n_laminaL))
         mat_lamL = zeros(Int,sum(n_laminaL))
+        t_lamL = zeros(sum(n_laminaL)) #TODO: hook this into the optimization parameters and or the material properties
+        tht_lamL = zeros(sum(n_laminaL)) #TODO: same with this
         idx = 1
         for seg_idx = 1:numadIn.n_segments
             if seg_idxL[seg_idx] == true
@@ -620,13 +654,11 @@ function getPreCompOutput(numadIn;plyprops = plyproperties())
                     mat_idx = numadIn.skin_seq[i_station,seg_idx].seq[seq_idx]
                     mat_lamL[idx] = mat_idx
                     n_pliesL[idx] = numadIn.stack_layers[i_station,mat_idx]
+                    t_lamL[idx] = ply_thickness[mat_idx]#n_pliesL[idx]*ply_thickness[mat_idx]
                     idx += 1
                 end
             end
         end
-
-        t_lamL = zeros(sum(n_laminaL)) .+ 0.001 #TODO: hook this into the optimization parameters and or the material properties
-        tht_lamL = zeros(sum(n_laminaL)) #TODO: same with this
 
         ##################################
         ############# Web(s) #############
@@ -664,59 +696,32 @@ function getPreCompOutput(numadIn;plyprops = plyproperties())
 
         n_pliesW = zeros(Int,sum(n_laminaW))
         mat_lamW = zeros(Int,sum(n_laminaW))
+        t_lamW = zeros(sum(n_laminaW)) #TODO: hook this into the optimization parameters and or the material properties
+        tht_lamW = zeros(sum(n_laminaW)) #TODO: same with this
         idx = 1
         for web_idx = 1:numadIn.n_web
             for seq_idx = 1:length(numadIn.web_seq[i_station,web_idx].seq)
                 mat_idx = numadIn.web_seq[i_station,web_idx].seq[seq_idx]
                 mat_lamW[idx] = mat_idx
                 n_pliesW[idx] = numadIn.stack_layers[i_station,mat_idx]
+                t_lamW[idx] = ply_thickness[mat_idx] #n_pliesW[idx]*ply_thickness[mat_idx]
                 idx += 1
             end
         end
 
-        t_lamW = zeros(sum(n_laminaW)) .+ 0.001 #TODO: hook this into the optimization parameters and or the material properties
-        tht_lamW = zeros(sum(n_laminaW)) #TODO: same with this
-
-        ##################################
-        ######## Materials Input #########
-        ##################################
-        mat_single = []
-        usedmaterials = ["highmodulus_uni","highmodulus_weave","SNL_foam","highmodulus_weave","SNL_foam","highmodulus_weave","SNL_foam","highmodulus_weave"] #TODO: hook this up to the numad materials
-        e1 = zeros(length(usedmaterials))
-        e2 = zeros(length(usedmaterials))
-        g12 = zeros(length(usedmaterials))
-        anu12 = zeros(length(usedmaterials))
-        density = zeros(length(usedmaterials))
-
-        for i_mat = 1:length(usedmaterials)
-            matnames = plyprops.names
-            idx = findall(matnames -> matnames == usedmaterials[i_mat],matnames)
-            material = plyprops.plies[idx[1]]
-            push!(mat_single,material)
-            e1[i_mat] = material.e1
-            e2[i_mat] = material.e2
-            g12[i_mat] = material.g12
-            anu12[i_mat] = material.nu12
-            density[i_mat] = material.rho
-        end
-
-        mat[i_station] = mat_single
-
         ########################################
         ## Create the Precomp Input Structure ##
         ########################################
-        #TODO: fix this so it picks up all sections when the interpolation gets input
         precompinput[i_station] = PreComp.Input(
         normalchord[i_station],
         -twist_d[i_station],-twistrate_d[i_station],
-        leloc[i_station],xpc_filtered,ypc_filtered, #TODO: use the actual airfoils at each section
+        leloc[i_station],xpc_filtered,ypc_filtered,
         e1,e2,g12,anu12,density,
         xsec_nodeU,n_laminaU,n_pliesU,t_lamU,tht_lamU,mat_lamU,
         xsec_nodeL,n_laminaL,n_pliesL,t_lamL,tht_lamL,mat_lamL,
         loc_web,n_laminaW,n_pliesW,t_lamW,tht_lamW,mat_lamW)
 
         # calculate composite properties: stiffness, mass, etc
-        #TODO: fix this so it picks up all sections when the interpolation gets input
         precompoutput[i_station] = PreComp.properties(precompinput[i_station])
 
     end
