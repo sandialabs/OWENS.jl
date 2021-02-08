@@ -8,7 +8,7 @@ include("$(path)/../src/OWENS.jl")
 mesh = OWENS.readMesh("$(path)/data/unit_test_5MW.mesh")
 joint = DelimitedFiles.readdlm("$(path)/data/unit_test_5MW.jnt",'\t',skipstart = 0)
 
-#TODO: ort file, nodal file, element file, initial conditions, and blade file
+plots = false
 
 # Use the SNL5MW as the baseline check
 #The 15 is subtracted off at the end of the line
@@ -66,29 +66,141 @@ for i = 1:length(joint[:,1])
     end
 end
 
-PyPlot.figure()
-PyPlot.plot(mymesh.x,mymesh.z,"k.-",markersize=10.0)
-PyPlot.plot(mesh.x,mesh.z,"b.")
-PyPlot.axis("equal")
+if plots
 
-PyPlot.figure()
-PyPlot.plot(mymesh.y,mymesh.z,"k.-",markersize=10.0)
-PyPlot.plot(mesh.y,mesh.z,"b.")
-PyPlot.legend(["mymesh","originalmesh"])
-# PyPlot.axis("equal")
+    PyPlot.figure()
+    PyPlot.plot(mymesh.x,mymesh.z,"k.-",markersize=10.0)
+    PyPlot.plot(mesh.x,mesh.z,"b.")
+    PyPlot.axis("equal")
 
-PyPlot.figure()
-PyPlot.plot(LinRange(0,1,length(mymesh.z)),mesh.z[1:length(mymesh.z)]-mymesh.z,"k.-")
-PyPlot.ylabel("z")
+    PyPlot.figure()
+    PyPlot.plot(mymesh.y,mymesh.z,"k.-",markersize=10.0)
+    PyPlot.plot(mesh.y,mesh.z,"b.")
+    PyPlot.legend(["mymesh","originalmesh"])
+    # PyPlot.axis("equal")
 
-PyPlot.figure()
-PyPlot.plot(LinRange(0,1,length(mymesh.x)),mesh.x[1:length(mymesh.x)]-mymesh.x,"k.-")
-PyPlot.ylabel("x")
+    PyPlot.figure()
+    PyPlot.plot(LinRange(0,1,length(mymesh.z)),mesh.z[1:length(mymesh.z)]-mymesh.z,"k.-")
+    PyPlot.ylabel("z")
 
-PyPlot.figure()
-PyPlot.plot(LinRange(0,1,length(mymesh.y)),mesh.y[1:length(mymesh.y)]-mymesh.y,"k.-")
-PyPlot.ylabel("y")
+    PyPlot.figure()
+    PyPlot.plot(LinRange(0,1,length(mymesh.x)),mesh.x[1:length(mymesh.x)]-mymesh.x,"k.-")
+    PyPlot.ylabel("x")
 
-PyPlot.figure()
-PyPlot.plot(LinRange(0,1,length(mymesh.conn[:,2])),mesh.conn[:,2].-mymesh.conn[:,2],"k.-")
-PyPlot.ylabel("connection")
+    PyPlot.figure()
+    PyPlot.plot(LinRange(0,1,length(mymesh.y)),mesh.y[1:length(mymesh.y)]-mymesh.y,"k.-")
+    PyPlot.ylabel("y")
+
+    PyPlot.figure()
+    PyPlot.plot(LinRange(0,1,length(mymesh.conn[:,2])),mesh.conn[:,2].-mymesh.conn[:,2],"k.-")
+    PyPlot.ylabel("connection")
+end
+
+
+##################################
+### Blade Sectional Properties ###
+##################################
+
+
+bladeData,_,_,_ = OWENS.readBladeData("$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.bld") #reads overall blade data file
+el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.el","$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.ort",bladeData) #read element data file (also reads orientation and blade data file associated with elements)
+
+NuMad_props_xlscsv_file = "$path/data/NuMAD_Props_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+xlsprops_blade = DelimitedFiles.readdlm(NuMad_props_xlscsv_file,',',skipstart = 0)
+
+span_loc = Float64.(xlsprops_blade[3:23,1])
+chord = Float64.(xlsprops_blade[3:23,2])
+tw_aero = Float64.(xlsprops_blade[3:23,3])
+ei_flap = Float64.(xlsprops_blade[3:23,4])
+ei_lag = Float64.(xlsprops_blade[3:23,5])
+gj = Float64.(xlsprops_blade[3:23,6])
+ea = Float64.(xlsprops_blade[3:23,7])
+s_fl = Float64.(xlsprops_blade[3:23,8])
+s_af = Float64.(xlsprops_blade[3:23,9])
+s_al = Float64.(xlsprops_blade[3:23,10])
+s_ft = Float64.(xlsprops_blade[3:23,11])
+s_lt = Float64.(xlsprops_blade[3:23,12])
+s_at = Float64.(xlsprops_blade[3:23,13])
+x_sc = Float64.(xlsprops_blade[3:23,14])
+y_sc = Float64.(xlsprops_blade[3:23,15])
+x_tc = Float64.(xlsprops_blade[3:23,16])
+y_tc = Float64.(xlsprops_blade[3:23,17])
+mass = Float64.(xlsprops_blade[3:23,18])
+flap_iner = Float64.(xlsprops_blade[3:23,19])
+lag_iner = Float64.(xlsprops_blade[3:23,20])
+tw_iner = Float64.(xlsprops_blade[3:23,21])
+x_cm = Float64.(xlsprops_blade[3:23,22])
+y_cm = Float64.(xlsprops_blade[3:23,23])
+
+#Blades
+
+# Geometry
+NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+
+# Materials
+NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+
+# Precomp Outputs Restructured into owens format
+bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
+sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(span_loc,numadIn_bld,bld_precompoutput)
+
+if plots
+    PyPlot.figure()
+    toplot0 = zeros(length(span_loc))
+    for ii = 1:length(span_loc)-1
+        toplot0[ii] = sectionPropsArray_bld[ii].rhoA[1]
+    end
+    toplot0[end] = sectionPropsArray_bld[end].rhoA[2]
+
+    PyPlot.plot(span_loc,toplot0,"r.-")
+    PyPlot.plot(span_loc,mass,"b.-")
+end
+
+
+for ii = 1:length(sectionPropsArray_bld)
+    tol = 0.05 # 5% error
+    tol2 = 0.16 # %
+    if !(isapprox(tw_aero[ii],sectionPropsArray_bld[ii].twist[1],atol=tol))
+        println("tw_aero failed at $tol tolerance $(isapprox(tw_aero[ii],sectionPropsArray_bld[ii].twist[1],atol=tol)), increasing tolerance")
+        @test isapprox(tw_aero[ii],sectionPropsArray_bld[ii].twist[1],atol=tol2)
+    end
+    if !(abs((ei_flap[ii]-sectionPropsArray_bld[ii].EIyy[1])/ei_flap[ii])<tol)
+        println("ei_flap failed at $tol tolerance $(abs((ei_flap[ii]-sectionPropsArray_bld[ii].EIyy[1])/ei_flap[ii])), increasing tolerance")
+        @test abs((ei_flap[ii]-sectionPropsArray_bld[ii].EIyy[1])/ei_flap[ii])<tol2
+    end
+    if !(abs((ei_lag[ii]-sectionPropsArray_bld[ii].EIzz[1])/ei_lag[ii])<tol)
+        println("ei_lag failed at $tol tolerance $(abs((ei_lag[ii]-sectionPropsArray_bld[ii].EIzz[1])/ei_lag[ii])), increasing tolerance")
+        @test abs((ei_lag[ii]-sectionPropsArray_bld[ii].EIzz[1])/ei_lag[ii])<tol2
+    end
+    if !(abs((gj[ii]-sectionPropsArray_bld[ii].GJ[1])/gj[ii])<tol)
+        println("gj failed at $tol tolerance $(abs((gj[ii]-sectionPropsArray_bld[ii].GJ[1])/gj[ii])), increasing tolerance")
+        @test abs((gj[ii]-sectionPropsArray_bld[ii].GJ[1])/gj[ii])<tol2
+    end
+    if !(abs((ea[ii]-sectionPropsArray_bld[ii].EA[1])/ea[ii])<tol)
+        println("ea failed at $tol tolerance $(abs((ea[ii]-sectionPropsArray_bld[ii].EA[1])/ea[ii])), increasing tolerance")
+        @test abs((ea[ii]-sectionPropsArray_bld[ii].EA[1])/ea[ii])<tol2
+    end
+    if !(abs((mass[ii]-sectionPropsArray_bld[ii].rhoA[1])/mass[ii])<tol)
+        println("mass failed at $tol tolerance $(abs((mass[ii]-sectionPropsArray_bld[ii].rhoA[1])/mass[ii])), increasing tolerance")
+        @test abs((mass[ii]-sectionPropsArray_bld[ii].rhoA[1])/mass[ii])<tol2
+    end
+    if !(abs((flap_iner[ii]-sectionPropsArray_bld[ii].rhoIyy[1])/flap_iner[ii])<tol)
+        println("flap_iner failed at $tol tolerance $(abs((flap_iner[ii]-sectionPropsArray_bld[ii].rhoIyy[1])/flap_iner[ii])), increasing tolerance")
+        @test abs((flap_iner[ii]-sectionPropsArray_bld[ii].rhoIyy[1])/flap_iner[ii])<tol2
+    end
+    if !(abs((lag_iner[ii]-sectionPropsArray_bld[ii].rhoIzz[1])/lag_iner[ii])<tol)
+        println("lag_iner failed at $tol tolerance $(abs((lag_iner[ii]-sectionPropsArray_bld[ii].rhoIzz[1])/lag_iner[ii])), increasing tolerance")
+        @test abs((lag_iner[ii]-sectionPropsArray_bld[ii].rhoIzz[1])/lag_iner[ii])<tol2
+    end
+    if !(abs((x_cm[ii]-sectionPropsArray_bld[ii].zcm[1])/x_cm[ii])<tol)
+        println("x_cm failed at $tol tolerance $(abs((x_cm[ii]-sectionPropsArray_bld[ii].zcm[1])/x_cm[ii])), increasing tolerance")
+        @test abs((x_cm[ii]-sectionPropsArray_bld[ii].zcm[1])/x_cm[ii])<tol2*2
+    end
+    if !(abs((y_cm[ii]-sectionPropsArray_bld[ii].ycm[1])/y_cm[ii])<tol)
+        println("y_cm failed at $tol tolerance $(abs((y_cm[ii]-sectionPropsArray_bld[ii].ycm[1])/y_cm[ii])), increasing tolerance")
+        @test abs((y_cm[ii]-sectionPropsArray_bld[ii].ycm[1])/y_cm[ii])<tol2
+    end
+
+end

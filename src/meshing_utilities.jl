@@ -839,7 +839,7 @@ function getSectPropsFromPreComp(usedUnitSpan,numadIn,precompoutput)
         alpha6 = [0.0, 0.0]
         rhoIyz = [0.0, 0.0]
         b = [0.0, 0.0]
-        a0 = [2*pi, 2*pi]
+        a0 = [2*pi, 2*pi] #TODO: shouldn't the lift slope for a cylinder be 0? So this should depend on the airfoil used.
         aeroCenterOffset = [0.0, 0.0]
 
         #TODO: not all of the precomp data is used, need to include it for a more accurate solution
