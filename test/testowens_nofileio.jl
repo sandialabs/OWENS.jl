@@ -41,7 +41,6 @@ nselem = 2,  #strut elements
 bshapex=SNL5MW_bld_x,
 bshapez=SNL5MW_bld_z) #use defaults
 
-
 bladeData,_,_,_ = OWENS.readBladeData("$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.bld") #reads overall blade data file
 el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.el","$(path)/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.ort",bladeData) #read element data file (also reads orientation and blade data file associated with elements)
 
