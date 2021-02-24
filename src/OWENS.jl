@@ -48,13 +48,13 @@ include("visualization.jl")
 
 
 # ------------ LOAD airfoilprep.py ---------------------------------------------
-path_hydro = module_path                    # Path to tlp_platform.py
-hydro = PyNULL()                                    # tlp_platform module
-
-function __init__()
-    imp = pyimport("imp")
-    (file, filename, data) = imp.find_module("tlp_platform", [path_hydro])
-    copy!(hydro, imp.load_module("tlp_platform", file, filename, data))
-end
+# path_hydro = "$(module_path)/../../pyfloater/pyFloater"                    # Path to tlp_platform.py
+# hydro = PyNULL()                                    # tlp_platform module
+#
+# function __init__()
+#     imp = pyimport("imp")
+#     (file, filename, data) = imp.find_module("core", [path_hydro])
+#     copy!(hydro, imp.load_module("pyFloater", file, filename, data))
+# end
 
 end

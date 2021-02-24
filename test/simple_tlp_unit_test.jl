@@ -1,6 +1,6 @@
 filepath = splitdir(@__FILE__)[1]
-# include("$(filepath)/../src/OWENS.jl")
-using OWENS
+include("$(filepath)/../src/OWENS.jl")
+# using OWENS
 import HDF5
 
 p = OWENS.hydro.tlp_platform(r_spar=2,draft=30, height=5, width=2, length=10, num=3, ofst=1)

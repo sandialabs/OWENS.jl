@@ -12,7 +12,7 @@ Conda.add("numpy==1.19.2")
 Conda.pip_interop(true)
 Conda.pip("install", "pygmsh==6.1.0")
 Conda.pip("install", "meshmagick @ https://github.com/LHEEA/meshmagick/archive/2.0.tar.gz")
-
+# Conda.pip("install","pymap")
 # # Resolve mkl error
 Conda.add("nomkl")
 try

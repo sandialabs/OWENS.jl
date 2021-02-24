@@ -12,12 +12,6 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     bshapez = zeros(nbelem+1)) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 
-    v_space_t = (Ht+Hb)/(ntelem)
-    v_space_b = (Hb)/(nbelem)
-
-    bshapex = R .* bshapex./maximum(bshapex)
-    bshapez = Hb .* bshapez./maximum(bshapez)
-
     function discretize_z(Ht,Hb,strut_mout_ratio,nelem; offset=0)
         mesh_z_inner = collect(LinRange(0,Ht+Hb,nelem+1))
         # Insert Bottom Blade Mount Point
@@ -74,6 +68,8 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
         bld_X = R.*(1.0.-4.0.*(bld_Z/Hb.-.5).^2)
     else
         # Ensure the blade shape conforms to the turbine height and radius specs
+        bshapex = R .* bshapex./maximum(bshapex)
+        bshapez = Hb .* bshapez./maximum(bshapez)
         bld_X = FLOWMath.akima(bshapez,bshapex,bld_Z)
     end
     bld_Y = zero(bld_X)
@@ -168,7 +164,7 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
     #TODO: this is hard coded for two blades, make arbitrary
     meshSeg = zeros(1+2+nstrut*2) #tower, two blades, and two struts that support the two blades
 
-    meshSeg[1] = ntelem+nstrut+1
+    meshSeg[1] = ntelem+nstrut+1 # the +1 is the blade mount point
     meshSeg[2:3] .= nbelem+nstrut
     meshSeg[4:end] .= nselem
 
@@ -226,6 +222,244 @@ function create_mesh(;Ht = 15.0, #tower height before blades attach
         elnum_of_joint = findall(x->x==jointconn[jnt,2],ort.elNum) #gives index of the elNum vector which contains the point index we're after. (the elNum vector is a map between point index and element index)
         if length(elnum_of_joint)==0 #Use the other element associated with the joint
             elnum_of_joint = findall(x->x==jointconn[jnt,2]-1,ort.elNum) #TODO: we get away with this since the elements are increasing and there are no two point objects (and this is only a problem for the top of the tower connecting to the blade tops)
+        end
+        if length(elnum_of_joint)==0
+            elnum_of_joint = findall(x->x==jointconn[jnt,1]-1,ort.elNum)
+        end
+        Psi_d_joint[jnt] = ort.Psi_d[elnum_of_joint[1]]
+        Theta_d_joint[jnt] = ort.Theta_d[elnum_of_joint[1]]
+    end
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+
+    #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
+    myjoint = [Float64.(1:1:njoint) jointconn zeros(njoint) zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
+
+    return mymesh, ort, myjoint
+end
+
+function create_arcus_mesh(;
+    Ht = 15.0, #tower height before blades attach
+    Hb = 147.148-15.0, #blade height
+    R = 54.014, # m bade radius
+    nblade = 3,
+    ntelem = 4, #tower elements
+    nbelem = 30, #blade elements
+    ncelem = 10,  #cable elements
+    c_mount_ratio = 0.05, #fraction of blade where the cable mounts
+    bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+    bshapez = zeros(nbelem+1)) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+
+    ##################################
+    #             _
+    #           /| |\
+    #          | | | )
+    #           \|_|/
+    #             |
+    # Wires as tower tension support, for now are mounted to the blades like a bow
+    ####################################
+    ###------------Tower--------------##
+    ####################################
+    mesh_z = collect(LinRange(0,Ht,ntelem+1))
+    # Create the x and y components
+    mesh_x = zero(mesh_z)
+    mesh_y = zero(mesh_z)
+
+    t_topidx = length(mesh_z)
+
+    # intra-tower connectivity
+    conn = zeros(length(mesh_z)-1,2)
+    conn[:,1] = collect(1:length(mesh_z)-1)
+    conn[:,2] = collect(2:length(mesh_z))
+
+    #####################################
+    ###------------Blades--------------##
+    #####################################
+
+    #connection points on tower are simply the top of the tower connecting to the bottom of the blades
+    bld_Z = collect(LinRange(0.0,Hb,nbelem+1))
+
+    # The cable connections must be added though
+    if maximum(Hb*c_mount_ratio .== bld_Z) # if we are at exactly an existing node, then offset our mount point
+        c_mount_ratio += 1e-6
+    end
+    bld_Z = sort([bld_Z;Hb*c_mount_ratio])
+
+    if bshapex == zeros(nbelem+1)
+        bshapex = R .* bshapex./maximum(bshapex)
+        bshapez = Hb .* bshapez./maximum(bshapez)
+        bld_Y = R.*(1.0.-4.0.*(bld_Z/Hb.-.5).^2)
+    else
+        # Ensure the blade shape conforms to the turbine height and radius specs
+        bld_Y = FLOWMath.akima(bshapez,bshapex,bld_Z)
+    end
+    bld_X = zero(bld_Y)
+
+    bld_Z .+= Ht
+
+    b_Z = []
+    b_X = []
+    b_Y = []
+    # Now using standard VAWT convention, blade 1 is zero degrees at top dead center, or North/Y+
+    # and they are offset counter clockwise
+    b_topidx = zeros(Int,nblade)
+    b_botidx = zeros(Int,nblade) .+ length(mesh_z)
+    conn_b = zeros(length(bld_Z)-1,2)
+    for ibld = 1:nblade
+        myangle = (ibld-1)*2.0*pi/nblade
+        b_Z = [b_Z;bld_Z]
+        b_X = [b_X;bld_Y.*sin(myangle).+bld_X.*cos(myangle)]
+        b_Y = [b_Y;bld_X.*sin(myangle).+bld_Y.*cos(myangle)]
+
+        # Element joint indices
+        b_botidx[ibld] = length(mesh_z)+1 + length(bld_Z)*(ibld-1)
+        b_topidx[ibld] = length(mesh_z)+1 + length(bld_Z)*ibld-1
+
+        # Intraconnectivity
+        conn_b[:,1] = collect(b_botidx[ibld]:1:b_topidx[ibld]-1)
+        conn_b[:,2] = collect(b_botidx[ibld]+1:1:b_topidx[ibld])
+        conn = [conn;conn_b]
+    end
+
+    # Add to the mesh
+    mesh_z = [mesh_z;b_Z]
+    mesh_x = [mesh_x;b_X]
+    mesh_y = [mesh_y;b_Y]
+
+    # pick out the blade to cable mounting indices
+    b2c_botidx = findall(x->x==Hb*c_mount_ratio+Ht,mesh_z)[1:nblade]
+
+
+    #####################################
+    ###------------Cables--------------##
+    #####################################
+
+    #Connect from the bottom to the top
+    # For each blade, find the mounting location and draw a line to the top center confluence of blades
+    c2b_botidx = zeros(Int,nblade)
+    c2b_topidx = zeros(Int,nblade)
+    conn_c = zeros(ncelem,2)
+    for ibld = 1:nblade
+        cstartidx = b2c_botidx[ibld]
+        cxstart = mesh_x[cstartidx]
+        cystart = mesh_y[cstartidx]
+        czstart = mesh_z[cstartidx]
+
+        # x y z end are at the top of the tower
+        cxend = 0.0
+        cyend = 0.0
+        czend = Ht + Hb
+
+        # Now draw the lines
+        c_x = collect(LinRange(cxstart,cxend,ncelem+1))
+        c_y = collect(LinRange(cystart,cyend,ncelem+1))
+        c_z = collect(LinRange(czstart,czend,ncelem+1))
+
+        # joint connections
+        c2b_botidx[ibld] = length(mesh_z)+1
+        c2b_topidx[ibld] = c2b_botidx[ibld]+length(c_z)-1
+
+        # and add to the mesh
+        mesh_x = [mesh_x;c_x]
+        mesh_y = [mesh_y;c_y]
+        mesh_z = [mesh_z;c_z]
+
+        # Intraconnectivity
+        conn_c[:,1] = collect(c2b_botidx[ibld]:1:c2b_topidx[ibld]-1)
+        conn_c[:,2] = collect(c2b_botidx[ibld]+1:1:c2b_topidx[ibld])
+        conn = [conn;conn_c]
+
+    end
+
+    #######################################
+    ###   Cleanup/Derived parameters    ###
+    #######################################
+
+    #space out the mesh numerically to avoid numerical issues
+    for i = 1:length(mesh_z)-1
+        if isapprox(mesh_z[i],mesh_z[i+1];atol = 1e-6)
+            mesh_z[i+1] -= 1e-4
+        end
+    end
+
+    numNodes = length(mesh_z)
+    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    numEl = length(conn[:,1])
+    elNum = collect(LinRange(1,numEl,numEl))
+
+    # Define Mesh Types
+    # Mesh Type: 0-blade 1-tower 2-strut
+    meshtype = zeros(Int,numEl)
+    meshtype[1:t_topidx] .= 1 #Tower
+    # meshtype[idx_bot_lbld_tower:idx_top_rbld_tower] .= 0 #Blades
+    meshtype[c2b_botidx[1]-1:end] .= 2 #Struts
+
+    #########################
+    # .bld equivalent
+    #########################
+
+    ncable = nblade
+
+    # For a single blade
+    meshSeg = zeros(1+nblade+ncable) #tower, blades, and cables
+
+    meshSeg[1] = ntelem
+    meshSeg[2:nblade+1] .= nbelem+1 # +1 for the cable mount
+    meshSeg[nblade+2:end] .= ncelem
+
+    # For each blade
+    structuralSpanLocNorm = zeros(nblade,length(bld_Z)) # +1 for the cable mount
+    structuralNodeNumbers = zeros(nblade,length(bld_Z))
+    structuralElNumbers = zeros(nblade,length(bld_Z))
+
+    for iblade = 1:nblade
+
+        # Normalized Span
+        span_len = sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Ht).^2.0)
+        structuralSpanLocNorm[iblade,:] = span_len./maximum(span_len)
+
+        # Node Numbers
+        structuralNodeNumbers[iblade,:] = collect(b_botidx[iblade]:b_topidx[iblade])
+
+        # Element Numbers
+        structuralElNumbers[iblade,:] = structuralNodeNumbers[iblade,:].-iblade
+        structuralElNumbers[iblade,end] = -1 #TODO: figure out why this is in the original OWENS setup and if it is used
+    end
+
+    mymesh = Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers)
+
+    ######################################
+    ####----------Joint Matrix----------##
+    ######################################
+
+    # Connect Tower Top to Blades bottom, then each cable to each blade bottom
+    # Then each cable to each blade top, then the latter two blade tops to the first
+
+    jointconn = zeros(Int,nblade*2-1+ncable*2,2)
+    for ibld = 1:nblade
+        # connect tower to blades
+        jointconn[ibld,:] = [t_topidx b_botidx[ibld]]
+
+        # connect cables to blades bases
+        jointconn[ibld+nblade,:] = [b2c_botidx[ibld] c2b_botidx[ibld]]
+
+        # connect cables to blades tops
+        jointconn[ibld+nblade*2,:] = [b_topidx[ibld] c2b_topidx[ibld]]
+
+        #Connect first Blade to all other blades
+        if ibld>1
+            jointconn[ibld-1+nblade*3,:] = [b_topidx[1] b_topidx[ibld]]
+        end
+    end
+
+    njoint = length(jointconn[:,1])
+    ort = calculateElementOrientation(mymesh)
+    # println("start")
+    Psi_d_joint = zeros(njoint)
+    Theta_d_joint = zeros(njoint)
+    for jnt = 1:njoint
+        elnum_of_joint = findall(x->x==jointconn[jnt,2],ort.elNum) #gives index of the elNum vector which contains the point index we're after. (the elNum vector is a map between point index and element index)
+        if length(elnum_of_joint)==0 #Use the other element associated with the joint
+            elnum_of_joint = findall(x->x==jointconn[jnt,2]-1,ort.elNum) #TODO: we get away with this since the elements are increasing and there are no two point objects
         end
         if length(elnum_of_joint)==0
             elnum_of_joint = findall(x->x==jointconn[jnt,1]-1,ort.elNum)
