@@ -25,3 +25,4 @@
 *.geo
 *.pyc
 *pycache*
+*.map

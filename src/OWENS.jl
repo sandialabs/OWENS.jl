@@ -1,6 +1,5 @@
 module OWENS
 
-using PyCall
 import Statistics
 import DelimitedFiles
 import LinearAlgebra
@@ -15,7 +14,10 @@ import PyPlot
 import PreComp
 import Composites
 import MAT #for saving .mat H5 files
-
+using pyfloater
+pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
+using PyCall
+wave = pyimport("mhkit.wave")
 # ------------ GLOBAL VARIABLES ------------------------------------------------
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
 
@@ -45,16 +47,5 @@ include("file_io.jl")
 include("structs.jl")
 include("depreciated.jl")
 include("visualization.jl")
-
-
-# ------------ LOAD airfoilprep.py ---------------------------------------------
-# path_hydro = "$(module_path)/../../pyfloater/pyFloater"                    # Path to tlp_platform.py
-# hydro = PyNULL()                                    # tlp_platform module
-#
-# function __init__()
-#     imp = pyimport("imp")
-#     (file, filename, data) = imp.find_module("core", [path_hydro])
-#     copy!(hydro, imp.load_module("pyFloater", file, filename, data))
-# end
 
 end

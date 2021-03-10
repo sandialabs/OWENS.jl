@@ -9,6 +9,9 @@ PyPlot.close("all")
 path = splitdir(@__FILE__)[1]
 include("$(path)/../src/OWENS.jl")
 
+using pyfloater
+pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
+
 ##############################################
 # Setup
 #############################################
@@ -75,36 +78,97 @@ rotationalEffects = ones(mymesh.numEl)
 #store data in element object
 myel = OWENS.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
+p = pyFloater(wrking_dir="$path/data",
+name="coupled_hydro_test",
+draft= 20,
+freeboard= 1,
+column_radius= 7.5,
+pontoon_length= 35,
+pontoon_width= 5,
+pontoon_height= 5,
+num_columns= 3,
+num_pontoons= 3,
+tension_frac= 0.3,
+water_depth= 80,
+displacement= -99,
+turbine_power= 5e6,
+turbine_mass= 568800,
+turbine_cog= [0, 0, 22.5],
+mesh_refine= 0.7)
 
-nodalinputdata = [1 "M6" 1 1 9.8088e6
-1 "M6" 2 2 9.7811e6
-1 "M6" 3 3 1.8914e7
-1 "M6" 4 4 3.6351e9
-1 "M6" 5 5 3.6509e9
-1 "M6" 6 6 2.4362e9
-1 "K6" 1 1 132900.0
-1 "K6" 2 2 132900.0
-1 "K6" 3 3 1.985e6
-1 "K6" 4 4 2.2878204759573773e8
-1 "K6" 5 5 2.2889663915476388e8
-1 "K6" 6 6 6.165025875607658e7]
+#%% Compute hydrodyanmics
+
+p.run_hydro(freq=1/LinRange(1/20, 1/2, 3))
+# p.write_hydro()           # save the results to an netCDF
+# p.read_hydro()            # load results from netCDF (avoid calling run_hydro)
+# p.floatingbody.show()     # visualize platform
+
+#%% Get linear models
+
+m, b, k = p.get_linearModel()
+
+m_jl = m.data
+b_jl = b.data
+k_jl = k.data
+
+mbk_array = [m_jl;b_jl;k_jl]
+
+m_nrow,m_ncol = size(m_jl)
+b_nrow,b_ncol = size(b_jl)
+k_nrow,k_ncol = size(k_jl)
+ntotalrow = 6+6+6 #TODO: it can't handle anything other than the diagonals for now#m_nrow*m_ncol+b_nrow*b_ncol+k_nrow*k_ncol
+nodalinputdata = [zeros(ntotalrow) repeat(["NA"],ntotalrow) zeros(ntotalrow,3)]
+
+inodal = 0
+for icol = 1:length(mbk_array[1,:])
+    for irow = 1:length(mbk_array[:,1])
+        if icol%6 == irow%6
+            global inodal += 1
+            nodalinputdata[inodal,1] = 1 #node number
+
+            # Type and Row number
+            if irow<=m_nrow
+                nodalinputdata[inodal,2] = "M6"
+                nodalinputdata[inodal,3] = irow
+            elseif irow<=m_nrow+b_nrow
+                nodalinputdata[inodal,2] = "C6"
+                nodalinputdata[inodal,3] = irow-m_nrow
+            elseif irow<=m_nrow+b_nrow+k_nrow
+                nodalinputdata[inodal,2] = "K6"
+                nodalinputdata[inodal,3] = irow-(m_nrow+b_nrow)
+            end
+
+            #Col num
+            nodalinputdata[inodal,4] = icol
+
+            #Value
+            nodalinputdata[inodal,5] = mbk_array[irow,icol]
+        end
+    end
+end
+
+for i = 1:length(nodalinputdata[:,1])
+    println(nodalinputdata[i,:])
+end
+
 
 mynodalTerms = OWENS.readNodalTerms(data = nodalinputdata)
 
 # node, dof, bc
-pBC = [1 1 0
-1 2 0
-1 3 0
-1 4 0
-1 5 0
-1 6 0]
+# pBC = [1 1 0
+# 1 2 0
+# 1 3 0
+# 1 4 0
+# 1 5 0
+# 1 6 0]
 
 model = OWENS.Model(;analysisType = "TNB",
 outFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 bladeData,
-pBC = pBC,
+hydroOn = true,
+plat_model = p,
 nodalTerms = mynodalTerms,
 numNodes = mymesh.numNodes)
 
@@ -250,13 +314,13 @@ meshFile = "$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh"
 mesh = OWENS.readMesh(meshFile)
 
 mymodel = OWENS.Model(;analysisType = "M",
-        outFilename = "none",
-        joint = myjoint,
-        platformTurbineConnectionNodeNumber = 1,
-        bladeData,
-        pBC = pBC,
-        nodalTerms = mynodalTerms,
-        numNodes = mymesh.numNodes)
+outFilename = "none",
+joint = myjoint,
+platformTurbineConnectionNodeNumber = 1,
+bladeData,
+pBC = pBC,
+nodalTerms = mynodalTerms,
+numNodes = mymesh.numNodes)
 
 freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENS.Modal(mymodel,mesh,myel,displInitGuess,Omega,OmegaStart)
 

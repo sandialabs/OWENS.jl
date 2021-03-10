@@ -348,6 +348,7 @@ mutable struct Model
     gravityOn
     generatorOn
     hydroOn
+    plat_model
     JgearBox
     gearRatio
     gearBoxEfficiency
@@ -396,6 +397,7 @@ function Model(;analysisType = "TNB",
     gravityOn = true,
     generatorOn = false,
     hydroOn = false,
+    plat_model = [],
     JgearBox = 0.0,
     gearRatio = 1.0,
     gearBoxEfficiency = 1.0,
@@ -441,6 +443,14 @@ function Model(;analysisType = "TNB",
 
     if pBC!=0
         BC = makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
+    else
+        BC = BC_struct(0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0)
     end
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
@@ -448,7 +458,7 @@ function Model(;analysisType = "TNB",
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
     aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
-    guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    guessFreq,gravityOn,generatorOn,hydroOn,plat_model,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
     spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,

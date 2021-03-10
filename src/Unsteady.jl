@@ -328,6 +328,10 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
 
     model.jointTransform, model.reducedDOFList = createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
+    if model.hydroOn
+        Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
+    end
+
     ## Main Loop - iterate for a solution at each time step, i
     for i=1:numTS
 
@@ -383,6 +387,46 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         gbNorm = 1e5 #initialize norms for various module states
         ##
 
+        ## evaluate platform module
+        ##-------------------------------------
+        if model.hydroOn
+            ds = model.plat_model.get_waveExcitation(Spd, time=[t[i],t[i]+delta_t], seed=1)
+            wave6dof_F_M = ds."fexc".data[1,:]
+        end
+        #-------------------------------------
+    #
+
+        # Freq Domain of Hydro does give stiffness and damping
+        # Should be consistent with how OrcaFlex/Hydrodyn would work for modularity
+
+        # Possible best way: Kevin run simple case to produce example reaction forces at bases for time history,
+        # then Ryan writes code that calculates new motion and sitffness/damping
+
+        # Other way: OWENS solves for motions and hydro solves for reaction forces
+
+        # Kevin look at wavec2wire (dissertation might help)
+        # rigid body motion should not be calculated within hydro
+
+        # Near term coupling is easier in time domain
+
+        # Assignments
+        # - Kevin look at wavec2wire, OrcaFlex, hydrodyn, mass and stiffness approx
+        # - Kevin give Ryan example of mass and stiffness approx how it's being used/read in
+        # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
+
+        # Hydro Coupling
+        #1) modify the mesh to include a platform cg offset #option
+        #2) modify the element properties so that this element is rigid
+        #3) ensure that this element is non-rotating - deflected solution is solved in one step (perhaps just give rotated stiffenss, forces, etc, so the node is actually rotating, as long as the mass isn't being cyntrifical)
+        #4) apply the hydro F, C, K, M to the nodal term (we have calm sea, as well as waves and currents). Mooring will also apply forces.
+        #5) use flags to turn degrees of freedom off
+
+        # Unit Testing
+        # 1) Turn all dof off and the solution should be the same
+        # 2) allow heave and the turbine should go up and down
+        # 3) no aero, but mass offset should cause the turbine to tilt slightly
+
+
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
             # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
@@ -400,70 +444,18 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
 
             CN2H = CP2H*CN2P
 
-            #         ## evaluate platform module
-            #         ##-------------------------------------
-            #         if (model.hydroOn)
-            #             # 	Accel_jLast= Accel_j
-            #             Ywec_jLast = Ywec_j;
-            #             if (model.platformTurbineYawInteraction == 0)
-            #                 FReaction0 = [-FReactionHist(i,1:5)'; 0.0]; #'
-            #                 FReaction1 =  [-FReaction_j(1:5); 0.0];
-            #             elseif (model.platformTurbineYawInteraction == 1)
-            #                 FReaction0 = (-FReactionHist(i,1:6)');
-            #                 FReaction1 =  (-FReaction_j(1:6));
-            #             elseif (model.platformTurbineYawInteraction == 2)
-            #                 FReaction0 = [-FReactionHist(i,1:5)'; genTorque_s];
-            #                 FReaction1 =  [-FReaction_j(1:5); genTorque_j];
-            #             else
-            #                 error('PlatformTurbineYawInteraction flag not recognized.');
-            #             end
-            #             [rbData,Ywec_j,_] = platformModule([t[i] t[i]+delta_t],Ywec(i,:),CP2H,FReaction0,FReaction1,d_input_streamPlatform,d_output_streamPlatform);
-            #         end
-            #         #-------------------------------------
-            ##
-
-            # Freq Domain of Hydro does give stiffness and damping
-            # Should be consistent with how OrcaFlex/Hydrodyn would work for modularity
-
-            # Possible best way: Kevin run simple case to produce example reaction forces at bases for time history,
-            # then Ryan writes code that calculates new motion and sitffness/damping
-
-            # Other way: OWENS solves for motions and hydro solves for reaction forces
-
-            # Kevin look at wavec2wire (dissertation might help)
-            # rigid body motion should not be calculated within hydro
-
-            # Near term coupling is easier in time domain
-
-            # Assignments
-            # - Kevin look at wavec2wire, OrcaFlex, hydrodyn, mass and stiffness approx
-            # - Kevin give Ryan example of mass and stiffness approx how it's being used/read in
-            # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
-
-            # Hydro Coupling
-            #1) modify the mesh to include a platform cg offset #option
-            #2) modify the element properties so that this element is rigid
-            #3) ensure that this element is non-rotating - deflected solution is solved in one step (perhaps just give rotated stiffenss, forces, etc, so the node is actually rotating, as long as the mass isn't being cyntrifical)
-            #4) apply the hydro F, C, K, M to the nodal term (we have calm sea, as well as waves and currents). Mooring will also apply forces.
-            #5) use flags to turn degrees of freedom off
-
-            # Unit Testing
-            # 1) Turn all dof off and the solution should be the same
-            # 2) allow heave and the turbine should go up and down
-            # 3) no aero, but mass offset should cause the turbine to tilt slightly
-
             ## evaluate generator module
             #----- generator module ---------------------------
             genTorque_j = 0
-            if (model.generatorOn)
-                if (model.driveTrainOn)
-                    if (model.useGeneratorFunction)
+            if model.generatorOn
+                if model.driveTrainOn
+                    if model.useGeneratorFunction
                         genTorqueHSS0 = userDefinedGenerator(gbDot_j*model.gearRatio)
                     else
                         error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio)
                     end
                 else
-                    if (model.useGeneratorFunction)
+                    if model.useGeneratorFunction
                         genTorqueHSS0 = userDefinedGenerator(Omega_j)
                     else
                         error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j)
