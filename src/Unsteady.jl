@@ -546,17 +546,9 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             else
                 step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
                 t_used = t[i]
-                # function runme()
-                #     println("here")
-                #     println("here")
-                #     println("here")
-                # println("here")
-                # Juno.@enter mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers,el,turbine3D,env,step_AC,us_param)
 
                 Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
 
-                # end
-                # Juno.@enter runme()
             end
 
             if isempty(FAeroDof)
@@ -567,6 +559,10 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 Fexternal = [Fexternal_sub; FAero]
             end
 
+            if model.hydroOn
+                Fdof = [Int.(Fdof[:,1]); collect(1:6)] #TODO: tie into ndof per node
+                Fexternal = [Fexternal; wave6dof_F_M]
+            end
 
             ## evaluate structural dynamics
             #call structural dynamics solver
@@ -724,7 +720,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         torqueDriveShaft[i+1] = torqueDriveShaft_s
 
         if (model.hydroOn)
-            error("Hydro Model not fully implemented")
+            # error("Hydro Model not fully implemented")
             #         Ywec(i+1,:) = Ywec_j
             #         rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6)
 
