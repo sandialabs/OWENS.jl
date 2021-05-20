@@ -969,6 +969,9 @@ function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
         for seg_idx = 1:n_segments
             # seg_idx = 1
             str = split(csvdata[3+sta_idx,DP_idx_end+seg_idx],",")
+            if length(str)>1 && str[2]=="" #allow for single number
+                str = str[1]
+            end
             skin_seq[sta_idx,seg_idx] = Seq([parse(Int,x) for x in str])
         end
     end
@@ -982,6 +985,9 @@ function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
             # sta_idx = 1
             str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2-1],",")
             if !isempty(str[1])
+                if str[2]=="" #allow for single number
+                    str = str[1]
+                end
                 web_seq[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
 
                 str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2],",")
@@ -1006,7 +1012,6 @@ function readNuMadMaterialsCSV(NuMad_geom_xlscsv_file)
         end
 
         if data_start!=0 && ii>data_start && !isa(csvdata[ii,1],Number) # in case they have a file with excess rows
-            println("break")
             data_end = ii-1
             break
         end
