@@ -204,12 +204,12 @@ function owens(owensfile,analysisType;
 
     outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
 
-    jointTransform, reducedDOFList = createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
-    BC.map = calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,reducedDOFList) #TODO: put this before BC so the structs can be made immutable in the future. #create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
+    jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    BC.map = GyricFEA.calculateBCMap(BC.numpBC,BC.pBC,numDofPerNode,reducedDOFList) #TODO: put this before BC so the structs can be made immutable in the future. #create boundary condition map from original DOF numbering to reduced/constrained DOF numbering
 
     numReducedDof = length(jointTransform[1,:])
     # BC.redVectorMap = zeros(numReducedDof,1)
-    BC.redVectorMap = constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC.numpBC,BC.pBC,BC.isConstrained) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
+    BC.redVectorMap = GyricFEA.constructReducedDispVectorMap(mesh.numNodes,numDofPerNode,numReducedDof,BC.numpBC,BC.pBC,BC.isConstrained) #TODO: put this before BC so the structs can be made immutable in the future. #create a map between reduced and full DOF lists
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)

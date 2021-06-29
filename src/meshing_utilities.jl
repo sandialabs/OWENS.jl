@@ -725,9 +725,9 @@ function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     end
     numpBC = length(pBC[:,1])
 
-    map = calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
+    map = GyricFEA.calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
     numReducedDof = length(jointTransform[1,:])
-    redVectorMap = constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
+    redVectorMap = GyricFEA.constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
 
     BC = BC_struct(numpBC,
     pBC,

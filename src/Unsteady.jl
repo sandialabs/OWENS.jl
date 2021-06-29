@@ -153,9 +153,9 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     uddot_j = 0.0
     torqueDriveShaft_j = 0.0
 
-    elStrain = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
+    elStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
 
-    dispOut = DispOut(elStrain,zeros(492,492),zeros(492,492),zeros(492,492))
+    dispOut = GyricFEA.DispOut(elStrain,zeros(492,492),zeros(492,492),zeros(492,492))
     #................................................................
 
     ## Rotor mode initialization
@@ -207,7 +207,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     t = zeros(numTS+1)
     FReactionHist = zeros(numTS+1,6)
     # strainHist(numTS+1) = struct()
-    # strainHist = fill(ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+    # strainHist = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
     eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
     eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
     eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
@@ -290,15 +290,14 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         #     etadot_s  = invPhi*udot_s2
         #     etaddot_s = invPhi*uddot_s2
     else
-        # mat"$elStorage = initialElementCalculations($model,$el,$mesh)" #perform initial element calculations for conventional structural dynamics analysis
-        elStorage = initialElementCalculations(model,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
+        elStorage = GyricFEA.initialElementCalculations(model,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
     #calculate structural/platform moi
-    _,structureMOI,_=calculateStructureMassProps(elStorage)
+    _,structureMOI,_ = GyricFEA.calculateStructureMassProps(elStorage)
     #..........................................................................
 
-    model.jointTransform, model.reducedDOFList = createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    model.jointTransform, model.reducedDOFList = GyricFEA.createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
     if model.hydroOn
         Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
@@ -540,7 +539,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             #call structural dynamics solver
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
             #             dispData.displ_sm1 = u_sm1 #Not even used
-            dispData = DispData(u_s,udot_s,uddot_s)
+            dispData = GyricFEA.DispData(u_s,udot_s,uddot_s)
 
             #         if model.analysisType=='ROM'
             #             dispData.displ_s = u_s
@@ -560,16 +559,15 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 # evalulate structural dynamics using conventional representation
                 t_in = t[i]
                 # mat"[$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient2($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
-                # elStrain = Array{ElStrain, 1}(undef, mesh.numEl)
+                # elStrain = Array{GyricFEA.ElStrain, 1}(undef, mesh.numEl)
                 #
                 # for jj = 1:mesh.numEl
-                #     elStrain[jj] =  ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
+                #     elStrain[jj] =  GyricFEA.ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
                 # end
-                # dispOut = DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
+                # dispOut = GyricFEA.DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
 
                 start = time()
-                # elStrain,dispOut,FReaction_j,Kgmat = call_structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Fdof,CN2H,rbData)
-                elStrain,dispOut,FReaction_j = structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
 
                 # error("stop")
                 println("$(time()-start)")
@@ -732,7 +730,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     # save aeroOutputArray
     #save simulation data in .mat file
     # save(model.outFilename,'t','uHist','aziHist','OmegaHist','OmegaDotHist','gbHist','gbDotHist','gbDotDotHist','FReactionHist','rigidDof','genTorque','genPower','torqueDriveShaft','strainHist')
-    # fprintf('#s\n','Output Saving Not Currently Implemented')
 
     #Writefile
     if model.outFilename=="none"

@@ -24,18 +24,6 @@ mutable struct Ort
     Offset
 end
 
-mutable struct TimeInt
-    delta_t
-    a1
-    a2
-    a3
-    a4
-    a5
-    a6
-    a7
-    a8
-end
-
 mutable struct BC_struct
     numpBC
     pBC
@@ -44,60 +32,6 @@ mutable struct BC_struct
     isConstrained
     map
     redVectorMap
-end
-
-mutable struct ElInput
-    elementOrder
-    modalFlag
-    timeInt
-    xloc
-    sectionProps
-    sweepAngle
-    coneAngle
-    rollAngle
-    aeroSweepAngle
-    iterationType
-    useDisp
-    preStress
-    aeroElasticOn
-    aeroForceOn
-    loadStepPrev
-    loadStep
-    maxNumLoadSteps
-    MAXIT
-    tolerance
-    analysisType
-    disp
-    dispdot
-    dispddot
-    displ_iter
-    concMass
-    concStiff
-    concLoad
-    dispm1
-    x
-    y
-    z
-    gravityOn
-    RayleighAlpha
-    RayleighBeta
-    accelVec
-    omegaVec
-    omegaDotVec
-    Omega
-    OmegaDot
-    CN2H
-    airDensity
-    freq
-    firstIteration
-end
-
-mutable struct ElOutput
-    FhatLessConc
-    Ke
-    Fe
-    Me
-    Ce
 end
 
 mutable struct BladeData
@@ -204,87 +138,6 @@ mutable struct El
     rotationalEffects
 end
 
-mutable struct ElStorage
-      K11
-      K12
-      K13
-      K14
-      K15
-      K16
-      K22
-      K23
-      K24
-      K25
-      K26
-      K33
-      K34
-      K35
-      K36
-      K44
-      K45
-      K46
-      K55
-      K56
-      K66
-      M11
-      M15
-      M16
-      M22
-      M24
-      M33
-      M34
-      M44
-      M55
-      M56
-      M66
-      S11
-      S12
-      S13
-      S15
-      S16
-      S22
-      S23
-      S25
-      S26
-      S33
-      S35
-      S36
-      S55
-      S56
-      S66
-      S14_1
-      S14_2
-      S24_1
-      S24_2
-      S34_1
-      S34_2
-      S45_1
-      S45_2
-      S46_1
-      S46_2
-      S44_1
-      S44_2
-      S44_3
-      C12
-      C13
-      C23
-      C24
-      C25
-      C26
-      C34
-      C35
-      C36
-      C14_1
-      C14_2
-      C45_1
-      C45_2
-      C46_1
-      C46_2
-      mel
-      moiel
-      xmel
-end
-
 mutable struct NodalTerms
     concLoad
     concStiff
@@ -305,29 +158,6 @@ mutable struct ConcNDLGen
     dof1
     dof2
     val
-end
-
-mutable struct ElStrain
-    eps_xx_0
-    eps_xx_z
-    eps_xx_y
-    gam_xz_0
-    gam_xz_y
-    gam_xy_0
-    gam_xy_z
-end
-
-mutable struct DispOut
-    elStrain
-    displ_sp1
-    displddot_sp1
-    displdot_sp1
-end
-
-mutable struct DispData
-    displ_s
-    displdot_s
-    displddot_s
 end
 
 mutable struct Model
@@ -438,7 +268,7 @@ function Model(;analysisType = "TNB",
     prescribedLoadStep = 0.0)# nlParams
 
     if jointTransform==0.0
-        jointTransform, reducedDOFList = createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+        jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     end
     if nodalTerms == 0.0
         nodalTerms = OWENS.readNodalTerms() #Fill in the data structure with nothing
