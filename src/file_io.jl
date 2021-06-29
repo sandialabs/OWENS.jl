@@ -446,7 +446,7 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
     end
 end
 
-function readNodalTerms(;filename="none",data=zeros(2))
+function readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
     #readNodalTerms reads concentrated nodal terms file
     #   [nodalTerms] = readNodalTerms(filename)
     #

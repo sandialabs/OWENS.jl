@@ -4,7 +4,6 @@ using Test
 import HDF5
 import PyPlot
 import DelimitedFiles
-import FLOWMath
 PyPlot.close("all")
 # import OWENS
 path = splitdir(@__FILE__)[1]
@@ -15,7 +14,7 @@ include("$(path)/../src/OWENS.jl")
 #############################################
 # start = time()
 # Use the SNL5MW as the baseline check
-
+#The 15 is subtracted off at the end of the line
 SNL34_unit_xz = DelimitedFiles.readdlm("$(path)/data/SNL34m/SNL34m_unit_blade_shape.txt",'\t',skipstart = 0)
 
 #Ensure the data is fully unitized since the hand picking process is only good to one or two significant digits.
@@ -27,30 +26,34 @@ height = 41.9 #m
 radius = 17.1 #m
 SNL34Z = SNL34z*height
 SNL34X = SNL34x*radius
+SNL5MW_bld_z = SNL34Z
+SNL5MW_bld_x = SNL34X
 
-# Transitions
-idx = [1,6,11,24,31,40]
-z_transitions = [SNL34Z[idx[1]],SNL34Z[idx[2]],SNL34Z[idx[3]],SNL34Z[idx[4]],SNL34Z[idx[5]],SNL34Z[idx[6]]]
-x_transitions = [SNL34X[idx[1]],SNL34X[idx[2]],SNL34X[idx[3]],SNL34X[idx[4]],SNL34X[idx[5]],SNL34X[idx[6]]]
+# Juno.@enter OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+# Hb = 147.148-15.0, #blade height
+# R = 54.014, # m bade radius
+# nstrut = 2,
+# strut_mout_ratio = 0.1, #distance from top/bottom
+# ntelem = 20, #tower elements
+# nbelem = 20, #blade elements
+# nselem = 2,  #strut elements
+# bshapex=SNL5MW_bld_x,
+# bshapez=SNL5MW_bld_z) #use defaults
 
-# Create the spline, and for simplicity, we will not use the exact transition points in the mesh
-npt = 30
-spl_z = LinRange(0,height,npt)
-spl_x = FLOWMath.akima(SNL34Z,SNL34X,spl_z)
+mymesh,myort,myjoint = OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+Hb = height, #blade height
+R = radius, # m bade radius
+nstrut = 2,
+strut_mout_ratio = 0.05, #distance from top/bottom
+ntelem = 20, #tower elements
+nbelem = 20, #blade elements
+nselem = 2,  #strut elements
+bshapex=SNL5MW_bld_x,
+bshapez=SNL5MW_bld_z) #use defaults
 
-mymesh, myort, myjoint = OWENS.create_mesh(;Ht = 0.1, #tower height before blades attach
-    Hb = height, #blade height
-    R = radius, # m bade radius
-    nstrut = 2, #strut elements
-    strut_mout_ratio = 0.025, #distance from top/bottom
-    ntelem = 20, #tower elements
-    nbelem = 20, #blade elements
-    nselem = 2,  #strut elements
-    bshapex = SNL34X, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    bshapez = SNL34Z) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 
-nTwrElem = Int(mymesh.meshSeg[1])
-nBldElem = Int(mymesh.meshSeg[2])
+nTwrElem = Int(mymesh.meshSeg[1])+1
+nBldElem = Int(mymesh.meshSeg[2])+1
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/SNL34m/SNL34mGeom.csv"
 numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
@@ -71,8 +74,6 @@ plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
 sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput)
 
-
-
 #Struts
 # They are the same as the end properties of the blades
 
@@ -85,36 +86,26 @@ rotationalEffects = ones(mymesh.numEl)
 #store data in element object
 myel = OWENS.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
-
-nodalinputdata = [1 "M6" 1 1 9.8088e6
-1 "M6" 2 2 9.7811e6
-1 "M6" 3 3 1.8914e7
-1 "M6" 4 4 3.6351e9
-1 "M6" 5 5 3.6509e9
-1 "M6" 6 6 2.4362e9
-1 "K6" 1 1 132900.0
-1 "K6" 2 2 132900.0
-1 "K6" 3 3 1.985e6
-1 "K6" 4 4 2.2878204759573773e8
-1 "K6" 5 5 2.2889663915476388e8
-1 "K6" 6 6 6.165025875607658e7]
-
-mynodalTerms = OWENS.readNodalTerms(data = nodalinputdata)
-
-# node, dof, bc
+# node, dof, bc.  Constrain the top and bottom of the turbine TODO: figure out if there is a less trial and error approach to hit the end boundary condition
 pBC = [1 1 0
 1 2 0
 1 3 0
 1 4 0
 1 5 0
-1 6 0]
-
+1 6 0
+70 1 0
+70 2 0
+70 3 0
+70 4 0
+70 5 0
+70 6 0]
+# owensfile = "$path/SNL34m/SNL34.owens", #controls output filenames: TODO: clean up
 model = OWENS.Model(;analysisType = "TNB",
 outFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 pBC = pBC,
-nodalTerms = mynodalTerms,
+bladeData = numadIn_bld,
 numNodes = mymesh.numNodes)
 
 ##############################################
@@ -123,63 +114,48 @@ numNodes = mymesh.numNodes)
 
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 rigidDof,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,
-eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist = OWENS.Unsteady(mymodel,mymesh,myel;getLinearizedMatrices=false)
-
+eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist = OWENS.Unsteady(model,mymesh,myel;getLinearizedMatrices=false)
 
 PyPlot.figure()
-# PyPlot.plot(1:length(old_FReactionHist[:,1]),old_FReactionHist[:,1])
 PyPlot.plot(1:length(FReactionHist[:,1]),FReactionHist[:,1])
-#PyPlot.legend(["Old", "New"])
+PyPlot.legend(["Old", "New"])
 PyPlot.ylabel("FReaction Hist 1")
 
 PyPlot.figure()
-# PyPlot.plot(1:length(old_FReactionHist[:,2]),old_FReactionHist[:,2])
 PyPlot.plot(1:length(FReactionHist[:,2]),FReactionHist[:,2])
-#PyPlot.legend(["Old", "New"])
+PyPlot.legend(["Old", "New"])
 PyPlot.ylabel("FReaction Hist 2")
 
 PyPlot.figure()
-# PyPlot.plot(1:length(old_FReactionHist[:,3]),old_FReactionHist[:,3])
 PyPlot.plot(1:length(FReactionHist[:,3]),FReactionHist[:,3])
-#PyPlot.legend(["Old", "New"])
+PyPlot.legend(["Old", "New"])
 PyPlot.ylabel("FReaction Hist 3")
 
 PyPlot.figure()
-# PyPlot.plot(1:length(old_FReactionHist[:,4]),old_FReactionHist[:,4])
 PyPlot.plot(1:length(FReactionHist[:,4]),FReactionHist[:,4])
-#PyPlot.legend(["Old", "New"])
+PyPlot.legend(["Old", "New"])
 PyPlot.ylabel("FReaction Hist 4")
 
 PyPlot.figure()
-# PyPlot.plot(1:length(old_FReactionHist[:,5]),old_FReactionHist[:,5])
 PyPlot.plot(1:length(FReactionHist[:,5]),FReactionHist[:,5])
-#PyPlot.legend(["Old", "New"])
+PyPlot.legend(["Old", "New"])
 PyPlot.ylabel("FReaction Hist 5")
 
 PyPlot.figure()
-# PyPlot.plot(1:length(old_FReactionHist[:,6]),old_FReactionHist[:,6])
 PyPlot.plot(1:length(FReactionHist[:,6]),FReactionHist[:,6])
-#PyPlot.legend(["Old", "New"])
+PyPlot.legend(["Old", "New"])
 PyPlot.ylabel("FReaction Hist 6")
 
-# for ii = 1:length(old_uHist)
-#     if isapprox(old_uHist[ii],uHist[ii],atol=tol)
-#         @test isapprox(old_uHist[ii],uHist[ii],atol=tol)
-#     else
-#         @warn "$ii tolerance is 1000%, error is $(old_uHist[ii]-uHist[ii]), old: $(old_uHist[ii]), new:$(uHist[ii]), percent error: $((old_uHist[ii]-uHist[ii])/old_uHist[ii]*100)%"
-#         @test isapprox(old_uHist[ii],uHist[ii],atol=abs(old_uHist[ii])*10000.0)
-#     end
-# end
+
 PyPlot.figure()
+PyPlot.ylabel("uhist")
 for ii = 1:length(uHist[1,:])
-    # PyPlot.plot(1:length(old_uHist[ii,:]),old_uHist[ii,:],"k-")
     PyPlot.plot(1:length(uHist[ii,:]),uHist[ii,:],"k--")
     if ii%10 == 0.0
         PyPlot.figure()
     end
 end
 
-# if testModal
 ##############################################
 # Modal Test
 #############################################
@@ -191,27 +167,40 @@ displInitGuess = zeros(mymesh.numNodes*6)
 mymodel = OWENS.Model(;analysisType = "M",
         outFilename = "none",
         joint = myjoint,
+        owensfile = "$path/SNL34m/SNL34.owens", #controls output filenames: TODO: clean up
         platformTurbineConnectionNodeNumber = 1,
         pBC = pBC,
-        nodalTerms = mynodalTerms,
         numNodes = mymesh.numNodes)
 
-freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENS.Modal(mymodel,mesh,myel,displInitGuess,Omega,OmegaStart)
+freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENS.Modal(mymodel,mymesh,myel,displInitGuess,Omega,OmegaStart)
+
+
 
 numNodes = 82#mesh.numNodes
+new_filename = "$path/data/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff.out" #TODO: fix this filename
+if true
+    # PyPlot.close("all")
+    println("Plotting Modes")
+    Ndof = 10
+    savePlot = true
 
-# freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = OWENS.readResultsModalOut(old_filename,numNodes)
 
-el=myel #TODO...
+    for df = 1:Ndof
+        OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
+        if savePlot # save the plot
+            PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
+        else # flip through the plots visually
+            sleep(0.1)
+        end
+        # PyPlot.close("all")
+    end
+
+println("MODAL PLOTTING COMPLETE")
+
+end
 
 # ac
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.ac[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].ac[1]
@@ -222,12 +211,6 @@ PyPlot.xlabel("Element")
 
 # twist
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.twist[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].twist[1]
@@ -238,12 +221,6 @@ PyPlot.xlabel("Element")
 
 # rhoA
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.rhoA[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].rhoA[1]
@@ -254,12 +231,6 @@ PyPlot.xlabel("Element")
 
 # EIyy
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.EIyy[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].EIyy[1]
@@ -270,12 +241,6 @@ PyPlot.xlabel("Element")
 
 # EIzz
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.EIzz[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].EIzz[1]
@@ -286,12 +251,6 @@ PyPlot.xlabel("Element")
 
 # GJ
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.GJ[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].GJ[1]
@@ -302,12 +261,6 @@ PyPlot.xlabel("Element")
 
 # EA
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.EA[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].EA[1]
@@ -318,12 +271,6 @@ PyPlot.xlabel("Element")
 
 # rhoIyy
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.rhoIyy[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].rhoIyy[1]
@@ -334,12 +281,6 @@ PyPlot.xlabel("Element")
 
 # rhoIzz
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.rhoIzz[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].rhoIzz[1]
@@ -350,12 +291,6 @@ PyPlot.xlabel("Element")
 
 # rhoJ
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.rhoJ[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].rhoJ[1]
@@ -366,12 +301,6 @@ PyPlot.xlabel("Element")
 
 # zcm
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.zcm[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].zcm[1]
@@ -382,12 +311,6 @@ PyPlot.xlabel("Element")
 
 # ycm
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.ycm[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].ycm[1]
@@ -398,12 +321,6 @@ PyPlot.xlabel("Element")
 
 # a
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.a[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].a[1]
@@ -414,12 +331,6 @@ PyPlot.xlabel("Element")
 
 # EIyz
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.EIyz[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].EIyz[1]
@@ -430,12 +341,6 @@ PyPlot.xlabel("Element")
 
 # rhoIyz
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.rhoIyz[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].rhoIyz[1]
@@ -446,12 +351,6 @@ PyPlot.xlabel("Element")
 
 # b
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.b[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].b[1]
@@ -462,12 +361,6 @@ PyPlot.xlabel("Element")
 
 # a0
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.a0[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].a0[1]
@@ -478,12 +371,6 @@ PyPlot.xlabel("Element")
 
 # aeroCenterOffset
 PyPlot.figure()
-elplot = zeros(length(el.props))
-for ii = 1:length(el.props)
-    secprops = el.props[ii]
-    elplot[ii] = secprops.aeroCenterOffset[1]
-end
-PyPlot.plot(1:length(elplot),elplot,"k.-")
 myelplot = zeros(length(sectionPropsArray))
 for ii = 1:length(sectionPropsArray)
     myelplot[ii] = sectionPropsArray[ii].aeroCenterOffset[1]
@@ -491,3 +378,6 @@ end
 PyPlot.plot(1:length(myelplot),myelplot,"r.-")
 PyPlot.ylabel("aeroCenterOffset")
 PyPlot.xlabel("Element")
+
+# PyPlot.figure()
+# PyPlot.plot(mymesh.structuralSpanLocNorm[1,:],zero(mymesh.structuralSpanLocNorm[1,:]),"r.")

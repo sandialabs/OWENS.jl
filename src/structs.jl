@@ -426,7 +426,7 @@ function Model(;analysisType = "TNB",
     nlParams = [],
     pBC = 0,
     BC = [],
-    nodalTerms = [],
+    nodalTerms = 0.0,
     driveShaftProps = DriveShaftProps(0.0,0.0),
     iterationType = "NR", # nlParams
     adaptiveLoadSteppingFlag = true, # nlParams
@@ -439,6 +439,9 @@ function Model(;analysisType = "TNB",
 
     if jointTransform==0.0
         jointTransform, reducedDOFList = createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    end
+    if nodalTerms == 0.0
+        nodalTerms = OWENS.readNodalTerms() #Fill in the data structure with nothing
     end
 
     if pBC!=0

@@ -41,10 +41,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
 
     else
         #TODO: not hard coded
-        QCx=[0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00,0.00000e+00]
-        QCy=[0.00000e+00,2.44680e-01,4.89360e-01,7.34040e-01,9.78720e-01,1.22340e+00,1.46808e+00,1.71276e+00,1.95744e+00,2.20212e+00,2.44680e+00]
-        QCz=[0.00000e+00,3.76945e-01,6.77076e-01,8.73458e-01,9.77684e-01,1.00000e+00,9.44658e-01,8.13441e-01,6.09216e-01,3.25362e-01,0.00000e+00]
-        CtoR=[1.11093e-01,1.11093e-01,8.20390e-02,6.35940e-02,5.68145e-02,5.55467e-02,5.88008e-02,6.82860e-02,9.11773e-02,1.11093e-01,1.11093e-01]
+
         RefR=177.2022
         NBlade = 2
         PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
@@ -62,64 +59,32 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         # mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
         path,_ = splitdir(@__FILE__)
         af = VAWTAero.readaerodyn("$path/../test/airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
-        ft2m = 1 / 3.281
-        RefR = RefR*ft2m
 
-        xyz = zeros(length(QCz),3)
-        xyz[:,1] = RefR*QCz
-        xyz[:,2] = RefR*QCx
-        xyz[:,3] = RefR*QCy
+        RefR = maximum(mesh.y)
 
-        n_slices = length(QCz)-1
+        xyz = zeros(length(mesh.z),3)
+        xyz[:,1] = mesh.z
+        xyz[:,2] = mesh.x
+        xyz[:,3] = mesh.y
 
-        # h_ends = xyz(:,3)
-        # h_frac = (h_ends(2:end) - h_ends(1:end-1))/h_ends(end)
-        # h = (h_ends(2:end) + h_ends(1:end-1))/2
+        n_slices = length(mesh.z)-1
 
         delta_xs = xyz[2:end,1] - xyz[1:end-1,1]
         delta_zs = xyz[2:end,3] - xyz[1:end-1,3]
 
-        # element_planf_A = sqrt(delta_xs.^2+delta_zs.^2)*chord
-        # element_planf_L = sqrt(delta_xs.^2+delta_zs.^2)
-
         delta = atan.(delta_xs./delta_zs)
 
         r = (xyz[2:end,1]+xyz[1:end-1,1])/2
-        twist = ones(n_slices)*0*pi/180
-        chord = RefR*CtoR
+        twist = ones(n_slices)*0*pi/180 #TODO
+        chordspl = FLOWMath.Akima(LinRange(1,n_slices,length(model.bladeData.chord)),model.bladeData.chord)
         # Single Slice
-        # slice = Slice(ones(ntheta),
-        #     RefR,
-        #     0.0,
-        #     zeros(1,ntheta),
-        #     zeros(1,ntheta),
-        #     Float64(NBlade),
-        #     alpha_rad,
-        #     cl,
-        #     cd,
-        #     ones(1,ntheta)*model.OmegaInit*2*pi,
-        #     0.0,
-        #     0.0)
-
-        slice = VAWTAero.Turbine(RefR,
-        zeros(ntheta),
-        zeros(1),
-        zeros(ntheta),
-        zeros(ntheta),
-        zeros(ntheta),
-        2,
-        1.0,
-        af,
-        ntheta,
-        false,
-        0.0,
-        0.0)
+        slice = VAWTAero.Turbine(RefR,zeros(ntheta),zeros(1),zeros(ntheta),zeros(ntheta),zeros(ntheta),2,af,ntheta,false)
 
         # turbine built from bottom up
         turbine3D = fill(slice, n_slices)
         for i = 1:n_slices
             turbine3D[i].r[:] .= ones(ntheta)*r[i]
-            turbine3D[i].chord[:] .= chord[i]
+            turbine3D[i].chord[:] .= chordspl(float(i))
             turbine3D[i].twist[:] .= ones(ntheta)*twist[i]
             turbine3D[i].delta[:] .= ones(ntheta)*delta[i]
         end
@@ -173,6 +138,13 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         zeros(Int,2*2),
         zeros(N_aw),
         zeros(1))
+
+        env = VAWTAero.Environment(rho,mu,Vinf,DS_model,AModel,awwarm)
+
+        us_param = VAWTAero.UnsteadyParams(RPI,tau,ifw,IECgust,nominalVinf,G_amp,gustX0,gustT)
+        start = time()
+        turbines = Array{VAWTAero.Turbine}(undef,1)
+        turbines[1] = turbine2D
     end
 
 

@@ -711,7 +711,7 @@ function createJointTransform(joint,numNodes,numDofPerNode)
         #associated with a particular joint, dDOF is a listing of dependent
         #global DOFs associated with this joint, aDOF is a listing of
         #active global DOFs associated with this joint.
-        Tda,dDOF,aDOF =  createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint[i,:])
+        Tda,dDOF,aDOF = createTda(jointType,slaveNodeNum,masterNodeNum,psi,theta,joint[i,:])
 
         for m=1:length(aDOF) #loop over global active DOFs associated with joint
             for k = 1:length(dDOF) #loop over global dependent DOFs associated with joint
