@@ -108,7 +108,6 @@ nodalTerms = mynodalTerms,
 numNodes = mymesh.numNodes)
 
 # elapsed = time() - start
-# println("here")
 # println(elapsed)
 ##############################################
 # Unsteady Test

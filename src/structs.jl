@@ -277,14 +277,15 @@ function Model(;analysisType = "TNB",
     if pBC!=0
         BC = makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     else
-        BC = BC_struct(0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0)
+        BC = BC_struct(0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0)
     end
+
 
     nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)

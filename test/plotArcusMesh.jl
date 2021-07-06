@@ -6,7 +6,6 @@ const module_path = splitdir(@__FILE__)[1]
 include("$module_path/../src/OWENS.jl")
 
 println("Start")
-println("here")
 
 mymesh, myort, myjoint = OWENS.create_arcus_mesh(;nblade=4,c_mount_ratio = 0.2)
 figure()

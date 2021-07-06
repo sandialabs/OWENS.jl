@@ -712,7 +712,7 @@ function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
     #constrained)
 
     #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof,1)
+    isConstrained = zeros(totalNumDof)
     constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
     index = 1
     for i=1:numNodes

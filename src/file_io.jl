@@ -92,7 +92,7 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
     #      BC            = object containing boundary condition data
 
     fid = open(bcfilename)       #open boundary condition file
-    numpBC = real(parse(Int,readline(fid))) #read in number of boundary conditions (displacement boundary conditions)
+    numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
     pBC = zeros(Int,numpBC,3)         #initialize boundary conditions
     for i=1:numpBC
 
