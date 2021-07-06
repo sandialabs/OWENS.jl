@@ -224,7 +224,7 @@ if plotmodal
 
 
     for df = 1:Ndof
-        OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
+        PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
         if savePlot # save the plot
             PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
         else # flip through the plots visually
@@ -234,7 +234,7 @@ if plotmodal
     end
 
     for df = 1:Ndof
-        OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
+        PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
         if savePlot # save the plot
             PyPlot.savefig(string(old_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
         else # flip through the plots visually

@@ -1,14 +1,14 @@
-# using PyPlot
-# close("all")
 using Test
 import HDF5
 import PyPlot
 import DelimitedFiles
+import PrePostOWENS
+import GyricFEA
 PyPlot.close("all")
 # import OWENS
 path = splitdir(@__FILE__)[1]
 include("$(path)/../src/OWENS.jl")
-#TODO:  element file, initial conditions
+#TODO:  initial conditions
 
 ##############################################
 # Setup
@@ -21,7 +21,7 @@ SNL5MW_bld_x = -[0.0, -10.201, -20.361, -20.368290684, -29.478, -36.575, -42.579
 
 H_plat = 10.0
 
-mymesh,myort,myjoint = OWENS.create_mesh(;Ht = 15.0+H_plat, #tower height before blades attach
+mymesh,myort,myjoint = PrePostOWENS.create_mesh(;Ht = 15.0+H_plat, #tower height before blades attach
 Hb = 147.148-15.0, #blade height
 R = 54.014, # m bade radius
 nstrut = 2,
@@ -43,23 +43,23 @@ PyPlot.legend(["mymesh"])
 
 #Tower
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
-numadIn = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn = PrePostOWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops = PrePostOWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
-sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(mymesh.z[1:25],numadIn,precompoutput)
+precompoutput,precompinput = PrePostOWENS.getPreCompOutput(numadIn;plyprops)
+sectionPropsArray_twr = PrePostOWENS.getSectPropsFromPreComp(mymesh.z[1:25],numadIn,precompoutput)
 
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn_bld = PrePostOWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops = PrePostOWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
-sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(mymesh.z[26:48].-15.0,numadIn_bld,bld_precompoutput)
+bld_precompoutput,bld_precompinput = PrePostOWENS.getPreCompOutput(numadIn_bld;plyprops)
+sectionPropsArray_bld = PrePostOWENS.getSectPropsFromPreComp(mymesh.z[26:48].-15.0,numadIn_bld,bld_precompoutput)
 
 #Struts
 # They are the same as the end properties of the blades
@@ -71,7 +71,7 @@ sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArr
 rotationalEffects = ones(mymesh.numEl)
 
 #store data in element object
-myel = OWENS.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
 nodalinputdata = [1 "M6" 1 1 9.8088e6
 1 "M6" 2 2 9.7811e6
@@ -95,12 +95,12 @@ nodalinputdata = [1 "M6" 1 1 9.8088e6
 mynodalTerms = OWENS.readNodalTerms(data = nodalinputdata)
 
 # node, dof, bc
-# pBC = [1 1 0
-# 1 2 0
-# 1 3 0
-# 1 4 0
-# 1 5 0
-# 1 6 0]
+pBC = [1 1 0
+1 2 0
+1 3 0
+1 4 0
+1 5 0
+1 6 0]
 
 model = OWENS.Model(;analysisType = "TNB",
 outFilename = "none",
@@ -139,38 +139,39 @@ mymodel = OWENS.Model(;analysisType = "M",
 freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=OWENS.Modal(mymodel,mymesh,myel,displInitGuess,Omega,OmegaStart)
 
 old_filename = "$path/data/input_files_test/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out"
+new_filename = "$path/data/input_files_test/NEW_1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out"
 #Reading function
 
 numNodes = mymesh.numNodes
 
 freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = OWENS.readResultsModalOut(old_filename,numNodes)
 
-# if true
-#     PyPlot.close("all")
-#     println("Plotting Modes")
-#     Ndof = 10
-#     savePlot = true
-#
-#
-#     for df = 1:Ndof
-#         OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
-#         if savePlot # save the plot
-#             PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
-#         else # flip through the plots visually
-#             sleep(0.1)
-#         end
-#         PyPlot.close("all")
-#     end
-#
-#     for df = 1:Ndof
-#         OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
-#         if savePlot # save the plot
-#             PyPlot.savefig(string(old_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
-#         else # flip through the plots visually
-#             sleep(0.1)
-#         end
-#         PyPlot.close("all")
-#     end
-# println("MODAL PLOTTING COMPLETE")
-#
-# end
+if true
+    PyPlot.close("all")
+    println("Plotting Modes")
+    Ndof = 10
+    savePlot = false
+
+
+    for df = 1:Ndof
+        PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
+        if savePlot # save the plot
+            PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
+        else # flip through the plots visually
+            sleep(0.1)
+        end
+        PyPlot.close("all")
+    end
+
+    for df = 1:Ndof
+        PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
+        if savePlot # save the plot
+            PyPlot.savefig(string(old_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
+        else # flip through the plots visually
+            sleep(0.1)
+        end
+        PyPlot.close("all")
+    end
+println("MODAL PLOTTING COMPLETE")
+
+end

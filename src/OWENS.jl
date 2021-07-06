@@ -1,12 +1,15 @@
 module OWENS
 
 # Custom unregistered (julia) packages
-import VAWTAero
+try
+    import VAWTAero
+catch
+    @info "Using one way CACTUS Coupling"
+    #TODO: propogate logic
+end
+
 import GyricFEA
 using pyfloater
-import PreComp
-import Composites
-import OptimizationParameters
 
 # Github packages
 import Statistics
@@ -16,7 +19,7 @@ import FLOWMath
 import HDF5
 import PyPlot
 import MAT #for saving .mat H5 files
-pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
+# pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
 using PyCall
 wave = pyimport("mhkit.wave")
 # ------------ GLOBAL VARIABLES ------------------------------------------------
@@ -34,11 +37,8 @@ export Modal#, Flutter
 include("Steady.jl")
 include("Unsteady.jl")
 include("UnsteadyROM.jl")
-include("meshing_utilities.jl")
 include("aero_utilities.jl")
 include("file_io.jl")
 include("structs.jl")
-include("depreciated.jl")
-include("visualization.jl")
 
 end

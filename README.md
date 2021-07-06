@@ -2,6 +2,8 @@
 
 <!-- [![pipeline status](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/badges/master/pipeline.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/-/commits/master) [![coverage report](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/badges/master/coverage.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/-/commits/master) -->
 
+## Must delete history before making code available since preprocessing is in the history
+
 This repository is based on the original structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813).
 The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.
 This repository consists of the core of the aero-hydro-servo-elastic solver and structural dynamics solver (elastic).

@@ -4,6 +4,7 @@ using Test
 import HDF5
 import PyPlot
 import DelimitedFiles
+import PrePostOWENS
 PyPlot.close("all")
 # import OWENS
 path = splitdir(@__FILE__)[1]
@@ -29,7 +30,7 @@ SNL34X = SNL34x*radius
 SNL5MW_bld_z = SNL34Z
 SNL5MW_bld_x = SNL34X
 
-# Juno.@enter OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+# Juno.@enter PrePostOWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
 # Hb = 147.148-15.0, #blade height
 # R = 54.014, # m bade radius
 # nstrut = 2,
@@ -40,7 +41,7 @@ SNL5MW_bld_x = SNL34X
 # bshapex=SNL5MW_bld_x,
 # bshapez=SNL5MW_bld_z) #use defaults
 
-mymesh,myort,myjoint = OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+mymesh,myort,myjoint = PrePostOWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
 Hb = height, #blade height
 R = radius, # m bade radius
 nstrut = 2,
@@ -56,23 +57,23 @@ nTwrElem = Int(mymesh.meshSeg[1])+1
 nBldElem = Int(mymesh.meshSeg[2])+1
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/SNL34m/SNL34mGeom.csv"
-numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn_bld = PrePostOWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 NuMad_mat_xlscsv_file = "$path/data/SNL34m/SNL34mMaterials.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops = PrePostOWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
-sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(LinRange(0,1,nBldElem),numadIn_bld,bld_precompoutput)
+bld_precompoutput,bld_precompinput = PrePostOWENS.getPreCompOutput(numadIn_bld;plyprops)
+sectionPropsArray_bld = PrePostOWENS.getSectPropsFromPreComp(LinRange(0,1,nBldElem),numadIn_bld,bld_precompoutput)
 
 #Tower #TODO: use actual tower
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
-numadIn = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn = PrePostOWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops = PrePostOWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
-sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput)
+precompoutput,precompinput = PrePostOWENS.getPreCompOutput(numadIn;plyprops)
+sectionPropsArray_twr = PrePostOWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput)
 
 #Struts
 # They are the same as the end properties of the blades
@@ -84,7 +85,7 @@ sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArr
 rotationalEffects = ones(mymesh.numEl)
 
 #store data in element object
-myel = OWENS.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
 # node, dof, bc.  Constrain the top and bottom of the turbine TODO: figure out if there is a less trial and error approach to hit the end boundary condition
 pBC = [1 1 0
@@ -186,7 +187,7 @@ if true
 
 
     for df = 1:Ndof
-        OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
+        PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
         if savePlot # save the plot
             PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
         else # flip through the plots visually

@@ -4,6 +4,7 @@ using Test
 import HDF5
 import PyPlot
 import DelimitedFiles
+import PrePostOWENS
 PyPlot.close("all")
 # import OWENS
 path = splitdir(@__FILE__)[1]
@@ -21,7 +22,7 @@ pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
 SNL5MW_bld_z = [15.0, 21.61004296, 28.20951408, 28.2148, 34.81955704, 41.4296, 48.03964296, 54.63911408, 61.24915704, 67.8592, 74.46924296, 81.06871408, 87.67875704, 94.2888, 100.89884296, 107.49831408, 114.10835704, 120.7184, 127.32844296, 133.92791408, 133.9332, 140.53795704, 147.148].-15.0
 SNL5MW_bld_x = -[0.0, -10.201, -20.361, -20.368290684, -29.478, -36.575, -42.579, -47.177, -50.555, -52.809, -53.953, -54.014, -53.031, -51.024, -47.979, -43.942, -38.768, -32.91, -25.587, -17.587, -17.580079568, -8.933, 8.0917312607e-15]
 
-# Juno.@enter OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+# Juno.@enter PrePostOWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
 # Hb = 147.148-15.0, #blade height
 # R = 54.014, # m bade radius
 # nstrut = 2,
@@ -32,7 +33,7 @@ SNL5MW_bld_x = -[0.0, -10.201, -20.361, -20.368290684, -29.478, -36.575, -42.579
 # bshapex=SNL5MW_bld_x,
 # bshapez=SNL5MW_bld_z) #use defaults
 
-mymesh,myort,myjoint = OWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
+mymesh,myort,myjoint = PrePostOWENS.create_mesh(;Ht = 15.0, #tower height before blades attach
 Hb = 147.148-15.0, #blade height
 R = 54.014, # m bade radius
 nstrut = 2,
@@ -48,23 +49,23 @@ el = OWENS.readElementData(mymesh.numEl,"$(path)/data/input_files_test/_15mTower
 
 #Tower
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
-numadIn = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn = PrePostOWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops = PrePostOWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
-sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(mymesh.z[1:24],numadIn,precompoutput)
+precompoutput,precompinput = PrePostOWENS.getPreCompOutput(numadIn;plyprops)
+sectionPropsArray_twr = PrePostOWENS.getSectPropsFromPreComp(mymesh.z[1:24],numadIn,precompoutput)
 
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn_bld = PrePostOWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops = PrePostOWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
-sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(mymesh.z[25:47].-15.0,numadIn_bld,bld_precompoutput)
+bld_precompoutput,bld_precompinput = PrePostOWENS.getPreCompOutput(numadIn_bld;plyprops)
+sectionPropsArray_bld = PrePostOWENS.getSectPropsFromPreComp(mymesh.z[25:47].-15.0,numadIn_bld,bld_precompoutput)
 
 #Struts
 # They are the same as the end properties of the blades
@@ -76,7 +77,7 @@ sectionPropsArray = [sectionPropsArray_twr;sectionPropsArray_bld;sectionPropsArr
 rotationalEffects = ones(mymesh.numEl)
 
 #store data in element object
-myel = OWENS.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
 p = pyFloater(wrking_dir="$path/data",
 name="coupled_hydro_test",
@@ -339,7 +340,7 @@ freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OL
 #
 #
 #     for df = 1:Ndof
-#         OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
+#         PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",new_filename,df,10)
 #         if savePlot # save the plot
 #             PyPlot.savefig(string(new_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
 #         else # flip through the plots visually
@@ -349,7 +350,7 @@ freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OL
 #     end
 #
 #     for df = 1:Ndof
-#         OWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
+#         PrePostOWENS.viz("$path/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.mesh",old_filename,df,10)
 #         if savePlot # save the plot
 #             PyPlot.savefig(string(old_filename[1:end-4],"_MODE$(df)newplot.pdf"),transparent = true)
 #         else # flip through the plots visually

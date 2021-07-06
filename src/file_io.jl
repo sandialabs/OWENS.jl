@@ -1,4 +1,258 @@
 
+function owens(owensfile,analysisType;
+    delta_t=2e-3,
+    numTS=100,
+    tocp=[0.0,1.1],
+    Omegaocp=[0.0,1.0],
+    OmegaInit=0.0,
+    OmegaGenStart=0.0,
+    usingRotorSpeedFunction=false,
+    nlOn=true,
+    Omega=0.0,
+    turbineStartup=0,
+    spinUpOn=false,
+    numModesToExtract=20,
+    displInitGuess=0.0, #TODO: clean this up, is overwritten below
+    airDensity=1.2041,
+    aeroElasticOn = false,        # aeroElastic flags, and air density,
+    aeroForceOn = true,
+    guessFreq = 0,          #``guess"" modal frequency
+    gravityOn = true,             #flag to activate gravity loading in structural dynamics/static simulations,
+    generatorOn = false, #Initialize only, gets changed later on,
+    omegaControl = false, #Initialize only, gets changed later on,
+    totalNumDof = 0.0, #Initialize only, gets changed later on,
+    iterationType = "NR", # nlParams
+    adaptiveLoadSteppingFlag = true,
+    tolerance = 1.0000e-06,
+    maxIterations = 50,
+    maxNumLoadSteps = 20,
+    minLoadStepDelta = 0.0500,
+    minLoadStep = 0.0500,
+    prescribedLoadStep = 0.0,
+    elementOrder = 1, #linear element order
+    numDofPerNode = 6,
+    hydroOn = false,
+    platformTurbineConnectionNodeNumber = 1,
+    JgearBox =0.0,
+    gearRatio = 1.0,             #set gear ratio and efficiency to 1
+    gearBoxEfficiency = 1.0,
+    useGeneratorFunction = false,
+    generatorProps = 0.0,
+    driveTrainOn = false)          #set drive shaft unactive
+
+    # if(analysisType=="S") #STATIC ANALYSIS
+    #     Omega = varargin{3}            #initialization of rotor speed (Hz)
+    #     model.nlOn= varargin{4}        #flag for nonlinear elastic calculation
+    #     if(length(varargin)>4)                #sets initial guess for nonlinear calculations
+    #         displInitGuess = varargin{5}
+    #     end
+    #     #    if(length(varargin)>5)                #sets air density if simple thin
+    #     #        model.airDensity = varargin{6}   # airfoil theory loading desired
+    #     #    else
+    #     model.airDensity = 1.2041
+    #     #    end
+
+    if (analysisType=="TNB" || analysisType=="TD") #TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
+        if usingRotorSpeedFunction
+            _,OmegaInit,_ = getRotorPosSpeedAccelAtTime(-1.0,0.0,0)
+        else
+            #this option uses a discretely specified rotor speed profile
+            OmegaInit = Omegaocp[1] #TODO: simplify this downstream since the data doesn't need to be repeated
+        end
+    end
+
+    # elseif(analysisType=="ROM") #REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
+    #     model.delta_t = varargin{3} #time step size
+    #     model.numTS = varargin{4}   #number of time steps
+    #     model.numModesForROM = varargin{5} #number of lower system modes to include in ROM
+    #     model.nlOn = varargin{6}    #flag for nonlinear elastic calculation
+    #     turbineOpFlag = varargin{7}
+    #     if(turbineOpFlag == 1) #generator start up operation mode
+    #         model.OmegaInit = varargin{8} #initial rotor speed
+    #     elseif(turbineOpFlag == 2) # self starting operation mode
+    #         model.OmegaInit = varargin{8} #initial rotor speed (Hz)
+    #         model.OmegaGenStart = varargin{9} #rotor speed at which generator activates (Hz)
+    #     else                         #specified rotor speed profile
+    #         if(length(varargin) == 7)
+    #             model.usingRotorSpeedFunction = true #set flag to use user specified rotor speed function
+    #             [~,model.OmegaInit,~] = getRotorPosSpeedAccelAtTime(-1.0,0.0,0)
+    #         else
+    #             #this option uses a discretely specified rotor speed profile
+    #             model.usingRotorSpeedFunction = false #set flag to not use user specified rotor speed function
+    #             model.tocp = varargin{8} #time points for rotor speed provfile
+    #             Omegaocp = varargin{9} #rotor speed value at time points (Hz)
+    #             model.Omegaocp = Omegaocp
+    #             model.OmegaInit = Omegaocp(1)
+    #         end
+    #     end
+    # elseif(analysisType=="F")  #MANUAL FLUTTER ANALYSIS
+    #     Omega = varargin{3}   #rotor speed (Hz)
+    #     model.spinUpOn = varargin{4} #flag for pre-stressed modal analysis
+    #     model.guessFreq = varargin{5} #``guess"" modal frequency
+    #     model.aeroElasticOn = true
+    #     model.nlOn = true
+    #
+    #     if(length(varargin)>5)   #air density initialization
+    #         model.airDensity = varargin{6}
+    #     else
+    #         model.airDensity = 1.2041
+    #     end
+    #     if(length(varargin)>6)   #number of lower system modes to extract
+    #         model.numModesToExtract = varargin{7}
+    #     else
+    #         model.numModesToExtract = 20
+    #     end
+    #
+    # elseif(analysisType=="FA") #AUTOMATED FLUTTER ANALYSIS
+    #     omegaArray = varargin{3}    #array of rotor speed values(Hz)
+    #     model.spinUpOn = varargin{4} #flag for pre-stressed modal analysis
+    #     model.aeroElasticOn = true
+    #     model.nlOn = true
+    #
+    #     if(length(varargin)>4)    #air density initializatio
+    #         model.airDensity = varargin{5}
+    #     else
+    #         model.airDensity = 1.2041
+    #     end
+    #     if(length(varargin)>5)    #number of lower system modes to extract
+    #         model.numModesToExtract = varargin{6}
+    #     else
+    #         model.numModesToExtract = 20
+    #     end
+    #
+    # else
+    #     error("Analysis type not recognized.")
+    # end
+
+    fid = open(owensfile,"r") #reads in model file names from .owens file
+
+    last_delimiter   = findall(r"\W", owensfile) #Find the file directory
+    fdirectory       = owensfile[1:last_delimiter[end-1][1]]
+
+    meshfilename     = string(fdirectory, readline(fid)) #mesh file name
+    eldatafilename   = string(fdirectory, readline(fid)) #element data file name
+    ortdatafilename  = string(fdirectory, readline(fid)) #element orientation file name
+    jntdatafilename  = string(fdirectory, readline(fid)) #joint data file name
+    ndldatafilename  = string(fdirectory, readline(fid)) #concentrated nodal data file name
+    bcdatafilename   = string(fdirectory, readline(fid)) #boundary condition file name
+    line             = readline(fid)
+    platformFlag     = real(parse(Int,line[1:2]))
+    platfilename     = string(fdirectory, line[3:end])
+
+    initcondfilename = string(fdirectory, readline(fid)) #initial condition filename
+
+    line             = readline(fid)
+    delimiter_idx    = findall(" ",line)
+
+    aeroLoadsOn      = Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
+
+    blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
+    aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
+    if analysisType!="M"
+        owensfile = string(blddatafilename[1:end-4], ".owens") #TODO: this is redundant and confusing since it is specified at the beginning, clean up
+    end
+    line             = readline(fid) #flag to include drive shaft effects
+    driveShaftFlag   = real(parse(Int,line[1:2]))
+    driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
+
+    generatorfilename = string(fdirectory, readline(fid)) #generator file name
+    line = readline(fid)
+    rayleighDamping = split(line)
+
+    if (isempty(rayleighDamping))
+        RayleighAlpha = 0.0
+        RayleighBeta = 0.0
+    else
+        RayleighAlpha = parse(Float64,rayleighDamping[1])
+        RayleighBeta = parse(Float64,rayleighDamping[2])
+    end
+
+    close(fid) # close .owens file
+
+    #model definitions
+    #--------------------------------------------
+    mesh = readMesh(meshfilename) #read mesh file
+    bladeData,_,_,_ = readBladeData(blddatafilename) #reads overall blade data file
+    BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
+    el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
+    joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
+    # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
+    # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
+    nodalTerms = readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
+    # [model] = readPlatformFile(model,platformFlag,platfilename)
+    initCond = []
+
+    #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
+
+    driveShaftProps = DriveShaftProps(0.0,0.0)       #set drive shat properties to 0
+
+    if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #for transient analysis...
+
+        initCond = readInitCond(initcondfilename) #read initial conditions
+
+        if !(occursin("[",generatorfilename)) #If there isn't a file
+            useGeneratorFunction = true
+            generatorProps = 0.0
+        else
+            useGeneratorFunction = false
+            generatorProps = readGeneratorProps(generatorfilename) #reads generator properties
+        end
+
+    end
+
+    outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
+    jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    numReducedDof = length(jointTransform[1,:])
+
+    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
+    maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+
+    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
+    aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
+    guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
+    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
+    RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
+    reducedDOFList,mesh.numNodes,bladeData,nlParams,pBC=BC.pBC,nodalTerms,driveShaftProps)
+
+    #     if(analysisType=="S") #EXECUTE STATIC ANALYSIS
+    #         [model.nlParams] = readNLParamsFile(owensfile)
+    #         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
+    #             displInitGuess = zeros(mesh.numNodes*6,1)
+    #         end
+    #
+    #         OmegaStart = 0.0
+    #         staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
+    #     end
+    #
+    if (analysisType == "M" || analysisType == "F") #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
+        if (displInitGuess==0 || !nlOn)
+            displInitGuess = zeros(mesh.numNodes*6)
+        end
+        OmegaStart = 0.0
+        # mat"$freq,$damp=Modal($model,$mesh,$el,$displInitGuess,$Omega,$OmegaStart)"
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el,displInitGuess,Omega,OmegaStart)
+        return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+    end
+    #
+    #     if(analysisType=="FA") #EXECUTE AUTOMATED FLUTTER ANALYSIS
+    #         displ = zeros(mesh.numNodes*6,1)
+    #         OmegaStart = 0.0
+    #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
+    #     end
+    #
+    if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
+        # [model.nlParams] = readNLParamsFile(owensfile) #TODO: this isn't really used, clean up
+        # Juno.@enter Unsteady(model,mesh,el)
+        Unsteady(model,mesh,el)
+        return model
+    end
+    #
+    # end
+    #
+
+end
+
 function readMesh(filename)
     #readMesh  reads mesh file and stores data in mesh object
     #   [mesh] = readMesh(filename)
@@ -57,7 +311,7 @@ function readMesh(filename)
 
     close(fid)  #close mesh file
 
-    mesh = Mesh(nodeNum,
+    mesh = GyricFEA.Mesh(nodeNum,
     numEl,
     numNodes,
     x,
@@ -133,7 +387,7 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
         end
     end
 
-    BC = BC_struct(numpBC,
+    BC = GyricFEA.BC_struct(numpBC,
     pBC,
     numsBC,
     nummBC,
@@ -203,7 +457,7 @@ function readBladeData(filename)
         structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
     end
 
-    bladeData = BladeData(numBlades,  #assign data to bladeData object
+    bladeData = GyricFEA.BladeData(numBlades,  #assign data to bladeData object
     bladeDataBlock[:,1],
     bladeDataBlock[:,2],
     bladeDataBlock[:,3],
@@ -258,7 +512,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     a0 = zeros(2)
     aeroCenterOffset = zeros(2)
 
-    sectionPropsArray = Array{SectionPropsArray, 1}(undef, numElements)
+    sectionPropsArray = Array{GyricFEA.SectionPropsArray, 1}(undef, numElements)
 
     data1 = zeros(1,17)
     data2 = zeros(1,17)
@@ -298,7 +552,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         b = [0.0, 0.0]
         a0 = [2*pi, 2*pi]
 
-        sectionPropsArray[i] = SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
+        sectionPropsArray[i] = GyricFEA.SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
 
     end
     close(fid) #close element file
@@ -350,7 +604,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     rotationalEffects = ones(numElements)
 
     #store data in element object
-    el = El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
+    el = GyricFEA.El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
 
     return el
 
@@ -532,80 +786,80 @@ function readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
     if length(data[1,:])==5
         @warn "General 6x6 concentrated diagonal terms are being applied to the old diagonal method with coulping (e.g. mass and force through acceleration), and no coupling is happening for the non-diagonal terms"
         #TODO: implement the 6x6 terms since they will be necessary for the linearized platform since there is strong cross coupling
-        concLoad = Array{ConcNDL, 1}(undef, n_F)
+        concLoad = Array{GyricFEA.ConcNDL, 1}(undef, n_F)
         for i_F = 1:n_F
             if concFnodeNum[i_F] == concFdof2[i_F]
-                concLoad[i_F]= ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
+                concLoad[i_F]= GyricFEA.ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
             end
         end
 
-        concStiff = Array{ConcNDL, 1}(undef, n_K)
+        concStiff = Array{GyricFEA.ConcNDL, 1}(undef, n_K)
         for i_K = 1:n_K
             if concKdof1[i_K] == concKdof2[i_K]
-                concStiff[i_K] = ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
+                concStiff[i_K] = GyricFEA.ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
             end
         end
 
-        concMass = Array{ConcNDL, 1}(undef, n_M)
+        concMass = Array{GyricFEA.ConcNDL, 1}(undef, n_M)
         for i_M = 1:n_M
             if concMdof1[i_M] == concMdof2[i_M]
-                concMass[i_M] = ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
+                concMass[i_M] = GyricFEA.ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
             end
         end
 
-        concStiffGen = Array{ConcNDLGen, 1}(undef, n_K)
+        concStiffGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_K)
         for i_K = 1:n_K
-            concStiffGen[i_K] = ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof2[i_K],concKval[i_K])
+            concStiffGen[i_K] = GyricFEA.ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof2[i_K],concKval[i_K])
         end
 
-        concMassGen = Array{ConcNDLGen, 1}(undef, n_M)
+        concMassGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_M)
         for i_M = 1:n_M
-            concMassGen[i_M] = ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof2[i_M], concMval[i_M])
+            concMassGen[i_M] = GyricFEA.ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof2[i_M], concMval[i_M])
         end
 
-        concDampGen = Array{ConcNDLGen, 1}(undef, n_C)
+        concDampGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_C)
         for i_C = 1:n_C
-            concDampGen[i_C] = ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof2[i_C], concCval[i_C])
+            concDampGen[i_C] = GyricFEA.ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof2[i_C], concCval[i_C])
         end
 
     elseif length(data[1,:])==4
         @warn "Only diagonal terms being used, there are no cross terms"
         # This portion is different in that it uses the nongeneral terms and applies them to the general just at the diagonal, TODO: once the general terms are implemented, this needs to be updated
-        concLoad = Array{ConcNDL, 1}(undef, n_F)
+        concLoad = Array{GyricFEA.ConcNDL, 1}(undef, n_F)
         for i_F = 1:n_F
-            concLoad[i_F]= ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
+            concLoad[i_F]= GyricFEA.ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
         end
 
-        concStiff = Array{ConcNDL, 1}(undef, n_K)
+        concStiff = Array{GyricFEA.ConcNDL, 1}(undef, n_K)
         for i_K = 1:n_K
-            concStiff[i_K] = ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
+            concStiff[i_K] = GyricFEA.ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
         end
 
-        concMass = Array{ConcNDL, 1}(undef, n_M)
+        concMass = Array{GyricFEA.ConcNDL, 1}(undef, n_M)
         for i_M = 1:n_M
-            concMass[i_M] = ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
+            concMass[i_M] = GyricFEA.ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
         end
 
-        concStiffGen = Array{ConcNDLGen, 1}(undef, n_K)
+        concStiffGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_K)
         for i_K = 1:n_K #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concStiffGen[i_K] = ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof1[i_K],concKval[i_K])
+            concStiffGen[i_K] = GyricFEA.ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof1[i_K],concKval[i_K])
         end
 
-        concMassGen = Array{ConcNDLGen, 1}(undef, n_M)
+        concMassGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_M)
         for i_M = 1:n_M #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concMassGen[i_M] = ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof1[i_M], concMval[i_M])
+            concMassGen[i_M] = GyricFEA.ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof1[i_M], concMval[i_M])
         end
 
-        concDampGen = Array{ConcNDLGen, 1}(undef, n_C)
+        concDampGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_C)
         for i_C = 1:n_C #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concDampGen[i_C] = ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof1[i_C], concCval[i_C])
+            concDampGen[i_C] = GyricFEA.ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof1[i_C], concCval[i_C])
         end
     else
         error("Wrong number of terms in the .ndl file")
     end
 
     #store concentrated nodal term data in nodalTerms object
-    return NodalTerms(concLoad,concStiff,concMass,concStiffGen,concMassGen,concDampGen)
+    return GyricFEA.NodalTerms(concLoad,concStiff,concMass,concStiffGen,concMassGen,concDampGen)
 
 end
 
@@ -758,125 +1012,4 @@ function readResultsModalOut(resultsFile,numNodes)
         theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
-end
-
-
-"""
-readNuMadGeomCSV(Rhub, Rtip, B; precone=0.0, turbine=false,
-mach=nothing, re=nothing, rotation=nothing, tip=PrandtlTipHub())
-
-Parameters defining the rotor (apply to all sections).
-
-**Arguments**
-- `NuMad_geom_xlscsv_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
-
-
-**Returns**
-- `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
-"""
-
-function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
-    #TODO: add composite orientation
-    csvdata = DelimitedFiles.readdlm(NuMad_geom_xlscsv_file,',',skipstart = 0)
-
-    n_station = length(csvdata[4:end,1])- sum(isempty.(csvdata[4:end,1]))
-    n_web = Int(csvdata[1,6])
-    n_stack = Int(csvdata[1,8])
-    n_segments = Int(csvdata[2,8])
-    span = Float64.(csvdata[4:n_station+3,2])
-    #TODO: interpolations
-    airfoil = csvdata[4:n_station+3,3]
-    te_type = csvdata[4:n_station+3,4]
-    twist_d = Float64.(csvdata[4:n_station+3,5])
-    chord = Float64.(csvdata[4:n_station+3,6])
-    xoffset = Float64.(csvdata[4:n_station+3,7])
-    aerocenter = Float64.(csvdata[4:n_station+3,8])
-
-    # Read stack info
-    stack_idx_end = 10+n_stack-1
-    stack_mat_types = Int.(csvdata[2,10:stack_idx_end])
-    stack_layers_tmp = csvdata[4:n_station+3,10:stack_idx_end]
-    if mod(stack_layers_tmp[1],1) != 0.0
-        @warn "Stack layers not integer value, rounding"
-    end
-    stack_layers = round.(Int,stack_layers_tmp)
-
-    seg_idx_end = stack_idx_end+n_segments+1
-    segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])
-
-    DP_idx_end = seg_idx_end+n_segments+1
-    DPtypes = csvdata[4:n_station+3,seg_idx_end+1:DP_idx_end]
-
-    skin_seq = Array{Seq, 2}(undef, n_station,n_segments) #can be any number of stack nums, so we have to make non-square containers
-
-    skin_idx_end = DP_idx_end+n_segments
-
-    for sta_idx = 1:n_station
-        # sta_idx = 1
-        for seg_idx = 1:n_segments
-            # seg_idx = 1
-            str = split(csvdata[3+sta_idx,DP_idx_end+seg_idx],",")
-            if length(str)>1 && str[2]=="" #allow for single number
-                str = str[1]
-            end
-            skin_seq[sta_idx,seg_idx] = Seq([parse(Int,x) for x in str])
-        end
-    end
-
-    web_seq = Array{Seq, 2}(undef, n_station,n_web) #can be any number of stack nums, so we have to make non-square containers
-    web_dp = Array{Seq, 2}(undef, n_station,n_web) #this is fixed size square, but it's easier to do it this way
-
-    for web_idx = 1:n_web
-        # web_idx = 1
-        for sta_idx = 1:n_station
-            # sta_idx = 1
-            str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2-1],",")
-            if !isempty(str[1])
-                if str[2]=="" #allow for single number
-                    str = str[1]
-                end
-                web_seq[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
-
-                str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2],",")
-                web_dp[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
-            end
-        end
-    end
-
-    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
-end
-
-function readNuMadMaterialsCSV(NuMad_geom_xlscsv_file)
-
-
-    csvdata = DelimitedFiles.readdlm(NuMad_geom_xlscsv_file,',',skipstart = 0)
-
-    data_start = 0
-    data_end = length(csvdata[:,1])
-    for ii = 1:length(csvdata[:,1])
-        if csvdata[ii,1]=="Material ID"
-            data_start = ii+1
-        end
-
-        if data_start!=0 && ii>data_start && !isa(csvdata[ii,1],Number) # in case they have a file with excess rows
-            data_end = ii-1
-            break
-        end
-    end
-
-    names = csvdata[data_start:data_end,2]
-    e1 = Float64.(csvdata[data_start:data_end,5]) .* 1e6
-    e2 = Float64.(csvdata[data_start:data_end,6]) .* 1e6
-    g12 = Float64.(csvdata[data_start:data_end,8]) .* 1e6
-    anu = Float64.(csvdata[data_start:data_end,11])  #ratio
-    rho = Float64.(csvdata[data_start:data_end,14])  #g/cc * 1000 #kg/m3
-    xt = Float64.(csvdata[data_start:data_end,15]) .* 1e6  #pa
-    xc = Float64.(csvdata[data_start:data_end,16]) .* 1e6  #pa
-    yt = ones(length(e1)) .* 100.0e6 #made up
-    yc = ones(length(e1)) .* 100.0e6  #made up
-    s = ones(length(e1)) .* 100.0e6  #made up
-    plythickness = Float64.(csvdata[data_start:data_end,4]) .* 1e-3 #meters
-
-    return OWENS.plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness))
-
 end
