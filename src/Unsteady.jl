@@ -36,7 +36,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         d5 = string(OWENSfile_root, ".ort")
         d6 = string(OWENSfile_root, ".mesh")
 
-        # mat"[$aerotimeArray1,$aeroForceValHist1,$aeroForceDof1] = mapCactusLoadsFile($d1,$d2,$d3,$d4,$d5,$d6)"
         aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(d1,d2,d3,d4,d5,d6)
 
     else
@@ -56,7 +55,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         H = [] #For plotting turbine
         plotTurbine = false
 
-        # mat"[$alpha_rad,$cl_af,$cd_af] = readaerodyn('airfoils/NACA_0015_RE3E5.dat')"
         path,_ = splitdir(@__FILE__)
         af = VAWTAero.readaerodyn("$path/../test/airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
 
@@ -300,7 +298,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     model.jointTransform, model.reducedDOFList = GyricFEA.createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
     if model.hydroOn
-        Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
+        # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
     end
 
     ## Main Loop - iterate for a solution at each time step, i
@@ -361,8 +359,8 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         ## evaluate platform module
         ##-------------------------------------
         if model.hydroOn
-            ds = model.plat_model.get_waveExcitation(Spd, time=[t[i],t[i]+delta_t], seed=1)
-            wave6dof_F_M = ds."fexc".data[1,:]
+            # ds = model.plat_model.get_waveExcitation(Spd, time=[t[i],t[i]+delta_t], seed=1)
+            # wave6dof_F_M = ds."fexc".data[1,:]
         end
         #-------------------------------------
     #
@@ -518,7 +516,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
                 t_used = t[i]
 
-                Fexternal_sub, Fdof_sub, env = mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
+                Fexternal_sub, Fdof_sub, env = VAWTAero.mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
 
             end
 
@@ -550,7 +548,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             #             dispData.etadot_s  = etadot_s
             #             dispData.etaddot_s = etaddot_s
             #         end
-            println("starting struct dyn")
+
             if model.analysisType=="ROM"
                 error("ROM not fully implemented")
                 #             # evalulate structural dynamics using reduced order model
@@ -558,7 +556,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             else
                 # evalulate structural dynamics using conventional representation
                 t_in = t[i]
-                # mat"[$displ_sp1,$displddot_sp1,$displdot_sp1,$eps_xx_0,$eps_xx_z,$eps_xx_y,$gam_xz_0,$gam_xz_y,$gam_xy_0,$gam_xy_z,$FReaction_j] = structuralDynamicsTransient2($model,$mesh,$el,$dispData,$Omega_j,$OmegaDot_j,$t_in,$delta_t,$elStorage,$Fexternal,$Fdof,$CN2H,$rbData)"
+
                 # elStrain = Array{GyricFEA.ElStrain, 1}(undef, mesh.numEl)
                 #
                 # for jj = 1:mesh.numEl
@@ -566,11 +564,11 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 # end
                 # dispOut = GyricFEA.DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
 
-                start = time()
+
                 elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
 
                 # error("stop")
-                println("$(time()-start)")
+
             end
             #update last iteration displacement vector
             u_jLast = u_j

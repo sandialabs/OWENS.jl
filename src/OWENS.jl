@@ -9,7 +9,6 @@ catch
 end
 
 import GyricFEA
-using pyfloater
 
 # Github packages
 import Statistics
@@ -17,17 +16,13 @@ import DelimitedFiles
 import LinearAlgebra
 import FLOWMath
 import HDF5
-import PyPlot
-import MAT #for saving .mat H5 files
+
+# using pyfloater
 # pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
-using PyCall
-wave = pyimport("mhkit.wave")
+# wave = pyimport("mhkit.wave")
 # ------------ GLOBAL VARIABLES ------------------------------------------------
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
 
-# mat_path = string(module_path,"/Matlab_Cxx")
-# using MATLAB #if this is used, must run from src location
-# mat"addpath($mat_path)"
 Modal = GyricFEA.modal
 export Unsteady #, UnsteadyROM
 export owens
@@ -37,7 +32,7 @@ export Modal#, Flutter
 include("Steady.jl")
 include("Unsteady.jl")
 include("UnsteadyROM.jl")
-include("file_io.jl")
+include("utilities.jl")
 include("structs.jl")
 
 end

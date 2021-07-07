@@ -28,3 +28,4 @@ Manifest.toml
 *pycache*
 *.map
 /airfoils/
+*.ndl
