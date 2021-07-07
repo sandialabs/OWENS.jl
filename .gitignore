@@ -6,6 +6,7 @@
 *codegen*
 *.pdf
 *.ppt*
+Manifest.toml
 *_checkpoints*
 *.dSYM
 *.zip
@@ -26,3 +27,4 @@
 *.pyc
 *pycache*
 *.map
+/airfoils/

@@ -37,7 +37,6 @@ export Modal#, Flutter
 include("Steady.jl")
 include("Unsteady.jl")
 include("UnsteadyROM.jl")
-include("aero_utilities.jl")
 include("file_io.jl")
 include("structs.jl")
 
