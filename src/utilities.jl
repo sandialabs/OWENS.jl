@@ -15,7 +15,6 @@ function owens(owensfile,analysisType;
     displInitGuess=0.0, #TODO: clean this up, is overwritten below
     airDensity=1.2041,
     aeroElasticOn = false,        # aeroElastic flags, and air density,
-    aeroForceOn = true,
     guessFreq = 0,          #``guess"" modal frequency
     gravityOn = true,             #flag to activate gravity loading in structural dynamics/static simulations,
     generatorOn = false, #Initialize only, gets changed later on,
@@ -208,9 +207,9 @@ function owens(owensfile,analysisType;
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
     model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
-    aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
+    aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,
     guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
-    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
+    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
     spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
     reducedDOFList,mesh.numNodes,bladeData,nlParams,pBC=BC.pBC,nodalTerms,driveShaftProps)
@@ -230,8 +229,7 @@ function owens(owensfile,analysisType;
             displInitGuess = zeros(mesh.numNodes*6)
         end
         OmegaStart = 0.0
-        # mat"$freq,$damp=Modal($model,$mesh,$el,$displInitGuess,$Omega,$OmegaStart)"
-        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el,displInitGuess,Omega,OmegaStart)
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el;displ=displInitGuess,Omega,OmegaStart)
         return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
     end
     #

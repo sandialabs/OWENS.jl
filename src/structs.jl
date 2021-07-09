@@ -9,7 +9,6 @@ mutable struct Model
     delta_t
     Omegaocp
     aeroElasticOn
-    aeroForceOn
     aeroLoadsOn
     driveTrainOn
     airDensity
@@ -26,7 +25,6 @@ mutable struct Model
     OmegaGenStart
     omegaControl
     OmegaInit
-    totalNumDof
     spinUpOn
     nlOn
     numModesToExtract
@@ -58,7 +56,6 @@ function Model(;analysisType = "TNB",
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
     aeroElasticOn = false,
-    aeroForceOn = true, #this need to get cleaned up in the code
     aeroLoadsOn = false, #this need to get cleaned up in the code
     driveTrainOn = false,
     airDensity=1.2041,
@@ -75,7 +72,6 @@ function Model(;analysisType = "TNB",
     OmegaGenStart = 0.0,
     omegaControl = false,
     OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
-    totalNumDof = 0.0,
     spinUpOn = false,
     nlOn = false,
     numModesToExtract = 20,
@@ -130,9 +126,9 @@ function Model(;analysisType = "TNB",
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
-    aeroElasticOn,aeroForceOn,aeroLoadsOn,driveTrainOn,airDensity,
+    aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,
     guessFreq,gravityOn,generatorOn,hydroOn,plat_model,JgearBox,gearRatio,gearBoxEfficiency,
-    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,totalNumDof,
+    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
     spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
     reducedDOFList,bladeData,nlParams,BC,nodalTerms,driveShaftProps)

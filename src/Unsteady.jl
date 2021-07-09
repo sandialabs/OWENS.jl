@@ -17,7 +17,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
 
     ## activate platform module
     #............... flags for module activation ....................
-    aeroOn = false #TODO: clean this up
+
     CACTUS = true #TODO: not hardcoded
     println("CACTUS AERO: $CACTUS")
     #modularIteration
@@ -26,8 +26,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
     # Get AeroLoads
     if CACTUS
-        # mat"$aeroLoads = processAeroLoadsBLE($model.aeroloadfile, $model.owensfile)"
-
 
         d1 = string(aeroLoadsFile_root, ".geom")
         d2 = string(aeroLoadsFile_root, "_ElementData.csv")
@@ -87,31 +85,12 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             turbine3D[i].delta[:] .= ones(ntheta)*delta[i]
         end
 
-        # env1 = Env(rho,
-        #     mu,
-        #     0.0, #m/s gust
-        #     0.8, #sec
-        #     13.0, #radaii offset back is starting point for gust
-        #     20,
-        #     zeros(1,NBlade*2),
-        #     zeros(1,ntheta*2),
-        #     Vinf,
-        #     zeros(1,ntheta),
-        #     zeros(1,ntheta),
-        #     zeros(1,ntheta),
-        #     zeros(1,ntheta),
-        #     ones(ntheta)*Vinf,
-        #     Vinf,
-        #     0,
-        #     ntheta,
-        #     [0.3025, 2.9500])
-
         env1 = VAWTAero.Environment(rho,
         mu,
         ones(ntheta).*Vinf,
-        "AC", #TODO: use this to unify the DMS and AC steady methods, like in the unsteady method
+        "AC",
         "None",
-        false, #TODO: generalize this name since it is now being used as an option on the solution method for both AC and DMS, not just DMS anymore
+        false,
         Vinf,
         zeros(ntheta))
 
@@ -176,17 +155,13 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = 1e6 #ensures generator always off for practical purposes
     end
-    #..........................................................................
-    # if (model.turbineStartup ==1 || model.turbineStartup==2)
-    #     plotGenSpeedVsTorque([0:.01:5],model.generatorProps)
-    # end
-    ##
+
     ## state initialization
     numDOFPerNode = 6
-    model.totalNumDof = mesh.numNodes*numDOFPerNode
+    totalNumDof = mesh.numNodes*numDOFPerNode
     #......... specify initial conditions .......................
-    u_s = zeros(model.totalNumDof,1)
-    u_s = setInitialConditions(model.initCond,u_s,numDOFPerNode)
+    u_s = zeros(totalNumDof,1)
+    u_s = GyricFEA.setInitialConditions(model.initCond,u_s,numDOFPerNode)
     u_sm1 = u_s
     udot_s = u_s*0
     uddot_s = u_s*0
@@ -204,8 +179,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
 
     t = zeros(numTS+1)
     FReactionHist = zeros(numTS+1,6)
-    # strainHist(numTS+1) = struct()
-    # strainHist = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)),mesh.numEl,numTS)
+
     eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
     eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
     eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
@@ -235,7 +209,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     OmegaDot_s = 0
     genTorque_s = 0
     torqueDriveShaft_s = 0
-    # azi_sm1 = -Omega*delta_t*2*pi
+
     aziHist[1] = azi_s
     OmegaHist[1] = Omega_s
     OmegaDotHist[1] = OmegaDot_s
@@ -247,7 +221,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     gbDotDotHist[1] = gbDotDot_s
     genTorque[1] = genTorque_s
     torqueDriveShaft[1] = torqueDriveShaft_s
-    ##
 
     ## structural dynamics initialization
     #..........................................................................
@@ -255,7 +228,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         error("ROM not fully implemented")
         #     #calculate constrained dof vector
         #     numDofPerNode = 6
-        #     isConstrained = zeros(model.totalNumDof,1)
+        #     isConstrained = zeros(totalNumDof,1)
         #     constDof = (model.BC.pBC(:,1)-1)*numDofPerNode + model.BC.pBC(:,2)
         #     index = 1
         #     for i=1:mesh.numNodes
@@ -327,7 +300,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         else
             omegaCurrent = 0.0
         end
-        ##
 
         ## initialize "j" Gauss-Sidel iteration
         u_j=u_s
@@ -339,13 +311,9 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         gbDotDot_j = gbDotDot_s
         genTorque_j = genTorque_s
 
-        needsAeroCalcAtThisTimestep = true
-
         #initialize  platform module related variables only used if (model.hydroOn)
         Ywec_j = Ywec[i,:]
         Ywec_jLast = Ywec_j
-        # 		Accel_j = Accel
-        # 		Accel_jLast = Accel
 
         TOL = 1e-5  #gauss-seidel iteration tolerance for various modules
         MAXITER = 50 #max iteration for various modules
@@ -354,7 +322,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         platNorm = 1e5
         aziNorm = 1e5
         gbNorm = 1e5 #initialize norms for various module states
-        ##
 
         ## evaluate platform module
         ##-------------------------------------
@@ -363,20 +330,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             # wave6dof_F_M = ds."fexc".data[1,:]
         end
         #-------------------------------------
-    #
-
-        # Freq Domain of Hydro does give stiffness and damping
-        # Should be consistent with how OrcaFlex/Hydrodyn would work for modularity
-
-        # Possible best way: Kevin run simple case to produce example reaction forces at bases for time history,
-        # then Ryan writes code that calculates new motion and sitffness/damping
-
-        # Other way: OWENS solves for motions and hydro solves for reaction forces
-
-        # Kevin look at wavec2wire (dissertation might help)
-        # rigid body motion should not be calculated within hydro
-
-        # Near term coupling is easier in time domain
 
         # Assignments
         # - Kevin look at wavec2wire, OrcaFlex, hydrodyn, mass and stiffness approx
@@ -458,7 +411,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 gbDot_j = omegaCurrent*2*pi
                 gbDotDot_j = 0
             end
-            #-------------------------------------        ## rotor speed update
+
             #------ update rotor speed ---------------------------------
             azi_jLast = azi_j
             if model.omegaControl
@@ -478,38 +431,12 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             else
                 error("omega control option not correctly specified")
             end
-            #-------------------------------------        ##
 
-            ## evaluate aerodynamic module (CACTUS ONE-WAY)
-            ##------== aerodynamics module ------------------------==
-            if (model.aeroLoadsOn) # TODO: this is odd since we load in the aero loads elsewhere
-                #             println('using cactus aero loads...')
-                #             #----- calculate aerodynamic loads --------------------------------
-                #             # this is place holder
-                #             [FAero] = getAeroLoads(model.bladeData,model.aeroloadfile,t[i],el.props,model.totalNumDof)
-                #             # these loads will need to account for a turbine with a
-                #             # platform with different orientation than the inertial system.
-                #             FAeroDof = (1:length(u_s))
-                #             #------------------------------------------------------------------
-            else
-                FAero = []
-                FAeroDof = []
-            end
-            #-------------------------------------       ## evaluate aerodynamic module (TU DELFT)
-            ##------== aerodynamics module ------------------------==
-            if (aeroOn && needsAeroCalcAtThisTimestep)
-
-                #             [FAero,FAeroDof] = aeroModule(model,t[i] + delta_t,u_j,Omega_j,azi_j,numDOFPerNode,d_input_streamAero,d_output_streamAero)
-                #
-                #             #set aero forces flag
-                #             needsAeroCalcAtThisTimestep = false
-
-            end
-            #-------------------------------------       ##
+            FAero = []
+            FAeroDof = []
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            # println("starting Aero Loads")
             if CACTUS
                 Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
             else
@@ -517,7 +444,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 t_used = t[i]
 
                 Fexternal_sub, Fdof_sub, env = VAWTAero.mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
-
             end
 
             if isempty(FAeroDof)
@@ -529,14 +455,14 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             end
 
             if model.hydroOn
-                Fdof = [Int.(Fdof[:,1]); collect(1:6)] #TODO: tie into ndof per node
+                Fdof = [Fdof; Int.(Fdof[:,1]); collect(1:6)] #TODO: tie into ndof per node
                 Fexternal = [Fexternal; wave6dof_F_M]
             end
 
             ## evaluate structural dynamics
             #call structural dynamics solver
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
-            #             dispData.displ_sm1 = u_sm1 #Not even used
+
             dispData = GyricFEA.DispData(u_s,udot_s,uddot_s)
 
             #         if model.analysisType=='ROM'
@@ -630,20 +556,12 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
 
 
         ## update timestepping variables and other states, store in history arrays
-        if model.analysisType=="TD"
-            u_sm1 = u_s
-            u_s = u_j
-        end
-        if model.analysisType=="TNB"
-            u_s = u_j
-            udot_s = udot_j
-            uddot_s = uddot_j
-        end
+
+        u_s = u_j
+        udot_s = udot_j
+        uddot_s = uddot_j
+
         if model.analysisType=="ROM"
-            #         u_s = u_j
-            #         udot_s = udot_j
-            #         uddot_s = uddot_j
-            #
             #         eta_s = eta_j
             #         etadot_s = etadot_j
             #         etaddot_s = etaddot_j
@@ -696,9 +614,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             rigidDof[i] = 0
         end
 
-        # FReactionHist[i+1,:] = FReaction_j
-        ##
-
         ## check rotor speed for generator operation
         if (Omega_s>= rotorSpeedForGenStart)
             model.generatorOn = true
@@ -708,26 +623,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         ##
 
     end #end timestep loop
-
-    ## kill platform module process
-    if (model.hydroOn)
-        #     serverSendVector(-1.0,d_output_streamPlatform)
-        #     terminateServer(server_socketPlatform,output_socketPlatform,1)
-        #     terminateClient(input_socketPlatform,1)
-    end
-
-    ## kill aerodynamic module process
-    if (aeroOn)
-        #     serverSendVector(decodeVec(4,-1.0),d_output_streamAero)
-        #     terminateClient(input_socketAero,1) #close down client connection to forcing module
-        #     terminateServer(server_socketAero,output_socketAero,1) #close down server on this side
-    end
-
-    ##
-    #toc
-    # save aeroOutputArray
-    #save simulation data in .mat file
-    # save(model.outFilename,'t','uHist','aziHist','OmegaHist','OmegaDotHist','gbHist','gbDotHist','gbDotDotHist','FReactionHist','rigidDof','genTorque','genPower','torqueDriveShaft','strainHist')
 
     #Writefile
     if model.outFilename=="none"
@@ -842,39 +737,6 @@ end
 
 function userDefinedRotorSpeedProfile(time)
     return 0.5 #this is what was originally in the file...
-end
-
-function setInitialConditions(initCond,u,numDOFPerNode)
-    #setInitialConditions sets initial conditions
-    #   [u] =  setInitialConditions(initCond,u,numDOFPerNode)
-    #
-    #   This function reads initial conditions from file
-    #
-    #   input:
-    #   initCond      = array containing initial conditions
-    #                     initCond(i,1) = node number for init cond i
-    #                     initCond(i,2) = local DOF number for init cond i
-    #                     initCond(i,3) = value for init cond i
-    #   u             = displacement vector
-    #   numDOFPerNode = number of degrees of freedom per node
-    #
-    #   output:
-    #    u             = displacement vector modified for initial conditions
-
-    len=size(initCond) #get number of specified initial conditions
-    #unspecified initial conditions are assumed to
-    #be zero
-
-    for i=1:len[1] #loop over initial conditions
-        if (initCond[i,2]>numDOFPerNode) #error check
-            error("setInitalConditios:: DOF greater than numDOFPerNode")
-        end
-        index = (initCond[i,1]-1)*numDOFPerNode + initCond[i,2] #calculate global DOF number for initial condition
-        u[index] = initCond[i,3] #specify initial condition using global DOF number
-    end
-
-    return u
-
 end
 
 function externalForcing(time,timeArray,ForceValHist,ForceDof)
