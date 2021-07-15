@@ -12,14 +12,13 @@ function owens(owensfile,analysisType;
     turbineStartup=0,
     spinUpOn=false,
     numModesToExtract=20,
-    displInitGuess=0.0, #TODO: clean this up, is overwritten below
+    displInitGuess=0.0,
     airDensity=1.2041,
     aeroElasticOn = false,        # aeroElastic flags, and air density,
     guessFreq = 0,          #``guess"" modal frequency
     gravityOn = true,             #flag to activate gravity loading in structural dynamics/static simulations,
-    generatorOn = false, #Initialize only, gets changed later on,
-    omegaControl = false, #Initialize only, gets changed later on,
-    totalNumDof = 0.0, #Initialize only, gets changed later on,
+    generatorOn = false,
+    omegaControl = false,
     iterationType = "NR", # nlParams
     adaptiveLoadSteppingFlag = true,
     tolerance = 1.0000e-06,
@@ -215,7 +214,6 @@ function owens(owensfile,analysisType;
     reducedDOFList,mesh.numNodes,bladeData,nlParams,pBC=BC.pBC,nodalTerms,driveShaftProps)
 
     #     if(analysisType=="S") #EXECUTE STATIC ANALYSIS
-    #         [model.nlParams] = readNLParamsFile(owensfile)
     #         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
     #             displInitGuess = zeros(mesh.numNodes*6,1)
     #         end
@@ -240,9 +238,22 @@ function owens(owensfile,analysisType;
     #     end
     #
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
-        # [model.nlParams] = readNLParamsFile(owensfile) #TODO: this isn't really used, clean up
-        # Juno.@enter Unsteady(model,mesh,el)
-        Unsteady(model,mesh,el)
+        aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
+        OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
+
+        geomFn = string(aeroLoadsFile_root, ".geom")
+        loadsFn = string(aeroLoadsFile_root, "_ElementData.csv")
+        bldFn = string(OWENSfile_root, ".bld")
+        elFn = string(OWENSfile_root, ".el")
+        ortFn = string(OWENSfile_root, ".ort")
+        meshFn = string(OWENSfile_root, ".mesh")
+
+        aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
+
+        aeroForces(t) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
+
+        Unsteady(model,mesh,el,aeroForces)
+        
         return model
     end
     #
@@ -963,24 +974,12 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     # time = zeros(len/numAeroEl,1)
     time = normTime[1:Int(numAeroEl):end,1].*RefR[1]./V[1]
 
-    urel = aero_data[:,12]
+    urel = aero_data[:,15]
     uloc = urel.*V
 
-    cn = aero_data[:,17]
-    ct = aero_data[:,18]
-    cm25 = aero_data[:,15]
-
-    #     cl = aero_data[:,13]
-    #     cd = aero_data[:,14]
-    #
-    #     cx = aero_data[:,19]
-    #     cy = aero_data[:,20]
-    #     cz = aero_data[:,21]
-
-    #calculate element areas
-    #     Fx = zeros(len)
-    #     Fy = Fx
-    #     Fz = Fx
+    cn = aero_data[:,24]
+    ct = aero_data[:,25]
+    cm25 = aero_data[:,22]
 
     NperSpan = zeros(len)
     TperSpan = zeros(len)

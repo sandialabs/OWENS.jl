@@ -209,7 +209,7 @@ Due to the nonlinearity and non-closed-form nature of the floating turbine probl
 \begin{figure}[H]
 \centering
 \vspace{-12pt}
-\includegraphics[trim={0 0 0 0},clip,width=0.5\textwidth]{../figs/global_FOR.png}
+\includegraphics[trim={0 0 0 0},clip,width=0.5\textwidth]{./figs/global_FOR.png}
 \vspace{-12pt}
 \caption{Draft Global Frame of Reference, should be prettified.  Wind comes in from the left in the direction of the positive X-axis, the positive Y-axis is 90 degrees counter-clockwise to the X-axis.  Z-axis is vertical.  Positive rotations follow right hand rule.}
 \label{fig:ac_velocities}
@@ -220,7 +220,7 @@ Due to the nonlinearity and non-closed-form nature of the floating turbine probl
 \begin{figure}[H]
 \centering
 \vspace{-12pt}
-\includegraphics[trim={1.3cm 2.4cm .5cm 1.5cm},clip,width=0.5\textwidth]{../figs/inflow_wind}
+\includegraphics[trim={1.3cm 2.4cm .5cm 1.5cm},clip,width=0.5\textwidth]{./figs/inflow_wind}
 \vspace{-12pt}
 \caption{Wind frame of reference is the same as global.  Wind propagation angle is zero when aligned with the positive X-axis and clockwise positive, in the direction of the negative negative Y-axis.}
 \label{fig:ac_velocities}
@@ -231,13 +231,13 @@ Due to the nonlinearity and non-closed-form nature of the floating turbine probl
 \begin{figure}[H]
 \centering
 \vspace{-12pt}
-\includegraphics[trim={1.3cm 2.4cm .5cm 1.5cm},clip,width=0.5\textwidth]{../figs/vawt_slice}
+\includegraphics[trim={1.3cm 2.4cm .5cm 1.5cm},clip,width=0.5\textwidth]{./figs/vawt_slice}
 \vspace{-12pt}
 \caption{VAWT 2D section looking downwards with induced velocity \(w\) vector broken into \(u\) and \(v\) components depicted by arrows. Airfoils show example blade locations with dots aligning to the circumferential discretization.  Aero frame of reference is the same as global, however a blade is at 0 degrees azimuth when it is aligned with the Y-axis.  If an aero module is 2D, it is made quasi-3D by stacking slices from lower to higher in the Z-axis.}
 \label{fig:ac_velocities}
 \end{figure}
 
-Note: CACTUS, does not fully follow this scheme and differs from the global frame of reference by switching the Y and Z axes for a VAWT.  All else follows the description above.
+Note: CACTUS, does not fully follow this scheme and differs from the global frame of reference by switching the Y and Z axes for a VAWT.  Be careful with the geometry inputs; if the blade 1 starts out at the "south" position, as opposed to the north, then it will behave as though it were a north starting blade rotating clockwise, and the gust velocity will match (if the simple iec uniform gust is used).  All else follows the description above.
 
 \subsection{Turbine Structures}
 

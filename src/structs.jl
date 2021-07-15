@@ -88,19 +88,19 @@ function Model(;analysisType = "TNB",
     numDofPerNode = 6,
     numNodes = 0,
     bladeData = [],
-    nlParams = [],
+    nlParams = 0,
     pBC = 0,
     BC = [],
     nodalTerms = 0.0,
     driveShaftProps = DriveShaftProps(0.0,0.0),
-    iterationType = "NR", # nlParams
-    adaptiveLoadSteppingFlag = true, # nlParams
-    tolerance = 1.0000e-06,# nlParams
-    maxIterations = 50,# nlParams
-    maxNumLoadSteps = 20,# nlParams
-    minLoadStepDelta = 0.0500,# nlParams
-    minLoadStep = 0.0500,# nlParams
-    prescribedLoadStep = 0.0)# nlParams
+    iterationType = "NR",
+    adaptiveLoadSteppingFlag = true,
+    tolerance = 1.0000e-06,
+    maxIterations = 50,
+    maxNumLoadSteps = 20,
+    minLoadStepDelta = 0.0500,
+    minLoadStep = 0.0500,
+    prescribedLoadStep = 0.0)
 
     if jointTransform==0.0
         jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,numNodes,numDofPerNode) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
@@ -121,9 +121,10 @@ function Model(;analysisType = "TNB",
         0)
     end
 
-
-    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
-    maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+    if nlParams==0
+        nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
+        maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
+    end
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
     aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,

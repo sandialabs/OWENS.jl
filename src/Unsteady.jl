@@ -1,4 +1,4 @@
-function Unsteady(model,mesh,el;getLinearizedMatrices=false)
+function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
     #Unsteady performs modular transient analysis
     #
     #   Unsteady(model,mesh,el)
@@ -15,28 +15,8 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     #
     #   output: (NONE)
 
-    ## activate platform module
-    #............... flags for module activation ....................
-
-    CACTUS = true #TODO: not hardcoded
-    println("CACTUS AERO: $CACTUS")
-    #modularIteration
-    moduleIteration = true
-    aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
-    OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
     # Get AeroLoads
-    if CACTUS
-
-        d1 = string(aeroLoadsFile_root, ".geom")
-        d2 = string(aeroLoadsFile_root, "_ElementData.csv")
-        d3 = string(OWENSfile_root, ".bld")
-        d4 = string(OWENSfile_root, ".el")
-        d5 = string(OWENSfile_root, ".ort")
-        d6 = string(OWENSfile_root, ".mesh")
-
-        aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(d1,d2,d3,d4,d5,d6)
-
-    else
+    if false
         #TODO: not hard coded
 
         RefR=177.2022
@@ -198,7 +178,7 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
     genPower = zeros(numTS+1)
     torqueDriveShaft = zeros(numTS+1)
     Ywec = zeros(numTS+1,1)
-    rigidDof = zeros(numTS+1)
+    rigidDof = zeros(numTS+1) #TODO: figure this out
 
     t[1] = 0.0 #initialize various states and variables
     gb_s = 0
@@ -283,7 +263,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         # end
 
         ## check for specified rotor speed at t[i] + delta_t
-        model.omegaControl = false #TODO: why hard code it here and invalidate inputs?
         if (model.turbineStartup == 0)
             model.omegaControl = true #TODO: are we setting this back?
             if (model.usingRotorSpeedFunction) #use user specified rotor speed profile function
@@ -315,13 +294,14 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         Ywec_j = Ywec[i,:]
         Ywec_jLast = Ywec_j
 
+        #TODO: put these in the model
         TOL = 1e-5  #gauss-seidel iteration tolerance for various modules
         MAXITER = 50 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
-        platNorm = 1e5
+        platNorm = 0.0
         aziNorm = 1e5
-        gbNorm = 1e5 #initialize norms for various module states
+        gbNorm = 0.0 #initialize norms for various module states
 
         ## evaluate platform module
         ##-------------------------------------
@@ -332,8 +312,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         #-------------------------------------
 
         # Assignments
-        # - Kevin look at wavec2wire, OrcaFlex, hydrodyn, mass and stiffness approx
-        # - Kevin give Ryan example of mass and stiffness approx how it's being used/read in
         # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
 
         # Hydro Coupling
@@ -347,7 +325,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         # 1) Turn all dof off and the solution should be the same
         # 2) allow heave and the turbine should go up and down
         # 3) no aero, but mass offset should cause the turbine to tilt slightly
-
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
             # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
@@ -432,26 +409,15 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 error("omega control option not correctly specified")
             end
 
-            FAero = []
-            FAeroDof = []
-
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            if CACTUS
-                Fexternal_sub, Fdof_sub = externalForcing(t[i]+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
-            else
+
+            Fexternal, Fdof = aero(t[i])
+
+            if false
                 step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
-                t_used = t[i]
 
-                Fexternal_sub, Fdof_sub, env = VAWTAero.mapACloads(u_j,udot_j,Omega_j,t_used,PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
-            end
-
-            if isempty(FAeroDof)
-                Fdof = Fdof_sub
-                Fexternal = Fexternal_sub
-            else
-                Fdof = [Fdof_sub, FAeroDof]
-                Fexternal = [Fexternal_sub; FAero]
+                Fexternal, Fdof, env = VAWTAero.mapACloads(u_j,udot_j,Omega_j,t[i],PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
             end
 
             if model.hydroOn
@@ -460,7 +426,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             end
 
             ## evaluate structural dynamics
-            #call structural dynamics solver
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
 
             dispData = GyricFEA.DispData(u_s,udot_s,uddot_s)
@@ -475,27 +440,13 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
             #             dispData.etaddot_s = etaddot_s
             #         end
 
-            if model.analysisType=="ROM"
+            if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                 error("ROM not fully implemented")
-                #             # evalulate structural dynamics using reduced order model
                 #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
-            else
-                # evalulate structural dynamics using conventional representation
-                t_in = t[i]
-
-                # elStrain = Array{GyricFEA.ElStrain, 1}(undef, mesh.numEl)
-                #
-                # for jj = 1:mesh.numEl
-                #     elStrain[jj] =  GyricFEA.ElStrain(eps_xx_0[jj*4-3:jj*4], eps_xx_z[jj*4-3:jj*4], eps_xx_y[jj*4-3:jj*4], gam_xz_0[jj*4-3:jj*4], gam_xz_y[jj*4-3:jj*4], gam_xy_0[jj*4-3:jj*4], gam_xy_z[jj*4-3:jj*4])
-                # end
-                # dispOut = GyricFEA.DispOut(elStrain,displ_sp1,displddot_sp1,displdot_sp1)
-
-
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t_in,delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
-
-                # error("stop")
-
+            else # evalulate structural dynamics using conventional representation
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
             end
+
             #update last iteration displacement vector
             u_jLast = u_j
             u_j = dispOut.displ_sp1             #update current estimates of velocity, acceleration
@@ -513,47 +464,28 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
                 #             etaddot_j = dispOut.etaddot_sp1
                 error("ROM not fully implemented")
             end
-            ##
 
             ## calculate norms
             uNorm = LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
             aziNorm = LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-
-            if (model.hydroOn)
-                platNorm = LinearAlgebra.norm(Ywec_j-Ywec_jLast)/LinearAlgebra.norm(Ywec_j) #platform module states iteration norm
-            else
-                platNorm = 0.0
-            end
-
-            if (model.driveTrainOn)
-                gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm
-            else
-                gbNorm = 0.0
-            end
-
-            if (moduleIteration == false)
-                break
-            end
+            platNorm = LinearAlgebra.norm(Ywec_j-Ywec_jLast)/LinearAlgebra.norm(Ywec_j) #platform module states iteration norm if it is off, the norm will be zero
+            gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
 
             numIterations = numIterations + 1
             if numIterations==MAXITER
-                @warn "Maximum Iterations Met"
+                @warn "Maximum Iterations Met Breaking Iteration Loop"
+                break
             end
         end #end iteration while loop
 
         ## calculate converged generator torque/power
+        genTorquePlot = 0
         if (model.useGeneratorFunction)
             if (model.generatorOn || (model.turbineStartup==0))
                 println("simpleGenerator not fully implemented")#[genTorquePlot] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio)
-                genTorquePlot = 0
-            else
-                genTorquePlot = 0
             end
-        else
-            genTorquePlot = 0
         end
         genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*model.gearRatio
-
 
         ## update timestepping variables and other states, store in history arrays
 
@@ -605,22 +537,15 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         genPower[i+1] = genPowerPlot
         torqueDriveShaft[i+1] = torqueDriveShaft_s
 
-        if (model.hydroOn)
-            # error("Hydro Model not fully implemented")
-            #         Ywec(i+1,:) = Ywec_j
-            #         rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6)
-
-        else
-            rigidDof[i] = 0
-        end
+        # Ywec(i+1,:) = Ywec_j #TODO figure out platform deflection, etc
+        # rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6)
 
         ## check rotor speed for generator operation
-        if (Omega_s>= rotorSpeedForGenStart)
+        if Omega_s >= rotorSpeedForGenStart
             model.generatorOn = true
         else
             model.generatorOn = false
         end
-        ##
 
     end #end timestep loop
 
@@ -629,7 +554,6 @@ function Unsteady(model,mesh,el;getLinearizedMatrices=false)
         println("NOT WRITING Verification File")
     else
         println("WRITING Verification File")
-        # mat"write_verification($model,$t,$aziHist,$OmegaHist,$OmegaDotHist,$gbHist,$gbDotHist,$gbDotDotHist,$FReactionHist,$rigidDof,$genTorque,$genPower,$torqueDriveShaft,$uHist,$strainHist)"
 
         filename = string(model.outFilename[1:end-3], "h5")
         HDF5.h5open(filename, "w") do file
@@ -765,19 +689,6 @@ function externalForcing(time,timeArray,ForceValHist,ForceDof)
     #      Fexternal     = vector of external loads (forces/moments)
     #      Fdof          = vector of corresponding DOF numbers to apply loads to
 
-
-    #     if(time < 0.2)
-    #         Fexternal = 1e6
-    #         Fdof = 20*6+1
-    #     else
-    #         Fexternal = []
-    #         Fdof = []
-    #     end
-
-    #temp = load('aeroLoads.mat')
-    # timeArray = aeroLoads["timeArray"]
-    # ForceValHist = aeroLoads["ForceValHist"]
-    # ForceDof = aeroLoads["ForceDof"]
     Fexternal = zeros(length(ForceDof))
 
     for i = 1:length(ForceDof)
@@ -786,7 +697,6 @@ function externalForcing(time,timeArray,ForceValHist,ForceDof)
     Fdof = ForceDof
 
     return Fexternal, Fdof
-
 end
 
 function calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)

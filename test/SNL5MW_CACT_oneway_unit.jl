@@ -1,7 +1,7 @@
 path = splitdir(@__FILE__)[1]
 
-import OWENS
-# include("$path/../src/OWENS.jl")
+# import OWENS
+include("$path/../src/OWENS.jl")
 
 using Test
 import HDF5
@@ -78,7 +78,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     if test_transient
         println("Running Transient")
 
-        OWENS.owens(string(fname, ".owens"),"TNB", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+        OWENS.owens(string(fname, ".owens"),"TNB";iterationType="DI", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
 
         # Perform Tests
         tol = 1e-5
@@ -140,7 +140,6 @@ function test_owens(test_transient,test_modal,test_flutter)
         @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
         @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
         for ii = 1:length(FReactionHist)
-            # println(ii)
             local digits = floor(log10(abs(old_FReactionHist[ii]))) #this way if the tol is 1e-5, then we are actually looking at significant digits, much better than comparing 1e-5 on a 1e6 large number, that's 11 significant digits!
             @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol=tol*10^digits)
         end
