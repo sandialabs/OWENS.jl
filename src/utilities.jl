@@ -253,7 +253,7 @@ function owens(owensfile,analysisType;
         aeroForces(t) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
         Unsteady(model,mesh,el,aeroForces)
-        
+
         return model
     end
     #
@@ -1115,7 +1115,8 @@ end
 function readResultsModalOut(resultsFile,numNodes)
     data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
 
-    nmodes = Int(length(data[:,1])/171) #This requires the specific formatting of the file to remain the same
+    nmodes = round(Int,min(length(data[:,1])/(numNodes*2+6),30))
+
     freq = zeros(nmodes)
     damp = zeros(nmodes)
     U_x_0 = zeros(numNodes,nmodes)
@@ -1131,9 +1132,8 @@ function readResultsModalOut(resultsFile,numNodes)
     theta_y_90 = zeros(numNodes,nmodes)
     theta_z_90 = zeros(numNodes,nmodes)
 
-    i_line = 1
     for i_mode = 1:nmodes
-        i_line = (i_mode-1)*171+1
+        i_line = (i_mode-1)*(numNodes*2+7)+1
 
         freq[i_mode] = parse(Float64,(split(data[i_line+1,1])[2])[1:end-1])
         damp[i_mode] = parse(Float64,(split(data[i_line+2,1])[2])[1:end-1])
@@ -1153,7 +1153,7 @@ function readResultsModalOut(resultsFile,numNodes)
         temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
         theta_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
 
-        i_line = i_line+84 #90 degree shapes, with the max value scaled to 1
+        i_line = i_line+numNodes+2 #90 degree shapes, with the max value scaled to 1
 
         temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
         U_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())

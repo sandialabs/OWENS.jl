@@ -444,7 +444,7 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
                 error("ROM not fully implemented")
                 #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;getLinearizedMatrices)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
             end
 
             #update last iteration displacement vector
