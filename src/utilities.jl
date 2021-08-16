@@ -959,7 +959,8 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     rho = 1.225
     #     RefAR = cactusGeom.RefAR*ft2m*ft2m
     RefR = cactusGeom.RefR*ft2m
-    V = 25 #m/s
+    V = 25 #m/s #27.148993200000003
+    @warn "Velocity is hardcoded here at $V"
 
     normTime = aero_data[:,1]
 
@@ -1024,6 +1025,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     struct_T = zeros(cactusGeom.NBlade,numAeroTS,length(structuralElNumbers[1,:]))
     struct_M25 = zeros(cactusGeom.NBlade,numAeroTS,length(structuralElNumbers[1,:]))
 
+    # TODO: the interpolation input here is blade height vs blade span length, should be updated to be consistent
     for i=1:cactusGeom.NBlade
         for j=1:numAeroTS
             struct_N[i,j,:] = FLOWMath.linear(spanLocNorm[i,:],N[i,j,:],structuralSpanLocNorm[i,:])

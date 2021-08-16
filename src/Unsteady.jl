@@ -15,96 +15,6 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
     #
     #   output: (NONE)
 
-    # Get AeroLoads
-    if false
-        #TODO: not hard coded
-
-        RefR=177.2022
-        NBlade = 2
-        PEy=[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
-        NElem = 10
-
-        step_AC = 0
-        ntheta = 36#1/(model.OmegaInit*model.delta_t)
-        Vinf = 25.0 #TODO
-        rho = 1.225 #TODO
-        mu = 1.7894e-5 #TODO
-
-        H = [] #For plotting turbine
-        plotTurbine = false
-
-        path,_ = splitdir(@__FILE__)
-        af = VAWTAero.readaerodyn("$path/../test/airfoils/NACA_0015_RE3E5.dat") #TODO: make this path smarter
-
-        RefR = maximum(mesh.y)
-
-        xyz = zeros(length(mesh.z),3)
-        xyz[:,1] = mesh.z
-        xyz[:,2] = mesh.x
-        xyz[:,3] = mesh.y
-
-        n_slices = length(mesh.z)-1
-
-        delta_xs = xyz[2:end,1] - xyz[1:end-1,1]
-        delta_zs = xyz[2:end,3] - xyz[1:end-1,3]
-
-        delta = atan.(delta_xs./delta_zs)
-
-        r = (xyz[2:end,1]+xyz[1:end-1,1])/2
-        twist = ones(n_slices)*0*pi/180 #TODO
-        chordspl = FLOWMath.Akima(LinRange(1,n_slices,length(model.bladeData.chord)),model.bladeData.chord)
-        # Single Slice
-        slice = VAWTAero.Turbine(RefR,zeros(ntheta),zeros(1),zeros(ntheta),zeros(ntheta),zeros(ntheta),2,af,ntheta,false)
-
-        # turbine built from bottom up
-        turbine3D = fill(slice, n_slices)
-        for i = 1:n_slices
-            turbine3D[i].r[:] .= ones(ntheta)*r[i]
-            turbine3D[i].chord[:] .= chordspl(float(i))
-            turbine3D[i].twist[:] .= ones(ntheta)*twist[i]
-            turbine3D[i].delta[:] .= ones(ntheta)*delta[i]
-        end
-
-        env1 = VAWTAero.Environment(rho,
-        mu,
-        ones(ntheta).*Vinf,
-        "AC",
-        "None",
-        false,
-        Vinf,
-        zeros(ntheta))
-
-        env = fill(env1, n_slices)
-
-        if env1.AModel == "AC"
-            N_aw = ntheta*2 #Number of either "a" (DMS induction factor) or w (u and v induction factors)
-        elseif env1.AModel == "DMS"
-            N_aw = ntheta
-        else
-            error("Aeromodel not recognized, choose AC or DMS")
-        end
-
-        us_param = VAWTAero.UnsteadyParams(true,
-        0,
-        0.0,
-        0.0,
-        0.0,
-        zeros(Int,1),
-        0.0,
-        [0.3,3.0],
-        zeros(Int,2*2),
-        zeros(N_aw),
-        zeros(1))
-
-        env = VAWTAero.Environment(rho,mu,Vinf,DS_model,AModel,awwarm)
-
-        us_param = VAWTAero.UnsteadyParams(RPI,tau,ifw,IECgust,nominalVinf,G_amp,gustX0,gustT)
-        start = time()
-        turbines = Array{VAWTAero.Turbine}(undef,1)
-        turbines[1] = turbine2D
-    end
-
-
     # Declare Variable Type, are set later
     udot_j = 0.0
     uddot_j = 0.0
@@ -325,7 +235,8 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
         # 1) Turn all dof off and the solution should be the same
         # 2) allow heave and the turbine should go up and down
         # 3) no aero, but mass offset should cause the turbine to tilt slightly
-
+        Fexternal = 0.0 #TODO: do this right, especially if there are only hydro forces
+        Fdof = 0.0
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
             # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
@@ -411,13 +322,8 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-
-            Fexternal, Fdof = aero(t[i])
-
-            if false
-                step_AC = ceil(azi_j/(2*pi/ntheta)) #current_rot_angle/angle_per_step = current step (rounded since the structural ntheta is several thousand, whereas the actuator cylinder really can't handle that many)
-
-                Fexternal, Fdof, env = VAWTAero.mapACloads(u_j,udot_j,Omega_j,t[i],PEy,QCy,NElem,NBlade,RefR,mesh,el,turbine3D,env,step_AC,us_param)
+            if numIterations==1
+                Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
             end
 
             if model.hydroOn
