@@ -959,7 +959,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     rho = 1.225
     #     RefAR = cactusGeom.RefAR*ft2m*ft2m
     RefR = cactusGeom.RefR*ft2m
-    V = 25 #m/s #27.148993200000003
+    V = 6.787243728 #m/s #27.148993200000003
     @warn "Velocity is hardcoded here at $V"
 
     normTime = aero_data[:,1]
@@ -1082,16 +1082,18 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #reduce Fg to nonzero components
     #assumes any loaded DOF will never be identically zero throughout time
     #history
-    ForceValHist = zeros(sum(Fg[:,1].!=0),length(Fg[1,:]))
-    ForceDof = zeros(sum(Fg[:,1].!=0),1)
+    # ForceValHist = zeros(sum(Fg[:,1].!=0),length(Fg[1,:]))
+    # ForceDof = zeros(sum(Fg[:,1].!=0),1)
+    ForceValHist = zeros(length(Fg[:,1]),length(Fg[1,:]))
+    ForceDof = zeros(length(Fg[:,1]),1)
     index = 1
     for i=1:Int(maximum(maximum(structuralNodeNumbers))*6)
-        if !isempty(findall(x->x!=0,Fg[i,:]))
+        # if !isempty(findall(x->x!=0,Fg[i,:]))
 
             ForceValHist[index,:] = Fg[i,:]
             ForceDof[index] = i
             index = index + 1
-        end
+        # end
     end
     return time,ForceValHist,ForceDof,cactusGeom
 end
