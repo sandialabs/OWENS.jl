@@ -9,6 +9,7 @@ catch
 end
 
 import GyricFEA
+import VAWTHydro
 
 # Github packages
 import Statistics

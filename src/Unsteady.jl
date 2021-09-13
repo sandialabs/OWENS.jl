@@ -161,6 +161,8 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
     model.jointTransform, model.reducedDOFList = GyricFEA.createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
     if model.hydroOn
+        hydrodyn.HD_Init(hd_lib_filename, output_root_name, PotFile=potmod_dir, t_initial=t_initial, dt=dt, t_max=t_max)
+        moordyn.MD_Init(md_lib_filename, init_ptfm_pos=ptfm_pos_ts[1,:], interp_order=interp_order)
         # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
     end
 
@@ -216,8 +218,12 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
         ## evaluate platform module
         ##-------------------------------------
         if model.hydroOn
+            HD_UpdateStates(t, t+dt, ptfm_pos, ptfm_vel, ptfm_acc)
+            wave6dof_F_M, _ = hydrodyn.HD_CalcOutput(t+dt, ptfm_pos, ptfm_vel, ptfm_acc, forces, out_vals)
+
             # ds = model.plat_model.get_waveExcitation(Spd, time=[t[i],t[i]+delta_t], seed=1)
             # wave6dof_F_M = ds."fexc".data[1,:]
+            
         end
         #-------------------------------------
 
@@ -327,7 +333,7 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
             end
 
             if model.hydroOn
-                Fdof = [Fdof; Int.(Fdof[:,1]); collect(1:6)] #TODO: tie into ndof per node
+                Fdof = [Fdof; Int.(Fdof[:,2]); collect(1:6)] #TODO: tie into ndof per node #just concatenate hydro/mooring forces to this and Fexternal
                 Fexternal = [Fexternal; wave6dof_F_M]
             end
 
@@ -454,6 +460,11 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
         end
 
     end #end timestep loop
+
+    # End FAST module linkages
+    if model.hydroOn
+        hydrodyn.HD_End()
+        moordyn.MD_End()
 
     #Writefile
     if model.outFilename=="none"
