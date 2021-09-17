@@ -1,6 +1,6 @@
 path = splitdir(@__FILE__)[1]
 
-import OWENS
+include("../src/OWENS.jl") # import OWENS
 # include("$path/../src/OWENS.jl")
 
 using Test
@@ -33,6 +33,10 @@ function test_owens(test_transient,test_modal,test_flutter)
     platfileRoot = "$path/data/1_FourColumnSemi_2ndPass"
     platMassDiag = [9.8088e6 9.7811e6 1.8914e7 3.6351e9 3.6509e9 2.4362e9]
     platStiffDiag_Nm_deg = [1.329e5 1.329e5 1.985e6 3.993e6 3.995e6 1.076e6]
+
+    # external dependencies
+    hydrodynLib = "$path/../bin/HydroDyn_c_lib_x64.dll"
+    moordynLib = "$path/../bin/MoorDyn_c_lib_x64.dll"
 
     # define the filename saving convention
     fname = string(platfileRoot,outFileExt)
@@ -162,7 +166,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     # *********************************************************************
     if test_modal
 
-        OWENS.owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes)
+        OWENS.owens(string(fname, ".owens"),"M", Omega=0.5*maxRPM*2*pi/60, spinUpOn=false, numModesToExtract=Nmodes, hydrodynLib=hydrodynLib, moordynLib=moordynLib)
 
         # if verify_modal
         old_filename = "$path/data/1_FourColumnSemi_2ndPass_15mTowerExt_NOcentStiff_MODAL_VERIFICATION.out"

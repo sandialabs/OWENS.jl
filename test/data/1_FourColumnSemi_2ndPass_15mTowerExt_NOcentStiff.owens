@@ -9,4 +9,5 @@ _15mTower_transient_dvawt_c_2_lcdt.bc
 0 _15mTower_transient_dvawt_c_2_lcdt.bld DVAWT_2B_LCDT_ElementData.csv
 0 [drivetrain_property_file]
 [generator_property_file]
+0 [potential_flow_file_root] 2
 0.000000	0.000000

@@ -1,4 +1,4 @@
-function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
+function Unsteady(model,mesh,el,aero,bin;getLinearizedMatrices=false)
     #Unsteady performs modular transient analysis
     #
     #   Unsteady(model,mesh,el)
@@ -161,8 +161,12 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
     model.jointTransform, model.reducedDOFList = GyricFEA.createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
     if model.hydroOn
-        hydrodyn.HD_Init(hd_lib_filename, output_root_name, PotFile=potmod_dir, t_initial=t[1], dt=delta_t, t_max=t[1]+numTS*delta_t)
-        moordyn.MD_Init(md_lib_filename, init_ptfm_pos=u_s, interp_order=interp_order)
+        if model.outFilename == "none"
+            hd_outFilename = "hydrodyn_temp.out"
+        else
+            hd_outFilename = model.outFilename
+        hydrodyn.HD_Init(bin.hydrodynLibPath, hd_outFilename, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+numTS*delta_t)
+        moordyn.MD_Init(bin.moordynLibPath, init_ptfm_pos=u_s, interp_order=model.interpOrder)
         # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
     end
 
@@ -333,17 +337,17 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
             ## compile external forcing on platform
             # compile forces to supply to structural dynamics solver
             if model.hydroOn
-                HD_UpdateStates(t, t+delta_t, u_j, udot_j, uddot_j)
+                HD_UpdateStates(t, t+delta_t, u_j*inv(CN2H), udot_j*inv(CN2H), uddot_j*inv(CN2H))
                 if interp_order == 1
-                    MD_UpdateStates(0, t, t+delta_t, u_j, udot_j, uddot_j)
+                    MD_UpdateStates(0, t, t+delta_t, u_j*inv(CN2H), udot_j*inv(CN2H), uddot_j*inv(CN2H))
                 elseif interp_order == 2
-                    MD_UpdateStates(t-delta_t, t, t+delta_t, u_j, udot_j, uddot_j)
+                    MD_UpdateStates(t-delta_t, t, t+delta_t, u_j*inv(CN2H) udot_j*inv(CN2H), uddot_j*inv(CN2H))
                 end
 
-                wave6dof_F_M, out_vals = hydrodyn.HD_CalcOutput(t+delta_t, u_j, udot_j, uddot_j, wave6dof_F_M, out_vals)  # TODO change HD input string to output platform motions?
-                mooring6dof_F_M, mooring_tensions = MD_CalcOutput(t+delta_t, u_j, udot_j, uddot_j, wave6dof_F_M, mooring_tensions)
+                wave6dof_F_M, out_vals = hydrodyn.HD_CalcOutput(t+delta_t, u_j*inv(CN2H), udot_j*inv(CN2H), uddot_j*inv(CN2H), wave6dof_F_M, out_vals)
+                mooring6dof_F_M, mooring_tensions = MD_CalcOutput(t+delta_t, u_j*inv(CN2H), udot_j*inv(CN2H), uddot_j*inv(CN2H), wave6dof_F_M, mooring_tensions)
 
-                Fdof = [Fdof; Int.(Fdof[:,2]); collect(1:6)] #TODO: tie into ndof per node #just concatenate hydro/mooring forces to this and Fexternal
+                Fdof = [Fdof; Int.(Fdof[:,2]); collect(1:6)] #TODO: tie into ndof per node
                 Fexternal = [Fexternal; wave6dof_F_M+mooring6dof_F_M]
             end
 

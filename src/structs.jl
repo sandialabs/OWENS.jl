@@ -1,4 +1,9 @@
 
+struct Bin
+    hydrodynLibPath
+    moordynLibPath
+end
+
 mutable struct Model
     analysisType
     turbineStartup
@@ -16,6 +21,7 @@ mutable struct Model
     gravityOn
     generatorOn
     hydroOn
+    interpOrder
     plat_model
     JgearBox
     gearRatio
@@ -30,6 +36,7 @@ mutable struct Model
     numModesToExtract
     aeroloadfile
     owensfile
+    potflowfile
     outFilename
     RayleighAlpha
     RayleighBeta
@@ -63,6 +70,7 @@ function Model(;analysisType = "TNB",
     gravityOn = true,
     generatorOn = false,
     hydroOn = false,
+    interpOrder = 2,
     plat_model = [],
     JgearBox = 0.0,
     gearRatio = 1.0,
@@ -77,6 +85,7 @@ function Model(;analysisType = "TNB",
     numModesToExtract = 20,
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
+    potflowfile = "$module_path/../test/data/potential_flow_data/arcus",
     outFilename = "none",
     RayleighAlpha = 0.0,
     RayleighBeta = 0.0,
@@ -128,9 +137,9 @@ function Model(;analysisType = "TNB",
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
     aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,
-    guessFreq,gravityOn,generatorOn,hydroOn,plat_model,JgearBox,gearRatio,gearBoxEfficiency,
+    guessFreq,gravityOn,generatorOn,hydroOn,interpOrder,plat_model,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
+    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,potflowfile,outFilename,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
     reducedDOFList,bladeData,nlParams,BC,nodalTerms,driveShaftProps)
 end

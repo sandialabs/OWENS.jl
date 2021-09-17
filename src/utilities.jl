@@ -30,13 +30,16 @@ function owens(owensfile,analysisType;
     elementOrder = 1, #linear element order
     numDofPerNode = 6,
     hydroOn = false,
+    interpOrder = 2,
     platformTurbineConnectionNodeNumber = 1,
     JgearBox =0.0,
     gearRatio = 1.0,             #set gear ratio and efficiency to 1
     gearBoxEfficiency = 1.0,
     useGeneratorFunction = false,
     generatorProps = 0.0,
-    driveTrainOn = false)          #set drive shaft unactive
+    driveTrainOn = false,          #set drive shaft unactive
+    hydrodynLib = "none",
+    moordynLib = "none")
 
     # if(analysisType=="S") #STATIC ANALYSIS
     #     Omega = varargin{3}            #initialization of rotor speed (Hz)
@@ -154,6 +157,12 @@ function owens(owensfile,analysisType;
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
 
     generatorfilename = string(fdirectory, readline(fid)) #generator file name
+    
+    line = readline(fid)
+    hydroOn = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
+    potflowfile  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) # potential flow file prefix
+    interpOrder = real(parse(Int,line[3])) # interpolation order for HD/MD libraries
+
     line = readline(fid)
     rayleighDamping = split(line)
 
@@ -207,9 +216,9 @@ function owens(owensfile,analysisType;
 
     model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
     aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,
-    guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    guessFreq,gravityOn,generatorOn,hydroOn,interpOrder,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
+    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,potflowfile,outFilename,RayleighAlpha,
     RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
     reducedDOFList,mesh.numNodes,bladeData,nlParams,pBC=BC.pBC,nodalTerms,driveShaftProps)
 
@@ -237,6 +246,11 @@ function owens(owensfile,analysisType;
     #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
     #     end
     #
+
+    if (hydrodynLib/="none"||moordynLib/="none") # Map shared library paths for external dependencies
+        bin = Bin(hydrodynLib, moordynLib)
+    end
+
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
         aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
         OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
@@ -252,10 +266,11 @@ function owens(owensfile,analysisType;
 
         aeroForces(t) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
-        Unsteady(model,mesh,el,aeroForces)
+        Unsteady(model,mesh,el,bin,aeroForces)
 
         return model
     end
+
     #
     # end
     #
