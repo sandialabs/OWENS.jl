@@ -174,10 +174,7 @@ function owens(owensfile,analysisType;
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
     el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
-    # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
-    # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
-    nodalTerms = readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
-    # [model] = readPlatformFile(model,platformFlag,platfilename)
+    nodalTerms = GyricFEA.readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
     initCond = []
 
     #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
@@ -202,16 +199,34 @@ function owens(owensfile,analysisType;
     jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     numReducedDof = length(jointTransform[1,:])
 
-    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
+    nlParams = GyricFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
-    aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,
-    guessFreq,gravityOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,outFilename,RayleighAlpha,
-    RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
-    reducedDOFList,mesh.numNodes,bladeData,nlParams,pBC=BC.pBC,nodalTerms,driveShaftProps)
+    numModesToExtract,aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
+
+    feamodel = GyricFEA.FEAModel(;analysisType,
+    initCond,
+    aeroElasticOn,
+    guessFreq,
+    airDensity,
+    gravityOn,
+    nlOn,
+    spinUpOn,
+    outFilename,
+    RayleighAlpha,
+    RayleighBeta,
+    elementOrder,
+    joint,
+    platformTurbineConnectionNodeNumber,
+    jointTransform,
+    reducedDOFList,
+    nlParams,
+    numNodes = mesh.numNodes,
+    pBC=BC.pBC,
+    nodalTerms)
 
     #     if(analysisType=="S") #EXECUTE STATIC ANALYSIS
     #         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
@@ -227,7 +242,7 @@ function owens(owensfile,analysisType;
             displInitGuess = zeros(mesh.numNodes*6)
         end
         OmegaStart = 0.0
-        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el;displ=displInitGuess,Omega,OmegaStart)
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(feamodel,mesh,el;displ=displInitGuess,Omega,OmegaStart)
         return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
     end
     #
@@ -252,7 +267,7 @@ function owens(owensfile,analysisType;
 
         aeroForces(t) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
-        Unsteady(model,mesh,el,aeroForces)
+        Unsteady(model,feamodel,mesh,el,aeroForces)
 
         return model
     end
@@ -466,7 +481,7 @@ function readBladeData(filename)
         structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
     end
 
-    bladeData = GyricFEA.BladeData(numBlades,  #assign data to bladeData object
+    bladeData = BladeData(numBlades,  #assign data to bladeData object
     bladeDataBlock[:,1],
     bladeDataBlock[:,2],
     bladeDataBlock[:,3],
@@ -707,169 +722,6 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
             end
         end
     end
-end
-
-function readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
-    #readNodalTerms reads concentrated nodal terms file
-    #   [nodalTerms] = readNodalTerms(filename)
-    #
-    #   This function reads the nodal terms file and stores data in the nodal
-    #   terms object.
-    #
-    #      input:
-    #      filename      = string containing nodal terms filename
-    #
-    #      output:
-    #      nodalTerms    = object containing concentrated nodal data
-    if filename!="none"
-        data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
-    end
-
-    n_M = sum(count.(x->(x=='M'), data[:,2]))
-    n_K = sum(count.(x->(x=='K'), data[:,2]))
-    n_C = sum(count.(x->(x=='C'), data[:,2]))
-    n_F = sum(count.(x->(x=='F'), data[:,2]))
-
-    concMnodeNum = zeros(n_M)
-    concMdof1 = zeros(n_M)
-    concMdof2 = zeros(n_M)
-    concMval = zeros(n_M)
-
-    concKnodeNum = zeros(n_K)
-    concKdof1 = zeros(n_K)
-    concKdof2 = zeros(n_K)
-    concKval = zeros(n_K)
-
-    concCnodeNum = zeros(n_C)
-    concCdof1 = zeros(n_C)
-    concCdof2 = zeros(n_C)
-    concCval = zeros(n_C)
-
-    concFnodeNum = zeros(n_F)
-    concFdof1 = zeros(n_F)
-    concFdof2 = zeros(n_F)
-    concFval = zeros(n_F)
-
-    i_M = 1
-    i_K = 1
-    i_C = 1
-    i_F = 1
-    for i_data = 1:length(data[:,1])
-        if data[i_data,2][1] == 'M'
-            concMnodeNum[i_M] = data[i_data,1]
-            concMdof1[i_M] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concMdof2[i_M] = data[i_data,4]
-            end
-            concMval[i_M] = data[i_data,end]
-            i_M += 1
-        elseif data[i_data,2][1] == 'K'
-            concKnodeNum[i_K] = data[i_data,1]
-            concKdof1[i_K] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concKdof2[i_K] = data[i_data,4]
-            end
-            concKval[i_K] = data[i_data,end]
-            i_K += 1
-        elseif data[i_data,2][1] == 'C'
-            concCnodeNum[i_C] = data[i_data,1]
-            concCdof1[i_C] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concCdof2[i_C] = data[i_data,4]
-            end
-            concCval[i_C] = data[i_data,end]
-            i_C += 1
-        elseif data[i_data,2][1] == 'F'
-            concFnodeNum[i_F] = data[i_data,1]
-            concFdof1[i_F] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concFdof2[i_F] = data[i_data,4]
-            end
-            concFval[i_F] = data[i_data,end]
-            i_F += 1
-        else
-            error("Unknown Nodal Data Type")
-        end
-    end
-
-    if length(data[1,:])==5
-        @warn "General 6x6 concentrated diagonal terms are being applied to the old diagonal method with coulping (e.g. mass and force through acceleration), and no coupling is happening for the non-diagonal terms"
-        #TODO: implement the 6x6 terms since they will be necessary for the linearized platform since there is strong cross coupling
-        concLoad = Array{GyricFEA.ConcNDL, 1}(undef, n_F)
-        for i_F = 1:n_F
-            if concFnodeNum[i_F] == concFdof2[i_F]
-                concLoad[i_F]= GyricFEA.ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
-            end
-        end
-
-        concStiff = Array{GyricFEA.ConcNDL, 1}(undef, n_K)
-        for i_K = 1:n_K
-            if concKdof1[i_K] == concKdof2[i_K]
-                concStiff[i_K] = GyricFEA.ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
-            end
-        end
-
-        concMass = Array{GyricFEA.ConcNDL, 1}(undef, n_M)
-        for i_M = 1:n_M
-            if concMdof1[i_M] == concMdof2[i_M]
-                concMass[i_M] = GyricFEA.ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
-            end
-        end
-
-        concStiffGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_K)
-        for i_K = 1:n_K
-            concStiffGen[i_K] = GyricFEA.ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof2[i_K],concKval[i_K])
-        end
-
-        concMassGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_M)
-        for i_M = 1:n_M
-            concMassGen[i_M] = GyricFEA.ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof2[i_M], concMval[i_M])
-        end
-
-        concDampGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_C)
-        for i_C = 1:n_C
-            concDampGen[i_C] = GyricFEA.ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof2[i_C], concCval[i_C])
-        end
-
-    elseif length(data[1,:])==4
-        @warn "Only diagonal terms being used, there are no cross terms"
-        # This portion is different in that it uses the nongeneral terms and applies them to the general just at the diagonal, TODO: once the general terms are implemented, this needs to be updated
-        concLoad = Array{GyricFEA.ConcNDL, 1}(undef, n_F)
-        for i_F = 1:n_F
-            concLoad[i_F]= GyricFEA.ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
-        end
-
-        concStiff = Array{GyricFEA.ConcNDL, 1}(undef, n_K)
-        for i_K = 1:n_K
-            concStiff[i_K] = GyricFEA.ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
-        end
-
-        concMass = Array{GyricFEA.ConcNDL, 1}(undef, n_M)
-        for i_M = 1:n_M
-            concMass[i_M] = GyricFEA.ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
-        end
-
-        concStiffGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_K)
-        for i_K = 1:n_K #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concStiffGen[i_K] = GyricFEA.ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof1[i_K],concKval[i_K])
-        end
-
-        concMassGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_M)
-        for i_M = 1:n_M #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concMassGen[i_M] = GyricFEA.ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof1[i_M], concMval[i_M])
-        end
-
-        concDampGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_C)
-        for i_C = 1:n_C #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concDampGen[i_C] = GyricFEA.ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof1[i_C], concCval[i_C])
-        end
-    else
-        error("Wrong number of terms in the .ndl file")
-    end
-
-    #store concentrated nodal term data in nodalTerms object
-    return GyricFEA.NodalTerms(concLoad,concStiff,concMass,concStiffGen,concMassGen,concDampGen)
-
 end
 
 function readCactusGeom(geom_fn)
@@ -1173,58 +1025,4 @@ function readResultsModalOut(resultsFile,numNodes)
         theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
-end
-
-
-function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
-    #readBDdata  reads boundary condition file
-    #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
-    #
-    #   This function reads the boundray condition file and stores data in the
-    #   boundary condition object.
-    #
-    #      input:
-    #      bcfilename    = string containing boundary condition filename
-    #      numNodes      = number of nodes in structural model
-    #      numDofPerNode = number of degrees of freedom per node
-
-    #      output:
-    #      BC            = object containing boundary condition data
-
-    totalNumDof = numNodes*numDofPerNode
-
-    numsBC = 0
-    nummBC = 0
-
-    #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
-    #constrained)
-
-    #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
-                isConstrained[index] = 1
-            end
-            index = index + 1
-        end
-    end
-    numpBC = length(pBC[:,1])
-
-    map = GyricFEA.calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
-    numReducedDof = length(jointTransform[1,:])
-    redVectorMap = GyricFEA.constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
-
-    BC = GyricFEA.BC_struct(numpBC,
-    pBC,
-    numsBC,
-    nummBC,
-    isConstrained,
-    map,
-    redVectorMap)
-
-    return BC
-
 end

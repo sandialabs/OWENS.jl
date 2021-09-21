@@ -1,4 +1,4 @@
-function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
+function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
     #Unsteady performs modular transient analysis
     #
     #   Unsteady(model,mesh,el)
@@ -51,7 +51,7 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
     totalNumDof = mesh.numNodes*numDOFPerNode
     #......... specify initial conditions .......................
     u_s = zeros(totalNumDof,1)
-    u_s = GyricFEA.setInitialConditions(model.initCond,u_s,numDOFPerNode)
+    u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
     u_sm1 = u_s
     udot_s = u_s*0
     uddot_s = u_s*0
@@ -135,7 +135,7 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
         #     [rom,elStorage]=reducedOrderModel(model,mesh,el,u_s) #construct reduced order model
         #
         #     #set up inital values in modal space
-        #     jointTransformTrans = model.jointTransform' #'
+        #     jointTransformTrans = feamodel.jointTransform' #'
         #     u_sRed = jointTransformTrans*u_s(1:end)
         #     udot_sRed = jointTransformTrans*udot_s(1:end)
         #     uddot_sRed = jointTransformTrans*uddot_s(1:end)
@@ -151,14 +151,14 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
         #     etadot_s  = invPhi*udot_s2
         #     etaddot_s = invPhi*uddot_s2
     else
-        elStorage = GyricFEA.initialElementCalculations(model,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
+        elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
     #calculate structural/platform moi
     _,structureMOI,_ = GyricFEA.calculateStructureMassProps(elStorage)
     #..........................................................................
 
-    model.jointTransform, model.reducedDOFList = GyricFEA.createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    feamodel.jointTransform, feamodel.reducedDOFList = GyricFEA.createJointTransform(feamodel.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
     if model.hydroOn
         # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
@@ -350,7 +350,7 @@ function Unsteady(model,mesh,el,aero;getLinearizedMatrices=false)
                 error("ROM not fully implemented")
                 #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
             end
 
             #update last iteration displacement vector
