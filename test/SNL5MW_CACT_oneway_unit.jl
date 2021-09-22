@@ -3,7 +3,7 @@ path = splitdir(@__FILE__)[1]
 # import OWENS
 include("$path/../src/OWENS.jl")
 
-import PyPlot
+# import PyPlot
 
 using Test
 import HDF5
@@ -142,13 +142,13 @@ if test_transient
     @test isapprox(old_gbHist,gbHist,atol = tol)
     @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
     @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
-    for ii = 1:6
-        PyPlot.figure()
-        PyPlot.plot(LinRange(0,1,length(old_FReactionHist[:,1])),old_FReactionHist[:,ii],label="old")
-        PyPlot.plot(LinRange(0,1,length(FReactionHist[:,1])),FReactionHist[:,ii],label="new")
-        PyPlot.ylabel("Freaction $ii")
-        PyPlot.legend()
-    end
+    # for ii = 1:6
+    #     PyPlot.figure()
+    #     PyPlot.plot(LinRange(0,1,length(old_FReactionHist[:,1])),old_FReactionHist[:,ii],label="old")
+    #     PyPlot.plot(LinRange(0,1,length(FReactionHist[:,1])),FReactionHist[:,ii],label="new")
+    #     PyPlot.ylabel("Freaction $ii")
+    #     PyPlot.legend()
+    # end
     for ii = 1:length(FReactionHist)
         local digits = floor(log10(abs(old_FReactionHist[ii]))) #this way if the tol is 1e-5, then we are actually looking at significant digits, much better than comparing 1e-5 on a 1e6 large number, that's 11 significant digits!
         @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol=tol*10^digits)
@@ -211,58 +211,60 @@ if test_modal
         # println("mode: $imode")
         # for inode = 1:numNodes
         # println("node $inode")
-        if isapprox(abs.(U_x_0OLD[:,imode]),abs.(U_x_0[:,imode]),atol = tol)
-            U_x_0pass += 1
+        for inode = 1:length(U_x_0OLD[:,1])
+            if isapprox(abs.(U_x_0OLD[inode,imode]),abs.(U_x_0[inode,imode]),atol = tol)
+                global U_x_0pass += 1
+            end
+            if isapprox(abs.(U_y_0OLD[inode,imode]),abs.(U_y_0[inode,imode]),atol = tol)
+                global U_y_0pass += 1
+            end
+            if isapprox(abs.(U_z_0OLD[inode,imode]),abs.(U_z_0[inode,imode]),atol = tol)
+                global U_z_0pass += 1
+            end
+            if isapprox(abs.(theta_x_0OLD[inode,imode]),abs.(theta_x_0[inode,imode]),atol = tol)
+                global theta_x_0pass += 1
+            end
+            if isapprox(abs.(theta_y_0OLD[inode,imode]),abs.(theta_y_0[inode,imode]),atol = tol)
+                global theta_y_0pass += 1
+            end
+            if isapprox(abs.(theta_z_0OLD[inode,imode]),abs.(theta_z_0[inode,imode]),atol = tol)
+                global theta_z_0pass += 1
+            end
+            if isapprox(abs.(U_x_90OLD[inode,imode]),abs.(U_x_90[inode,imode]),atol = tol)
+                global U_x_90pass += 1
+            end
+            if isapprox(abs.(U_y_90OLD[inode,imode]),abs.(U_y_90[inode,imode]),atol = tol)
+                global U_y_90pass += 1
+            end
+            if isapprox(abs.(U_z_90OLD[inode,imode]),abs.(U_z_90[inode,imode]),atol = tol)
+                global U_z_90pass += 1
+            end
+            if isapprox(abs.(theta_x_90OLD[inode,imode]),abs.(theta_x_90[inode,imode]),atol = tol)
+                global theta_x_90pass += 1
+            end
+            if isapprox(abs.(theta_y_90OLD[inode,imode]),abs.(theta_y_90[inode,imode]),atol = tol)
+                global theta_y_90pass += 1
+            end
+            if isapprox(abs.(theta_z_90OLD[inode,imode]),abs.(theta_z_90[inode,imode]),atol = tol)
+                global theta_z_90pass += 1
+            end
         end
-        if isapprox(abs.(U_y_0OLD[:,imode]),abs.(U_y_0[:,imode]),atol = tol)
-            U_y_0pass += 1
-        end
-        if isapprox(abs.(U_z_0OLD[:,imode]),abs.(U_z_0[:,imode]),atol = tol)
-            U_z_0pass += 1
-        end
-        if isapprox(abs.(theta_x_0OLD[:,imode]),abs.(theta_x_0[:,imode]),atol = tol)
-            theta_x_0pass += 1
-        end
-        if isapprox(abs.(theta_y_0OLD[:,imode]),abs.(theta_y_0[:,imode]),atol = tol)
-            theta_y_0pass += 1
-        end
-        if isapprox(abs.(theta_z_0OLD[:,imode]),abs.(theta_z_0[:,imode]),atol = tol)
-            theta_z_0pass += 1
-        end
-        if isapprox(abs.(U_x_90OLD[:,imode]),abs.(U_x_90[:,imode]),atol = tol)
-            U_x_90pass += 1
-        end
-        if isapprox(abs.(U_y_90OLD[:,imode]),abs.(U_y_90[:,imode]),atol = tol)
-            U_y_90pass += 1
-        end
-        if isapprox(abs.(U_z_90OLD[:,imode]),abs.(U_z_90[:,imode]),atol = tol)
-            U_z_90pass += 1
-        end
-        if isapprox(abs.(theta_x_90OLD[:,imode]),abs.(theta_x_90[:,imode]),atol = tol)
-            theta_x_90pass += 1
-        end
-        if isapprox(abs.(theta_y_90OLD[:,imode]),abs.(theta_y_90[:,imode]),atol = tol)
-            theta_y_90pass += 1
-        end
-        if isapprox(abs.(theta_z_90OLD[:,imode]),abs.(theta_z_90[:,imode]),atol = tol)
-            theta_z_90pass += 1
-        end
-        # end
     end
 
-    # at least 70 percent of the modeshapes are identical indicates (despite the recripocity of the solutions) that the analysis is adequate
-    @test U_x_0pass/length(U_x_0OLD[1,:])>0.70
-    @test U_y_0pass/length(U_x_0OLD[1,:])>0.70
-    @test U_z_0pass/length(U_x_0OLD[1,:])>0.70
-    @test theta_x_0pass/length(U_x_0OLD[1,:])>0.70
-    @test theta_y_0pass/length(U_x_0OLD[1,:])>0.70
-    @test theta_z_0pass/length(U_x_0OLD[1,:])>0.70
-    @test U_x_90pass/length(U_x_0OLD[1,:])>0.70
-    @test U_y_90pass/length(U_x_0OLD[1,:])>0.70
-    @test U_z_90pass/length(U_x_0OLD[1,:])>0.70
-    @test theta_x_90pass/length(U_x_0OLD[1,:])>0.70
-    @test theta_y_90pass/length(U_x_0OLD[1,:])>0.70
-    @test theta_z_90pass/length(U_x_0OLD[1,:])>0.70
+    # at least 90 percent of the modeshapes are identical indicates (despite the recripocity of the solutions) that the analysis is adequate
+    tol2 = 0.9
+    @test U_x_0pass/length(U_x_0OLD)>tol2
+    @test U_y_0pass/length(U_x_0OLD)>tol2
+    @test U_z_0pass/length(U_x_0OLD)>tol2
+    @test theta_x_0pass/length(U_x_0OLD)>tol2
+    @test theta_y_0pass/length(U_x_0OLD)>tol2
+    @test theta_z_0pass/length(U_x_0OLD)>tol2
+    @test U_x_90pass/length(U_x_0OLD)>tol2
+    @test U_y_90pass/length(U_x_0OLD)>tol2
+    @test U_z_90pass/length(U_x_0OLD)>tol2
+    @test theta_x_90pass/length(U_x_0OLD)>tol2
+    @test theta_y_90pass/length(U_x_0OLD)>tol2
+    @test theta_z_90pass/length(U_x_0OLD)>tol2
     # end
 
 end
