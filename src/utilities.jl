@@ -1,4 +1,52 @@
+"""
+    owens(owensfile,analysisType;
+        delta_t=2e-3,
+        numTS=100,
+        tocp=[0.0,1.1],
+        Omegaocp=[0.0,1.0],
+        OmegaInit=0.0,
+        OmegaGenStart=0.0,
+        usingRotorSpeedFunction=false,
+        nlOn=true,
+        Omega=0.0,
+        turbineStartup=0,
+        spinUpOn=false,
+        numModesToExtract=20,
+        displInitGuess=0.0,
+        airDensity=1.2041,
+        aeroElasticOn = false,
+        guessFreq = 0,
+        gravityOn = true,
+        generatorOn = false,
+        omegaControl = false,
+        iterationType = "NR", # nlParams
+        adaptiveLoadSteppingFlag = true,
+        tolerance = 1.0000e-06,
+        maxIterations = 50,
+        maxNumLoadSteps = 20,
+        minLoadStepDelta = 0.0500,
+        minLoadStep = 0.0500,
+        prescribedLoadStep = 0.0,
+        elementOrder = 1,
+        numDofPerNode = 6,
+        hydroOn = false,
+        platformTurbineConnectionNodeNumber = 1,
+        JgearBox =0.0,
+        gearRatio = 1.0,
+        gearBoxEfficiency = 1.0,
+        useGeneratorFunction = false,
+        generatorProps = 0.0,
+        driveTrainOn = false)
 
+Original serial and file reading method of running an analysis.
+
+#Inputs
+See ?OWENS.Model and ?GyricFEA.FEAModel
+
+#Outputs
+See ?OWENS.Unsteady, ?GyricFEA.Modal
+
+"""
 function owens(owensfile,analysisType;
     delta_t=2e-3,
     numTS=100,
@@ -277,17 +325,19 @@ function owens(owensfile,analysisType;
 
 end
 
-function readMesh(filename)
-    #readMesh  reads mesh file and stores data in mesh object
-    #   [mesh] = readMesh(filename)
-    #
-    #   This function reads the mesh file and stores data in the mesh object.
-    #
-    #      input:
-    #      filename      = string containing mesh filename
+"""
 
-    #      output:
-    #      mesh          = object containing mesh data
+    readMesh(filename)
+
+Reads the mesh file and stores data in the mesh object.
+
+input:
+* `filename::string` string containing mesh path/to/filename.mesh
+
+output:
+* `mesh::GyricFEA.Mesh` see GyricFEA.Mesh
+"""
+function readMesh(filename)
 
     fid = open(filename,"r")   #open mesh file
 
@@ -353,21 +403,22 @@ function readMesh(filename)
 
 end
 
+"""
 
+    readBCdata(bcfilename,numNodes,numDofPerNode)
+
+This function reads the boundray condition file and stores data in the
+boundary condition object.
+
+#Input
+* `bcfilename::string`:    string containing boundary condition filename
+* `numNodes::int`:      number of nodes in structural model
+* `numDofPerNode::int`: number of degrees of freedom per node
+
+#Output
+* `BC::GyricFEA.BC_struct`:   see GyricFEA.BC_struct, object containing boundary condition data
+"""
 function readBCdata(bcfilename,numNodes,numDofPerNode)
-    #readBDdata  reads boundary condition file
-    #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
-    #
-    #   This function reads the boundray condition file and stores data in the
-    #   boundary condition object.
-    #
-    #      input:
-    #      bcfilename    = string containing boundary condition filename
-    #      numNodes      = number of nodes in structural model
-    #      numDofPerNode = number of degrees of freedom per node
-
-    #      output:
-    #      BC            = object containing boundary condition data
 
     fid = open(bcfilename)       #open boundary condition file
     numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
@@ -423,18 +474,20 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
 
 end
 
+"""
 
+    readBladeData(filename)
+
+This function reads blade data from file
+
+#Input
+* `filename::string`:   string containing /path/to/bladedata.bld
+
+#Output
+* `bladeData::BladeData`:  see ?BladeData object containing blade data
+"""
 function readBladeData(filename)
-    #readBladeDAta reads blade data
-    #   [bladeData] = readBladeData(filename)
-    #
-    #   This function reads blade data from file
-    #
-    #   input:
-    #   filename      = string containing file name for blade data file
-    #
-    #   output:
-    #   bladeData     = object containing blade data
+
     a = DelimitedFiles.readdlm(filename,'\t',skipstart = 0)
 
     bladeNum = a[:,1]
@@ -492,22 +545,23 @@ function readBladeData(filename)
 
 end
 
+"""
 
+    readElementData(numElements,elfile,ortfile,bldfile
+
+Reads element data and stores data in the element data
+object.
+
+#Input
+* `numElements::int`:  number of elements in structural mesh
+* `elfile::string`:       element data path/to/filename
+* `ortfile::string`:      element orientation path/to/filename
+* `bldfile::string`:      blade data path/to/filename
+
+#Output
+* `el::GyricFEA.El`:       see GyricFEA.El    element data object
+"""
 function readElementData(numElements,elfile,ortfile,bladeData_struct)
-    #readElementData  reads element data
-    #   [el] = readElementData(numElements,elfile,ortfile,bldfile
-    #
-    #   This function reads element data and stores data in the element data
-    #   object.
-    #
-    #      input:
-    #      numElements   = number of elements in structural mesh
-    #      elfile        = element data filename
-    #      ortfile       = element orientation filename
-    #      bldfile       = blade data filename
-
-    #      output:
-    #      el            = element data object
 
     fid = open(elfile,"r") #open element data file
 
@@ -634,18 +688,19 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
 
 end
 
-function readGeneratorProps(generatorfilename)
-    #readGeneratorProps reads generator properties from file
-    #   [genprops] = readGeneratorProps(generatorfilename)
-    #
-    #   This function reads generator properties from file.
-    #
-    #   input:
-    #   generatorfilenanme  = string containing generator property file name
-    #
-    #   output:
-    #   genprops          = model object containing generator properties
+"""
 
+    readGeneratorProps(generatorfilename)
+
+This function reads generator properties from file.
+
+#Input
+* `generatorfilenanme::string`:  = string containing path/to/generatorfile
+
+#Output
+* `genprops`:    = model object containing generator properties
+"""
+function readGeneratorProps(generatorfilename)
 
     # fid = fopen(generatorfilename) #open generator property file
     # if (fid!=-1) #if file can be opened
@@ -667,17 +722,19 @@ function readGeneratorProps(generatorfilename)
     return genprops
 end
 
+"""
+
+    readInitCond(filename)
+
+Reads initial conditions from file
+
+#Input
+* `filename`      string containing file name for initial conditions file
+
+#Output
+* `initCond`      array containing initial conditions
+"""
 function readInitCond(filename)
-    #readInitCond reads initial conditions
-    #   [initCond] = readInitCond(filename)
-    #
-    #   This function reads initial conditions from file
-    #
-    #   input:
-    #   filename      = string containing file name for initial conditions file
-    #
-    #   output:
-    #   initCond      = array containing initial conditions
 
     initCond =[] #initialize intial condition to null
 
@@ -698,13 +755,23 @@ function readInitCond(filename)
     return initCond
 end
 
+"""
+
+    writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
+
+writes a nodal input file
+
+#Intput
+* `fileRoot::string`: string path to desired location with name but no extension
+* `nodes::int`: node numbers for C/M/K
+* `cmkType::string`: "C" "M" or "K"
+* `cmkValues::float`: C/M/K value
+
+#Output
+* `none`:
+
+"""
 function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
-    # writeOwensNDL writes a nodal input file for the OWENS Toolkit
-    #   This function writes a boundary condition file for the OWENS Toolkit
-    #      input:
-    #      fileRoot     = string containing input prefix of file name
-    #      output:     (NONE)
-    # **********************************************************************
 
     # open the BC file to save the boundary conditions to
     BCfile = string(fileRoot, ".ndl")    #construct file name
@@ -724,6 +791,9 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
     end
 end
 
+"""
+Internal, reads cactus .geom file and stores each column in an array within the CactusGeom struct
+"""
 function readCactusGeom(geom_fn)
 
     data = DelimitedFiles.readdlm(geom_fn,skipstart = 0)
@@ -798,7 +868,9 @@ function readCactusGeom(geom_fn)
     return CactusGeom(NBlade,NStrut,RotN,RotP,RefAR,RefR,blade,strut)
 end
 
-
+"""
+Internal, takes cactus loads and geometry and OWENS mesh and maps the loads to the blades' FEA dofs
+"""
 function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
 
     cactusGeom = readCactusGeom(geomFn)
@@ -950,8 +1022,10 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     return time,ForceValHist,ForceDof,cactusGeom
 end
 
+"""
+Internal, generates an output file name depending on the analysis type
+"""
 function generateOutputFilename(owensfilename,analysisType)
-    #This function generates an output file name depending on the analysis type
 
     #find the last "." in owensfilename - helps to extract the prefix in the .owens
     index = findlast(".",owensfilename)[1]
@@ -968,6 +1042,9 @@ function generateOutputFilename(owensfilename,analysisType)
 
 end
 
+"""
+Internal, reads modal file and returns freq, damp, and modeshapes
+"""
 function readResultsModalOut(resultsFile,numNodes)
     data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
 
