@@ -1,6 +1,8 @@
 # OWENS (Offshore Wind ENergy Simulator)
 
-<!-- [![pipeline status](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/badges/master/pipeline.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/-/commits/master) [![coverage report](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/badges/master/coverage.svg)](https://gitlab.sandia.gov/8821-vawt-tools/OWENS.jl/-/commits/master) -->
+[![pipeline status](https://cee-gitlab.sandia.gov/8921-VAWT-TOOLS/OWENS.jl/badges/master/pipeline.svg)](https://cee-gitlab.sandia.gov/8921-VAWT-TOOLS/OWENS.jl/-/commits/master)
+
+[![code coverage](https://cee-gitlab.sandia.gov/8921-VAWT-TOOLS/OWENS.jl/badges/master/coverage.svg)](https://cee-gitlab.sandia.gov/8921-VAWT-TOOLS/OWENS.jl/-/commits/master)
 
 ## Must delete history before making code available since preprocessing and aero is in the history
 

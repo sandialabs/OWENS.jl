@@ -42,12 +42,10 @@
     # The code below decodes it into the correct format
     - ssh-add <(echo "$GIT_SSH_PRIV_KEY" | base64 --decode)
     - mkdir -p ~/.ssh && touch ~/.ssh/known_hosts
-    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    - echo cee-gitlab.sandia.gov,205.137.80.113 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPGMKnnt5MDq2swdsmJqIGjQF6JfqXM/Ju1e0lGZiaL6rdOY0dTZFBDHuSrwrp954J0WYXuMKRJB54uMi7B+VZc= >> ~/.ssh/known_hosts
     - export SSH_KEY_PATH=~/.ssh
     - export JULIA_PKG_USE_CLI_GIT=true
     - (echo "$GIT_SSH_PRIV_KEY" | base64 --decode) > ~/.ssh/id_rsa
-    - ls ~/.ssh
-    - cat ~/.ssh/id_rsa
     - chmod 400 ~/.ssh/id_rsa
     - 'which git || ( apt-get update -y && apt-get install git -y )'
     - git config --global user.name "${GITLAB_USER_NAME}"
@@ -56,12 +54,8 @@
     - git config --global https.sslVerify false
     - git config --global http.proxy http://user:nopass@proxy.sandia.gov:80
     - git config --global https.proxy http://user:nopass@proxy.sandia.gov:80
-    - git config --list
-    - sleep 200
     - git clone git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/VAWTAero.jl.git
     - git clone git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/GyricFEA.jl.git
-    # - echo "WE NEED TO FIGURE OUT THE CA CERTIFICATES, the issue is that we are inside a conda environment within the julia environment (which works fine locally), but now we're inside a docker container, which is running on a mac, which is behind a proxy... Downloading from the official anaconda website (used by millions of scientists) should not pose a significant risk, but this is a WARNING that the ssl certs aren't being checked on the runner side (though our Corporate man in the middle interception (which causes all of this fuss) is still monitoring all traffic for malware.  It needs to be fixed, I've put more than 16 hours into it, and will need an IT person to sit down and help.)"
-    # - echo insecure >> ~/.curlrc
   script:
     # Let's run the tests. Substitute `coverage = false` below, if you do not
     # want coverage results.
