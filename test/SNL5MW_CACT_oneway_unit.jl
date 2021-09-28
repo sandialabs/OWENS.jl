@@ -1,7 +1,7 @@
 path = splitdir(@__FILE__)[1]
 
-# import OWENS
-include("$path/../src/OWENS.jl")
+import OWENS
+# include("$path/../src/OWENS.jl")
 
 # import PyPlot
 

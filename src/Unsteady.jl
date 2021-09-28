@@ -210,7 +210,7 @@ function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
                 OmegaDot_s = OmegaDotCurrent
             end
         else
-            omegaCurrent = 0.0
+            # omegaCurrent = 0.0 TODO: figure this out
         end
 
         ## initialize "j" Gauss-Sidel iteration
@@ -228,8 +228,8 @@ function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
         Ywec_jLast = Ywec_j
 
         #TODO: put these in the model
-        TOL = 1e-5  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 50 #max iteration for various modules
+        TOL = 1e-3  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 30 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
         platNorm = 0.0
@@ -281,19 +281,12 @@ function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
             #----- generator module ---------------------------
             genTorque_j = 0
             if model.generatorOn
-                if model.driveTrainOn
-                    if model.useGeneratorFunction
-                        genTorqueHSS0 = userDefinedGenerator(gbDot_j*model.gearRatio)
-                    else
-                        error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,gbDot_j*model.gearRatio)
-                    end
+                if model.useGeneratorFunction
+                    genTorqueHSS0 = userDefinedGenerator(Omega_j)
                 else
-                    if model.useGeneratorFunction
-                        genTorqueHSS0 = userDefinedGenerator(Omega_j)
-                    else
-                        error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j)
-                    end
+                    genTorqueHSS0 = simpleGenerator(model,Omega_j)
                 end
+
                 #should eventually account for Omega = gbDot*gearRatio here...
                 genTorque_j = genTorqueHSS0*model.gearRatio*model.gearBoxEfficiency #calculate generator torque on LSS side
                 #         genTorqueAppliedToTurbineRotor0 = -genTorque0

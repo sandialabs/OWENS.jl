@@ -1103,3 +1103,116 @@ function readResultsModalOut(resultsFile,numNodes)
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end
+
+"""
+    simpleGenerator(generatorProps,genSpeed)
+
+Caclulates generator torque for simple induction generator
+
+#Input
+* `generatorProps` object containing generator properties, see ?model
+* `genSpeed::float`       generator speed (Hz)
+
+#Output
+* `genTorque::float`      generator torque
+"""
+function simpleGenerator(model,genSpeed)
+
+    #assign generator properties form model object
+    ratedTorque        = model.ratedTorque;
+    ratedGenSlipPerc   = model.ratedGenSlipPerc;
+    zeroTorqueGenSpeed = model.zeroTorqueGenSpeed;
+    pulloutRatio       = model.pulloutRatio;
+
+    #calculate rated generator speed
+    ratedGenSpeed = zeroTorqueGenSpeed*(1.0 + 0.01*ratedGenSlipPerc);
+
+    #calculate slope between lower and upper torque limits for simple induction generator
+    midSlope = (ratedTorque/(ratedGenSpeed-zeroTorqueGenSpeed));
+
+    #calculate lower and upper torque limits of generator
+    upperTorqueLimit =ratedTorque*pulloutRatio;
+    lowerTorqueLimit = -upperTorqueLimit;
+
+    #calculate upper and lower generator speeds at which linear torque vs. speed region begins/ends
+    upperGenSpeed = zeroTorqueGenSpeed + upperTorqueLimit/midSlope;
+    lowerGenSpeed = zeroTorqueGenSpeed - upperTorqueLimit/midSlope;
+
+    #calculate generator torque
+    if genSpeed<0.0#lowerGenSpeed
+        genTorque = 0.0#lowerTorqueLimit;
+    elseif genSpeed>upperGenSpeed
+        genTorque = upperTorqueLimit;
+    else
+        genTorque = midSlope*(genSpeed-zeroTorqueGenSpeed);
+    end
+
+    return genTorque
+
+end
+
+#
+# function stress_wrapper(usedmaterials,plyprops,spanlocy,orientation,strain,shear)
+#
+#     c_stress = []
+#     stress = [] #used in vtk output
+#     stresslayer = zeros(length(usedmaterials),length(spanlocy),length(strain[1,:]))
+#     j=1
+#     for i = 1:length(usedmaterials)
+#
+#         if !contains(usedmaterials[i],"foam") #don't check stress on foam
+#             matnames = plyprops.names
+#             idx = find(matnames -> matnames == usedmaterials[i],matnames)
+#
+#             material = plyprops.plies[idx[1]]
+#             orien = orientation[j]
+#             j+=1 #so we don't have to have extra design variables in orientation
+#
+#             stressi = stresscalc(strain,shear,material,orien)
+#
+#             if i==1 #only calc once since it's the same for the whole structure (assuming thin layups)
+#                 stress = sqrt.(stressi[:,:,1].^2+stressi[:,:,2].^2+stressi[:,:,3].^2) #TODO break up or calculate von-mises etc
+#             end
+#
+#             # determine contraint values
+#             c_stressi = stresscon(stressi,material)
+#             stresslayer[i,:,:] = c_stressi
+#
+#             c_stress = [c_stress;c_stressi]
+#         end
+#     end
+#
+#     return c_stress, stress, stresslayer
+# end #stress_wrapper
+#
+# """
+#     stresscalc(strain::Array{Float64,2},shear::Array{Float64,1},mat::Composites.material,theta_d::Float64)
+#
+# #Inputs
+# * `strain::Array{Float64,2}`:: strain at every span location and every chord location around the airfoil
+# * `shear::Array{Float64,1}`:: shear stress, needs to be included, is zeros for now
+# * `mat::Composites.material`:: material properties
+# * `theta_d::Float64`:: orientation of the ply in degrees
+#
+# #Outputs
+# * `plystress::Array{Float64,2}`: stress at every span location and every chord location around the airfoil
+# """
+# function stresscalc(strain,shear,mat,theta_d)
+#     # Get rotated material stiffness matrix
+#     qbar = Composites.getQ(mat,theta_d)
+#     # Determine Stresses from Strains in individual plys
+#     nnodes = size(strain,1)
+#     nloc = size(strain,2)
+#     plystress = zeros(nnodes,nloc,3)
+#     for i = 1:nnodes #Run entire length of wing #
+#         for iloc = 1:nloc # Run at every specified strain location
+#             # Convert shear stress to shear strain
+#             gam12 = shear[i]/qbar[3,3]-qbar[1,3]/qbar[3,3]*strain[i,iloc]
+#             # Calculate laminate stresses
+#             stress = qbar*[strain[i,iloc],0,gam12]
+#             # Transform stresses to ply axes
+#             plystress[i,iloc,:] = Composites.rotstress(stress,theta_d)
+#         end
+#     end
+#     return plystress
+# end #stress_calc

@@ -15,6 +15,10 @@ mutable struct Model
     gearBoxEfficiency
     useGeneratorFunction
     generatorProps
+    ratedTorque
+    zeroTorqueGenSpeed
+    pulloutRatio
+    ratedGenSlipPerc
     OmegaGenStart
     omegaControl
     OmegaInit
@@ -45,6 +49,10 @@ Model(;analysisType = "TNB",
     gearBoxEfficiency = 1.0,
     useGeneratorFunction = false,
     generatorProps = 0.0,
+    ratedTorque = 0.0,
+    zeroTorqueGenSpeed = 0.0,
+    pulloutRatio = 0.0,
+    ratedGenSlipPerc = 0.0,
     OmegaGenStart = 0.0,
     omegaControl = false,
     OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
@@ -75,7 +83,11 @@ Model inputs for OWENS coupled analysis, struct
 * `gearRatio::float`: gearbox gear ratio
 * `gearBoxEfficiency::float`: gearbox efficiency (typically 0-1)
 * `useGeneratorFunction::bool`: = flag to use user specified generator profile
-* `generatorProps::float`: not used, would consist of ratedTorque, zeroTorqueGenSpeed, pulloutRatio, and ratedGenSlipPerc
+* `generatorProps::float`: not used, should clean up
+* `ratedTorque::float`: Generator rated max torque
+* `zeroTorqueGenSpeed::float`: rated generator speed (minus slippage)
+* `pulloutRatio::float`: Fraction of the min/max torque that the generator engages/disengages
+* `ratedGenSlipPerc::float`: extra speed from slipping?
 * `OmegaGenStart::float`: speed (Hz) at which generator would kick in
 * `omegaControl::bool`: false for fixed speed, true for dynamic
 * `OmegaInit::float`: initial rotor speed (Hz)
@@ -107,6 +119,10 @@ function Model(;analysisType = "TNB",
     gearBoxEfficiency = 1.0,
     useGeneratorFunction = false,
     generatorProps = 0.0,
+    ratedTorque = 0.0,
+    zeroTorqueGenSpeed = 0.0,
+    pulloutRatio = 0.0,
+    ratedGenSlipPerc = 0.0,
     OmegaGenStart = 0.0,
     omegaControl = false,
     OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
@@ -121,7 +137,8 @@ function Model(;analysisType = "TNB",
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
     aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
-    useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
+    useGeneratorFunction,generatorProps,ratedTorque,zeroTorqueGenSpeed,pulloutRatio,
+    ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
     numModesToExtract,aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
 end
 
