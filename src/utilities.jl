@@ -314,8 +314,8 @@ function owens(owensfile,analysisType;
         aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
 
         aeroForces(t) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
-
-        Unsteady(model,feamodel,mesh,el,aeroForces)
+        deformAero(omega) = 0.0 #placeholder function
+        Unsteady(model,feamodel,mesh,el,aeroForces,deformAero)
 
         return model
     end

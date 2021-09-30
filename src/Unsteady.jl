@@ -36,7 +36,7 @@ external module with transient structural dynamics analysis capability.
 * `gam_xy_0_hist`: strain history for gam_xy_0 for each dof
 * `gam_xy_z_hist`: strain history for gam_xy_z for each dof
 """
-function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
+function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=false)
 
     # Declare Variable Type, are set later
     udot_j = 0.0
@@ -228,8 +228,8 @@ function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
         Ywec_jLast = Ywec_j
 
         #TODO: put these in the model
-        TOL = 1e-3  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 30 #max iteration for various modules
+        TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 300 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
         platNorm = 0.0
@@ -338,9 +338,12 @@ function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            if numIterations==1
+            # if numIterations==1
+                deformAero(Omega_j*2*pi)
                 Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
-            end
+            # end
+
+
 
             if model.hydroOn
                 Fdof = [Fdof; Int.(Fdof[:,1]); collect(1:6)] #TODO: tie into ndof per node
@@ -350,7 +353,7 @@ function Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
             ## evaluate structural dynamics
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
 
-            dispData = GyricFEA.DispData(u_s,udot_s,uddot_s)
+            dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
 
             #         if model.analysisType=='ROM'
             #             dispData.displ_s = u_s
