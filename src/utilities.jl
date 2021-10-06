@@ -159,10 +159,10 @@ function owens(owensfile,analysisType;
     generatorfilename = string(fdirectory, readline(fid)) #generator file name
     
     line = readline(fid)
+    delimiter_idx = findall(" ",line)
     hydroOn = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
     potflowfile  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) # potential flow file prefix
-    interpOrder = real(parse(Int,line[3])) # interpolation order for HD/MD libraries
-
+    interpOrder = real(parse(Int,line[delimiter_idx[2][1]+1])) # interpolation order for HD/MD libraries
     line = readline(fid)
     rayleighDamping = split(line)
 
@@ -247,7 +247,7 @@ function owens(owensfile,analysisType;
     #     end
     #
 
-    if (hydrodynLib/="none"||moordynLib/="none") # Map shared library paths for external dependencies
+    if ((hydrodynLib!="none")||(moordynLib!="none")) # Map shared library paths for external dependencies
         bin = Bin(hydrodynLib, moordynLib)
     end
 

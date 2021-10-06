@@ -35,8 +35,8 @@ function test_owens(test_transient,test_modal,test_flutter)
     platStiffDiag_Nm_deg = [1.329e5 1.329e5 1.985e6 3.993e6 3.995e6 1.076e6]
 
     # external dependencies
-    hydrodynLib = "$path/../bin/HydroDyn_c_lib_x64.dll"
-    moordynLib = "$path/../bin/MoorDyn_c_lib_x64.dll"
+    hydrodynLib = "$path/../bin/HydroDyn_c_lib_x64"
+    moordynLib = "$path/../bin/MoorDyn_c_lib_x64"
 
     # define the filename saving convention
     fname = string(platfileRoot,outFileExt)
@@ -82,7 +82,7 @@ function test_owens(test_transient,test_modal,test_flutter)
     if test_transient
         println("Running Transient")
 
-        OWENS.owens(string(fname, ".owens"),"TNB";iterationType="DI", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+        OWENS.owens(string(fname, ".owens"),"TNB";iterationType="DI", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz, hydrodynLib=hydrodynLib, moordynLib=moordynLib)
 
         # Perform Tests
         tol = 1e-5
