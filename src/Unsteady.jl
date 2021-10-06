@@ -1,4 +1,6 @@
-
+"""
+Internal, gets specified rotor speed at time
+"""
 function omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)
 
     if (tocp[length(tocp)]<tCurrent)
@@ -26,30 +28,33 @@ function omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)
     return OmegaCurrent,OmegaDotCurrent,terminateSimulation
 end
 
+"""
+Internal, generator definintion
+"""
 function userDefinedGenerator(input)
     return 0.0 #this is what was in the original file...
 end
 
+"""
+
+    getRotorPosSpeedAccelAtTime(t0,time,aziInit)
+
+Uses the user defined function rotorSpeedProfile() to get
+the azimuth, speed, and acceleration of the rotor.
+
+#Input
+* `t0`      time at which azimuth integration is beginning
+* `time`    current time that position, velocity, and acceleration are being requested
+* `aziInit` initial rotor azimuth angle integration will begin at
+
+#Output
+* `rotorAzimuth` azimuth position of rotor (rad) at time
+* `rotorSpeed`   rotor speed (Hz) at time
+* `rotorAcceleration` rotor acceleration (Hz/s) at time
+"""
 function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
-    #getRotorPosSpeedAccelAtTime uses user defined function to get rotor pos.
-    #   [rotorAzimuth,rotorSpeed,rotorAcceleration] = getRotorPosSpeedAccelAtTime(t0,time,aziInit)
-    #
-    #   This function uses the user defined function rotorSpeedProfile() to get
-    #   the azimuth, speed, and acceleration of the rotor.
-    #
-    #   input:
-    #   t0      = time at which azimuth integration is beginning
-    #   time    = current time that position, velocity, and acceleration are
-    #             being requested
-    #   aziInit = initial rotor azimuth angle integration will begin at
-    #
-    #   output:
-    #   rotorAzimuth = azimuth position of rotor (rad) at time
-    #   rotorSpeed   = rotor speed (Hz) at time
-    #   rotorAcceleration = rotor acceleration (Hz/s) at time
 
-
-    rotorSpeed = userDefinedRotorSpeedProfile(time) #get rotgor speed at time
+    rotorSpeed = userDefinedRotorSpeedProfile(time) #get rotor speed at time
 
     dt = 0.01#some small delta t used in estimating rotor acceleration
     if ((time-dt) < 0)
@@ -69,7 +74,9 @@ function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
     return rotorAzimuth,rotorSpeed,rotorAcceleration
 end
 
-#simple trapezoidal rule integration
+"""
+Internal, simple trapezoidal rule integration
+"""
 function trapezoidalRule(aziInit,rotorSpeedStart,rotorSpeedEnd,dt)
     return (aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi))
 end
@@ -112,36 +119,44 @@ function transMat(theta1, theta2, theta3)
     return transMat
 
 end
-
+"""
+Internal, unused, userDefinedRotorSpeedProfile
+"""
 function userDefinedRotorSpeedProfile(time)
     return 0.5 #this is what was originally in the file...
 end
 
+"""
+
+    externalForcing(time,timeArray,ForceValHist,ForceDof)
+
+Internal, linear time interpolation on the input forces (ForceValHist) for each specified ForceDof
+
+This function specifies external forcing for a transient analysis.
+Fexternal is a vector of loads and Fdof is a corresponding vector of
+degrees of freedom the concentrated loads in Fexternal correspond to.
+The input time allows for arbitrary time varying loads
+The global degree of freedom number corresponding with the local degree
+of freedom of a node may be calculated by:
+globalDOFNumber = (nodeNumber-1)*6 + localDOFnumber
+The localDOFnumber may range from 1 to 6 such that 1 corresponds to a
+force in "x direction" of the co-rotating hub frame. 2 and 3
+corresponds to a force in the "y" and "z directions" respectively. 4,
+5, and 6 correspond to a moment about the "x", "y", and "z" directions
+respectively.
+
+
+#Input
+* `time`: Current time
+* `timeArray`: time associated with ForceValHist
+* `ForceValHist`: Forces for each time for each Dof
+* `ForceDof`: Dofs within ForceValHist
+
+#Output
+* `Fexternal`: vector of external loads (forces/moments)
+* `Fdof`:      vector of corresponding DOF numbers to apply loads to
+"""
 function externalForcing(time,timeArray,ForceValHist,ForceDof)
-
-    #owens externalForcing function for the OWENS toolkit
-    #   [Fexternal, Fdof] = externalForcing(time,aeroLoads)
-    #
-    #   This function specifies external forcing for a transient analysis.
-    #   Fexternal is a vector of loads and Fdof is a corresponding vector of
-    #   degrees of freedom the concentrated loads in Fexternal correspond to.
-    #   The input time allows for arbitrary time varying loads
-    #   The global degree of freedom number corresponding with the local degree
-    #   of freedom of a node may be calculated by:
-    #   globalDOFNumber = (nodeNumber-1)*6 + localDOFnumber
-    #   The localDOFnumber may range from 1 to 6 such that 1 corresponds to a
-    #   force in "x direction" of the co-rotating hub frame. 2 and 3
-    #   corresponds to a force in the "y" and "z directions" respectively. 4,
-    #   5, and 6 correspond to a moment about the "x", "y", and "z" directions
-    #   respectively.
-
-    #
-    #      input:
-    #      time         = simulation time
-    #
-    #      output:
-    #      Fexternal     = vector of external loads (forces/moments)
-    #      Fdof          = vector of corresponding DOF numbers to apply loads to
 
     Fexternal = zeros(length(ForceDof))
 
@@ -153,23 +168,23 @@ function externalForcing(time,timeArray,ForceValHist,ForceDof)
     return Fexternal, Fdof
 end
 
-function calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
-    #calculateDriveShaftReactionTorque calculates reaction torque of driveshaft
-    #   [torque] = calculateDriveShaftReactionTorque(driveShaftProps,...
-    #                thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
-    #
-    #   This function calculates reaction torque of driveshaft
-    #
-    #   input:
-    #   driveShaftProps      = object containing driveshaft properties
-    #   thetaRotor           = azimuth position of rotor/rotor shaft (rad)
-    #   thetaGB              = azimuth position of gearbox shaft (rad)
-    #   thetaDotRotor        = angular velocity of rotor/rotor shaft (rad/s)
-    #   thetaDotGB           = angular velocity of gearbox shaft (rad/s)
-    #
-    #   output:
-    #   torque   = reaction torque of drive shaft
+"""
 
+    calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
+
+Internal, calculates reaction torque of driveshaft
+
+#Input
+* `driveShaftProps`:    object containing driveshaft properties
+* `thetaRotor`:         azimuth position of rotor/rotor shaft (rad)
+* `thetaGB`:            azimuth position of gearbox shaft (rad)
+* `thetaDotRotor`:      angular velocity of rotor/rotor shaft (rad/s)
+* `thetaDotGB`:         angular velocity of gearbox shaft (rad/s)
+
+#Output
+* `torque`: reaction torque of drive shaft
+"""
+function calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
 
     k = driveShaftProps.k  #drive shaft stiffness
     c = driveShaftProps.c  #drive shaft damping
@@ -178,34 +193,32 @@ function calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,th
 
 end
 
-function updateRotorRotation(Irotor,Crotor,Krotor,
-    shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s,
-    delta_t)
-    #updateRotorRotation updates rotor rotation
-    #
-    #   [azi_sp1,Omega_sp1,OmegaDot_sp1] = updateRotorRotation(Irotor,Crotor,Krotor,...
-    #                                  shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s,...
-    #                                  delta_t)
-    #
-    #   This function updates the rotor rotation given rotor properties and external
-    #   torques
-    #
-    #   input:
-    #   Irotor      = rotor inertia
-    #   Crotor      = arbitrary rotor damping
-    #   Krotor      = arbitrary rotor stiffness
-    #   shaftTorque = torque from external forces on rotor
-    #   genTorque   = torque from generator
-    #   azi_s       = rotor azimuth (rad) at beginning of time step
-    #   Omega_s     = rotor speed (Hz) at beginning of time step
-    #   OmegaDot_s  = rotor acceleration (Hz/s) at beginning of time step
-    #   delta_t     = time step
-    #
-    #   output:
-    #   azi_sp1       = rotor azimuth (rad) at end of time step
-    #   Omega_sp1     = rotor speed (Hz/s) at end of time step
-    #   OmegaDot_sp1  = rotor acceleration (Hz/s) at end of time step
-    #
+"""
+updateRotorRotation updates rotor rotation
+
+    updateRotorRotation(Irotor,Crotor,Krotor,shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s,delta_t)
+
+Internal, updates the rotor rotation given rotor properties and external torques
+
+#Input
+* `Irotor`:      rotor inertia
+* `Crotor`:      arbitrary rotor damping
+* `Krotor`:      arbitrary rotor stiffness
+* `shaftTorque`: torque from external forces on rotor
+* `genTorque`:   torque from generator
+* `azi_s`:       rotor azimuth (rad) at beginning of time step
+* `Omega_s`:     rotor speed (Hz) at beginning of time step
+* `OmegaDot_s`:  rotor acceleration (Hz/s) at beginning of time step
+* `delta_t`:     time step
+
+#Output
+* `azi_sp1`:       rotor azimuth (rad) at end of time step
+* `Omega_sp1`:     rotor speed (Hz/s) at end of time step
+* `OmegaDot_sp1`:  rotor acceleration (Hz/s) at end of time step
+
+"""
+function updateRotorRotation(Irotor,Crotor,Krotor,shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s, delta_t)
+
     Frotor = shaftTorque + genTorque #calculate effective torque on rotor
     Omega_s = Omega_s*2*pi #conversion form Hz to rad/s, etc.
     OmegaDot_s = OmegaDot_s*2*pi
@@ -219,31 +232,31 @@ function updateRotorRotation(Irotor,Crotor,Krotor,
 
 end
 
+"""
 
+    timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
+
+Internal, performs integration of a system using the Newmark-Beta method(constant-average acceleration sceheme).
+
+#Input
+* `M`:       system mass matrix
+* `K`:       system sttiffness matrix
+* `C`:       system damping matrix
+* `F`:       system force vector
+* `delta_t`: time step
+* `u`:       displacement at beginning of time step
+* `udot`:    velocity at beginning of time step
+* `uddot`:   acceleration at beginning of time step
+
+
+#Output
+* `unp1`:       displacement at end of time step
+* `udotnp1`:    velocity at end of time step
+* `uddotnp1`:   acceleration at end of time step
+
+"""
 function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
-    #timeIntegrateSubSystem integrates a system using Newmark-Beta method
-    #
-    #   [unp1,udotnp1,uddotnp1] = timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
-    #
-    #   #This function perform integration of a system using the Newmark-Beta
-    #   method(constant-average acceleration sceheme).
-    #
-    #   input:
-    #   M        = system mass matrix
-    #   K        = system sttiffness matrix
-    #   C        = system damping matrix
-    #   F        = system force vector
-    #   delta_t  = time step
-    #   u        = displacement at beginning of time step
-    #   udot     = velocity at beginning of time step
-    #   uddot    = acceleration at beginning of time step
-    #
-    #
-    #   output:
-    #   unp1        = displacement at end of time step
-    #   udotnp1     = velocity at end of time step
-    #   uddotnp1    = acceleration at end of time step
-    #
+
     alpha = 0.5 #constant avg accel scheme
     gamma = 0.5
     beta = 0.5*gamma
@@ -271,23 +284,46 @@ function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
     return unp1,udotnp1,uddotnp1
 
 end
+"""
 
+    Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
+
+Executable function for transient analysis. Provides the interface of various
+external module with transient structural dynamics analysis capability.
+
+# Input
+* `model::Model`: see ?Model
+* `feamodel::FEAModel`: see ?GyricFEA.FEAModel
+* `mesh::Mesh`: see ?GyricFEA.Mesh
+* `el::El`: see ?GyricFEA.El
+* `aero::function`: Fexternal, Fdof = aero(t) where Fexternal is the force on each affected mesh dof and Fdof is the corresponding DOFs affected
+* `getLinearizedMatrices::Bool`: Flag to save the linearized matrices
+
+
+# Output
+* `t`: time array
+* `aziHist`: azimuthal history array
+* `OmegaHist`: rotational speed array history
+* `OmegaDotHist`: rotational acceleration array history
+* `gbHist`: gearbox position history array
+* `gbDotHist`: gearbox velocity history array
+* `gbDotDotHist`: gearbox acceleration history array
+* `FReactionHist`: Base reaction 6dof forces history
+* `rigidDof`:
+* `genTorque`: generator torque history
+* `genPower`: generator power history
+* `torqueDriveShaft`: driveshaft torque history
+* `uHist`: mesh displacement history for each dof
+* `eps_xx_0_hist`: strain history for eps_xx_0 for each dof
+* `eps_xx_z_hist`: strain history for eps_xx_z for each dof
+* `eps_xx_y_hist`: strain history for eps_xx_y for each dof
+* `gam_xz_0_hist`: strain history for gam_xz_0 for each dof
+* `gam_xz_y_hist`: strain history for gam_xz_y for each dof
+* `gam_xy_0_hist`: strain history for gam_xy_0 for each dof
+* `gam_xy_z_hist`: strain history for gam_xy_z for each dof
+"""
 function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
-    #Unsteady performs modular transient analysis
-    #
-    #   Unsteady(model,mesh,el)
-    #
-    #   #This function is an executable function for transient analysis. It
-    #   provides the interface of various external module with transient
-    #   structural dynamics analysis capability.
-    #
-    #   input:
-    #   model       = object containing model data
-    #   mesh        = object containing mesh data
-    #   el          = object containing element data
-    #
-    #
-    #   output: (NONE)
+
 
     # Declare Variable Type, are set later
     udot_j = 0.0
@@ -325,7 +361,7 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
     totalNumDof = mesh.numNodes*numDOFPerNode
     #......... specify initial conditions .......................
     u_s = zeros(totalNumDof,1)
-    u_s = GyricFEA.setInitialConditions(model.initCond,u_s,numDOFPerNode)
+    u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
     u_sm1 = u_s
     udot_s = u_s*0
     uddot_s = u_s*0
@@ -424,14 +460,14 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
         #     etadot_s  = invPhi*udot_s2
         #     etaddot_s = invPhi*uddot_s2
     else
-        elStorage = GyricFEA.initialElementCalculations(model,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
+        elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
     #calculate structural/platform moi
     _,structureMOI,_ = GyricFEA.calculateStructureMassProps(elStorage)
     #..........................................................................
 
-    model.jointTransform, model.reducedDOFList = GyricFEA.createJointTransform(model.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    feamodel.jointTransform, feamodel.reducedDOFList = GyricFEA.createJointTransform(feamodel.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
     if model.hydroOn
         if model.outFilename == "none"
@@ -492,8 +528,8 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
         Ywec_jLast = Ywec_j
 
         #TODO: put these in the model
-        TOL = 1e-5  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 50 #max iteration for various modules
+        TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
+        MAXITER = 300 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
         platNorm = 0.0
@@ -562,7 +598,7 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
                     if model.useGeneratorFunction
                         genTorqueHSS0 = userDefinedGenerator(Omega_j)
                     else
-                        error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(model.generatorProps,Omega_j)
+                        genTorqueHSS0 = simpleGenerator(model,Omega_j)
                     end
                 end
                 #should eventually account for Omega = gbDot*gearRatio here...
@@ -642,10 +678,8 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
                     VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 end
 
-                println("CalcOutput")
                 frc_hydro_n, out_vals = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
                 frc_mooring_n, mooring_tensions = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
-                println("after CalcOutput")
 
                 # store platform rotations from the output values, as OWENS can not internally calculate this
                 ptfm_roll = out_vals[4]
@@ -665,7 +699,7 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
             ## evaluate structural dynamics
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
 
-            dispData = GyricFEA.DispData(u_s,udot_s,uddot_s)
+            dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
 
             #         if model.analysisType=='ROM'
             #             dispData.displ_s = u_s
@@ -681,7 +715,7 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
                 error("ROM not fully implemented")
                 #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
             end
 
             #update last iteration displacement vector

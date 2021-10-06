@@ -1,4 +1,52 @@
+"""
+    owens(owensfile,analysisType;
+        delta_t=2e-3,
+        numTS=100,
+        tocp=[0.0,1.1],
+        Omegaocp=[0.0,1.0],
+        OmegaInit=0.0,
+        OmegaGenStart=0.0,
+        usingRotorSpeedFunction=false,
+        nlOn=true,
+        Omega=0.0,
+        turbineStartup=0,
+        spinUpOn=false,
+        numModesToExtract=20,
+        displInitGuess=0.0,
+        airDensity=1.2041,
+        aeroElasticOn = false,
+        guessFreq = 0,
+        gravityOn = true,
+        generatorOn = false,
+        omegaControl = false,
+        iterationType = "NR", # nlParams
+        adaptiveLoadSteppingFlag = true,
+        tolerance = 1.0000e-06,
+        maxIterations = 50,
+        maxNumLoadSteps = 20,
+        minLoadStepDelta = 0.0500,
+        minLoadStep = 0.0500,
+        prescribedLoadStep = 0.0,
+        elementOrder = 1,
+        numDofPerNode = 6,
+        hydroOn = false,
+        platformTurbineConnectionNodeNumber = 1,
+        JgearBox =0.0,
+        gearRatio = 1.0,
+        gearBoxEfficiency = 1.0,
+        useGeneratorFunction = false,
+        generatorProps = 0.0,
+        driveTrainOn = false)
 
+Original serial and file reading method of running an analysis.
+
+#Inputs
+See ?OWENS.Model and ?GyricFEA.FEAModel
+
+#Outputs
+See ?OWENS.Unsteady, ?GyricFEA.Modal
+
+"""
 function owens(owensfile,analysisType;
     delta_t=2e-3,
     numTS=100,
@@ -183,10 +231,7 @@ function owens(owensfile,analysisType;
     BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
     el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
-    # rbarFileName = [owensfile(1:end-6),".rbar"] #setrbarfile
-    # [model.joint] = readRBarFile(rbarFileName,model.joint,mesh) #read rbar file name
-    nodalTerms = readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
-    # [model] = readPlatformFile(model,platformFlag,platfilename)
+    nodalTerms = GyricFEA.readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
     initCond = []
 
     #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
@@ -211,16 +256,34 @@ function owens(owensfile,analysisType;
     jointTransform, reducedDOFList = GyricFEA.createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     numReducedDof = length(jointTransform[1,:])
 
-    nlParams = NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
+    nlParams = GyricFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
     model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
-    aeroElasticOn,aeroLoadsOn,driveTrainOn,airDensity,
-    guessFreq,gravityOn,generatorOn,hydroOn,interpOrder,JgearBox,gearRatio,gearBoxEfficiency,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    spinUpOn,nlOn,numModesToExtract,aeroloadfile,owensfile,potflowfile,outFilename,RayleighAlpha,
-    RayleighBeta,elementOrder,joint,platformTurbineConnectionNodeNumber,jointTransform,
-    reducedDOFList,mesh.numNodes,bladeData,nlParams,pBC=BC.pBC,nodalTerms,driveShaftProps)
+    numModesToExtract,aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
+
+    feamodel = GyricFEA.FEAModel(;analysisType,
+    initCond,
+    aeroElasticOn,
+    guessFreq,
+    airDensity,
+    gravityOn,
+    nlOn,
+    spinUpOn,
+    outFilename,
+    RayleighAlpha,
+    RayleighBeta,
+    elementOrder,
+    joint,
+    platformTurbineConnectionNodeNumber,
+    jointTransform,
+    reducedDOFList,
+    nlParams,
+    numNodes = mesh.numNodes,
+    pBC=BC.pBC,
+    nodalTerms)
 
     #     if(analysisType=="S") #EXECUTE STATIC ANALYSIS
     #         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
@@ -236,7 +299,7 @@ function owens(owensfile,analysisType;
             displInitGuess = zeros(mesh.numNodes*6)
         end
         OmegaStart = 0.0
-        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(model,mesh,el;displ=displInitGuess,Omega,OmegaStart)
+        freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90=Modal(feamodel,mesh,el;displ=displInitGuess,Omega,OmegaStart)
         return freq,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
     end
     #
@@ -266,7 +329,8 @@ function owens(owensfile,analysisType;
 
         aeroForces(t) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
-        Unsteady(model,mesh,el,bin,aeroForces)
+        deformAero(omega) = 0.0 #placeholder function
+        Unsteady(model,feamodel,mesh,el,bin,aeroForces,deformAero)
 
         return model
     end
@@ -277,17 +341,19 @@ function owens(owensfile,analysisType;
 
 end
 
-function readMesh(filename)
-    #readMesh  reads mesh file and stores data in mesh object
-    #   [mesh] = readMesh(filename)
-    #
-    #   This function reads the mesh file and stores data in the mesh object.
-    #
-    #      input:
-    #      filename      = string containing mesh filename
+"""
 
-    #      output:
-    #      mesh          = object containing mesh data
+    readMesh(filename)
+
+Reads the mesh file and stores data in the mesh object.
+
+input:
+* `filename::string` string containing mesh path/to/filename.mesh
+
+output:
+* `mesh::GyricFEA.Mesh` see GyricFEA.Mesh
+"""
+function readMesh(filename)
 
     fid = open(filename,"r")   #open mesh file
 
@@ -353,21 +419,22 @@ function readMesh(filename)
 
 end
 
+"""
 
+    readBCdata(bcfilename,numNodes,numDofPerNode)
+
+This function reads the boundray condition file and stores data in the
+boundary condition object.
+
+#Input
+* `bcfilename::string`:    string containing boundary condition filename
+* `numNodes::int`:      number of nodes in structural model
+* `numDofPerNode::int`: number of degrees of freedom per node
+
+#Output
+* `BC::GyricFEA.BC_struct`:   see GyricFEA.BC_struct, object containing boundary condition data
+"""
 function readBCdata(bcfilename,numNodes,numDofPerNode)
-    #readBDdata  reads boundary condition file
-    #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
-    #
-    #   This function reads the boundray condition file and stores data in the
-    #   boundary condition object.
-    #
-    #      input:
-    #      bcfilename    = string containing boundary condition filename
-    #      numNodes      = number of nodes in structural model
-    #      numDofPerNode = number of degrees of freedom per node
-
-    #      output:
-    #      BC            = object containing boundary condition data
 
     fid = open(bcfilename)       #open boundary condition file
     numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
@@ -423,18 +490,20 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
 
 end
 
+"""
 
+    readBladeData(filename)
+
+This function reads blade data from file
+
+#Input
+* `filename::string`:   string containing /path/to/bladedata.bld
+
+#Output
+* `bladeData::BladeData`:  see ?BladeData object containing blade data
+"""
 function readBladeData(filename)
-    #readBladeDAta reads blade data
-    #   [bladeData] = readBladeData(filename)
-    #
-    #   This function reads blade data from file
-    #
-    #   input:
-    #   filename      = string containing file name for blade data file
-    #
-    #   output:
-    #   bladeData     = object containing blade data
+
     a = DelimitedFiles.readdlm(filename,'\t',skipstart = 0)
 
     bladeNum = a[:,1]
@@ -481,7 +550,7 @@ function readBladeData(filename)
         structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
     end
 
-    bladeData = GyricFEA.BladeData(numBlades,  #assign data to bladeData object
+    bladeData = BladeData(numBlades,  #assign data to bladeData object
     bladeDataBlock[:,1],
     bladeDataBlock[:,2],
     bladeDataBlock[:,3],
@@ -492,22 +561,23 @@ function readBladeData(filename)
 
 end
 
+"""
 
+    readElementData(numElements,elfile,ortfile,bldfile
+
+Reads element data and stores data in the element data
+object.
+
+#Input
+* `numElements::int`:  number of elements in structural mesh
+* `elfile::string`:       element data path/to/filename
+* `ortfile::string`:      element orientation path/to/filename
+* `bldfile::string`:      blade data path/to/filename
+
+#Output
+* `el::GyricFEA.El`:       see GyricFEA.El    element data object
+"""
 function readElementData(numElements,elfile,ortfile,bladeData_struct)
-    #readElementData  reads element data
-    #   [el] = readElementData(numElements,elfile,ortfile,bldfile
-    #
-    #   This function reads element data and stores data in the element data
-    #   object.
-    #
-    #      input:
-    #      numElements   = number of elements in structural mesh
-    #      elfile        = element data filename
-    #      ortfile       = element orientation filename
-    #      bldfile       = blade data filename
-
-    #      output:
-    #      el            = element data object
 
     fid = open(elfile,"r") #open element data file
 
@@ -634,18 +704,19 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
 
 end
 
-function readGeneratorProps(generatorfilename)
-    #readGeneratorProps reads generator properties from file
-    #   [genprops] = readGeneratorProps(generatorfilename)
-    #
-    #   This function reads generator properties from file.
-    #
-    #   input:
-    #   generatorfilenanme  = string containing generator property file name
-    #
-    #   output:
-    #   genprops          = model object containing generator properties
+"""
 
+    readGeneratorProps(generatorfilename)
+
+This function reads generator properties from file.
+
+#Input
+* `generatorfilenanme::string`:  = string containing path/to/generatorfile
+
+#Output
+* `genprops`:    = model object containing generator properties
+"""
+function readGeneratorProps(generatorfilename)
 
     # fid = fopen(generatorfilename) #open generator property file
     # if (fid!=-1) #if file can be opened
@@ -667,17 +738,19 @@ function readGeneratorProps(generatorfilename)
     return genprops
 end
 
+"""
+
+    readInitCond(filename)
+
+Reads initial conditions from file
+
+#Input
+* `filename`      string containing file name for initial conditions file
+
+#Output
+* `initCond`      array containing initial conditions
+"""
 function readInitCond(filename)
-    #readInitCond reads initial conditions
-    #   [initCond] = readInitCond(filename)
-    #
-    #   This function reads initial conditions from file
-    #
-    #   input:
-    #   filename      = string containing file name for initial conditions file
-    #
-    #   output:
-    #   initCond      = array containing initial conditions
 
     initCond =[] #initialize intial condition to null
 
@@ -698,13 +771,23 @@ function readInitCond(filename)
     return initCond
 end
 
+"""
+
+    writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
+
+writes a nodal input file
+
+#Intput
+* `fileRoot::string`: string path to desired location with name but no extension
+* `nodes::int`: node numbers for C/M/K
+* `cmkType::string`: "C" "M" or "K"
+* `cmkValues::float`: C/M/K value
+
+#Output
+* `none`:
+
+"""
 function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
-    # writeOwensNDL writes a nodal input file for the OWENS Toolkit
-    #   This function writes a boundary condition file for the OWENS Toolkit
-    #      input:
-    #      fileRoot     = string containing input prefix of file name
-    #      output:     (NONE)
-    # **********************************************************************
 
     # open the BC file to save the boundary conditions to
     BCfile = string(fileRoot, ".ndl")    #construct file name
@@ -724,169 +807,9 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
     end
 end
 
-function readNodalTerms(;filename="none",data=[1 "M6" 1 1 0.0])
-    #readNodalTerms reads concentrated nodal terms file
-    #   [nodalTerms] = readNodalTerms(filename)
-    #
-    #   This function reads the nodal terms file and stores data in the nodal
-    #   terms object.
-    #
-    #      input:
-    #      filename      = string containing nodal terms filename
-    #
-    #      output:
-    #      nodalTerms    = object containing concentrated nodal data
-    if filename!="none"
-        data = DelimitedFiles.readdlm(filename,' ',skipstart = 0)
-    end
-
-    n_M = sum(count.(x->(x=='M'), data[:,2]))
-    n_K = sum(count.(x->(x=='K'), data[:,2]))
-    n_C = sum(count.(x->(x=='C'), data[:,2]))
-    n_F = sum(count.(x->(x=='F'), data[:,2]))
-
-    concMnodeNum = zeros(n_M)
-    concMdof1 = zeros(n_M)
-    concMdof2 = zeros(n_M)
-    concMval = zeros(n_M)
-
-    concKnodeNum = zeros(n_K)
-    concKdof1 = zeros(n_K)
-    concKdof2 = zeros(n_K)
-    concKval = zeros(n_K)
-
-    concCnodeNum = zeros(n_C)
-    concCdof1 = zeros(n_C)
-    concCdof2 = zeros(n_C)
-    concCval = zeros(n_C)
-
-    concFnodeNum = zeros(n_F)
-    concFdof1 = zeros(n_F)
-    concFdof2 = zeros(n_F)
-    concFval = zeros(n_F)
-
-    i_M = 1
-    i_K = 1
-    i_C = 1
-    i_F = 1
-    for i_data = 1:length(data[:,1])
-        if data[i_data,2][1] == 'M'
-            concMnodeNum[i_M] = data[i_data,1]
-            concMdof1[i_M] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concMdof2[i_M] = data[i_data,4]
-            end
-            concMval[i_M] = data[i_data,end]
-            i_M += 1
-        elseif data[i_data,2][1] == 'K'
-            concKnodeNum[i_K] = data[i_data,1]
-            concKdof1[i_K] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concKdof2[i_K] = data[i_data,4]
-            end
-            concKval[i_K] = data[i_data,end]
-            i_K += 1
-        elseif data[i_data,2][1] == 'C'
-            concCnodeNum[i_C] = data[i_data,1]
-            concCdof1[i_C] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concCdof2[i_C] = data[i_data,4]
-            end
-            concCval[i_C] = data[i_data,end]
-            i_C += 1
-        elseif data[i_data,2][1] == 'F'
-            concFnodeNum[i_F] = data[i_data,1]
-            concFdof1[i_F] = data[i_data,3]
-            if length(data[1,:])==5 #If 6x6 general method
-                concFdof2[i_F] = data[i_data,4]
-            end
-            concFval[i_F] = data[i_data,end]
-            i_F += 1
-        else
-            error("Unknown Nodal Data Type")
-        end
-    end
-
-    if length(data[1,:])==5
-        @warn "General 6x6 concentrated diagonal terms are being applied to the old diagonal method with coulping (e.g. mass and force through acceleration), and no coupling is happening for the non-diagonal terms"
-        #TODO: implement the 6x6 terms since they will be necessary for the linearized platform since there is strong cross coupling
-        concLoad = Array{GyricFEA.ConcNDL, 1}(undef, n_F)
-        for i_F = 1:n_F
-            if concFnodeNum[i_F] == concFdof2[i_F]
-                concLoad[i_F]= GyricFEA.ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
-            end
-        end
-
-        concStiff = Array{GyricFEA.ConcNDL, 1}(undef, n_K)
-        for i_K = 1:n_K
-            if concKdof1[i_K] == concKdof2[i_K]
-                concStiff[i_K] = GyricFEA.ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
-            end
-        end
-
-        concMass = Array{GyricFEA.ConcNDL, 1}(undef, n_M)
-        for i_M = 1:n_M
-            if concMdof1[i_M] == concMdof2[i_M]
-                concMass[i_M] = GyricFEA.ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
-            end
-        end
-
-        concStiffGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_K)
-        for i_K = 1:n_K
-            concStiffGen[i_K] = GyricFEA.ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof2[i_K],concKval[i_K])
-        end
-
-        concMassGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_M)
-        for i_M = 1:n_M
-            concMassGen[i_M] = GyricFEA.ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof2[i_M], concMval[i_M])
-        end
-
-        concDampGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_C)
-        for i_C = 1:n_C
-            concDampGen[i_C] = GyricFEA.ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof2[i_C], concCval[i_C])
-        end
-
-    elseif length(data[1,:])==4
-        @warn "Only diagonal terms being used, there are no cross terms"
-        # This portion is different in that it uses the nongeneral terms and applies them to the general just at the diagonal, TODO: once the general terms are implemented, this needs to be updated
-        concLoad = Array{GyricFEA.ConcNDL, 1}(undef, n_F)
-        for i_F = 1:n_F
-            concLoad[i_F]= GyricFEA.ConcNDL(concFnodeNum[i_F], concFdof1[i_F], concFval[i_F])
-        end
-
-        concStiff = Array{GyricFEA.ConcNDL, 1}(undef, n_K)
-        for i_K = 1:n_K
-            concStiff[i_K] = GyricFEA.ConcNDL(concKnodeNum[i_K], concKdof1[i_K], concKval[i_K])
-        end
-
-        concMass = Array{GyricFEA.ConcNDL, 1}(undef, n_M)
-        for i_M = 1:n_M
-            concMass[i_M] = GyricFEA.ConcNDL(concMnodeNum[i_M], concMdof1[i_M], concMval[i_M])
-        end
-
-        concStiffGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_K)
-        for i_K = 1:n_K #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concStiffGen[i_K] = GyricFEA.ConcNDLGen(concKnodeNum[i_K],concKdof1[i_K],concKdof1[i_K],concKval[i_K])
-        end
-
-        concMassGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_M)
-        for i_M = 1:n_M #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concMassGen[i_M] = GyricFEA.ConcNDLGen(concMnodeNum[i_M], concMdof1[i_M], concMdof1[i_M], concMval[i_M])
-        end
-
-        concDampGen = Array{GyricFEA.ConcNDLGen, 1}(undef, n_C)
-        for i_C = 1:n_C #NOTE dof1 is being used twice since in this case we didn't read in any cross terms!
-            concDampGen[i_C] = GyricFEA.ConcNDLGen(concCnodeNum[i_C], concCdof1[i_C], concCdof1[i_C], concCval[i_C])
-        end
-    else
-        error("Wrong number of terms in the .ndl file")
-    end
-
-    #store concentrated nodal term data in nodalTerms object
-    return GyricFEA.NodalTerms(concLoad,concStiff,concMass,concStiffGen,concMassGen,concDampGen)
-
-end
-
+"""
+Internal, reads cactus .geom file and stores each column in an array within the CactusGeom struct
+"""
 function readCactusGeom(geom_fn)
 
     data = DelimitedFiles.readdlm(geom_fn,skipstart = 0)
@@ -961,7 +884,9 @@ function readCactusGeom(geom_fn)
     return CactusGeom(NBlade,NStrut,RotN,RotP,RefAR,RefR,blade,strut)
 end
 
-
+"""
+Internal, takes cactus loads and geometry and OWENS mesh and maps the loads to the blades' FEA dofs
+"""
 function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
 
     cactusGeom = readCactusGeom(geomFn)
@@ -974,7 +899,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     rho = 1.225
     #     RefAR = cactusGeom.RefAR*ft2m*ft2m
     RefR = cactusGeom.RefR*ft2m
-    V = 6.787243728 #m/s #27.148993200000003
+    V = 25.0#6.787243728 #m/s #27.148993200000003
     @warn "Velocity is hardcoded here at $V"
 
     normTime = aero_data[:,1]
@@ -1113,8 +1038,10 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     return time,ForceValHist,ForceDof,cactusGeom
 end
 
+"""
+Internal, generates an output file name depending on the analysis type
+"""
 function generateOutputFilename(owensfilename,analysisType)
-    #This function generates an output file name depending on the analysis type
 
     #find the last "." in owensfilename - helps to extract the prefix in the .owens
     index = findlast(".",owensfilename)[1]
@@ -1131,6 +1058,9 @@ function generateOutputFilename(owensfilename,analysisType)
 
 end
 
+"""
+Internal, reads modal file and returns freq, damp, and modeshapes
+"""
 function readResultsModalOut(resultsFile,numNodes)
     data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
 
@@ -1190,56 +1120,115 @@ function readResultsModalOut(resultsFile,numNodes)
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end
 
+"""
+    simpleGenerator(generatorProps,genSpeed)
 
-function makeBCdata(pBC,numNodes,numDofPerNode,reducedDOFList,jointTransform)
-    #readBDdata  reads boundary condition file
-    #   [BC] = readBCdata(bcfilename,numNodes,numDofPerNode)
-    #
-    #   This function reads the boundray condition file and stores data in the
-    #   boundary condition object.
-    #
-    #      input:
-    #      bcfilename    = string containing boundary condition filename
-    #      numNodes      = number of nodes in structural model
-    #      numDofPerNode = number of degrees of freedom per node
+Caclulates generator torque for simple induction generator
 
-    #      output:
-    #      BC            = object containing boundary condition data
+#Input
+* `generatorProps` object containing generator properties, see ?model
+* `genSpeed::float`       generator speed (Hz)
 
-    totalNumDof = numNodes*numDofPerNode
+#Output
+* `genTorque::float`      generator torque
+"""
+function simpleGenerator(model,genSpeed)
 
-    numsBC = 0
-    nummBC = 0
+    #assign generator properties form model object
+    ratedTorque        = model.ratedTorque;
+    ratedGenSlipPerc   = model.ratedGenSlipPerc;
+    zeroTorqueGenSpeed = model.zeroTorqueGenSpeed;
+    pulloutRatio       = model.pulloutRatio;
 
-    #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
-    #constrained)
+    #calculate rated generator speed
+    ratedGenSpeed = zeroTorqueGenSpeed*(1.0 + 0.01*ratedGenSlipPerc);
 
-    #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
-                isConstrained[index] = 1
-            end
-            index = index + 1
-        end
+    #calculate slope between lower and upper torque limits for simple induction generator
+    midSlope = (ratedTorque/(ratedGenSpeed-zeroTorqueGenSpeed));
+
+    #calculate lower and upper torque limits of generator
+    upperTorqueLimit =ratedTorque*pulloutRatio;
+    lowerTorqueLimit = -upperTorqueLimit;
+
+    #calculate upper and lower generator speeds at which linear torque vs. speed region begins/ends
+    upperGenSpeed = zeroTorqueGenSpeed + upperTorqueLimit/midSlope;
+    lowerGenSpeed = zeroTorqueGenSpeed - upperTorqueLimit/midSlope;
+
+    #calculate generator torque
+    if genSpeed<0.0#lowerGenSpeed
+        genTorque = 0.0#lowerTorqueLimit;
+    elseif genSpeed>upperGenSpeed
+        genTorque = upperTorqueLimit;
+    else
+        genTorque = midSlope*(genSpeed-zeroTorqueGenSpeed);
     end
-    numpBC = length(pBC[:,1])
 
-    map = GyricFEA.calculateBCMap(numpBC,pBC,numDofPerNode,reducedDOFList)
-    numReducedDof = length(jointTransform[1,:])
-    redVectorMap = GyricFEA.constructReducedDispVectorMap(numNodes,numDofPerNode,numReducedDof,numpBC,pBC,isConstrained) #create a map between reduced and full DOF lists
-
-    BC = GyricFEA.BC_struct(numpBC,
-    pBC,
-    numsBC,
-    nummBC,
-    isConstrained,
-    map,
-    redVectorMap)
-
-    return BC
+    return genTorque
 
 end
+
+#
+# function stress_wrapper(usedmaterials,plyprops,spanlocy,orientation,strain,shear)
+#
+#     c_stress = []
+#     stress = [] #used in vtk output
+#     stresslayer = zeros(length(usedmaterials),length(spanlocy),length(strain[1,:]))
+#     j=1
+#     for i = 1:length(usedmaterials)
+#
+#         if !contains(usedmaterials[i],"foam") #don't check stress on foam
+#             matnames = plyprops.names
+#             idx = find(matnames -> matnames == usedmaterials[i],matnames)
+#
+#             material = plyprops.plies[idx[1]]
+#             orien = orientation[j]
+#             j+=1 #so we don't have to have extra design variables in orientation
+#
+#             stressi = stresscalc(strain,shear,material,orien)
+#
+#             if i==1 #only calc once since it's the same for the whole structure (assuming thin layups)
+#                 stress = sqrt.(stressi[:,:,1].^2+stressi[:,:,2].^2+stressi[:,:,3].^2) #TODO break up or calculate von-mises etc
+#             end
+#
+#             # determine contraint values
+#             c_stressi = stresscon(stressi,material)
+#             stresslayer[i,:,:] = c_stressi
+#
+#             c_stress = [c_stress;c_stressi]
+#         end
+#     end
+#
+#     return c_stress, stress, stresslayer
+# end #stress_wrapper
+#
+# """
+#     stresscalc(strain::Array{Float64,2},shear::Array{Float64,1},mat::Composites.material,theta_d::Float64)
+#
+# #Inputs
+# * `strain::Array{Float64,2}`:: strain at every span location and every chord location around the airfoil
+# * `shear::Array{Float64,1}`:: shear stress, needs to be included, is zeros for now
+# * `mat::Composites.material`:: material properties
+# * `theta_d::Float64`:: orientation of the ply in degrees
+#
+# #Outputs
+# * `plystress::Array{Float64,2}`: stress at every span location and every chord location around the airfoil
+# """
+# function stresscalc(strain,shear,mat,theta_d)
+#     # Get rotated material stiffness matrix
+#     qbar = Composites.getQ(mat,theta_d)
+#     # Determine Stresses from Strains in individual plys
+#     nnodes = size(strain,1)
+#     nloc = size(strain,2)
+#     plystress = zeros(nnodes,nloc,3)
+#     for i = 1:nnodes #Run entire length of wing #
+#         for iloc = 1:nloc # Run at every specified strain location
+#             # Convert shear stress to shear strain
+#             gam12 = shear[i]/qbar[3,3]-qbar[1,3]/qbar[3,3]*strain[i,iloc]
+#             # Calculate laminate stresses
+#             stress = qbar*[strain[i,iloc],0,gam12]
+#             # Transform stresses to ply axes
+#             plystress[i,iloc,:] = Composites.rotstress(stress,theta_d)
+#         end
+#     end
+#     return plystress
+# end #stress_calc
