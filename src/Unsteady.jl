@@ -97,7 +97,7 @@ function transMat(theta1, theta2, theta3)
 
 
     # Define the transformation matrix:
-
+    transMat = Array{Float64}(undef, 3,3)
     if comDenom == 0.0  # All angles are zero and matrix is ill-conditioned (the matrix is derived assuming that the angles are not zero); return identity
 
         transMat = LinearAlgebra.I(3)
@@ -322,7 +322,7 @@ external module with transient structural dynamics analysis capability.
 * `gam_xy_0_hist`: strain history for gam_xy_0 for each dof
 * `gam_xy_z_hist`: strain history for gam_xy_z for each dof
 """
-function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
+function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatrices=false)
 
 
     # Declare Variable Type, are set later
@@ -487,7 +487,7 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
 
         #     i #TODO add verbose printing
         # if (mod(i,100)==0) #print command that displays progress of time stepping
-        println("Time Step: $i")
+        println("\nTime Step: $i")
         # end
 
         ## check for specified rotor speed at t[i] + delta_t
@@ -521,9 +521,12 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
         genTorque_j = genTorque_s
 
         #initialize  platform module related variables only used if (model.hydroOn)
-        frc_hydro_n = Vector{Float32}(undef, numDOFPerNode)
-        frc_mooring_n = Vector{Float32}(undef, numDOFPerNode)
-        out_vals = Vector{Float32}(undef, numDOFPerNode)    
+        frc_hydro_n = Vector{Float64}(undef, numDOFPerNode)
+        frc_hydro_h = Vector{Float64}(undef, numDOFPerNode)
+        frc_mooring_n = Vector{Float64}(undef, numDOFPerNode)
+        frc_mooring_h = Vector{Float64}(undef, numDOFPerNode)
+        out_vals = Vector{Float64}(undef, numDOFPerNode)
+        mooring_tensions = Vector{Float64}(undef, numDOFPerNode)
         Ywec_j = Ywec[i,:]
         Ywec_jLast = Ywec_j
 
@@ -652,9 +655,10 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
 
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
-            if numIterations==1
+            # if numIterations==1
+                deformAero(Omega_j*2*pi)
                 Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
-            end
+            # end
 
             ## compile external forcing on platform
             # compile forces to supply to structural dynamics solver
@@ -677,9 +681,8 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
                 elseif model.interpOrder == 2
                     VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 end
-
-                frc_hydro_n, out_vals = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
-                frc_mooring_n, mooring_tensions = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
+                frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
+                frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
 
                 # store platform rotations from the output values, as OWENS can not internally calculate this
                 ptfm_roll = out_vals[4]
@@ -687,12 +690,12 @@ function Unsteady(model,mesh,el,bin,aero;getLinearizedMatrices=false)
                 ptfm_yaw = out_vals[6]
 
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
-                frc_hydro_h[1:3] = frc_hydro_n[1]*a1 + frc_hydro_n[3]*a2 + frc_hydro_n[2]-a3
-                frc_hydro_h[4:6] = frc_hydro_n[4]*a1 + frc_hydro_n[6]*a2 + frc_hydro_n[5]-a3
-                frc_mooring_h[1:3] = frc_mooring_n[1]*a1 + frc_mooring_n[3]*a2 + frc_mooring_n[2]-a3
-                frc_mooring_h[4:6] = frc_mooring_n[4]*a1 + frc_mooring_n[6]*a2 + frc_mooring_n[5]-a3
+                frc_hydro_h[1:3] = frc_hydro_n[1]*a1 + frc_hydro_n[3]*a2 + frc_hydro_n[2]*a3
+                frc_hydro_h[4:6] = frc_hydro_n[4]*a1 + frc_hydro_n[6]*a2 + frc_hydro_n[5]*a3
+                frc_mooring_h[1:3] = frc_mooring_n[1]*a1 + frc_mooring_n[3]*a2 + frc_mooring_n[2]*a3
+                frc_mooring_h[4:6] = frc_mooring_n[4]*a1 + frc_mooring_n[6]*a2 + frc_mooring_n[5]*a3
 
-                Fdof = [Fdof; Int.(Fdof[:,2]); collect(1:6)] #TODO: tie into ndof per node
+                Fdof = [Fdof; Int.(Fdof[numDOFPerNode+1:numDOFPerNode*2])] #TODO: tie into ndof per node
                 Fexternal = [Fexternal; frc_hydro_h+frc_mooring_h]
             end
 

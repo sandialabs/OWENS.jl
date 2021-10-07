@@ -259,7 +259,7 @@ function owens(owensfile,analysisType;
     nlParams = GyricFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,initCond,numTS,delta_t,Omegaocp,
+    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
     aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
     numModesToExtract,aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
