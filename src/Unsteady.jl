@@ -475,6 +475,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             hd_outFilename = "hydrodyn_temp.out"
         else
             hd_outFilename = model.outFilename
+        end
 
         u_s_ptfm = Vector(u_s[numDOFPerNode+1:numDOFPerNode*2]) # platform is modeled at the second node (bottom node is fixed)
         udot_s_ptfm = Vector(udot_s[numDOFPerNode+1:numDOFPerNode*2])
@@ -589,22 +590,22 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
             #.... inertial frame to platform transformation matrix ...........
             if (model.hydroOn)
-                CN2P = transMat(ptfm_roll, ptfm_yaw, -ptfm_pitch)
+                CN2P = transMat(ptfm_roll, ptfm_pitch, ptfm_yaw)
                 #             CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4))
-                iCN2P = inv(CN2P)
-                a1 = CN2P[1,:]
-                a2 = CN2P[2,:]
-                a3 = CN2P[3,:]
-                ia1 = iCN2P[1,:]
-                ia2 = iCN2P[2,:]
-                ia3 = iCN2P[3,:]
-            else
                 CN2P=1.0*LinearAlgebra.I(3)            
             end
             
             #.........................................
 
             CN2H = CP2H*CN2P
+            iCN2H = inv(CN2H)
+            
+            a1 = CN2H[1,:]
+            a2 = CN2H[2,:]
+            a3 = CN2H[3,:]
+            ia1 = iCN2H[1,:]
+            ia2 = iCN2H[2,:]
+            ia3 = iCN2H[3,:]
 
             ## evaluate generator module
             #----- generator module ---------------------------
@@ -684,19 +685,12 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             if model.hydroOn
 
                 # transform platform motions from hub frame to inertial frame
-                u_j_ptfm[1:3] = u_j_ptfm[1]*ia1 + u_j_ptfm[3]*ia2 - u_j_ptfm[2]*ia3
-                u_j_ptfm[4:6] = u_j_ptfm[4]*ia1 + u_j_ptfm[6]*ia2 - u_j_ptfm[5]*ia3
-                udot_j_ptfm[1:3] = udot_j_ptfm[1]*ia1 + udot_j_ptfm[3]*ia2 - udot_j_ptfm[2]*ia3
-                udot_j_ptfm[4:6] = udot_j_ptfm[4]*ia1 + udot_j_ptfm[6]*ia2 - udot_j_ptfm[5]*ia3
-                uddot_j_ptfm[1:3] = uddot_j_ptfm[1]*ia1 + uddot_j_ptfm[3]*ia2 - uddot_j_ptfm[2]*ia3
-                uddot_j_ptfm[4:6] = uddot_j_ptfm[4]*ia1 + uddot_j_ptfm[6]*ia2 - uddot_j_ptfm[5]*ia3
-
-                # println("u_j_ptfm")
-                # println(u_j_ptfm)
-                # println("udot_j_ptfm")
-                # println(udot_j_ptfm)
-                # println("uddot_j_ptfm")
-                # println(uddot_j_ptfm)
+                u_j_ptfm[1:3] = u_j_ptfm[1]*iCN2H[1,:] + u_j_ptfm[2]*iCN2H[2,:] + u_j_ptfm[3]*iCN2H[3,:]
+                u_j_ptfm[4:6] = u_j_ptfm[4]*iCN2H[1,:] + u_j_ptfm[5]*iCN2H[2,:] + u_j_ptfm[6]*iCN2H[3,:]
+                udot_j_ptfm[1:3] = udot_j_ptfm[1]*iCN2H[1,:] + udot_j_ptfm[2]*iCN2H[2,:] + udot_j_ptfm[3]*iCN2H[3,:]
+                udot_j_ptfm[4:6] = udot_j_ptfm[4]*iCN2H[1,:] + udot_j_ptfm[5]*iCN2H[2,:] + udot_j_ptfm[6]*iCN2H[3,:]
+                uddot_j_ptfm[1:3] = uddot_j_ptfm[1]*iCN2H[1,:] + uddot_j_ptfm[2]*iCN2H[2,:] + uddot_j_ptfm[3]*iCN2H[3,:]
+                uddot_j_ptfm[4:6] = uddot_j_ptfm[4]*iCN2H[1,:] + uddot_j_ptfm[5]*iCN2H[2,:] + uddot_j_ptfm[6]*iCN2H[3,:]
 
                 VAWTHydro.HD_UpdateStates(t[i], t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 if model.interpOrder == 1
@@ -707,10 +701,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
                 frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
                 frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
-                # println("Mooring forces on platform:")
-                # println(frc_mooring_n)
-                # println("Fairlead tensions 1-3, Anchor tensions 1-3:")
-                # println(mooring_tensions)
 
                 # store platform rotations from the output values, as OWENS can not internally calculate this
                 ptfm_roll = out_vals[4]
@@ -718,10 +708,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 ptfm_yaw = out_vals[6]
 
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
-                frc_hydro_h[1:3] = frc_hydro_n[1]*a1 + frc_hydro_n[3]*a2 + frc_hydro_n[2]*a3
-                frc_hydro_h[4:6] = frc_hydro_n[4]*a1 + frc_hydro_n[6]*a2 + frc_hydro_n[5]*a3
-                frc_mooring_h[1:3] = frc_mooring_n[1]*a1 + frc_mooring_n[3]*a2 + frc_mooring_n[2]*a3
-                frc_mooring_h[4:6] = frc_mooring_n[4]*a1 + frc_mooring_n[6]*a2 + frc_mooring_n[5]*a3
+                frc_hydro_h[1:3] = frc_hydro_n[1]*CN2H[1,:] + frc_hydro_n[2]*CN2H[2,:] + frc_hydro_n[3]*CN2H[3,:]
+                frc_hydro_h[4:6] = frc_hydro_n[4]*CN2H[1,:] + frc_hydro_n[5]*CN2H[2,:] + frc_hydro_n[6]*CN2H[3,:]
+                frc_mooring_h[1:3] = frc_mooring_n[1]*CN2H[1,:] + frc_mooring_n[2]*CN2H[2,:] + frc_mooring_n[3]*CN2H[3,:]
+                frc_mooring_h[4:6] = frc_mooring_n[4]*CN2H[1,:] + frc_mooring_n[5]*CN2H[2,:] + frc_mooring_n[6]*CN2H[3,:]
 
                 Fdof = [Fdof; Int.(Fdof[numDOFPerNode+1:numDOFPerNode*2])] #TODO: tie into ndof per node
                 Fexternal = [Fexternal; frc_hydro_h+frc_mooring_h]
@@ -891,6 +881,4 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
     end
     return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
-end
-
 end
