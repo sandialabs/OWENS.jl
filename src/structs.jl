@@ -16,6 +16,8 @@ mutable struct Model
     generatorOn
     hydroOn
     interpOrder
+    hd_input_file
+    md_input_file
     plat_model
     JgearBox
     gearRatio
@@ -91,6 +93,8 @@ function Model(;analysisType = "TNB",
     generatorOn = false,
     hydroOn = false,
     interpOrder = 2,
+    hd_input_file = "none",
+    md_input_file = "none",
     plat_model = [],
     JgearBox = 0.0,
     gearRatio = 1.0,
@@ -115,9 +119,9 @@ function Model(;analysisType = "TNB",
     )
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,plat_model,JgearBox,gearRatio,gearBoxEfficiency,
-    useGeneratorFunction,generatorProps,ratedTorque,zeroTorqueGenSpeed,pulloutRatio,
-    ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,plat_model,
+    JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
+    zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
     numModesToExtract,aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
 end
 

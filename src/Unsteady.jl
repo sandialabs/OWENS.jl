@@ -359,6 +359,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     ## state initialization
     numDOFPerNode = 6
     totalNumDof = mesh.numNodes*numDOFPerNode
+    numMooringLines = 3
     #......... specify initial conditions .......................
     u_s = zeros(totalNumDof,1)
     u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
@@ -396,8 +397,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     genTorque = zeros(numTS+1)
     genPower = zeros(numTS+1)
     torqueDriveShaft = zeros(numTS+1)
-    Ywec = zeros(numTS+1,1)
-    rigidDof = zeros(numTS+1) #TODO: figure this out
 
     # initialize various states and variables
     gb_s = 0
@@ -481,24 +480,28 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         udot_s_ptfm = Vector(udot_s[numDOFPerNode+1:numDOFPerNode*2])
         uddot_s_ptfm = Vector(uddot_s[numDOFPerNode+1:numDOFPerNode*2])
 
-        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+numTS*delta_t)
-        VAWTHydro.MD_Init(bin.moordynLibPath, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
+        uHist_ptfm = zeros(length(u_s_ptfm),numTS+1)
+        uHist_ptfm[:,1] = u_s_ptfm
+
+
+        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+numTS*delta_t)
+        VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=model.md_input_file, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
         
-        frc_hydro_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
-        frc_hydro_h = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
-        frc_mooring_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
-        frc_mooring_h = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
-        out_vals = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
-        mooring_tensions = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
+        frc_hydro_n = zeros(Float32, numDOFPerNode)
+        frc_hydro_h = zeros(Float32, numDOFPerNode)
+        frc_mooring_n = zeros(Float32, numDOFPerNode)
+        frc_mooring_h = zeros(Float32, numDOFPerNode)
+        out_vals = zeros(Float32, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
+        mooring_tensions = zeros(Float32, numMooringLines*2) # Fairlead + anchor tension for each line
         
         # calculate initial HydroDyn/MoorDyn states
         # TODO: transform these to the inertial frame, since u_s is in the hub frame
         #       (u_s and azi_s are initialized to zero, so it doesn't matter right now, but it will if we add nonzero initial conditions)
         frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_hydro_n, out_vals)
         frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_mooring_n, mooring_tensions)
-        ptfm_roll = out_vals[4]
-        ptfm_pitch = out_vals[5]
-        ptfm_yaw = out_vals[6]
+        ptfm_roll = out_vals[5] # B1Roll
+        ptfm_pitch = out_vals[6] # B1Pitch
+        ptfm_yaw = out_vals[7] # B1Yaw
         # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
     end
 
@@ -542,11 +545,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
         #initialize  platform module related variables only used if (model.hydroOn)
         if model.hydroOn
-            u_j_ptfm = Vector(u_s[numDOFPerNode+1:numDOFPerNode*2])
-            udot_j_ptfm = Vector(udot_s[numDOFPerNode+1:numDOFPerNode*2])
-            uddot_j_ptfm = Vector(uddot_s[numDOFPerNode+1:numDOFPerNode*2])
-            Ywec_j = Ywec[i,:]
-            Ywec_jLast = Ywec_j
+            u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2])
+            udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2])
+            uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2])
         end
 
         #TODO: put these in the model
@@ -583,6 +584,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         Fexternal = 0.0 #TODO: do this right, especially if there are only hydro forces
         Fdof = 0.0
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
+
             # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
@@ -592,6 +594,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             if (model.hydroOn)
                 CN2P = transMat(ptfm_roll, ptfm_pitch, ptfm_yaw)
                 #             CN2P=calculateLambdaSlim(Ywec_j(s_stsp+6),Ywec_j(s_stsp+5),Ywec_j(s_stsp+4))
+            else
                 CN2P=1.0*LinearAlgebra.I(3)            
             end
             
@@ -599,13 +602,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
             CN2H = CP2H*CN2P
             iCN2H = inv(CN2H)
-            
-            a1 = CN2H[1,:]
-            a2 = CN2H[2,:]
-            a3 = CN2H[3,:]
-            ia1 = iCN2H[1,:]
-            ia2 = iCN2H[2,:]
-            ia3 = iCN2H[3,:]
 
             ## evaluate generator module
             #----- generator module ---------------------------
@@ -684,6 +680,12 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
             if model.hydroOn
 
+                println("u_j_ptfm")
+                println(u_j_ptfm)
+                println("udot_j_ptfm")
+                println(udot_j_ptfm)
+                println("uddot_j_ptfm")
+                println(uddot_j_ptfm)
                 # transform platform motions from hub frame to inertial frame
                 u_j_ptfm[1:3] = u_j_ptfm[1]*iCN2H[1,:] + u_j_ptfm[2]*iCN2H[2,:] + u_j_ptfm[3]*iCN2H[3,:]
                 u_j_ptfm[4:6] = u_j_ptfm[4]*iCN2H[1,:] + u_j_ptfm[5]*iCN2H[2,:] + u_j_ptfm[6]*iCN2H[3,:]
@@ -701,19 +703,27 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
                 frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
                 frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
-
+                println("frc_hydro_n")
+                println(frc_hydro_n)
+                println("frc_mooring_n")
+                println(frc_mooring_n)
                 # store platform rotations from the output values, as OWENS can not internally calculate this
-                ptfm_roll = out_vals[4]
-                ptfm_pitch = out_vals[5]
-                ptfm_yaw = out_vals[6]
-
+                ptfm_roll = out_vals[5] # B1Roll
+                ptfm_pitch = out_vals[6] # B1Pitch
+                ptfm_yaw = out_vals[7] # B1Yaw
+                println("ptfm_roll")
+                println(ptfm_roll)
+                println("ptfm_pitch")
+                println(ptfm_pitch)
+                println("ptfm_yaw")
+                println(ptfm_yaw)
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
                 frc_hydro_h[1:3] = frc_hydro_n[1]*CN2H[1,:] + frc_hydro_n[2]*CN2H[2,:] + frc_hydro_n[3]*CN2H[3,:]
                 frc_hydro_h[4:6] = frc_hydro_n[4]*CN2H[1,:] + frc_hydro_n[5]*CN2H[2,:] + frc_hydro_n[6]*CN2H[3,:]
                 frc_mooring_h[1:3] = frc_mooring_n[1]*CN2H[1,:] + frc_mooring_n[2]*CN2H[2,:] + frc_mooring_n[3]*CN2H[3,:]
                 frc_mooring_h[4:6] = frc_mooring_n[4]*CN2H[1,:] + frc_mooring_n[5]*CN2H[2,:] + frc_mooring_n[6]*CN2H[3,:]
 
-                Fdof = [Fdof; Int.(Fdof[numDOFPerNode+1:numDOFPerNode*2])] #TODO: tie into ndof per node
+                Fdof = [Fdof; Int.(Fdof[1:numDOFPerNode])] #TODO: tie into ndof per node
                 Fexternal = [Fexternal; frc_hydro_h+frc_mooring_h]
             end
 
@@ -746,7 +756,13 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             udot_j  = dispOut.displdot_sp1
             uddot_j = dispOut.displddot_sp1
 
-            # Transform to the platform reference frame to determine the 
+            if model.hydroOn
+                u_jLast_ptfm = copy(u_j_ptfm)
+                u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2])
+                udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2])
+                uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2])
+            end
+
             # println("ran structdyn")
             if model.analysisType=="ROM"
                 #             udot_j  = dispOut.displdot_sp1
@@ -761,7 +777,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             ## calculate norms
             uNorm = LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
             aziNorm = LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-            platNorm = LinearAlgebra.norm(Ywec_j-Ywec_jLast)/LinearAlgebra.norm(Ywec_j) #platform module states iteration norm if it is off, the norm will be zero
+            platNorm = LinearAlgebra.norm(u_j_ptfm - u_jLast_ptfm)/LinearAlgebra.norm(u_j_ptfm) #platform module states iteration norm if it is off, the norm will be zero
             gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
 
             numIterations = numIterations + 1
@@ -794,6 +810,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         end
 
         uHist[:,i+1] = u_s
+        uHist_ptfm[:,i+1] = u_j_ptfm
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
             eps_xx_0_hist[:,ii,i] = elStrain[ii].eps_xx_0
@@ -830,9 +847,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         genPower[i+1] = genPowerPlot
         torqueDriveShaft[i+1] = torqueDriveShaft_s
 
-        # Ywec(i+1,:) = Ywec_j #TODO figure out platform deflection, etc
-        # rigidDof(i+1,:)=Ywec(i+1,s_stsp+1:s_stsp+6)
-
         ## check rotor speed for generator operation
         if Omega_s >= rotorSpeedForGenStart
             model.generatorOn = true
@@ -865,11 +879,11 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             HDF5.write(file,"gbDotHist",gbDotHist)
             HDF5.write(file,"gbDotDotHist",gbDotDotHist)
             HDF5.write(file,"FReactionHist",FReactionHist)
-            HDF5.write(file,"rigidDof",rigidDof)
             HDF5.write(file,"genTorque",genTorque)
             HDF5.write(file,"genPower",genPower)
             HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
             HDF5.write(file,"uHist",uHist)
+            HDF5.write(file,"uHist_ptfm",uHist_ptfm)
             HDF5.write(file,"eps_xx_0_hist",eps_xx_0_hist)
             HDF5.write(file,"eps_xx_z_hist",eps_xx_z_hist)
             HDF5.write(file,"eps_xx_y_hist",eps_xx_y_hist)
@@ -880,5 +894,5 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         end
 
     end
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
 end
