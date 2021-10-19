@@ -476,7 +476,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             hd_outFilename = model.outFilename
         end
 
-        u_s_ptfm = Vector(u_s[numDOFPerNode+1:numDOFPerNode*2]) # platform is modeled at the second node (bottom node is fixed)
+        u_s_ptfm = Vector(u_s[numDOFPerNode+1:numDOFPerNode*2]) # platform BCs are modeled at the second node (bottom node is fixed)
         udot_s_ptfm = Vector(udot_s[numDOFPerNode+1:numDOFPerNode*2])
         uddot_s_ptfm = Vector(uddot_s[numDOFPerNode+1:numDOFPerNode*2])
 
@@ -680,12 +680,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
             if model.hydroOn
 
-                println("u_j_ptfm")
-                println(u_j_ptfm)
-                println("udot_j_ptfm")
-                println(udot_j_ptfm)
-                println("uddot_j_ptfm")
-                println(uddot_j_ptfm)
                 # transform platform motions from hub frame to inertial frame
                 u_j_ptfm[1:3] = u_j_ptfm[1]*iCN2H[1,:] + u_j_ptfm[2]*iCN2H[2,:] + u_j_ptfm[3]*iCN2H[3,:]
                 u_j_ptfm[4:6] = u_j_ptfm[4]*iCN2H[1,:] + u_j_ptfm[5]*iCN2H[2,:] + u_j_ptfm[6]*iCN2H[3,:]
@@ -703,27 +697,19 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
                 frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
                 frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
-                println("frc_hydro_n")
-                println(frc_hydro_n)
-                println("frc_mooring_n")
-                println(frc_mooring_n)
+
                 # store platform rotations from the output values, as OWENS can not internally calculate this
                 ptfm_roll = out_vals[5] # B1Roll
                 ptfm_pitch = out_vals[6] # B1Pitch
                 ptfm_yaw = out_vals[7] # B1Yaw
-                println("ptfm_roll")
-                println(ptfm_roll)
-                println("ptfm_pitch")
-                println(ptfm_pitch)
-                println("ptfm_yaw")
-                println(ptfm_yaw)
+
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
                 frc_hydro_h[1:3] = frc_hydro_n[1]*CN2H[1,:] + frc_hydro_n[2]*CN2H[2,:] + frc_hydro_n[3]*CN2H[3,:]
                 frc_hydro_h[4:6] = frc_hydro_n[4]*CN2H[1,:] + frc_hydro_n[5]*CN2H[2,:] + frc_hydro_n[6]*CN2H[3,:]
                 frc_mooring_h[1:3] = frc_mooring_n[1]*CN2H[1,:] + frc_mooring_n[2]*CN2H[2,:] + frc_mooring_n[3]*CN2H[3,:]
                 frc_mooring_h[4:6] = frc_mooring_n[4]*CN2H[1,:] + frc_mooring_n[5]*CN2H[2,:] + frc_mooring_n[6]*CN2H[3,:]
 
-                Fdof = [Fdof; Int.(Fdof[1:numDOFPerNode])] #TODO: tie into ndof per node
+                Fdof = [Fdof; Int.(Fdof)] #TODO: tie into ndof per node
                 Fexternal = [Fexternal; frc_hydro_h+frc_mooring_h]
             end
 
