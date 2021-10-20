@@ -324,7 +324,6 @@ external module with transient structural dynamics analysis capability.
 """
 function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatrices=false)
 
-
     # Declare Variable Type, are set later
     udot_j = 0.0
     uddot_j = 0.0
@@ -584,7 +583,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         Fexternal = 0.0 #TODO: do this right, especially if there are only hydro forces
         Fdof = 0.0
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-
             # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
@@ -673,7 +671,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             #compile forces to supply to structural dynamics solver
             # if numIterations==1
                 deformAero(Omega_j*2*pi)
-                Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
+                # Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
             # end
 
             ## compile external forcing on platform
@@ -709,8 +707,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 frc_mooring_h[1:3] = frc_mooring_n[1]*CN2H[1,:] + frc_mooring_n[2]*CN2H[2,:] + frc_mooring_n[3]*CN2H[3,:]
                 frc_mooring_h[4:6] = frc_mooring_n[4]*CN2H[1,:] + frc_mooring_n[5]*CN2H[2,:] + frc_mooring_n[6]*CN2H[3,:]
 
-                Fdof = [Fdof; Int.(Fdof)] #TODO: tie into ndof per node
-                Fexternal = [Fexternal; frc_hydro_h+frc_mooring_h]
+                Fdof = collect(7:12) #[Fdof; Int.(Fdof)] #TODO: tie into ndof per node
+                Fexternal = frc_hydro_h+frc_mooring_h #[Fexternal; frc_hydro_h+frc_mooring_h]
             end
 
             ## evaluate structural dynamics
@@ -743,7 +741,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             uddot_j = dispOut.displddot_sp1
 
             if model.hydroOn
-                u_jLast_ptfm = copy(u_j_ptfm)
+                u_jLast_ptfm = Vector(u_jLast[numDOFPerNode+1:numDOFPerNode*2])
                 u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2])
                 udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2])
                 uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2])
