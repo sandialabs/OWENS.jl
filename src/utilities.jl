@@ -253,7 +253,7 @@ function owens(owensfile,analysisType;
     model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
     aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    numModesToExtract,aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
 
     feamodel = GyricFEA.FEAModel(;analysisType,
     initCond,
@@ -273,6 +273,7 @@ function owens(owensfile,analysisType;
     reducedDOFList,
     nlParams,
     numNodes = mesh.numNodes,
+    numModes = numModesToExtract,
     pBC=BC.pBC,
     nodalTerms)
 

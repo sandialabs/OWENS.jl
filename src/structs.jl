@@ -22,7 +22,6 @@ mutable struct Model
     OmegaGenStart
     omegaControl
     OmegaInit
-    numModesToExtract
     aeroloadfile
     owensfile
     outFilename
@@ -56,7 +55,6 @@ Model(;analysisType = "TNB",
     OmegaGenStart = 0.0,
     omegaControl = false,
     OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
-    numModesToExtract = 20,
     aeroloadfile = "module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     outFilename = "none",
@@ -91,7 +89,6 @@ Model inputs for OWENS coupled analysis, struct
 * `OmegaGenStart::float`: speed (Hz) at which generator would kick in
 * `omegaControl::bool`: false for fixed speed, true for dynamic
 * `OmegaInit::float`: initial rotor speed (Hz)
-* `numModesToExtract`: number of modes to extract, for modal analysis
 * `aeroloadfile::string`: string of the name and path for the cactus aeroloads if using the old serial owens call
 * `owensfile::string`: string of the name and path for the owens input file if using the old serial owens call
 * `outFilename::string`: path and name of output file, will be overwritten if already exists
@@ -126,7 +123,6 @@ function Model(;analysisType = "TNB",
     OmegaGenStart = 0.0,
     omegaControl = false,
     OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
-    numModesToExtract = 20,
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     outFilename = "none",
@@ -139,7 +135,7 @@ function Model(;analysisType = "TNB",
     aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,ratedTorque,zeroTorqueGenSpeed,pulloutRatio,
     ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
-    numModesToExtract,aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
 end
 
 """
