@@ -360,11 +360,11 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     totalNumDof = mesh.numNodes*numDOFPerNode
     numMooringLines = 3
     #......... specify initial conditions .......................
-    u_s = zeros(totalNumDof,1)
+    u_s = zeros(totalNumDof)
     u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
-    u_sm1 = u_s
-    udot_s = u_s*0
-    uddot_s = u_s*0
+    u_sm1 = copy(u_s)
+    udot_s = zero(u_s)
+    uddot_s = zero(u_s)
     #............................................................
 
     numTS = Int(model.numTS)       #define number of time steps
@@ -427,41 +427,41 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     ## structural dynamics initialization
     #..........................................................................
     if model.analysisType=="ROM" #initialize reduced order model
-        error("ROM not fully implemented")
-        #     #calculate constrained dof vector
-        #     numDofPerNode = 6
-        #     isConstrained = zeros(totalNumDof,1)
-        #     constDof = (model.BC.pBC(:,1)-1)*numDofPerNode + model.BC.pBC(:,2)
-        #     index = 1
-        #     for i=1:mesh.numNodes
-        #         for j=1:numDofPerNode
-        #             if (ismember((i-1)*numDofPerNode + j,constDof))
-        #                 isConstrained(index) = 1
-        #             end
-        #             index = index + 1
+        #calculate constrained dof vector
+        #TODO: This is already done, remove this redundant code
+        # numDofPerNode = 6
+        # isConstrained = zeros(totalNumDof)
+        # constDof = (feamodel.BC.pBC[:,1]-1)*numDofPerNode + feamodel.BC.pBC[:,2]
+        # index = 1
+        # for i=1:mesh.numNodes
+        #     for j=1:numDofPerNode
+        #         if ((i-1)*numDofPerNode + j in constDof)
+        #             isConstrained[index] = 1
         #         end
+        #         index = index + 1
         #     end
-        #     model.BC.isConstrained = isConstrained
-        #
-        #
-        #     [rom,elStorage]=reducedOrderModel(model,mesh,el,u_s) #construct reduced order model
-        #
-        #     #set up inital values in modal space
-        #     jointTransformTrans = model.jointTransform' #'
-        #     u_sRed = jointTransformTrans*u_s(1:end)
-        #     udot_sRed = jointTransformTrans*udot_s(1:end)
-        #     uddot_sRed = jointTransformTrans*uddot_s(1:end)
-        #
-        #     BC = model.BC
-        #     [u_s2] = applyBCModalVec(u_sRed,BC.numpBC,BC.map)
-        #     [udot_s2] = applyBCModalVec(udot_sRed,BC.numpBC,BC.map)
-        #     [uddot_s2] = applyBCModalVec(uddot_sRed,BC.numpBC,BC.map)
-        #
-        #     invPhi = rom.invPhi
-        #
-        #     eta_s     = invPhi*u_s2
-        #     etadot_s  = invPhi*udot_s2
-        #     etaddot_s = invPhi*uddot_s2
+        # end
+        # feamodel.BC.isConstrained = isConstrained
+
+        rom,elStorage = GyricFEA.reducedOrderModel(feamodel,mesh,el,u_s) #construct reduced order model
+
+        #set up inital values in modal space
+        jointTransformTrans = feamodel.jointTransform' #'
+        u_sRed = jointTransformTrans*u_s
+        udot_sRed = jointTransformTrans*udot_s
+        uddot_sRed = jointTransformTrans*uddot_s
+
+        BC = feamodel.BC
+        u_s2 = GyricFEA.applyBCModalVec(u_sRed,BC.numpBC,BC.map)
+        udot_s2 = GyricFEA.applyBCModalVec(udot_sRed,BC.numpBC,BC.map)
+        uddot_s2 = GyricFEA.applyBCModalVec(uddot_sRed,BC.numpBC,BC.map)
+
+        invPhi = rom.invPhi
+
+        eta_s     = invPhi*u_s2
+        etadot_s  = invPhi*udot_s2
+        etaddot_s = invPhi*uddot_s2
+
     else
         elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
@@ -754,21 +754,16 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             ## evaluate structural dynamics
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
 
-            dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
 
-            #         if model.analysisType=='ROM'
-            #             dispData.displ_s = u_s
-            #             dispData.displdot_s = udot_s
-            #             dispData.displddot_s = uddot_s
-            #
-            #             dispData.eta_s     = eta_s
-            #             dispData.etadot_s  = etadot_s
-            #             dispData.etaddot_s = etaddot_s
-            #         end
+
+            if model.analysisType=="ROM"
+                dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1,eta_s,etadot_s,etaddot_s)
+            else
+                dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
+            end
 
             if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                error("ROM not fully implemented")
-                #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
                 # println(Fexternal)
                 elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
@@ -786,17 +781,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(u_j[1:numDOFPerNode])
                 udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(udot_j[1:numDOFPerNode])
                 uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(uddot_j[1:numDOFPerNode])
-            end
-
-            # println("ran structdyn")
-            if model.analysisType=="ROM"
-                #             udot_j  = dispOut.displdot_sp1
-                #             uddot_j = dispOut.displddot_sp1
-                #
-                #             eta_j = dispOut.eta_sp1
-                #             etadot_j = dispOut.etadot_sp1
-                #             etaddot_j = dispOut.etaddot_sp1
-                error("ROM not fully implemented")
             end
 
             ## calculate norms
@@ -828,10 +812,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         uddot_s = uddot_j
 
         if model.analysisType=="ROM"
-            #         eta_s = eta_j
-            #         etadot_s = etadot_j
-            #         etaddot_s = etaddot_j
-            error("ROM not fully implemented")
+            eta_s = dispOut.eta_sp1 #eta_j
+            etadot_s = dispOut.etadot_sp1 #etadot_j
+            etaddot_s = dispOut.etaddot_sp1 #etaddot_j
         end
 
         uHist[i+1,:] = u_s

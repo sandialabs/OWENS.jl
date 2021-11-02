@@ -282,6 +282,7 @@ function owens(owensfile,analysisType;
     reducedDOFList,
     nlParams,
     numNodes = mesh.numNodes,
+    numModes = numModesToExtract,
     pBC=BC.pBC,
     nodalTerms)
 
