@@ -369,15 +369,16 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
     numTS = Int(model.numTS)       #define number of time steps
     delta_t = model.delta_t   #define time step size
-    uHist = zeros(length(u_s),numTS+1)
-    uHist[:,1] = u_s          #store initial condition
+    uHist = zeros(numTS, length(u_s))
+    uHist[1,:] = u_s          #store initial condition
     #initialize omega_platform, omega_platform_dot, omegaPlatHist
     # omega_platform = zeros(3,1)
     # omega_platform_dot = zeros(3,1)
     # omegaPlatHist(:,1) = omega_platform
 
-    t = collect(0:delta_t:numTS*delta_t)
-    FReactionHist = zeros(numTS+1,6)
+    t = range(0, length=numTS, step=delta_t)
+
+    FReactionHist = zeros(numTS,6)
 
     eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
     eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
@@ -387,15 +388,15 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
     gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
 
-    aziHist = zeros(numTS+1)
-    OmegaHist = zeros(numTS+1)
-    OmegaDotHist = zeros(numTS+1)
-    gbHist = zeros(numTS+1)
-    gbDotHist = zeros(numTS+1)
-    gbDotDotHist = zeros(numTS+1)
-    genTorque = zeros(numTS+1)
-    genPower = zeros(numTS+1)
-    torqueDriveShaft = zeros(numTS+1)
+    aziHist = zeros(numTS)
+    OmegaHist = zeros(numTS)
+    OmegaDotHist = zeros(numTS)
+    gbHist = zeros(numTS)
+    gbDotHist = zeros(numTS)
+    gbDotDotHist = zeros(numTS)
+    genTorque = zeros(numTS)
+    genPower = zeros(numTS)
+    torqueDriveShaft = zeros(numTS)
 
     # initialize various states and variables
     gb_s = 0
@@ -475,15 +476,14 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             hd_outFilename = model.outFilename
         end
 
-        u_s_ptfm = Vector(u_s[numDOFPerNode+1:numDOFPerNode*2]) # platform BCs are modeled at the second node (bottom node is fixed)
-        udot_s_ptfm = Vector(udot_s[numDOFPerNode+1:numDOFPerNode*2])
-        uddot_s_ptfm = Vector(uddot_s[numDOFPerNode+1:numDOFPerNode*2])
+        u_s_ptfm = Vector(u_s[numDOFPerNode+1:numDOFPerNode*2]) #Vector(u_s[1:numDOFPerNode]) # platform BCs are modeled at the second node (bottom node is fixed)
+        udot_s_ptfm = Vector(udot_s[numDOFPerNode+1:numDOFPerNode*2]) #Vector(udot_s[1:numDOFPerNode])
+        uddot_s_ptfm = Vector(uddot_s[numDOFPerNode+1:numDOFPerNode*2]) #Vector(uddot_s[1:numDOFPerNode])
 
-        uHist_ptfm = zeros(length(u_s_ptfm),numTS+1)
-        uHist_ptfm[:,1] = u_s_ptfm
+        uHist_ptfm = zeros(numTS,length(u_s_ptfm))
+        uHist_ptfm[1,:] = u_s_ptfm
 
-
-        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+numTS*delta_t)
+        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t)
         VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=model.md_input_file, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
         
         frc_hydro_n = zeros(Float32, numDOFPerNode)
@@ -498,28 +498,34 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         #       (u_s and azi_s are initialized to zero, so it doesn't matter right now, but it will if we add nonzero initial conditions)
         frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_hydro_n, out_vals)
         frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_mooring_n, mooring_tensions)
-        ptfm_roll = out_vals[5] # B1Roll
-        ptfm_pitch = out_vals[6] # B1Pitch
-        ptfm_yaw = out_vals[7] # B1Yaw
+
         # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
     end
 
+    ptfm_roll = 0 #placeholder for numerical stability while debugging #TODO reverse azi_j to get platform motions in inertial frame
+    ptfm_pitch = 0
+    ptfm_yaw = 0
+
     ## Main Loop - iterate for a solution at each time step, i
-    for i=1:numTS
+    for i=1:numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
 
-        #     i #TODO add verbose printing
-        # if (mod(i,100)==0) #print command that displays progress of time stepping
-        println("\nTime Step: $i")
-        # end
+        if isinteger(t[i])
+            now = Int(t[i])
+            if now == 1
+                println("\nSimulation Time: $now second")
+            else
+                println("\nSimulation Time: $now seconds")
+            end
+        end
 
-        ## check for specified rotor speed at t[i] + delta_t
+        ## check for specified rotor speed at t+dt
         if (model.turbineStartup == 0)
             model.omegaControl = true #TODO: are we setting this back?
             if (model.usingRotorSpeedFunction) #use user specified rotor speed profile function
-                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i]+delta_t,0.0,delta_t)
+                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,delta_t)
                 Omega_s = omegaCurrent
             else #use discreteized rotor speed profile function
-                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i]+delta_t,model.tocp,model.Omegaocp,delta_t)
+                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],model.tocp,model.Omegaocp,delta_t)
                 if (terminateSimulation)
                     break
                 end
@@ -544,9 +550,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
         #initialize  platform module related variables only used if (model.hydroOn)
         if model.hydroOn
-            u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2])
-            udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2])
-            uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2])
+            u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(u_j[1:numDOFPerNode])
+            udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(udot_j[1:numDOFPerNode])
+            uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(uddot_j[1:numDOFPerNode])
         end
 
         #TODO: put these in the model
@@ -557,14 +563,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         platNorm = 0.0
         aziNorm = 1e5
         gbNorm = 0.0 #initialize norms for various module states
-
-        ## evaluate platform module
-        ##-------------------------------------
-        if model.hydroOn
-            # ds = model.plat_model.get_waveExcitation(Spd, time=[t[i],t[i]+delta_t], seed=1)
-            # wave6dof_F_M = ds."fexc".data[1,:]
-        end
-        #-------------------------------------
 
         # Assignments
         # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
@@ -581,8 +579,11 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         # 2) allow heave and the turbine should go up and down
         # 3) no aero, but mass offset should cause the turbine to tilt slightly
         Fexternal = 0.0 #TODO: do this right, especially if there are only hydro forces
-        Fdof = 0.0
+        Fdof = 1
+
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
+            println("Iteration $numIterations")
+
             # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
@@ -598,7 +599,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             
             #.........................................
 
-            CN2H = CP2H*CN2P
+            CN2H = CN2P*CP2H
             iCN2H = inv(CN2H)
 
             ## evaluate generator module
@@ -651,7 +652,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             azi_jLast = azi_j
             if model.omegaControl
                 if (model.usingRotorSpeedFunction)
-                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i]+delta_t,azi_s,delta_t)
+                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
                 else
                     Omega_j = Omega_s
                     OmegaDot_j = OmegaDot_s
@@ -686,20 +687,16 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 uddot_j_ptfm[1:3] = uddot_j_ptfm[1]*iCN2H[1,:] + uddot_j_ptfm[2]*iCN2H[2,:] + uddot_j_ptfm[3]*iCN2H[3,:]
                 uddot_j_ptfm[4:6] = uddot_j_ptfm[4]*iCN2H[1,:] + uddot_j_ptfm[5]*iCN2H[2,:] + uddot_j_ptfm[6]*iCN2H[3,:]
 
-                VAWTHydro.HD_UpdateStates(t[i], t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
+                VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 if model.interpOrder == 1
-                    VAWTHydro.MD_UpdateStates(0, t[i], t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
+                    VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 elseif model.interpOrder == 2
-                    VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
+                    VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 end
 
-                frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
-                frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i]+delta_t, u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
-
-                # store platform rotations from the output values, as OWENS can not internally calculate this
-                ptfm_roll = out_vals[5] # B1Roll
-                ptfm_pitch = out_vals[6] # B1Pitch
-                ptfm_yaw = out_vals[7] # B1Yaw
+                # println(u_j_ptfm)
+                frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
+                frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
 
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
                 frc_hydro_h[1:3] = frc_hydro_n[1]*CN2H[1,:] + frc_hydro_n[2]*CN2H[2,:] + frc_hydro_n[3]*CN2H[3,:]
@@ -707,7 +704,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 frc_mooring_h[1:3] = frc_mooring_n[1]*CN2H[1,:] + frc_mooring_n[2]*CN2H[2,:] + frc_mooring_n[3]*CN2H[3,:]
                 frc_mooring_h[4:6] = frc_mooring_n[4]*CN2H[1,:] + frc_mooring_n[5]*CN2H[2,:] + frc_mooring_n[6]*CN2H[3,:]
 
-                Fdof = collect(7:12) #[Fdof; Int.(Fdof)] #TODO: tie into ndof per node
+                Fdof = collect(7:12) #[Fdof; collect(7:12))] #TODO: tie into ndof per node
+
                 Fexternal = frc_hydro_h+frc_mooring_h #[Fexternal; frc_hydro_h+frc_mooring_h]
             end
 
@@ -730,6 +728,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 error("ROM not fully implemented")
                 #             [dispOut,FReaction_j] = structuralDynamicsTransientROM(model,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Fdof,CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
+                # println(Fexternal)
                 elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
             end
 
@@ -741,10 +740,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             uddot_j = dispOut.displddot_sp1
 
             if model.hydroOn
-                u_jLast_ptfm = Vector(u_jLast[numDOFPerNode+1:numDOFPerNode*2])
-                u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2])
-                udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2])
-                uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2])
+                u_jLast_ptfm = Vector(u_jLast[numDOFPerNode+1:numDOFPerNode*2]) #Vector(u_jLast[1:numDOFPerNode])
+                u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(u_j[1:numDOFPerNode])
+                udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(udot_j[1:numDOFPerNode])
+                uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(uddot_j[1:numDOFPerNode])
             end
 
             # println("ran structdyn")
@@ -793,8 +792,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             error("ROM not fully implemented")
         end
 
-        uHist[:,i+1] = u_s
-        uHist_ptfm[:,i+1] = u_j_ptfm
+        uHist[i+1,:] = u_s
+        uHist_ptfm[i+1,:] = u_j_ptfm
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
             eps_xx_0_hist[:,ii,i] = elStrain[ii].eps_xx_0
@@ -805,7 +804,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             gam_xy_0_hist[:,ii,i] = elStrain[ii].gam_xy_0
             gam_xy_z_hist[:,ii,i] = elStrain[ii].gam_xy_z
         end
-        t[i+1] = t[i] + delta_t
 
         azi_s = azi_j
         Omega_s = Omega_j
@@ -878,5 +876,5 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         end
 
     end
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_ptfm,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
 end
