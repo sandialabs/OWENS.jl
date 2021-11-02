@@ -8,8 +8,8 @@ catch
     #TODO: propogate logic
 end
 
-import GyricFEA
-import VAWTHydro
+include("C:/code/GyricFEA.jl/src/GyricFEA.jl")
+include("C:/code/VAWTHydro.jl/src/VAWTHydro.jl")  # import VAWTHydro
 
 # Github packages
 import Statistics

@@ -420,6 +420,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     genTorque[1] = genTorque_s
     torqueDriveShaft[1] = torqueDriveShaft_s
 
+    ptfm_disp = zeros(0)
+    hydro_forcing = zeros(0)
+    iteration_count = zeros(0)
+
     ## structural dynamics initialization
     #..........................................................................
     if model.analysisType=="ROM" #initialize reduced order model
@@ -482,6 +486,15 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
         uHist_ptfm = zeros(numTS,length(u_s_ptfm))
         uHist_ptfm[1,:] = u_s_ptfm
+
+        # Platform properties (hard-coded to OC4 for now for debugging purposes) TODO: add these to the Model struct
+        # twr_base_pt = [0, 0, 10]
+        # ptfm_mass = 3.85218e6
+        # ptfm_ref_pt = [0, 0, 0]
+        # ptfm_com = [0, 0, -8.6588]
+        # ptfm_roll_iner = 2.5619e9
+        # ptfm_pitch_iner = 2.5619e9
+        # ptfm_yaw_iner = 4.24265e9
 
         VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t)
         VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=model.md_input_file, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
@@ -563,6 +576,14 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         platNorm = 0.0
         aziNorm = 1e5
         gbNorm = 0.0 #initialize norms for various module states
+
+        ## evaluate platform module
+        ##-------------------------------------
+        if model.hydroOn
+            # ds = model.plat_model.get_waveExcitation(Spd, time=[t[i],t[i]+delta_t], seed=1)
+            # wave6dof_F_M = ds."fexc".data[1,:]
+        end
+        #-------------------------------------
 
         # Assignments
         # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
@@ -686,7 +707,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 udot_j_ptfm[4:6] = udot_j_ptfm[4]*iCN2H[1,:] + udot_j_ptfm[5]*iCN2H[2,:] + udot_j_ptfm[6]*iCN2H[3,:]
                 uddot_j_ptfm[1:3] = uddot_j_ptfm[1]*iCN2H[1,:] + uddot_j_ptfm[2]*iCN2H[2,:] + uddot_j_ptfm[3]*iCN2H[3,:]
                 uddot_j_ptfm[4:6] = uddot_j_ptfm[4]*iCN2H[1,:] + uddot_j_ptfm[5]*iCN2H[2,:] + uddot_j_ptfm[6]*iCN2H[3,:]
-
+                println(u_j_ptfm)
+                println(udot_j_ptfm)
+                println(uddot_j_ptfm)
                 VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 if model.interpOrder == 1
                     VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
@@ -698,15 +721,34 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 frc_hydro_n[:], out_vals[:] = VAWTHydro.HD_CalcOutput(t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_hydro_n, out_vals)
                 frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
 
+                println(frc_hydro_n)
+                println(frc_mooring_n)
+                
+
+                # calculate forces and moments caused by the platform motions in 6 rigid body degrees 
+                # g = [0, 0, -9.81, 0, 0, 0]
+                # rZY = ptfm_ref_pt - ptfm_com
+                # ptfm_com_linvel = [udot_j_ptfm[1:3], LinearAlgebra.cross(udot_j_ptfm[4:6],rZY)]
+                # ptfm_com_plinacc =  [zeros(3), LinearAlgebra.cross(ones(3), LinearAlgebra.cross(udot_j_ptfm[4:6], rZY))]
+                # ptfm_com_linacc = ptfm_com_linvel .* uddot_j_ptfm + ptfm_com_plinacc .* udot_j_ptfm
+
+                # frc_ptfm_n = ptfm_mass * (ptfm_com_linacc + g)
+
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
                 frc_hydro_h[1:3] = frc_hydro_n[1]*CN2H[1,:] + frc_hydro_n[2]*CN2H[2,:] + frc_hydro_n[3]*CN2H[3,:]
                 frc_hydro_h[4:6] = frc_hydro_n[4]*CN2H[1,:] + frc_hydro_n[5]*CN2H[2,:] + frc_hydro_n[6]*CN2H[3,:]
                 frc_mooring_h[1:3] = frc_mooring_n[1]*CN2H[1,:] + frc_mooring_n[2]*CN2H[2,:] + frc_mooring_n[3]*CN2H[3,:]
                 frc_mooring_h[4:6] = frc_mooring_n[4]*CN2H[1,:] + frc_mooring_n[5]*CN2H[2,:] + frc_mooring_n[6]*CN2H[3,:]
 
+                # force of gravity on RNA (assumed point mass for time being)
+
+
                 Fdof = collect(7:12) #[Fdof; collect(7:12))] #TODO: tie into ndof per node
 
+                # println(frc_hydro_h)
+                # println(frc_mooring_h)
                 Fexternal = frc_hydro_h+frc_mooring_h #[Fexternal; frc_hydro_h+frc_mooring_h]
+                # Fexternal[3] -= 1025*9.81*13917
             end
 
             ## evaluate structural dynamics
