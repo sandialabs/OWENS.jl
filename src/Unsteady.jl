@@ -284,6 +284,102 @@ function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
     return unp1,udotnp1,uddotnp1
 
 end
+
+
+function calc_hydro_residual(new_accels, new_hydro_frcs, md_frc, u)
+
+    new_frcs = md_frc + new_hydro_frcs
+
+    u_resid = Vector(Float32, length(new_frcs) + length(new_mots))
+    u_resid[1:numDOFPerNode] = u[1:numDOFPerNode] - new_frcs/frc_multiplier
+    u_resid[numDOFPerNode+1:numDOFPerNode*2] = u[numDOFPerNode+1:numDOFPerNode*2] - new_accels
+
+    return u_resid
+end
+
+
+function OWENS_HD_Coupling(time, dt, calcJacobian, numDOFPerNode, ptfm_node_idxs, frc_hydro_in,
+    frc_mooring_in, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
+    other_Fexternal, other_Fdof, CN2H)
+
+    # !!! Make sure structuralDynamicsTransient and MD_CalcOutput have run before this so you can send dispOut and frc_mooring_in here !!!
+    # 
+    # allocate new variables
+    frc_hydro2 = zero(frc_hydro_in)
+    if calcJacobian
+        frc_hydro_perturb_hd = zero(frc_hydro_in)
+    end
+    frc_hydro_out = zero(frc_hydro_in) # TODO: all of the frc_hydro's may be able to be combined for efficiency
+    out_vals = zeros(numDOFPerNode+1)
+    u = Vector(Float32, numDOFPerNode*2)
+    jac = Matrix(Float32, numDOFPerNode*2, length(u))
+
+    frc_multiplier = 1e6
+
+    dispIn = deepcopy(dispData) # TODO: does this need to be copied, or can we just use the original dispData?
+    u_ptfm = dispIn.displ_sp1[ptfm_node_idxs]
+    udot_ptfm = dispIn.displdot_sp1[ptfm_node_idxs]
+    uddot_ptfm = dispIn.displddot_sp1[ptfm_node_idxs]
+    
+    u[1:numDOFPerNode] = frc_hydro_in / frc_multiplier
+    u[numDOFPerNode+1:numDOFPerNode*2] = uddot_ptfm
+
+    # Calculate outputs at the current time, based on inputs at the current time
+    total_Fexternal = frc_hydro_in + frc_mooring_in + other_Fexternal
+    total_Fdof = [other_Fdof; ptfm_node_idxs]
+    _ ,dispOut2, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,Omega_j,OmegaDot_j,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),CN2H,zeros(9))
+    frc_hydro2[:], _ = VAWTHydro.HD_CalcOutput(time, u_ptfm, udot_ptfm, uddot_ptfm, frc_hydro2, out_vals)
+
+   # Calculate the residual
+   uddot_ptfm2 = dispOut2.displddot_sp1[ptfm_node_idxs]
+   residual = calc_hydro_residual(uddot_ptfm2, frc_hydro2, frc_mooring_in, u)
+
+   # Calculate the Jacobian. Since there's no single function associated with the motions/forces, we will manually
+   # perturb each degree of freedom one at a time and recalculate the outputs so we can get a full gradient.
+   if calcJacobian
+
+        for dof = collect(1:numDOFPerNode) # forces
+            frc_hydro_perturb_owens = deepcopy(frc_hydro_in)
+            u_perturb = copy(u)
+            frc_hydro_perturb_owens[dof] += 1E6
+            u_perturb[dof] += 1
+            total_Fexternal_perturb = frc_hydro_perturb_owens + frc_mooring_in + other_Fexternal
+            _, dispOut_perturb_owens, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),CN2H,zeros(9))
+            uddot_ptfm_perturb = dispOut_perturb_owens.displddot_sp1[ptfm_node_idxs]
+            residual_perturb = calc_hydro_residual(uddot_ptfm_perturb, frc_hydro2, frc_mooring_in, u_perturb)
+            jac[:,dof] = residual_perturb - residual
+        end
+
+        for dof = collect(1:numDOFPerNode) # accelerations
+            uddot_ptfm_perturb_hd = deepcopy(uddot_ptfm)
+            u_perturb = copy(u)
+            uddot_ptfm_perturb_hd[dof] += 1
+            u_perturb[dof+numDOFPerNode] += 1
+            frc_hydro_perturb_hd[:], _ = VAWTHydro.HD_CalcOutput(time, u_ptfm, udot_ptfm, uddot_ptfm_perturb_hd, frc_hydro_perturb_hd, out_vals)
+            residual_perturb = calc_hydro_residual(uddot_ptfm2, frc_hydro_perturb_hd, frc_mooring_in, u_perturb)
+            jac[:,dof+numDOFPerNode] = residual_perturb - residual
+        end
+
+   end  # if calcJacobian
+
+   # Solve for delta_u: jac*delta_u = -residual
+   delta_u = jac\-residual
+
+   # Update inputs
+   frc_hydro_rev = frc_hydro_in + delta_u(1:numDOFPerNode)*frc_multiplier
+   total_Fexternal = frc_hydro_rev + frc_mooring_in + other_Fexternal
+   dispData_rev = deepcopy(dispIn)
+   dispData_rev.displddot_sp1 = dispIn.displddot_sp1 + delta_u(numDOFPerNode+1:numDOFPerNode*2)
+
+   # Rerun OWENS and HydroDyn with updated inputs
+   elStrain_out,dispOut,FReaction_out = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,Omega_j,OmegaDot_j,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),CN2H,zeros(9)) # TODO: should we use dispData_rev instead of dispIn here?
+   frc_hydro_out, out_vals = VAWTHydro.HD_CalcOutput(time, u_ptfm, udot_ptfm, uddot_ptfm, frc_hydro2, out_vals)
+
+   return elStrain_out, dispOut, FReaction_out, frc_hydro_out, out_vals
+
+end
+
+
 """
 
     Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
@@ -566,6 +662,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             u_j_ptfm = Vector(u_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(u_j[1:numDOFPerNode])
             udot_j_ptfm = Vector(udot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(udot_j[1:numDOFPerNode])
             uddot_j_ptfm = Vector(uddot_j[numDOFPerNode+1:numDOFPerNode*2]) #Vector(uddot_j[1:numDOFPerNode])
+
+            frc_hydro_last = deepcopy(frc_hydro_n)
+            frc_mooring_last = deepcopy(frc_mooring_n)
         end
 
         #TODO: put these in the model
@@ -745,10 +844,15 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
                 Fdof = collect(7:12) #[Fdof; collect(7:12))] #TODO: tie into ndof per node
 
-                # println(frc_hydro_h)
-                # println(frc_mooring_h)
-                Fexternal = frc_hydro_h+frc_mooring_h #[Fexternal; frc_hydro_h+frc_mooring_h]
-                # Fexternal[3] -= 1025*9.81*13917
+                alpha = 0.2
+                frc_hydro_damped = frc_hydro_last + alpha*(frc_hydro_h-frc_hydro_last)
+                frc_mooring_damped = frc_mooring_last + alpha*(frc_mooring_h-frc_mooring_last)
+                println(frc_hydro_damped)
+                println(frc_mooring_damped)
+                Fexternal = frc_hydro_damped+frc_mooring_damped #[Fexternal; frc_hydro_h+frc_mooring_h]
+
+                frc_hydro_last = frc_hydro_damped
+                frc_mooring_last = frc_mooring_damped
             end
 
             ## evaluate structural dynamics
