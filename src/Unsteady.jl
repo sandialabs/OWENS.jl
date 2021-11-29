@@ -325,7 +325,7 @@ function OWENS_HD_Coupling(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs
     u[numDOFPerNode+1:numDOFPerNode*2] = uddot_ptfm
 
     # Calculate outputs at the current time, based on inputs at the current time
-    total_Fexternal = [other_Fexternal; frc_hydro_in + frc_mooring_in]
+    total_Fexternal = [other_Fexternal; frc_hydro_in]
     total_Fdof = [other_Fdof; ptfm_dofs]
     _ ,dispOut2, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,Omega,OmegaDot,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),CN2H,zeros(9))
     frc_hydro2[:], _ = VAWTHydro.HD_CalcOutput(time, u_ptfm, udot_ptfm, uddot_ptfm, frc_hydro2, out_vals)
@@ -343,7 +343,7 @@ function OWENS_HD_Coupling(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs
             u_perturb = copy(u)
             frc_hydro_perturb_owens[dof] += 1E6
             u_perturb[dof] += 1
-            total_Fexternal_perturb = [other_Fexternal; frc_hydro_perturb_owens + frc_mooring_in]
+            total_Fexternal_perturb = [other_Fexternal; frc_hydro_perturb_owens]
             _, dispOut_perturb_owens, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,Omega,OmegaDot,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),CN2H,zeros(9))
             uddot_ptfm_perturb = dispOut_perturb_owens.displddot_sp1[ptfm_dofs]
             residual_perturb = calc_hydro_residual(uddot_ptfm_perturb, frc_hydro2, frc_mooring_in, u_perturb, frc_multiplier)
@@ -368,7 +368,7 @@ function OWENS_HD_Coupling(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs
 
    # Update inputs
    frc_hydro_rev = frc_hydro_in + delta_u[1:numDOFPerNode]*frc_multiplier
-   total_Fexternal = [other_Fexternal; frc_hydro_rev + frc_mooring_in]
+   total_Fexternal = [other_Fexternal; frc_hydro_rev] # note frc_hydro_rev also captures mooring forces
    dispData_rev = deepcopy(dispIn)
    dispData_rev.displddot_s[ptfm_dofs] = dispIn.displddot_s[ptfm_dofs] + delta_u[numDOFPerNode+1:numDOFPerNode*2]
    uddot_ptfm = dispData_rev.displddot_s[ptfm_dofs]
@@ -598,10 +598,16 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_mooring_n, mooring_tensions)
         elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], delta_t, true, jac, numDOFPerNode, ptfm_dofs, frc_hydro_n,
                                                                                     frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
-                                                                                    0.0, 1, zeros(3,3))
-        
+                                                                                    0.0, 1, LinearAlgebra.I(3))
 
-        # Spd = wave.resource.jonswap_spectrum(f=model.plat_model.hydro.freq, Tp=6, Hs=1)
+        u_s = dispOut.displ_sp1
+        u_s_ptfm = u_s[ptfm_dofs]
+        udot_s  = dispOut.displdot_sp1
+        udot_s_ptfm = udot_s[ptfm_dofs]
+        uddot_s = dispOut.displddot_sp1
+        uddot_s_ptfm = uddot_s[ptfm_dofs]
+
+        dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
     end
 
     ptfm_roll = 0 #placeholder for numerical stability while debugging #TODO reverse azi_j to get platform motions in inertial frame
@@ -684,7 +690,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         Fdof = 1
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-            println("Iteration $numIterations")
+            # println("Iteration $numIterations")
 
             rbData = zeros(9)
 
@@ -797,9 +803,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             uddot_j_ptfm = uddot_j[ptfm_dofs]
 
             if model.analysisType=="ROM"
-                dispData_j = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1,eta_s,etadot_s,etaddot_s) #TODO: fix the j/s mixing in this line
+                # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1,eta_s,etadot_s,etaddot_s) #TODO: fix the j/s mixing in this line
             else
-                dispData_j = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1)
+                # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1)
             end
 
             ## Evaluate hydro-structural dynamics
@@ -813,9 +819,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 uddot_j_ptfm[1:3] = uddot_j_ptfm[1]*iCN2H[1,:] + uddot_j_ptfm[2]*iCN2H[2,:] + uddot_j_ptfm[3]*iCN2H[3,:]
                 uddot_j_ptfm[4:6] = uddot_j_ptfm[4]*iCN2H[1,:] + uddot_j_ptfm[5]*iCN2H[2,:] + uddot_j_ptfm[6]*iCN2H[3,:]
                 
-                println(u_j_ptfm)
-                println(udot_j_ptfm)
-                println(uddot_j_ptfm)
+                # println(u_j_ptfm)
+                # println(udot_j_ptfm)
+                # println(uddot_j_ptfm)
                 
                 VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
                 if model.interpOrder == 1
@@ -828,12 +834,12 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 
 
                 elStrain, dispOut_j, FReaction_j, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], delta_t, false, jac, numDOFPerNode, ptfm_dofs, frc_hydro_n,
-                                                                                    frc_mooring_n, dispData_j, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
-                                                                                    Fexternal, Fdof, zeros(3,3))
+                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
+                                                                                    Fexternal, Fdof, CN2H)
 
 
-                println(frc_hydro_n)
-                println(frc_mooring_n)
+                # println(frc_hydro_n)
+                # println(frc_mooring_n)
 
                 # transform forces/moments calculated in inertial reference frame back to hub reference frame for the structural solve
                 frc_hydro_h[1:3] = frc_hydro_n[1]*CN2H[1,:] + frc_hydro_n[2]*CN2H[2,:] + frc_hydro_n[3]*CN2H[3,:]
@@ -850,6 +856,12 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 udot_j_ptfm = udot_j[ptfm_dofs]
                 uddot_j = dispOut_j.displddot_sp1
                 uddot_j_ptfm = uddot_j[ptfm_dofs]
+
+                if model.analysisType=="ROM"
+                    # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1,eta_s,etadot_s,etaddot_s) #TODO: fix the j/s mixing in this line
+                else
+                    # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1)
+                end
             end
 
 
@@ -877,7 +889,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*model.gearRatio
 
         ## update timestepping variables and other states, store in history arrays
-
+        u_sm1 = copy(u_s)
         u_s = u_j
         udot_s = udot_j
         uddot_s = uddot_j
@@ -886,8 +898,12 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             eta_s = dispOut.eta_sp1 #eta_j
             etadot_s = dispOut.etadot_sp1 #etadot_j
             etaddot_s = dispOut.etaddot_sp1 #etaddot_j
+            dispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1, eta_s, etadot_s, etaddot_s)
+        else
+            dispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
         end
 
+        
         uHist[i+1,:] = u_s
         uHist_ptfm[i+1,:] = u_j_ptfm
         FReactionHist[i+1,:] = FReaction_j
