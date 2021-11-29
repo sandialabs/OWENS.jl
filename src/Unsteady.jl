@@ -802,12 +802,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             uddot_j = dispOut.displddot_sp1
             uddot_j_ptfm = uddot_j[ptfm_dofs]
 
-            if model.analysisType=="ROM"
-                # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1,eta_s,etadot_s,etaddot_s) #TODO: fix the j/s mixing in this line
-            else
-                # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1)
-            end
-
             ## Evaluate hydro-structural dynamics
             if model.hydroOn
 
@@ -857,11 +851,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 uddot_j = dispOut_j.displddot_sp1
                 uddot_j_ptfm = uddot_j[ptfm_dofs]
 
-                if model.analysisType=="ROM"
-                    # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1,eta_s,etadot_s,etaddot_s) #TODO: fix the j/s mixing in this line
-                else
-                    # dispData = GyricFEA.DispData(u_j,udot_j,uddot_j,u_sm1)
-                end
             end
 
 
