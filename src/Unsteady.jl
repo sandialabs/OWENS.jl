@@ -286,6 +286,21 @@ function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
 end
 
 
+function extrap_ptfm_motions(old_pos, old_vel, old_acc, old_ts, t_out, interp_order)
+
+    pos_spl = Dierckx.Spline1D(old_ts, old_pos, k=interp_order, bc="extrapolate")
+    vel_spl = Dierckx.Spline1D(old_ts, old_vel, k=interp_order, bc="extrapolate")
+    vel_spl = Dierckx.Spline1D(old_ts, old_acc, k=interp_order, bc="extrapolate")
+
+    pred_pos = Dierckx.evaluate(pos_spl, t_out)
+    pred_vel = Dierckx.evaluate(vel_spl, t_out)
+    pred_acc = Dierckx.evaluate(acc_spl, t_out)
+
+    return pred_pos, pred_vel, pred_acc
+
+end
+
+
 function calc_hydro_residual(new_accels, new_hydro_frcs, md_frc, u, frc_multiplier)
 
     new_frcs = md_frc + new_hydro_frcs
@@ -683,9 +698,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
         #initialize  platform module related variables only used if (model.hydroOn)
         if model.hydroOn
-            u_j_ptfm = Vector(u_j[ptfm_dofs])
-            udot_j_ptfm = Vector(udot_j[ptfm_dofs])
-            uddot_j_ptfm = Vector(uddot_j[ptfm_dofs])
+            u_j_ptfm, udot_j_ptfm, uddot_j_ptfm = extrapolate_ptfm_motions(u_j[ptfm_dofs], udot_j[ptfm_dofs], uddot_j[ptfm_dofs], t[i+1], model.interpOrder) # guess motions at t+dt to make HD/MD happy
         end
 
         #TODO: put these in the model
