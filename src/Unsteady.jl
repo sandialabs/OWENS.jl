@@ -286,17 +286,24 @@ function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
 end
 
 
-function extrap_ptfm_motions(old_pos, old_vel, old_acc, old_ts, t_out, interp_order)
+function extrap_pred_vals(curr_vals, ts, t_out, interp_order)
 
-    pos_spl = Dierckx.Spline1D(old_ts, old_pos, k=interp_order, bc="extrapolate")
-    vel_spl = Dierckx.Spline1D(old_ts, old_vel, k=interp_order, bc="extrapolate")
-    vel_spl = Dierckx.Spline1D(old_ts, old_acc, k=interp_order, bc="extrapolate")
+    for i = 1:size(curr_vals)[2]
+        spl = Dierckx.Spline1D(ts, curr_vals[:,i], k=interp_order, bc="extrapolate")
+        pred_vals[i] = Dierckx.evaluate(spl, t_out)
+    end
 
-    pred_pos = Dierckx.evaluate(pos_spl, t_out)
-    pred_vel = Dierckx.evaluate(vel_spl, t_out)
-    pred_acc = Dierckx.evaluate(acc_spl, t_out)
+    return pred_vals
 
-    return pred_pos, pred_vel, pred_acc
+end
+
+
+function frame_trans(init_frame_vals, trans_mat)
+
+    out_frame_vals[1:3] = init_frame_vals[1]*trans_mat[1,:] + init_frame_vals[2]*trans_mat[2,:] + init_frame_vals[3]*trans_mat[3,:]
+    out_frame_vals[4:6] = init_frame_vals[4]*trans_mat[1,:] + init_frame_vals[5]*trans_mat[2,:] + init_frame_vals[6]*trans_mat[3,:]       
+    
+    return out_frame_vals
 
 end
 
@@ -318,6 +325,7 @@ function OWENS_HD_Coupling(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs
     other_Fexternal, other_Fdof, CN2H, rom=0)
 
     # !!! Make sure structuralDynamicsTransient and MD_CalcOutput have run before this so you can send dispOut and frc_mooring_in here !!!
+    # !!! All forces and motions inputs must be in the hub reference frame !!!
     # 
     # allocate new variables
     frc_hydro2 = zero(frc_hydro_in)
@@ -328,13 +336,12 @@ function OWENS_HD_Coupling(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs
     out_vals = zeros(numDOFPerNode+1)
     u = Vector{Float32}(undef, numDOFPerNode*2)
     
-
     frc_multiplier = 1e6
 
     dispIn = deepcopy(dispData) # TODO: does this need to be copied, or can we just use the original dispData?
-    u_ptfm = dispIn.displ_s[ptfm_dofs]
-    udot_ptfm = dispIn.displdot_s[ptfm_dofs]
-    uddot_ptfm = dispIn.displddot_s[ptfm_dofs]
+    u_ptfm_h = dispIn.displ_s[ptfm_dofs]
+    udot_ptfm_h = dispIn.displdot_s[ptfm_dofs]
+    uddot_ptfm_h = dispIn.displddot_s[ptfm_dofs]
     
     u[1:numDOFPerNode] = frc_hydro_in / frc_multiplier
     u[numDOFPerNode+1:numDOFPerNode*2] = uddot_ptfm
@@ -453,18 +460,67 @@ external module with transient structural dynamics analysis capability.
 """
 function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatrices=false)
 
-    # Declare Variable Type, are set later
-    udot_j = 0.0
-    uddot_j = 0.0
-    torqueDriveShaft_j = 0.0
+    #..........................................................................
+    #                             INITIALIZATION
+    #..........................................................................
 
-    elStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
+    ## General
+    t = range(0, length=model.numTS, step=model.delta_t)
+    numDOFPerNode = 6
+    totalNumDof = mesh.numNodes*numDOFPerNode
+    CN2H = LinearAlgebra.I(3) # hub and inertial frames initialize as copies
 
-    dispOut = GyricFEA.DispOut(elStrain,zeros(492,492),zeros(492,492),zeros(492,492)) # I don't think this needs to be initialized here
-    #................................................................
+    ## Initial conditions
+    u_s = zeros(totalNumDof)
+    u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
+    u_sm1 = copy(u_s)
+    udot_s = zero(u_s)
+    uddot_s = zero(u_s)
+    rbData = zeros(9)
+    dispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
+
+    gb_s = 0
+    gbDot_s = 0
+    gbDotDot_s = 0
+    azi_s = 0
+    Omega_s = OmegaInitial
+    OmegaDot_s = 0
+    genTorque_s = 0
+    torqueDriveShaft_s = 0
+
+    Fexternal = 0.0
+    Fdof = 1
+
+    ## Hydrodynamics/mooring module initialization and coupling variables
+    if model.hydroOn
+        u_s_ptfm = Vector(u_s[ptfm_dofs])
+        udot_s_ptfm = Vector(udot_s[ptfm_dofs])
+        uddot_s_ptfm = Vector(uddot_s[ptfm_dofs])
+
+        jac = Array{Float64}(undef, numDOFPerNode*2, numDOFPerNode*2)
+        numMooringLines = 3
+
+        if model.outFilename == "none"
+            hd_outFilename = "hydrodyn_temp.out"
+        else
+            hd_outFilename = model.outFilename
+        end
+
+        ptfm_dofs = 1:numDOFPerNode
+        ptfm_mass = feamodel.nodalTerms.concMass[1].val #TODO: make it so the platform concentrated mass terms doesn't have to be the first concentrated term defined
+        
+        frc_hydro_n = zeros(Float32, numDOFPerNode)
+        frc_hydro_h = zeros(Float32, numDOFPerNode)
+        frc_mooring_n = zeros(Float32, numDOFPerNode)
+        frc_mooring_h = zeros(Float32, numDOFPerNode)
+        out_vals = zeros(Float32, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
+        mooring_tensions = zeros(Float32, numMooringLines*2) # Fairlead + anchor tension for each line
+
+        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=model.delta_t, t_max=t[1]+(numTS-1)*model.delta_t)
+        VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=model.md_input_file, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
+    end
 
     ## Rotor mode initialization
-    #..........................................................................
     OmegaInitial = model.OmegaInit #Initial rotor speed (Hz)
 
     if (model.turbineStartup == 1) #forced start-up using generator as motor
@@ -484,88 +540,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         rotorSpeedForGenStart = 1e6 #ensures generator always off for practical purposes
     end
 
-    ## state initialization
-    numDOFPerNode = 6
-    totalNumDof = mesh.numNodes*numDOFPerNode
-
-    #......... specify initial conditions .......................
-    u_s = zeros(totalNumDof)
-    u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
-    u_sm1 = copy(u_s)
-    udot_s = zero(u_s)
-    uddot_s = zero(u_s)
-    dispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
-    #............................................................
-
-    numTS = Int(model.numTS)       #define number of time steps
-    delta_t = model.delta_t   #define time step size
-    uHist = zeros(numTS, length(u_s))
-    uHist[1,:] = u_s          #store initial condition
-
-    t = range(0, length=numTS, step=delta_t)
-
-    FReactionHist = zeros(numTS,6)
-    FHydroHist = zeros(numTS,6)
-
-    eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
-    eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
-    eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
-    gam_xz_0_hist = zeros(4,mesh.numEl,numTS)
-    gam_xz_y_hist = zeros(4,mesh.numEl,numTS)
-    gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
-    gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
-
-    aziHist = zeros(numTS)
-    OmegaHist = zeros(numTS)
-    OmegaDotHist = zeros(numTS)
-    gbHist = zeros(numTS)
-    gbDotHist = zeros(numTS)
-    gbDotDotHist = zeros(numTS)
-    genTorque = zeros(numTS)
-    genPower = zeros(numTS)
-    torqueDriveShaft = zeros(numTS)
-
-    # initialize various states and variables
-    gb_s = 0
-    gbDot_s = 0
-    gbDotDot_s = 0
-    azi_s = 0
-    Omega_s = OmegaInitial
-    OmegaDot_s = 0
-    genTorque_s = 0
-    torqueDriveShaft_s = 0
-
-    aziHist[1] = azi_s
-    OmegaHist[1] = Omega_s
-    OmegaDotHist[1] = OmegaDot_s
-    FReactionsm1 = zeros(6)
-    FReactionHist[1,:] = FReactionsm1 
-    FReaction_j = FReactionsm1
-    gbHist[1] = gb_s
-    gbDotHist[1] = gbDot_s
-    gbDotDotHist[1] = gbDotDot_s
-    genTorque[1] = genTorque_s
-    torqueDriveShaft[1] = torqueDriveShaft_s
-
-    ## structural dynamics initialization
-    #..........................................................................
-    if model.analysisType=="ROM" #initialize reduced order model
-        #calculate constrained dof vector
-        #TODO: This is already done, remove this redundant code
-        # numDofPerNode = 6
-        # isConstrained = zeros(totalNumDof)
-        # constDof = (feamodel.BC.pBC[:,1]-1)*numDofPerNode + feamodel.BC.pBC[:,2]
-        # index = 1
-        # for i=1:mesh.numNodes
-        #     for j=1:numDofPerNode
-        #         if ((i-1)*numDofPerNode + j in constDof)
-        #             isConstrained[index] = 1
-        #         end
-        #         index = index + 1
-        #     end
-        # end
-        # feamodel.BC.isConstrained = isConstrained
-
+    ## Structural dynamics initialization
+    if model.analysisType=="ROM"
         rom,elStorage = GyricFEA.reducedOrderModel(feamodel,mesh,el,u_s) #construct reduced order model
 
         #set up inital values in modal space
@@ -584,79 +560,107 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         eta_s     = invPhi*u_s2
         etadot_s  = invPhi*udot_s2
         etaddot_s = invPhi*uddot_s2
-
     else
         elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
-    #calculate structural/platform moi
     _,structureMOI,_ = GyricFEA.calculateStructureMassProps(elStorage)
-    #..........................................................................
 
     feamodel.jointTransform, feamodel.reducedDOFList = GyricFEA.createJointTransform(feamodel.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    
+    ## History array initialization
+    uHist = zeros(model.numTS, length(u_s))
+    uHist[1,:] = u_s          #store initial condition
 
-    # Initialize hydro libraries and working variables
+    FReactionHist = zeros(model.numTS,6)
+    
+    eps_xx_0_hist = zeros(4,mesh.numEl,model.numTS)
+    eps_xx_z_hist = zeros(4,mesh.numEl,model.numTS)
+    eps_xx_y_hist = zeros(4,mesh.numEl,model.numTS)
+    gam_xz_0_hist = zeros(4,mesh.numEl,model.numTS)
+    gam_xz_y_hist = zeros(4,mesh.numEl,model.numTS)
+    gam_xy_0_hist = zeros(4,mesh.numEl,model.numTS)
+    gam_xy_z_hist = zeros(4,mesh.numEl,model.numTS)
+
+    aziHist = zeros(model.numTS)
+    OmegaHist = zeros(model.numTS)
+    OmegaDotHist = zeros(model.numTS)
+    gbHist = zeros(model.numTS)
+    gbDotHist = zeros(model.numTS)
+    gbDotDotHist = zeros(model.numTS)
+    genTorque = zeros(model.numTS)
+    genPower = zeros(model.numTS)
+    torqueDriveShaft = zeros(model.numTS)
+
+    aziHist[1] = azi_s
+    OmegaHist[1] = Omega_s
+    OmegaDotHist[1] = OmegaDot_s
+    FReactionsm1 = zeros(6)
+    FReactionHist[1,:] = FReactionsm1 
+    FReaction_j = FReactionsm1
+    gbHist[1] = gb_s
+    gbDotHist[1] = gbDot_s
+    gbDotDotHist[1] = gbDotDot_s
+    genTorque[1] = genTorque_s
+    torqueDriveShaft[1] = torqueDriveShaft_s
+
     if model.hydroOn
-        jac = Array{Float64}(undef, numDOFPerNode*2, numDOFPerNode*2)
-        numMooringLines = 3
-
-        if model.outFilename == "none"
-            hd_outFilename = "hydrodyn_temp.out"
-        else
-            hd_outFilename = model.outFilename
-        end
-
-        ptfm_dofs = 1:numDOFPerNode
-        ptfm_mass = feamodel.nodalTerms.concMass[1].val #TODO: make it so the platform concentrated mass terms doesn't have to be the first concentrated term defined
-        u_s_ptfm = Vector(u_s[ptfm_dofs])
-        udot_s_ptfm = Vector(udot_s[ptfm_dofs])
-        uddot_s_ptfm = Vector(uddot_s[ptfm_dofs])
-
-        uHist_ptfm = zeros(numTS,length(u_s_ptfm))
+        uHist_ptfm = zeros(model.numTS,length(u_s_ptfm))
         uHist_ptfm[1,:] = u_s_ptfm
-
-        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t)
-        VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=model.md_input_file, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
-        
-        frc_hydro_n = zeros(Float32, numDOFPerNode)
-        frc_hydro_h = zeros(Float32, numDOFPerNode)
-        frc_mooring_n = zeros(Float32, numDOFPerNode)
-        frc_mooring_h = zeros(Float32, numDOFPerNode)
-        out_vals = zeros(Float32, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
-        mooring_tensions = zeros(Float32, numMooringLines*2) # Fairlead + anchor tension for each line
-        
-        # calculate initial HydroDyn/MoorDyn states
-        # TODO: transform these to the inertial frame, since u_s is in the hub frame
-        #       (u_s and azi_s are initialized to zero, so it doesn't matter right now, but it will if we add nonzero initial conditions)
-        frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_mooring_n, mooring_tensions)
-        if model.analysisType=="ROM"
-            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
-                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
-                                                                                    0.0, 1, LinearAlgebra.I(3), rom)
-        else
-            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
-                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
-                                                                                    0.0, 1, LinearAlgebra.I(3))
-        end
-
-        u_s = dispOut.displ_sp1
-        u_s_ptfm = u_s[ptfm_dofs]
-        udot_s  = dispOut.displdot_sp1
-        udot_s_ptfm = udot_s[ptfm_dofs]
-        uddot_s = dispOut.displddot_sp1
-        uddot_s_ptfm = uddot_s[ptfm_dofs]
-
-        dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
-        FHydroHist[1,:] = frc_hydro_n
+        FHydroHist = zeros(model.numTS,6)
     end
 
-    ptfm_roll = 0 #placeholder for numerical stability while debugging #TODO reverse azi_j to get platform motions in inertial frame
-    ptfm_pitch = 0
-    ptfm_yaw = 0
+    #..........................................................................
+    #                          INITIAL COUPLED SOLVE
+    #..........................................................................
 
-    ## Main Loop - iterate for a solution at each time step, i
-    for i=1:numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+    ## TODO: I think structuralDynamicsTransient *might* need to be called here if we want to mirror ElastoDyn-HydroDyn coupling perfectly, but since we already initialize displacements
+    ##       without running it, I think it's good unless we see instability.
 
+    # Calculate aerodynamic forcing
+    deformAero(Omega_j*2*pi)
+    # Fexternal, Fdof = aero(t[1]) #TODO: implement turbine deformation and deformation induced velocities
+    Fexternal = 0.0
+    Fdof = 1
+
+    ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions (don't need to transform b/w reference frames since hub and inertial frames are the same at t=0)
+    if model.hydroOn
+        frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s[ptfm_dofs], udot_s[ptfm_dofs], uddot_s[ptfm_dofs], frc_mooring_n, mooring_tensions)
+        if model.analysisType=="ROM"
+            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], model.delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
+                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
+                                                                                    Fexternal, Fdof, CN2H, rom)
+        else
+            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], model.delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
+                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
+                                                                                    Fexternal, Fdof, CN2H)
+        end
+
+        u_sm1 = copy(u_s) # not sure if this is necessary (or correct), since the initial u_s isn't technically at t=-dt
+        u_s = dispOut.displ_sp1
+        udot_s = dispOut.displdot_sp1
+        uddot_s = dispOut.dispddot_sp1
+        dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
+        
+        FHydroHist[1,:] = frc_hydro_n
+
+    ## Copy values of the inital outputs to arrays for interpolation/extrapolation
+        interp_u_ptfm = repeat(u_s[ptfm_dofs], model.interpOrder+1, 1)
+        interp_udot_ptfm = repeat(udot[ptfm_dofs], model.interpOrder+1, 1)
+        interp_uddot_ptfm = repeat(uddot_s[ptfm_dofs], model.interpOrder+1 ,1)
+        interp_hydro_frc = repeat(frc_hydro_n, model.interpOrder+1, 1)
+        interp_mooring_frc = repeat(frc_mooring_n, model.interpOrder+1, 1)
+        interp_times = collect(range(0.0, -model.delta_t*model.interpOrder, model.interpOrder+1))
+    end
+
+    #..........................................................................
+    #                                MAIN LOOP
+    #..........................................................................
+
+    ### Iterate for a solution at t+dt
+    for i=1:model.numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+
+        ## Print current simulation time to terminal
         if isinteger(t[i])
             now = Int(t[i])
             if now == 1
@@ -666,14 +670,14 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             end
         end
 
-        ## check for specified rotor speed at t+dt
+        ## Check for specified rotor speed at t+dt
         if (model.turbineStartup == 0)
             model.omegaControl = true #TODO: are we setting this back?
             if (model.usingRotorSpeedFunction) #use user specified rotor speed profile function
-                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,delta_t)
+                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,model.delta_t)
                 Omega_s = omegaCurrent
             else #use discreteized rotor speed profile function
-                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],model.tocp,model.Omegaocp,delta_t)
+                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],model.tocp,model.Omegaocp,model.delta_t)
                 if (terminateSimulation)
                     break
                 end
@@ -684,10 +688,26 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             omegaCurrent = 0.0
         end
 
-        ## initialize "j" Gauss-Sidel iteration
+        ## Guess platform motions and forces at t+dt to get proper rotations for reference frame conversions (and to make hydro coupling stable)
+        if model.hydroOn
+            u_s_ptfm = extrap_pred_vals(interp_u_ptfm, interp_times, t[i+1], model.interpOrder)
+            udot_s_ptfm = extrap_pred_vals(interp_udot_ptfm, interp_times, t[i+1], model.interpOrder)
+            uddot_s_ptfm = extrap_pred_vals(interp_uddot_ptfm, interp_times, t[i+1], model.interpOrder)
+            frc_hydro_n = extrap_pred_vals(interp_hydro_frc, interp_times, t[i+1], model.interpOrder)
+            frc_mooring_n = extrap_pred_vals(interp_mooring_frc, interp_times, t[i+1], model.interpOrder)
+        end
+
+        ## Initialize "j" Gauss-Seidel iteration variables
         u_j=u_s
+        u_j_ptfm = u_s_ptfm
         udot_j=udot_s
+        udot_j_ptfm = udot_s_ptfm
         uddot_j=uddot_s
+        uddot_j_ptfm = uddot_s_ptfm
+        
+        frc_hydro_n_j = frc_hydro_n
+        frc_mooring_n_j = frc_mooring_n
+
         azi_j = azi_s
         Omega_j = Omega_s
         OmegaDot_j = OmegaDot_s
@@ -695,11 +715,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         gbDot_j = gbDot_s
         gbDotDot_j = gbDotDot_s
         genTorque_j = genTorque_s
-
-        #initialize  platform module related variables only used if (model.hydroOn)
-        if model.hydroOn
-            u_j_ptfm, udot_j_ptfm, uddot_j_ptfm = extrapolate_ptfm_motions(u_j[ptfm_dofs], udot_j[ptfm_dofs], uddot_j[ptfm_dofs], t[i+1], model.interpOrder) # guess motions at t+dt to make HD/MD happy
-        end
 
         #TODO: put these in the model
         TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
@@ -710,43 +725,13 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         aziNorm = 1e5
         gbNorm = 0.0 #initialize norms for various module states
 
-        # Assignments
-        # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
-
-        # Hydro Coupling
-        #1) modify the mesh to include a platform cg offset #option
-        #2) modify the element properties so that this element is rigid
-        #3) ensure that this element is non-rotating - deflected solution is solved in one step (perhaps just give rotated stiffenss, forces, etc, so the node is actually rotating, as long as the mass isn't being cyntrifical)
-        #4) apply the hydro F, C, K, M to the nodal term (we have calm sea, as well as waves and currents). Mooring will also apply forces.
-        #5) use flags to turn degrees of freedom off
-
-        # Unit Testing
-        # 1) Turn all dof off and the solution should be the same
-        # 2) allow heave and the turbine should go up and down
-        # 3) no aero, but mass offset should cause the turbine to tilt slightly
-        Fexternal = 0.0 #TODO: do this right, especially if there are only hydro forces
-        Fdof = 1
-
-        while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
+        ## Gauss-Seidel predictor-corrector loop
+        while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
             # println("Iteration $numIterations")
 
-            rbData = zeros(9)
-
-            #calculate CP2H (platform frame to hub frame transformation matrix)
-            CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
-
-            #.... inertial frame to platform transformation matrix ...........
-            if (model.hydroOn)
-                CN2P = transMat(ptfm_roll, ptfm_pitch, ptfm_yaw)
-            else
-                CN2P=1.0*LinearAlgebra.I(3)            
-            end
-            CN2H = CN2P*CP2H
-            iCN2H = inv(CN2H)
-
-            #.........................................
-            ## evaluate generator module
-            #----- generator module ---------------------------
+            #------------------
+            # GENERATOR MODULE
+            #------------------
             genTorque_j = 0
             if model.generatorOn
                 if model.driveTrainOn
@@ -767,10 +752,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 #         genTorqueAppliedToTurbineRotor0 = -genTorque0
                 #         genTorqueAppliedToPlatform0 = genTorqueHSS0
             end
-            #-------------------------------------       ##
 
-            ## evaluate drivetrain module
-            # #------ drivetrain module ---------------------------------
+            #-------------------
+            # DRIVETRAIN MODULE
+            #-------------------
             torqueDriveShaft_j = genTorque_j
             gb_jLast = gb_j
             if (!model.omegaControl)
@@ -779,7 +764,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                     azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi)
 
                     gb_j,gbDot_j,gbDotDot_j = updateRotorRotation(model.JgearBox,0,0,
-                    -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,delta_t)
+                    -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,model.delta_t)
                 else
                     gb_j = azi_j
                     gbDot_j = Omega_j
@@ -791,82 +776,100 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 gbDotDot_j = 0
             end
 
-            #------ update rotor speed ---------------------------------
+            # Update rotor speed
             azi_jLast = azi_j
             if model.omegaControl
                 if (model.usingRotorSpeedFunction)
-                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
+                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,model.delta_t)
                 else
                     Omega_j = Omega_s
                     OmegaDot_j = OmegaDot_s
-                    azi_j = azi_s + Omega_j*delta_t*2*pi
+                    azi_j = azi_s + Omega_j*model.delta_t*2*pi
                 end
             elseif !model.omegaControl
                 Crotor = 0
                 Krotor = 0
                 azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
                 -FReaction_j[6],-torqueDriveShaft_j,
-                azi_s,Omega_s,OmegaDot_s,delta_t)
+                azi_s,Omega_s,OmegaDot_s,model.delta_t)
             else
                 error("omega control option not correctly specified")
             end
 
-            #initialization of structural dynamics displacements, velocities, accelerations, etc.
-            
+            #---------------------
+            # AERODYNAMICS MODULE
+            #---------------------
 
-            # --------------------------------------------------------
-            #                      Solve Procedure
-            # --------------------------------------------------------
-
-            ## Calculate aerodynamic forcing
+            # Calculate aerodynamic forcing
             deformAero(Omega_j*2*pi)
             # Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
+            Fexternal = 0.0
+            Fdof = 1
 
-            # Evaluate structural dynamics based on aerodynamic forcing and outputs from time t.
+            #------------------------------------
+            # STRUCTURAL/HYDRO/MOORING MODULES
+            #------------------------------------
+
+            # Update reference frame transformation and convert external forces to hub reference frame (note aero forces are already assumed to be in the hub frame)
+            CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
+            if (model.hydroOn)
+                CN2P = transMat(u_j_ptfm[4], u_j_ptfm[5], u_j_ptfm[6])
+            else
+                CN2P=1.0*LinearAlgebra.I(3)            
+            end
+            CN2H = CN2P*CP2H
+            iCN2H = inv(CN2H)
+
+            frc_hydro_h_j = frame_trans(frc_hydro_n_j, CN2H)
+            frc_mooring_h_j = frame_trans(frc_mooring_n_j, CN2H)
+
+            # Evaluate structural dynamics based on values from last iteration (or extrapolated values from last time step if it's the first iteration) and new aerodynamic loads
+            mom_hydro_abtbs = LinearAlgebra.cross(model.ptfmref2bs, frc_hydro_h_j[1:3] + frc_mooring_h_j[1:3]) # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
+            mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, CN2H*[0,0,9.81]) # add the moments about the platform node due to gravitational effects at the platform center of mass 
+            Fexternal = [Fexternal; frc_hydro_h_j + frc_mooring_h_j; mom_hydro_abtbs + mom_ptfm_abtbs]
+            Fdof = [Fdof; ptfm_dofs; ptfm_dofs[4:6]]
+
             if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],model.delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
-                # println(Fexternal)
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],model.delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
             end
                   
             # update current motion estimates and structures
-            u_jLast = u_j
-            u_jLast_ptfm = u_jLast[ptfm_dofs]
             u_j = dispOut.displ_sp1
-            u_j_ptfm = u_j[ptfm_dofs]
             udot_j  = dispOut.displdot_sp1
-            udot_j_ptfm = udot_j[ptfm_dofs]
             uddot_j = dispOut.displddot_sp1
-            uddot_j_ptfm = uddot_j[ptfm_dofs]
 
             ## Evaluate hydro-structural dynamics
             if model.hydroOn
 
+                u_j_ptfm_h = u_j[ptfm_dofs]
+                udot_j_ptfm_h = udot_j[ptfm_dofs]
+                uddot_j_ptfm_h = uddot_j[ptfm_dofs]
+
                 # transform platform motions from hub frame to inertial frame
-                u_j_ptfm[1:3] = u_j_ptfm[1]*iCN2H[1,:] + u_j_ptfm[2]*iCN2H[2,:] + u_j_ptfm[3]*iCN2H[3,:]
-                u_j_ptfm[4:6] = u_j_ptfm[4]*iCN2H[1,:] + u_j_ptfm[5]*iCN2H[2,:] + u_j_ptfm[6]*iCN2H[3,:]
-                udot_j_ptfm[1:3] = udot_j_ptfm[1]*iCN2H[1,:] + udot_j_ptfm[2]*iCN2H[2,:] + udot_j_ptfm[3]*iCN2H[3,:]
-                udot_j_ptfm[4:6] = udot_j_ptfm[4]*iCN2H[1,:] + udot_j_ptfm[5]*iCN2H[2,:] + udot_j_ptfm[6]*iCN2H[3,:]
-                uddot_j_ptfm[1:3] = uddot_j_ptfm[1]*iCN2H[1,:] + uddot_j_ptfm[2]*iCN2H[2,:] + uddot_j_ptfm[3]*iCN2H[3,:]
-                uddot_j_ptfm[4:6] = uddot_j_ptfm[4]*iCN2H[1,:] + uddot_j_ptfm[5]*iCN2H[2,:] + uddot_j_ptfm[6]*iCN2H[3,:]
+                u_j_ptfm_n2 = frame_trans(u_j_ptfm_h, iCN2H)
+                udot_j_ptfm_n2 = frame_trans(udot_j_ptfm_h, iCN2H)
+                uddot_j_ptfm_n2 = frame_trans(uddot_j_ptfm_h, iCN2H)
                 
-                VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
+                # FAST updates HD/MD using inputs from last time step/correct instead of transferring the new ElastoDyn outputs, which is why I'm using u*_j_ptfm_n instead of u*_j_ptfmn2 here
+                VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_j_ptfm_n, udot_j_ptfm_n, uddot_j_ptfm_n)
                 if model.interpOrder == 1
-                    VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
+                    VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_j_ptfm_n, udot_j_ptfm_n, uddot_j_ptfm_n)
                 elseif model.interpOrder == 2
-                    VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm)
+                    VAWTHydro.MD_UpdateStates(t[i]-model.delta_t, t[i], t[i+1], u_j_ptfm_n, udot_j_ptfm_n, uddot_j_ptfm_n)
                 end
 
-                frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i+1], u_j_ptfm, udot_j_ptfm, uddot_j_ptfm, frc_mooring_n, mooring_tensions)
+                # Calculate new mooring forces on the platform since MoorDyn doesn't use acceleration inputs (despite the input arguments). Note the new GyricFEA motion outputs are now used as inputs.
+                frc_mooring_n_j[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i+1], u_j_ptfm_n2, udot_j_ptfm_n2, uddot_j_ptfm_n2, frc_mooring_n_j, mooring_tensions)
                 
                 if model.analysisType=="ROM"
-                    elStrain, dispOut_j, FReaction_j, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
-                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
+                    elStrain, dispOut_j, FReaction_j, frc_hydro_n_j, out_vals, jac = OWENS_HD_Coupling(t[1], model.delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs,
+                                                                                    frc_hydro_h_j, frc_mooring_h_j, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
                                                                                     Fexternal, Fdof, CN2H, rom)
                 else
-                    elStrain, dispOut_j, FReaction_j, frc_hydro_n, out_vals, jac = OWENS_HD_Coupling(t[1], delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
-                                                                                    frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
+                    elStrain, dispOut_j, FReaction_j, frc_hydro_n_j, out_vals, jac = OWENS_HD_Coupling(t[1], model.delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs,
+                                                                                    frc_hydro_h_j, frc_mooring_h_j, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
                                                                                     Fexternal, Fdof, CN2H)
                 end
 
