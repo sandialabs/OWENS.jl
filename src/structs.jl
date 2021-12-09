@@ -85,7 +85,7 @@ function Model(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
-    numTS = 50.0,
+    numTS = 50,
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
     aeroLoadsOn = false, #this need to get cleaned up in the code
@@ -119,7 +119,7 @@ function Model(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0)
     )
 
-    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,Int(numTS),delta_t,Omegaocp,
     aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,ptfmref2bs,ptfmcom2bs,plat_model,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
