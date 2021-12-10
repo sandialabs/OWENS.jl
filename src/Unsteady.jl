@@ -321,35 +321,82 @@ function calc_hydro_residual(new_accels, new_hydro_frcs, md_frc, u, frc_multipli
     return u_resid
 end
 
+"""
+
+        OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, rZT, rYT, frc_hydro_in,
+        frc_mooring_in, dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
+        other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
+
+Internal function to perform the input-output solve procedure between OWENS and HydroDyn. This is required
+    due to the close interdependency between the rigid body acceleration of the platform (calculated in
+    OWENS/GyricFEA) and the hydrodynamic forcing due to the platform added mass (calculated in HydroDyn).
+    This is basically a mirror of the `ED_HD_InputOutputSolve` subroutine from OpenFAST, only replacing
+    ElastoDyn with GyricFEA.
+
+# Input
+* `time::float`: current simulation time
+* `dt::float`: simulation time step
+* `calcJacobian::bool`: flag on whether or not to calculate the force/acceleration Jacobians (needs to be true at initialization)
+* `jac::Array{<:float}`: existing array containing the platform hydro force and acceleration Jacobians 
+* `numDOFPerNode::int`: number of degrees of freedom per node (typically 6)
+* `ptfm_dofs::Vector{<:int}`: indices of the nodal vector representing the platform (typically 1 through 6)
+* `ptfm_mass::float`: mass of the floating platform (not including the ballast) (kg)
+* `rZT::Vector{<:float}`: see ?Model.ptfmref2bs
+* `rYT::Vector{<:float}`: see ?Model.ptfmcom2bs
+* `frc_hydro_in::Vector{<:float}`: previously calculated hydrodynamic forces in the inertial frame (N)
+* `frc_mooring_in::Vector{<:float}`: previously calculated mooring forces in the inertial frame (N)
+* `dispIn::DispData`: see ?GyricFEA.DispData
+* `feamodel::FEAModel`: see ?GyricFEA.FEAModel
+* `mesh::Mesh`: see ?GyricFEA.Mesh
+* `el::El`: see ?GyricFEA.El,
+* `elStorage::ElStorage`: see ?GyricFEA.elStorage
+* `Omega::float`: rotor speed (Hz)
+* `OmegaDot::float`: rotor acceleration (Hz/s)
+* `other_Fexternal::Vector{<:float}`: other external loads acting on the structure besides the hydro and mooring loads (typically aero loads) (N)
+* `other_Fdof::Vector{<:float}`: vector of nodes with indices corresponding to the loads given in other_Fexternal`
+* `CN2H::Array{<:float}`: rotation matrix defining the transformation from the inertial to the hub reference frames
+* `u_ptfm_n{:Vector{<:float}`: the platform position in the inertial reference frame at the current simulation time (m)
+* `udot_ptfm_n{:Vector{<:float}`: the platform velocity in the inertial reference frame at the current simulation time (m/s)
+* `uddot_ptfm_n{:Vector{<:float}`: the platform acceleration in the inertial reference frame at the current simulation time (m/s/s)
+* `rom::int/ROM`: see ?GyricFEA.ROM. Instead defaults to 0 if the reduced order model is not used
+
+# Output
+* `elStrain_out`: object containing strains on each element returned by GyricFEA
+* `dispOut`: object containing motions on each element returned by GyricFEA
+* `FReaction_out`: vector of the total loads acting on the specified nodes
+* `frc_hydro_out`: vector of the hydrodynamic loads acting on the platform returned by HydroDyn
+* `out_vals`: vector containing the output parameters specified at the end of the HydroDyn input file
+* `jac_out`: the platform hydro forces and accelerations Jacobian calculated internally if calcJacobian=true (passthrough if calcJacobian=false)
+"""
 
 function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, rZT, rYT, frc_hydro_in,
     frc_mooring_in, dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
-    other_Fexternal, other_Fdof, CN2H, rom=0)
+    other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
 
     # !!! Make sure structuralDynamicsTransient and MD_CalcOutput have run before this so you can send dispOut and frc_mooring_in here !!!
-    # !!! Hydro/mooring force inputs/outputs are in the inertial reference frame, motion inputs/outputs are in the hub reference frame !!!
+    # !!! Hydro/mooring force inputs/outputs are in the inertial reference frame, platform motion inputs/outputs are in the hub reference frame !!!
     # 
     # allocate new variables
-    frc_hydro2 = zero(frc_hydro_in)
+    frc_hydro2 = Vector{Float32}(undef, numDOFPerNode)
     if calcJacobian
-        frc_hydro_perturb_hd = zero(frc_hydro_in)
+        
     end
-    frc_hydro_out = zero(frc_hydro_in) # TODO: all of the frc_hydro's may be able to be combined for efficiency
-    out_vals = zeros(numDOFPerNode+1)
+    frc_hydro_out = Vector{Float32}(undef, numDOFPerNode) # TODO: all of the frc_hydro's may be able to be combined for efficiency
+    out_vals = Vector{Float32}(undef, numDOFPerNode+1)
     u = Vector{Float32}(undef, numDOFPerNode*2)
     
     frc_multiplier = 1e6
 
-    u_ptfm_n = frame_convert(dispIn.displ_s[ptfm_dofs], LinearAlgebra.inv(CN2H))
-    udot_ptfm_n = frame_convert(dispIn.displdot_s[ptfm_dofs], LinearAlgebra.inv(CN2H))
-    uddot_ptfm_n = frame_convert(dispIn.displddot_s[ptfm_dofs], LinearAlgebra.inv(CN2H))
+    # u_ptfm_n = frame_convert(dispIn.displ_s[ptfm_dofs], LinearAlgebra.inv(CN2H))
+    # udot_ptfm_n = frame_convert(dispIn.displdot_s[ptfm_dofs], LinearAlgebra.inv(CN2H))
+    # uddot_ptfm_n = frame_convert(dispIn.displddot_s[ptfm_dofs], LinearAlgebra.inv(CN2H))
     
     # For consistency, everything in the u vector is in the inertial reference frame
     u[1:numDOFPerNode] = frc_hydro_in / frc_multiplier
     u[numDOFPerNode+1:numDOFPerNode*2] = uddot_ptfm_n
 
     # Calculate outputs at the current time, based on inputs at the current time
-    mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_in[1:3]))*CN2H # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
+    mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_in[1:3]+frc_mooring_in[1:3]))*CN2H # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
     mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.transpose(LinearAlgebra.cross(rYT, [0,0,9.81]))*CN2H # add the moments about the platform node due to gravitational effects at the platform center of mass 
     total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_in, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)]
     total_Fdof = [other_Fdof; ptfm_dofs; ptfm_dofs[4:6]]
@@ -373,7 +420,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
             u_perturb = copy(u)
             frc_hydro_perturb_owens[dof] += 1E6
             u_perturb[dof] += 1
-            mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_perturb_owens[1:3]))*CN2H
+            mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_perturb_owens[1:3]+frc_mooring_in[1:3]))*CN2H
             total_Fexternal_perturb = [other_Fexternal; frame_convert(frc_hydro_perturb_owens, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)]
             if !isa(rom, Number)
                 _ ,dispOut2, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,Omega,OmegaDot,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),CN2H,zeros(9))
@@ -390,6 +437,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
             u_perturb = copy(u)
             uddot_ptfm_perturb_hd[dof] += 1
             u_perturb[dof+numDOFPerNode] += 1
+            frc_hydro_perturb_hd = Vector{Float32}(undef, numDOFPerNode) # this is reset each time, otherwise HydroDyn returns garbage values after the first iteration
             frc_hydro_perturb_hd[:], _ = VAWTHydro.HD_CalcOutput(time, u_ptfm_n, udot_ptfm_n, uddot_ptfm_perturb_hd, frc_hydro_perturb_hd, out_vals)
             residual_perturb = calc_hydro_residual(uddot_ptfm2_n, frc_hydro_perturb_hd, frc_mooring_in, u_perturb, frc_multiplier)
             jac[:,dof+numDOFPerNode] = residual_perturb - residual
@@ -403,11 +451,12 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
 
     # Update inputs
     frc_hydro_rev = frc_hydro_in + delta_u[1:numDOFPerNode]*frc_multiplier
-    mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_rev[1:3]))*CN2H
-    total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_rev, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)] # note frc_hydro_rev also captures mooring forces
+    mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_rev[1:3]))*CN2H # the delta_u calculation accounts for mooring forces, so I don't think I need to add it here?
+    total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_rev, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)]
     dispData_rev = deepcopy(dispIn)
-    dispData_rev.displddot_s[ptfm_dofs] = frame_convert(dispIn.displddot_s[ptfm_dofs], LinearAlgebra.inv(CN2H)) + delta_u[numDOFPerNode+1:numDOFPerNode*2]
-    uddot_ptfm_n = dispData_rev.displddot_s[ptfm_dofs]
+    # dispData_rev.displddot_s[ptfm_dofs] = frame_convert(dispIn.displddot_s[ptfm_dofs], LinearAlgebra.inv(CN2H)) + delta_u[numDOFPerNode+1:numDOFPerNode*2]
+    # uddot_ptfm_n = dispData_rev.displddot_s[ptfm_dofs]
+    uddot_ptfm_n_rev = uddot_ptfm_n + delta_u[numDOFPerNode+1:end]
 
     # Rerun OWENS and HydroDyn with updated inputs
     if rom != 0
@@ -415,7 +464,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
     else
         elStrain_out,dispOut,FReaction_out = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,Omega,OmegaDot,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),CN2H,zeros(9)) # TODO: should we use dispData_rev instead of dispIn here?
     end
-    frc_hydro_out[:], out_vals[:] = VAWTHydro.HD_CalcOutput(time, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, frc_hydro_out, out_vals)
+    frc_hydro_out[:], out_vals[:] = VAWTHydro.HD_CalcOutput(time, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n_rev, frc_hydro_out, out_vals)
 
     return elStrain_out, dispOut, FReaction_out, frc_hydro_out, out_vals, jac_out
 
@@ -434,6 +483,7 @@ external module with transient structural dynamics analysis capability.
 * `feamodel::FEAModel`: see ?GyricFEA.FEAModel
 * `mesh::Mesh`: see ?GyricFEA.Mesh
 * `el::El`: see ?GyricFEA.El
+* `bin::Bin`: see ?Bin
 * `aero::function`: Fexternal, Fdof = aero(t) where Fexternal is the force on each affected mesh dof and Fdof is the corresponding DOFs affected
 * `getLinearizedMatrices::Bool`: Flag to save the linearized matrices
 
@@ -467,7 +517,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     #..........................................................................
 
     ## General
-    t = range(0, length=model.numTS, step=model.delta_t)
+    delta_t = model.delta_t
+    numTS = Int(model.numTS)
+    t = range(0, length=numTS, step=delta_t)
     numDOFPerNode = 6
     totalNumDof = mesh.numNodes*numDOFPerNode
     CN2H = LinearAlgebra.I(3) # hub and inertial frames initialize as copies
@@ -512,12 +564,12 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             hd_outFilename = model.outFilename
         end
         
-        frc_hydro_n = zeros(Float32, numDOFPerNode)
-        frc_mooring_n = zeros(Float32, numDOFPerNode)
-        out_vals = zeros(Float32, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
-        mooring_tensions = zeros(Float32, numMooringLines*2) # Fairlead + anchor tension for each line
+        frc_hydro_n = Vector{Float32}(undef, numDOFPerNode)
+        frc_mooring_n = Vector{Float32}(undef, numDOFPerNode)
+        out_vals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
+        mooring_tensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
-        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=model.delta_t, t_max=t[1]+(model.numTS-1)*model.delta_t)
+        VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=model.hd_input_file, PotFile=model.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t)
         VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=model.md_input_file, init_ptfm_pos=u_s_ptfm, interp_order=model.interpOrder)
     end
 
@@ -569,28 +621,28 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     feamodel.jointTransform, feamodel.reducedDOFList = GyricFEA.createJointTransform(feamodel.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     
     ## History array initialization
-    uHist = zeros(model.numTS, length(u_s))
+    uHist = zeros(numTS, length(u_s))
     uHist[1,:] = u_s          #store initial condition
 
-    FReactionHist = zeros(model.numTS,6)
+    FReactionHist = zeros(numTS,6)
     
-    eps_xx_0_hist = zeros(4,mesh.numEl,model.numTS)
-    eps_xx_z_hist = zeros(4,mesh.numEl,model.numTS)
-    eps_xx_y_hist = zeros(4,mesh.numEl,model.numTS)
-    gam_xz_0_hist = zeros(4,mesh.numEl,model.numTS)
-    gam_xz_y_hist = zeros(4,mesh.numEl,model.numTS)
-    gam_xy_0_hist = zeros(4,mesh.numEl,model.numTS)
-    gam_xy_z_hist = zeros(4,mesh.numEl,model.numTS)
+    eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
+    eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
+    eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
+    gam_xz_0_hist = zeros(4,mesh.numEl,numTS)
+    gam_xz_y_hist = zeros(4,mesh.numEl,numTS)
+    gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
+    gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
 
-    aziHist = zeros(model.numTS)
-    OmegaHist = zeros(model.numTS)
-    OmegaDotHist = zeros(model.numTS)
-    gbHist = zeros(model.numTS)
-    gbDotHist = zeros(model.numTS)
-    gbDotDotHist = zeros(model.numTS)
-    genTorque = zeros(model.numTS)
-    genPower = zeros(model.numTS)
-    torqueDriveShaft = zeros(model.numTS)
+    aziHist = zeros(numTS)
+    OmegaHist = zeros(numTS)
+    OmegaDotHist = zeros(numTS)
+    gbHist = zeros(numTS)
+    gbDotHist = zeros(numTS)
+    gbDotDotHist = zeros(numTS)
+    genTorque = zeros(numTS)
+    genPower = zeros(numTS)
+    torqueDriveShaft = zeros(numTS)
 
     aziHist[1] = azi_s
     OmegaHist[1] = Omega_s
@@ -605,9 +657,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     torqueDriveShaft[1] = torqueDriveShaft_s
 
     if model.hydroOn
-        uHist_ptfm = zeros(model.numTS,length(u_s_ptfm))
+        uHist_ptfm = zeros(numTS,length(u_s_ptfm))
         uHist_ptfm[1,:] = u_s_ptfm
-        FHydroHist = zeros(model.numTS,6)
+        FHydroHist = zeros(numTS,6)
     end
 
     #..........................................................................
@@ -619,21 +671,21 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
     # Calculate aerodynamic forcing
     deformAero(Omega_s*2*pi)
-    # Fexternal, Fdof = aero(t[1]) #TODO: implement turbine deformation and deformation induced velocities
-    Fexternal = 0.0
-    Fdof = 1
+    # frc_aero_h, aero_dofs = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
+    frc_aero_h = 0.0
+    aero_dofs = 1
 
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
     if model.hydroOn
-        frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s[ptfm_dofs], udot_s[ptfm_dofs], uddot_s[ptfm_dofs], frc_mooring_n, mooring_tensions)
+        frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_mooring_n, mooring_tensions)
         if model.analysisType=="ROM"
-            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupled_Solve(t[1], model.delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
+            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupled_Solve(t[1], delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
                                                                                     frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
-                                                                                    Fexternal, Fdof, CN2H, rom)
+                                                                                    frc_aero_h, aero_dofs, CN2H, u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, rom)
         else
-            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupled_Solve(t[1], model.delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
+            elStrain, dispOut, FReaction, frc_hydro_n, out_vals, jac = OWENS_HD_Coupled_Solve(t[1], delta_t, true, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs, frc_hydro_n,
                                                                                     frc_mooring_n, dispData, feamodel, mesh, el, elStorage, Omega_s, OmegaDot_s,
-                                                                                    Fexternal, Fdof, CN2H)
+                                                                                    frc_aero_h, aero_dofs, CN2H, u_s_ptfm, udot_s_ptfm, uddot_s_ptfm)
         end
 
         # Don't need to do a frame conversion here since the inertial and hub frames are aligned at t=0
@@ -651,7 +703,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         recent_uddot_ptfm = repeat(uddot_s[ptfm_dofs], 1, model.interpOrder+1)
         recent_hydro_frc = repeat(frc_hydro_n, 1, model.interpOrder+1)
         recent_mooring_frc = repeat(frc_mooring_n, 1, model.interpOrder+1)
-        recent_times = collect(range(-model.delta_t*model.interpOrder, 0.0, model.interpOrder+1))
+        recent_times = collect(range(-delta_t*model.interpOrder, 0.0, model.interpOrder+1))
     end
 
     #..........................................................................
@@ -659,7 +711,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     #..........................................................................
 
     ### Iterate for a solution at t+dt
-    for i=1:model.numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+    for i=1:numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
 
         ## Print current simulation time to terminal
         if isinteger(t[i])
@@ -675,10 +727,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         if (model.turbineStartup == 0)
             model.omegaControl = true #TODO: are we setting this back?
             if (model.usingRotorSpeedFunction) #use user specified rotor speed profile function
-                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,model.delta_t)
+                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,delta_t)
                 Omega_s = omegaCurrent
             else #use discreteized rotor speed profile function
-                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],model.tocp,model.Omegaocp,model.delta_t)
+                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],model.tocp,model.Omegaocp,delta_t)
                 if (terminateSimulation)
                     break
                 end
@@ -768,7 +820,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                     azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi)
 
                     gb_j,gbDot_j,gbDotDot_j = updateRotorRotation(model.JgearBox,0,0,
-                    -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,model.delta_t)
+                    -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,delta_t)
                 else
                     gb_j = azi_j
                     gbDot_j = Omega_j
@@ -784,18 +836,18 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             azi_jLast = azi_j
             if model.omegaControl
                 if (model.usingRotorSpeedFunction)
-                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,model.delta_t)
+                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
                 else
                     Omega_j = Omega_s
                     OmegaDot_j = OmegaDot_s
-                    azi_j = azi_s + Omega_j*model.delta_t*2*pi
+                    azi_j = azi_s + Omega_j*delta_t*2*pi
                 end
             elseif !model.omegaControl
                 Crotor = 0
                 Krotor = 0
                 azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
                 -FReaction_j[6],-torqueDriveShaft_j,
-                azi_s,Omega_s,OmegaDot_s,model.delta_t)
+                azi_s,Omega_s,OmegaDot_s,delta_t)
             else
                 error("omega control option not correctly specified")
             end
@@ -806,9 +858,9 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
             # Calculate aerodynamic forcing
             deformAero(Omega_j*2*pi)
-            # Fexternal, Fdof = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
-            Fexternal = 0.0
-            Fdof = 1
+            # frc_aero_h, aero_dofs = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
+            frc_aero_h_j = 0.0
+            aero_dofs = 1
 
             #------------------------------------
             # STRUCTURAL/HYDRO/MOORING MODULES
@@ -817,7 +869,7 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             # Update reference frame transformation and convert external forces to hub reference frame (note aero forces are already assumed to be in the hub frame)
             CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
             if (model.hydroOn)
-                CN2P = transMat(u_j_ptfm_n[4], u_j_ptfm_n[5], u_j_ptfm_n[6])
+                CN2P = transMat(u_j_ptfm_n[4], -u_j_ptfm_n[5], u_j_ptfm_n[6])
             else
                 CN2P=1.0*LinearAlgebra.I(3)
             end
@@ -830,13 +882,13 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             # Evaluate structural dynamics based on values from last iteration (or extrapolated values from last time step if it's the first iteration) and new aerodynamic loads
             mom_hydro_abtbs = LinearAlgebra.cross(model.ptfmref2bs, frc_hydro_h_j[1:3] + frc_mooring_h_j[1:3]) # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
             mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, CN2H*[0,0,9.81]) # add the moments about the platform node due to gravitational effects at the platform center of mass 
-            Fexternal = [Fexternal; frc_hydro_h_j + frc_mooring_h_j; mom_hydro_abtbs + mom_ptfm_abtbs]
-            Fdof = [Fdof; ptfm_dofs; ptfm_dofs[4:6]]
+            Fexternal = [frc_aero_h_j; frc_hydro_h_j + frc_mooring_h_j; mom_hydro_abtbs + mom_ptfm_abtbs] # apply both aero and previous platform loads here, since it is outside the coupling routine
+            Fdof = [aero_dofs; ptfm_dofs; ptfm_dofs[4:6]]
 
             if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],model.delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i+1],delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
-                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],model.delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+                elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i+1],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
             end
                   
             # update current motion estimates and structures
@@ -846,6 +898,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
             ## Evaluate hydro-structural dynamics
             if model.hydroOn
+
+                # dispData_j = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
 
                 # transform platform motions from hub frame to inertial frame
                 u_j_ptfm_n2 = frame_convert(u_j[ptfm_dofs], CH2N)
@@ -857,20 +911,21 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 if model.interpOrder == 1
                     VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_j_ptfm_n, udot_j_ptfm_n, uddot_j_ptfm_n)
                 elseif model.interpOrder == 2
-                    VAWTHydro.MD_UpdateStates(t[i]-model.delta_t, t[i], t[i+1], u_j_ptfm_n, udot_j_ptfm_n, uddot_j_ptfm_n)
+                    VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_j_ptfm_n, udot_j_ptfm_n, uddot_j_ptfm_n)
                 end
 
                 # Calculate new mooring forces on the platform since MoorDyn doesn't use acceleration inputs (despite the input arguments). Note the new GyricFEA motion outputs are now used as inputs.
+                frc_mooring_n_j = Vector{Float32}(undef, numDOFPerNode) # this is reset here, otherwise MoorDyn returns garbage values in the next line
                 frc_mooring_n_j[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[i+1], u_j_ptfm_n2, udot_j_ptfm_n2, uddot_j_ptfm_n2, frc_mooring_n_j, mooring_tensions)
                 
                 if model.analysisType=="ROM"
-                    elStrain, dispOut_j, FReaction_j, frc_hydro_n_j, out_vals, jac = OWENS_HD_Coupled_Solve(t[1], model.delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs,
+                    elStrain, dispOut_j, FReaction_j, frc_hydro_n_j, out_vals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs,
                                                                                     frc_hydro_n_j, frc_mooring_n_j, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
-                                                                                    Fexternal, Fdof, CN2H, rom)
+                                                                                    frc_aero_h_j, aero_dofs, CN2H, u_j_ptfm_n2, udot_j_ptfm_n2, uddot_j_ptfm_n2, rom)
                 else
-                    elStrain, dispOut_j, FReaction_j, frc_hydro_n_j, out_vals, jac = OWENS_HD_Coupled_Solve(t[1], model.delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs,
+                    elStrain, dispOut_j, FReaction_j, frc_hydro_n_j, out_vals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, model.ptfmref2bs, model.ptfmcom2bs,
                                                                                     frc_hydro_n_j, frc_mooring_n_j, dispData, feamodel, mesh, el, elStorage, Omega_j, OmegaDot_j,
-                                                                                    Fexternal, Fdof, CN2H)
+                                                                                    frc_aero_h_j, aero_dofs, CN2H, u_j_ptfm_n2, udot_j_ptfm_n2, uddot_j_ptfm_n2)
                 end
             
                 # update current motion estimates and structures
@@ -883,6 +938,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 udot_j_ptfm_n = frame_convert(udot_j[ptfm_dofs], CH2N)
                 uddot_j_ptfm_n = frame_convert(uddot_j[ptfm_dofs], CH2N)
 
+                # dispData_j = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
+
                 # println(u_j_ptfm_n)
                 # println(udot_j_ptfm_n)
                 # println(uddot_j_ptfm_n)
@@ -892,10 +949,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
 
             ## calculate norms
-            uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
-            aziNorm = 0.0 #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-            platNorm = 0.0 #LinearAlgebra.norm(u_j_ptfm_n - u_jLast_ptfm_n)/LinearAlgebra.norm(u_j_ptfm_n) #platform module states iteration norm if it is off, the norm will be zero
-            gbNorm = 0.0 #LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+            uNorm = LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+            aziNorm = LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+            platNorm = LinearAlgebra.norm(u_j_ptfm_n - u_jLast_ptfm_n)/LinearAlgebra.norm(u_j_ptfm_n) #platform module states iteration norm if it is off, the norm will be zero
+            gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
 
             numIterations = numIterations + 1
             if numIterations==MAXITER

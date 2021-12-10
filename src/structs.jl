@@ -1,4 +1,7 @@
 struct Bin
+"""
+Inputs pointing to the file paths of compiled binaries of external libraries
+"""
     hydrodynLibPath
     moordynLibPath
 end
@@ -58,6 +61,11 @@ Model inputs for OWENS coupled analysis, struct
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
 * `hydroOn::bool`: flag to include platform coupling
+* `interpOrder::int`: order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+* `hd_input_file::string`: file path to the HydroDyn .dat input file
+* `md_input_file::string`: file path to the MoorDyn .dat input file
+* `ptfmref2bs::Array{<:float}`: 3-dimensional direction vector from the platform reference to the tower base
+* `ptfmcom2bs::Array{<:float}`: 3-dimensional direction vector from the platform center of mass to the tower base
 * `JgearBox::float`: gearbox intertia, standard SI units
 * `gearRatio::float`: gearbox gear ratio
 * `gearBoxEfficiency::float`: gearbox efficiency (typically 0-1)
@@ -72,8 +80,9 @@ Model inputs for OWENS coupled analysis, struct
 * `OmegaInit::float`: initial rotor speed (Hz)
 * `aeroloadfile::string`: string of the name and path for the cactus aeroloads if using the old serial owens call
 * `owensfile::string`: string of the name and path for the owens input file if using the old serial owens call
+* `potflowfile::string`: string of the prefix and path for the directory containing the potential flow files from WAMIT (required by HydroDyn)
 * `outFilename::string`: path and name of output file, will be overwritten if already exists
-* `numDofPerNode::bool`: number of degrees of freedom per node
+* `numDofPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
 
@@ -85,7 +94,7 @@ function Model(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
-    numTS = 50,
+    numTS = 50.0,
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
     aeroLoadsOn = false, #this need to get cleaned up in the code
@@ -119,7 +128,7 @@ function Model(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0)
     )
 
-    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,Int(numTS),delta_t,Omegaocp,
+    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
     aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,ptfmref2bs,ptfmcom2bs,plat_model,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
