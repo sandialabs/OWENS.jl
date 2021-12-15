@@ -81,7 +81,14 @@ function trapezoidalRule(aziInit,rotorSpeedStart,rotorSpeedEnd,dt)
     return (aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi))
 end
 
-# 3x3 transformation matrix between coordinate systems (with small angle assumption)
+"""
+    transMat(theta1, theta2, theta3)
+
+Internal, computes the 3x3 transformation matrix for given input rotations. The generated matrix
+is the closest orthonormal matrix to the Bernoulli-Euler transformation matrix from beam theory,
+which assumes small rotations. A full description of this matrix is found in the
+"FASTCoordinateSystems.doc" document by Jason Jonkman.
+"""
 function transMat(theta1, theta2, theta3)
     theta11      = theta1 * theta1
     theta22      = theta2 * theta2
@@ -285,7 +292,20 @@ function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
 
 end
 
+"""
+    extrap_pred_vals(curr_vals, ts, t_out, interp_order)
 
+Internal, calculates predicted values at t_out based on previous values at earlier times.
+
+# Input
+* `curr_vals::Vector{<:float}`: input values
+* `ts::Vector{<:float}`: time values corresponding to curr_vals. Left to right, times go from earliest to most recent.
+* `t_out::float`: time for values to be extrapolated tocp
+* `interp_order::int`: order of the spline fit for the extrapolation, 0 flat, 1 linear, 2 quadratic
+
+# Output
+* `pred_vals`: extrapolated values at t_out
+"""
 function extrap_pred_vals(curr_vals, ts, t_out, interp_order)
 
     pred_vals = zeros(length(curr_vals[:,1]))
@@ -298,7 +318,18 @@ function extrap_pred_vals(curr_vals, ts, t_out, interp_order)
 
 end
 
+"""
+    frame_convert(init_frame_vals, trans_mat)
 
+Internal, transfers 6 DOFs element-wise to a new reference frame
+
+# Input
+* `init_frame_vals::Vector{<:float}`: Values in 6 degrees of freedom in the initial reference frame
+* `trans_mat::Array{<:float}`: Transformation matrix to the output reference frame
+
+# Output
+* `out_frame_vals`: Values in 6 degrees of freedom in the output reference frame
+"""
 function frame_convert(init_frame_vals, trans_mat)
 
     out_frame_vals = zero(init_frame_vals)
@@ -309,7 +340,23 @@ function frame_convert(init_frame_vals, trans_mat)
 
 end
 
+"""
 
+    calc_hydro_residual(new_accels, new_hydro_frcs, md_frc, u, frc_multiplier)
+
+Internal, finds the residual of the platform accelerations/forces when adding in new values
+from HydroDyn, MoorDyn, and GyricFEA.
+
+# Input
+* `new_accels::Vector{<:float}`: the new platform accelerations in the inertial reference frame from GyricFEA  (m/s/s)
+* `new_hydro_frcs::Vector{<:float}`: the new platform hydro forces in the inertial reference frame from HydroDyn (N)
+* `md_frc::Vector{<:float}`: the mooring forces at the platform in the inertial reference frame from MoorDyn (N)
+* `u::Vector{<:float}`: input vector containing platform loads and accelerations prior to the new additions
+* `frc_multiplier::Number`: scaling factor used to make the loads/accelerations in the same magnitude for the Jacobians
+
+# Output
+* `u_resid`: vector containing residual between the input u and the new load/accelerations
+"""
 function calc_hydro_residual(new_accels, new_hydro_frcs, md_frc, u, frc_multiplier)
 
     new_frcs = md_frc + new_hydro_frcs
@@ -323,15 +370,15 @@ end
 
 """
 
-        OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, rZT, rYT, frc_hydro_in,
+    OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, rZT, rYT, frc_hydro_in,
         frc_mooring_in, dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
         other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
 
-Internal function to perform the input-output solve procedure between OWENS and HydroDyn. This is required
-    due to the close interdependency between the rigid body acceleration of the platform (calculated in
-    OWENS/GyricFEA) and the hydrodynamic forcing due to the platform added mass (calculated in HydroDyn).
-    This is basically a mirror of the `ED_HD_InputOutputSolve` subroutine from OpenFAST, only replacing
-    ElastoDyn with GyricFEA.
+Internal, performs the input-output solve procedure between OWENS and HydroDyn. This is required
+due to the close interdependency between the rigid body acceleration of the platform (calculated in
+OWENS/GyricFEA) and the hydrodynamic forcing due to the platform added mass (calculated in HydroDyn).
+This is basically a mirror of the `ED_HD_InputOutputSolve` subroutine from OpenFAST, only replacing
+ElastoDyn with GyricFEA.
 
 # Input
 * `time::float`: current simulation time
@@ -355,9 +402,9 @@ Internal function to perform the input-output solve procedure between OWENS and 
 * `other_Fexternal::Vector{<:float}`: other external loads acting on the structure besides the hydro and mooring loads (typically aero loads) (N)
 * `other_Fdof::Vector{<:float}`: vector of nodes with indices corresponding to the loads given in other_Fexternal`
 * `CN2H::Array{<:float}`: rotation matrix defining the transformation from the inertial to the hub reference frames
-* `u_ptfm_n{:Vector{<:float}`: the platform position in the inertial reference frame at the current simulation time (m)
-* `udot_ptfm_n{:Vector{<:float}`: the platform velocity in the inertial reference frame at the current simulation time (m/s)
-* `uddot_ptfm_n{:Vector{<:float}`: the platform acceleration in the inertial reference frame at the current simulation time (m/s/s)
+* `u_ptfm_n::Vector{<:float}`: the platform position in the inertial reference frame at the current simulation time (m)
+* `udot_ptfm_n::Vector{<:float}`: the platform velocity in the inertial reference frame at the current simulation time (m/s)
+* `uddot_ptfm_n::Vector{<:float}`: the platform acceleration in the inertial reference frame at the current simulation time (m/s/s)
 * `rom::int/ROM`: see ?GyricFEA.ROM. Instead defaults to 0 if the reduced order model is not used
 
 # Output
@@ -397,8 +444,8 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
 
     # Calculate outputs at the current time, based on inputs at the current time
     mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_in[1:3]+frc_mooring_in[1:3]))*CN2H # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
-    mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.transpose(LinearAlgebra.cross(rYT, [0,0,9.81]))*CN2H # add the moments about the platform node due to gravitational effects at the platform center of mass 
-    total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_in, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)]
+    mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.transpose(LinearAlgebra.cross(rYT, [0,0,9.81]))*CN2H # add the moments about the platform node due to gravitational effects at the platform center of mass
+    total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_in, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs - mom_ptfm_abtbs)]
     total_Fdof = [other_Fdof; ptfm_dofs; ptfm_dofs[4:6]]
     if rom != 0
         _ ,dispOut2, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,Omega,OmegaDot,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),CN2H,zeros(9))
@@ -421,7 +468,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
             frc_hydro_perturb_owens[dof] += 1E6
             u_perturb[dof] += 1
             mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_perturb_owens[1:3]+frc_mooring_in[1:3]))*CN2H
-            total_Fexternal_perturb = [other_Fexternal; frame_convert(frc_hydro_perturb_owens, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)]
+            total_Fexternal_perturb = [other_Fexternal; frame_convert(frc_hydro_perturb_owens, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs - mom_ptfm_abtbs)]
             if !isa(rom, Number)
                 _ ,dispOut2, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,Omega,OmegaDot,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),CN2H,zeros(9))
             else
@@ -442,7 +489,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
             residual_perturb = calc_hydro_residual(uddot_ptfm2_n, frc_hydro_perturb_hd, frc_mooring_in, u_perturb, frc_multiplier)
             jac[:,dof+numDOFPerNode] = residual_perturb - residual
         end
-
+ 
     end  # if calcJacobian
 
     # Solve for delta_u: jac*delta_u = -residual
@@ -451,12 +498,14 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
 
     # Update inputs
     frc_hydro_rev = frc_hydro_in + delta_u[1:numDOFPerNode]*frc_multiplier
+    uddot_ptfm_n_rev = uddot_ptfm_n + delta_u[numDOFPerNode+1:end]
+
+    mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.transpose(LinearAlgebra.cross(rYT, [0,0,9.81]))*CN2H
     mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(rZT, frc_hydro_rev[1:3]))*CN2H # the delta_u calculation accounts for mooring forces, so I don't think I need to add it here?
-    total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_rev, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs+mom_ptfm_abtbs)]
-    dispData_rev = deepcopy(dispIn)
+    total_Fexternal = [other_Fexternal; frame_convert(frc_hydro_rev, CN2H); LinearAlgebra.transpose(mom_hydro_abtbs - mom_ptfm_abtbs)]
+    # dispData_rev = deepcopy(dispIn)
     # dispData_rev.displddot_s[ptfm_dofs] = frame_convert(dispIn.displddot_s[ptfm_dofs], LinearAlgebra.inv(CN2H)) + delta_u[numDOFPerNode+1:numDOFPerNode*2]
     # uddot_ptfm_n = dispData_rev.displddot_s[ptfm_dofs]
-    uddot_ptfm_n_rev = uddot_ptfm_n + delta_u[numDOFPerNode+1:end]
 
     # Rerun OWENS and HydroDyn with updated inputs
     if rom != 0
@@ -880,11 +929,11 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
             frc_mooring_h_j = frame_convert(frc_mooring_n_j, CN2H)
 
             # Evaluate structural dynamics based on values from last iteration (or extrapolated values from last time step if it's the first iteration) and new aerodynamic loads
-            mom_hydro_abtbs = LinearAlgebra.cross(model.ptfmref2bs, frc_hydro_h_j[1:3] + frc_mooring_h_j[1:3]) # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
-            mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, CN2H*[0,0,9.81]) # add the moments about the platform node due to gravitational effects at the platform center of mass 
-            Fexternal = [frc_aero_h_j; frc_hydro_h_j + frc_mooring_h_j; mom_hydro_abtbs + mom_ptfm_abtbs] # apply both aero and previous platform loads here, since it is outside the coupling routine
+            # TODO: All of these transpose's should really be cleaned up
+            mom_hydro_abtbs = LinearAlgebra.transpose(LinearAlgebra.cross(model.ptfmref2bs, frc_hydro_h_j[1:3] + frc_mooring_h_j[1:3]))*CN2H # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
+            mom_ptfm_abtbs = ptfm_mass * LinearAlgebra.transpose(LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81]))*CN2H # add the moments about the platform node due to gravitational effects at the platform center of mass
+            Fexternal = [frc_aero_h_j; frc_hydro_h_j + frc_mooring_h_j; LinearAlgebra.transpose(mom_hydro_abtbs - mom_ptfm_abtbs)] # apply both aero and previous platform loads here, since it is outside the coupling routine
             Fdof = [aero_dofs; ptfm_dofs; ptfm_dofs[4:6]]
-
             if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                 elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i+1],delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
