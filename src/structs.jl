@@ -23,6 +23,7 @@ mutable struct Model
     md_input_file
     ptfmref2bs
     ptfmcom2bs
+    towertop_dofs
     plat_model
     JgearBox
     gearRatio
@@ -66,6 +67,7 @@ Model inputs for OWENS coupled analysis, struct
 * `md_input_file::string`: file path to the MoorDyn .dat input file
 * `ptfmref2bs::Array{<:float}`: 3-dimensional direction vector from the platform reference to the tower base
 * `ptfmcom2bs::Array{<:float}`: 3-dimensional direction vector from the platform center of mass to the tower base
+* `towertop_dofs::Vector{<:int}`: Indices of the node vector that indicate the last tower node before the rotor/blades
 * `JgearBox::float`: gearbox intertia, standard SI units
 * `gearRatio::float`: gearbox gear ratio
 * `gearBoxEfficiency::float`: gearbox efficiency (typically 0-1)
@@ -106,6 +108,7 @@ function Model(;analysisType = "TNB",
     md_input_file = "none",
     ptfmref2bs = [0.0,0.0,0.0],
     ptfmcom2bs = [0.0,0.0,0.0],
+    towertop_dofs = [],
     plat_model = [],
     JgearBox = 0.0,
     gearRatio = 1.0,
@@ -129,7 +132,7 @@ function Model(;analysisType = "TNB",
     )
 
     return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,ptfmref2bs,ptfmcom2bs,plat_model,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,ptfmref2bs,ptfmcom2bs,towertop_dofs,plat_model,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
