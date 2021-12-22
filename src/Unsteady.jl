@@ -370,8 +370,8 @@ end
 
 """
 
-    OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, ptfm_mass, rZT, rYT, frc_hydro_in,
-        frc_mooring_in, dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
+    OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, frc_ptfm_old, frc_mooring_new,
+        dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
         other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
 
 Internal, performs the input-output solve procedure between OWENS and HydroDyn. This is required
@@ -387,11 +387,8 @@ ElastoDyn with GyricFEA.
 * `jac::Array{<:float}`: existing array containing the platform hydro force and acceleration Jacobians 
 * `numDOFPerNode::int`: number of degrees of freedom per node (typically 6)
 * `ptfm_dofs::Vector{<:int}`: indices of the nodal vector representing the platform (typically 1 through 6)
-* `ptfm_mass::float`: mass of the floating platform (not including the ballast) (kg)
-* `rZT::Vector{<:float}`: see ?Model.ptfmref2bs
-* `rYT::Vector{<:float}`: see ?Model.ptfmcom2bs
-* `frc_hydro_in::Vector{<:float}`: previously calculated hydrodynamic forces in the inertial frame (N)
-* `frc_mooring_in::Vector{<:float}`: previously calculated mooring forces in the inertial frame (N)
+* `frc_ptfm_old::Vector{<:float}`: previously calculated total platform loads in the inertial frame (N)
+* `frc_mooring_new::Vector{<:float}`: mooring loads calculated in the current time step/correction in the inertial frame (N)
 * `dispIn::DispData`: see ?GyricFEA.DispData
 * `feamodel::FEAModel`: see ?GyricFEA.FEAModel
 * `mesh::Mesh`: see ?GyricFEA.Mesh
@@ -399,8 +396,8 @@ ElastoDyn with GyricFEA.
 * `elStorage::ElStorage`: see ?GyricFEA.elStorage
 * `Omega::float`: rotor speed (Hz)
 * `OmegaDot::float`: rotor acceleration (Hz/s)
-* `other_Fexternal::Vector{<:float}`: other external loads acting on the structure besides the hydro and mooring loads (typically aero loads) (N)
-* `other_Fdof::Vector{<:float}`: vector of nodes with indices corresponding to the loads given in other_Fexternal`
+* `other_Fexternal::Vector{<:float}`: other external loads acting on the structure besides at the platform (typically aero loads) (N)
+* `other_Fdof::Vector{<:float}`: vector of nodes with indices corresponding to the loads given in other_Fexternal
 * `CN2H::Array{<:float}`: rotation matrix defining the transformation from the inertial to the hub reference frames
 * `u_ptfm_n::Vector{<:float}`: the platform position in the inertial reference frame at the current simulation time (m)
 * `udot_ptfm_n::Vector{<:float}`: the platform velocity in the inertial reference frame at the current simulation time (m/s)
