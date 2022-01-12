@@ -591,7 +591,8 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     if model.hydroOn
 
         ptfm_dofs = 1:numDOFPerNode
-        ptfm_mass = feamodel.nodalTerms.concMass[1].val #TODO: make it so the platform concentrated mass terms doesn't have to be the first concentrated term defined
+        ptfm_mass_idx = (feamodel.platformTurbineConnectionNodeNumber-1)*numDOFPerNode + 1
+        ptfm_mass = feamodel.nodalTerms.concMass[ptfm_mass_idx, ptfm_mass_idx]
 
         u_s_ptfm = Vector(u_s[ptfm_dofs])
         udot_s_ptfm = Vector(udot_s[ptfm_dofs])
