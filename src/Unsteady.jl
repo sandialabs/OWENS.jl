@@ -427,7 +427,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm
     end
     frc_hydro_out = Vector{Float32}(undef, numDOFPerNode) # TODO: all of the frc_hydro's may be able to be combined for efficiency
     out_vals = Vector{Float32}(undef, numDOFPerNode+1)
-    u = Vector{Float32}(undef, numDOFPerNode*2)
+    u = Vector{Float64}(undef, numDOFPerNode*2)
     
     frc_multiplier = 1e6
 
@@ -709,9 +709,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     #                          INITIAL COUPLED SOLVE
     #..........................................................................
 
-    ## TODO: I think structuralDynamicsTransient *might* need to be called here if we want to mirror ElastoDyn-HydroDyn coupling perfectly, but since we already initialize displacements
-    ##       without running it, I think it's good unless we see instability.
-
     # Calculate aerodynamic forcing
     deformAero(Omega_s*2*pi)
     # frc_aero_h, aero_dofs = aero(t[i]) #TODO: implement turbine deformation and deformation induced velocities
@@ -720,6 +717,18 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
     if model.hydroOn
+
+        if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model
+            _, dispOut, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_s,OmegaDot_s,t[1],delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
+        else # evalulate structural dynamics using conventional representation
+            _, dispOut, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_s,OmegaDot_s,t[1],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData)
+        end
+
+        uddot_s = dispOut.displddot_sp1 # this is updated here because the Jacobian calculated in the initial hydro-structural solve depends on the residual between the structural-only accelerations (including gravity) and the structural+aero accelerations, which should be nonzero if gravity is on
+        uddot_s_ptfm = uddot_s[ptfm_dofs]
+
+        # uddot_s_ptfm[3] -= 9.81
+
         moms_ptfm2bs_n = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
         LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n[1:3] + frc_mooring_n[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
         ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
