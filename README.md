@@ -1,0 +1,97 @@
+# OWENS (Offshore Wind ENergy Simulator)
+
+This repository is based on the original structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813).
+The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.
+The aerodynamics are provided by the VAWTAero.jl module (https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl)
+
+## Documentation
+
+The theory manual can be found in the docs folder along with the validation paper(s).
+Additionally, there is a lessons learned document regarding Matlab to C++ "automatic" translation.
+The test cases are the base material for the validation paper(s).
+
+## Using/Setting Up the Package
+1. Get access to repository and set up ssh keys
+	Create a ssh key via:
+
+```bash
+ssh-keygen -t rsa -m PEM -C username@sandia.gov
+```
+	Copy the id_rsa.pub key found in ~./ssh into your GitLab profile public key
+
+2. To develop OWENS, the recommended setup is as follows:
+
+    -	Use linux, mac, or unix based system – the code works on windows, but you’ll find yourself taking 10x longer to setup and troubleshoot any custom compiled fortran libraries.
+
+    -	Install Julia 1.7+ (brew/apt-get install, or download the binary from julialang.org, more detail here https://julialang.org/downloads/platform/) such that it is on the system path
+
+    -	Clone the packages you will be developing (e.g. OWENS, GyricFEA, VAWTAero, etc)
+
+    -	If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or the equivalent
+        * http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
+        * git config --global http.proxy http://user:nopass@proxy.yourorg:number
+        * git config --global https.proxy http://user:nopass@proxy.yourorg:number
+        * export JULIA_SSL_CA_ROOTS_PATH=""
+        * export JULIA_SSL_NO_VERIFY_HOSTS="*.yourorgurl"
+        * export JULIA_PKG_USE_CLI_GIT=true 				
+
+
+    -	Install the custom packages in the following order to prevent precompilation dependency errors.
+        * VAWTAero.jl
+        * GyricFEA.jl
+        * PreComp.jl
+        * Composites.jl (from https://github.com/byuflowlab/Composites.jl.git)
+        * OWENS.jl
+        * ModelGen.jl 				
+
+
+    -	Install custom repositories you want to develop by starting Julia from the directory you are developing and using the command:
+        * ] dev .
+        * This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update 	
+
+
+    -	Install custom repositories you don’t want to develop directly within Julia using:
+        * ] add url2yourrepo
+        * You may need to set up ssh keys and use the ssh url depending on the repo setup.
+
+
+    -	Install other nonregistered packages using:
+        * ] add url2yourpackage 		
+
+
+    -	Install other registered packages as prompted using:
+        * ] add packagename 			
+
+
+    -	Be sure to run update before building/testing to make sure the other ~120 open source dependencies are up to date.
+        * ] update 				
+
+
+    -	Run your code either from a terminal via julia scriptname.jl or from within an IDE like the Atom/Juno IDE (http://docs.junolab.org/stable/man/installation/) where you can see variables, use the debugger with breakpoints similar to matlab (with a Juno.@enter in front of a function call) and run sections of code iteratively as desired.
+        * OWENS can be run from files, like in the test scripts, or without files (except the composite input and airfoils) using ModelGen (see the example folder in ModelGen.jl for a working example with turbulent inflow)
+        * There are several plotting options in Julia, note that if you use PyPlot it does download anaconda and set up its own conda behind Julia. If you are using a proxy and have your proxy settings right (as described above) it will install smoothly (though it takes a while to download everything initially and when you use it the first time). 	
+
+
+    -	All of the functions have docstrings describing the i/o and function purpose, which can be accessed by:
+        * Import module
+        * ? module.function() 				
+    -	A note about julia debuggers – if you don’t want it to step through everything, you need to tell it what packages to not step through via the following code before the debug call. This will make the debugger comparable (if not faster) than Matlab in speed.
+```Julia
+# Don’t step through base
+import JuliaInterpreter
+visit(Base) do item
+    isa(item, Module) && push!(JuliaInterpreter.compiled_modules, item)
+    true
+end
+
+# Don’t step through your other used packages you’re not debugging
+import moduleyouusebutdonotwanttodebug
+push!(JuliaInterpreter.compiled_modules, moduleyouusebutdonotwanttodebug)
+```
+## Software License
+
+Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+Under the terms of Contract DE-NA0003525 with NTESS, there is a non-exclusive license for use of this work by or on behalf of the U.S. Government.
+Export of this data may require a license from the United States Government.
+
+See Copyright.txt file for more information
