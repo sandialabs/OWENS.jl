@@ -29,13 +29,12 @@ external module with transient structural dynamics analysis capability.
 * `genPower`: generator power history
 * `torqueDriveShaft`: driveshaft torque history
 * `uHist`: mesh displacement history for each dof
-* `eps_xx_0_hist`: strain history for eps_xx_0 for each element at the 4 quad points
-* `eps_xx_z_hist`: strain history for eps_xx_z for each element at the 4 quad points
-* `eps_xx_y_hist`: strain history for eps_xx_y for each element at the 4 quad points
-* `gam_xz_0_hist`: strain history for gam_xz_0 for each element at the 4 quad points
-* `gam_xz_y_hist`: strain history for gam_xz_y for each element at the 4 quad points
-* `gam_xy_0_hist`: strain history for gam_xy_0 for each element at the 4 quad points
-* `gam_xy_z_hist`: strain history for gam_xy_z for each element at the 4 quad points
+* `epsilon_x_hist`: strain history for epsilon_x for each element at the 4 quad points
+* `kappa_y_hist`: strain history for kappa_y for each element at the 4 quad points
+* `kappa_z_hist`: strain history for kappa_z for each element at the 4 quad points
+* `epsilon_z_hist`: strain history for epsilon_z for each element at the 4 quad points
+* `kappa_x_hist`: strain history for kappa_x for each element at the 4 quad points
+* `epsilon_y_hist`: strain history for epsilon_y for each element at the 4 quad points
 """
 function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=false)
 
@@ -44,7 +43,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
     uddot_j = 0.0
     torqueDriveShaft_j = 0.0
 
-    elStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
+    elStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), mesh.numEl)
 
     dispOut = GyricFEA.DispOut(elStrain,zeros(492,492),zeros(492,492),zeros(492,492))
     #................................................................
@@ -95,13 +94,12 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
     t = zeros(numTS+1)
     FReactionHist = zeros(numTS+1,6)
 
-    eps_xx_0_hist = zeros(4,mesh.numEl,numTS)
-    eps_xx_z_hist = zeros(4,mesh.numEl,numTS)
-    eps_xx_y_hist = zeros(4,mesh.numEl,numTS)
-    gam_xz_0_hist = zeros(4,mesh.numEl,numTS)
-    gam_xz_y_hist = zeros(4,mesh.numEl,numTS)
-    gam_xy_0_hist = zeros(4,mesh.numEl,numTS)
-    gam_xy_z_hist = zeros(4,mesh.numEl,numTS)
+    epsilon_x_hist = zeros(4,mesh.numEl,numTS)
+    kappa_y_hist = zeros(4,mesh.numEl,numTS)
+    kappa_z_hist = zeros(4,mesh.numEl,numTS)
+    epsilon_z_hist = zeros(4,mesh.numEl,numTS)
+    kappa_x_hist = zeros(4,mesh.numEl,numTS)
+    epsilon_y_hist = zeros(4,mesh.numEl,numTS)
 
     aziHist = zeros(numTS+1)
     OmegaHist = zeros(numTS+1)
@@ -286,9 +284,6 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             genTorque_j = 0
             if model.generatorOn
                 if model.useGeneratorFunction
-                    if i ==190
-                        println("hre")
-                    end
                     genTorqueHSS0 = userDefinedGenerator(Omega_j,delta_t,integrator)
                 else
                     genTorqueHSS0 = simpleGenerator(model,Omega_j)
@@ -441,13 +436,12 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         uHist[:,i+1] = u_s
         FReactionHist[i+1,:] = FReaction_j
         for ii = 1:length(elStrain)
-            eps_xx_0_hist[:,ii,i] = elStrain[ii].eps_xx_0
-            eps_xx_z_hist[:,ii,i] = elStrain[ii].eps_xx_z
-            eps_xx_y_hist[:,ii,i] = elStrain[ii].eps_xx_y
-            gam_xz_0_hist[:,ii,i] = elStrain[ii].gam_xz_0
-            gam_xz_y_hist[:,ii,i] = elStrain[ii].gam_xz_y
-            gam_xy_0_hist[:,ii,i] = elStrain[ii].gam_xy_0
-            gam_xy_z_hist[:,ii,i] = elStrain[ii].gam_xy_z
+            epsilon_x_hist[:,ii,i] = elStrain[ii].epsilon_x
+            kappa_y_hist[:,ii,i] = elStrain[ii].kappa_y
+            kappa_z_hist[:,ii,i] = elStrain[ii].kappa_z
+            epsilon_z_hist[:,ii,i] = elStrain[ii].epsilon_z
+            kappa_x_hist[:,ii,i] = elStrain[ii].kappa_x
+            epsilon_y_hist[:,ii,i] = elStrain[ii].epsilon_y
         end
         t[i+1] = t[i] + delta_t
 
@@ -509,17 +503,17 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             HDF5.write(file,"genPower",genPower)
             HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
             HDF5.write(file,"uHist",uHist)
-            HDF5.write(file,"eps_xx_0_hist",eps_xx_0_hist)
-            HDF5.write(file,"eps_xx_z_hist",eps_xx_z_hist)
-            HDF5.write(file,"eps_xx_y_hist",eps_xx_y_hist)
-            HDF5.write(file,"gam_xz_0_hist",gam_xz_0_hist)
-            HDF5.write(file,"gam_xz_y_hist",gam_xz_y_hist)
-            HDF5.write(file,"gam_xy_0_hist",gam_xy_0_hist)
-            HDF5.write(file,"gam_xy_z_hist",gam_xy_z_hist)
+            HDF5.write(file,"eps_xx_0_hist",epsilon_x_hist)
+            HDF5.write(file,"eps_xx_z_hist",kappa_y_hist)
+            HDF5.write(file,"eps_xx_y_hist",kappa_z_hist)
+            HDF5.write(file,"gam_xz_0_hist",epsilon_z_hist)
+            HDF5.write(file,"gam_xz_y_hist",kappa_x_hist)
+            HDF5.write(file,"gam_xy_0_hist",epsilon_y_hist)
+            HDF5.write(file,"gam_xy_z_hist",-kappa_x_hist)
         end
 
     end
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,kappa_x_hist,epsilon_y_hist,-kappa_x_hist
 end
 
 """
