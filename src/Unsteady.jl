@@ -729,10 +729,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
 
         # uddot_s_ptfm[3] -= 9.81
 
-        moms_ptfm2bs_n = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
-        LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n[1:3] + frc_mooring_n[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
-        ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
-        frc_ptfm_n = frc_hydro_n + frc_mooring_n + moms_ptfm2bs_n
+        # moms_ptfm2bs_n = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
+        # LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n[1:3] + frc_mooring_n[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
+        # ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
+        frc_ptfm_n = frc_hydro_n + frc_mooring_n # + moms_ptfm2bs_n
 
         frc_mooring_n = Vector{Float32}(undef, numDOFPerNode) # this is reset here, otherwise MoorDyn returns garbage values in MD_CalcOutput
         frc_mooring_n[:], mooring_tensions[:] = VAWTHydro.MD_CalcOutput(t[1], u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, frc_mooring_n, mooring_tensions)
@@ -753,10 +753,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         uddot_s = dispOut.displddot_sp1
         dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1)
         
-        moms_ptfm2bs_n_s = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
-        LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n[1:3] + frc_mooring_n[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
-        ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
-        frc_ptfm_n_s = frc_hydro_n + frc_mooring_n + moms_ptfm2bs_n_s
+        # moms_ptfm2bs_n_s = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
+        # LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n[1:3] + frc_mooring_n[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
+        # ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
+        frc_ptfm_n_s = frc_hydro_n + frc_mooring_n # + moms_ptfm2bs_n_s
 
         FHydroHist[1,:] = frc_hydro_n
 
@@ -995,10 +995,10 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 udot_j_ptfm_n = frame_convert(udot_j[ptfm_dofs], CH2N)
                 uddot_j_ptfm_n = frame_convert(uddot_j[ptfm_dofs], CH2N)
 
-                moms_ptfm2bs_n_j = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
-                LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n_j[1:3] + frc_mooring_n_j[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
-                ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
-                frc_ptfm_n_j = frc_hydro_n_j + frc_mooring_n_j + moms_ptfm2bs_n_j
+                # moms_ptfm2bs_n_j = vcat(zeros(3), # 3 force DOFs (no additions here, only moments below)
+                # LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n_j[1:3] + frc_mooring_n_j[1:3])) - # add the moments about the platform node due to the hydrodynamic forces at the platform reference point
+                # ptfm_mass * LinearAlgebra.cross(model.ptfmcom2bs, [0,0,9.81])) # add the moments about the platform node due to gravitational effects at the platform center of mass (gravity acts in the negative direction)
+                frc_ptfm_n_j = frc_hydro_n_j + frc_mooring_n_j # + moms_ptfm2bs_n_j
 
                 # dispData_j = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
 
