@@ -309,9 +309,28 @@ Internal, calculates predicted values at t_out based on previous values at earli
 function extrap_pred_vals(curr_vals, ts, t_out, interp_order)
 
     pred_vals = zeros(length(curr_vals[:,1]))
-    for i = 1:size(curr_vals, 1)
-        spl = Dierckx.Spline1D(ts, curr_vals[i,:], k=interp_order, bc="extrapolate")
-        pred_vals[i] = Dierckx.evaluate(spl, t_out)
+
+    # reduce times to relative values (fixes extrapolation problems when t gets large)
+    t = ts .- ts[3]
+    tout = t_out - ts[3]
+
+    if interp_order == 0
+        pred_vals = copy(curr_vals[:,end])
+    elseif interp_order == 1
+        k = tout / t[end-1]
+        for i = 1:size(curr_vals, 1)
+            pred_vals[i] = curr_vals[i,end] + (curr_vals[i,end-1] - curr_vals[i,end])*k
+        end
+
+    elseif interp_order == 2
+        k = tout / (t[end-1]*t[end-2]*(t[end-1]-t[end-2]))
+        for i = 1:size(curr_vals, 1)
+            pred_vals[i] =   curr_vals[i,end] +
+            (t[end-2]^2 * (curr_vals[i,end] - curr_vals[i,end-1]) + t[end-1]^2 * (-curr_vals[i,end] + curr_vals[i,end-2]))*k +
+            ((t[end-1]-t[end-2])*curr_vals[i,end] + t[end-2]*curr_vals[i,end-1] - t[end-1]*curr_vals[i,end-2])*k*tout
+        end
+    else
+        error("interp_order must equal 0, 1, or 2")
     end
 
     return pred_vals
