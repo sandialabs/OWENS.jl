@@ -77,7 +77,7 @@
 #   <<: *test_definition
 
 test:latest:
-  image: julia:1.7
+  image: julia:latest
   <<: *test_definition
 
 # Maybe you would like to test your package against the development branch:

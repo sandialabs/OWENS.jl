@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 FLOWMath = "6cb5d3fb-0fe8-4cc2-bd89-9fe0b19a99d3"
+GXBeam = "974624c9-1acb-4ad6-a627-8ac40fc27a3e"
 GyricFEA = "3cd7cb04-a333-4aed-a1f1-c87982f3ae73"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -17,6 +18,7 @@ VAWTAero = "513c2d6f-fecb-4566-aa46-de6170e5ba6d"
 julia = "1"
 
 [extras]
+CPUSummary = "2a0fbf3d-bb9c-48f3-b0a9-814d99fd7ab9"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]

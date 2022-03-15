@@ -16,6 +16,7 @@ import DelimitedFiles
 import LinearAlgebra
 import FLOWMath
 import HDF5
+import GXBeam
 
 # using pyfloater
 # pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
