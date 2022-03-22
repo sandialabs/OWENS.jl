@@ -244,7 +244,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
 
         #TODO: put these in the model
         TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 300 #max iteration for various modules
+        MAXITER = 10 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
         platNorm = 0.0
@@ -358,23 +358,84 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
 
-            # ntheta = 20
-            # aerodt = 1/(Omega_j*ntheta)
-            if numIterations==1 #&& isapprox(t[i]%aerodt,0;atol=0.021)
-                if model.tocp_Vinf == -1
-                    newVinf = -1
-                else
-                    newVinf = FLOWMath.akima(model.tocp_Vinf,model.Vinfocp,t[i])
+            if model.aeroLoadsOn>0 #0 off, 1 one way, 2 two way
+                runaero = true
+                if model.aeroLoadsOn==1 && numIterations!=1
+                    runaero = false
                 end
-                println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
-                deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf=newVinf)
-                Fexternal, Fdof,Xp,Yp,Zp,z3Dnorm,Fexternal_global = aero(t[i],azi_j) #TODO: implement turbine deformation and deformation induced velocities
+                if runaero
+                    if model.tocp_Vinf == -1
+                        newVinf = -1
+                    else
+                        newVinf = FLOWMath.akima(model.tocp_Vinf,model.Vinfocp,t[i])
+                    end
+
+                    if model.aeroLoadsOn==2
+                        # Transform Local Displacements to Global
+                        numDofPerNode = 6
+                        #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
+                        u_j_global = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
+                        for jbld = 1:length(mesh.structuralElNumbers[:,1])
+                            for kel = 1:length(mesh.structuralElNumbers[1,:])-1
+                                # orientation angle,xloc,sectionProps,element order]
+                                elNum = Int(mesh.structuralElNumbers[jbld,kel])
+                                #get dof map
+                                node1 = Int(mesh.structuralNodeNumbers[jbld,kel])
+                                node2 = Int(mesh.structuralNodeNumbers[jbld,kel+1])
+                                dofList = [(node1-1)*numDofPerNode.+(1:6);(node2-1)*numDofPerNode.+(1:6)]
+
+                                localdisp = u_j[dofList]
+                                x = [mesh.x[node1], mesh.x[node2]]
+                                y = [mesh.y[node1], mesh.y[node2]]
+                                z = [mesh.z[node1], mesh.z[node2]]
+
+                                twist = el.props[elNum].twist
+                                sweepAngle = el.psi[elNum]
+                                coneAngle = el.theta[elNum]
+                                rollAngle = el.roll[elNum]
+
+                                twistAvg = rollAngle + 0.5*(twist[1] + twist[2])
+                                lambda = GyricFEA.calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
+                                globaldisp = inv(lambda')*localdisp
+
+                                #asssembly
+                                for m = 1:length(dofList)
+                                    u_j_global[dofList[m]] =  u_j_global[dofList[m]]+globaldisp[m]
+                                end
+
+                            end
+                        end
+
+                        disp_x = [u_j_global[i] for i = 1:6:length(u_j_global)]
+                        disp_y = [u_j_global[i] for i = 2:6:length(u_j_global)]
+                        disp_z = [u_j_global[i] for i = 3:6:length(u_j_global)]
+                        disp_twist = [u_j[i] for i = 4:6:length(u_j)]
+
+                        bld_x = zero(mesh.structuralElNumbers[:,1:end-1])
+                        bld_y = zero(mesh.structuralElNumbers[:,1:end-1])
+                        bld_z = zero(mesh.structuralElNumbers[:,1:end-1])
+                        bld_twist = zero(mesh.structuralElNumbers[:,1:end-1])
+
+                        for jbld = 1:length(mesh.structuralElNumbers[:,1])
+                            bld_indices = Int.(mesh.structuralElNumbers[jbld,1:end-1])
+                            bld_x[jbld,:] = mesh.x[bld_indices]+disp_x[bld_indices]
+                            bld_y[jbld,:] = mesh.y[bld_indices]+disp_y[bld_indices]
+                            bld_z[jbld,:] = mesh.z[bld_indices]+disp_z[bld_indices]
+                            # flatten blade x,y
+                            bld_x[jbld,:] = sqrt.(bld_x[jbld,:].^2 .+bld_y[jbld,:].^2)
+                            bld_twist[jbld,:] = disp_twist[bld_indices]
+                        end
+                    else
+                        bld_x = -1
+                        bld_z = -1
+                        bld_twist = -1
+                    end
+
+                    println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
+                    deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
+                    Fexternal, Fdof,Xp,Yp,Zp,z3Dnorm,Fexternal_global = aero(t[i],azi_j)
+                end
             end
-
-            # io = DelimitedFiles.open("./mytestfile2.txt", "a")
-            # DelimitedFiles.writedlm(io, OmegaDot_j*60)
-            # DelimitedFiles.close(io)
-
 
             if model.hydroOn
                 Fdof = [Fdof; Int.(Fdof[:,1]); collect(1:6)] #TODO: tie into ndof per node
@@ -383,8 +444,6 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
 
             ## evaluate structural dynamics
             #initialization of structural dynamics displacements, velocities, accelerations, etc.
-
-
 
             if model.analysisType=="ROM"
                 dispData = GyricFEA.DispData(u_s,udot_s,uddot_s,u_sm1,eta_s,etadot_s,etaddot_s)
@@ -544,10 +603,10 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             uddot_j = dispOut.displddot_sp1
 
             ## calculate norms
-            uNorm = #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
-            aziNorm = #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-            platNorm = #LinearAlgebra.norm(Ywec_j-Ywec_jLast)/LinearAlgebra.norm(Ywec_j) #platform module states iteration norm if it is off, the norm will be zero
-            gbNorm = 1e-6#LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+            uNorm = LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+            aziNorm = LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+            platNorm = LinearAlgebra.norm(Ywec_j-Ywec_jLast)/LinearAlgebra.norm(Ywec_j) #platform module states iteration norm if it is off, the norm will be zero
+            gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
             Omega_jlast = Omega_j
 
             if model.analysisType=="GX" && !((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))

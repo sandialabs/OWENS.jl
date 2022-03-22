@@ -44,7 +44,7 @@ Model(;analysisType = "TNB",
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
     Vinfocp = [12.0,12.0],
-    aeroLoadsOn = false, #this need to get cleaned up in the code
+    aeroLoadsOn = 1,
     driveTrainOn = false,
     generatorOn = false,
     hydroOn = false,
@@ -81,7 +81,7 @@ Model inputs for OWENS coupled analysis, struct
 * `delta_t::float`: timestep interval (s)
 * `Omegaocp::Array{<:float}`: = rotor speed points for rotor speed profile (Hz)
 * `Vinfocp::Array{<:float}`: = rotor speed points for specified Vinf profile (Hz)
-* `aeroLoadsOn::bool`: flag to trigger aero loads being applied
+* `aeroLoadsOn::int`: flag to trigger aero loads being applied # 1 one way, 2 two way, 0 off
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
 * `hydroOn::bool`: flag to include platform coupling
@@ -117,7 +117,7 @@ function Model(;analysisType = "TNB",
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
     Vinfocp = -1,
-    aeroLoadsOn = false, #this need to get cleaned up in the code
+    aeroLoadsOn = 1, #this need to get cleaned up in the code
     driveTrainOn = false,
     generatorOn = false,
     hydroOn = false,
