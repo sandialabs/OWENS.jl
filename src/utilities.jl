@@ -190,7 +190,7 @@ function owens(owensfile,analysisType;
     line             = readline(fid)
     delimiter_idx    = findall(" ",line)
 
-    aeroLoadsOn      = Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
+    aeroLoadsOn      = 1#Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
 
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
     aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
@@ -312,10 +312,10 @@ function owens(owensfile,analysisType;
         ortFn = string(OWENSfile_root, ".ort")
         meshFn = string(OWENSfile_root, ".mesh")
 
-        aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
+        # aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
 
-        aeroForces(t,azi) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
-        deformAero(azi;newOmega=-1,newVinf=-1) = 0.0 #placeholder function
+        aeroForces(t,azi) = externalForcing(t+delta_t,[0],[0],[0])
+        deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1) = 0.0 #placeholder function
         Unsteady(model,feamodel,mesh,el,aeroForces,deformAero)
 
         return model
