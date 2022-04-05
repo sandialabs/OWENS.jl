@@ -245,7 +245,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         Ywec_jLast = copy(Ywec_j)
 
         #TODO: put these in the model
-        TOL = 1e-3  #gauss-seidel iteration tolerance for various modules
+        TOL = 0.01#1e-3  #gauss-seidel iteration tolerance for various modules
         MAXITER = 11 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
@@ -281,8 +281,13 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             curvGX = zeros(3,length(assembly.elements))
         end
 
+        # if i%29==0 || i == 1
+        #     PyPlot.close("all")
+        #     PyPlot.figure(111)
+        #     PyPlot.plot(mesh.x,mesh.z,"k-")
+        # end
+
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
-            # println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
             CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
@@ -304,7 +309,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             if model.generatorOn
                 if model.useGeneratorFunction
                     specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,model.tocp,model.Omegaocp,delta_t)
-                    genTorqueHSS0 = userDefinedGenerator(Omega_j,OmegaHist[i],delta_t,integrator,specifiedOmega)
+                    genTorqueHSS0 = userDefinedGenerator(Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
                 else
                     genTorqueHSS0 = simpleGenerator(model,Omega_j)
                 end
@@ -328,11 +333,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                     # if model.JgearBox==0.0
                     #     @error "model.JgearBox cannot be 0 if modeling the drivetrain. The SNL17m's was 243.0 n-s^2-m"
                     # end
-                    # model.JgearBox = structureMOI[3,3]
-                    println("here")
-                    println(structureMOI[3,3])
-                    println(-genTorque_j)
-                    println(torqueDriveShaft_j)
+                    # model.JgearBox = structureMOI[3,3]/10
                     gb_j,gbDot_j,gbDotDot_j,Fhat = updateRotorRotation(model.JgearBox,0,0,
                     -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,delta_t)
                 else
@@ -369,9 +370,9 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             ## compile external forcing on rotor
             #compile forces to supply to structural dynamics solver
 
-            if model.aeroLoadsOn>0 #0 off, 1 one way, 2 two way
+            if model.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
                 runaero = true
-                if model.aeroLoadsOn==1 && numIterations!=1
+                if (model.aeroLoadsOn==1 || model.aeroLoadsOn==1.5) && numIterations!=1
                     runaero = false
                 end
                 if runaero
@@ -381,11 +382,11 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                         newVinf = FLOWMath.akima(model.tocp_Vinf,model.Vinfocp,t[i])
                     end
 
-                    if model.aeroLoadsOn==2
-                        # Transform Local Displacements to Global
+                    if model.aeroLoadsOn > 1
+                        # Transform Global Displacements to Local
                         numDofPerNode = 6
-                        #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
-                        u_j_global = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
+
+                        u_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
                         for jbld = 1:length(mesh.structuralElNumbers[:,1])
                             for kel = 1:length(mesh.structuralElNumbers[1,:])-1
                                 # orientation angle,xloc,sectionProps,element order]
@@ -395,10 +396,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                                 node2 = Int(mesh.structuralNodeNumbers[jbld,kel+1])
                                 dofList = [(node1-1)*numDofPerNode.+(1:6);(node2-1)*numDofPerNode.+(1:6)]
 
-                                localdisp = u_j[dofList]
-                                x = [mesh.x[node1], mesh.x[node2]]
-                                y = [mesh.y[node1], mesh.y[node2]]
-                                z = [mesh.z[node1], mesh.z[node2]]
+                                globaldisp = u_j[dofList]
 
                                 twist = el.props[elNum].twist
                                 sweepAngle = el.psi[elNum]
@@ -407,35 +405,49 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
 
                                 twistAvg = rollAngle + 0.5*(twist[1] + twist[2])
                                 lambda = GyricFEA.calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
-                                globaldisp = inv(lambda')*localdisp
+                                localdisp = lambda*globaldisp
 
                                 #asssembly
                                 for m = 1:length(dofList)
-                                    u_j_global[dofList[m]] =  u_j_global[dofList[m]]+globaldisp[m]
+                                    u_j_local[dofList[m]] =  u_j_local[dofList[m]]+localdisp[m]
                                 end
 
                             end
                         end
 
-                        disp_x = [u_j_global[i] for i = 1:6:length(u_j_global)]
-                        disp_y = [u_j_global[i] for i = 2:6:length(u_j_global)]
-                        disp_z = [u_j_global[i] for i = 3:6:length(u_j_global)]
-                        disp_twist = [u_j[i] for i = 4:6:length(u_j)]
+                        disp_x = [u_j[i] for i = 1:6:length(u_j)]
+                        disp_y = [u_j[i] for i = 2:6:length(u_j)]
+                        disp_z = [u_j[i] for i = 3:6:length(u_j)]
+                        disp_twist = [u_j_local[i] for i = 4:6:length(u_j_local)]
+                        # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
+                        # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
 
-                        bld_x = zero(mesh.structuralElNumbers[:,1:end-1])
-                        bld_y = zero(mesh.structuralElNumbers[:,1:end-1])
-                        bld_z = zero(mesh.structuralElNumbers[:,1:end-1])
-                        bld_twist = zero(mesh.structuralElNumbers[:,1:end-1])
+                        bld_x = zero(mesh.structuralNodeNumbers[:,1:end-1])
+                        bld_y = zero(mesh.structuralNodeNumbers[:,1:end-1])
+                        bld_z = zero(mesh.structuralNodeNumbers[:,1:end-1])
+                        bld_twist = zero(mesh.structuralNodeNumbers[:,1:end-1])
 
-                        for jbld = 1:length(mesh.structuralElNumbers[:,1])
-                            bld_indices = Int.(mesh.structuralElNumbers[jbld,1:end-1])
+                        for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
+                            bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
                             bld_x[jbld,:] = mesh.x[bld_indices]+disp_x[bld_indices]
                             bld_y[jbld,:] = mesh.y[bld_indices]+disp_y[bld_indices]
                             bld_z[jbld,:] = mesh.z[bld_indices]+disp_z[bld_indices]
                             # flatten blade x,y
-                            bld_x[jbld,:] = sqrt.(bld_x[jbld,:].^2 .+bld_y[jbld,:].^2)
-                            bld_twist[jbld,:] = disp_twist[bld_indices]
+                            bld_x[jbld,:] = sqrt.(bld_x[jbld,:].^2 .+bld_y[jbld,:].^2) #TODO: a better way via the blade offset azimuth?
+                            bld_twist[jbld,:] = -disp_twist[bld_indices] #the bending displacements are in radians
+                            # The local structural FOR follows right hand rule, so at the bottom of the blade, the x-vector is pointing outward, and a positive
+                            # rotation about x would make the blade twist into the turbine.  In AC and DMS, if we are looking at say Andrew's 2016 paper, fig 10,
+                            # the blade has looped up and is pointing at us, so positive twist would increase the aoa.  In the AC and DMS equations, aoa is decreased by twist
+                            # so, we should negate
+                            # PyPlot.figure(111)
+                            # PyPlot.plot(mesh.x[bld_indices]+disp_x[bld_indices],mesh.z[bld_indices]+disp_z[bld_indices].*1,label="disp")
+                            # PyPlot.plot(bld_twist[jbld,:]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist1")
+                            # PyPlot.plot(disp_twist2[bld_indices]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist2")
+                            # PyPlot.plot(disp_twist3[bld_indices]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist3")
+                            # PyPlot.legend()
+                            # sleep(.1)
                         end
+
                     else
                         bld_x = -1
                         bld_z = -1
@@ -444,7 +456,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
 
                     println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
                     deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
-                    Fexternal, Fdof,Xp,Yp,Zp,z3Dnorm,Fexternal_global = aero(t[i],azi_j)
+                    Fexternal, Fdof,Xp,Yp,Zp,z3Dnorm = aero(t[i],azi_j)
                 end
             end
 
@@ -618,7 +630,11 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             if model.analysisType=="GX" && !((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
                 system = deepcopy(systemout)
             end
+
             numIterations = numIterations + 1
+
+            println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
+
             if numIterations==MAXITER
                 @warn "Maximum Iterations Met Breaking Iteration Loop"
                 break
@@ -769,17 +785,52 @@ end
 Internal, generator definintion
 """
 
-function userDefinedGenerator(omega,omegalast,dt,integrator,omega0)
+# If startup
+
+# If normal operation
+
+# If shutdown
+function userDefinedGenerator(omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint;operPhase="normal")
     # omega is in hz
     omega_RPM = omega*60
-    omega_RPM0 = omega0*60 # 33.92871
-    Kp = 11.1599
-    Ki = 5.2693
-    Kd = 3.3076
-    Q0 = -345.7731*0
-    integrator[1] = integrator[1] + (omega_RPM - omega_RPM0)*dt
-    deriv = (omega-omegalast)/dt
-    controllerQ = Q0 + Kp*(omega_RPM-omega_RPM0) + Kd*deriv + Ki*integrator[1]
+    omegalast_RPM = omegalast*60
+
+    omegadot_RPM = omegadot*60
+    omegadotlast_RPM = omegadotlast*60
+
+    if operPhase == "normal" #Level controller
+        omega_RPM0 = 33.92871 #omegasetpoint*60 #
+        Kp = 10.62992345720471
+        Ki = 5.2553876053628725
+        Kd = 0.0#3.3076
+        Q0 = -320.1533668398164
+        integrator[1] = integrator[1] + (omega_RPM - omega_RPM0)*dt
+        deriv = (omega_RPM-omegalast_RPM)/dt
+        controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator[1]
+
+    elseif operPhase == "startup" #Rate controller
+        omegadot_RPM0 = 0.06
+        Kp = -169.28544850462416
+        Kd = 0.0
+        Ki = 6.992781011211898
+        Q0 = -1.5322393433581225
+        integrator[1] = integrator[1] + (omegadot_RPM - omegadot_RPM0)*dt
+        deriv = (omegadot_RPM-omegadotlast_RPM)/dt
+        controllerQ = Q0 + Kp*(omegadot_RPM) + Kd*deriv + Ki*integrator[1]
+
+    elseif operPhase == "alarmstop" #Rate controller
+        omegadot_RPM0 = -0.17
+        Kp = -60.260960830212184
+        Kd = 0.0
+        Ki = 1.207543227057866
+        Q0 = 121.93177867856548
+        integrator[1] = integrator[1] + (omegadot_RPM - omegadot_RPM0)*dt
+        deriv = (omegadot_RPM-omegadotlast_RPM)/dt
+        controllerQ = Q0 + Kp*(omegadot_RPM) + Kd*deriv + Ki*integrator[1]
+
+    else
+        @error "selected operation phase not defined"
+    end
     return controllerQ*1000
 end
 
