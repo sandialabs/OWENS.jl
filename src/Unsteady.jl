@@ -1,3 +1,6 @@
+global controlnamelast = "none"
+global controlnamecurrent = "none"
+
 """
 
     Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
@@ -57,7 +60,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         println("Running in forced starting mode.")
         model.generatorOn = true  #TODO: clean this redundant/conflicting logic up
         #     Omega = OmegaInitial
-        rotorSpeedForGenStart = 0.0
+        rotorSpeedForGenStart = -100.0
     elseif model.turbineStartup == 2 || model.turbineStartup == "self" #self-starting mode
         println("Running in self-starting mode.")
         model.generatorOn = false
@@ -203,7 +206,8 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
     Fdof = 0.0
     Fexternal_global = 0.0
     z3Dnorm = 0.0
-    integrator = zeros(1) #for generator control algorithm
+    integrator = 0.0 #for generator control algorithm
+    integrator_j = 0.0
     ## Main Loop - iterate for a solution at each time step, i
     for i=1:numTS
 
@@ -287,6 +291,15 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         #     PyPlot.plot(mesh.x,mesh.z,"k-")
         # end
 
+        integrator = integrator_j #don't compound integrator within the convergence loop.
+        global controlnamecurrent
+        global controlnamelast
+        if controlnamelast != controlnamecurrent
+            integrator = 0.0
+            @warn "switching control schemes"
+        end
+        controlnamelast = controlnamecurrent
+
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
@@ -309,7 +322,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             if model.generatorOn
                 if model.useGeneratorFunction
                     specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,model.tocp,model.Omegaocp,delta_t)
-                    genTorqueHSS0 = userDefinedGenerator(Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
+                    genTorqueHSS0,integrator_j,controlnamecurrent = userDefinedGenerator(t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
                 else
                     genTorqueHSS0 = simpleGenerator(model,Omega_j)
                 end
@@ -790,7 +803,8 @@ Internal, generator definintion
 # If normal operation
 
 # If shutdown
-function userDefinedGenerator(omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint;operPhase="normal")
+
+function userDefinedGenerator(t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint)
     # omega is in hz
     omega_RPM = omega*60
     omegalast_RPM = omegalast*60
@@ -798,40 +812,81 @@ function userDefinedGenerator(omega,omegalast,omegadot,omegadotlast,dt,integrato
     omegadot_RPM = omegadot*60
     omegadotlast_RPM = omegadotlast*60
 
-    if operPhase == "normal" #Level controller
-        omega_RPM0 = 33.92871 #omegasetpoint*60 #
+    # if omegasetpoint*60<=0.99 && isapprox(0.0,omega_RPM;atol=1.0)
+    #     controlnamecurrent = "off"
+    #     println("off setpoint $(omegasetpoint*60) RPM $(omega_RPM)")
+    #     controllerQ = 0
+    # elseif isapprox(omegasetpoint,omega;atol=omegasetpoint*0.07)#operPhase == "normal" #Level controller
+        controlnamecurrent = "normal"
+        # println(" ")
+        # println("normal setpoint $(omegasetpoint*60) RPM $(omega*60)")
+        omega_RPM0 = omegasetpoint*60 #33.92871
         Kp = 10.62992345720471
         Ki = 5.2553876053628725
-        Kd = 0.0#3.3076
+        Kd = 0.0
         Q0 = -320.1533668398164
-        integrator[1] = integrator[1] + (omega_RPM - omega_RPM0)*dt
+        integrator = integrator + (omega_RPM - omega_RPM0)*dt
         deriv = (omega_RPM-omegalast_RPM)/dt
-        controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator[1]
+        controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator
 
-    elseif operPhase == "startup" #Rate controller
-        omegadot_RPM0 = 0.06
-        Kp = -169.28544850462416
-        Kd = 0.0
-        Ki = 6.992781011211898
-        Q0 = -1.5322393433581225
-        integrator[1] = integrator[1] + (omegadot_RPM - omegadot_RPM0)*dt
-        deriv = (omegadot_RPM-omegadotlast_RPM)/dt
-        controllerQ = Q0 + Kp*(omegadot_RPM) + Kd*deriv + Ki*integrator[1]
+    #     # # Synchronous Generator: 17m generator from SAND-78-0577 x10 and scaled up for rotation rate
+    #     # k = 57.6 #N-m-s/rad
+    #     # D = 1.27e3 #N-m/rad
+    #     # ws = omega_RPM0 / 60 * 2 * pi
+    #     # scale = 10 #x larger than the 17m
+    #     # gbMultiplier = 52.94
+    #     # controllerQ = (k*(gb_j-ws*t) + D*(omega*2*pi-ws))/1000 * gbMultiplier * scale
+    #
+    #     # println("Integrator $(integrator[1]) Ki*Int: $(Ki*integrator[1])")
+    #     # println("Kp*omegadot_RPM $(Kp*omegadot_RPM)")
+    #     # println("controllerQ $(controllerQ)")
+    # elseif omegasetpoint>omega#operPhase == "startup" #Rate controller
+    #     controlnamecurrent = "startup"
+    #     println(" ")
+    #     println("startup setpoint $(omegasetpoint*60) RPMdot $(omegadot_RPM)")
+    #     omegadot_RPM0 = 0.1076
+    #     Kp = 0.0
+    #     Kd = 610.8381799970701*0 #TODO: derivative based on GB position
+    #     Ki = 37.79082483023065
+    #     Q0 = 39.74991266082707
+    #     integrator = integrator + (omegadot_RPM - omegadot_RPM0)*dt
+    #     deriv = (omegadot_RPM-omegadotlast_RPM)/dt
+    #     QKp = Kp*(omegadot_RPM)
+    #
+    #     controllerQ = Q0 + QKp + Kd*deriv + Ki*integrator
+    #
+    #     if controllerQ>100.0
+    #         controllerQ = 100.0
+    #     elseif controllerQ<-100.0
+    #         controllerQ = -100.0
+    #     end
+    #
+    #     println("Integrator $(integrator[1]) Ki*Int: $(Ki*integrator[1])")
+    #     println("Kp*omegadot_RPM $(Kp*omegadot_RPM)")
+    #     println("controllerQ $(controllerQ)")
+    #
+    # elseif omegasetpoint<omega#operPhase == "alarmstop" #Rate controller
+    #     controlnamecurrent = "alarmstop"
+    #     println(" ")
+    #     println("alarmstop setpoint $(omegasetpoint*60) RPMdot $(omegadot_RPM)")
+    #     omegadot_RPM0 = -1.04474
+    #     Kp = -5.592014753661118
+    #     Kd = -0.6525496964068226*0 #TODO: derivative based on GB position
+    #     Ki = -3.2809838749728284
+    #     Q0 = 123.94659715178108
+    #     integrator = integrator + (omegadot_RPM - omegadot_RPM0)*dt
+    #     deriv = (omegadot_RPM-omegadotlast_RPM)/dt
+    #     controllerQ = Q0 + Kp*(omegadot_RPM) + Kd*deriv + Ki*integrator
+    #     println("Integrator $(integrator[1]) Ki*Int: $(Ki*integrator[1])")
+    #     println("Kp*omegadot_RPM $(Kp*omegadot_RPM)")
+    #     println("controllerQ $(controllerQ)")
+    # end
+    #
+    # if omega_RPM>41.0
+    #     controllerQ = 150.0*2
+    # end
 
-    elseif operPhase == "alarmstop" #Rate controller
-        omegadot_RPM0 = -0.17
-        Kp = -60.260960830212184
-        Kd = 0.0
-        Ki = 1.207543227057866
-        Q0 = 121.93177867856548
-        integrator[1] = integrator[1] + (omegadot_RPM - omegadot_RPM0)*dt
-        deriv = (omegadot_RPM-omegadotlast_RPM)/dt
-        controllerQ = Q0 + Kp*(omegadot_RPM) + Kd*deriv + Ki*integrator[1]
-
-    else
-        @error "selected operation phase not defined"
-    end
-    return controllerQ*1000
+    return controllerQ*1000,integrator,controlnamecurrent
 end
 
 """
