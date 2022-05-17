@@ -14,8 +14,8 @@ include("C:/code/VAWTHydro.jl/src/VAWTHydro.jl")  # import VAWTHydro
 # Github packages
 import Statistics
 import DelimitedFiles
+import SparseArrays
 import LinearAlgebra
-import Dierckx
 import FLOWMath
 import HDF5
 
