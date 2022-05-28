@@ -741,39 +741,6 @@ end
 
 """
 
-    readInitCond(filename)
-
-Reads initial conditions from file
-
-#Input
-* `filename`      string containing file name for initial conditions file
-
-#Output
-* `initCond`      array containing initial conditions
-"""
-function readInitCond(filename)
-
-    initCond =[] #initialize intial condition to null
-
-    # fid = open(filename) #open initial  conditions file
-
-    #         index = 1
-    #         while(~feof(fid))
-    #             temp1 = fscanf(fid,'#i',2) #read node number and local DOF number for initial cond.
-    #             temp2 = fscanf(fid,'#f',1) #read value for initial cond.
-    #
-    #             #place node number, dof number and value into array
-    #             initCond(index,1:3) = [temp1(1), temp1(2), temp2(1)]
-    #
-    #             index = index + 1
-    #         end
-
-    println("INITIAL CONDITIONS NOT FULLY ENABLED")
-    return initCond
-end
-
-"""
-
     writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
 
 writes a nodal input file
@@ -1166,6 +1133,57 @@ function simpleGenerator(model,genSpeed)
 
     return genTorque
 
+end
+
+"""
+    setInitConditions(initDisps, numNodes, numDOFPerNode)
+
+Creates the formatted initial conditions array needed by GyricFEA
+
+#Input
+* `initDisps`: an array of length numDOFPerNode specifying the initial displacement of each DOF
+* `numNodes`: the number of nodes in the given mesh
+* `numDOFPerNode`: the number of unconstrained degrees of freedom calculated in each node
+
+#Output
+* `initCond`: array containing initial conditions.
+    initCond(i,1) node number for init cond i.
+    initCond(i,2) local DOF number for init cond i.
+    initCond(i,3) value for init cond i.
+"""
+function createInitCondArray(initDisps, numNodes, numDOFPerNode)
+    if initDisps == zeros(length(initDisps))
+        initCond = []
+    else
+        initCond = zeros(numNodes*numDOFPerNode, 3)
+        for i = 1:length(initDisps)
+            if initDisps[i] != 0.0
+                dof_initCond = hcat(collect(1:numNodes), ones(Int,numNodes)*i, ones(numNodes)*initDisps[i])
+                initCond[(i-1)*numNodes+1:i*numNodes,:] = dof_initCond
+            end
+        end
+        initCond = initCond[vec(mapslices(col -> any(col .!= 0), initCond, dims = 2)), :] #removes rows of all zeros
+    end
+
+    return initCond
+end
+
+function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNodes)
+    if (fixedDOFs == []) && (fixedNodes == [])
+        pBC = []
+    else
+        pBC = zeros(Int, numNodes*numDOFPerNode, 3)
+        
+        pBC[1:length(fixedNodes)*numDOFPerNode, :] = hcat(fixedNodes, collect(1:numDOFPerNode), zeros(Int, numNodes))
+        for i = 1:length(fixedDOFs)
+            dofBCs = hcat(setdiff([1:numNodes], fixedNodes), ones(Int,numNodes)*fixedDOFs[i], zeros(Int,numNodes))
+            pBC[length(fixedNodes)*numDOFPerNode+(i-1)*numNodes+1:length(fixedNodes)*numDOFPerNode+i*numNodes, :] = dofBCs
+        end
+        pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes rows of all zeros
+    end
+
+    return pBC
+    
 end
 
 #

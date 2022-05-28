@@ -580,7 +580,7 @@ external module with transient structural dynamics analysis capability.
 * `gam_xy_0_hist`: strain history for gam_xy_0 for each dof
 * `gam_xy_z_hist`: strain history for gam_xy_z for each dof
 """
-function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatrices=false)
+function UnsteadyCoupled(model,topFEAModel,bottomFEAModel,top_mesh,bottom_mesh,top_el,bottom_el,bin,aero,deformAero;getLinearizedMatrices=false)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -690,10 +690,63 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
-    _,structureMOI,_ = GyricFEA.calculateStructureMassProps(elStorage)
+    topsideMass, topsideMOI, _ = GyricFEA.calculateStructureMassProps(elStorage)
 
     feamodel.jointTransform, feamodel.reducedDOFList = GyricFEA.createJointTransform(feamodel.joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     
+    ## Implement the mass matrix of the topside as a concentrated mass on the bottom side
+    topsideMass = [ #TODO: I'm sure there's a more efficient way of doing this
+        topsideMass               0.0                      0.0                 0.0                0.0                0.0
+        0.0                       topsideMass              0.0                 0.0                0.0                0.0
+        0.0                       0.0                      topsideMass         0.0                0.0                0.0
+        0.0                       0.0                      0.0                 topsideMOI[1,1]    topsideMOI[1,2]    topsideMOI[1,3]
+        0.0                       0.0                      0.0                 topsideMOI[2,1]    topsideMOI[2,2]    topsideMOI[2,3]
+        0.0                       0.0                      0.0                 topsideMOI[3,1]    topsideMOI[3,2]    topsideMOI[3,3]
+    ]
+
+    nodalinputdata = [
+    1 "M6" 1 1 topsideMass[1][1,1]
+    1 "M6" 1 2 topsideMass[1][1,2]
+    1 "M6" 1 3 topsideMass[1][1,3]
+    1 "M6" 1 4 topsideMass[1][1,4]
+    1 "M6" 1 5 topsideMass[1][1,5]
+    1 "M6" 1 6 topsideMass[1][1,6]
+    1 "M6" 2 1 topsideMass[1][2,1]
+    1 "M6" 2 2 topsideMass[1][2,2]
+    1 "M6" 2 3 topsideMass[1][2,3]
+    1 "M6" 2 4 topsideMass[1][2,4]
+    1 "M6" 2 5 topsideMass[1][2,5]
+    1 "M6" 2 6 topsideMass[1][2,6]
+    1 "M6" 3 1 topsideMass[1][3,1]
+    1 "M6" 3 2 topsideMass[1][3,2]
+    1 "M6" 3 3 topsideMass[1][3,3]
+    1 "M6" 3 4 topsideMass[1][3,4]
+    1 "M6" 3 5 topsideMass[1][3,5]
+    1 "M6" 3 6 topsideMass[1][3,6]
+    1 "M6" 4 1 topsideMass[1][4,1]
+    1 "M6" 4 2 topsideMass[1][4,2]
+    1 "M6" 4 3 topsideMass[1][4,3]
+    1 "M6" 4 4 topsideMass[1][4,4]
+    1 "M6" 4 5 topsideMass[1][4,5]
+    1 "M6" 4 6 topsideMass[1][4,6]
+    1 "M6" 5 1 topsideMass[1][5,1]
+    1 "M6" 5 2 topsideMass[1][5,2]
+    1 "M6" 5 3 topsideMass[1][5,3]
+    1 "M6" 5 4 topsideMass[1][5,4]
+    1 "M6" 5 5 topsideMass[1][5,5]
+    1 "M6" 5 6 topsideMass[1][5,6]
+    1 "M6" 6 1 topsideMass[1][6,1]
+    1 "M6" 6 2 topsideMass[1][6,2]
+    1 "M6" 6 3 topsideMass[1][6,3]
+    1 "M6" 6 4 topsideMass[1][6,4]
+    1 "M6" 6 5 topsideMass[1][6,5]
+    1 "M6" 6 6 topsideMass[1][6,6]
+    ]
+
+    mynodalTerms2 = GyricFEA.applyConcentratedTerms(mesh.numNodes, numDOFPerNode, data=nodalinputdata, jointData=feamodel.joint)
+
+    feamodel.nodalTerms += mynodalTerms2
+
     ## History array initialization
     uHist = zeros(Float32, numTS, length(u_s))
     uHist[1,:] = u_s          #store initial condition
@@ -738,14 +791,18 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
     FHydroHist = zeros(Float32, numTS,numDOFPerNode)
     FMooringHist = zeros(Float32, numTS,numDOFPerNode)
 
-    #..........................................................................
-    #                          INITIAL COUPLED SOLVE
-    #..........................................................................
+    #..................................................................
+    #                          INITIAL SOLVE
+    #..................................................................
 
-    # Calculate aerodynamic forcing
-    deformAero(Omega_s*2*pi)
-    frc_aero_n = aero[1, :] #TODO: implement turbine deformation and deformation induced velocities
-    # frc_aero_n = zeros(Float32, 6)
+    # Topside solve TODO
+
+    # .
+    # .
+    # . 
+
+    # Calculate forcing from topside
+    topside_loading = FReaction
     frc_aero_h = frame_convert(frc_aero_n, CN2H)
     aero_dofs = collect(totalNumDof-numDOFPerNode+1:totalNumDof)
 
@@ -764,10 +821,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
         uddot_s = dispOut.displddot_sp1 # this is updated here because the Jacobian calculated in the initial hydro-structural solve depends on the residual between the structural-only accelerations (including gravity) and the structural+aero accelerations, which should be nonzero if gravity is on
 
         uddot_s_ptfm = frame_convert(uddot_s[ptfm_dofs], CH2N)
-        # udot_s_ptfm = frame_convert(udot_s[ptfm_dofs], CH2N)
-        # u_s_ptfm = frame_convert(u_s[ptfm_dofs], CH2N)
-
-        # uddot_s_ptfm[3] -= 9.81
 
         moms_ptfm2bs_n = vcat(zeros(Float32, 3), # 3 force DOFs (no additions here, only moments below)
         LinearAlgebra.cross(model.ptfmref2bs, (frc_hydro_n[1:3] + frc_mooring_n[1:3])) + # add the moments about the tower base due to the hydrodynamic forces at the platform reference point
@@ -980,11 +1033,6 @@ function Unsteady(model,feamodel,mesh,el,bin,aero,deformAero;getLinearizedMatric
                 Fexternal = copy(frc_aero_h)
                 Fdof = copy(aero_dofs)
             end
-            
-            
-            # Fexternal = 0.0
-            
-            # Fdof = 1
 
             # Evaluate structural dynamics based on values from last iteration (or extrapolated values from last time step if it's the first iteration)
             if model.analysisType=="ROM" # evalulate structural dynamics using reduced order model

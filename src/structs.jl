@@ -6,7 +6,7 @@ Inputs pointing to the file paths of compiled binaries of external libraries
     moordynLibPath
 end
 
-mutable struct Model
+mutable struct Inputs
     analysisType
     turbineStartup
     usingRotorSpeedFunction
@@ -21,9 +21,6 @@ mutable struct Model
     interpOrder
     hd_input_file
     md_input_file
-    ptfmref2bs
-    ptfmcom2bs
-    plat_model
     JgearBox
     gearRatio
     gearBoxEfficiency
@@ -47,7 +44,7 @@ end
 # this way you can use defaults and pass in what is different, and it's mapped
 # by keyword so it doesn't have to be in order.
 """
-Model inputs for OWENS coupled analysis, struct
+Simulation inputs for OWENS coupled analysis, struct
 
 # Inputs
 * `analysisType::string`: Newmark Beta time stepping "TNB", Dean time stepping "TD", modal "M"
@@ -64,8 +61,6 @@ Model inputs for OWENS coupled analysis, struct
 * `interpOrder::int`: order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
 * `hd_input_file::string`: file path to the HydroDyn .dat input file
 * `md_input_file::string`: file path to the MoorDyn .dat input file
-* `ptfmref2bs::Array{<:float}`: 3-dimensional direction vector from the platform reference to the tower base
-* `ptfmcom2bs::Array{<:float}`: 3-dimensional direction vector from the platform center of mass to the tower base
 * `JgearBox::float`: gearbox intertia, standard SI units
 * `gearRatio::float`: gearbox gear ratio
 * `gearBoxEfficiency::float`: gearbox efficiency (typically 0-1)
@@ -90,7 +85,7 @@ Model inputs for OWENS coupled analysis, struct
 * `none`:
 """
 
-function Model(;analysisType = "TNB",
+function Inputs(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
@@ -104,9 +99,6 @@ function Model(;analysisType = "TNB",
     interpOrder = 2,
     hd_input_file = "none",
     md_input_file = "none",
-    ptfmref2bs = [0.0,0.0,0.0],
-    ptfmcom2bs = [0.0,0.0,0.0],
-    plat_model = [],
     JgearBox = 0.0,
     gearRatio = 1.0,
     gearBoxEfficiency = 1.0,
@@ -128,8 +120,8 @@ function Model(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0)
     )
 
-    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,ptfmref2bs,ptfmcom2bs,plat_model,
+    return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
