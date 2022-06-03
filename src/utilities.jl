@@ -1168,18 +1168,19 @@ function createInitCondArray(initDisps, numNodes, numDOFPerNode)
     return initCond
 end
 
-function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNodes)
+function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNode) #node, dof, bc
     if (fixedDOFs == []) && (fixedNodes == [])
         pBC = []
     else
         pBC = zeros(Int, numNodes*numDOFPerNode, 3)
-        
-        pBC[1:length(fixedNodes)*numDOFPerNode, :] = hcat(fixedNodes, collect(1:numDOFPerNode), zeros(Int, numNodes))
-        for i = 1:length(fixedDOFs)
-            dofBCs = hcat(setdiff([1:numNodes], fixedNodes), ones(Int,numNodes)*fixedDOFs[i], zeros(Int,numNodes))
-            pBC[length(fixedNodes)*numDOFPerNode+(i-1)*numNodes+1:length(fixedNodes)*numDOFPerNode+i*numNodes, :] = dofBCs
+        for i = 1:length(fixedNodes)
+            pBC[(i-1)*numDOFPerNode+1:i*numDOFPerNode, :] = hcat(ones(numDOFPerNode)*fixedNodes[i], collect(1:numDOFPerNode), zeros(Int, numDOFPerNode) )
         end
-        pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes rows of all zeros
+        for i = 1:length(fixedDOFs)
+            dofBCs = hcat(setdiff([1:numNodes], fixedNodes), ones(Int,numNodes)*fixedDOFs[i], zeros(Int,numNodes)) # this avoids duplicating nodes already counted for by fixedNodes
+            pBC[length(fixedNodes)*numDOFPerNode+numDOFPerNode+(i-1)*numNodes+1:length(fixedNodes)+numDOFPerNode+i*numNodes, :] = dofBCs
+        end
+        pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes extra rows (i.e. rows of all zeros)
     end
 
     return pBC
