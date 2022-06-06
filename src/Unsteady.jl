@@ -200,9 +200,9 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
     end
 
     Fexternal = 0.0 #TODO: do this right, especially if there are only hydro forces
-    struct_X = 0.0
-    struct_Y = 0.0
-    struct_Z = 0.0
+    Xp = 0.0
+    Yp = 0.0
+    Zp = 0.0
     Fdof = 0.0
     Fexternal_global = 0.0
     z3Dnorm = 0.0
@@ -523,16 +523,19 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 distributed_loads = Dict()
                 # B1
                 # GXz = [assembly.points[ipt][3] for ipt = 24:46]
+                height = maximum(mesh.z)
                 for jbld = 1:length(mesh.structuralElNumbers[:,1])
-                    XpGXspl1 = FLOWMath.Akima(z3Dnorm,Xp[jbld,:,1])#,GXz/maximum(GXz))
-                    YpGXspl1 = FLOWMath.Akima(z3Dnorm,Yp[jbld,:,1])#,GXz/maximum(GXz))
-                    ZpGXspl1 = FLOWMath.Akima(z3Dnorm,Zp[jbld,:,1])#,GXz/maximum(GXz))
+                    XpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Xp[jbld,end,:])#,GXz/maximum(GXz))
+                    YpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Yp[jbld,end,:])#,GXz/maximum(GXz))
+                    ZpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Zp[jbld,end,:])#,GXz/maximum(GXz))
 
-                    for ipt = mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1] #TODO: el or node?
+                    for ipt = Int.(mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1]) #TODO: el or node?
                         iel = findfirst(x->x==ipt,assembly.start)
+                        s1 = assembly.points[assembly.start[ipt]][3]
+                        s2 = assembly.points[assembly.stop[ipt]][3]
                         if !isempty(iel)
-                            distributed_loads[ipt] = GXBeam.DistributedLoads(assembly,iel;fx = (s) -> XpGXspl1(s),
-                                fy = (s) -> YpGXspl1(s), fz = (s) -> ZpGXspl1(s))
+                            distributed_loads[iel] = GXBeam.DistributedLoads(assembly,iel;s1,s2,fx = (s) -> XpGXspl1(s),
+                                fy = (s) -> YpGXspl1(s))#, fz = (s) -> ZpGXspl1(s))
                         else
                             println("Empty at $ipt")
                         end
@@ -564,23 +567,14 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 # end
 
 
-                prescribed_conditions = (t) -> begin
-                    Dict(
+                prescribed_conditions = Dict(
                     # fixed base
                     1 => GXBeam.PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
                     # fixed top, but free to rotate around z-axis
                     # 50 => GXBeam.PrescribedConditions(Fx = 1e4*sin(20*t)),
                     23 => GXBeam.PrescribedConditions(ux=0, uy=0, uz=0),
                     )
-                end
 
-                if i == 1 && numIterations == 1
-                    reset_state = false
-                    initialize = false
-                else
-                    reset_state = false
-                    initialize = false
-                end
                 linear_velocity = [0.0,0.0,0.0]
                 angular_velocity = [0.0,0.0,Omega_j*2*pi]
                 linear_acceleration = [0.0,0.0,0.0]
@@ -589,6 +583,16 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 tvec = [t[i],t[i]+delta_t]
 
                 gravity = [0.0,0.0,-9.81]
+
+                if i == 1 && numIterations == 1
+                    reset_state = false
+                    initialize = false
+                    GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions,
+                    gravity,angular_velocity,linear=false,reset_state=true)
+                else
+                    reset_state = false
+                    initialize = false
+                end
 
                 systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;
                 reset_state,initialize,linear_velocity,angular_velocity,linear_acceleration,
@@ -602,8 +606,8 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 prescribed_conditions)
 
                 for iel = 1:length(state.elements)
-                    strainGX[:,iel] = GXBeam.element_strain(assembly.elements[iel],state.elements[iel].F,state.elements[iel].M)
-                    curvGX[:,iel] = GXBeam.element_curvature(assembly.elements[iel],state.elements[iel].F,state.elements[iel].M)
+                    strainGX[:,iel] = GXBeam.element_strain(assembly.elements[iel],state.elements[iel].Fi,state.elements[iel].Mi)
+                    curvGX[:,iel] = GXBeam.element_curvature(assembly.elements[iel],state.elements[iel].Fi,state.elements[iel].Mi)
                 end
 
                 # disp
@@ -828,7 +832,9 @@ function userDefinedGenerator(t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,in
         integrator = integrator + (omega_RPM - omega_RPM0)*dt
         deriv = (omega_RPM-omegalast_RPM)/dt
         controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator
-
+        # if t>20.0
+        #     controllerQ = 350.0
+        # end
     #     # # Synchronous Generator: 17m generator from SAND-78-0577 x10 and scaled up for rotation rate
     #     # k = 57.6 #N-m-s/rad
     #     # D = 1.27e3 #N-m/rad
