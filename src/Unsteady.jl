@@ -723,7 +723,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     topModel.jointTransform, topModel.reducedDOFList = GyricFEA.createJointTransform(topModel.joint,topMesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     
     ## Implement the mass matrix of the topside as a concentrated mass on the bottom side
-    topsideMass = [ #TODO: I'm sure there's a more efficient way of doing this
+    topsideMassMat = [ #TODO: I'm sure there's a more efficient way of doing this
         topsideMass                0.0                        0.0                        0.0                        topsideMass*topsideCG[3]  -topsideMass*topsideCG[2]
         0.0                        topsideMass                0.0                       -topsideMass*topsideCG[3]   0.0                        topsideMass*topsideCG[1]
         0.0                        0.0                        topsideMass                topsideMass*topsideCG[2]  -topsideMass*topsideCG[1]   0.0
@@ -739,42 +739,42 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     ]
 
     nodalinputdata = [
-    length(bottomMesh.z) "M6" 1 1 topsideMass[1,1]
-    length(bottomMesh.z) "M6" 1 2 topsideMass[1,2]
-    length(bottomMesh.z) "M6" 1 3 topsideMass[1,3]
-    length(bottomMesh.z) "M6" 1 4 topsideMass[1,4]
-    length(bottomMesh.z) "M6" 1 5 topsideMass[1,5]
-    length(bottomMesh.z) "M6" 1 6 topsideMass[1,6]
-    length(bottomMesh.z) "M6" 2 1 topsideMass[2,1]
-    length(bottomMesh.z) "M6" 2 2 topsideMass[2,2]
-    length(bottomMesh.z) "M6" 2 3 topsideMass[2,3]
-    length(bottomMesh.z) "M6" 2 4 topsideMass[2,4]
-    length(bottomMesh.z) "M6" 2 5 topsideMass[2,5]
-    length(bottomMesh.z) "M6" 2 6 topsideMass[2,6]
-    length(bottomMesh.z) "M6" 3 1 topsideMass[3,1]
-    length(bottomMesh.z) "M6" 3 2 topsideMass[3,2]
-    length(bottomMesh.z) "M6" 3 3 topsideMass[3,3]
-    length(bottomMesh.z) "M6" 3 4 topsideMass[3,4]
-    length(bottomMesh.z) "M6" 3 5 topsideMass[3,5]
-    length(bottomMesh.z) "M6" 3 6 topsideMass[3,6]
-    length(bottomMesh.z) "M6" 4 1 topsideMass[4,1]
-    length(bottomMesh.z) "M6" 4 2 topsideMass[4,2]
-    length(bottomMesh.z) "M6" 4 3 topsideMass[4,3]
-    length(bottomMesh.z) "M6" 4 4 topsideMass[4,4]
-    length(bottomMesh.z) "M6" 4 5 topsideMass[4,5]
-    length(bottomMesh.z) "M6" 4 6 topsideMass[4,6]
-    length(bottomMesh.z) "M6" 5 1 topsideMass[5,1]
-    length(bottomMesh.z) "M6" 5 2 topsideMass[5,2]
-    length(bottomMesh.z) "M6" 5 3 topsideMass[5,3]
-    length(bottomMesh.z) "M6" 5 4 topsideMass[5,4]
-    length(bottomMesh.z) "M6" 5 5 topsideMass[5,5]
-    length(bottomMesh.z) "M6" 5 6 topsideMass[5,6]
-    length(bottomMesh.z) "M6" 6 1 topsideMass[6,1]
-    length(bottomMesh.z) "M6" 6 2 topsideMass[6,2]
-    length(bottomMesh.z) "M6" 6 3 topsideMass[6,3]
-    length(bottomMesh.z) "M6" 6 4 topsideMass[6,4]
-    length(bottomMesh.z) "M6" 6 5 topsideMass[6,5]
-    length(bottomMesh.z) "M6" 6 6 topsideMass[6,6]
+    length(bottomMesh.z) "M6" 1 1 topsideMassMat[1,1]
+    length(bottomMesh.z) "M6" 1 2 topsideMassMat[1,2]
+    length(bottomMesh.z) "M6" 1 3 topsideMassMat[1,3]
+    length(bottomMesh.z) "M6" 1 4 topsideMassMat[1,4]
+    length(bottomMesh.z) "M6" 1 5 topsideMassMat[1,5]
+    length(bottomMesh.z) "M6" 1 6 topsideMassMat[1,6]
+    length(bottomMesh.z) "M6" 2 1 topsideMassMat[2,1]
+    length(bottomMesh.z) "M6" 2 2 topsideMassMat[2,2]
+    length(bottomMesh.z) "M6" 2 3 topsideMassMat[2,3]
+    length(bottomMesh.z) "M6" 2 4 topsideMassMat[2,4]
+    length(bottomMesh.z) "M6" 2 5 topsideMassMat[2,5]
+    length(bottomMesh.z) "M6" 2 6 topsideMassMat[2,6]
+    length(bottomMesh.z) "M6" 3 1 topsideMassMat[3,1]
+    length(bottomMesh.z) "M6" 3 2 topsideMassMat[3,2]
+    length(bottomMesh.z) "M6" 3 3 topsideMassMat[3,3]
+    length(bottomMesh.z) "M6" 3 4 topsideMassMat[3,4]
+    length(bottomMesh.z) "M6" 3 5 topsideMassMat[3,5]
+    length(bottomMesh.z) "M6" 3 6 topsideMassMat[3,6]
+    length(bottomMesh.z) "M6" 4 1 topsideMassMat[4,1]
+    length(bottomMesh.z) "M6" 4 2 topsideMassMat[4,2]
+    length(bottomMesh.z) "M6" 4 3 topsideMassMat[4,3]
+    length(bottomMesh.z) "M6" 4 4 topsideMassMat[4,4]
+    length(bottomMesh.z) "M6" 4 5 topsideMassMat[4,5]
+    length(bottomMesh.z) "M6" 4 6 topsideMassMat[4,6]
+    length(bottomMesh.z) "M6" 5 1 topsideMassMat[5,1]
+    length(bottomMesh.z) "M6" 5 2 topsideMassMat[5,2]
+    length(bottomMesh.z) "M6" 5 3 topsideMassMat[5,3]
+    length(bottomMesh.z) "M6" 5 4 topsideMassMat[5,4]
+    length(bottomMesh.z) "M6" 5 5 topsideMassMat[5,5]
+    length(bottomMesh.z) "M6" 5 6 topsideMassMat[5,6]
+    length(bottomMesh.z) "M6" 6 1 topsideMassMat[6,1]
+    length(bottomMesh.z) "M6" 6 2 topsideMassMat[6,2]
+    length(bottomMesh.z) "M6" 6 3 topsideMassMat[6,3]
+    length(bottomMesh.z) "M6" 6 4 topsideMassMat[6,4]
+    length(bottomMesh.z) "M6" 6 5 topsideMassMat[6,5]
+    length(bottomMesh.z) "M6" 6 6 topsideMassMat[6,6]
     ]
 
     topsideConcTerms = GyricFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=nodalinputdata, jointData=topModel.joint)
@@ -1053,7 +1053,6 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
                 _, topDispTmp, topFReaction_sp1 = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
             end
 
-            topFReaction_sp1[3] = 0.0
             u_jLast = copy(u_j)
             u_j = topDispTmp.displ_sp1
 
