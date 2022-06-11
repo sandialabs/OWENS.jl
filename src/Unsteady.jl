@@ -810,7 +810,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     OmegaDotHist[1] = OmegaDot_s
     FReactionsm1 = zeros(Float32, 6)
     FReactionHist[1,:] = FReactionsm1 
-    FReaction_j = FReactionsm1
+    topFReaction_j = FReactionsm1
     gbHist[1] = gb_s
     gbDotHist[1] = gbDot_s
     gbDotDotHist[1] = gbDotDot_s
@@ -824,6 +824,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     FPtfmHist = zeros(Float32, numTS,numDOFPerNode)
     FHydroHist = zeros(Float32, numTS,numDOFPerNode)
     FMooringHist = zeros(Float32, numTS,numDOFPerNode)
+    topFReaction_sp1 = zeros(Float32, numDOFPerNode)
 
     #..................................................................
     #                          INITIAL SOLVE
@@ -832,28 +833,11 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
     if inputs.hydroOn
 
-        # Initial topside solve (this is run for t > 0 even if !hydroOn, but initial conditions account for the topside fine if there's no bottomside. We need it here to get topFReaction.)
-        if inputs.hydroOn
-            CN2H = calcHubRotMat(u_s_prp[4:6], azi_s)
-        else
-            CN2H = calcHubRotMat(zeros(3), azi_s)
-        end
+        CN2H = calcHubRotMat(u_s_prp[4:6], azi_s)
         CH2N = LinearAlgebra.transpose(CN2H) # rotation matrices are always orthogonal, therefore inv(CN2H) = transpose(CN2H), and transpose is much faster.
 
-        if inputs.aeroLoadsOn > 0
-            topFexternal = frame_convert(aeroVals[1,:], CN2H)
-            topFDOFs = aeroDOFs
-        end
-
-        if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-            _, _, topFReaction = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[1],delta_t,topElStorage,top_rom,topFexternal,Int.(topFDOFs),CN2H,rbData)
-        else # evalulate structural dynamics using conventional representation
-            _, _, topFReaction = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[1],delta_t,topElStorage,topFexternal,Int.(topFDOFs),CN2H,rbData)
-        end
-
         # Initial coupled bottomside solve using reaction force from topside
-        bottomFexternal = frame_convert(-1*topFReaction, CN2H) #TODO: is FReaction in hub or inertial reference frame?
-        # bottomFexternal = zeros(6)
+        bottomFexternal = zeros(6)
         bottomFDOFs = collect(bottom_totalNumDOF-numDOFPerNode+1:bottom_totalNumDOF)
         FPtfm_n = FHydro_n + FMooring_n
 
@@ -948,7 +932,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
         genTorque_j = genTorque_s
         torqueDriveShaft_j = torqueDriveShaft_s
 
-        if inputs.hydroOn
+        if inputs.hydroOn # TODO: this can be simplified with the above if statement
             u_s_prp_n = copy(u_sp1_prp)
             udot_s_prp_n = copy(udot_sp1_prp)
             uddot_s_prp_n = copy(uddot_sp1_prp)
@@ -1031,7 +1015,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
                 Crotor = 0
                 Krotor = 0
                 azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
-                -FReaction_j[6],-torqueDriveShaft_j,
+                -topFReaction_j[6],-torqueDriveShaft_j,
                 azi_s,Omega_s,OmegaDot_s,delta_t)
             else
                 error("omega control option not correctly specified")
@@ -1048,6 +1032,9 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
             # Update reference frame transformation and convert aerodynamic loads to hub reference frame
             if inputs.hydroOn
                 CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
+                uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
+                udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
+                rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
             else
                 CN2H = calcHubRotMat(zeros(3), azi_j)
             end
@@ -1060,17 +1047,15 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
             #------------------------------------
             # TOPSIDE STRUCTURAL MODULE
             #------------------------------------
-            
             if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                topElStrain, topDispOut, topFReaction = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(topFDOFs),CN2H,rbData)
+                _, topDispTmp, topFReaction_sp1 = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
             else # evalulate structural dynamics using conventional representation
-                topElStrain, topDispOut, topFReaction = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(topFDOFs),CN2H,rbData)
+                _, topDispTmp, topFReaction_sp1 = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
             end
 
+            topFReaction_sp1[3] = 0.0
             u_jLast = copy(u_j)
-            u_j = topDispOut.displ_sp1
-            udot_j = topDispOut.displdot_sp1
-            uddot_j = topDispOut.displddot_sp1
+            u_j = topDispTmp.displ_sp1
 
             ## calculate norms
             uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
@@ -1089,7 +1074,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
         # COUPLED BOTTOMSIDE STRUCTURAL/HYDRO/MOORING MODULES
         #------------------------------------
 
-        bottomFexternal = frame_convert(-1*topFReaction, CN2H)
+        bottomFexternal = frame_convert(-1*topFReaction_sp1, CN2H)
         # bottomFexternal = zeros(6)
 
         ## Evaluate hydro-structural dynamics
@@ -1117,10 +1102,12 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
             u_s_ptfm_h = bottomUncoupledDisps.displ_sp1
             u_s_prp_n = frame_convert(u_s_ptfm_h[prpDOFs], CH2N)
             udot_s_ptfm_h = bottomUncoupledDisps.displdot_sp1
-            udot_s_prp_n = frame_convert(udot_s_ptfm_h[prpDOFs], CH2N)
+            udot_s_prp_h = udot_s_ptfm_h[prpDOFs]
+            udot_s_prp_n = frame_convert(udot_s_prp_h, CH2N)
 
             # update current acceleration estimates from the coupled solve to account for added mass
             uddot_s_ptfm_h = bottomCoupledDisps.displddot_sp1
+            uddot_s_prp_h = uddot_s_ptfm_h[prpDOFs]
             uddot_s_prp_n = frame_convert(uddot_s_ptfm_h[prpDOFs], CH2N)
 
             # update displacement and velocity predictions for next time step
@@ -1137,12 +1124,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
             else
                 bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
             end
-
-            # println(u_j_ptfm_n)
-            # println(udot_j_ptfm_n)
-            # println(uddot_j_ptfm_n)
-            # println(frc_j_hydro_n)
-            # println(frc_j_mooring_n)
+            
         end
 
         #------------------------------------
@@ -1153,6 +1135,31 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
         aziNorm = 1e5
         gbNorm = 0.0 #initialize norms for various module states
         while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
+
+            # Update reference frame transformation and convert aerodynamic loads to hub reference frame
+            if inputs.hydroOn
+                CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
+                rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+            else
+                CN2H = calcHubRotMat(zeros(3), azi_j)
+            end
+            CH2N = LinearAlgebra.transpose(CN2H)
+
+            if inputs.aeroLoadsOn > 0
+                topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+            end
+
+            if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
+                topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+            else # evalulate structural dynamics using conventional representation
+                topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+            end
+
+            u_jLast = copy(u_j)
+            u_j = topDispOut.displ_sp1
+            udot_j = topDispOut.displdot_sp1
+            uddot_j = topDispOut.displddot_sp1
+
             ## calculate norms
             uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
             aziNorm = 0.0 #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
@@ -1205,7 +1212,7 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
         end
         
         uHist[i+1,:] = u_s
-        FReactionHist[i+1,:] = FReaction_j
+        FReactionHist[i+1,:] = topFReaction_j
         
         for ii = 1:length(topElStrain)
             eps_xx_0_hist[:,ii,i] = topElStrain[ii].eps_xx_0
