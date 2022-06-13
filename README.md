@@ -25,7 +25,7 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 
     -	Install Julia 1.7+ (brew/apt-get install, or download the binary from julialang.org, more detail here https://julialang.org/downloads/platform/) such that it is on the system path
 
-    -	Clone the packages you will be developing (e.g. OWENS, GyricFEA, VAWTAero, etc)
+    -	Clone the packages you will be developing into an easy to access working folder (e.g. OWENS, GyricFEA, VAWTAero, etc)
 
     -	If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or the equivalent
         * http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
@@ -37,6 +37,8 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 
 
     -	Install the custom packages in the following order to prevent precompilation dependency errors.
+				* GXBeam.jl (specifically the zip included here)
+				* OpenFASTWrappers.jl
         * VAWTAero.jl
         * GyricFEA.jl
         * PreComp.jl
@@ -45,7 +47,7 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
         * ModelGen.jl 				
 
 
-    -	Install custom repositories you want to develop by starting Julia from the directory you are developing and using the command:
+    -	Install custom repositories you want to develop by starting Julia from the cloned directory and using the command:
         * ] dev .
         * This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update 	
 

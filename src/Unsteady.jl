@@ -832,9 +832,13 @@ function userDefinedGenerator(t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,in
         integrator = integrator + (omega_RPM - omega_RPM0)*dt
         deriv = (omega_RPM-omegalast_RPM)/dt
         controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator
-        # if t>20.0
-        #     controllerQ = 350.0
+        # if t>40.0
+        #     controllerQ = 145.0
         # end
+        # if omega_RPM<0.0 || t>75.0
+        #     controllerQ = 20*(omega_RPM)
+        # end
+        # println("$t $controllerQ")
     #     # # Synchronous Generator: 17m generator from SAND-78-0577 x10 and scaled up for rotation rate
     #     # k = 57.6 #N-m-s/rad
     #     # D = 1.27e3 #N-m/rad
