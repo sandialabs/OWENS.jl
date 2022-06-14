@@ -18,6 +18,7 @@ mutable struct Inputs
     driveTrainOn
     generatorOn
     hydroOn
+    topsideOn
     interpOrder
     hd_input_file
     md_input_file
@@ -96,6 +97,7 @@ function Inputs(;analysisType = "TNB",
     driveTrainOn = false,
     generatorOn = false,
     hydroOn = false,
+    topsideOn = true,
     interpOrder = 2,
     hd_input_file = "none",
     md_input_file = "none",
@@ -121,7 +123,7 @@ function Inputs(;analysisType = "TNB",
     )
 
     return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,interpOrder,hd_input_file,md_input_file,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)

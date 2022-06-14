@@ -1177,8 +1177,10 @@ function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNode) #node, dof, bc
             pBC[(i-1)*numDOFPerNode+1:i*numDOFPerNode, :] = hcat(ones(numDOFPerNode)*fixedNodes[i], collect(1:numDOFPerNode), zeros(Int, numDOFPerNode) )
         end
         for i = 1:length(fixedDOFs)
-            dofBCs = hcat(setdiff([1:numNodes], fixedNodes), ones(Int,numNodes)*fixedDOFs[i], zeros(Int,numNodes)) # this avoids duplicating nodes already counted for by fixedNodes
-            pBC[length(fixedNodes)*numDOFPerNode+numDOFPerNode+(i-1)*numNodes+1:length(fixedNodes)+numDOFPerNode+i*numNodes, :] = dofBCs
+            newNodes = setdiff(1:numNodes, fixedNodes) # this avoids duplicating nodes already counted for by fixedNodes
+            numNewNodes = length(newNodes)
+            dofBCs = hcat(newNodes, ones(Int,numNewNodes)*fixedDOFs[i], zeros(Int,numNewNodes)) 
+            pBC[length(fixedNodes)*numDOFPerNode+(i-1)*numNewNodes+1:length(fixedNodes)*numDOFPerNode+i*numNewNodes, :] = dofBCs
         end
         pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes extra rows (i.e. rows of all zeros)
     end

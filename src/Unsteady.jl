@@ -587,47 +587,71 @@ external module with transient structural dynamics analysis capability.
 * `gam_xy_0_hist`: strain history for gam_xy_0 for each dof
 * `gam_xy_z_hist`: strain history for gam_xy_z for each dof
 """
-function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bottomEl,bin,aeroVals,aeroDOFs,deformAero;getLinearizedMatrices=false)
+function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals=nothing,aeroDOFs=nothing,deformAero=nothing,bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,getLinearizedMatrices=false)
 
     #..........................................................................
     #                             INITIALIZATION
     #..........................................................................
+
+    if (!inputs.topsideOn) && (!inputs.hydroOn)
+        error("No structure is being simulated!")
+    end
 
     ## General
     delta_t = inputs.delta_t
     numTS = Int(inputs.numTS)
     t = range(0, length=numTS, step=delta_t)
     numDOFPerNode = 6
-    top_totalNumDOF = topMesh.numNodes*numDOFPerNode
-    bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode
     CN2H = LinearAlgebra.I(3) # hub and inertial frames initialize as copies
     g = [0.0, 0.0, -9.80665]
 
     ## Initial conditions
-    u_s = zeros(Float32, top_totalNumDOF)
-    u_s = GyricFEA.setInitialConditions(topModel.initCond, u_s, numDOFPerNode)
-    udot_s = zero(u_s)
-    uddot_s = zero(u_s)
-    u_sm1 = copy(u_s)
     rbData = zeros(Float32, 9)
-    topDispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
-    topElStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), topMesh.numEl)
-
-    gb_s = 0
-    gbDot_s = 0
-    gbDotDot_s = 0
-    azi_s = 0
-    Omega_s = copy(inputs.OmegaInit)
-    OmegaDot_s = 0
-    genTorque_s = 0
-    torqueDriveShaft_s = 0
-
     Fexternal = 0.0
     Fdof = 1
 
+    if inputs.topsideOn
+        if isnothing(topModel)
+            error("topMesh must be specified if OWENS.Inputs.topsideOn")
+        elseif isnothing(topMesh)
+            error("topMesh must be specified if OWENS.Inputs.topsideOn")
+        elseif isnothing(topEl)
+            error("topEl must be specified if OWENS.Inputs.topsideOn")
+        end
+
+        top_totalNumDOF = topMesh.numNodes*numDOFPerNode
+        u_s = zeros(Float32, top_totalNumDOF)
+        u_s = GyricFEA.setInitialConditions(topModel.initCond, u_s, numDOFPerNode)
+        udot_s = zero(u_s)
+        uddot_s = zero(u_s)
+        u_sm1 = copy(u_s)
+    
+        topDispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
+        topElStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), topMesh.numEl)
+
+        gb_s = 0
+        gbDot_s = 0
+        gbDotDot_s = 0
+        azi_s = 0
+        Omega_s = copy(inputs.OmegaInit)
+        OmegaDot_s = 0
+        genTorque_s = 0
+        torqueDriveShaft_s = 0
+    end
+
     ## Hydrodynamics/mooring module initialization and coupling variables
     if inputs.hydroOn
+        if isnothing(bottomModel)
+            error("bottomMesh must be specified if OWENS.Inputs.hydroOn")
+        elseif isnothing(bottomMesh)
+            error("bottomMesh must be specified if OWENS.Inputs.hydroOn")
+        elseif isnothing(bottomEl)
+            error("bottomEl must be specified if OWENS.Inputs.hydroOn")
+        elseif isnothing(bin)
+            error("bin must be specified if OWENS.Inputs.hydroOn")
+        end
 
+        bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode
         u_s_ptfm = zeros(Float32, bottom_totalNumDOF)
         u_s_ptfm = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm, numDOFPerNode)
         udot_s_ptfm = zero(u_s_ptfm)
@@ -679,122 +703,142 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
 
     ## Structural dynamics initialization
     if inputs.analysisType=="ROM"
-        top_rom, topElStorage = GyricFEA.reducedOrderModel(topModel,topMesh,topEl,u_s) #construct reduced order model
-        bottom_rom, bottomElStorage = GyricFEA.reducedOrderModel(bottomModel,bottomMesh,bottomEl,u_s_ptfm)
+        if inputs.topsideOn
+            top_rom, topElStorage = GyricFEA.reducedOrderModel(topModel,topMesh,topEl,u_s) #construct reduced order model
+            
+            #set up inital values in modal space
+            topJointTransformTrans = topModel.jointTransform'
+            u_sRed = topjointTransformTrans*u_s
+            udot_sRed = topjointTransformTrans*udot_s
+            uddot_sRed = topjointTransformTrans*uddot_s
 
-        #set up inital values in modal space
-        topJointTransformTrans = topModel.jointTransform'
-        u_sRed = topjointTransformTrans*u_s
-        udot_sRed = topjointTransformTrans*udot_s
-        uddot_sRed = topjointTransformTrans*uddot_s
+            topJointTransformTrans = bottomModel.jointTransform'
+            u_sRed_ptfm = jointTransformTrans*u_s_ptfm
+            udot_sRed_ptfm = jointTransformTrans*udot_s_ptfm
+            uddot_sRed_ptfm = jointTransformTrans*uddot_s_ptfm
 
-        topJointTransformTrans = bottomModel.jointTransform'
-        u_sRed_ptfm = jointTransformTrans*u_s_ptfm
-        udot_sRed_ptfm = jointTransformTrans*udot_s_ptfm
-        uddot_sRed_ptfm = jointTransformTrans*uddot_s_ptfm
+            topBC = topModel.BC
+            u_s2 = GyricFEA.applyBCModalVec(u_sRed,topBC.numpBC,topBC.map)
+            udot_s2 = GyricFEA.applyBCModalVec(udot_sRed,topBC.numpBC,topBC.map)
+            uddot_s2 = GyricFEA.applyBCModalVec(uddot_sRed,topBC.numpBC,topBC.map)
 
-        topBC = topModel.BC
-        u_s2 = GyricFEA.applyBCModalVec(u_sRed,topBC.numpBC,topBC.map)
-        udot_s2 = GyricFEA.applyBCModalVec(udot_sRed,topBC.numpBC,topBC.map)
-        uddot_s2 = GyricFEA.applyBCModalVec(uddot_sRed,topBC.numpBC,topBC.map)
+            top_invPhi = top_rom.invPhi
 
-        bottomBC = bottomModel.BC
-        u_s2_ptfm = GyricFEA.applyBCModalVec(u_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
-        udot_s2_ptfm = GyricFEA.applyBCModalVec(udot_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
-        uddot_s2_ptfm = GyricFEA.applyBCModalVec(uddot_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
+            eta_s      = top_invPhi*u_s2
+            etadot_s   = top_invPhi*udot_s2
+            etaddot_s  = top_invPhi*uddot_s2
+        end
 
-        top_invPhi = top_rom.invPhi
-        bottom_invPhi = bottom_rom.invPhi
-
-        eta_s      = top_invPhi*u_s2
-        etadot_s   = top_invPhi*udot_s2
-        etaddot_s  = top_invPhi*uddot_s2
-
-        eta_s_ptfm = bottom_invPhi*u_s2_ptfm
-        etadot_s_ptfm = bottom_invPhi*udot_s2_ptfm
-        etaddot_s_ptfm = bottom_invPhi*uddot_s2_ptfm
+        if inputs.hydroOn
+            bottom_rom, bottomElStorage = GyricFEA.reducedOrderModel(bottomModel,bottomMesh,bottomEl,u_s_ptfm)
+            bottomBC = bottomModel.BC
+            u_s2_ptfm = GyricFEA.applyBCModalVec(u_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
+            udot_s2_ptfm = GyricFEA.applyBCModalVec(udot_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
+            uddot_s2_ptfm = GyricFEA.applyBCModalVec(uddot_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
+            bottom_invPhi = bottom_rom.invPhi
+            eta_s_ptfm = bottom_invPhi*u_s2_ptfm
+            etadot_s_ptfm = bottom_invPhi*udot_s2_ptfm
+            etaddot_s_ptfm = bottom_invPhi*uddot_s2_ptfm
+        end
+        
     else
-        topElStorage = GyricFEA.initialElementCalculations(topModel,topEl,topMesh) #perform initial element calculations for conventional structural dynamics analysis
-        bottomElStorage = GyricFEA.initialElementCalculations(bottomModel,bottomEl,bottomMesh)
+        if inputs.topsideOn
+            topElStorage = GyricFEA.initialElementCalculations(topModel,topEl,topMesh) #perform initial element calculations for conventional structural dynamics analysis
+        end
+        if inputs.hydroOn
+            bottomElStorage = GyricFEA.initialElementCalculations(bottomModel,bottomEl,bottomMesh)
+        end
     end
 
-    topsideMass, topsideMOI, topsideCG = GyricFEA.calculateStructureMassProps(topElStorage)
-
-    topModel.jointTransform, topModel.reducedDOFList = GyricFEA.createJointTransform(topModel.joint,topMesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    if inputs.topsideOn
+        topsideMass, topsideMOI, topsideCG = GyricFEA.calculateStructureMassProps(topElStorage)
+        topModel.jointTransform, topModel.reducedDOFList = GyricFEA.createJointTransform(topModel.joint,topMesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
     
-    ## Implement the mass matrix of the topside as a concentrated mass on the bottom side
-    topsideMassMat = [ #TODO: I'm sure there's a more efficient way of doing this
-        topsideMass                0.0                        0.0                        0.0                        topsideMass*topsideCG[3]  -topsideMass*topsideCG[2]
-        0.0                        topsideMass                0.0                       -topsideMass*topsideCG[3]   0.0                        topsideMass*topsideCG[1]
-        0.0                        0.0                        topsideMass                topsideMass*topsideCG[2]  -topsideMass*topsideCG[1]   0.0
-        0.0                       -topsideMass*topsideCG[3]   topsideMass*topsideCG[2]   topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
-       -topsideMass*topsideCG[3]   0.0                       -topsideMass*topsideCG[1]   topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
-       -topsideMass*topsideCG[2]   topsideMass*topsideCG[1]   0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
-        # topsideMass                0.0                        0.0                        0.0                        0.0                        0.0 
-        # 0.0                        topsideMass                0.0                        0.0                        0.0                        0.0 
-        # 0.0                        0.0                        topsideMass                0.0                        0.0                        0.0 
-        # 0.0                        0.0                        0.0                        topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
-        # 0.0                        0.0                        0.0                        topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
-        # 0.0                        0.0                        0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
-    ]
+        if inputs.hydroOn
+            ## Implement the mass matrix of the topside as a concentrated mass on the bottom side
+            topsideMassMat = [ #TODO: I'm sure there's a more efficient way of doing this
+                topsideMass                0.0                        0.0                        0.0                        topsideMass*topsideCG[3]  -topsideMass*topsideCG[2]
+                0.0                        topsideMass                0.0                       -topsideMass*topsideCG[3]   0.0                        topsideMass*topsideCG[1]
+                0.0                        0.0                        topsideMass                topsideMass*topsideCG[2]  -topsideMass*topsideCG[1]   0.0
+                0.0                       -topsideMass*topsideCG[3]   topsideMass*topsideCG[2]   topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
+               -topsideMass*topsideCG[3]   0.0                       -topsideMass*topsideCG[1]   topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
+               -topsideMass*topsideCG[2]   topsideMass*topsideCG[1]   0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
+                # topsideMass                0.0                        0.0                        0.0                        0.0                        0.0 
+                # 0.0                        topsideMass                0.0                        0.0                        0.0                        0.0 
+                # 0.0                        0.0                        topsideMass                0.0                        0.0                        0.0 
+                # 0.0                        0.0                        0.0                        topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
+                # 0.0                        0.0                        0.0                        topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
+                # 0.0                        0.0                        0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
+            ]
 
-    nodalinputdata = [
-    length(bottomMesh.z) "M6" 1 1 topsideMassMat[1,1]
-    length(bottomMesh.z) "M6" 1 2 topsideMassMat[1,2]
-    length(bottomMesh.z) "M6" 1 3 topsideMassMat[1,3]
-    length(bottomMesh.z) "M6" 1 4 topsideMassMat[1,4]
-    length(bottomMesh.z) "M6" 1 5 topsideMassMat[1,5]
-    length(bottomMesh.z) "M6" 1 6 topsideMassMat[1,6]
-    length(bottomMesh.z) "M6" 2 1 topsideMassMat[2,1]
-    length(bottomMesh.z) "M6" 2 2 topsideMassMat[2,2]
-    length(bottomMesh.z) "M6" 2 3 topsideMassMat[2,3]
-    length(bottomMesh.z) "M6" 2 4 topsideMassMat[2,4]
-    length(bottomMesh.z) "M6" 2 5 topsideMassMat[2,5]
-    length(bottomMesh.z) "M6" 2 6 topsideMassMat[2,6]
-    length(bottomMesh.z) "M6" 3 1 topsideMassMat[3,1]
-    length(bottomMesh.z) "M6" 3 2 topsideMassMat[3,2]
-    length(bottomMesh.z) "M6" 3 3 topsideMassMat[3,3]
-    length(bottomMesh.z) "M6" 3 4 topsideMassMat[3,4]
-    length(bottomMesh.z) "M6" 3 5 topsideMassMat[3,5]
-    length(bottomMesh.z) "M6" 3 6 topsideMassMat[3,6]
-    length(bottomMesh.z) "M6" 4 1 topsideMassMat[4,1]
-    length(bottomMesh.z) "M6" 4 2 topsideMassMat[4,2]
-    length(bottomMesh.z) "M6" 4 3 topsideMassMat[4,3]
-    length(bottomMesh.z) "M6" 4 4 topsideMassMat[4,4]
-    length(bottomMesh.z) "M6" 4 5 topsideMassMat[4,5]
-    length(bottomMesh.z) "M6" 4 6 topsideMassMat[4,6]
-    length(bottomMesh.z) "M6" 5 1 topsideMassMat[5,1]
-    length(bottomMesh.z) "M6" 5 2 topsideMassMat[5,2]
-    length(bottomMesh.z) "M6" 5 3 topsideMassMat[5,3]
-    length(bottomMesh.z) "M6" 5 4 topsideMassMat[5,4]
-    length(bottomMesh.z) "M6" 5 5 topsideMassMat[5,5]
-    length(bottomMesh.z) "M6" 5 6 topsideMassMat[5,6]
-    length(bottomMesh.z) "M6" 6 1 topsideMassMat[6,1]
-    length(bottomMesh.z) "M6" 6 2 topsideMassMat[6,2]
-    length(bottomMesh.z) "M6" 6 3 topsideMassMat[6,3]
-    length(bottomMesh.z) "M6" 6 4 topsideMassMat[6,4]
-    length(bottomMesh.z) "M6" 6 5 topsideMassMat[6,5]
-    length(bottomMesh.z) "M6" 6 6 topsideMassMat[6,6]
-    ]
+            nodalinputdata = [
+            length(bottomMesh.z) "M6" 1 1 topsideMassMat[1,1]
+            length(bottomMesh.z) "M6" 1 2 topsideMassMat[1,2]
+            length(bottomMesh.z) "M6" 1 3 topsideMassMat[1,3]
+            length(bottomMesh.z) "M6" 1 4 topsideMassMat[1,4]
+            length(bottomMesh.z) "M6" 1 5 topsideMassMat[1,5]
+            length(bottomMesh.z) "M6" 1 6 topsideMassMat[1,6]
+            length(bottomMesh.z) "M6" 2 1 topsideMassMat[2,1]
+            length(bottomMesh.z) "M6" 2 2 topsideMassMat[2,2]
+            length(bottomMesh.z) "M6" 2 3 topsideMassMat[2,3]
+            length(bottomMesh.z) "M6" 2 4 topsideMassMat[2,4]
+            length(bottomMesh.z) "M6" 2 5 topsideMassMat[2,5]
+            length(bottomMesh.z) "M6" 2 6 topsideMassMat[2,6]
+            length(bottomMesh.z) "M6" 3 1 topsideMassMat[3,1]
+            length(bottomMesh.z) "M6" 3 2 topsideMassMat[3,2]
+            length(bottomMesh.z) "M6" 3 3 topsideMassMat[3,3]
+            length(bottomMesh.z) "M6" 3 4 topsideMassMat[3,4]
+            length(bottomMesh.z) "M6" 3 5 topsideMassMat[3,5]
+            length(bottomMesh.z) "M6" 3 6 topsideMassMat[3,6]
+            length(bottomMesh.z) "M6" 4 1 topsideMassMat[4,1]
+            length(bottomMesh.z) "M6" 4 2 topsideMassMat[4,2]
+            length(bottomMesh.z) "M6" 4 3 topsideMassMat[4,3]
+            length(bottomMesh.z) "M6" 4 4 topsideMassMat[4,4]
+            length(bottomMesh.z) "M6" 4 5 topsideMassMat[4,5]
+            length(bottomMesh.z) "M6" 4 6 topsideMassMat[4,6]
+            length(bottomMesh.z) "M6" 5 1 topsideMassMat[5,1]
+            length(bottomMesh.z) "M6" 5 2 topsideMassMat[5,2]
+            length(bottomMesh.z) "M6" 5 3 topsideMassMat[5,3]
+            length(bottomMesh.z) "M6" 5 4 topsideMassMat[5,4]
+            length(bottomMesh.z) "M6" 5 5 topsideMassMat[5,5]
+            length(bottomMesh.z) "M6" 5 6 topsideMassMat[5,6]
+            length(bottomMesh.z) "M6" 6 1 topsideMassMat[6,1]
+            length(bottomMesh.z) "M6" 6 2 topsideMassMat[6,2]
+            length(bottomMesh.z) "M6" 6 3 topsideMassMat[6,3]
+            length(bottomMesh.z) "M6" 6 4 topsideMassMat[6,4]
+            length(bottomMesh.z) "M6" 6 5 topsideMassMat[6,5]
+            length(bottomMesh.z) "M6" 6 6 topsideMassMat[6,6]
+            ]
 
-    topsideConcTerms = GyricFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=nodalinputdata, jointData=topModel.joint)
+            topsideConcTerms = GyricFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=nodalinputdata, jointData=topModel.joint)
 
-    bottomModel.nodalTerms.concMass += topsideConcTerms.concMass
+            bottomModel.nodalTerms.concMass += topsideConcTerms.concMass
+        end # if inputs.hydroOn
+    end # if inputs.topsideOn
 
     ## History array initialization
-    uHist = zeros(Float32, numTS, length(u_s))
-    uHist[1,:] = u_s          #store initial condition
+    if inputs.topsideOn
+        uHist = zeros(Float32, numTS, length(u_s))
+        uHist[1,:] = u_s          #store initial condition
+        eps_xx_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        eps_xx_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        eps_xx_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        gam_xz_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        gam_xz_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        gam_xy_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        gam_xy_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+    else
+        uHist = zeros(Float32, numTS, numDOFPerNode)
+        eps_xx_0_hist = zeros(Float32, 4,1, numTS)
+        eps_xx_z_hist = zeros(Float32, 4,1, numTS)
+        eps_xx_y_hist = zeros(Float32, 4,1, numTS)
+        gam_xz_0_hist = zeros(Float32, 4,1, numTS)
+        gam_xz_y_hist = zeros(Float32, 4,1, numTS)
+        gam_xy_0_hist = zeros(Float32, 4,1, numTS)
+        gam_xy_z_hist = zeros(Float32, 4,1, numTS)
+    end
 
     FReactionHist = zeros(Float32, numTS,6)
-    
-    eps_xx_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-    eps_xx_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-    eps_xx_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-    gam_xz_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-    gam_xz_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-    gam_xy_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-    gam_xy_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-
     aziHist = zeros(Float32, numTS)
     OmegaHist = zeros(Float32, numTS)
     OmegaDotHist = zeros(Float32, numTS)
@@ -805,26 +849,30 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     genPower = zeros(Float32, numTS)
     torqueDriveShaft = zeros(Float32, numTS)
 
-    aziHist[1] = azi_s
-    OmegaHist[1] = Omega_s
-    OmegaDotHist[1] = OmegaDot_s
-    FReactionsm1 = zeros(Float32, 6)
-    FReactionHist[1,:] = FReactionsm1 
-    topFReaction_j = FReactionsm1
-    gbHist[1] = gb_s
-    gbDotHist[1] = gbDot_s
-    gbDotDotHist[1] = gbDotDot_s
-    genTorque[1] = genTorque_s
-    torqueDriveShaft[1] = torqueDriveShaft_s
+    if inputs.topsideOn
+        aziHist[1] = azi_s
+        OmegaHist[1] = Omega_s
+        OmegaDotHist[1] = OmegaDot_s
+        FReactionsm1 = zeros(Float32, 6)
+        FReactionHist[1,:] = FReactionsm1 
+        topFReaction_j = FReactionsm1
+        gbHist[1] = gb_s
+        gbDotHist[1] = gbDot_s
+        gbDotDotHist[1] = gbDotDot_s
+        genTorque[1] = genTorque_s
+        torqueDriveShaft[1] = torqueDriveShaft_s
+    end
 
     uHist_prp = zeros(Float32, numTS,numDOFPerNode)
     if inputs.hydroOn
         uHist_prp[1,:] = u_s_prp
+        if inputs.topsideOn
+            topFReaction_sp1 = zeros(Float32, numDOFPerNode)
+        end
     end
     FPtfmHist = zeros(Float32, numTS,numDOFPerNode)
     FHydroHist = zeros(Float32, numTS,numDOFPerNode)
     FMooringHist = zeros(Float32, numTS,numDOFPerNode)
-    topFReaction_sp1 = zeros(Float32, numDOFPerNode)
 
     #..................................................................
     #                          INITIAL SOLVE
@@ -833,7 +881,11 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
     if inputs.hydroOn
 
-        CN2H = calcHubRotMat(u_s_prp[4:6], azi_s)
+        if inputs.topsideOn
+            CN2H = calcHubRotMat(u_s_prp[4:6], azi_s)
+        else
+            CN2H = calcHubRotMat(u_s_prp[4:6], 0.0)
+        end
         CH2N = LinearAlgebra.transpose(CN2H) # rotation matrices are always orthogonal, therefore inv(CN2H) = transpose(CN2H), and transpose is much faster.
 
         # Initial coupled bottomside solve using reaction force from topside
@@ -893,192 +945,202 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
         end
 
         ## Check for specified rotor speed at t+dt #TODO: fix this so that it can be probably accounted for in RK4
-        if (inputs.turbineStartup == 0)
-            inputs.omegaControl = true #TODO: are we setting this back?
-            if (inputs.usingRotorSpeedFunction) #use user specified rotor speed profile function
-                _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,delta_t)
-                Omega_s = omegaCurrent
-            else #use discreteized rotor speed profile function
-                omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],inputs.tocp,inputs.Omegaocp,delta_t)
-                if (terminateSimulation)
-                    break
+        if inputs.topsideOn
+            if (inputs.turbineStartup == 0)
+                inputs.omegaControl = true #TODO: are we setting this back?
+                if (inputs.usingRotorSpeedFunction) #use user specified rotor speed profile function
+                    _,omegaCurrent,_ = getRotorPosSpeedAccelAtTime(t[i],t[i+1],0.0,delta_t)
+                    Omega_s = omegaCurrent
+                else #use discreteized rotor speed profile function
+                    omegaCurrent,OmegaDotCurrent,terminateSimulation = omegaSpecCheck(t[i+1],inputs.tocp,inputs.Omegaocp,delta_t)
+                    if (terminateSimulation)
+                        break
+                    end
+                    Omega_s = omegaCurrent
+                    OmegaDot_s = OmegaDotCurrent
                 end
-                Omega_s = omegaCurrent
-                OmegaDot_s = OmegaDotCurrent
+            else
+                omegaCurrent = 0.0
             end
-        else
-            omegaCurrent = 0.0
+
+            ## Initialize "j" Gauss-Seidel iteration variables
+            u_j=u_s
+            udot_j=udot_s
+            uddot_j=uddot_s
+
+            azi_j = azi_s
+            Omega_j = Omega_s
+            OmegaDot_j = OmegaDot_s
+            gb_j = gb_s
+            gbDot_j = gbDot_s
+            gbDotDot_j = gbDotDot_s
+            genTorque_j = genTorque_s
+            torqueDriveShaft_j = torqueDriveShaft_s
         end
 
         ## Extrapolate platform motions at t+dt to send to HydroDyn/MoorDyn #TODO: use Adams-Bashforth method if i > 4?
         if inputs.hydroOn
-            u_sp1_prp = extrap_pred_vals(recent_u_prp, recent_times, t[i+1], inputs.interpOrder)
-            udot_sp1_prp = extrap_pred_vals(recent_udot_prp, recent_times, t[i+1], inputs.interpOrder)
-            uddot_sp1_prp = extrap_pred_vals(recent_uddot_prp, recent_times, t[i+1], inputs.interpOrder)
-            FPtfm_sp1 = extrap_pred_vals(recent_FPtfm, recent_times, t[i+1], inputs.interpOrder)
-        end
-
-        ## Initialize "j" Gauss-Seidel iteration variables
-        u_j=u_s
-        udot_j=udot_s
-        uddot_j=uddot_s
-
-        azi_j = azi_s
-        Omega_j = Omega_s
-        OmegaDot_j = OmegaDot_s
-        gb_j = gb_s
-        gbDot_j = gbDot_s
-        gbDotDot_j = gbDotDot_s
-        genTorque_j = genTorque_s
-        torqueDriveShaft_j = torqueDriveShaft_s
-
-        if inputs.hydroOn # TODO: this can be simplified with the above if statement
-            u_s_prp_n = copy(u_sp1_prp)
-            udot_s_prp_n = copy(udot_sp1_prp)
-            uddot_s_prp_n = copy(uddot_sp1_prp)
+            u_s_prp_n = extrap_pred_vals(recent_u_prp, recent_times, t[i+1], inputs.interpOrder)
+            udot_s_prp_n = extrap_pred_vals(recent_udot_prp, recent_times, t[i+1], inputs.interpOrder)
+            uddot_s_prp_n = extrap_pred_vals(recent_uddot_prp, recent_times, t[i+1], inputs.interpOrder)
             u_s_prp_predState = copy(u_sp1_prp_predState)
-            FPtfm_n = copy(FPtfm_sp1)
+            FPtfm_n = extrap_pred_vals(recent_FPtfm, recent_times, t[i+1], inputs.interpOrder)
             FHydro_n = copy(FHydro_n) # this doesn't have to be used outside the while loop outside of tracking purposes
             FMooring_n = copy(FMooring_n)
         end
 
-        #TODO: put these in the model
-        TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 300 #max iteration for various modules
-        numIterations = 1
-        uNorm = 1e5
-        aziNorm = 1e5
-        gbNorm = 0.0 #initialize norms for various module states
+        if inputs.topsideOn
+            #TODO: put these in the model
+            TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
+            MAXITER = 300 #max iteration for various modules
+            numIterations = 1
+            uNorm = 1e5
+            aziNorm = 1e5
+            gbNorm = 0.0 #initialize norms for various module states
 
-        ## Gauss-Seidel predictor-corrector loop
-        while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
-            # println("Iteration $numIterations")
+            ## Gauss-Seidel predictor-corrector loop
+            while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
+                # println("Iteration $numIterations")
 
-            #------------------
-            # GENERATOR MODULE
-            #------------------
-            genTorque_j = 0
-            if inputs.generatorOn
-                if inputs.driveTrainOn
-                    if inputs.useGeneratorFunction
-                        genTorqueHSS0 = userDefinedGenerator(gbDot_j*inputs.gearRatio)
+                #------------------
+                # GENERATOR MODULE
+                #------------------
+                genTorque_j = 0
+                if inputs.generatorOn
+                    if inputs.driveTrainOn
+                        if inputs.useGeneratorFunction
+                            genTorqueHSS0 = userDefinedGenerator(gbDot_j*inputs.gearRatio)
+                        else
+                            error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(inputs.generatorProps,gbDot_j*inputs.gearRatio)
+                        end
                     else
-                        error("simpleGenerator not fully implemented")#[genTorqueHSS0] = simpleGenerator(inputs.generatorProps,gbDot_j*inputs.gearRatio)
+                        if inputs.useGeneratorFunction
+                            genTorqueHSS0 = userDefinedGenerator(Omega_j)
+                        else
+                            genTorqueHSS0 = simpleGenerator(model,Omega_j)
+                        end
                     end
-                else
-                    if inputs.useGeneratorFunction
-                        genTorqueHSS0 = userDefinedGenerator(Omega_j)
-                    else
-                        genTorqueHSS0 = simpleGenerator(model,Omega_j)
-                    end
+                    #should eventually account for Omega = gbDot*gearRatio here...
+                    genTorque_j = genTorqueHSS0*inputs.gearRatio*inputs.gearBoxEfficiency #calculate generator torque on LSS side
+                    #         genTorqueAppliedToTurbineRotor0 = -genTorque0
+                    #         genTorqueAppliedToPlatform0 = genTorqueHSS0
                 end
-                #should eventually account for Omega = gbDot*gearRatio here...
-                genTorque_j = genTorqueHSS0*inputs.gearRatio*inputs.gearBoxEfficiency #calculate generator torque on LSS side
-                #         genTorqueAppliedToTurbineRotor0 = -genTorque0
-                #         genTorqueAppliedToPlatform0 = genTorqueHSS0
-            end
 
-            #-------------------
-            # DRIVETRAIN MODULE
-            #-------------------
-            torqueDriveShaft_j = genTorque_j
-            gb_jLast = gb_j
-            if (!inputs.omegaControl)
-                if (inputs.driveTrainOn)
-                    torqueDriveShaft_j = calculateDriveShaftReactionTorque(inputs.driveShaftProps,
-                    azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi)
+                #-------------------
+                # DRIVETRAIN MODULE
+                #-------------------
+                torqueDriveShaft_j = genTorque_j
+                gb_jLast = gb_j
+                if (!inputs.omegaControl)
+                    if (inputs.driveTrainOn)
+                        torqueDriveShaft_j = calculateDriveShaftReactionTorque(inputs.driveShaftProps,
+                        azi_j,gb_j,Omega_j*2*pi,gbDot_j*2*pi)
 
-                    gb_j,gbDot_j,gbDotDot_j = updateRotorRotation(inputs.JgearBox,0,0,
-                    -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,delta_t)
+                        gb_j,gbDot_j,gbDotDot_j = updateRotorRotation(inputs.JgearBox,0,0,
+                        -genTorque_j,torqueDriveShaft_j,gb_s,gbDot_s,gbDotDot_s,delta_t)
+                    else
+                        gb_j = azi_j
+                        gbDot_j = Omega_j
+                        gbDotDot_j = OmegaDot_j
+                    end
                 else
                     gb_j = azi_j
-                    gbDot_j = Omega_j
-                    gbDotDot_j = OmegaDot_j
+                    gbDot_j = omegaCurrent*2*pi
+                    gbDotDot_j = 0
                 end
-            else
-                gb_j = azi_j
-                gbDot_j = omegaCurrent*2*pi
-                gbDotDot_j = 0
-            end
 
-            # Update rotor speed
-            azi_jLast = azi_j
-            if inputs.omegaControl
-                if (inputs.usingRotorSpeedFunction)
-                    azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
+                # Update rotor speed
+                azi_jLast = azi_j
+                if inputs.omegaControl
+                    if (inputs.usingRotorSpeedFunction)
+                        azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
+                    else
+                        Omega_j = Omega_s
+                        OmegaDot_j = OmegaDot_s
+                        azi_j = azi_s + Omega_j*delta_t*2*pi
+                    end
+                elseif !inputs.omegaControl
+                    Crotor = 0
+                    Krotor = 0
+                    azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
+                    -topFReaction_j[6],-torqueDriveShaft_j,
+                    azi_s,Omega_s,OmegaDot_s,delta_t)
                 else
-                    Omega_j = Omega_s
-                    OmegaDot_j = OmegaDot_s
-                    azi_j = azi_s + Omega_j*delta_t*2*pi
+                    error("omega control option not correctly specified")
                 end
-            elseif !inputs.omegaControl
-                Crotor = 0
-                Krotor = 0
-                azi_j,Omega_j,OmegaDot_j = updateRotorRotation(structureMOI[3,3],Crotor,Krotor,
-                -topFReaction_j[6],-torqueDriveShaft_j,
-                azi_s,Omega_s,OmegaDot_s,delta_t)
-            else
-                error("omega control option not correctly specified")
-            end
 
-            #---------------------
-            # AERODYNAMICS MODULE
-            #---------------------
-            # Calculate new aerodynamic loading
-            # TODO implement the actual module, we're just parsing prescribed loading right now
+                #---------------------
+                # AERODYNAMICS MODULE
+                #---------------------
+                # Calculate new aerodynamic loading
+                # TODO implement the actual module, we're just parsing prescribed loading right now
 
-            # deformAero(Omega_j*2*pi)
+                # deformAero(Omega_j*2*pi)
 
-            # Update reference frame transformation and convert aerodynamic loads to hub reference frame
-            if inputs.hydroOn
-                CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
-                uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
-                udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
-                rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
-            else
-                CN2H = calcHubRotMat(zeros(3), azi_j)
-            end
-            CH2N = LinearAlgebra.transpose(CN2H)
+                # Update reference frame transformation and convert aerodynamic loads to hub reference frame
+                if inputs.hydroOn
+                    CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
+                    uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
+                    udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
+                    rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+                else
+                    CN2H = calcHubRotMat(zeros(3), azi_j)
+                end
+                CH2N = LinearAlgebra.transpose(CN2H)
 
-            if inputs.aeroLoadsOn > 0
-                topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
-            end
+                if inputs.aeroLoadsOn > 0
+                    if isnothing(aeroVals)
+                        error("aeroVals must be specified if OWENS.Inputs.aeroLoadsOn")
+                    elseif isnothing(aeroDOFs)
+                        error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
+                    elseif isnothing(deformAero)
+                        error("deformAero must be specified if OWENS.Inputs.aeroLoadsOn")
+                    end
+                    topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
 
-            #------------------------------------
-            # TOPSIDE STRUCTURAL MODULE
-            #------------------------------------
-            if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                _, topDispTmp, topFReaction_sp1 = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-            else # evalulate structural dynamics using conventional representation
-                _, topDispTmp, topFReaction_sp1 = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-            end
+                else
+                    topFexternal = zeros(numDOFPerNode)
+                end
 
-            u_jLast = copy(u_j)
-            u_j = topDispTmp.displ_sp1
+                #------------------------------------
+                # TOPSIDE STRUCTURAL MODULE
+                #------------------------------------
+                if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
+                    topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                else # evalulate structural dynamics using conventional representation
+                    topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                end
 
-            ## calculate norms
-            uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
-            aziNorm = 0.0 #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-            gbNorm = 0.0 #LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+                u_jLast = copy(u_j)
+                u_j = topDispOut.displ_sp1
+                udot_j = topDispOut.displdot_sp1
+                uddot_j = topDispOut.displddot_sp1
 
-            numIterations = numIterations + 1
-            if numIterations==MAXITER
-                @warn "Maximum Iterations Met Breaking Iteration Loop"
-                break
-            end
+                ## calculate norms
+                uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+                aziNorm = 0.0 #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+                gbNorm = 0.0 #LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
 
-        end #end iteration while loop
+                numIterations = numIterations + 1
+                if numIterations==MAXITER
+                    @warn "Maximum Iterations Met Breaking Iteration Loop"
+                    break
+                end
+
+            end #end iteration while loop
+
+        end # if inputs.topsideOn
 
         #------------------------------------
         # COUPLED BOTTOMSIDE STRUCTURAL/HYDRO/MOORING MODULES
         #------------------------------------
-
-        bottomFexternal = frame_convert(-1*topFReaction_sp1, CN2H)
-        # bottomFexternal = zeros(6)
-
-        ## Evaluate hydro-structural dynamics
         if inputs.hydroOn
+            if inputs.topsideOn
+                bottomFexternal = frame_convert(-1*topFReaction_sp1, CN2H)
+                # bottomFexternal = zeros(6)
+            end
 
+            ## Evaluate hydro-structural dynamics
             # FAST updates HD/MD using t+dt inputs extrapolated from previous time steps, NOT from the new ElastoDyn motions
             VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
             if inputs.interpOrder == 1
@@ -1116,84 +1178,134 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
 
             u_sm1_ptfm_h = copy(u_s_ptfm_h)
             if inputs.analysisType=="ROM"
-                eta_s_ptfm_h = topDisps.eta_sp1 #eta_j
-                etadot_s_ptfm_h = topDisps.etadot_sp1 #etadot_j
-                etaddot_s_ptfm_h = topDisps.etaddot_sp1 #etaddot_j
+                eta_s_ptfm_h = bottomUncoupledDisps.eta_sp1 #eta_j
+                etadot_s_ptfm_h = bottomUncoupledDisps.etadot_sp1 #etadot_j
+                etaddot_s_ptfm_h = bottomCoupledDisps.etaddot_sp1 #etaddot_j
                 bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h, eta_s_ptfm_h, etadot_s_ptfm_h, etaddot_s_ptfm_h)
             else
                 bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
             end
-            
-        end
 
-        #------------------------------------
-        # TOPSIDE STRUCTURAL MODULE W/ RIGID BODY MOTIONS
-        #------------------------------------
-        numIterations = 1
-        uNorm = 1e5
-        aziNorm = 1e5
-        gbNorm = 0.0 #initialize norms for various module states
-        while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
+            #------------------------------------
+            # TOPSIDE STRUCTURAL MODULE W/ PLATFORM RIGID BODY MOTIONS
+            #------------------------------------
+            if inputs.topsideOn
+                numIterations = 1
+                uNorm = 1e5
+                aziNorm = 1e5
+                gbNorm = 0.0 #initialize norms for various module states
+                while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
 
-            # Update reference frame transformation and convert aerodynamic loads to hub reference frame
-            if inputs.hydroOn
-                CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
-                rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
-            else
-                CN2H = calcHubRotMat(zeros(3), azi_j)
-            end
-            CH2N = LinearAlgebra.transpose(CN2H)
+                    # Update reference frame transformation and convert aerodynamic loads to hub reference frame
+                    if inputs.hydroOn
+                        CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
+                        rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+                    else
+                        CN2H = calcHubRotMat(zeros(3), azi_j)
+                    end
+                    CH2N = LinearAlgebra.transpose(CN2H)
 
-            if inputs.aeroLoadsOn > 0
-                topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
-            end
+                    if inputs.aeroLoadsOn > 0
+                        topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+                    end
 
-            if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-            else # evalulate structural dynamics using conventional representation
-                topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-            end
+                    if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
+                        topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                    else # evalulate structural dynamics using conventional representation
+                        topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                    end
 
-            u_jLast = copy(u_j)
-            u_j = topDispOut.displ_sp1
-            udot_j = topDispOut.displdot_sp1
-            uddot_j = topDispOut.displddot_sp1
+                    u_jLast = copy(u_j)
+                    u_j = topDispOut.displ_sp1
+                    udot_j = topDispOut.displdot_sp1
+                    uddot_j = topDispOut.displddot_sp1
 
-            ## calculate norms
-            uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
-            aziNorm = 0.0 #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-            gbNorm = 0.0 #LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+                    ## calculate norms
+                    uNorm = 0.0 #LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+                    aziNorm = 0.0 #LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+                    gbNorm = 0.0 #LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
 
-            numIterations = numIterations + 1
-            if numIterations==MAXITER
-                @warn "Maximum Iterations Met Breaking Iteration Loop"
-                break
-            end
+                    numIterations = numIterations + 1
+                    if numIterations==MAXITER
+                        @warn "Maximum Iterations Met Breaking Iteration Loop"
+                        break
+                    end
 
-        end #end iteration while loop
+                end # iteration while loop
 
-        ## calculate converged generator torque/power
-        genTorquePlot = 0
-        if (inputs.useGeneratorFunction)
-            if (inputs.generatorOn || (inputs.turbineStartup==0))
-                println("simpleGenerator not fully implemented")#[genTorquePlot] = simpleGenerator(inputs.generatorProps,gbDot_j*inputs.gearRatio)
-            end
-        end
-        genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*inputs.gearRatio
+            end # if inputs.topsideOn
+
+        end # if inputs.hydroOn
 
         ## update timestepping variables and other states, store in history arrays
-        u_sm1 = copy(u_s)
-        u_s = u_j
-        udot_s = udot_j
-        uddot_s = uddot_j
+        if inputs.topsideOn
+            ## calculate converged generator torque/power
+            genTorquePlot = 0
+            if (inputs.useGeneratorFunction)
+                if (inputs.generatorOn || (inputs.turbineStartup==0))
+                    println("simpleGenerator not fully implemented")#[genTorquePlot] = simpleGenerator(inputs.generatorProps,gbDot_j*inputs.gearRatio)
+                end
+            end
+            genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*inputs.gearRatio
+            
+            u_sm1 = copy(u_s)
+            u_s = u_j
+            udot_s = udot_j
+            uddot_s = uddot_j
 
-        if inputs.analysisType=="ROM"
-            eta_s = topDisps.eta_sp1 #eta_j
-            etadot_s = topDisps.etadot_sp1 #etadot_j
-            etaddot_s = topDisps.etaddot_sp1 #etaddot_j
-            topDispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1, eta_s, etadot_s, etaddot_s)
-        else
-            topDispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
+            if inputs.analysisType=="ROM"
+                eta_s = topDisps.eta_sp1 #eta_j
+                etadot_s = topDisps.etadot_sp1 #etadot_j
+                etaddot_s = topDisps.etaddot_sp1 #etaddot_j
+                topDispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1, eta_s, etadot_s, etaddot_s)
+            else
+                topDispData = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
+            end
+
+            azi_s = azi_j
+            Omega_s = Omega_j
+            OmegaDot_s = OmegaDot_j
+
+            genTorque_s = genTorque_j
+            torqueDriveShaft_s = torqueDriveShaft_j
+
+            gb_s = gb_j
+            gbDot_s = gbDot_j
+            gbDotDot_s = gbDotDot_j
+
+            uHist[i+1,:] = u_s
+            FReactionHist[i+1,:] = topFReaction_j
+
+            aziHist[i+1] = azi_s
+            OmegaHist[i+1] = Omega_s
+            OmegaDotHist[i+1] = OmegaDot_s
+
+            gbHist[i+1] = gb_s
+            gbDotHist[i+1] = gbDot_s
+            gbDotDotHist[i+1] = gbDotDot_s
+
+            #genTorque[i+1] = genTorque_s
+            genTorque[i+1] = genTorquePlot
+            genPower[i+1] = genPowerPlot
+            torqueDriveShaft[i+1] = torqueDriveShaft_s
+
+            for ii = 1:length(topElStrain)
+                eps_xx_0_hist[:,ii,i] = topElStrain[ii].eps_xx_0
+                eps_xx_z_hist[:,ii,i] = topElStrain[ii].eps_xx_z
+                eps_xx_y_hist[:,ii,i] = topElStrain[ii].eps_xx_y
+                gam_xz_0_hist[:,ii,i] = topElStrain[ii].gam_xz_0
+                gam_xz_y_hist[:,ii,i] = topElStrain[ii].gam_xz_y
+                gam_xy_0_hist[:,ii,i] = topElStrain[ii].gam_xy_0
+                gam_xy_z_hist[:,ii,i] = topElStrain[ii].gam_xy_z
+            end
+
+            ## check rotor speed for generator operation
+            if Omega_s >= rotorSpeedForGenStart
+                inputs.generatorOn = true
+            else
+                inputs.generatorOn = false
+            end
+
         end
 
         if inputs.hydroOn
@@ -1208,50 +1320,6 @@ function UnsteadyCoupled(inputs,topModel,bottomModel,topMesh,bottomMesh,topEl,bo
             recent_uddot_prp = hcat(recent_uddot_prp[:, 2:end], uddot_s_prp_n)
             recent_FPtfm = hcat(recent_FPtfm[:, 2:end], FPtfm_n)
             recent_times = vcat(recent_times[2:end], t[i+1])
-        end
-        
-        uHist[i+1,:] = u_s
-        FReactionHist[i+1,:] = topFReaction_j
-        
-        for ii = 1:length(topElStrain)
-            eps_xx_0_hist[:,ii,i] = topElStrain[ii].eps_xx_0
-            eps_xx_z_hist[:,ii,i] = topElStrain[ii].eps_xx_z
-            eps_xx_y_hist[:,ii,i] = topElStrain[ii].eps_xx_y
-            gam_xz_0_hist[:,ii,i] = topElStrain[ii].gam_xz_0
-            gam_xz_y_hist[:,ii,i] = topElStrain[ii].gam_xz_y
-            gam_xy_0_hist[:,ii,i] = topElStrain[ii].gam_xy_0
-            gam_xy_z_hist[:,ii,i] = topElStrain[ii].gam_xy_z
-        end
-
-        azi_s = azi_j
-        Omega_s = Omega_j
-        OmegaDot_s = OmegaDot_j
-
-        genTorque_s = genTorque_j
-        torqueDriveShaft_s = torqueDriveShaft_j
-
-        aziHist[i+1] = azi_s
-        OmegaHist[i+1] = Omega_s
-        OmegaDotHist[i+1] = OmegaDot_s
-
-        gb_s = gb_j
-        gbDot_s = gbDot_j
-        gbDotDot_s = gbDotDot_j
-
-        gbHist[i+1] = gb_s
-        gbDotHist[i+1] = gbDot_s
-        gbDotDotHist[i+1] = gbDotDot_s
-
-        #genTorque[i+1] = genTorque_s
-        genTorque[i+1] = genTorquePlot
-        genPower[i+1] = genPowerPlot
-        torqueDriveShaft[i+1] = torqueDriveShaft_s
-
-        ## check rotor speed for generator operation
-        if Omega_s >= rotorSpeedForGenStart
-            inputs.generatorOn = true
-        else
-            inputs.generatorOn = false
         end
 
     end #end timestep loop
