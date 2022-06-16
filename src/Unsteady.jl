@@ -460,17 +460,17 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     FMultiplier = 1e6
 
     # Calculate outputs at the current time, based on inputs at the current time
-    total_Fexternal = vcat(other_Fexternal, frame_convert(FPtfm_old, CN2H)) # platform loads are old inputs from last time step/correction
+    total_Fexternal = vcat(other_Fexternal, FPtfm_old) # platform loads are old inputs from last time step/correction
     total_Fdof = vcat(other_Fdof, prpDOFS)
     if rom != 0
-        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),CN2H,zeros(Float32, 9))
+        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
     else
-        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),CN2H,zeros(Float32, 9))
+        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
     end
-    uddot_prp_n = frame_convert(dispsUncoupled.displddot_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
+    uddot_prp_n = dispsUncoupled.displddot_sp1[prpDOFS]
     if time > 0
-        udot_prp_n = frame_convert(dispsUncoupled.displdot_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
-        u_prp_n = frame_convert(dispsUncoupled.displ_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
+        udot_prp_n = dispsUncoupled.displdot_sp1[prpDOFS]
+        u_prp_n = dispsUncoupled.displ_sp1[prpDOFS]
     else
         udot_prp_n = zeros(Float32, numDOFPerNode)
         u_prp_n = zeros(Float32, numDOFPerNode)
@@ -495,13 +495,13 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             u_perturb = copy(u)
             FPtfm_perturb[dof] += 1E6
             u_perturb[dof] += 1
-            total_Fexternal_perturb = vcat(other_Fexternal, frame_convert(FPtfm_perturb, CN2H))
+            total_Fexternal_perturb = vcat(other_Fexternal, FPtfm_perturb)
             if !isa(rom, Number)
-                _ ,dispOut_perturb, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),CN2H,zeros(Float32, 9))
+                _ ,dispOut_perturb, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
             else
-                _, dispOut_perturb, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),CN2H,zeros(Float32, 9))
+                _, dispOut_perturb, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
             end
-            uddot_ptfm_perturb_n = frame_convert(dispOut_perturb.displddot_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
+            uddot_ptfm_perturb_n = dispOut_perturb.displddot_sp1[prpDOFS]
             residual_perturb = calcHydroResidual(uddot_ptfm_perturb_n, FHydro_2, FMooring_new, u_perturb, FMultiplier)
             jac[:,dof] = residual_perturb - residual
         end
@@ -532,13 +532,13 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     # udot_prp_n_rev = udot_prp_n + (1-del)*dt*uddot_prp_n + del*dt*uddot_prp_n_rev
     # u_prp_n_rev = u_prp_n + udot_prp_n*dt + (0.5 - alp)*dt^2*uddot_prp_n + alp*dt^2*uddot_prp_n_rev
 
-    total_Fexternal_rev = vcat(other_Fexternal, frame_convert(FPtfm_rev, CN2H))
+    total_Fexternal_rev = vcat(other_Fexternal, FPtfm_rev)
 
     # Rerun OWENS and HydroDyn with updated inputs
     if rom != 0
-        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_rev,Int.(total_Fdof),CN2H,zeros(Float32, 9))
+        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
     else
-        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),CN2H,zeros(Float32, 9))
+        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
     end
     FHydro_new[:], outVals[:] = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
 
@@ -652,17 +652,17 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         end
 
         bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode
-        u_s_ptfm_h = zeros(Float32, bottom_totalNumDOF)
-        u_s_ptfm_h = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm_h, numDOFPerNode)
-        udot_s_ptfm_h = zero(u_s_ptfm_h)
-        uddot_s_ptfm_h = zero(u_s_ptfm_h)
-        u_sm1_ptfm_h = copy(u_s_ptfm_h)   
-        bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
+        u_s_ptfm_n = zeros(Float32, bottom_totalNumDOF)
+        u_s_ptfm_n = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm_n, numDOFPerNode)
+        udot_s_ptfm_n = zero(u_s_ptfm_n)
+        uddot_s_ptfm_n = zero(u_s_ptfm_n)
+        u_sm1_ptfm_n = copy(u_s_ptfm_n)   
+        bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
 
         prpDOFs = collect(7:12) #TODO: add this to bottomModel
-        u_s_prp_n = Vector(u_s_ptfm_h[prpDOFs]) # the hub and global reference frames start as the same, so we don't need to frame_convert here
-        udot_s_prp_n = Vector(udot_s_ptfm_h[prpDOFs])
-        uddot_s_prp_n = Vector(uddot_s_ptfm_h[prpDOFs])
+        u_s_prp_n = Vector(u_s_ptfm_n[prpDOFs]) # the hub and global reference frames start as the same, so we don't need to frame_convert here
+        udot_s_prp_n = Vector(udot_s_ptfm_n[prpDOFs])
+        uddot_s_prp_n = Vector(uddot_s_ptfm_n[prpDOFs])
 
         jac = Array{Float32}(undef, numDOFPerNode*2, numDOFPerNode*2)
         numMooringLines = 3
@@ -725,21 +725,21 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         end
 
         if inputs.hydroOn
-            bottom_rom, bottomElStorage = GyricFEA.reducedOrderModel(bottomModel,bottomMesh,bottomEl,u_s_ptfm_h)
+            bottom_rom, bottomElStorage = GyricFEA.reducedOrderModel(bottomModel,bottomMesh,bottomEl,u_s_ptfm_n)
 
             topJointTransformTrans = bottomModel.jointTransform'
-            u_sRed_ptfm_h = jointTransformTrans*u_s_ptfm_h
-            udot_sRed_ptfm_h = jointTransformTrans*udot_s_ptfm_h
-            uddot_sRed_ptfm_h = jointTransformTrans*uddot_s_ptfm_h
+            u_sRed_ptfm_n = jointTransformTrans*u_s_ptfm_n
+            udot_sRed_ptfm_n = jointTransformTrans*udot_s_ptfm_n
+            uddot_sRed_ptfm_n = jointTransformTrans*uddot_s_ptfm_n
             
             bottomBC = bottomModel.BC
-            u_s2_ptfm_h = GyricFEA.applyBCModalVec(u_sRed_ptfm_h,bottomBC.numpBC,bottomBC.map)
-            udot_s2_ptfm_h = GyricFEA.applyBCModalVec(udot_sRed_ptfm_h,bottomBC.numpBC,bottomBC.map)
-            uddot_s2_ptfm_h = GyricFEA.applyBCModalVec(uddot_sRed_ptfm_h,bottomBC.numpBC,bottomBC.map)
+            u_s2_ptfm_n = GyricFEA.applyBCModalVec(u_sRed_ptfm_n,bottomBC.numpBC,bottomBC.map)
+            udot_s2_ptfm_n = GyricFEA.applyBCModalVec(udot_sRed_ptfm_n,bottomBC.numpBC,bottomBC.map)
+            uddot_s2_ptfm_n = GyricFEA.applyBCModalVec(uddot_sRed_ptfm_n,bottomBC.numpBC,bottomBC.map)
             bottom_invPhi = bottom_rom.invPhi
-            eta_s_ptfm_h = bottom_invPhi*u_s2_ptfm_h
-            etadot_s_ptfm_h = bottom_invPhi*udot_s2_ptfm_h
-            etaddot_s_ptfm_h = bottom_invPhi*uddot_s2_ptfm_h
+            eta_s_ptfm_n = bottom_invPhi*u_s2_ptfm_n
+            etadot_s_ptfm_n = bottom_invPhi*udot_s2_ptfm_n
+            etaddot_s_ptfm_n = bottom_invPhi*uddot_s2_ptfm_n
         end
         
     else
@@ -879,15 +879,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
     if inputs.hydroOn
 
-        if inputs.topsideOn
-            CN2H = calcHubRotMat(u_s_prp_n[4:6], azi_s)
-        else
-            CN2H = calcHubRotMat(u_s_prp_n[4:6], 0.0)
-        end
-        CH2N = LinearAlgebra.transpose(CN2H) # rotation matrices are always orthogonal, therefore inv(CN2H) = transpose(CN2H), and transpose is much faster.
+        # if inputs.topsideOn
+        #     CN2H = calcHubRotMat(u_s_prp_n[4:6], azi_s)
+        # else
+        #     CN2H = calcHubRotMat(u_s_prp_n[4:6], 0.0)
+        # end
+        # CH2N = LinearAlgebra.transpose(CN2H) # rotation matrices are always orthogonal, therefore inv(CN2H) = transpose(CN2H), and transpose is much faster.
 
         # Initial coupled bottomside solve using reaction force from topside
-        bottomFexternal = zeros(6)
+        bottomFexternal = zeros(6) 
         bottomFDOFs = collect(bottom_totalNumDOF-numDOFPerNode+1:bottom_totalNumDOF)
         FPtfm_n = FHydro_n + FMooring_n
 
@@ -902,15 +902,17 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         end
 
         # Update DispData with the new accelerations ONLY to account for added mass from HydroDyn
-        uddot_s_ptfm_h = bottomCoupledDisps.displddot_sp1
-
-        uddot_s_prp_n = frame_convert(uddot_s_ptfm_h[prpDOFs], CH2N)
-        u_sp1_prp_predState = frame_convert(bottomCoupledDisps.displ_sp1[prpDOFs], CH2N) # this is kind of like ED%x in FAST, which is advanced using an ABM4 method.
+        # uddot_s_ptfm_h = bottomCoupledDisps.displddot_sp1
+        uddot_s_ptfm_n = bottomCoupledDisps.displddot_sp1
+        uddot_s_prp_n = uddot_s_ptfm_n[prpDOFs]
+        # uddot_s_prp_n = frame_convert(uddot_s_ptfm_h[prpDOFs], CH2N)
+        # u_sp1_prp_predState = frame_convert(bottomCoupledDisps.displ_sp1[prpDOFs], CH2N) # this is kind of like ED%x in FAST, which is advanced using an ABM4 method.
                                                                                     # Since we don't have a 4th order integration method, we do this as a stopgap before motions are actually updated in the first time marching structural solve.
                                                                                     # TODO: is this even needed? is the normal u_sp1_ptfm prediction accurate enough?
                                                                                     #       what if we're including correction steps?
-        
-        bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
+        u_sp1_prp_predState = bottomCoupledDisps.displ_sp1[prpDOFs]
+        # bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
+        bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
         FPtfm_n = FHydro_n + FMooring_n
 
         FPtfmHist[1,:] = FPtfm_n
@@ -1135,7 +1137,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         #------------------------------------
         if inputs.hydroOn
             if inputs.topsideOn
-                bottomFexternal = -1*topFReaction_j # in hub frame already
+                bottomFexternal = frame_convert(topFReaction_j, LinearAlgebra.transpose(CN2H)) # in hub frame already
                 # bottomFexternal = zeros(6)
             end
 
@@ -1159,30 +1161,28 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
             end
         
             # update displacement and velocity estimates based on inputs at t+dt
-            u_s_ptfm_h = bottomUncoupledDisps.displ_sp1
-            u_s_prp_n = frame_convert(u_s_ptfm_h[prpDOFs], CH2N)
-            udot_s_ptfm_h = bottomUncoupledDisps.displdot_sp1
-            udot_s_prp_h = udot_s_ptfm_h[prpDOFs]
-            udot_s_prp_n = frame_convert(udot_s_prp_h, CH2N)
+            u_s_ptfm_n = bottomUncoupledDisps.displ_sp1
+            u_s_prp_n = u_s_ptfm_n[prpDOFs]
+            udot_s_ptfm_n = bottomUncoupledDisps.displdot_sp1
+            udot_s_prp_n = udot_s_ptfm_n[prpDOFs]
 
             # update current acceleration estimates from the coupled solve to account for added mass
-            uddot_s_ptfm_h = bottomCoupledDisps.displddot_sp1
-            uddot_s_prp_h = uddot_s_ptfm_h[prpDOFs]
-            uddot_s_prp_n = frame_convert(uddot_s_ptfm_h[prpDOFs], CH2N)
+            uddot_s_ptfm_n = bottomCoupledDisps.displddot_sp1
+            uddot_s_prp_n = uddot_s_ptfm_n[prpDOFs]
 
             # update displacement and velocity predictions for next time step
-            u_sp1_prp_predState = frame_convert(bottomCoupledDisps.displ_sp1[prpDOFs], CH2N)
+            u_sp1_prp_predState = bottomCoupledDisps.displ_sp1[prpDOFs]
 
             FPtfm_n = FHydro_n + FMooring_n
 
-            u_sm1_ptfm_h = copy(u_s_ptfm_h)
+            u_sm1_ptfm_n = copy(u_s_ptfm_n)
             if inputs.analysisType=="ROM"
-                eta_s_ptfm_h = bottomUncoupledDisps.eta_sp1 #eta_j
-                etadot_s_ptfm_h = bottomUncoupledDisps.etadot_sp1 #etadot_j
-                etaddot_s_ptfm_h = bottomCoupledDisps.etaddot_sp1 #etaddot_j
-                bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h, eta_s_ptfm_h, etadot_s_ptfm_h, etaddot_s_ptfm_h)
+                eta_s_ptfm_n = bottomUncoupledDisps.eta_sp1 #eta_j
+                etadot_s_ptfm_n = bottomUncoupledDisps.etadot_sp1 #etadot_j
+                etaddot_s_ptfm_n = bottomCoupledDisps.etaddot_sp1 #etaddot_j
+                bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n, eta_s_ptfm_n, etadot_s_ptfm_n, etaddot_s_ptfm_n)
             else
-                bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
+                bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
             end
 
             #------------------------------------
@@ -1199,6 +1199,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                     if inputs.hydroOn
                         CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
                         # CN2H = LinearAlgebra.I(3)
+                        uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
+                        udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
                         rbData = vcat(-1*uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
                     else
                         CN2H = calcHubRotMat(zeros(3), azi_j)
