@@ -361,7 +361,7 @@ end
 function calcHubRotMat(ptfmRot, azi_j)
 
     CN2P = transMat(ptfmRot[1], ptfmRot[2], ptfmRot[3])
-    CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
+    CP2H = [cos(azi_j) sin(azi_j) 0; -sin(azi_j) cos(azi_j) 0;0 0 1]
     
     CN2H = CN2P*CP2H
     
@@ -469,7 +469,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     end
     uddot_prp_n = frame_convert(dispsUncoupled.displddot_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
     if time > 0
-        udot_prp_n = frame_convert(dispsUncoupled.displdot_sp1[prpDOFS], LinearAlgebra.transpose(CN2H)) ########## need to send _ptfm!
+        udot_prp_n = frame_convert(dispsUncoupled.displdot_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
         u_prp_n = frame_convert(dispsUncoupled.displ_sp1[prpDOFS], LinearAlgebra.transpose(CN2H))
     else
         udot_prp_n = zeros(Float32, numDOFPerNode)
@@ -532,7 +532,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     # udot_prp_n_rev = udot_prp_n + (1-del)*dt*uddot_prp_n + del*dt*uddot_prp_n_rev
     # u_prp_n_rev = u_prp_n + udot_prp_n*dt + (0.5 - alp)*dt^2*uddot_prp_n + alp*dt^2*uddot_prp_n_rev
 
-    total_Fexternal_rev = [other_Fexternal; frame_convert(FPtfm_rev, CN2H)]
+    total_Fexternal_rev = vcat(other_Fexternal, frame_convert(FPtfm_rev, CN2H))
 
     # Rerun OWENS and HydroDyn with updated inputs
     if rom != 0
@@ -652,17 +652,17 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         end
 
         bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode
-        u_s_ptfm = zeros(Float32, bottom_totalNumDOF)
-        u_s_ptfm = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm, numDOFPerNode)
-        udot_s_ptfm = zero(u_s_ptfm)
-        uddot_s_ptfm = zero(u_s_ptfm)
-        u_sm1_ptfm = copy(u_s_ptfm)   
-        bottomDispData = GyricFEA.DispData(u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, u_sm1_ptfm)
+        u_s_ptfm_h = zeros(Float32, bottom_totalNumDOF)
+        u_s_ptfm_h = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm_h, numDOFPerNode)
+        udot_s_ptfm_h = zero(u_s_ptfm_h)
+        uddot_s_ptfm_h = zero(u_s_ptfm_h)
+        u_sm1_ptfm_h = copy(u_s_ptfm_h)   
+        bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
 
         prpDOFs = collect(7:12) #TODO: add this to bottomModel
-        u_s_prp = Vector(u_s_ptfm[prpDOFs])
-        udot_s_prp = Vector(udot_s_ptfm[prpDOFs])
-        uddot_s_prp = Vector(uddot_s_ptfm[prpDOFs])
+        u_s_prp_n = Vector(u_s_ptfm_h[prpDOFs]) # the hub and global reference frames start as the same, so we don't need to frame_convert here
+        udot_s_prp_n = Vector(udot_s_ptfm_h[prpDOFs])
+        uddot_s_prp_n = Vector(uddot_s_ptfm_h[prpDOFs])
 
         jac = Array{Float32}(undef, numDOFPerNode*2, numDOFPerNode*2)
         numMooringLines = 3
@@ -679,7 +679,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
         VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
-        VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp, interp_order=inputs.interpOrder, WtrDpth=200)
+        VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
     end
 
     ## Rotor mode initialization
@@ -712,11 +712,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
             udot_sRed = topjointTransformTrans*udot_s
             uddot_sRed = topjointTransformTrans*uddot_s
 
-            topJointTransformTrans = bottomModel.jointTransform'
-            u_sRed_ptfm = jointTransformTrans*u_s_ptfm
-            udot_sRed_ptfm = jointTransformTrans*udot_s_ptfm
-            uddot_sRed_ptfm = jointTransformTrans*uddot_s_ptfm
-
             topBC = topModel.BC
             u_s2 = GyricFEA.applyBCModalVec(u_sRed,topBC.numpBC,topBC.map)
             udot_s2 = GyricFEA.applyBCModalVec(udot_sRed,topBC.numpBC,topBC.map)
@@ -730,15 +725,21 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         end
 
         if inputs.hydroOn
-            bottom_rom, bottomElStorage = GyricFEA.reducedOrderModel(bottomModel,bottomMesh,bottomEl,u_s_ptfm)
+            bottom_rom, bottomElStorage = GyricFEA.reducedOrderModel(bottomModel,bottomMesh,bottomEl,u_s_ptfm_h)
+
+            topJointTransformTrans = bottomModel.jointTransform'
+            u_sRed_ptfm_h = jointTransformTrans*u_s_ptfm_h
+            udot_sRed_ptfm_h = jointTransformTrans*udot_s_ptfm_h
+            uddot_sRed_ptfm_h = jointTransformTrans*uddot_s_ptfm_h
+            
             bottomBC = bottomModel.BC
-            u_s2_ptfm = GyricFEA.applyBCModalVec(u_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
-            udot_s2_ptfm = GyricFEA.applyBCModalVec(udot_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
-            uddot_s2_ptfm = GyricFEA.applyBCModalVec(uddot_sRed_ptfm,bottomBC.numpBC,bottomBC.map)
+            u_s2_ptfm_h = GyricFEA.applyBCModalVec(u_sRed_ptfm_h,bottomBC.numpBC,bottomBC.map)
+            udot_s2_ptfm_h = GyricFEA.applyBCModalVec(udot_sRed_ptfm_h,bottomBC.numpBC,bottomBC.map)
+            uddot_s2_ptfm_h = GyricFEA.applyBCModalVec(uddot_sRed_ptfm_h,bottomBC.numpBC,bottomBC.map)
             bottom_invPhi = bottom_rom.invPhi
-            eta_s_ptfm = bottom_invPhi*u_s2_ptfm
-            etadot_s_ptfm = bottom_invPhi*udot_s2_ptfm
-            etaddot_s_ptfm = bottom_invPhi*uddot_s2_ptfm
+            eta_s_ptfm_h = bottom_invPhi*u_s2_ptfm_h
+            etadot_s_ptfm_h = bottom_invPhi*udot_s2_ptfm_h
+            etaddot_s_ptfm_h = bottom_invPhi*uddot_s2_ptfm_h
         end
         
     else
@@ -865,10 +866,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
 
     uHist_prp = zeros(Float32, numTS,numDOFPerNode)
     if inputs.hydroOn
-        uHist_prp[1,:] = u_s_prp
-        if inputs.topsideOn
-            topFReaction_sp1 = zeros(Float32, numDOFPerNode)
-        end
+        uHist_prp[1,:] = u_s_prp_n
     end
     FPtfmHist = zeros(Float32, numTS,numDOFPerNode)
     FHydroHist = zeros(Float32, numTS,numDOFPerNode)
@@ -882,9 +880,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
     if inputs.hydroOn
 
         if inputs.topsideOn
-            CN2H = calcHubRotMat(u_s_prp[4:6], azi_s)
+            CN2H = calcHubRotMat(u_s_prp_n[4:6], azi_s)
         else
-            CN2H = calcHubRotMat(u_s_prp[4:6], 0.0)
+            CN2H = calcHubRotMat(u_s_prp_n[4:6], 0.0)
         end
         CH2N = LinearAlgebra.transpose(CN2H) # rotation matrices are always orthogonal, therefore inv(CN2H) = transpose(CN2H), and transpose is much faster.
 
@@ -904,15 +902,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         end
 
         # Update DispData with the new accelerations ONLY to account for added mass from HydroDyn
-        uddot_s_ptfm = bottomCoupledDisps.displddot_sp1
+        uddot_s_ptfm_h = bottomCoupledDisps.displddot_sp1
 
-        uddot_s_prp = frame_convert(uddot_s_ptfm[prpDOFs], CH2N)
+        uddot_s_prp_n = frame_convert(uddot_s_ptfm_h[prpDOFs], CH2N)
         u_sp1_prp_predState = frame_convert(bottomCoupledDisps.displ_sp1[prpDOFs], CH2N) # this is kind of like ED%x in FAST, which is advanced using an ABM4 method.
                                                                                     # Since we don't have a 4th order integration method, we do this as a stopgap before motions are actually updated in the first time marching structural solve.
                                                                                     # TODO: is this even needed? is the normal u_sp1_ptfm prediction accurate enough?
                                                                                     #       what if we're including correction steps?
         
-        bottomDispData = GyricFEA.DispData(u_s_ptfm, udot_s_ptfm, uddot_s_ptfm, u_sm1_ptfm)
+        bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
         FPtfm_n = FHydro_n + FMooring_n
 
         FPtfmHist[1,:] = FPtfm_n
@@ -920,9 +918,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         FMooringHist[1,:] = FMooring_n
 
         ## Copy values of the inital outputs to arrays for interpolation/extrapolation
-        recent_u_prp = repeat(u_s_prp, 1, inputs.interpOrder+1)
-        recent_udot_prp = repeat(udot_s_prp, 1, inputs.interpOrder+1)
-        recent_uddot_prp = repeat(uddot_s_prp, 1, inputs.interpOrder+1)
+        recent_u_prp = repeat(u_s_prp_n, 1, inputs.interpOrder+1)
+        recent_udot_prp = repeat(udot_s_prp_n, 1, inputs.interpOrder+1)
+        recent_uddot_prp = repeat(uddot_s_prp_n, 1, inputs.interpOrder+1)
         recent_FPtfm = repeat(FPtfm_n, 1, inputs.interpOrder+1)
         recent_times = collect(range(-delta_t*inputs.interpOrder, 0.0, inputs.interpOrder+1))
     end
@@ -1080,9 +1078,10 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                 # Update reference frame transformation and convert aerodynamic loads to hub reference frame
                 if inputs.hydroOn
                     CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
+                    # CN2H = LinearAlgebra.I(3)
                     uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
                     udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
-                    rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+                    rbData = vcat(-1*uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
                 else
                     CN2H = calcHubRotMat(zeros(3), azi_j)
                 end
@@ -1136,7 +1135,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         #------------------------------------
         if inputs.hydroOn
             if inputs.topsideOn
-                bottomFexternal = frame_convert(-1*topFReaction_sp1, CN2H)
+                bottomFexternal = -1*topFReaction_j # in hub frame already
                 # bottomFexternal = zeros(6)
             end
 
@@ -1199,7 +1198,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                     # Update reference frame transformation and convert aerodynamic loads to hub reference frame
                     if inputs.hydroOn
                         CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
-                        rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+                        # CN2H = LinearAlgebra.I(3)
+                        rbData = vcat(-1*uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
                     else
                         CN2H = calcHubRotMat(zeros(3), azi_j)
                     end
