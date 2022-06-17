@@ -1137,7 +1137,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         #------------------------------------
         if inputs.hydroOn
             if inputs.topsideOn
-                bottomFexternal = frame_convert(topFReaction_j, LinearAlgebra.transpose(CN2H)) # in hub frame already
+                bottomFexternal = frame_convert(-1*topFReaction_j, LinearAlgebra.transpose(CN2H)) # in hub frame already
                 # bottomFexternal = zeros(6)
             end
 
