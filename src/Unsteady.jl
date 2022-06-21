@@ -659,7 +659,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         u_sm1_ptfm_n = copy(u_s_ptfm_n)   
         bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
 
-        prpDOFs = collect(7:12) #TODO: add this to bottomModel
+        prpDOFs = collect(1:6) #TODO: add this to bottomModel
         u_s_prp_n = Vector(u_s_ptfm_n[prpDOFs]) # the hub and global reference frames start as the same, so we don't need to frame_convert here
         udot_s_prp_n = Vector(udot_s_ptfm_n[prpDOFs])
         uddot_s_prp_n = Vector(uddot_s_ptfm_n[prpDOFs])
@@ -1082,8 +1082,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                     CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
                     # CN2H = LinearAlgebra.I(3)
                     uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
+                    uddot_s_prp_h[3] = -1*uddot_s_prp_h[3]
                     udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
-                    rbData = vcat(-1*uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+                    rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
                 else
                     CN2H = calcHubRotMat(zeros(3), azi_j)
                 end
@@ -1200,8 +1201,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                         CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
                         # CN2H = LinearAlgebra.I(3)
                         uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
+                        uddot_s_prp_h[3] = -1*uddot_s_prp_h[3]
                         udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
-                        rbData = vcat(-1*uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+                        rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
                     else
                         CN2H = calcHubRotMat(zeros(3), azi_j)
                     end
