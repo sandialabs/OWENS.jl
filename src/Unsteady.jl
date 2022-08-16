@@ -3,7 +3,7 @@ global controlnamecurrent = "none"
 
 """
 
-    Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
+    Unsteady(model,feamodel,mesh,el,aero;elStorage = nothing, u_s = nothing,getLinearizedMatrices=false)
 
 Executable function for transient analysis. Provides the interface of various
 external module with transient structural dynamics analysis capability.
@@ -16,6 +16,8 @@ external module with transient structural dynamics analysis capability.
 * `aero::function`: Fexternal, Fdof = aero(t) where Fexternal is the force on each affected mesh dof and Fdof is the corresponding DOFs affected
 * `deformAero::function`: deformAero(input) in work, currently just updates the backend aero state variables based on current RPM
 * `getLinearizedMatrices::Bool`: Flag to save the linearized matrices
+* `elStorage::ElStorage.ElStorage`: Optional object containing stored element matrices
+* `u_s::Array{<:float}`: Optional warm start of deflections, of length Nnodes x Ndof
 
 
 # Output
@@ -39,7 +41,8 @@ external module with transient structural dynamics analysis capability.
 * `kappa_x_hist`: strain history for kappa_x for each element at the 4 quad points
 * `epsilon_y_hist`: strain history for epsilon_y for each element at the 4 quad points
 """
-function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=false,assembly=nothing,system=nothing)
+function Unsteady(model,feamodel,mesh,el,aero,deformAero;elStorage = nothing, u_s = nothing,
+    getLinearizedMatrices=false,assembly=nothing,system=nothing)
 
     # Declare Variable Type, are set later
     udot_j = 0.0
@@ -77,7 +80,9 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
     numDOFPerNode = 6
     totalNumDof = mesh.numNodes*numDOFPerNode
     #......... specify initial conditions .......................
-    u_s = zeros(totalNumDof)
+    if isnothing(u_s)
+        u_s = zeros(totalNumDof)
+    end
     u_s = GyricFEA.setInitialConditions(feamodel.initCond,u_s,numDOFPerNode)
     u_sm1 = copy(u_s)
     udot_s = zero(u_s)
@@ -149,27 +154,15 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
 
     ## structural dynamics initialization
     #..........................................................................
+    if isnothing(elStorage)
+        elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
+    end
     if model.analysisType=="ROM" #initialize reduced order model
         #calculate constrained dof vector
-        #TODO: This is already done, remove this redundant code
-        # numDofPerNode = 6
-        # isConstrained = zeros(totalNumDof)
-        # constDof = (feamodel.BC.pBC[:,1]-1)*numDofPerNode + feamodel.BC.pBC[:,2]
-        # index = 1
-        # for i=1:mesh.numNodes
-        #     for j=1:numDofPerNode
-        #         if ((i-1)*numDofPerNode + j in constDof)
-        #             isConstrained[index] = 1
-        #         end
-        #         index = index + 1
-        #     end
-        # end
-        # feamodel.BC.isConstrained = isConstrained
-
-        rom,elStorage = GyricFEA.reducedOrderModel(feamodel,mesh,el,u_s) #construct reduced order model
+        rom = GyricFEA.reducedOrderModel(elStorage,feamodel,mesh,el,u_s) #construct reduced order model
 
         #set up inital values in modal space
-        jointTransformTrans = feamodel.jointTransform' #'
+        jointTransformTrans = feamodel.jointTransform'
         u_sRed = jointTransformTrans*u_s
         udot_sRed = jointTransformTrans*udot_s
         uddot_sRed = jointTransformTrans*uddot_s
@@ -185,8 +178,6 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         etadot_s  = invPhi*udot_s2
         etaddot_s = invPhi*uddot_s2
 
-    else
-        elStorage = GyricFEA.initialElementCalculations(feamodel,el,mesh) #perform initial element calculations for conventional structural dynamics analysis
     end
 
     #calculate structural/platform moi
@@ -250,7 +241,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
 
         #TODO: put these in the model
         TOL = 0.01#1e-3  #gauss-seidel iteration tolerance for various modules
-        MAXITER = 11 #max iteration for various modules
+        MAXITER = 7 #max iteration for various modules
         numIterations = 1
         uNorm = 1e5
         platNorm = 0.0
@@ -265,31 +256,11 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         end
         #-------------------------------------
 
-        # Assignments
-        # - Owens gives motions, hydro gives mass/stiffness, owens recalculates motions, and reiterate
-
-        # Hydro Coupling
-        #1) modify the mesh to include a platform cg offset #option
-        #2) modify the element properties so that this element is rigid
-        #3) ensure that this element is non-rotating - deflected solution is solved in one step (perhaps just give rotated stiffenss, forces, etc, so the node is actually rotating, as long as the mass isn't being cyntrifical)
-        #4) apply the hydro F, C, K, M to the nodal term (we have calm sea, as well as waves and currents). Mooring will also apply forces.
-        #5) use flags to turn degrees of freedom off
-
-        # Unit Testing
-        # 1) Turn all dof off and the solution should be the same
-        # 2) allow heave and the turbine should go up and down
-        # 3) no aero, but mass offset should cause the turbine to tilt slightly
         if model.analysisType=="GX"
             # systemout = deepcopy(system)
             strainGX = zeros(3,length(assembly.elements))
             curvGX = zeros(3,length(assembly.elements))
         end
-
-        # if i%29==0 || i == 1
-        #     PyPlot.close("all")
-        #     PyPlot.figure(111)
-        #     PyPlot.plot(mesh.x,mesh.z,"k-")
-        # end
 
         integrator = integrator_j #don't compound integrator within the convergence loop.
         global controlnamecurrent
@@ -301,6 +272,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
         controlnamelast = controlnamecurrent
 
         while ((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER)) #module gauss-seidel iteration loop
+
             rbData = zeros(9)
             #calculate CP2H (platform frame to hub frame transformation matrix)
             CP2H = [cos(azi_j) sin(azi_j) 0;-sin(azi_j) cos(azi_j) 0;0 0 1]
@@ -322,7 +294,8 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             if model.generatorOn
                 if model.useGeneratorFunction
                     specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,model.tocp,model.Omegaocp,delta_t)
-                    genTorqueHSS0,integrator_j,controlnamecurrent = userDefinedGenerator(t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
+                    newVinf = FLOWMath.akima(model.tocp_Vinf,model.Vinfocp,t[i])
+                    genTorqueHSS0,integrator_j,controlnamecurrent = userDefinedGenerator(newVinf,t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
                 else
                     genTorqueHSS0 = simpleGenerator(model,Omega_j)
                 end
@@ -491,45 +464,15 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 elStrain,dispOut,FReaction_j = GyricFEA.structuralDynamicsTransientROM(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,rom,Fexternal,Int.(Fdof),CN2H,rbData)
             elseif model.analysisType=="GX"
 
-                # function getForces(Fexternal_global,Fdof,node,dof)
-                #
-                #     gdof = (node-1)*6+dof
-                #     idxGdof = findfirst(x->x==gdof,Fdof[:])
-                #
-                #     if !isnothing(idxGdof)
-                #         # println("1 $(size(Fexternal_global))")
-                #         # println("2 $(idxGdof)")
-                #         return Fexternal_global[idxGdof]
-                #     else
-                #         return nothing
-                #     end
-                # end
-                #
-                # # create dictionary of prescribed conditions
-                #
-                # prescribed_conditions = Dict()
-                # for inode = 1:length(assembly.start)
-                #
-                #     prescribed_conditions[assembly.start[inode]] = GXBeam.PrescribedConditions(Fx = getForces(Fexternal_global,Fdof,assembly.start[inode],1),
-                #     Fy = getForces(Fexternal_global,Fdof,assembly.start[inode],2), Fz = getForces(Fexternal_global,Fdof,assembly.start[inode],3),
-                #     Mx = getForces(Fexternal_global,Fdof,assembly.start[inode],4), My = getForces(Fexternal_global,Fdof,assembly.start[inode],5),
-                #     Mz = getForces(Fexternal_global,Fdof,assembly.start[inode],6))
-                # end
-                # prescribed_conditions[1] = GXBeam.PrescribedConditions(ux=0, uy=0, uz=0,theta_x=0, theta_y=0, theta_z=0)
-                # top_idx = Int(feamodel.joint[7,2])
-                # prescribed_conditions[top_idx] = GXBeam.PrescribedConditions(ux=0, uy=0)
-                # #TODO: parametric way to pull in pBC
-
                 distributed_loads = Dict()
-                # B1
-                # GXz = [assembly.points[ipt][3] for ipt = 24:46]
+
                 height = maximum(mesh.z)
                 for jbld = 1:length(mesh.structuralElNumbers[:,1])
                     XpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Xp[jbld,end,:])#,GXz/maximum(GXz))
                     YpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Yp[jbld,end,:])#,GXz/maximum(GXz))
                     ZpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Zp[jbld,end,:])#,GXz/maximum(GXz))
 
-                    for ipt = Int.(mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1]) #TODO: el or node?
+                    for ipt = Int.(mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1])
                         iel = findfirst(x->x==ipt,assembly.start)
                         s1 = assembly.points[assembly.start[ipt]][3]
                         s2 = assembly.points[assembly.stop[ipt]][3]
@@ -541,32 +484,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                         end
                     end
                 end
-
-                # create dictionary of prescribed conditions
-
-                # prescribed_conditions = Dict()
-                # # for ibld = 1:length(mesh.structuralNodeNumbers[:,1])
-                # #     for (inode,nodenum) in enumerate(Int.(mesh.structuralNodeNumbers[ibld,:]))
-                # #         L = assembly.elements[nodenum].L
-                # #         prescribed_conditions[nodenum] = GXBeam.PrescribedConditions(Fx = -struct_X[ibld,1,inode]*L,
-                # #         Fy = -struct_Y[ibld,1,inode]*L, Fz = struct_Z[ibld,1,inode]*L)
-                # #     end
-                # # end
-                # prescribed_conditions[1] = GXBeam.PrescribedConditions(ux=0, uy=0, uz=0,theta_x=0, theta_y=0, theta_z=0)
-                # top_idx = Int(feamodel.joint[7,2])
-                # prescribed_conditions[top_idx] = GXBeam.PrescribedConditions(ux=0, uy=0)
-                # #TODO: parametric way to pull in pBC
-                #
-                # # Create Dictionary of Distributed Loads
-                # distributed_loads = Dict()
-                # for ibld = 1:length(mesh.structuralNodeNumbers[:,1])
-                #     for (iel,elnum) in enumerate(Int.(mesh.structuralNodeNumbers[ibld,:]))
-                #         distributed_loads[elnum] = GXBeam.DistributedLoads(assembly,iel;fx = (s) -> -struct_X[ibld,1,iel],
-                #         fy = (s) -> -struct_Y[ibld,1,iel], fz = (s) -> struct_Z[ibld,1,iel])
-                #     end
-                # end
-
-
+                #TODO: pull in parametrically from model.BC info
                 prescribed_conditions = Dict(
                     # fixed base
                     1 => GXBeam.PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
@@ -583,15 +501,13 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 tvec = [t[i],t[i]+delta_t]
 
                 gravity = [0.0,0.0,-9.81]
+                reset_state = false
+                initialize = false
 
                 if i == 1 && numIterations == 1
-                    reset_state = false
-                    initialize = false
-                    GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions,
+
+                    GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions, #TODO: just gravity and rotation for the first solve? Could add on forces in next solve below
                     gravity,angular_velocity,linear=false,reset_state=true)
-                else
-                    reset_state = false
-                    initialize = false
                 end
 
                 systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;
@@ -599,7 +515,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
                 angular_acceleration,prescribed_conditions,distributed_loads,gravity,linear=false)#!feamodel.nlOn)
 
                 if !converged
-                    println("GX Didn't Converge")
+                    println("GX failed to converge")
                 end
                 # elStrain
                 state = GXBeam.AssemblyState(systemout, assembly;
@@ -644,11 +560,28 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;getLinearizedMatrices=f
             gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
             Omega_jlast = Omega_j
 
-            if model.analysisType=="GX" && !((uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
-                system = deepcopy(systemout)
+            if !model.driveTrainOn
+                gbNorm = 0.0
+            end
+            if !model.generatorOn
+                gbNorm = 0.0
+            end
+            if Omega_j<1e-3
+                aziNorm = 0.0
             end
 
             numIterations = numIterations + 1
+
+            if model.analysisType=="GX" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                system = deepcopy(systemout)
+            end
+
+            # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
+            if i==numTS && model.analysisType=="TNB" && feamodel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                GyricFEA.structuralDynamicsTransient(feamodel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;predef = feamodel.nlParams.predef)
+            end
+
+
 
             println("$(numIterations)   uNorm: $(uNorm)    platNorm: $(platNorm)    aziNorm: $(aziNorm)    gbNorm: $(gbNorm)")
 
@@ -808,7 +741,7 @@ Internal, generator definintion
 
 # If shutdown
 
-function userDefinedGenerator(t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint)
+function userDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint)
     # omega is in hz
     omega_RPM = omega*60
     omegalast_RPM = omegalast*60
@@ -824,11 +757,12 @@ function userDefinedGenerator(t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,in
         controlnamecurrent = "normal"
         # println(" ")
         # println("normal setpoint $(omegasetpoint*60) RPM $(omega*60)")
+        Kpfactor = newVinf^2 / 10.0^2
         omega_RPM0 = omegasetpoint*60 #33.92871
-        Kp = 10.62992345720471
-        Ki = 5.2553876053628725
+        Kp = 10.62992345720471*Kpfactor
+        Ki = 5.2553876053628725*Kpfactor
         Kd = 0.0
-        Q0 = -320.1533668398164
+        Q0 = -320.1533668398164*Kpfactor
         integrator = integrator + (omega_RPM - omega_RPM0)*dt
         deriv = (omega_RPM-omegalast_RPM)/dt
         controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator
