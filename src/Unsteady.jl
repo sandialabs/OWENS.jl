@@ -93,6 +93,8 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;elStorage = nothing, u_
     numTS = Int(model.numTS)       #define number of time steps
     delta_t = model.delta_t   #define time step size
     uHist = zeros(length(u_s),numTS+1)
+    udotHist = zeros(length(u_s),numTS+1)
+    uddotHist = zeros(length(u_s),numTS+1)
     uHist[:,1] = u_s          #store initial condition
 
     #initialize omega_platform, omega_platform_dot, omegaPlatHist
@@ -512,7 +514,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;elStorage = nothing, u_
 
                 systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;
                 reset_state,initialize,linear_velocity,angular_velocity,linear_acceleration,
-                angular_acceleration,prescribed_conditions,distributed_loads,gravity,linear=false)#!feamodel.nlOn)
+                angular_acceleration,prescribed_conditions,gravity,linear=false)#!feamodel.nlOn)
 
                 if !converged
                     println("GX failed to converge")
@@ -613,6 +615,8 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;elStorage = nothing, u_
         end
 
         uHist[1:length(u_s),i+1] = u_s #TODO: resolve this for GX
+        udotHist[1:length(u_s),i+1] = udot_s
+        uddotHist[1:length(u_s),i+1] = uddot_s
         FReactionHist[i+1,:] = FReaction_j
         FhatHist[i+1] = Fhat
         if model.analysisType=="GX"
@@ -704,7 +708,7 @@ function Unsteady(model,feamodel,mesh,el,aero,deformAero;elStorage = nothing, u_
         end
 
     end
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,kappa_x_hist,epsilon_y_hist,-kappa_x_hist,FhatHist
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,rigidDof,genTorque,genPower,torqueDriveShaft,uHist,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,kappa_x_hist,epsilon_y_hist,-kappa_x_hist,FhatHist,udotHist,uddotHist
 end
 
 """
@@ -757,7 +761,7 @@ function userDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,omegadotla
         controlnamecurrent = "normal"
         # println(" ")
         # println("normal setpoint $(omegasetpoint*60) RPM $(omega*60)")
-        Kpfactor = newVinf^2 / 10.0^2
+        Kpfactor = 1.0#newVinf^2 / 10.0^2
         omega_RPM0 = omegasetpoint*60 #33.92871
         Kp = 10.62992345720471*Kpfactor
         Ki = 5.2553876053628725*Kpfactor
