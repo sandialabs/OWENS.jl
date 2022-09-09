@@ -37,6 +37,10 @@ platfileRoot = "$path/data/1_FourColumnSemi_2ndPass"
 platMassDiag = [9.8088e6 9.7811e6 1.8914e7 3.6351e9 3.6509e9 2.4362e9]
 platStiffDiag_Nm_deg = [1.329e5 1.329e5 1.985e6 3.993e6 3.995e6 1.076e6]
 
+# external dependencies
+hydrodynLib = "$path/../bin/HydroDyn_c_lib_x64"
+moordynLib = "$path/../bin/MoorDyn_c_lib_x64"
+
 # define the filename saving convention
 fname = string(platfileRoot,outFileExt)
 
@@ -81,7 +85,7 @@ omegaArrayHz2 = [7.1]/60
 if test_transient
     println("Running Transient")
 
-    OWENS.owens(string(fname, ".owens"),"TNB";iterationType="DI", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz)
+    OWENS.owens(string(fname, ".owens"),"TNB";iterationType="DI", delta_t=timeStep, numTS=floor(timeSim/timeStep), nlOn=false, turbineStartup=0, usingRotorSpeedFunction=false, tocp=timeArray, Omegaocp=omegaArrayHz, hydrodynLib=hydrodynLib, moordynLib=moordynLib)
 
     # Perform Tests
     tol = 1e-5
@@ -142,13 +146,13 @@ if test_transient
     @test isapprox(old_gbHist,gbHist,atol = tol)
     @test isapprox(old_gbDotHist,gbDotHist,atol = tol)
     @test isapprox(old_gbDotDotHist,gbDotDotHist,atol = tol)
-    for ii = 1:6
-        # PyPlot.figure()
-        # PyPlot.plot(LinRange(0,1,length(old_FReactionHist[:,1])),old_FReactionHist[:,ii],label="old")
-        # PyPlot.plot(LinRange(0,1,length(FReactionHist[:,1])),FReactionHist[:,ii],label="new")
-        # PyPlot.ylabel("Freaction $ii")
-        # PyPlot.legend()
-    end
+    # for ii = 1:6
+    #     PyPlot.figure()
+    #     PyPlot.plot(LinRange(0,1,length(old_FReactionHist[:,1])),old_FReactionHist[:,ii],label="old")
+    #     PyPlot.plot(LinRange(0,1,length(FReactionHist[:,1])),FReactionHist[:,ii],label="new")
+    #     PyPlot.ylabel("Freaction $ii")
+    #     PyPlot.legend()
+    # end
     for ii = 1:length(FReactionHist)
         local digits = floor(log10(abs(old_FReactionHist[ii]))) #this way if the tol is 1e-5, then we are actually looking at significant digits, much better than comparing 1e-5 on a 1e6 large number, that's 11 significant digits!
         @test isapprox(old_FReactionHist[ii],FReactionHist[ii],atol=tol*10^digits)

@@ -78,13 +78,16 @@ function owens(owensfile,analysisType;
     elementOrder = 1, #linear element order
     numDofPerNode = 6,
     hydroOn = false,
+    interpOrder = 2,
     platformTurbineConnectionNodeNumber = 1,
     JgearBox =0.0,
     gearRatio = 1.0,             #set gear ratio and efficiency to 1
     gearBoxEfficiency = 1.0,
     useGeneratorFunction = false,
     generatorProps = 0.0,
-    driveTrainOn = false)          #set drive shaft unactive
+    driveTrainOn = false,          #set drive shaft unactive
+    hydrodynLib = "none",
+    moordynLib = "none")
 
     # if(analysisType=="S") #STATIC ANALYSIS
     #     Omega = varargin{3}            #initialization of rotor speed (Hz)
@@ -190,7 +193,7 @@ function owens(owensfile,analysisType;
     line             = readline(fid)
     delimiter_idx    = findall(" ",line)
 
-    aeroLoadsOn      = 1#Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
+    aeroLoadsOn      = Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
 
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
     aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
@@ -202,6 +205,12 @@ function owens(owensfile,analysisType;
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
 
     generatorfilename = string(fdirectory, readline(fid)) #generator file name
+
+    line = readline(fid)
+    delimiter_idx = findall(" ",line)
+    hydroOn = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
+    potflowfile  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) # potential flow file prefix
+    interpOrder = real(parse(Int,line[delimiter_idx[2][1]+1])) # interpolation order for HD/MD libraries
     line = readline(fid)
     rayleighDamping = split(line)
 
@@ -250,10 +259,10 @@ function owens(owensfile,analysisType;
     nlParams = GyricFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    model = Input(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
 
     feamodel = GyricFEA.FEAModel(;analysisType,
     initCond,
@@ -301,6 +310,11 @@ function owens(owensfile,analysisType;
     #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
     #     end
     #
+
+    if ((hydrodynLib!="none")||(moordynLib!="none")) # Map shared library paths for external dependencies
+        bin = Bin(hydrodynLib, moordynLib)
+    end
+
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
         aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
         OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
@@ -312,14 +326,16 @@ function owens(owensfile,analysisType;
         ortFn = string(OWENSfile_root, ".ort")
         meshFn = string(OWENSfile_root, ".mesh")
 
-        # aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
+        aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
 
-        aeroForces(t,azi) = externalForcing(t+delta_t,[0],[0],[0])
+        aeroForces(t,azi) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
+
         deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1) = 0.0 #placeholder function
-        Unsteady(model,feamodel,mesh,el,aeroForces,deformAero)
+        Unsteady(model,feamodel,mesh,el,bin,aeroForces,deformAero)
 
         return model
     end
+
     #
     # end
     #
@@ -725,39 +741,6 @@ end
 
 """
 
-    readInitCond(filename)
-
-Reads initial conditions from file
-
-#Input
-* `filename`      string containing file name for initial conditions file
-
-#Output
-* `initCond`      array containing initial conditions
-"""
-function readInitCond(filename)
-
-    initCond =[] #initialize intial condition to null
-
-    # fid = open(filename) #open initial  conditions file
-
-    #         index = 1
-    #         while(~feof(fid))
-    #             temp1 = fscanf(fid,'#i',2) #read node number and local DOF number for initial cond.
-    #             temp2 = fscanf(fid,'#f',1) #read value for initial cond.
-    #
-    #             #place node number, dof number and value into array
-    #             initCond(index,1:3) = [temp1(1), temp1(2), temp2(1)]
-    #
-    #             index = index + 1
-    #         end
-
-    println("INITIAL CONDITIONS NOT FULLY ENABLED")
-    return initCond
-end
-
-"""
-
     writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
 
 writes a nodal input file
@@ -1149,6 +1132,60 @@ function simpleGenerator(model,genSpeed)
     end
 
     return genTorque
+
+end
+
+"""
+    setInitConditions(initDisps, numNodes, numDOFPerNode)
+
+Creates the formatted initial conditions array needed by GyricFEA
+
+#Input
+* `initDisps`: an array of length numDOFPerNode specifying the initial displacement of each DOF
+* `numNodes`: the number of nodes in the given mesh
+* `numDOFPerNode`: the number of unconstrained degrees of freedom calculated in each node
+
+#Output
+* `initCond`: array containing initial conditions.
+    initCond(i,1) node number for init cond i.
+    initCond(i,2) local DOF number for init cond i.
+    initCond(i,3) value for init cond i.
+"""
+function createInitCondArray(initDisps, numNodes, numDOFPerNode)
+    if initDisps == zeros(length(initDisps))
+        initCond = []
+    else
+        initCond = zeros(numNodes*numDOFPerNode, 3)
+        for i = 1:length(initDisps)
+            if initDisps[i] != 0.0
+                dof_initCond = hcat(collect(1:numNodes), ones(Int,numNodes)*i, ones(numNodes)*initDisps[i])
+                initCond[(i-1)*numNodes+1:i*numNodes,:] = dof_initCond
+            end
+        end
+        initCond = initCond[vec(mapslices(col -> any(col .!= 0), initCond, dims = 2)), :] #removes rows of all zeros
+    end
+
+    return initCond
+end
+
+function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNode) #node, dof, bc
+    if (fixedDOFs == []) && (fixedNodes == [])
+        pBC = []
+    else
+        pBC = zeros(Int, numNodes*numDOFPerNode, 3)
+        for i = 1:length(fixedNodes)
+            pBC[(i-1)*numDOFPerNode+1:i*numDOFPerNode, :] = hcat(ones(numDOFPerNode)*fixedNodes[i], collect(1:numDOFPerNode), zeros(Int, numDOFPerNode) )
+        end
+        for i = 1:length(fixedDOFs)
+            newNodes = setdiff(1:numNodes, fixedNodes) # this avoids duplicating nodes already counted for by fixedNodes
+            numNewNodes = length(newNodes)
+            dofBCs = hcat(newNodes, ones(Int,numNewNodes)*fixedDOFs[i], zeros(Int,numNewNodes))
+            pBC[length(fixedNodes)*numDOFPerNode+(i-1)*numNewNodes+1:length(fixedNodes)*numDOFPerNode+i*numNewNodes, :] = dofBCs
+        end
+        pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes extra rows (i.e. rows of all zeros)
+    end
+
+    return pBC
 
 end
 

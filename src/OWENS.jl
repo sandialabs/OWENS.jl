@@ -9,11 +9,13 @@ catch
 end
 
 import GyricFEA
+import VAWTHydro
 
 # Github packages
 import Statistics
 import DelimitedFiles
 import LinearAlgebra
+import SparseArrays
 import FLOWMath
 import HDF5
 import GXBeam
