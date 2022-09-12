@@ -35,6 +35,7 @@ export Modal#, Flutter
 include("Steady.jl")
 include("Unsteady.jl")
 include("utilities.jl")
+include("Unsteady_utilities.jl")
 include("structs.jl")
 
 end
