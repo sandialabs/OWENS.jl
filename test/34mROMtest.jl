@@ -75,7 +75,7 @@ top_idx 4 0
 top_idx 5 0
 top_idx 6 0]
 
-model = OWENS.Model(;analysisType = "ROM",
+model = OWENS.Inputs(;analysisType = "ROM",
     outFilename = "none",
     tocp = [0.0,100000.1],
     numTS = 100,

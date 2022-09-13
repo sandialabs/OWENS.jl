@@ -1,8 +1,8 @@
 """
 
-    OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, FPtfm_old, FMooring_new,
-        dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
-        other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
+OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, FPtfm_old, FMooring_new,
+dispIn, feamodel, mesh, el, elStorage, Omega, OmegaDot,
+other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
 
 Internal, performs the input-output solve procedure between OWENS and HydroDyn. This is required
 due to the close interdependency between the rigid body acceleration of the platform (calculated in
@@ -79,16 +79,16 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     FHydro_2[:], _ = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
     FMooring_new[:], _ = VAWTHydro.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
 
-   # Calculate the residual
-   # For consistency, everything in the u vector is in the inertial reference frame
-   u[1:numDOFPerNode] = FPtfm_old / FMultiplier
-   u[numDOFPerNode+1:numDOFPerNode*2] = uddot_prp_n
-   residual = calcHydroResidual(uddot_prp_n, FHydro_2, FMooring_new, u, FMultiplier)  # note that residual[7:12] will always be zero.
-                                                                                                # Ordinarily, the accelerations would account for differences in motions once aerodynamics are factored in.
-                                                                                                # However, since the aerodynamics aren't included here in this meshing approach, we can remove a run of structuralDynamicsTransient by hardcoding it like this.
+    # Calculate the residual
+    # For consistency, everything in the u vector is in the inertial reference frame
+    u[1:numDOFPerNode] = FPtfm_old / FMultiplier
+    u[numDOFPerNode+1:numDOFPerNode*2] = uddot_prp_n
+    residual = calcHydroResidual(uddot_prp_n, FHydro_2, FMooring_new, u, FMultiplier)  # note that residual[7:12] will always be zero.
+    # Ordinarily, the accelerations would account for differences in motions once aerodynamics are factored in.
+    # However, since the aerodynamics aren't included here in this meshing approach, we can remove a run of structuralDynamicsTransient by hardcoding it like this.
 
-   # Calculate the Jacobian. Since there's no single function associated with the motions/forces, we will manually
-   # perturb each degree of freedom one at a time and recalculate the outputs so we can get a full gradient.
+    # Calculate the Jacobian. Since there's no single function associated with the motions/forces, we will manually
+    # perturb each degree of freedom one at a time and recalculate the outputs so we can get a full gradient.
     if calcJacobian
 
         for dof = collect(1:numDOFPerNode) # forces
@@ -151,43 +151,42 @@ end
 
 """
 
-    Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
+Unsteady(model,feamodel,mesh,el,aero;getLinearizedMatrices=false)
 
 Executable function for transient analysis. Provides the interface of various
-external module with transient structural dynamics analysis capability.
+    external module with transient structural dynamics analysis capability.
 
-# Input
-* `model::Model`: see ?Model
-* `feamodel::FEAModel`: see ?GyricFEA.FEAModel
-* `mesh::Mesh`: see ?GyricFEA.Mesh
-* `el::El`: see ?GyricFEA.El
-* `bin::Bin`: see ?Bin
-* `aero::function`: Fexternal, Fdof = aero(t) where Fexternal is the force on each affected mesh dof and Fdof is the corresponding DOFs affected
-* `getLinearizedMatrices::Bool`: Flag to save the linearized matrices
+    # Input
+    * `model::Model`: see ?Model
+    * `feamodel::FEAModel`: see ?GyricFEA.FEAModel
+    * `mesh::Mesh`: see ?GyricFEA.Mesh
+    * `el::El`: see ?GyricFEA.El
+    * `bin::Bin`: see ?Bin
+    * `aero::function`: Fexternal, Fdof = aero(t) where Fexternal is the force on each affected mesh dof and Fdof is the corresponding DOFs affected
+    * `getLinearizedMatrices::Bool`: Flag to save the linearized matrices
 
 
-# Output
-* `t`: time array
-* `aziHist`: azimuthal history array
-* `OmegaHist`: rotational speed array history
-* `OmegaDotHist`: rotational acceleration array history
-* `gbHist`: gearbox position history array
-* `gbDotHist`: gearbox velocity history array
-* `gbDotDotHist`: gearbox acceleration history array
-* `FReactionHist`: Base reaction 6dof forces history
-* `rigidDof`:
-* `genTorque`: generator torque history
-* `genPower`: generator power history
-* `torqueDriveShaft`: driveshaft torque history
-* `uHist`: mesh displacement history for each dof
-* `eps_xx_0_hist`: strain history for eps_xx_0 for each dof
-* `eps_xx_z_hist`: strain history for eps_xx_z for each dof
-* `eps_xx_y_hist`: strain history for eps_xx_y for each dof
-* `gam_xz_0_hist`: strain history for gam_xz_0 for each dof
-* `gam_xz_y_hist`: strain history for gam_xz_y for each dof
-* `gam_xy_0_hist`: strain history for gam_xy_0 for each dof
-* `gam_xy_z_hist`: strain history for gam_xy_z for each dof
-"""
+    # Output
+    * `t`: time array
+    * `aziHist`: azimuthal history array
+    * `OmegaHist`: rotational speed array history
+    * `OmegaDotHist`: rotational acceleration array history
+    * `gbHist`: gearbox position history array
+    * `gbDotHist`: gearbox velocity history array
+    * `gbDotDotHist`: gearbox acceleration history array
+    * `FReactionHist`: Base reaction 6dof forces history
+    * `rigidDof`:
+    * `genTorque`: generator torque history
+    * `genPower`: generator power history
+    * `torqueDriveShaft`: driveshaft torque history
+    * `uHist`: mesh displacement history for each dof
+    * `epsilon_x_hist`: strain history for eps_xx_0 for each dof
+    * `epsilon_y_hist`: strain history for eps_xx_z for each dof
+    * `epsilon_z_hist`: strain history for eps_xx_y for each dof
+    * `kappa_x_hist`: strain history for gam_xz_0 for each dof
+    * `kappa_y_hist`: strain history for gam_xz_y for each dof
+    * `kappa_z_hist`: strain history for gam_xy_0 for each dof
+    """
 function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals=nothing,aeroDOFs=nothing,deformAero=nothing,bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,getLinearizedMatrices=false)
 
     #..........................................................................
@@ -229,7 +228,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
 
         topDispData1 = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
         topDispData2 = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
-        topElStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), topMesh.numEl)
+        topElStrain = fill(GyricFEA.ElStrain(zeros(4),zeros(4),zeros(4),zeros(4),zeros(4),zeros(4)), topMesh.numEl)
 
         gb_s = 0
         gbDot_s = 0
@@ -360,18 +359,18 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         if inputs.hydroOn
             ## Implement the mass matrix of the topside as a concentrated mass on the bottom side
             topsideMassMat = [ #TODO: I'm sure there's a more efficient way of doing this
-                topsideMass                0.0                        0.0                        0.0                        topsideMass*topsideCG[3]  -topsideMass*topsideCG[2]
-                0.0                        topsideMass                0.0                       -topsideMass*topsideCG[3]   0.0                        topsideMass*topsideCG[1]
-                0.0                        0.0                        topsideMass                topsideMass*topsideCG[2]  -topsideMass*topsideCG[1]   0.0
-                0.0                       -topsideMass*topsideCG[3]   topsideMass*topsideCG[2]   topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
-               -topsideMass*topsideCG[3]   0.0                       -topsideMass*topsideCG[1]   topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
-               -topsideMass*topsideCG[2]   topsideMass*topsideCG[1]   0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
-                # topsideMass                0.0                        0.0                        0.0                        0.0                        0.0
-                # 0.0                        topsideMass                0.0                        0.0                        0.0                        0.0
-                # 0.0                        0.0                        topsideMass                0.0                        0.0                        0.0
-                # 0.0                        0.0                        0.0                        topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
-                # 0.0                        0.0                        0.0                        topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
-                # 0.0                        0.0                        0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
+            topsideMass                0.0                        0.0                        0.0                        topsideMass*topsideCG[3]  -topsideMass*topsideCG[2]
+            0.0                        topsideMass                0.0                       -topsideMass*topsideCG[3]   0.0                        topsideMass*topsideCG[1]
+            0.0                        0.0                        topsideMass                topsideMass*topsideCG[2]  -topsideMass*topsideCG[1]   0.0
+            0.0                       -topsideMass*topsideCG[3]   topsideMass*topsideCG[2]   topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
+            -topsideMass*topsideCG[3]   0.0                       -topsideMass*topsideCG[1]   topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
+            -topsideMass*topsideCG[2]   topsideMass*topsideCG[1]   0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
+            # topsideMass                0.0                        0.0                        0.0                        0.0                        0.0
+            # 0.0                        topsideMass                0.0                        0.0                        0.0                        0.0
+            # 0.0                        0.0                        topsideMass                0.0                        0.0                        0.0
+            # 0.0                        0.0                        0.0                        topsideMOI[1,1]            topsideMOI[1,2]            topsideMOI[1,3]
+            # 0.0                        0.0                        0.0                        topsideMOI[2,1]            topsideMOI[2,2]            topsideMOI[2,3]
+            # 0.0                        0.0                        0.0                        topsideMOI[3,1]            topsideMOI[3,2]            topsideMOI[3,3]
             ]
 
             nodalinputdata = [
@@ -423,25 +422,23 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
     if inputs.topsideOn
         uHist = zeros(Float32, numTS, length(u_s))
         uHist[1,:] = u_s          #store initial condition
-        eps_xx_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-        eps_xx_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-        eps_xx_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-        gam_xz_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-        gam_xz_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-        gam_xy_0_hist = zeros(Float32, 4,topMesh.numEl,numTS)
-        gam_xy_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        epsilon_x_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        epsilon_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        epsilon_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        kappa_x_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        kappa_y_hist = zeros(Float32, 4,topMesh.numEl,numTS)
+        kappa_z_hist = zeros(Float32, 4,topMesh.numEl,numTS)
     else
         uHist = zeros(Float32, numTS, numDOFPerNode)
-        eps_xx_0_hist = zeros(Float32, 4,1, numTS)
-        eps_xx_z_hist = zeros(Float32, 4,1, numTS)
-        eps_xx_y_hist = zeros(Float32, 4,1, numTS)
-        gam_xz_0_hist = zeros(Float32, 4,1, numTS)
-        gam_xz_y_hist = zeros(Float32, 4,1, numTS)
-        gam_xy_0_hist = zeros(Float32, 4,1, numTS)
-        gam_xy_z_hist = zeros(Float32, 4,1, numTS)
+        epsilon_x_hist = zeros(Float32, 4,1, numTS)
+        epsilon_y_hist = zeros(Float32, 4,1, numTS)
+        epsilon_z_hist = zeros(Float32, 4,1, numTS)
+        kappa_x_hist = zeros(Float32, 4,1, numTS)
+        kappa_y_hist = zeros(Float32, 4,1, numTS)
+        kappa_z_hist = zeros(Float32, 4,1, numTS)
     end
 
-    FReactionHist = zeros(Float32, numTS,6)
+    FReactionHist = zeros(Float32, numTS,6) #TODO: these can go with the general init
     FTwrBsHist = zeros(Float32, numTS, 6)
     aziHist = zeros(Float32, numTS)
     OmegaHist = zeros(Float32, numTS)
@@ -497,12 +494,12 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
 
         if inputs.analysisType=="ROM"
             _, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[1], delta_t, true, jac, numDOFPerNode, prpDOFs, FPtfm_n,
-                                                                                    bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
-                                                                                    bottomFexternal, bottomFDOFs, CN2H, bottom_rom)
+            bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
+            bottomFexternal, bottomFDOFs, CN2H, bottom_rom)
         else
             _, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[1], delta_t, true, jac, numDOFPerNode, prpDOFs, FPtfm_n,
-                                                                                    bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
-                                                                                    bottomFexternal, bottomFDOFs, CN2H)
+            bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
+            bottomFexternal, bottomFDOFs, CN2H)
         end
 
         # Update DispData with the new accelerations ONLY to account for added mass from HydroDyn
@@ -511,9 +508,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
         uddot_s_prp_n = uddot_s_ptfm_n[prpDOFs]
         # uddot_s_prp_n = frame_convert(uddot_s_ptfm_h[prpDOFs], CH2N)
         # u_sp1_prp_predState = frame_convert(bottomCoupledDisps.displ_sp1[prpDOFs], CH2N) # this is kind of like ED%x in FAST, which is advanced using an ABM4 method.
-                                                                                    # Since we don't have a 4th order integration method, we do this as a stopgap before motions are actually updated in the first time marching structural solve.
-                                                                                    # TODO: is this even needed? is the normal u_sp1_ptfm prediction accurate enough?
-                                                                                    #       what if we're including correction steps?
+        # Since we don't have a 4th order integration method, we do this as a stopgap before motions are actually updated in the first time marching structural solve.
+        # TODO: is this even needed? is the normal u_sp1_ptfm prediction accurate enough?
+        #       what if we're including correction steps?
         u_sp1_prp_predState = bottomCoupledDisps.displ_sp1[prpDOFs]
         # bottomDispData = GyricFEA.DispData(u_s_ptfm_h, udot_s_ptfm_h, uddot_s_ptfm_h, u_sm1_ptfm_h)
         bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
@@ -696,7 +693,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                 end
                 CH2N = LinearAlgebra.transpose(CN2H)
 
-                if inputs.aeroLoadsOn > 0
+                if inputs.aeroLoadsOn > 0 #TODO: looks like my aero functions will go here
                     if isnothing(aeroVals)
                         error("aeroVals must be specified if OWENS.Inputs.aeroLoadsOn")
                     elseif isnothing(aeroDOFs)
@@ -717,7 +714,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
                 else # evalulate structural dynamics using conventional representation
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-                end
+                end #TODO: looks like GX will go here
+
+                #TODO: possibly strain stiffening around here
 
                 u_jLast = copy(u_j)
                 u_j = topDispOut.displ_sp1
@@ -769,12 +768,12 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
 
             if inputs.analysisType=="ROM"
                 bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
-                                                                                        bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
-                                                                                        bottomFexternal, bottomFDOFs, CN2H, bottom_rom)
+                bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
+                bottomFexternal, bottomFDOFs, CN2H, bottom_rom)
             else
                 bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
-                                                                                        bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
-                                                                                        bottomFexternal, bottomFDOFs, CN2H)
+                bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
+                bottomFexternal, bottomFDOFs, CN2H)
             end
 
             # update displacement and velocity estimates based on inputs at t+dt
@@ -809,7 +808,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
                 numIterations = 1
                 uNorm = 1e5
                 aziNorm = 1e5
-                gbNorm = 0.0 #initialize norms for various module states
+                gbNorm = 0.0 #initialize norms for various module states #TODO: this while loop for the aero side could be turned into a function, just determine what the hydro coupled adds and make it optional
                 while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
 
                     topModel.gravityOn = top_grav_setting
@@ -848,14 +847,14 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
 
                 end # iteration while loop
 
-            if inputs.analysisType=="ROM"
-                eta_j = topDisps.eta_sp1 #eta_j
-                etadot_j = topDisps.etadot_sp1 #etadot_j
-                etaddot_j = topDisps.etaddot_sp1 #etaddot_j
-                topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1, eta_j, etadot_j, etaddot_j)
-            else
-                topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
-            end
+                if inputs.analysisType=="ROM"
+                    eta_j = topDisps.eta_sp1 #eta_j
+                    etadot_j = topDisps.etadot_sp1 #etadot_j
+                    etaddot_j = topDisps.etaddot_sp1 #etaddot_j
+                    topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1, eta_j, etadot_j, etaddot_j)
+                else
+                    topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
+                end
 
             end # if inputs.topsideOn
 
@@ -906,15 +905,13 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
             torqueDriveShaft[i+1] = torqueDriveShaft_s
 
             for ii = 1:length(topElStrain)
-                eps_xx_0_hist[:,ii,i] = topElStrain[ii].eps_xx_0
-                eps_xx_z_hist[:,ii,i] = topElStrain[ii].eps_xx_z
-                eps_xx_y_hist[:,ii,i] = topElStrain[ii].eps_xx_y
-                gam_xz_0_hist[:,ii,i] = topElStrain[ii].gam_xz_0
-                gam_xz_y_hist[:,ii,i] = topElStrain[ii].gam_xz_y
-                gam_xy_0_hist[:,ii,i] = topElStrain[ii].gam_xy_0
-                gam_xy_z_hist[:,ii,i] = topElStrain[ii].gam_xy_z
+                epsilon_x_hist[:,ii,i] = topElStrain[ii].epsilon_x
+                epsilon_y_hist[:,ii,i] = topElStrain[ii].epsilon_y
+                epsilon_z_hist[:,ii,i] = topElStrain[ii].epsilon_z
+                kappa_x_hist[:,ii,i] = topElStrain[ii].kappa_x
+                kappa_y_hist[:,ii,i] = topElStrain[ii].kappa_y
+                kappa_z_hist[:,ii,i] = topElStrain[ii].kappa_z
             end
-
             ## check rotor speed for generator operation
             if Omega_s >= rotorSpeedForGenStart
                 inputs.generatorOn = true
@@ -970,15 +967,14 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,aeroVals
             HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
             HDF5.write(file,"uHist",uHist)
             HDF5.write(file,"uHist_prp",uHist_prp)
-            HDF5.write(file,"eps_xx_0_hist",eps_xx_0_hist)
-            HDF5.write(file,"eps_xx_z_hist",eps_xx_z_hist)
-            HDF5.write(file,"eps_xx_y_hist",eps_xx_y_hist)
-            HDF5.write(file,"gam_xz_0_hist",gam_xz_0_hist)
-            HDF5.write(file,"gam_xz_y_hist",gam_xz_y_hist)
-            HDF5.write(file,"gam_xy_0_hist",gam_xy_0_hist)
-            HDF5.write(file,"gam_xy_z_hist",gam_xy_z_hist)
+            HDF5.write(file,"epsilon_x_hist",epsilon_x_hist)
+            HDF5.write(file,"epsilon_y_hist",epsilon_y_hist)
+            HDF5.write(file,"epsilon_z_hist",epsilon_z_hist)
+            HDF5.write(file,"kappa_x_hist",kappa_x_hist)
+            HDF5.write(file,"kappa_y_hist",kappa_y_hist)
+            HDF5.write(file,"kappa_z_hist",kappa_z_hist)
         end
 
     end
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,eps_xx_0_hist,eps_xx_z_hist,eps_xx_y_hist,gam_xz_0_hist,gam_xz_y_hist,gam_xy_0_hist,gam_xy_z_hist,FPtfmHist,FHydroHist,FMooringHist
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist
 end

@@ -260,7 +260,7 @@ function owens(owensfile,analysisType;
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
     model = Input(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,JgearBox,gearRatio,gearBoxEfficiency,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
 

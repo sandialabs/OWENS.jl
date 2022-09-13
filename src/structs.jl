@@ -16,9 +16,9 @@ mutable struct Inputs
     delta_t
     Omegaocp
     Vinfocp
-    aeroLoadsOn
     driveTrainOn
     generatorOn
+    aeroLoadsOn
     hydroOn
     topsideOn
     interpOrder
@@ -93,7 +93,6 @@ Model inputs for OWENS coupled analysis, struct
 * `turbineStartup::int`: 1 forced start-up using generator as motor, 2 self-starting mode, 0 specified rotor speed mode")
 * `usingRotorSpeedFunction::bool`: use user specified rotor speed profile function
 * `tocp::Array{<:float}`: = time points for rotor speed profile (s)
-=======
 * `tocp_Vinf::Array{<:float}`: = time points for specified Vinf profile (s)
 * `numTS::int`: total number of timesteps to run
 * `delta_t::float`: timestep interval (s)
@@ -134,12 +133,14 @@ function Inputs(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
+    tocp_Vinf = [0.0,1e6],
     numTS = 50.0,
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
-    aeroLoadsOn = false, #this need to get cleaned up in the code
+    Vinfocp = [10.0,10.0],
     driveTrainOn = false,
     generatorOn = false,
+    aeroLoadsOn = false, #this need to get cleaned up in the code
     hydroOn = false,
     topsideOn = true,
     interpOrder = 2,
@@ -167,8 +168,8 @@ function Inputs(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0)
     )
 
-    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
+    return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
+    driveTrainOn,generatorOn,aeroLoadsOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
