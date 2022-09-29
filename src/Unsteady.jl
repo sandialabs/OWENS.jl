@@ -377,7 +377,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                 #################################################################
                 if !isnothing(aero)
-                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                    if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
+                        runaero = true
+                        if (inputs.aeroLoadsOn==1 || inputs.aeroLoadsOn==1.5) && numIterations!=1
+                            runaero = false
+                        end
+                        if runaero
+                            aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                        end
+                    end
                 end
                 #################################################################
                 if inputs.aeroLoadsOn > 0
@@ -387,12 +395,12 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
                     end
 
-                    if size(aeroVals)[2]==1
+                    if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
                         topFexternal = zero(aeroVals)
                         for iter_i = 1:floor(Int,length(aeroVals)/6)
                             topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                         end
-                    else
+                    else # the other aero input as a 2D array
                         topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
                     end
                 else
@@ -529,7 +537,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
 
                     if !isnothing(aero)
-                        aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,mesh,el,u_j,inputs,numIterations,t)
+                        if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
+                            runaero = true
+                            if (inputs.aeroLoadsOn==1 || inputs.aeroLoadsOn==1.5) && numIterations!=1
+                                runaero = false
+                            end
+                            if runaero
+                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                            end
+                        end
                     end
 
                     if inputs.aeroLoadsOn > 0
@@ -788,96 +804,88 @@ end
 
 function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t_i,azi_j,Omega_j)
 
-    if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
-        runaero = true
-        if (inputs.aeroLoadsOn==1 || inputs.aeroLoadsOn==1.5) && numIterations!=1
-            runaero = false
-        end
-        if runaero
-            if inputs.tocp_Vinf == -1
-                newVinf = -1
-            else
-                newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t_i)
-            end
-
-            if inputs.aeroLoadsOn > 1
-                # Transform Global Displacements to Local
-                numDofPerNode = 6
-
-                u_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
-                for jbld = 1:length(mesh.structuralElNumbers[:,1])
-                    for kel = 1:length(mesh.structuralElNumbers[1,:])-1
-                        # orientation angle,xloc,sectionProps,element order]
-                        elNum = Int(mesh.structuralElNumbers[jbld,kel])
-                        #get dof map
-                        node1 = Int(mesh.structuralNodeNumbers[jbld,kel])
-                        node2 = Int(mesh.structuralNodeNumbers[jbld,kel+1])
-                        dofList = [(node1-1)*numDofPerNode.+(1:6);(node2-1)*numDofPerNode.+(1:6)]
-
-                        globaldisp = u_j[dofList]
-
-                        twist = el.props[elNum].twist
-                        sweepAngle = el.psi[elNum]
-                        coneAngle = el.theta[elNum]
-                        rollAngle = el.roll[elNum]
-
-                        twistAvg = rollAngle + 0.5*(twist[1] + twist[2])
-                        lambda = GyricFEA.calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
-                        localdisp = lambda*globaldisp
-
-                        #asssembly
-                        for m = 1:length(dofList)
-                            u_j_local[dofList[m]] =  u_j_local[dofList[m]]+localdisp[m]
-                        end
-
-                    end
-                end
-
-                disp_x = [u_j[i] for i = 1:6:length(u_j)]
-                disp_y = [u_j[i] for i = 2:6:length(u_j)]
-                disp_z = [u_j[i] for i = 3:6:length(u_j)]
-                disp_twist = [u_j_local[i] for i = 4:6:length(u_j_local)]
-                # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
-                # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
-
-                bld_x = zero(mesh.structuralNodeNumbers[:,1:end-1])
-                bld_y = zero(mesh.structuralNodeNumbers[:,1:end-1])
-                bld_z = zero(mesh.structuralNodeNumbers[:,1:end-1])
-                bld_twist = zero(mesh.structuralNodeNumbers[:,1:end-1])
-
-                for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
-                    bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
-                    bld_x[jbld,:] = mesh.x[bld_indices]+disp_x[bld_indices]
-                    bld_y[jbld,:] = mesh.y[bld_indices]+disp_y[bld_indices]
-                    bld_z[jbld,:] = mesh.z[bld_indices]+disp_z[bld_indices]
-                    # flatten blade x,y
-                    bld_x[jbld,:] = sqrt.(bld_x[jbld,:].^2 .+bld_y[jbld,:].^2) #TODO: a better way via the blade offset azimuth?
-                    bld_twist[jbld,:] = -disp_twist[bld_indices] #the bending displacements are in radians
-                    # The local structural FOR follows right hand rule, so at the bottom of the blade, the x-vector is pointing outward, and a positive
-                    # rotation about x would make the blade twist into the turbine.  In AC and DMS, if we are looking at say Andrew's 2016 paper, fig 10,
-                    # the blade has looped up and is pointing at us, so positive twist would increase the aoa.  In the AC and DMS equations, aoa is decreased by twist
-                    # so, we should negate
-                    # PyPlot.figure(111)
-                    # PyPlot.plot(mesh.x[bld_indices]+disp_x[bld_indices],mesh.z[bld_indices]+disp_z[bld_indices].*1,label="disp")
-                    # PyPlot.plot(bld_twist[jbld,:]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist1")
-                    # PyPlot.plot(disp_twist2[bld_indices]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist2")
-                    # PyPlot.plot(disp_twist3[bld_indices]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist3")
-                    # PyPlot.legend()
-                    # sleep(.1)
-                end
-
-            else
-                bld_x = -1
-                bld_z = -1
-                bld_twist = -1
-            end
-
-            # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
-            deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
-            aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
-            return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm
-        end
+    if inputs.tocp_Vinf == -1
+        newVinf = -1
+    else
+        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t_i)
     end
+
+    if inputs.aeroLoadsOn > 1
+        # Transform Global Displacements to Local
+        numDofPerNode = 6
+
+        u_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
+        for jbld = 1:length(mesh.structuralElNumbers[:,1])
+            for kel = 1:length(mesh.structuralElNumbers[1,:])-1
+                # orientation angle,xloc,sectionProps,element order]
+                elNum = Int(mesh.structuralElNumbers[jbld,kel])
+                #get dof map
+                node1 = Int(mesh.structuralNodeNumbers[jbld,kel])
+                node2 = Int(mesh.structuralNodeNumbers[jbld,kel+1])
+                dofList = [(node1-1)*numDofPerNode.+(1:6);(node2-1)*numDofPerNode.+(1:6)]
+
+                globaldisp = u_j[dofList]
+
+                twist = el.props[elNum].twist
+                sweepAngle = el.psi[elNum]
+                coneAngle = el.theta[elNum]
+                rollAngle = el.roll[elNum]
+
+                twistAvg = rollAngle + 0.5*(twist[1] + twist[2])
+                lambda = GyricFEA.calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
+                localdisp = lambda*globaldisp
+
+                #asssembly
+                for m = 1:length(dofList)
+                    u_j_local[dofList[m]] =  u_j_local[dofList[m]]+localdisp[m]
+                end
+
+            end
+        end
+
+        disp_x = [u_j[i] for i = 1:6:length(u_j)]
+        disp_y = [u_j[i] for i = 2:6:length(u_j)]
+        disp_z = [u_j[i] for i = 3:6:length(u_j)]
+        disp_twist = [u_j_local[i] for i = 4:6:length(u_j_local)]
+        # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
+        # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
+
+        bld_x = zero(mesh.structuralNodeNumbers[:,1:end-1])
+        bld_y = zero(mesh.structuralNodeNumbers[:,1:end-1])
+        bld_z = zero(mesh.structuralNodeNumbers[:,1:end-1])
+        bld_twist = zero(mesh.structuralNodeNumbers[:,1:end-1])
+
+        for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
+            bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
+            bld_x[jbld,:] = mesh.x[bld_indices]+disp_x[bld_indices]
+            bld_y[jbld,:] = mesh.y[bld_indices]+disp_y[bld_indices]
+            bld_z[jbld,:] = mesh.z[bld_indices]+disp_z[bld_indices]
+            # flatten blade x,y
+            bld_x[jbld,:] = sqrt.(bld_x[jbld,:].^2 .+bld_y[jbld,:].^2) #TODO: a better way via the blade offset azimuth?
+            bld_twist[jbld,:] = -disp_twist[bld_indices] #the bending displacements are in radians
+            # The local structural FOR follows right hand rule, so at the bottom of the blade, the x-vector is pointing outward, and a positive
+            # rotation about x would make the blade twist into the turbine.  In AC and DMS, if we are looking at say Andrew's 2016 paper, fig 10,
+            # the blade has looped up and is pointing at us, so positive twist would increase the aoa.  In the AC and DMS equations, aoa is decreased by twist
+            # so, we should negate
+            # PyPlot.figure(111)
+            # PyPlot.plot(mesh.x[bld_indices]+disp_x[bld_indices],mesh.z[bld_indices]+disp_z[bld_indices].*1,label="disp")
+            # PyPlot.plot(bld_twist[jbld,:]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist1")
+            # PyPlot.plot(disp_twist2[bld_indices]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist2")
+            # PyPlot.plot(disp_twist3[bld_indices]*180/pi*1,mesh.z[bld_indices]+disp_z[bld_indices].*1,label="twist3")
+            # PyPlot.legend()
+            # sleep(.1)
+        end
+
+    else
+        bld_x = -1
+        bld_z = -1
+        bld_twist = -1
+    end
+
+    # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
+    deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
+    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
+    return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm
 end
 
 function outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
@@ -1209,7 +1217,7 @@ function hydro_topside_nodal_coupling!(bottomModel,bottomMesh,topsideMass,topMod
         end
     end
 
-    topsideConcTerms = GyricFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=nodalinputdata, jointData=topModel.joint)
+    topsideConcTerms = GyricFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=nodalinputdata, jointData=topModel.joint,applyTop2Bot=true)
 
     bottomModel.nodalTerms.concMass += topsideConcTerms.concMass
 end
