@@ -1,13 +1,6 @@
 module OWENS
 
 # Custom unregistered (julia) packages
-try
-    import VAWTAero
-catch
-    @info "Using one way CACTUS Coupling"
-    #TODO: propogate logic
-end
-
 import GyricFEA
 import VAWTHydro
 
@@ -19,6 +12,7 @@ import SparseArrays
 import FLOWMath
 import HDF5
 import GXBeam
+import QuadGK
 
 # using pyfloater
 # pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
@@ -37,5 +31,7 @@ include("Unsteady.jl")
 include("utilities.jl")
 include("Unsteady_utilities.jl")
 include("structs.jl")
+include("./VAWTAero2OWENSCoupling.jl")
+include("./PostProcessing.jl")
 
 end

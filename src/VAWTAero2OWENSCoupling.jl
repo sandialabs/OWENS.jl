@@ -1,0 +1,326 @@
+"""
+    mapACDMS(t,mesh,el)
+
+map VAWTAero forces to OWENS mesh dofs
+
+# Inputs
+* `t::float`: time at which to get the loads (can be called repeatedly at the same time or for large time gaps, will infill run as needed)
+* `mesh::GyricFEA.Mesh`: see ?GyricFEA.Mesh
+* `mesh::GyricFEA.El`: see ?GyricFEA.El
+
+# Outputs:
+* `ForceValHist::Array(<:float)`: Force or moment (N, N-m) at the time corresponding to the time specified
+* `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
+
+"""
+function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true)
+    CP,Rp,Tp,Zp,alpha,cl,cd_af,Vloc,Re,thetavec,n_steps,Fx_base,Fy_base,Fz_base,
+    Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp = advanceTurb(t;azi=azi_j+3*pi/2,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
+
+    NBlade = length(Rp[:,1,1])
+    Nslices = length(Rp[1,:,1])
+
+    # Initialize bladeForces
+    N = zeros(NBlade,numAeroTS,Nslices)
+    T = zeros(NBlade,numAeroTS,Nslices)
+    X = zeros(NBlade,numAeroTS,Nslices)
+    Y = zeros(NBlade,numAeroTS,Nslices)
+    Z = zeros(NBlade,numAeroTS,Nslices)
+    M25 = zeros(NBlade,numAeroTS,Nslices)
+
+    for iTS=1:numAeroTS
+        if numAeroTS == 1
+            t_idx = length(Rp[1,1,:])
+        else
+            t_idx = iTS
+        end
+        for jbld=1:NBlade
+            for islice=1:Nslices
+                N[jbld,iTS,islice] = Rp[jbld,islice,t_idx] #Normal force on the structure is inward, VAWTAero normal is inward positive #we multiply by cos(delta) to go from force per height to force per span, and then divide by cos(delta) to go from radial to normal, so they cancel
+                T[jbld,iTS,islice] = -Tp[jbld,islice,t_idx]*cos(delta[jbld,islice]) ##Tangential force on the structure is against turbine rotation, VAWTAero tangential is with rotation positive # multiply by delta to convert from force per height to force per span
+                M25[jbld,iTS,islice] = 0.0#M25perSpan[index]
+                X[jbld,iTS,islice] = Xp[jbld,islice,t_idx]*cos(-azi_j) + Yp[jbld,islice,t_idx]*sin(-azi_j) #*cos(delta[jbld,islice]) # force per height converted to force per span
+                Y[jbld,iTS,islice] = -Xp[jbld,islice,t_idx]*sin(-azi_j) + Yp[jbld,islice,t_idx]*cos(-azi_j)#*cos(delta[jbld,islice]) # force per height converted to force per span
+                Z[jbld,iTS,islice] = Zp[jbld,islice,t_idx]#*cos(delta[jbld,islice]) # force per height converted to force per span
+            end
+        end
+    end
+
+    spanLocNorm = zeros(NBlade,Nslices)
+
+    for i=1:NBlade
+        spanLocNorm[i,:] = z3Dnorm #Note that the lookup for this is not the span position, but the vertical position
+    end
+
+    structuralSpanLocNorm = mesh.structuralSpanLocNorm # this is also just the blade z position
+    structuralNodeNumbers = mesh.structuralNodeNumbers
+    structuralElNumbers = mesh.structuralElNumbers
+
+    #Initialize structuralLoad
+    struct_N = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+    struct_T = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+    struct_M25 = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+    struct_X = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+    struct_Y = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+    struct_Z = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+
+    for i=1:NBlade
+        for j=1:numAeroTS
+            struct_N[i,j,:] = FLOWMath.akima(spanLocNorm[i,:],N[i,j,:],structuralSpanLocNorm[i,:])
+            struct_T[i,j,:] = FLOWMath.akima(spanLocNorm[i,:],T[i,j,:],structuralSpanLocNorm[i,:])
+            struct_M25[i,j,:] = FLOWMath.akima(spanLocNorm[i,:],M25[i,j,:],structuralSpanLocNorm[i,:])
+            struct_X[i,j,:] = FLOWMath.akima(spanLocNorm[i,:],X[i,j,:],structuralSpanLocNorm[i,:])
+            struct_Y[i,j,:] = FLOWMath.akima(spanLocNorm[i,:],Y[i,j,:],structuralSpanLocNorm[i,:])
+            struct_Z[i,j,:] = FLOWMath.akima(spanLocNorm[i,:],Z[i,j,:],structuralSpanLocNorm[i,:])
+        end
+    end
+
+    _,numNodesPerBlade = size(structuralNodeNumbers)
+
+    #integrate over elements
+
+    #read element aero_data in
+    numDofPerNode = 6
+    #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
+    Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6),numAeroTS)
+    for i=1:numAeroTS
+        for j = 1:NBlade
+            for k = 1:numNodesPerBlade-1
+                #get element aero_data
+                # orientation angle,xloc,sectionProps,element order]
+                elNum = Int(structuralElNumbers[j,k])
+                #get dof map
+                node1 = Int(structuralNodeNumbers[j,k])
+                node2 = Int(structuralNodeNumbers[j,k+1])
+                dofList = [(node1-1)*numDofPerNode.+(1:6) (node2-1)*numDofPerNode.+(1:6)]
+
+                elementOrder = 1
+                x = [mesh.x[node1], mesh.x[node2]]
+                elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
+                xloc = [0 elLength]
+                twist = el.props[elNum].twist
+                sweepAngle = el.psi[elNum]
+                coneAngle = el.theta[elNum]
+                rollAngle = el.roll[elNum]
+
+                extDistF2Node = [struct_T[j,i,k]    struct_T[j,i,k+1]]
+                extDistF3Node = [struct_N[j,i,k]    struct_N[j,i,k+1]]
+                extDistF4Node = [struct_M25[j,i,k]  struct_M25[j,i,k+1]]
+
+                Fe = GyricFEA.calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
+
+                #asssembly
+                for m = 1:length(dofList)
+                    Fg[dofList[m],i] =  Fg[dofList[m],i]+Fe[m]
+                end
+
+            end
+        end
+    end
+
+    #reduce Fg to nonzero components
+    #assumes any loaded DOF will never be identically zero throughout time
+    #history
+    # ForceValHist = zeros(sum(Fg[:,1].!=0),length(Fg[1,:]))
+    # ForceDof = zeros(sum(Fg[:,1].!=0),1)
+    ForceValHist = zeros(length(Fg[:,1]),length(Fg[1,:]))
+    ForceDof = zeros(length(Fg[:,1]),1)
+    index = 1
+    for i=1:Int(maximum(maximum(structuralNodeNumbers))*6)
+        # if !isempty(findall(x->x!=0,Fg[i,:]))
+
+            ForceValHist[index,:] = Fg[i,:]
+            ForceDof[index] = i
+            index = index + 1
+        # end
+    end
+
+    # return Fexternal, Fdof
+    return ForceValHist[:,1:numAeroTS],ForceDof,X,Y,Z,z3Dnorm
+end
+
+# """
+#     mapACDMS(t,mesh,el,loadsFn)
+#
+# map VAWTAero forces to OWENS mesh dofs using a file of loads TODO: merge the two functions together
+#
+# # Inputs
+# * `t::float`: time at which to get the loads (can be called repeatedly at the same time or for large time gaps, will infill run as needed)
+# * `mesh::GyricFEA.Mesh`: see ?GyricFEA.Mesh
+# * `mesh::GyricFEA.El`: see ?GyricFEA.El
+# * `loadsFn::string`: path/name to loads filename, in cactus Element_Data format
+#
+#
+# # Outputs:
+# * `ForceValHist::Array(<:float)`: Force or moment (N, N-m) at the time corresponding to the time specified
+# * `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
+#
+# """
+# function mapCACTUSFILE_minimalio(t,mesh,el,loadsFn)
+#     # TODO: if this function is used, either export the required data from VAWTAero to get rid of these globals, or put the function back into VAWTAero scope
+#     global turbslices
+#     global envslices
+#     NBlade = turbslices[1].B
+#
+#     aero_data = DelimitedFiles.readdlm(loadsFn,',',skipstart = 1)
+#
+#     #define these from params file
+#     rho = envslices[1].rho
+#
+#     RefR = turbslices[1].R
+#     NElem = length(turbslices)
+#     #TODO: get from VAWTAero structs
+#     # chord = RefR.*[1.11093e-01,1.11093e-01,8.20390e-02,6.35940e-02,5.68145e-02,5.55467e-02,5.88008e-02,6.82860e-02,9.11773e-02,1.11093e-01,1.11093e-01]
+#     # chord = (chord[1:end-1]+chord[2:end])./2
+#     chord = [turb.chord for turb in turbslices]
+#     V = envslices[1].V_x[1] #m/s #TODO: get nominal vinf
+#     global z3Dnorm
+#     # z3Dnorm = 1/2.44680.*[1.22340e-01,3.67020e-01,6.11700e-01,8.56380e-01,1.10106e+00,1.34574e+00,1.59042e+00,1.83510e+00,2.07978e+00,2.32446e+00]
+#
+#     normTime = aero_data[:,1]
+#
+#     numAeroEl = 0
+#     for i=1:NBlade
+#         numAeroEl = numAeroEl + NElem
+#     end
+#
+#     len,_ = size(aero_data)
+#
+#     numAeroTS = Int(len/numAeroEl)
+#
+#     time = normTime[1:Int(numAeroEl):end,1].*RefR[1]./V[1]
+#
+#     urel = aero_data[:,15]
+#     uloc = urel.*V
+#
+#     cn = aero_data[:,24]
+#     ct = aero_data[:,25]
+#     cm25 = aero_data[:,22]
+#
+#     NperSpan = zeros(len)
+#     TperSpan = zeros(len)
+#     M25perSpan = zeros(len)
+#
+#     for i=1:len
+#         NperSpan[i] =  cn[i]  * 0.5*rho*uloc[i]^2#*(blade[Int(aero_data[i,3])].ECtoR[Int(aero_data[i,4])]*RefR)
+#         TperSpan[i] =  ct[i]  * 0.5*rho*uloc[i]^2#*(blade[Int(aero_data[i,3])].ECtoR[Int(aero_data[i,4])]*RefR)
+#         M25perSpan[i] = cm25[i] * 0.5*rho*uloc[i]^2#*(blade[Int(aero_data[i,3])].ECtoR[Int(aero_data[i,4])]*RefR)*blade[Int(aero_data[i,3])].ECtoR[Int(aero_data[i,4])]*RefR
+#     end
+#
+#     # Initialize bladeForces
+#     N = zeros(NBlade,numAeroTS,NElem)
+#     T = zeros(NBlade,numAeroTS,NElem)
+#     M25 = zeros(NBlade,numAeroTS,NElem)
+#
+#     index = 1
+#     for i=1:numAeroTS
+#         for j=1:NBlade
+#             for k=1:NElem
+#                 N[j,i,k] = NperSpan[index]
+#                 T[j,i,k] = TperSpan[index]
+#                 M25[j,i,k] = M25perSpan[index]
+#                 index = index + 1
+#             end
+#         end
+#     end
+#
+#     #Apply chord since it was pulled out above
+#     for i=1:numAeroTS
+#         for j=1:NBlade
+#             N[j,i,:] = N[j,i,:].*chord
+#             T[j,i,:] = T[j,i,:].*chord
+#             M25[j,i,:] = M25[j,i,:].*chord
+#         end
+#     end
+#
+#     spanLocNorm = zeros(NBlade,NElem)
+#
+#     for i=1:NBlade
+#         spanLocNorm[i,:] = z3Dnorm
+#     end
+#
+#     structuralSpanLocNorm = mesh.structuralSpanLocNorm
+#     structuralNodeNumbers = mesh.structuralNodeNumbers
+#     structuralElNumbers = mesh.structuralElNumbers
+#
+#     #Initialize structuralLoad
+#     struct_N = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+#     struct_T = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+#     struct_M25 = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+#
+#     for i=1:NBlade
+#         for j=1:numAeroTS
+#             struct_N[i,j,:] = FLOWMath.linear(spanLocNorm[i,:],N[i,j,:],structuralSpanLocNorm[i,:])
+#             struct_T[i,j,:] = FLOWMath.linear(spanLocNorm[i,:],T[i,j,:],structuralSpanLocNorm[i,:])
+#             struct_M25[i,j,:] = FLOWMath.linear(spanLocNorm[i,:],M25[i,j,:],structuralSpanLocNorm[i,:])
+#         end
+#     end
+#
+#     _,numNodesPerBlade = size(structuralNodeNumbers)
+#
+#     #integrate over elements
+#
+#     #read element aero_data in
+#     numDofPerNode = 6
+#     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
+#     Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6),numAeroTS)
+#     for i=1:numAeroTS
+#         for j = 1:NBlade
+#             for k = 1:numNodesPerBlade-1
+#                 #get element aero_data
+#                 # orientation angle,xloc,sectionProps,element order]
+#                 elNum = Int(structuralElNumbers[j,k])
+#                 #get dof map
+#                 node1 = Int(structuralNodeNumbers[j,k])
+#                 node2 = Int(structuralNodeNumbers[j,k+1])
+#                 dofList = [(node1-1)*numDofPerNode.+(1:6) (node2-1)*numDofPerNode.+(1:6)]
+#
+#                 elementOrder = 1
+#                 x = [mesh.x[node1], mesh.x[node2]]
+#                 elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
+#                 xloc = [0 elLength]
+#                 twist = el.props[elNum].twist
+#                 sweepAngle = el.psi[elNum]
+#                 coneAngle = el.theta[elNum]
+#                 rollAngle = el.roll[elNum]
+#
+#                 extDistF2Node =  [struct_T[j,i,k]    struct_T[j,i,k+1]]
+#                 extDistF3Node = -[struct_N[j,i,k]    struct_N[j,i,k+1]]
+#                 extDistF4Node = -[struct_M25[j,i,k]  struct_M25[j,i,k+1]]
+#
+#                 Fe = GyricFEA.calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
+#
+#                 #asssembly
+#                 for m = 1:length(dofList)
+#                     Fg[dofList[m],i] =  Fg[dofList[m],i]+Fe[m]
+#                 end
+#
+#             end
+#         end
+#     end
+#
+#     #reduce Fg to nonzero components
+#     #assumes any loaded DOF will never be identically zero throughout time
+#     #history
+#     # ForceValHist = zeros(sum(Fg[:,1].!=0),length(Fg[1,:]))
+#     # ForceDof = zeros(sum(Fg[:,1].!=0),1)
+#     ForceValHist = zeros(length(Fg[:,1]),length(Fg[1,:]))
+#     ForceDof = zeros(length(Fg[:,1]),1)
+#     index = 1
+#     for i=1:Int(maximum(maximum(structuralNodeNumbers))*6)
+#         # if !isempty(findall(x->x!=0,Fg[i,:]))
+#
+#             ForceValHist[index,:] = Fg[i,:]
+#             ForceDof[index] = i
+#             index = index + 1
+#         # end
+#     end
+#
+#     #TODO: wrap the function at this level for time so you don't read in the file each time
+#     Fexternal = zeros(length(ForceDof))
+#     for i = 1:length(ForceDof)
+#         Fexternal[i] = FLOWMath.linear(time,ForceValHist[i,:],t)
+#     end
+#
+#     return Fexternal, ForceDof
+# end

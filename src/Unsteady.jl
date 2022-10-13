@@ -73,7 +73,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         # Allocate memory for topside
         u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,
         gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,
-        torqueDriveShaft_s = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
+        torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
     end
 
     ## Hydrodynamics/mooring module initialization and coupling variables
@@ -396,9 +396,14 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
 
                     if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
-                        topFexternal = zero(aeroVals)
-                        for iter_i = 1:floor(Int,length(aeroVals)/6)
-                            topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
+                        # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
+                        full_aeroVals = zeros(topMesh.numNodes*6)
+                        for i_idx = 1:length(aeroDOFs)
+                            full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
+                        end
+                        aeroDOFs = collect(1:topMesh.numNodes*6)
+                        for iter_i = 1:floor(Int,length(full_aeroVals)/6)
+                            topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                         end
                     else # the other aero input as a 2D array
                         topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
@@ -443,7 +448,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 end
 
                 #TODO: verbosity
-                println("$(numIterations)   uNorm: $(uNorm) ")
+                # println("$(numIterations)   uNorm: $(uNorm) ")
 
                 if numIterations==MAXITER
                     @warn "Maximum Iterations Met Breaking Iteration Loop"
@@ -549,10 +554,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
 
                     if inputs.aeroLoadsOn > 0
-                        if size(aeroVals)[2]==1
-                            topFexternal = zero(aeroVals)
+                        if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
+                            # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
+                            full_aeroVals = zeros(topMesh.numNodes*6)
+                            for i_idx = 1:length(aeroDOFs)
+                                full_aeroVals[aeroDOFs[i_idx]] = aeroVals[i_idx]
+                            end
+                            aeroDOFs = collect(1:topMesh.numNodes*6)
                             for iter_i = 1:floor(Int,length(aeroVals)/6)
-                                topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
+                                topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                             end
                         else
                             topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
@@ -636,6 +646,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             uHist[i+1,:] = u_s
             FReactionHist[i+1,:] = topFReaction_j
+            topFexternal_hist[i+1,:] = topFexternal
             # FTwrBsHist[i+1,:] = -topFReaction_j  + topFWeight_j
 
             aziHist[i+1] = azi_s
@@ -707,7 +718,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
 
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist
+    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,topFexternal_hist
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
@@ -950,7 +961,9 @@ function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
     OmegaDot_s = 0
     genTorque_s = 0
     torqueDriveShaft_s = 0
-    return u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,torqueDriveShaft_s
+    topFexternal = zeros(top_totalNumDOF)
+    topFexternal_hist = zeros(Int(inputs.numTS),top_totalNumDOF)
+    return u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,torqueDriveShaft_s,topFexternal,topFexternal_hist
 end
 
 
