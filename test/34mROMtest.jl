@@ -1,9 +1,22 @@
+# using PyPlot
+# close("all")
 using Test
 import GyricFEA
 import OWENS
 import MAT
 
 path = splitdir(@__FILE__)[1]
+
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 ##############################################
 # Setup
@@ -62,7 +75,7 @@ top_idx 4 0
 top_idx 5 0
 top_idx 6 0]
 
-model = OWENS.Model(;analysisType = "ROM",
+model = OWENS.Inputs(;analysisType = "ROM",
     outFilename = "none",
     tocp = [0.0,100000.1],
     numTS = 100,

@@ -1,22 +1,19 @@
 module OWENS
 
 # Custom unregistered (julia) packages
-try
-    import VAWTAero
-catch
-    @info "Using one way CACTUS Coupling"
-    #TODO: propogate logic
-end
-
 import GyricFEA
+import VAWTHydro
 
 # Github packages
 import Statistics
 import DelimitedFiles
 import LinearAlgebra
+import SparseArrays
 import FLOWMath
 import HDF5
 import GXBeam
+import QuadGK
+import Composites
 
 # using pyfloater
 # pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
@@ -33,6 +30,8 @@ export Modal#, Flutter
 include("Steady.jl")
 include("Unsteady.jl")
 include("utilities.jl")
+include("Unsteady_utilities.jl")
 include("structs.jl")
+include("./PostProcessing.jl")
 
 end

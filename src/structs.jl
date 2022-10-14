@@ -1,4 +1,12 @@
-mutable struct Model
+struct Bin
+"""
+Inputs pointing to the file paths of compiled binaries of external libraries
+"""
+    hydrodynLibPath
+    moordynLibPath
+end
+
+mutable struct Inputs
     analysisType
     turbineStartup
     usingRotorSpeedFunction
@@ -8,10 +16,14 @@ mutable struct Model
     delta_t
     Omegaocp
     Vinfocp
-    aeroLoadsOn
     driveTrainOn
     generatorOn
+    aeroLoadsOn
     hydroOn
+    topsideOn
+    interpOrder
+    hd_input_file
+    md_input_file
     JgearBox
     gearRatio
     gearBoxEfficiency
@@ -27,6 +39,7 @@ mutable struct Model
     rigid
     aeroloadfile
     owensfile
+    potflowfile
     outFilename
     bladeData
     driveShaftProps
@@ -35,7 +48,7 @@ end
 # this way you can use defaults and pass in what is different, and it's mapped
 # by keyword so it doesn't have to be in order.
 """
-Model(;analysisType = "TNB",
+Inputs(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
@@ -48,6 +61,10 @@ Model(;analysisType = "TNB",
     driveTrainOn = false,
     generatorOn = false,
     hydroOn = false,
+    topsideOn = true,
+    interpOrder = 2,
+    hd_input_file = "none",
+    md_input_file = "none",
     JgearBox = 0.0,
     gearRatio = 1.0,
     gearBoxEfficiency = 1.0,
@@ -81,10 +98,13 @@ Model inputs for OWENS coupled analysis, struct
 * `delta_t::float`: timestep interval (s)
 * `Omegaocp::Array{<:float}`: = rotor speed points for rotor speed profile (Hz)
 * `Vinfocp::Array{<:float}`: = rotor speed points for specified Vinf profile (Hz)
-* `aeroLoadsOn::int`: flag to trigger aero loads being applied # 1 one way, 2 two way, 0 off
+* `aeroLoadsOn::bool`: flag to trigger aero loads being applied
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
 * `hydroOn::bool`: flag to include platform coupling
+* `interpOrder::int`: order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+* `hd_input_file::string`: file path to the HydroDyn .dat input file
+* `md_input_file::string`: file path to the MoorDyn .dat input file
 * `JgearBox::float`: gearbox intertia, standard SI units
 * `gearRatio::float`: gearbox gear ratio
 * `gearBoxEfficiency::float`: gearbox efficiency (typically 0-1)
@@ -99,28 +119,33 @@ Model inputs for OWENS coupled analysis, struct
 * `OmegaInit::float`: initial rotor speed (Hz)
 * `aeroloadfile::string`: string of the name and path for the cactus aeroloads if using the old serial owens call
 * `owensfile::string`: string of the name and path for the owens input file if using the old serial owens call
+* `potflowfile::string`: string of the prefix and path for the directory containing the potential flow files from WAMIT (required by HydroDyn)
 * `outFilename::string`: path and name of output file, will be overwritten if already exists
-* `numDofPerNode::bool`: number of degrees of freedom per node
+* `numDofPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
 
 # Outputs:
 * `none`:
-
 """
-function Model(;analysisType = "TNB",
+
+function Inputs(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
-    tocp_Vinf = -1,
+    tocp_Vinf = [0.0,1e6],
     numTS = 50.0,
     delta_t = 2e-3,
     Omegaocp = [7.2,7.2] ./ 60,
-    Vinfocp = -1,
-    aeroLoadsOn = 1, #this need to get cleaned up in the code
+    Vinfocp = [10.0,10.0],
     driveTrainOn = false,
     generatorOn = false,
+    aeroLoadsOn = false, #this need to get cleaned up in the code
     hydroOn = false,
+    topsideOn = true,
+    interpOrder = 2,
+    hd_input_file = "none",
+    md_input_file = "none",
     JgearBox = 0.0,
     gearRatio = 1.0,
     gearBoxEfficiency = 1.0,
@@ -135,6 +160,7 @@ function Model(;analysisType = "TNB",
     OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
+    potflowfile = "$module_path/../test/data/potential_flow_data",
     outFilename = "none",
     numDofPerNode = 6,
     bladeData = [],
@@ -142,11 +168,11 @@ function Model(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0)
     )
 
-    return Model(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
-    useGeneratorFunction,generatorProps,ratedTorque,zeroTorqueGenSpeed,pulloutRatio,
-    ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
+    return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
+    driveTrainOn,generatorOn,aeroLoadsOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
+    JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
+    zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
 end
 
 """

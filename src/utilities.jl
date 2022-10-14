@@ -78,13 +78,16 @@ function owens(owensfile,analysisType;
     elementOrder = 1, #linear element order
     numDofPerNode = 6,
     hydroOn = false,
+    interpOrder = 2,
     platformTurbineConnectionNodeNumber = 1,
     JgearBox =0.0,
     gearRatio = 1.0,             #set gear ratio and efficiency to 1
     gearBoxEfficiency = 1.0,
     useGeneratorFunction = false,
     generatorProps = 0.0,
-    driveTrainOn = false)          #set drive shaft unactive
+    driveTrainOn = false,          #set drive shaft unactive
+    hydrodynLib = "none",
+    moordynLib = "none")
 
     # if(analysisType=="S") #STATIC ANALYSIS
     #     Omega = varargin{3}            #initialization of rotor speed (Hz)
@@ -190,7 +193,7 @@ function owens(owensfile,analysisType;
     line             = readline(fid)
     delimiter_idx    = findall(" ",line)
 
-    aeroLoadsOn      = 1#Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
+    aeroLoadsOn      = Bool(real(parse(Int,line[1]))) #flag for activating aerodynamic analysis
 
     blddatafilename  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) #blade data file name
     aeroloadfile = string(fdirectory, line[delimiter_idx[2][1]+1:end]) #.csv file containing CACTUS aerodynamic loads
@@ -202,6 +205,12 @@ function owens(owensfile,analysisType;
     driveshaftfilename = string(fdirectory, line[3:end]) #drive shaft file name
 
     generatorfilename = string(fdirectory, readline(fid)) #generator file name
+
+    line = readline(fid)
+    delimiter_idx = findall(" ",line)
+    hydroOn = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
+    potflowfile  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) # potential flow file prefix
+    interpOrder = real(parse(Int,line[delimiter_idx[2][1]+1])) # interpolation order for HD/MD libraries
     line = readline(fid)
     rayleighDamping = split(line)
 
@@ -250,10 +259,10 @@ function owens(owensfile,analysisType;
     nlParams = GyricFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Model(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,JgearBox,gearRatio,gearBoxEfficiency,
+    model = Input(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    aeroloadfile,owensfile,outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
 
     feamodel = GyricFEA.FEAModel(;analysisType,
     initCond,
@@ -301,6 +310,11 @@ function owens(owensfile,analysisType;
     #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
     #     end
     #
+
+    if ((hydrodynLib!="none")||(moordynLib!="none")) # Map shared library paths for external dependencies
+        bin = Bin(hydrodynLib, moordynLib)
+    end
+
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
         aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
         OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
@@ -312,485 +326,22 @@ function owens(owensfile,analysisType;
         ortFn = string(OWENSfile_root, ".ort")
         meshFn = string(OWENSfile_root, ".mesh")
 
-        # aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
+        aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
 
-        aeroForces(t,azi) = externalForcing(t+delta_t,[0],[0],[0])
+        aeroForces(t,azi) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
+
         deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1) = 0.0 #placeholder function
-        Unsteady(model,feamodel,mesh,el,aeroForces,deformAero)
+        Unsteady(model,feamodel,mesh,el,bin,aeroForces,deformAero)
 
         return model
     end
+
     #
     # end
     #
 
 end
 
-"""
-
-    readMesh(filename)
-
-Reads the mesh file and stores data in the mesh object.
-
-input:
-* `filename::string` string containing mesh path/to/filename.mesh
-
-output:
-* `mesh::GyricFEA.Mesh` see GyricFEA.Mesh
-"""
-function readMesh(filename)
-
-    fid = open(filename,"r")   #open mesh file
-
-    # temp = fscanf(fid,'#i',2)   #read in number of nodes and number of elements
-    line = readline(fid)
-    temp = split(line)
-
-    numNodes = parse(Int,temp[1])
-    numEl = parse(Int,temp[2])
-
-    nodeNum = zeros(numNodes,1)
-    x = zeros(numNodes,1)
-    y = zeros(numNodes,1)
-    z = zeros(numNodes,1)
-
-    conn = zeros(numEl,2)
-    elNum = zeros(numEl,1)
-
-    for i=1:numNodes            # read in node number and node coordinates
-        line = readline(fid)
-        temp = split(line)
-        nodeNum[i] = parse(Float64,temp[1])
-        x[i] = parse(Float64,temp[2])
-        y[i] = parse(Float64,temp[3])
-        z[i] = parse(Float64,temp[4])
-    end
-
-    for i=1:numEl               # read in element number and connectivity list
-        line = readline(fid)
-        temp = split(line)
-        elNum[i] = parse(Float64,temp[1])
-
-        conn[i,1] = parse(Float64,temp[3])
-        conn[i,2] = parse(Float64,temp[4])
-    end
-
-    line = readline(fid) #get blank line
-    line = readline(fid)
-    temp = split(line)
-    numComponents = parse(Int,temp[1])
-    meshSeg = zeros(Int,numComponents)
-    for i=1:numComponents
-        meshSeg[i] = parse(Int,temp[i+1])
-    end
-
-    close(fid)  #close mesh file
-
-    mesh = GyricFEA.Mesh(nodeNum,
-    numEl,
-    numNodes,
-    x,
-    y,
-    z,
-    elNum,
-    conn,
-    zeros(Int,numEl),
-    meshSeg,
-    0,
-    0,
-    0)
-
-    return mesh
-
-end
-
-"""
-
-    readBCdata(bcfilename,numNodes,numDofPerNode)
-
-This function reads the boundray condition file and stores data in the
-boundary condition object.
-
-#Input
-* `bcfilename::string`:    string containing boundary condition filename
-* `numNodes::int`:      number of nodes in structural model
-* `numDofPerNode::int`: number of degrees of freedom per node
-
-#Output
-* `BC::GyricFEA.BC_struct`:   see GyricFEA.BC_struct, object containing boundary condition data
-"""
-function readBCdata(bcfilename,numNodes,numDofPerNode)
-
-    fid = open(bcfilename)       #open boundary condition file
-    numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
-    pBC = zeros(Int,numpBC,3)         #initialize boundary conditions
-    for i=1:numpBC
-
-        line = readline(fid)
-
-        # Find where all of the delimiters are
-        #first two are boundary condition node number and local DOF number
-        #third is boundary condition value (typically zero)
-        delimiter_idx = [0;collect.(Int,findall(" ",line));length(line)+1]
-        # Extract the data from the beginning to the last delimiter
-        for k = 2:length(delimiter_idx)
-            pBC[i,k-1] = Int(parse(Float64,line[delimiter_idx[k-1][1]+1:delimiter_idx[k][1]-1]))
-        end
-
-    end
-
-    totalNumDof = numNodes*numDofPerNode
-
-    numsBC = 0
-    nummBC = 0
-
-    close(fid)
-
-    #create a vector denoting constrained DOFs in the model (0 unconstrained, 1
-    #constrained)
-
-
-    #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof,1)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
-    index = 1
-    for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
-                isConstrained[index] = 1
-            end
-            index = index + 1
-        end
-    end
-
-    BC = GyricFEA.BC_struct(numpBC,
-    pBC,
-    numsBC,
-    nummBC,
-    isConstrained,
-    [],
-    [])
-
-    return BC
-
-end
-
-"""
-
-    readBladeData(filename)
-
-This function reads blade data from file
-
-#Input
-* `filename::string`:   string containing /path/to/bladedata.bld
-
-#Output
-* `bladeData::BladeData`:  see ?BladeData object containing blade data
-"""
-function readBladeData(filename)
-
-    a = DelimitedFiles.readdlm(filename,'\t',skipstart = 0)
-
-    bladeNum = a[:,1]
-
-    numBlades = Int(maximum(bladeNum))
-    #     numStruts = min(bladeNum)
-    #     if (numStruts>0)
-    #         numStruts = 0
-    #     else
-    #         numStruts = abs(numStruts)
-    #     end
-
-    strutStartIndex = 0
-    for i=1:length(bladeNum)
-        if (isempty(a[i,end]))
-            strutStartIndex = i
-            break
-        end
-    end
-
-
-
-    if (strutStartIndex!=0)
-        #         strutDataBlock = a(strutStartIndex:end,:)
-        #         [strutEntries, _] = size(strutDataBlock)
-        #         numNodesPerStrut = strutEntries/numStruts
-        #         numElPerStrut = numNodesPerStrut - 1
-    else
-        temp=size(a)
-
-        strutStartIndex = temp[1] + 1
-    end
-
-    bladeDataBlock = a[1:strutStartIndex-1,:]
-    bladeEntries, _ = size(bladeDataBlock)
-    numNodesPerBlade = round(Int,bladeEntries/numBlades)
-
-    structuralSpanLocNorm = zeros(numBlades,numNodesPerBlade)
-    structuralNodeNumbers = zeros(numBlades,numNodesPerBlade)
-    structuralElNumbers = zeros(numBlades,numNodesPerBlade)
-    for i=1:numBlades
-        structuralSpanLocNorm[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,2]./bladeDataBlock[i*numNodesPerBlade,2]
-        structuralNodeNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3]
-        structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
-    end
-
-    bladeData = BladeData(numBlades,  #assign data to bladeData object
-    bladeDataBlock[:,1],
-    bladeDataBlock[:,2],
-    bladeDataBlock[:,3],
-    bladeDataBlock[:,4],
-    bladeDataBlock[:,5:end])
-
-    return bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers
-
-end
-
-"""
-
-    readElementData(numElements,elfile,ortfile,bldfile
-
-Reads element data and stores data in the element data
-object.
-
-#Input
-* `numElements::int`:  number of elements in structural mesh
-* `elfile::string`:       element data path/to/filename
-* `ortfile::string`:      element orientation path/to/filename
-* `bldfile::string`:      blade data path/to/filename
-
-#Output
-* `el::GyricFEA.El`:       see GyricFEA.El    element data object
-"""
-function readElementData(numElements,elfile,ortfile,bladeData_struct)
-
-    fid = open(elfile,"r") #open element data file
-
-    ac = zeros(2)
-    twist = zeros(2)
-    rhoA = zeros(2)
-    EIyy = zeros(2)
-    EIzz = zeros(2)
-    GJ = zeros(2)
-    EA = zeros(2)
-    rhoIyy = zeros(2)
-    rhoIzz = zeros(2)
-    rhoJ = zeros(2)
-    zcm = zeros(2)
-    ycm = zeros(2)
-    a = zeros(2)
-    EIyz = zeros(2)
-    alpha1 = zeros(2)
-    alpha2 = zeros(2)
-    alpha3 = zeros(2)
-    alpha4 = zeros(2)
-    alpha5 = zeros(2)
-    alpha6 = zeros(2)
-    rhoIyz = zeros(2)
-    b = zeros(2)
-    a0 = zeros(2)
-    aeroCenterOffset = zeros(2)
-
-    sectionPropsArray = Array{GyricFEA.SectionPropsArray, 1}(undef, numElements)
-
-    data1 = zeros(1,17)
-    data2 = zeros(1,17)
-    for i=1:numElements
-        data1=parse.(Float64,split(readline(fid))) #read element data
-        data2=parse.(Float64,split(readline(fid)))
-
-        #structural properties
-        ac = -([data1[2], data2[2]].-0.5) #TODO: why are we doing it this way???
-        twist=[data1[3], data2[3]]
-        rhoA = [data1[4], data2[4]]
-        EIyy = [data1[5], data2[5]]
-        EIzz = [data1[6], data2[6]]
-        if (minimum(abs.(EIyy - EIzz)) < 1.0e-3)
-            EIzz = EIzz.*1.0001
-        end
-        GJ = [data1[7], data2[7]]
-        EA = [data1[8], data2[8]]
-        alpha1 = [data1[9], data2[9]]
-
-        rhoIyy = [data1[10], data2[10]]
-        rhoIzz = [data1[11], data2[11]]
-        rhoJ = [(data1[10]+data1[11]), (data2[10]+data2[11])]
-        zcm = [data1[14], data2[14]]
-        ycm = [data1[15], data2[15]]
-        a = [data1[17], data2[17]]
-
-        #coupling factors
-        EIyz = [0.0, 0.0]
-        alpha1 = [0.0, 0.0]
-        alpha2 = [0.0, 0.0]
-        alpha3 = [0.0, 0.0]
-        alpha4 = [0.0, 0.0]
-        alpha5 = [0.0, 0.0]
-        alpha6 = [0.0, 0.0]
-        rhoIyz = [0.0, 0.0]
-        b = [0.0, 0.0]
-        a0 = [2*pi, 2*pi]
-
-        sectionPropsArray[i] = GyricFEA.SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
-
-    end
-    close(fid) #close element file
-
-    nodeNum = Int.(bladeData_struct.nodeNum)  #node number associated with blade section
-    elNum = Int.(bladeData_struct.elementNum)    #element number associated with blade section
-    bladeData = bladeData_struct.remaining  #blade data
-
-    chord = zeros(maximum(Int,nodeNum),1)
-    for i=1:length(elNum)
-        chord[nodeNum[i]] = bladeData[i,10]  #store chord of blade sections
-    end
-
-    for i=1:length(elNum)
-        if (elNum[i]!=-1)
-
-            sectionPropsArray[elNum[i]].b = 0.5.*[chord[nodeNum[i]], chord[nodeNum[i+1]]] #element semi chord
-            sectionPropsArray[elNum[i]].a0 = [bladeData[i,12], bladeData[i+1,12]]         #element lift curve slope (needed for flutter analysis)
-
-            #convert "a" to semichord fraction aft of halfchord
-            sectionPropsArray[elNum[i]].a = (sectionPropsArray[elNum[i]].a + 0.25*(2*sectionPropsArray[elNum[i]].b) - sectionPropsArray[elNum[i]].b)./sectionPropsArray[elNum[i]].b
-
-            #convert "ac" to semichord fraction foreward of halfchord TODO: why are we doing it this way???
-            sectionPropsArray[elNum[i]].ac = (sectionPropsArray[elNum[i]].ac).*2
-
-            #physical aero center offset from elastic axis
-            sectionPropsArray[elNum[i]].aeroCenterOffset = (sectionPropsArray[elNum[i]].ac).*sectionPropsArray[elNum[i]].b - sectionPropsArray[elNum[i]].a
-        end
-    end
-
-
-    println("EIyz, rhoIyz deactivated")
-
-    #read element orientation data
-    elLen = zeros(numElements)
-    psi = zeros(numElements)
-    theta = zeros(numElements)
-    roll = zeros(numElements)
-    fid = open(ortfile,"r")
-    for i=1:numElements
-        temp = parse.(Float64,split(readline(fid)))
-        elLen[i]=temp[5]
-        psi[i]=temp[2]
-        theta[i]=temp[3]
-        roll[i]=temp[4]
-    end
-    close(fid) #close ort file
-
-    rotationalEffects = ones(numElements)
-
-    #store data in element object
-    el = GyricFEA.El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
-
-    return el
-
-end
-
-"""
-
-    readGeneratorProps(generatorfilename)
-
-This function reads generator properties from file.
-
-#Input
-* `generatorfilenanme::string`:  = string containing path/to/generatorfile
-
-#Output
-* `genprops`:    = model object containing generator properties
-"""
-function readGeneratorProps(generatorfilename)
-
-    # fid = fopen(generatorfilename) #open generator property file
-    # if (fid!=-1) #if file can be opened
-    #         genprops.ratedTorque = fscanf(fid,'#f',1) #store rated torque
-    #         dum = fgetl(fid)
-    #         genprops.zeroTorqueGenSpeed = fscanf(fid,'#f',1) #store zero torque generator zpeed
-    #         dum = fgetl(fid)
-    #         genprops.pulloutRatio = fscanf(fid,'#f',1) #store pullout ratio
-    #         dum = fgetl(fid)
-    #         genprops.ratedGenSlipPerc= fscanf(fid,'#f',1) #store rated generator slip percentage
-    #         dum = fgetl(fid)
-    #
-    #         fclose(fid) #close generator propery file
-    genprops = 0.0
-    println("GENERATOR NOT FULLY ENABLED")
-
-    genprops = 0.0 #if generator property file does not exist, set object to null
-
-    return genprops
-end
-
-"""
-
-    readInitCond(filename)
-
-Reads initial conditions from file
-
-#Input
-* `filename`      string containing file name for initial conditions file
-
-#Output
-* `initCond`      array containing initial conditions
-"""
-function readInitCond(filename)
-
-    initCond =[] #initialize intial condition to null
-
-    # fid = open(filename) #open initial  conditions file
-
-    #         index = 1
-    #         while(~feof(fid))
-    #             temp1 = fscanf(fid,'#i',2) #read node number and local DOF number for initial cond.
-    #             temp2 = fscanf(fid,'#f',1) #read value for initial cond.
-    #
-    #             #place node number, dof number and value into array
-    #             initCond(index,1:3) = [temp1(1), temp1(2), temp2(1)]
-    #
-    #             index = index + 1
-    #         end
-
-    println("INITIAL CONDITIONS NOT FULLY ENABLED")
-    return initCond
-end
-
-"""
-
-    writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
-
-writes a nodal input file
-
-#Intput
-* `fileRoot::string`: string path to desired location with name but no extension
-* `nodes::int`: node numbers for C/M/K
-* `cmkType::string`: "C" "M" or "K"
-* `cmkValues::float`: C/M/K value
-
-#Output
-* `none`:
-
-"""
-function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
-
-    # open the BC file to save the boundary conditions to
-    BCfile = string(fileRoot, ".ndl")    #construct file name
-
-    open(BCfile, "w") do file
-        # write out the boundary conditions into the file
-        for nn = 1:length(nodes)
-            # [row, col, val] = find(cmkValues[nn])
-            indices = findall(x->x!=0,cmkValues[:,:,nn])
-            # println(indices)
-            for ii = 1:length(indices)
-                row = indices[ii][1]
-                col = indices[ii][2]
-                write(file, "$(nodes[nn]) $(cmkType[nn]) $(row) $(col) $(cmkValues[row,col,nn])\n")
-            end
-        end
-    end
-end
 
 """
 Internal, reads cactus .geom file and stores each column in an array within the CactusGeom struct
@@ -1043,67 +594,6 @@ function generateOutputFilename(owensfilename,analysisType)
 
 end
 
-"""
-Internal, reads modal file and returns freq, damp, and modeshapes
-"""
-function readResultsModalOut(resultsFile,numNodes)
-    data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
-
-    nmodes = round(Int,min(length(data[:,1])/(numNodes*2+6),30))
-
-    freq = zeros(nmodes)
-    damp = zeros(nmodes)
-    U_x_0 = zeros(numNodes,nmodes)
-    U_y_0 = zeros(numNodes,nmodes)
-    U_z_0 = zeros(numNodes,nmodes)
-    theta_x_0 = zeros(numNodes,nmodes)
-    theta_y_0 = zeros(numNodes,nmodes)
-    theta_z_0 = zeros(numNodes,nmodes)
-    U_x_90 = zeros(numNodes,nmodes)
-    U_y_90 = zeros(numNodes,nmodes)
-    U_z_90 = zeros(numNodes,nmodes)
-    theta_x_90 = zeros(numNodes,nmodes)
-    theta_y_90 = zeros(numNodes,nmodes)
-    theta_z_90 = zeros(numNodes,nmodes)
-
-    for i_mode = 1:nmodes
-        i_line = (i_mode-1)*(numNodes*2+7)+1
-
-        freq[i_mode] = parse(Float64,(split(data[i_line+1,1])[2])[1:end-1])
-        damp[i_mode] = parse(Float64,(split(data[i_line+2,1])[2])[1:end-1])
-
-        # 0 degree shapes, with the max value scaled to 1
-
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
-        U_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
-        U_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
-        U_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
-        theta_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
-        theta_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
-        theta_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-
-        i_line = i_line+numNodes+2 #90 degree shapes, with the max value scaled to 1
-
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
-        U_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
-        U_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
-        U_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
-        theta_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
-        theta_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
-        theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-    end
-    return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
-end
 
 """
     simpleGenerator(generatorProps,genSpeed)
@@ -1149,6 +639,60 @@ function simpleGenerator(model,genSpeed)
     end
 
     return genTorque
+
+end
+
+"""
+    setInitConditions(initDisps, numNodes, numDOFPerNode)
+
+Creates the formatted initial conditions array needed by GyricFEA
+
+#Input
+* `initDisps`: an array of length numDOFPerNode specifying the initial displacement of each DOF
+* `numNodes`: the number of nodes in the given mesh
+* `numDOFPerNode`: the number of unconstrained degrees of freedom calculated in each node
+
+#Output
+* `initCond`: array containing initial conditions.
+    initCond(i,1) node number for init cond i.
+    initCond(i,2) local DOF number for init cond i.
+    initCond(i,3) value for init cond i.
+"""
+function createInitCondArray(initDisps, numNodes, numDOFPerNode)
+    if initDisps == zeros(length(initDisps))
+        initCond = []
+    else
+        initCond = zeros(numNodes*numDOFPerNode, 3)
+        for i = 1:length(initDisps)
+            if initDisps[i] != 0.0
+                dof_initCond = hcat(collect(1:numNodes), ones(Int,numNodes)*i, ones(numNodes)*initDisps[i])
+                initCond[(i-1)*numNodes+1:i*numNodes,:] = dof_initCond
+            end
+        end
+        initCond = initCond[vec(mapslices(col -> any(col .!= 0), initCond, dims = 2)), :] #removes rows of all zeros
+    end
+
+    return initCond
+end
+
+function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNode) #node, dof, bc
+    if (fixedDOFs == []) && (fixedNodes == [])
+        pBC = []
+    else
+        pBC = zeros(Int, numNodes*numDOFPerNode, 3)
+        for i = 1:length(fixedNodes)
+            pBC[(i-1)*numDOFPerNode+1:i*numDOFPerNode, :] = hcat(ones(numDOFPerNode)*fixedNodes[i], collect(1:numDOFPerNode), zeros(Int, numDOFPerNode) )
+        end
+        for i = 1:length(fixedDOFs)
+            newNodes = setdiff(1:numNodes, fixedNodes) # this avoids duplicating nodes already counted for by fixedNodes
+            numNewNodes = length(newNodes)
+            dofBCs = hcat(newNodes, ones(Int,numNewNodes)*fixedDOFs[i], zeros(Int,numNewNodes))
+            pBC[length(fixedNodes)*numDOFPerNode+(i-1)*numNewNodes+1:length(fixedNodes)*numDOFPerNode+i*numNewNodes, :] = dofBCs
+        end
+        pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes extra rows (i.e. rows of all zeros)
+    end
+
+    return pBC
 
 end
 
