@@ -226,7 +226,7 @@ end
 
 function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-    mymesh,Nbld,epsilon_x_hist_ps,kappa_y_hist_ps,kappa_z_hist_ps,epsilon_z_hist_ps,kappa_x_hist_ps,epsilon_y_hist_ps,
+    mymesh,myel,myort,Nbld,epsilon_x_hist_ps,kappa_y_hist_ps,kappa_z_hist_ps,epsilon_z_hist_ps,kappa_x_hist_ps,epsilon_y_hist_ps,
     epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1;verbosity=2)
 
     # Linearly Superimpose the Strains
@@ -252,8 +252,8 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     #### Get strain values at the blades #####
     ##########################################
 
-    meanepsilon_z_hist = mean(epsilon_z_hist,dims=1)
-    meanepsilon_y_hist = mean(epsilon_y_hist,dims=1)
+    meanepsilon_z_hist = Statistics.mean(epsilon_z_hist,dims=1)
+    meanepsilon_y_hist = Statistics.mean(epsilon_y_hist,dims=1)
 
     N_ts = length(epsilon_x_hist[1,1,:])
     eps_x_bld = zeros(Nbld,N_ts,length(bld_precompinput))
@@ -657,15 +657,12 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         return mass
     end
 
-
-    massOwens = massOWENS(sectionPropsArray,myort)
+    massOwens = massOWENS(myel.props,myort)
     if verbosity>0
         println("Mass ARCUS 5MW Turbine: $massOwens")
     end
     if verbosity>1
         println("Mass Baseline 5MW: 181888.58246407832")
-    end
-    if verbosity>1
         println("That's a $((181888.58246407832-massOwens)/181888.58246407832*100)% reduction in mass")
     end
 

@@ -354,9 +354,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # AERODYNAMICS MODULE
                 #---------------------
                 # Calculate new aerodynamic loading
-                # TODO implement the actual module, we're just parsing prescribed loading right now
-
-                # deformAero(Omega_j*2*pi)
 
                 # Update reference frame transformation and convert aerodynamic loads to hub reference frame
                 if inputs.hydroOn
