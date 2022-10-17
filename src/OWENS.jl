@@ -2,7 +2,7 @@ module OWENS
 
 # Custom unregistered (julia) packages
 import GyricFEA
-import VAWTHydro
+# import VAWTHydro
 
 # Github packages
 import Statistics
