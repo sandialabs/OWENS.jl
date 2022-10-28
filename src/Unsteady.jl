@@ -118,14 +118,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             bottomDispData.etadot_s = etadot_s_ptfm_n
             bottomDispData.etaddot_s = etaddot_s_ptfm_n
         end
-
-    else
-        if inputs.topsideOn
-            topElStorage = GyricFEA.initialElementCalculations(topModel,topEl,topMesh) #perform initial element calculations for conventional structural dynamics analysis
-        end
-        if inputs.hydroOn
-            bottomElStorage = GyricFEA.initialElementCalculations(bottomModel,bottomEl,bottomMesh)
-        end
     end
 
     if inputs.topsideOn
@@ -211,7 +203,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     ### Iterate for a solution at t+dt
     for i=1:numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
-
+        println(i)
         ## Print current simulation time to terminal
         if isinteger(t[i])
             now = Int(t[i])
@@ -276,6 +268,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             numIterations = 1
             uNorm = 1e5
             aziNorm = 1e5
+            platNorm = 0.0 #TODO: remove this?
             gbNorm = 0.0 #initialize norms for various module states
             integrator = integrator_j #don't compound integrator within the convergence loop.
 
@@ -413,15 +406,14 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 #------------------------------------
                 # TOPSIDE STRUCTURAL MODULE
                 #------------------------------------
+                println(Float64.(rbData))
                 if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
                 elseif inputs.analysisType=="GX"
                     topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                 else # evalulate structural dynamics using conventional representation
-                    topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                    topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
-
-                #TODO: possibly strain stiffening around here
 
                 u_jLast = copy(u_j)
                 u_j = topDispOut.displ_sp1
@@ -440,8 +432,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 end
 
                 # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
-                if i==numTS && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-                    GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;predef = topModel.nlParams.predef)
+                if i==numTS-1 && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                    GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
 
                 #TODO: verbosity
@@ -522,6 +514,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             #------------------------------------
             # TOPSIDE STRUCTURAL MODULE W/ PLATFORM RIGID BODY MOTIONS
             #------------------------------------
+            platNorm = 0.0 #TODO: remove this?
             if inputs.topsideOn
                 numIterations = 1
                 uNorm = 1e5
@@ -571,7 +564,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     elseif inputs.analysisType=="GX"
                         topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topmesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                     else # evalulate structural dynamics using conventional representation
-                        topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                        topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                     end
 
                     u_jLast = copy(u_j)
@@ -584,8 +577,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
 
                     # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
-                    if i==numTS && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-                        GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;predef = topModel.nlParams.predef)
+                    if i==numTS-1 && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                        GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                     end
 
                     ## calculate norms
@@ -643,7 +636,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             uHist[i+1,:] = u_s
             FReactionHist[i+1,:] = topFReaction_j
-            topFexternal_hist[i+1,:] = topFexternal
+            topFexternal_hist[i+1,1:length(topFexternal)] = topFexternal
             # FTwrBsHist[i+1,:] = -topFReaction_j  + topFWeight_j
 
             aziHist[i+1] = azi_s
