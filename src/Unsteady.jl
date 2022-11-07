@@ -134,7 +134,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         aziHist[1] = azi_s
         OmegaHist[1] = Omega_s
         OmegaDotHist[1] = OmegaDot_s
-        FReactionsm1 = zeros(Float32, 6)
+        FReactionsm1 = zeros(Real, 6)
         FReactionHist[1,:] = FReactionsm1
         topFReaction_j = FReactionsm1
         # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used
@@ -360,7 +360,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 else
                     CN2H = calcHubRotMat(zeros(3), azi_j)
                     CN2H_no_azi = calcHubRotMat(zeros(3), 0.0)
-                    rbData = zeros(Float32, 9)
+                    rbData = zeros(Real, 9)
                 end
                 CH2N = LinearAlgebra.transpose(CN2H)
 
@@ -400,13 +400,13 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
                 else
                     topFexternal = zeros(numDOFPerNode)
-                    aeroDOFs = zero(topFexternal)
+                    aeroDOFs = copy(topFexternal).*0.0
                 end
 
                 #------------------------------------
                 # TOPSIDE STRUCTURAL MODULE
                 #------------------------------------
-                println(Float64.(rbData))
+                # println(Float64.(rbData))
                 if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
                 elseif inputs.analysisType=="GX"
@@ -469,11 +469,11 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             ## Evaluate hydro-structural dynamics
             # FAST updates HD/MD using t+dt inputs extrapolated from previous time steps, NOT from the new ElastoDyn motions
-            VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+            OpenFASTWrappers.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
             if inputs.interpOrder == 1
-                VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+                OpenFASTWrappers.MD_UpdateStates(0, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
             elseif inputs.interpOrder == 2
-                VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+                OpenFASTWrappers.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
             end
 
             if inputs.analysisType=="ROM"
@@ -702,8 +702,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     # End FAST module links
     if inputs.hydroOn
-        VAWTHydro.HD_End()
-        VAWTHydro.MD_End()
+        OpenFASTWrappers.HD_End()
+        OpenFASTWrappers.MD_End()
     end
 
     outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
@@ -797,7 +797,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,ass
             idx += 1
         end
     end
-    dispOut = GyricFEA.DispOut(nothing, disp_sp1,zero(disp_sp1),zero(disp_sp1))
+    dispOut = GyricFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,copy(disp_sp1).*0.0)
     FReaction_j = [-history[end].points[1].F[1];-history[end].points[1].F[2];-history[end].points[1].F[3];
     -history[end].points[1].M[1];-history[end].points[1].M[2];-history[end].points[1].M[3]]
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
@@ -851,10 +851,10 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
         # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
         # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
 
-        bld_x = zero(mesh.structuralNodeNumbers[:,1:end-1])
-        bld_y = zero(mesh.structuralNodeNumbers[:,1:end-1])
-        bld_z = zero(mesh.structuralNodeNumbers[:,1:end-1])
-        bld_twist = zero(mesh.structuralNodeNumbers[:,1:end-1])
+        bld_x = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        bld_y = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        bld_z = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        bld_twist = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
 
         for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
             bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
@@ -935,8 +935,8 @@ function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
         u_s = zeros(top_totalNumDOF)
     end
     u_s = GyricFEA.setInitialConditions(topModel.initCond, u_s, numDOFPerNode)
-    udot_s = zero(u_s)
-    uddot_s = zero(u_s)
+    udot_s = copy(u_s).*0.0
+    uddot_s = copy(u_s).*0.0
     u_sm1 = copy(u_s)
 
     topDispData1 = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
@@ -969,10 +969,10 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     end
 
     bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode
-    u_s_ptfm_n = zeros(Float32, bottom_totalNumDOF)
+    u_s_ptfm_n = zeros(Real, bottom_totalNumDOF)
     u_s_ptfm_n = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm_n, numDOFPerNode)
-    udot_s_ptfm_n = zero(u_s_ptfm_n)
-    uddot_s_ptfm_n = zero(u_s_ptfm_n)
+    udot_s_ptfm_n = copy(u_s_ptfm_n).*0.0
+    uddot_s_ptfm_n = copy(u_s_ptfm_n).*0.0
     u_sm1_ptfm_n = copy(u_s_ptfm_n)
     bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
 
@@ -981,7 +981,7 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     udot_s_prp_n = Vector(udot_s_ptfm_n[prpDOFs])
     uddot_s_prp_n = Vector(uddot_s_ptfm_n[prpDOFs])
 
-    jac = Array{Float32}(undef, numDOFPerNode*2, numDOFPerNode*2)
+    jac = Array{Real}(undef, numDOFPerNode*2, numDOFPerNode*2)
     numMooringLines = 3
 
     if inputs.outFilename == "none"
@@ -990,13 +990,13 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
         hd_outFilename = inputs.outFilename
     end
 
-    FHydro_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
-    FMooring_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
+    FHydro_n = zeros(Float32, numDOFPerNode) #Vector{Real}(undef, numDOFPerNode)
+    FMooring_n = zeros(Float32, numDOFPerNode) #Vector{Real}(undef, numDOFPerNode)
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
     mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
-    VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
-    VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
+    OpenFASTWrappers.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
+    OpenFASTWrappers.MD_Init(bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
 
     return bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,udot_s_prp_n,uddot_s_prp_n,jac,numMooringLines,FHydro_n,FMooring_n,outVals,mooringTensions
 end
@@ -1067,20 +1067,20 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     total_Fexternal = vcat(other_Fexternal, FPtfm_old) # platform loads are old inputs from last time step/correction
     total_Fdof = vcat(other_Fdof, prpDOFS)
     if rom != 0
-        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Real, 9))
     else
-        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Real, 9))
     end
     uddot_prp_n = dispsUncoupled.displddot_sp1[prpDOFS]
     if time > 0
         udot_prp_n = dispsUncoupled.displdot_sp1[prpDOFS]
         u_prp_n = dispsUncoupled.displ_sp1[prpDOFS]
     else
-        udot_prp_n = zeros(Float32, numDOFPerNode)
-        u_prp_n = zeros(Float32, numDOFPerNode)
+        udot_prp_n = zeros(Real, numDOFPerNode)
+        u_prp_n = zeros(Real, numDOFPerNode)
     end
-    FHydro_2[:], _ = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
-    FMooring_new[:], _ = VAWTHydro.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
+    FHydro_2[:], _ = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
+    FMooring_new[:], _ = OpenFASTWrappers.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
 
     # Calculate the residual
     # For consistency, everything in the u vector is in the inertial reference frame
@@ -1101,9 +1101,9 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             u_perturb[dof] += 1
             total_Fexternal_perturb = vcat(other_Fexternal, FPtfm_perturb)
             if !isa(rom, Number)
-                _ ,dispOut_perturb, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+                _ ,dispOut_perturb, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Real, 9))
             else
-                _, dispOut_perturb, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+                _, dispOut_perturb, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Real, 9))
             end
             uddot_ptfm_perturb_n = dispOut_perturb.displddot_sp1[prpDOFS]
             residual_perturb = calcHydroResidual(uddot_ptfm_perturb_n, FHydro_2, FMooring_new, u_perturb, FMultiplier)
@@ -1116,7 +1116,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             uddot_prp_perturb[dof] += 1
             u_perturb[dof+numDOFPerNode] += 1
             FHydro_perturb = Vector{Float32}(undef, numDOFPerNode) # this is reset each time, otherwise HydroDyn returns garbage values after the first iteration
-            FHydro_perturb[:], _ = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
+            FHydro_perturb[:], _ = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
             residual_perturb = calcHydroResidual(uddot_prp_n, FHydro_perturb, FMooring_new, u_perturb, FMultiplier)
             jac[:,dof+numDOFPerNode] = residual_perturb - residual
         end
@@ -1140,11 +1140,11 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
 
     # Rerun OWENS and HydroDyn with updated inputs
     if rom != 0
-        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Real, 9))
     else
-        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Real, 9))
     end
-    FHydro_new[:], outVals[:] = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
+    FHydro_new[:], outVals[:] = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
 
 
     return dispsUncoupled, dispsCoupled, FHydro_new, FMooring_new, outVals, jac_out
@@ -1229,44 +1229,44 @@ function allocate_general(inputs,topMesh,numDOFPerNode,numTS,assembly)
 
     ## History array initialization
     if inputs.topsideOn
-        uHist = zeros(Float32, numTS, topMesh.numNodes*numDOFPerNode)
+        uHist = zeros(Real, numTS, topMesh.numNodes*numDOFPerNode)
         if inputs.analysisType == "GX"
             nel = length(assembly.start) #TODO: these should be the same.
         else
             nel = topMesh.numEl
         end
-        epsilon_x_hist = zeros(Float32, 4,nel,numTS)
-        epsilon_y_hist = zeros(Float32, 4,nel,numTS)
-        epsilon_z_hist = zeros(Float32, 4,nel,numTS)
-        kappa_x_hist = zeros(Float32, 4,nel,numTS)
-        kappa_y_hist = zeros(Float32, 4,nel,numTS)
-        kappa_z_hist = zeros(Float32, 4,nel,numTS)
+        epsilon_x_hist = zeros(Real, 4,nel,numTS)
+        epsilon_y_hist = zeros(Real, 4,nel,numTS)
+        epsilon_z_hist = zeros(Real, 4,nel,numTS)
+        kappa_x_hist = zeros(Real, 4,nel,numTS)
+        kappa_y_hist = zeros(Real, 4,nel,numTS)
+        kappa_z_hist = zeros(Real, 4,nel,numTS)
     else
-        uHist = zeros(Float32, numTS, numDOFPerNode)
-        epsilon_x_hist = zeros(Float32, 4,1, numTS)
-        epsilon_y_hist = zeros(Float32, 4,1, numTS)
-        epsilon_z_hist = zeros(Float32, 4,1, numTS)
-        kappa_x_hist = zeros(Float32, 4,1, numTS)
-        kappa_y_hist = zeros(Float32, 4,1, numTS)
-        kappa_z_hist = zeros(Float32, 4,1, numTS)
+        uHist = zeros(Real, numTS, numDOFPerNode)
+        epsilon_x_hist = zeros(Real, 4,1, numTS)
+        epsilon_y_hist = zeros(Real, 4,1, numTS)
+        epsilon_z_hist = zeros(Real, 4,1, numTS)
+        kappa_x_hist = zeros(Real, 4,1, numTS)
+        kappa_y_hist = zeros(Real, 4,1, numTS)
+        kappa_z_hist = zeros(Real, 4,1, numTS)
     end
 
-    FReactionHist = zeros(Float32, numTS,6) #TODO: these can go with the general init
-    FTwrBsHist = zeros(Float32, numTS, 6)
-    aziHist = zeros(Float32, numTS)
-    OmegaHist = zeros(Float32, numTS)
-    OmegaDotHist = zeros(Float32, numTS)
-    gbHist = zeros(Float32, numTS)
-    gbDotHist = zeros(Float32, numTS)
-    gbDotDotHist = zeros(Float32, numTS)
-    genTorque = zeros(Float32, numTS)
-    genPower = zeros(Float32, numTS)
-    torqueDriveShaft = zeros(Float32, numTS)
+    FReactionHist = zeros(Real, numTS,6) #TODO: these can go with the general init
+    FTwrBsHist = zeros(Real, numTS, 6)
+    aziHist = zeros(Real, numTS)
+    OmegaHist = zeros(Real, numTS)
+    OmegaDotHist = zeros(Real, numTS)
+    gbHist = zeros(Real, numTS)
+    gbDotHist = zeros(Real, numTS)
+    gbDotDotHist = zeros(Real, numTS)
+    genTorque = zeros(Real, numTS)
+    genPower = zeros(Real, numTS)
+    torqueDriveShaft = zeros(Real, numTS)
 
-    uHist_prp = zeros(Float32, numTS,numDOFPerNode)
-    FPtfmHist = zeros(Float32, numTS,numDOFPerNode)
-    FHydroHist = zeros(Float32, numTS,numDOFPerNode)
-    FMooringHist = zeros(Float32, numTS,numDOFPerNode)
+    uHist_prp = zeros(Real, numTS,numDOFPerNode)
+    FPtfmHist = zeros(Real, numTS,numDOFPerNode)
+    FHydroHist = zeros(Real, numTS,numDOFPerNode)
+    FMooringHist = zeros(Real, numTS,numDOFPerNode)
 
     return uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,

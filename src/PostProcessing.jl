@@ -243,12 +243,12 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     Twr_LE_U_idx=1,Twr_LE_L_idx=1)
 
     # Linearly Superimpose the Strains
-    epsilon_x_hist = zero(epsilon_x_hist_ps)
-    kappa_y_hist = zero(kappa_y_hist_ps)
-    kappa_z_hist = zero(kappa_z_hist_ps)
-    epsilon_z_hist = zero(epsilon_z_hist_ps)
-    kappa_x_hist = zero(kappa_x_hist_ps)
-    epsilon_y_hist = zero(epsilon_y_hist_ps)
+    epsilon_x_hist = copy(epsilon_x_hist_ps).*0.0
+    kappa_y_hist = copy(kappa_y_hist_ps).*0.0
+    kappa_z_hist = copy(kappa_z_hist_ps).*0.0
+    epsilon_z_hist = copy(epsilon_z_hist_ps).*0.0
+    kappa_x_hist = copy(kappa_x_hist_ps).*0.0
+    epsilon_y_hist = copy(epsilon_y_hist_ps).*0.0
 
     if epsilon_x_hist_1!=nothing
         for ipt = 1:4

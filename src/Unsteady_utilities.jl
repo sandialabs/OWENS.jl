@@ -193,7 +193,7 @@ function transMat(theta1, theta2, theta3)
 
 
     # Define the transformation matrix:
-    transMat = Array{Float32}(undef, 3,3)
+    transMat = Array{Real}(undef, 3,3)
     if comDenom == 0.0  # All angles are zero and matrix is ill-conditioned (the matrix is derived assuming that the angles are not zero); return identity
 
         transMat = LinearAlgebra.I(3)
@@ -254,7 +254,7 @@ respectively.
 """
 function externalForcing(time,timeArray,ForceValHist,ForceDof)
 
-    Fexternal = zeros(Float32, length(ForceDof))
+    Fexternal = zeros(Real, length(ForceDof))
 
     for i = 1:length(ForceDof)
         Fexternal[i] = FLOWMath.linear(timeArray,ForceValHist[i,:],time)
@@ -439,7 +439,7 @@ Internal, transfers 6 DOFs element-wise to a new reference frame
 """
 function frame_convert(init_frame_vals, trans_mat)
 
-    out_frame_vals = zero(init_frame_vals)
+    out_frame_vals = copy(init_frame_vals).*0.0
     out_frame_vals[1:3] = trans_mat * init_frame_vals[1:3]
     out_frame_vals[4:6] = trans_mat * init_frame_vals[4:6]
 
