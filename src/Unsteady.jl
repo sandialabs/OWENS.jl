@@ -471,11 +471,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             ## Evaluate hydro-structural dynamics
             # FAST updates HD/MD using t+dt inputs extrapolated from previous time steps, NOT from the new ElastoDyn motions
             OpenFASTWrappers.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            if inputs.interpOrder == 1
-                OpenFASTWrappers.MD_UpdateStates(0, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            elseif inputs.interpOrder == 2
-                OpenFASTWrappers.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            end
+            OpenFASTWrappers.MD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
 
             if inputs.analysisType=="ROM"
                 bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
