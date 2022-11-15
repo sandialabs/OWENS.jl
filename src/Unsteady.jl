@@ -895,7 +895,7 @@ function outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbD
         filename = string(inputs.outFilename[1:end-3], "h5")
         HDF5.h5open(filename, "w") do file
             # HDF5.write(file,"model",model)
-            HDF5.write(file,"t",t)
+            HDF5.write(file,"t",collect(t))
             HDF5.write(file,"aziHist",aziHist)
             HDF5.write(file,"OmegaHist",OmegaHist)
             HDF5.write(file,"OmegaDotHist",OmegaDotHist)
