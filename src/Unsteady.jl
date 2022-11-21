@@ -470,8 +470,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             ## Evaluate hydro-structural dynamics
             # FAST updates HD/MD using t+dt inputs extrapolated from previous time steps, NOT from the new ElastoDyn motions
-            OpenFASTWrappers.hdUpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            OpenFASTWrappers.mdUpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+            OpenFASTWrappers.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+            OpenFASTWrappers.MD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
 
             if inputs.analysisType=="ROM"
                 bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
@@ -699,8 +699,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     # End FAST module links
     if inputs.hydroOn
-        OpenFASTWrappers.hdEnd()
-        OpenFASTWrappers.mdEnd()
+        OpenFASTWrappers.HD_End()
+        OpenFASTWrappers.MD_End()
     end
 
     outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
@@ -992,8 +992,8 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
     mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
-    OpenFASTWrappers.hdInit(hdLib_filename=bin.hydrodynLibPath, output_root_name=hd_outFilename, input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
-    OpenFASTWrappers.mdInit(mdLib_filename=bin.moordynLibPath, input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
+    OpenFASTWrappers.HD_Init(bin.hydrodynLibPath, hd_outFilename; hd_input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
+    OpenFASTWrappers.MD_Init(bin.moordynLibPath; md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
 
     return bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,udot_s_prp_n,uddot_s_prp_n,jac,numMooringLines,FHydro_n,FMooring_n,outVals,mooringTensions
 end
@@ -1076,8 +1076,8 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
         udot_prp_n = zeros( numDOFPerNode)
         u_prp_n = zeros( numDOFPerNode)
     end
-    FHydro_2[:], _ = OpenFASTWrappers.hdCalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
-    FMooring_new[:], _ = OpenFASTWrappers.mdCalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
+    FHydro_2[:], _ = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
+    FMooring_new[:], _ = OpenFASTWrappers.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
 
     # Calculate the residual
     # For consistency, everything in the u vector is in the inertial reference frame
