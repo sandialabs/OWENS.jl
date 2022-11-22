@@ -1113,7 +1113,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             uddot_prp_perturb[dof] += 1
             u_perturb[dof+numDOFPerNode] += 1
             FHydro_perturb = Vector{Float32}(undef, numDOFPerNode) # this is reset each time, otherwise HydroDyn returns garbage values after the first iteration
-            FHydro_perturb[:], _ = OpenFASTWrappers.hdCalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
+            FHydro_perturb[:], _ = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
             residual_perturb = calcHydroResidual(uddot_prp_n, FHydro_perturb, FMooring_new, u_perturb, FMultiplier)
             jac[:,dof+numDOFPerNode] = residual_perturb - residual
         end
@@ -1141,7 +1141,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     else
         _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros( 9))
     end
-    FHydro_new[:], outVals[:] = OpenFASTWrappers.hdCalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
+    FHydro_new[:], outVals[:] = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
 
 
     return dispsUncoupled, dispsCoupled, FHydro_new, FMooring_new, outVals, jac_out
