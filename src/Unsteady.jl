@@ -43,7 +43,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false,
     system=nothing,assembly=nothing, #TODO: should we initialize them in here? Unify the interface for ease?
-    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing)
+    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -203,7 +203,10 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #..........................................................................
 
     ### Iterate for a solution at t+dt
-    for i=1:numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+    i=0
+    timeconverged = false
+    while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+        i += 1
         # println(i)
         ## Print current simulation time to terminal
         if isinteger(t[i])
@@ -264,8 +267,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         if inputs.topsideOn
             #TODO: put these in the model
-            TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
-            MAXITER = 300 #max iteration for various modules
+            TOL = inputs.iteration_parameters.TOL#1e-4  #gauss-seidel iteration tolerance for various modules
+            MAXITER = inputs.iteration_parameters.MAXITER#2 #max iteration for various modules
             numIterations = 1
             uNorm = 1e5
             aziNorm = 1e5
@@ -404,6 +407,18 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     aeroDOFs = copy(topFexternal).*0.0
                 end
 
+                if meshcontrolfunction !== nothing
+                    # add to the loads based on the inputs, TODO: CN2H
+                    meshforces, meshdofs, timeconverged = meshcontrolfunction(topMesh,u_j)
+                    for idx_main in aeroDOFs
+                        for (idx,meshdof_idx) in enumerate(meshdofs)
+                            if idx_main == meshdof_idx
+                                topFexternal[idx_main] += meshforces[idx]
+                            end
+                        end
+                    end
+                end
+
                 #------------------------------------
                 # TOPSIDE STRUCTURAL MODULE
                 #------------------------------------
@@ -433,7 +448,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 end
 
                 # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
-                if i==numTS-1 && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
                     GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
 
@@ -441,7 +456,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # println("$(numIterations)   uNorm: $(uNorm) ")
 
                 if numIterations==MAXITER
-                    @warn "Maximum Iterations Met Breaking Iteration Loop"
+                    if inputs.iteration_parameters.iterwarnings
+                        @warn "Maximum Iterations Met Breaking Iteration Loop"
+                    end
                     break
                 end
 
@@ -574,7 +591,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
 
                     # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
-                    if i==numTS-1 && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                    if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
                         GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                     end
 
@@ -585,7 +602,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                     numIterations = numIterations + 1
                     if numIterations==MAXITER
-                        @warn "Maximum Iterations Met Breaking Iteration Loop"
+                        if inputs.iteration_parameters.iterwarnings
+                            @warn "Maximum Iterations Met Breaking Iteration Loop"
+                        end
                         break
                     end
 
@@ -1076,7 +1095,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
         udot_prp_n = zeros( numDOFPerNode)
         u_prp_n = zeros( numDOFPerNode)
     end
-    FHydro_2[:], _ = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
+    OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
     FMooring_new[:], _ = OpenFASTWrappers.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
 
     # Calculate the residual
@@ -1113,7 +1132,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             uddot_prp_perturb[dof] += 1
             u_perturb[dof+numDOFPerNode] += 1
             FHydro_perturb = Vector{Float32}(undef, numDOFPerNode) # this is reset each time, otherwise HydroDyn returns garbage values after the first iteration
-            FHydro_perturb[:], _ = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
+            OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
             residual_perturb = calcHydroResidual(uddot_prp_n, FHydro_perturb, FMooring_new, u_perturb, FMultiplier)
             jac[:,dof+numDOFPerNode] = residual_perturb - residual
         end
@@ -1141,7 +1160,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     else
         _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros( 9))
     end
-    FHydro_new[:], outVals[:] = OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
+    OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
 
 
     return dispsUncoupled, dispsCoupled, FHydro_new, FMooring_new, outVals, jac_out
