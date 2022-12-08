@@ -722,9 +722,16 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         OpenFASTWrappers.MD_End()
     end
 
-    outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
+    outputData(inputs,t[1:i],aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
+    FReactionHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[:,1:i],uHist_prp[1:i,:],
+    epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],kappa_y_hist[:,:,1:i],
+    kappa_z_hist[:,:,1:i])
 
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,topFexternal_hist,rbDataHist
+    return t[1:i], aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
+    FReactionHist[1:i,:],FTwrBsHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],
+    uHist_prp[1:i,:],epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],
+    kappa_y_hist[:,:,1:i],kappa_z_hist[:,:,1:i],FPtfmHist[1:i,:],FHydroHist[1:i,:],FMooringHist[1:i,:],
+    topFexternal_hist[1:i,:],rbDataHist[1:i,:]
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
