@@ -136,30 +136,43 @@ my_getplystrain(lam.nply, lam.tply, lam.theta, resultantstrain, offset)
 
 function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
-    kappa_y,kappa_z,numadIn;failmethod = "maxstress",upper=true,layer=-1)
+    kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1)
+    topstrainout = zeros(length(eps_x[1,:,1]),length(composites_span),length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
     for i_station = 1:length(composites_span)
         # i_station = 1
         ibld = 1
 
+        if upper # Get laminate location starting and ending points
+            lam_y_loc_le = precompinput[i_station].xsec_nodeU.*precompinput[i_station].chord
+        else
+            lam_y_loc_le = precompinput[i_station].xsec_nodeL.*precompinput[i_station].chord
+        end
+        lam_y_loc_le = (lam_y_loc_le[2:end]+lam_y_loc_le[1:end-1])./2 # Get the center locations
+
+        # Get thicknesses
+        refY = precompinput[i_station].le_loc*precompinput[i_station].chord # This is the distance from the leading edge to the reference axis.  Everything else is relative to the reference axis
+        thickness_precomp_lag_te = (precompinput[i_station].chord-(refY+precompoutput[i_station].y_sc))
+        thickness_precomp_lag_le = precompinput[i_station].chord - thickness_precomp_lag_te
+
         for j_lam = 1:length(lam_in[i_station,:])
+            
+            idx_y = round(Int,lam_y_loc_le[j_lam]/precompinput[i_station].chord*length(precompinput[i_station].ynode)/2)
 
-            # Get thickness
-            refY = precompinput[i_station].le_loc*precompinput[i_station].chord
-            thickness_precomp_lag_te = (precompinput[i_station].chord-(refY+precompoutput[i_station].y_sc))
-            thickness_precomp_lag_le = precompinput[i_station].chord - thickness_precomp_lag_te
-            crossover_fraction = thickness_precomp_lag_le/precompinput[i_station].chord
-            idx_y = round(Int,j_lam/length(lam_in[i_station,:])*length(precompinput[i_station].ynode)/2) #TODO: lower
-            thickness_precomp_flap = precompinput[i_station].ynode[idx_y]*precompinput[i_station].chord - precompoutput[i_station].x_sc
             if upper
-                offsetz = thickness_precomp_flap
-            else
-                offsetz = -thickness_precomp_flap
+                thickness_precomp_flap = precompinput[i_station].ynode[idx_y]*precompinput[i_station].chord - precompoutput[i_station].x_sc
+            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards 
+                thickness_precomp_flap = precompinput[i_station].ynode[end-idx_y+1]*precompinput[i_station].chord - precompoutput[i_station].x_sc
             end
+            offsetz = -thickness_precomp_flap #Negative due to sign convention of strain; i.e. if the blade starts at the bottom of the turbine, and goes out and bends up, the top should be in compression and the bottom in tension, which is opposite to the strain convention
 
-            if (j_lam-1)/length(lam_in[i_station,:]) < crossover_fraction
-                offsety = thickness_precomp_lag_le * 1-((j_lam-1)/length(lam_in[i_station,:])/crossover_fraction)
+            # Get y-distance from shear center to laminate location
+            # Get location of j_lam relative to the shear center
+            if j_lam == 1 # And address leading and trailing edge cases where we want the worst case and not center of lamina
+                offsety = thickness_precomp_lag_le
+            elseif j_lam == length(lam_in[i_station,:])
+                offsety = -thickness_precomp_lag_te
             else
-                offsety = -thickness_precomp_lag_te * ((j_lam)/length(lam_in[i_station,:])-(1-crossover_fraction))/crossover_fraction
+                offsety = -(lam_y_loc_le[j_lam]-(refY+precompoutput[i_station].y_sc))
             end
 
             offset = [0.0,offsety,offsetz]
@@ -178,18 +191,26 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
 
                 lam = lam_in[i_station,j_lam] #TODO: make this as an input
 
-                materials = [plyprops.plies[imat] for imat in lam.matid]
+                mat_idx = [numadIn.stack_mat_types[imat] for imat in lam.matid] # Map from the stack number to the material number
+                materials = [plyprops.plies[imat] for imat in mat_idx] # Then get the actual material used
+                
+                # Map the stack number to the material number
+
                 q = Composites.getQ.(materials,lam.theta)
 
+                #TODO: if we are doing the lower surface, should we use the lower plystrain?
                 lowerplystrain, upperplystrain = my_getplystrain(lam, resultantstrain, offset)
+                topstrainout[its,i_station,j_lam,1:3] = upperplystrain[1]
+                topstrainout[its,i_station,j_lam,4:end] = resultantstrain[:]
                 upperplystress = q.*upperplystrain #TODO: bootom side of plies needed for inter-laminate failure?
                 out = Composites.getmatfail.(upperplystress,materials,failmethod)
                 fail = [out[iii][1] for iii = 1:length(out)]
                 sf = [out[iii][2] for iii = 1:length(out)]
 
                 if failmethod == "maxstress"
-                    SF_ult[its,i_station,j_lam] = minimum([minimum(abs.(sf[i])) for i = 1:length(sf)])
+                    SF_ult[its,i_station,j_lam] = minimum(minimum([sf[isf][sf[isf].>0.0] for isf = 1:length(sf)])) # Pick out the worst case safety factor that is positive - negative means it is in the wrong direction for the failure criteria
                 else
+                    @warn "Use maxstress for now, or inspect safety factors for each layer manually, need to identify which layer is failing"
                     if layer == -1
                         SF_ult[its,i_station,j_lam] = minimum(sf) #TODO; use findmin to identify which layer is failing
                     else
@@ -228,6 +249,102 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
                 # cylinder_uniaxial_local_buckling_stress = Composites.cylinder_uniaxial_local_buckling(A, D, R, laminate_h)
                 # cylinder_bending_local_buckling_stress = Composites.cylinder_bending_local_buckling(A, D, R, laminate_h)
             end
+        end
+    end
+    return topstrainout
+end
+
+function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span_bld,lam_used)
+    #Ultimate
+    mymin,idx = findmin(SF_ult)
+    if verbosity>0
+        println("\nMinimum Safety Factor on Surface: $(minimum(SF_ult))")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld)) at lam $(idx[3]) of $(length(lam_used[idx[2],:]))")
+    end
+    #Buckling
+    if !isempty(SF_buck[SF_buck.>0.0])
+        SF_buck[SF_buck.<0.0] .= 1e6
+        SF_buck[:,:,LE_idx] .= 1e6 #ignore leading edge
+        SF_buck[:,:,TE_idx] .= 1e6 #ignore trailing edge
+        minbuck_sf,minbuck_sfidx = findmin(SF_buck)
+        if verbosity>0
+            println("\nWorst buckling safety factor $(minbuck_sf)")
+            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_bld)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
+        end
+        if verbosity>1
+            println("Buckling")
+            for istation = 1:length(composites_span_bld)
+                println(minimum(SF_buck[minbuck_sfidx[1],istation,:]))
+            end
+        end
+    else
+        if verbosity>0
+            println("Buckling not a factor, no sections in compression")
+        end
+    end
+
+    mymin,idx = findmin(SF_ult[:,:,SparCap_idx])
+    if verbosity>0
+        println("\nSpar Cap SF min: $mymin")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+    end
+
+    if verbosity>1
+        println("\nSpar")
+        for SF in SF_ult[idx[1],:,SparCap_idx]
+            println(SF)
+        end
+    end
+
+    mymin,idx = findmin(SF_ult[:,:,LE_idx])
+    if verbosity>0
+        println("\nLeading Edge SF min: $mymin")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+    end
+
+    if verbosity>1
+        println("Leading Edge")
+        for SF in SF_ult[idx[1],:,LE_idx]
+            println(SF)
+        end
+    end
+
+    mymin,idx = findmin(SF_ult[:,:,TE_idx])
+    if verbosity>0
+        println("\nTrailling Edge SF min: $mymin")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+    end
+
+    if verbosity>1
+        println("Trailing Edge")
+        for SF in SF_ult[idx[1],:,TE_idx]
+            println(SF)
+        end
+    end
+
+    mymin,idx = findmin(SF_ult[:,:,ForePanel_idx])
+    if verbosity>0
+        println("\nFore Panel SF min: $mymin")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+    end
+
+    if verbosity>1
+        println("Fore Panel")
+        for SF in SF_ult[idx[1],:,ForePanel_idx]
+            println(SF)
+        end
+    end
+
+    mymin,idx = findmin(SF_ult[:,:,AftPanel_idx])
+    if verbosity>0
+        println("\nAft Panel SF min: $mymin")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+    end
+
+    if verbosity>1
+        println("Aft Panel")
+        for SF in SF_ult[idx[1],:,AftPanel_idx]
+            println(SF)
         end
     end
 end
@@ -344,177 +461,28 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_U = zeros(N_ts,length(composites_span_bld),length(lam_U_bld[1,:]))
     SF_buck_U = zeros(N_ts,length(composites_span_bld),length(lam_U_bld[1,:]))
 
-    calcSF(stress_U,SF_ult_U,SF_buck_U,composites_span_bld,plyprops_bld,
+    topstrainout_blade_U = calcSF(stress_U,SF_ult_U,SF_buck_U,composites_span_bld,plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_U_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
-    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "tsaiwu",upper=true)
+    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=true)
 
     if verbosity>0
         println("Composite Ultimate and Buckling Safety Factors")
         println("\n\nUPPER BLADE SURFACE")
     end
-    #Ultimate
-    mymin,idx = findmin(SF_ult_U)
-    if verbosity>0
-        println("\nMinimum Safety Factor on Blade Surface: $(minimum(SF_ult_U))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld)) at lam $(idx[3]) of $(length(lam_U_bld[idx[2],:]))")
-    end
-    #Buckling
-    if !isempty(SF_buck_U[SF_buck_U.>0.0])
-        SF_buck_U[SF_buck_U.<0.0] .= 1e6
-        SF_buck_U[:,:,LE_U_idx] .= 1e6 #ignore leading edge
-        SF_buck_U[:,:,TE_U_idx] .= 1e6 #ignore trailing edge
-        minbuck_sf,minbuck_sfidx = findmin(SF_buck_U)
-        if verbosity>0
-            println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_bld)) at lam $(minbuck_sfidx[3]) of $(length(lam_U_bld[minbuck_sfidx[2],:]))")
-        end
-    else
-        if verbosity>0
-            println("Buckling not a factor, no sections in compression")
-        end
-    end
-
-    mymin,idx = findmin(SF_ult_U[:,:,SparCapU_idx])
-    if verbosity>0
-        println("\nSpar Cap SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    mymin,idx = findmin(SF_ult_U[:,:,LE_U_idx])
-    if verbosity>0
-        println("\nLeading Edge SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    if verbosity>1
-        println("\nUpper Spar")
-        for SF in SF_ult_U[idx[1],:,SparCapU_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Upper Leading Edge")
-        for SF in SF_ult_U[idx[1],:,LE_U_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Upper Trailing Edge")
-        for SF in SF_ult_U[idx[1],:,TE_U_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Upper Fore Panel")
-        for SF in SF_ult_U[idx[1],:,ForePanelU_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Upper Aft Panel")
-        for SF in SF_ult_U[idx[1],:,AftPanelU_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Upper Buckling")
-        for istation = 1:length(composites_span_bld)
-            println(minimum(SF_buck_U[idx[1],istation,:]))
-        end
-    end
-
+    printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_U_bld)
 
     stress_L = zeros(N_ts,length(composites_span_bld),length(lam_U_bld[1,:]),3)
     SF_ult_L = zeros(N_ts,length(composites_span_bld),length(lam_L_bld[1,:]))
     SF_buck_L = zeros(N_ts,length(composites_span_bld),length(lam_L_bld[1,:]))
 
-    calcSF(stress_L,SF_ult_L,SF_buck_L,composites_span_bld,plyprops_bld,
+    topstrainout_blade_L = calcSF(stress_L,SF_ult_L,SF_buck_L,composites_span_bld,plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_L_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
-    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "tsaiwu",upper=false)
+    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=false)
 
     if verbosity>0
         println("\n\nLOWER BLADE SURFACE")
     end
-    #Ultimate
-    mymin,idx = findmin(SF_ult_L)
-    if verbosity>0
-        println("\nMinimum Safety Factor on Blade Surface: $(minimum(SF_ult_L))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld)) at lam $(idx[3]) of $(length(lam_L_bld[idx[2],:]))")
-    end
-    #Buckling
-    if !isempty(SF_buck_L[SF_buck_L.>0.0])
-        SF_buck_L[SF_buck_L.<0.0] .= 1e6
-        SF_buck_L[:,:,LE_L_idx] .= 1e6 #ignore leading edge
-        SF_buck_L[:,:,TE_L_idx] .= 1e6 #ignore trailing edge
-        minbuck_sf,minbuck_sfidx = findmin(SF_buck_L)
-        if verbosity>0
-            println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_bld)) at lam $(minbuck_sfidx[3]) of $(length(lam_L_bld[minbuck_sfidx[2],:]))")
-        end
-    else
-        if verbosity>0
-            println("Buckling not a factor, no sections in compression")
-        end
-    end
-
-    mymin,idx = findmin(SF_ult_L[:,:,SparCapL_idx])
-    if verbosity>0
-        println("\nSpar Cap SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    mymin,idx = findmin(SF_ult_L[:,:,LE_L_idx])
-    if verbosity>0
-        println("\nLeading Edge SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    if verbosity>1
-        println("\nLower Spar")
-        for SF in SF_ult_L[idx[1],:,SparCapL_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Lower Leading Edge")
-        for SF in SF_ult_L[idx[1],:,LE_L_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Lower Trailing Edge")
-        for SF in SF_ult_L[idx[1],:,TE_L_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Lower Fore Panel")
-        for SF in SF_ult_L[idx[1],:,ForePanelL_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Lower Aft Panel")
-        for SF in SF_ult_L[idx[1],:,AftPanelL_idx]
-            println(SF)
-        end
-    end
-
-    if verbosity>1
-        println("Lower Buckling")
-        for istation = 1:length(composites_span_bld)
-            println(minimum(SF_buck_L[idx[1],istation,:]))
-        end
-    end
+    printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_L_bld)
 
     ##########################################
     #### Calculate Stress At the Tower
@@ -526,7 +494,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     calcSF(stress_TU,SF_ult_TU,SF_buck_TU,composites_span_twr,plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
-    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "tsaiwu",upper=true)
+    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true)
 
 
     if verbosity>0
@@ -547,7 +515,13 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         if verbosity>0
             println("\nWorst buckling safety factor $(minbuck_sf)")
             println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_twr)) at lam $(minbuck_sfidx[3]) of $(length(lam_U_twr[minbuck_sfidx[2],:]))")
+        elseif verbosity>1
+            println("Buckling")
+            for istation = 1:length(composites_span_twr)
+                println(minimum(SF_buck_TU[minbuck_sfidx[1],istation,:]))
+            end
         end
+    
     else
         if verbosity>0
             println("Buckling not a factor, no sections in compression")
@@ -561,12 +535,6 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         end
     end
 
-    if verbosity>1
-        println("Buckling")
-        for istation = 1:length(composites_span_twr)
-            println(minimum(SF_buck_TU[minbuck_sfidx[1],istation,:]))
-        end
-    end
 
 
     stress_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]),3)
@@ -575,7 +543,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     calcSF(stress_TL,SF_ult_TL,SF_buck_TL,composites_span_twr,plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
-    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "tsaiwu",upper=false)
+    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false)
 
 
     if verbosity>0
@@ -597,6 +565,12 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             println("\nWorst buckling safety factor $(minbuck_sf)")
             println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_twr)) at lam $(minbuck_sfidx[3]) of $(length(lam_L_twr[minbuck_sfidx[2],:]))")
         end
+        if verbosity>1
+            println("Buckling")
+            for istation = 1:length(composites_span_twr)
+                println(minimum(SF_buck_TL[minbuck_sfidx[1],istation,:]))
+            end
+        end
     else
         if verbosity>0
             println("Buckling not a factor, no sections in compression")
@@ -610,19 +584,14 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         end
     end
 
-    if verbosity>1
-        println("Buckling")
-        for istation = 1:length(composites_span_twr)
-            println(minimum(SF_buck_TL[minbuck_sfidx[1],istation,:]))
-        end
-    end
-
     ##########################################
     #### Calculate Mass
     ##########################################
 
     function calcMass(sectionPropsArray,myort)
         mass = 0.0
+        lens = zeros(length(sectionPropsArray))
+        rhoAs = zeros(length(sectionPropsArray))
         for (i,sectionProp) in enumerate(sectionPropsArray)
             lenEl = 0
             try
@@ -630,17 +599,22 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             catch
                 lenEl = myort.Length[i-1]
             end
+            lens[i] = lenEl
             rhoA = sectionProp.rhoA[1]
+            rhoAs[i] = rhoA
             mass += lenEl*rhoA
         end
-        return mass
+        span_array = cumsum(lens)
+        spl_rhoa = FLOWMath.Akima(span_array,rhoAs)
+        mass2, error = QuadGK.quadgk(spl_rhoa, span_array[1], span_array[end], atol=1e-10)
+        return mass, mass2
     end
 
-    turb_masskg = calcMass(myel.props,myort)
+    _,turb_masskg = calcMass(myel.props,myort)
     if verbosity>0
         println("\nMass of Turbine: $turb_masskg kg")
     end
 
     return turb_masskg,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,
-    stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL
+    stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L
 end
