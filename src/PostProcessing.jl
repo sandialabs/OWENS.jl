@@ -208,7 +208,10 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
                 sf = [out[iii][2] for iii = 1:length(out)]
 
                 if failmethod == "maxstress"
-                    SF_ult[its,i_station,j_lam] = minimum(minimum([sf[isf][sf[isf].>0.0] for isf = 1:length(sf)])) # Pick out the worst case safety factor that is positive - negative means it is in the wrong direction for the failure criteria
+                    try
+                        SF_ult[its,i_station,j_lam] = minimum(minimum([sf[isf][sf[isf].>0.0] for isf = 1:length(sf)])) # Pick out the worst case safety factor that is positive - negative means it is in the wrong direction for the failure criteria
+                    catch
+                    end
                 else
                     @warn "Use maxstress for now, or inspect safety factors for each layer manually, need to identify which layer is failing"
                     if layer == -1
@@ -255,6 +258,7 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
 end
 
 function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span_bld,lam_used)
+    # verbosity: 0 Nothing, 1 summary, 2 summary and spar, 3 everything except bucking, 4 everything
     #Ultimate
     mymin,idx = findmin(SF_ult)
     if verbosity>0
@@ -271,14 +275,14 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
             println("\nWorst buckling safety factor $(minbuck_sf)")
             println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_bld)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
         end
-        if verbosity>1
+        if verbosity>3
             println("Buckling")
             for istation = 1:length(composites_span_bld)
                 println(minimum(SF_buck[minbuck_sfidx[1],istation,:]))
             end
         end
     else
-        if verbosity>0
+        if verbosity>3
             println("Buckling not a factor, no sections in compression")
         end
     end
@@ -302,7 +306,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
     end
 
-    if verbosity>1
+    if verbosity>2
         println("Leading Edge")
         for SF in SF_ult[idx[1],:,LE_idx]
             println(SF)
@@ -315,7 +319,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
     end
 
-    if verbosity>1
+    if verbosity>2
         println("Trailing Edge")
         for SF in SF_ult[idx[1],:,TE_idx]
             println(SF)
@@ -328,7 +332,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
     end
 
-    if verbosity>1
+    if verbosity>2
         println("Fore Panel")
         for SF in SF_ult[idx[1],:,ForePanel_idx]
             println(SF)
@@ -341,7 +345,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
     end
 
-    if verbosity>1
+    if verbosity>2
         println("Aft Panel")
         for SF in SF_ult[idx[1],:,AftPanel_idx]
             println(SF)
@@ -349,6 +353,43 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
     end
 end
 
+function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Twr_LE_idx)
+
+    #Ultimate
+    mymin,idx = findmin(SF_ult_T)
+    if verbosity>2
+        println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_T))")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_twr)) at lam $(idx[3]) of $(length(lam_twr[idx[2],:]))")
+    end
+    #Buckling
+    if !isempty(SF_buck_T[SF_buck_T.>0.0])
+        SF_buck_T[SF_buck_T.<0.0] .= 1e6
+        # SF_buck_T[:,:,1] .= 1e6 #ignore leading edge
+        # SF_buck_T[:,:,6] .= 1e6 #ignore trailing edge
+        minbuck_sf,minbuck_sfidx = findmin(SF_buck_T)
+        if verbosity>3
+            println("\nWorst buckling safety factor $(minbuck_sf)")
+            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_twr)) at lam $(minbuck_sfidx[3]) of $(length(lam_twr[minbuck_sfidx[2],:]))")
+        elseif verbosity>1
+            println("Buckling")
+            for istation = 1:length(composites_span_twr)
+                println(minimum(SF_buck_T[minbuck_sfidx[1],istation,:]))
+            end
+        end
+    
+    else
+        if verbosity>3
+            println("Buckling not a factor, no sections in compression")
+        end
+    end
+
+    if verbosity>3
+        println("\nLeading Edge")
+        for SF in SF_ult_T[idx[1],:,Twr_LE_idx]
+            println(SF)
+        end
+    end
+end
 
 function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
@@ -496,46 +537,8 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
     kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true)
 
-
-    if verbosity>0
-        println("\n\nUPPER TOWER")
-    end
-    #Ultimate
-    mymin,idx = findmin(SF_ult_TU)
-    if verbosity>0
-        println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_TU))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_twr)) at lam $(idx[3]) of $(length(lam_U_twr[idx[2],:]))")
-    end
-    #Buckling
-    if !isempty(SF_buck_TU[SF_buck_TU.>0.0])
-        SF_buck_TU[SF_buck_TU.<0.0] .= 1e6
-        # SF_buck_TU[:,:,1] .= 1e6 #ignore leading edge
-        # SF_buck_TU[:,:,6] .= 1e6 #ignore trailing edge
-        minbuck_sf,minbuck_sfidx = findmin(SF_buck_TU)
-        if verbosity>0
-            println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_twr)) at lam $(minbuck_sfidx[3]) of $(length(lam_U_twr[minbuck_sfidx[2],:]))")
-        elseif verbosity>1
-            println("Buckling")
-            for istation = 1:length(composites_span_twr)
-                println(minimum(SF_buck_TU[minbuck_sfidx[1],istation,:]))
-            end
-        end
-    
-    else
-        if verbosity>0
-            println("Buckling not a factor, no sections in compression")
-        end
-    end
-
-    if verbosity>1
-        println("\nLeading Edge")
-        for SF in SF_ult_TU[idx[1],:,Twr_LE_U_idx]
-            println(SF)
-        end
-    end
-
-
+    println("\n\nUPPER TOWER")
+    printsf_twr(verbosity,lam_U_twr,SF_ult_TU,SF_buck_TU,composites_span_twr,Twr_LE_U_idx)
 
     stress_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]),3)
     SF_ult_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
@@ -545,45 +548,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
     kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false)
 
-
-    if verbosity>0
-        println("\n\nLOWER TOWER")
-    end
-    #Ultimate
-    mymin,idx = findmin(SF_ult_TL)
-    if verbosity>0
-        println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_TL))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_twr)) at lam $(idx[3]) of $(length(lam_L_twr[idx[2],:]))")
-    end
-    #Buckling
-    if !isempty(SF_buck_TL[SF_buck_TL.>0.0])
-        SF_buck_TL[SF_buck_TL.<0.0] .= 1e6
-        # SF_buck_TL[:,:,1] .= 1e6 #ignore leading edge
-        # SF_buck_TL[:,:,6] .= 1e6 #ignore trailing edge
-        minbuck_sf,minbuck_sfidx = findmin(SF_buck_TL)
-        if verbosity>0
-            println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_twr)) at lam $(minbuck_sfidx[3]) of $(length(lam_L_twr[minbuck_sfidx[2],:]))")
-        end
-        if verbosity>1
-            println("Buckling")
-            for istation = 1:length(composites_span_twr)
-                println(minimum(SF_buck_TL[minbuck_sfidx[1],istation,:]))
-            end
-        end
-    else
-        if verbosity>0
-            println("Buckling not a factor, no sections in compression")
-        end
-    end
-
-    if verbosity>1
-        println("\nLeading Edge")
-        for SF in SF_ult_TL[idx[1],:,Twr_LE_L_idx]
-            println(SF)
-        end
-    end
-
+    println("\n\nLower TOWER")
+    printsf_twr(verbosity,lam_L_twr,SF_ult_TL,SF_buck_TL,composites_span_twr,Twr_LE_L_idx)
+   
     ##########################################
     #### Calculate Mass
     ##########################################
