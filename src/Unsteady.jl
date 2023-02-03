@@ -43,7 +43,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false,
     system=nothing,assembly=nothing, #TODO: should we initialize them in here? Unify the interface for ease?
-    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing)
+    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -67,7 +67,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,
     gbDotHist,gbDotDotHist,genTorque,genPower,torqueDriveShaft,uHist_prp,
-    FPtfmHist,FHydroHist,FMooringHist = allocate_general(inputs,topMesh,numDOFPerNode,numTS,assembly)
+    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist = allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
 
     if inputs.topsideOn
         # Allocate memory for topside
@@ -118,14 +118,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             bottomDispData.etadot_s = etadot_s_ptfm_n
             bottomDispData.etaddot_s = etaddot_s_ptfm_n
         end
-
-    else
-        if inputs.topsideOn
-            topElStorage = GyricFEA.initialElementCalculations(topModel,topEl,topMesh) #perform initial element calculations for conventional structural dynamics analysis
-        end
-        if inputs.hydroOn
-            bottomElStorage = GyricFEA.initialElementCalculations(bottomModel,bottomEl,bottomMesh)
-        end
     end
 
     if inputs.topsideOn
@@ -142,13 +134,18 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         aziHist[1] = azi_s
         OmegaHist[1] = Omega_s
         OmegaDotHist[1] = OmegaDot_s
-        FReactionsm1 = zeros(Float32, 6)
+        if topModel.return_all_reaction_forces
+            FReactionsm1 = zeros(topMesh.numNodes*6)
+        else
+            FReactionsm1 = zeros(6)
+        end
         FReactionHist[1,:] = FReactionsm1
         topFReaction_j = FReactionsm1
         # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used
         gbHist[1] = gb_s
         gbDotHist[1] = gbDot_s
         gbDotDotHist[1] = gbDotDot_s
+        rbDataHist[1,:] = zeros(9)
         genTorque[1] = genTorque_s
         torqueDriveShaft[1] = torqueDriveShaft_s
     end
@@ -210,8 +207,11 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #..........................................................................
 
     ### Iterate for a solution at t+dt
-    for i=1:numTS-1 # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
-
+    i=0
+    timeconverged = false
+    while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+        i += 1
+        # println(i)
         ## Print current simulation time to terminal
         if isinteger(t[i])
             now = Int(t[i])
@@ -271,11 +271,12 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         if inputs.topsideOn
             #TODO: put these in the model
-            TOL = 1e-4  #gauss-seidel iteration tolerance for various modules
-            MAXITER = 300 #max iteration for various modules
+            TOL = inputs.iteration_parameters.TOL#1e-4  #gauss-seidel iteration tolerance for various modules
+            MAXITER = inputs.iteration_parameters.MAXITER#2 #max iteration for various modules
             numIterations = 1
             uNorm = 1e5
             aziNorm = 1e5
+            platNorm = 0.0 #TODO: remove this?
             gbNorm = 0.0 #initialize norms for various module states
             integrator = integrator_j #don't compound integrator within the convergence loop.
 
@@ -367,7 +368,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 else
                     CN2H = calcHubRotMat(zeros(3), azi_j)
                     CN2H_no_azi = calcHubRotMat(zeros(3), 0.0)
-                    rbData = zeros(Float32, 9)
+                    rbData = zeros(9)
                 end
                 CH2N = LinearAlgebra.transpose(CN2H)
 
@@ -407,21 +408,32 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
                 else
                     topFexternal = zeros(numDOFPerNode)
-                    aeroDOFs = zero(topFexternal)
+                    aeroDOFs = copy(topFexternal).*0.0
+                end
+
+                if meshcontrolfunction !== nothing
+                    # add to the loads based on the inputs, TODO: CN2H
+                    meshforces, meshdofs, timeconverged = meshcontrolfunction(topMesh,u_j)
+                    for idx_main in aeroDOFs
+                        for (idx,meshdof_idx) in enumerate(meshdofs)
+                            if idx_main == meshdof_idx
+                                topFexternal[idx_main] += meshforces[idx]
+                            end
+                        end
+                    end
                 end
 
                 #------------------------------------
                 # TOPSIDE STRUCTURAL MODULE
                 #------------------------------------
+                # println(Float64.(rbData))
                 if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
                 elseif inputs.analysisType=="GX"
                     topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                 else # evalulate structural dynamics using conventional representation
-                    topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                    topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
-
-                #TODO: possibly strain stiffening around here
 
                 u_jLast = copy(u_j)
                 u_j = topDispOut.displ_sp1
@@ -440,15 +452,17 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 end
 
                 # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
-                if i==numTS && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-                    GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;predef = topModel.nlParams.predef)
+                if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                    GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
 
                 #TODO: verbosity
                 # println("$(numIterations)   uNorm: $(uNorm) ")
 
                 if numIterations==MAXITER
-                    @warn "Maximum Iterations Met Breaking Iteration Loop"
+                    if inputs.iteration_parameters.iterwarnings
+                        @warn "Maximum Iterations Met Breaking Iteration Loop"
+                    end
                     break
                 end
 
@@ -470,147 +484,146 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         # COUPLED BOTTOMSIDE STRUCTURAL/HYDRO/MOORING MODULES
         #------------------------------------
         if inputs.hydroOn
-            # if inputs.topsideOn
-            #     bottomFexternal = frame_convert(-1*topFReaction_j, LinearAlgebra.transpose(CN2H)) # in hub frame already
-            #     # bottomFexternal = zeros(6)
-            # end
-            #
-            # ## Evaluate hydro-structural dynamics
-            # # FAST updates HD/MD using t+dt inputs extrapolated from previous time steps, NOT from the new ElastoDyn motions
-            # VAWTHydro.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            # if inputs.interpOrder == 1
-            #     VAWTHydro.MD_UpdateStates(0, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            # elseif inputs.interpOrder == 2
-            #     VAWTHydro.MD_UpdateStates(t[i]-delta_t, t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
-            # end
-            #
-            # if inputs.analysisType=="ROM"
-            #     bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
-            #     bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
-            #     bottomFexternal, bottomFDOFs, CN2H, bottom_rom)
-            # else
-            #     bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
-            #     bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
-            #     bottomFexternal, bottomFDOFs, CN2H)
-            # end
-            #
-            # # update displacement and velocity estimates based on inputs at t+dt
-            # u_s_ptfm_n = bottomUncoupledDisps.displ_sp1
-            # u_s_prp_n = u_s_ptfm_n[prpDOFs]
-            # udot_s_ptfm_n = bottomUncoupledDisps.displdot_sp1
-            # udot_s_prp_n = udot_s_ptfm_n[prpDOFs]
-            #
-            # # update current acceleration estimates from the coupled solve to account for added mass
-            # uddot_s_ptfm_n = bottomCoupledDisps.displddot_sp1
-            # uddot_s_prp_n = uddot_s_ptfm_n[prpDOFs]
-            #
-            # # update displacement and velocity predictions for next time step
-            # u_sp1_prp_predState = bottomCoupledDisps.displ_sp1[prpDOFs]
-            #
-            # FPtfm_n = FHydro_n + FMooring_n
-            #
-            # u_sm1_ptfm_n = copy(u_s_ptfm_n)
-            # if inputs.analysisType=="ROM"
-            #     eta_s_ptfm_n = bottomUncoupledDisps.eta_sp1 #eta_j
-            #     etadot_s_ptfm_n = bottomUncoupledDisps.etadot_sp1 #etadot_j
-            #     etaddot_s_ptfm_n = bottomCoupledDisps.etaddot_sp1 #etaddot_j
-            #     bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n, eta_s_ptfm_n, etadot_s_ptfm_n, etaddot_s_ptfm_n)
-            # else
-            #     bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
-            # end
-            #
-            # #------------------------------------
-            # # TOPSIDE STRUCTURAL MODULE W/ PLATFORM RIGID BODY MOTIONS
-            # #------------------------------------
-            # if inputs.topsideOn
-            #     numIterations = 1
-            #     uNorm = 1e5
-            #     aziNorm = 1e5
-            #     gbNorm = 0.0 #initialize norms for various module states #TODO: this while loop for the aero side could be turned into a function, just determine what the hydro coupled adds and make it optional
-            #     while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
-            #
-            #         topModel.gravityOn = top_grav_setting
-            #         CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
-            #         CN2H_no_azi = calcHubRotMat(u_s_prp_predState[4:6], 0.0)
-            #         # CN2P = calcHubRotMat(u_s_prp_predState[4:6], 0.0)
-            #         uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
-            #         uddot_s_prp_h[3] = -1*uddot_s_prp_h[3]
-            #         udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
-            #         rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
-            #
-            #         if !isnothing(aero)
-            #             if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
-            #                 runaero = true
-            #                 if (inputs.aeroLoadsOn==1 || inputs.aeroLoadsOn==1.5) && numIterations!=1
-            #                     runaero = false
-            #                 end
-            #                 if runaero
-            #                     aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
-            #                 end
-            #             end
-            #         end
-            #
-            #         if inputs.aeroLoadsOn > 0
-            #             if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
-            #                 # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
-            #                 full_aeroVals = zeros(topMesh.numNodes*6)
-            #                 for i_idx = 1:length(aeroDOFs)
-            #                     full_aeroVals[aeroDOFs[i_idx]] = aeroVals[i_idx]
-            #                 end
-            #                 aeroDOFs = collect(1:topMesh.numNodes*6)
-            #                 for iter_i = 1:floor(Int,length(aeroVals)/6)
-            #                     topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
-            #                 end
-            #             else
-            #                 topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
-            #             end
-            #         end
-            #
-            #         if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-            #             topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-            #         elseif inputs.analysisType=="GX"
-            #             topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topmesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
-            #         else # evalulate structural dynamics using conventional representation
-            #             topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-            #         end
-            #
-            #         u_jLast = copy(u_j)
-            #         u_j = topDispOut.displ_sp1
-            #         udot_j = topDispOut.displdot_sp1
-            #         uddot_j = topDispOut.displddot_sp1
-            #
-            #         if inputs.analysisType=="GX" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-            #             system = deepcopy(systemout)
-            #         end
-            #
-            #         # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
-            #         if i==numTS && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-            #             GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispData,Omega_j,OmegaDot_j,t[i],delta_t,elStorage,Fexternal,Int.(Fdof),CN2H,rbData;predef = topModel.nlParams.predef)
-            #         end
-            #
-            #         ## calculate norms
-            #         uNorm = 0.0#LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
-            #         aziNorm = 0.0#LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-            #         gbNorm = 0.0#LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
-            #
-            #         numIterations = numIterations + 1
-            #         if numIterations==MAXITER
-            #             @warn "Maximum Iterations Met Breaking Iteration Loop"
-            #             break
-            #         end
-            #
-            #     end # iteration while loop
-            #
-            #     if inputs.analysisType=="ROM"
-            #         eta_j = topDispOut.eta_sp1 #eta_j
-            #         etadot_j = topDispOut.etadot_sp1 #etadot_j
-            #         etaddot_j = topDispOut.etaddot_sp1 #etaddot_j
-            #         topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1, eta_j, etadot_j, etaddot_j)
-            #     else
-            #         topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
-            #     end
-            #
-            # end # if inputs.topsideOn
+            if inputs.topsideOn
+                bottomFexternal = frame_convert(-1*topFReaction_j, LinearAlgebra.transpose(CN2H)) # in hub frame already
+                # bottomFexternal = zeros(6)
+            end
+
+            ## Evaluate hydro-structural dynamics
+            # FAST updates HD/MD using t+dt inputs extrapolated from previous time steps, NOT from the new ElastoDyn motions
+            OpenFASTWrappers.HD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+            OpenFASTWrappers.MD_UpdateStates(t[i], t[i+1], u_s_prp_n, udot_s_prp_n, uddot_s_prp_n)
+
+            if inputs.analysisType=="ROM"
+                bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
+                bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
+                bottomFexternal, bottomFDOFs, CN2H, bottom_rom)
+            else
+                bottomUncoupledDisps, bottomCoupledDisps, FHydro_n, FMooring_n, outVals, jac = OWENS_HD_Coupled_Solve(t[i+1], delta_t, false, jac, numDOFPerNode, prpDOFs, FPtfm_n,
+                bottomDispData, bottomModel, bottomMesh, bottomEl, bottomElStorage,
+                bottomFexternal, bottomFDOFs, CN2H)
+            end
+
+            # update displacement and velocity estimates based on inputs at t+dt
+            u_s_ptfm_n = bottomUncoupledDisps.displ_sp1
+            u_s_prp_n = u_s_ptfm_n[prpDOFs]
+            udot_s_ptfm_n = bottomUncoupledDisps.displdot_sp1
+            udot_s_prp_n = udot_s_ptfm_n[prpDOFs]
+
+            # update current acceleration estimates from the coupled solve to account for added mass
+            uddot_s_ptfm_n = bottomCoupledDisps.displddot_sp1
+            uddot_s_prp_n = uddot_s_ptfm_n[prpDOFs]
+
+            # update displacement and velocity predictions for next time step
+            u_sp1_prp_predState = bottomCoupledDisps.displ_sp1[prpDOFs]
+
+            FPtfm_n = FHydro_n + FMooring_n
+
+            u_sm1_ptfm_n = copy(u_s_ptfm_n)
+            if inputs.analysisType=="ROM"
+                eta_s_ptfm_n = bottomUncoupledDisps.eta_sp1 #eta_j
+                etadot_s_ptfm_n = bottomUncoupledDisps.etadot_sp1 #etadot_j
+                etaddot_s_ptfm_n = bottomCoupledDisps.etaddot_sp1 #etaddot_j
+                bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n, eta_s_ptfm_n, etadot_s_ptfm_n, etaddot_s_ptfm_n)
+            else
+                bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
+            end
+
+            #------------------------------------
+            # TOPSIDE STRUCTURAL MODULE W/ PLATFORM RIGID BODY MOTIONS
+            #------------------------------------
+            platNorm = 0.0 #TODO: remove this?
+            if inputs.topsideOn
+                numIterations = 1
+                uNorm = 1e5
+                aziNorm = 1e5
+                gbNorm = 0.0 #initialize norms for various module states #TODO: this while loop for the aero side could be turned into a function, just determine what the hydro coupled adds and make it optional
+                while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
+
+                    topModel.gravityOn = top_grav_setting
+                    CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
+                    CN2H_no_azi = calcHubRotMat(u_s_prp_predState[4:6], 0.0)
+                    # CN2P = calcHubRotMat(u_s_prp_predState[4:6], 0.0)
+                    uddot_s_prp_h = frame_convert(uddot_s_prp_n, CN2H)
+                    uddot_s_prp_h[3] = -1*uddot_s_prp_h[3]
+                    udot_s_prp_h = frame_convert(udot_s_prp_n, CN2H)
+                    rbData = vcat(uddot_s_prp_h[1:3], udot_s_prp_h[4:6], uddot_s_prp_h[4:6])
+
+                    if !isnothing(aero)
+                        if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
+                            runaero = true
+                            if (inputs.aeroLoadsOn==1 || inputs.aeroLoadsOn==1.5) && numIterations!=1
+                                runaero = false
+                            end
+                            if runaero
+                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                            end
+                        end
+                    end
+
+                    if inputs.aeroLoadsOn > 0
+                        if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
+                            # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
+                            full_aeroVals = zeros(topMesh.numNodes*6)
+                            for i_idx = 1:length(aeroDOFs)
+                                full_aeroVals[aeroDOFs[i_idx]] = aeroVals[i_idx]
+                            end
+                            aeroDOFs = collect(1:topMesh.numNodes*6)
+                            for iter_i = 1:floor(Int,length(aeroVals)/6)
+                                topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
+                            end
+                        else
+                            topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+                        end
+                    end
+
+                    if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
+                        topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                    elseif inputs.analysisType=="GX"
+                        topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topmesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+                    else # evalulate structural dynamics using conventional representation
+                        topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
+                    end
+
+                    u_jLast = copy(u_j)
+                    u_j = topDispOut.displ_sp1
+                    udot_j = topDispOut.displdot_sp1
+                    uddot_j = topDispOut.displddot_sp1
+
+                    if inputs.analysisType=="GX" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                        system = deepcopy(systemout)
+                    end
+
+                    # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
+                    if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
+                        GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
+                    end
+
+                    ## calculate norms
+                    uNorm = 0.0#LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+                    aziNorm = 0.0#LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+                    gbNorm = 0.0#LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+
+                    numIterations = numIterations + 1
+                    if numIterations==MAXITER
+                        if inputs.iteration_parameters.iterwarnings
+                            @warn "Maximum Iterations Met Breaking Iteration Loop"
+                        end
+                        break
+                    end
+
+                end # iteration while loop
+
+                if inputs.analysisType=="ROM"
+                    eta_j = topDispOut.eta_sp1 #eta_j
+                    etadot_j = topDispOut.etadot_sp1 #etadot_j
+                    etaddot_j = topDispOut.etaddot_sp1 #etaddot_j
+                    topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1, eta_j, etadot_j, etaddot_j)
+                else
+                    topDispData2 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
+                end
+
+            end # if inputs.topsideOn
 
         end # if inputs.hydroOn
 
@@ -643,7 +656,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             uHist[i+1,:] = u_s
             FReactionHist[i+1,:] = topFReaction_j
-            topFexternal_hist[i+1,:] = topFexternal
+            topFexternal_hist[i+1,1:length(topFexternal)] = topFexternal
             # FTwrBsHist[i+1,:] = -topFReaction_j  + topFWeight_j
 
             aziHist[i+1] = azi_s
@@ -694,7 +707,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             FPtfmHist[i+1,:] = FPtfm_n
             FHydroHist[i+1,:] = FHydro_n
             FMooringHist[i+1, :] = FMooring_n
-
+            rbDataHist[i+1,:] = rbData
             # Shift up window of extrapolation vectors
             recent_u_prp = hcat(recent_u_prp[:, 2:end], u_s_prp_n)
             recent_udot_prp = hcat(recent_udot_prp[:, 2:end], udot_s_prp_n)
@@ -709,13 +722,20 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     # End FAST module links
     if inputs.hydroOn
-        # VAWTHydro.HD_End()
-        # VAWTHydro.MD_End()
+        OpenFASTWrappers.HD_End()
+        OpenFASTWrappers.MD_End()
     end
 
-    outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
+    outputData(inputs,t[1:i],aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
+    FReactionHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[:,1:i],uHist_prp[1:i,:],
+    epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],kappa_y_hist[:,:,1:i],
+    kappa_z_hist[:,:,1:i])
 
-    return t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,topFexternal_hist
+    return t[1:i], aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
+    FReactionHist[1:i,:],FTwrBsHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],
+    uHist_prp[1:i,:],epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],
+    kappa_y_hist[:,:,1:i],kappa_z_hist[:,:,1:i],FPtfmHist[1:i,:],FHydroHist[1:i,:],FMooringHist[1:i,:],
+    topFexternal_hist[1:i,:],rbDataHist[1:i,:]
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
@@ -804,7 +824,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,ass
             idx += 1
         end
     end
-    dispOut = GyricFEA.DispOut(nothing, disp_sp1,zero(disp_sp1),zero(disp_sp1))
+    dispOut = GyricFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,copy(disp_sp1).*0.0)
     FReaction_j = [-history[end].points[1].F[1];-history[end].points[1].F[2];-history[end].points[1].F[3];
     -history[end].points[1].M[1];-history[end].points[1].M[2];-history[end].points[1].M[3]]
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
@@ -858,10 +878,10 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
         # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
         # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
 
-        bld_x = zero(mesh.structuralNodeNumbers[:,1:end-1])
-        bld_y = zero(mesh.structuralNodeNumbers[:,1:end-1])
-        bld_z = zero(mesh.structuralNodeNumbers[:,1:end-1])
-        bld_twist = zero(mesh.structuralNodeNumbers[:,1:end-1])
+        bld_x = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        bld_y = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        bld_z = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        bld_twist = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
 
         for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
             bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
@@ -905,7 +925,7 @@ function outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbD
         filename = string(inputs.outFilename[1:end-3], "h5")
         HDF5.h5open(filename, "w") do file
             # HDF5.write(file,"model",model)
-            HDF5.write(file,"t",t)
+            HDF5.write(file,"t",collect(t))
             HDF5.write(file,"aziHist",aziHist)
             HDF5.write(file,"OmegaHist",OmegaHist)
             HDF5.write(file,"OmegaDotHist",OmegaDotHist)
@@ -942,8 +962,8 @@ function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
         u_s = zeros(top_totalNumDOF)
     end
     u_s = GyricFEA.setInitialConditions(topModel.initCond, u_s, numDOFPerNode)
-    udot_s = zero(u_s)
-    uddot_s = zero(u_s)
+    udot_s = copy(u_s).*0.0
+    uddot_s = copy(u_s).*0.0
     u_sm1 = copy(u_s)
 
     topDispData1 = GyricFEA.DispData(u_s, udot_s, uddot_s, u_sm1)
@@ -976,10 +996,10 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     end
 
     bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode
-    u_s_ptfm_n = zeros(Float32, bottom_totalNumDOF)
+    u_s_ptfm_n = zeros(bottom_totalNumDOF)
     u_s_ptfm_n = GyricFEA.setInitialConditions(bottomModel.initCond, u_s_ptfm_n, numDOFPerNode)
-    udot_s_ptfm_n = zero(u_s_ptfm_n)
-    uddot_s_ptfm_n = zero(u_s_ptfm_n)
+    udot_s_ptfm_n = copy(u_s_ptfm_n).*0.0
+    uddot_s_ptfm_n = copy(u_s_ptfm_n).*0.0
     u_sm1_ptfm_n = copy(u_s_ptfm_n)
     bottomDispData = GyricFEA.DispData(u_s_ptfm_n, udot_s_ptfm_n, uddot_s_ptfm_n, u_sm1_ptfm_n)
 
@@ -1002,8 +1022,8 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
     mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
-    # VAWTHydro.HD_Init(bin.hydrodynLibPath, hd_outFilename, hd_input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
-    # VAWTHydro.MD_Init(bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
+    OpenFASTWrappers.HD_Init(bin.hydrodynLibPath, hd_outFilename; hd_input_file=inputs.hd_input_file, PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
+    OpenFASTWrappers.MD_Init(bin.moordynLibPath; md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
 
     return bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,udot_s_prp_n,uddot_s_prp_n,jac,numMooringLines,FHydro_n,FMooring_n,outVals,mooringTensions
 end
@@ -1057,7 +1077,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     dispIn, topModel, mesh, el, elStorage,
     other_Fexternal, other_Fdof, CN2H, rom=0)
 
-    # !!! Make sure structuralDynamicsTransient and MD_CalcOutput have run before this so you can send dispOut and FMooring_new here !!!
+    # !!! Make sure structuralDynamicsTransient and mdCalcOutput have run before this so you can send dispOut and FMooring_new here !!!
     # !!! other_Fexternal is assumed to already be in the hub reference frame !!!
     #
     # allocate new variables
@@ -1074,20 +1094,20 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
     total_Fexternal = vcat(other_Fexternal, FPtfm_old) # platform loads are old inputs from last time step/correction
     total_Fdof = vcat(other_Fdof, prpDOFS)
     if rom != 0
-        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(9))
     else
-        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _ ,dispsUncoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal,Int.(total_Fdof),LinearAlgebra.I(3),zeros(9))
     end
     uddot_prp_n = dispsUncoupled.displddot_sp1[prpDOFS]
     if time > 0
         udot_prp_n = dispsUncoupled.displdot_sp1[prpDOFS]
         u_prp_n = dispsUncoupled.displ_sp1[prpDOFS]
     else
-        udot_prp_n = zeros(Float32, numDOFPerNode)
-        u_prp_n = zeros(Float32, numDOFPerNode)
+        udot_prp_n = zeros(numDOFPerNode)
+        u_prp_n = zeros(numDOFPerNode)
     end
-    # FHydro_2[:], _ = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
-    # FMooring_new[:], _ = VAWTHydro.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
+    OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FHydro_2, outVals)
+    FMooring_new[:], _ = OpenFASTWrappers.MD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n, FMooring_new, mooringTensions)
 
     # Calculate the residual
     # For consistency, everything in the u vector is in the inertial reference frame
@@ -1108,9 +1128,9 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             u_perturb[dof] += 1
             total_Fexternal_perturb = vcat(other_Fexternal, FPtfm_perturb)
             if !isa(rom, Number)
-                _ ,dispOut_perturb, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+                _ ,dispOut_perturb, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(9))
             else
-                _, dispOut_perturb, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+                _, dispOut_perturb, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_perturb,Int.(total_Fdof),LinearAlgebra.I(3),zeros(9))
             end
             uddot_ptfm_perturb_n = dispOut_perturb.displddot_sp1[prpDOFS]
             residual_perturb = calcHydroResidual(uddot_ptfm_perturb_n, FHydro_2, FMooring_new, u_perturb, FMultiplier)
@@ -1123,7 +1143,7 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
             uddot_prp_perturb[dof] += 1
             u_perturb[dof+numDOFPerNode] += 1
             FHydro_perturb = Vector{Float32}(undef, numDOFPerNode) # this is reset each time, otherwise HydroDyn returns garbage values after the first iteration
-            # FHydro_perturb[:], _ = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
+            OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_perturb, FHydro_perturb, outVals)
             residual_perturb = calcHydroResidual(uddot_prp_n, FHydro_perturb, FMooring_new, u_perturb, FMultiplier)
             jac[:,dof+numDOFPerNode] = residual_perturb - residual
         end
@@ -1147,11 +1167,11 @@ function OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, prpD
 
     # Rerun OWENS and HydroDyn with updated inputs
     if rom != 0
-        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransientROM(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,rom,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(9))
     else
-        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(Float32, 9))
+        _, dispsCoupled, _ = GyricFEA.structuralDynamicsTransient(topModel,mesh,el,dispIn,0.0,0.0,time,dt,elStorage,total_Fexternal_rev,Int.(total_Fdof),LinearAlgebra.I(3),zeros(9))
     end
-    # FHydro_new[:], outVals[:] = VAWTHydro.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
+    OpenFASTWrappers.HD_CalcOutput(time, u_prp_n, udot_prp_n, uddot_prp_n_rev, FHydro_new, outVals)
 
 
     return dispsUncoupled, dispsCoupled, FHydro_new, FMooring_new, outVals, jac_out
@@ -1232,51 +1252,57 @@ function hydro_topside_nodal_coupling!(bottomModel,bottomMesh,topsideMass,topMod
     bottomModel.nodalTerms.concMass += topsideConcTerms.concMass
 end
 
-function allocate_general(inputs,topMesh,numDOFPerNode,numTS,assembly)
+function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
 
     ## History array initialization
     if inputs.topsideOn
-        uHist = zeros(Float32, numTS, topMesh.numNodes*numDOFPerNode)
+        uHist = zeros(numTS, topMesh.numNodes*numDOFPerNode)
         if inputs.analysisType == "GX"
             nel = length(assembly.start) #TODO: these should be the same.
         else
             nel = topMesh.numEl
         end
-        epsilon_x_hist = zeros(Float32, 4,nel,numTS)
-        epsilon_y_hist = zeros(Float32, 4,nel,numTS)
-        epsilon_z_hist = zeros(Float32, 4,nel,numTS)
-        kappa_x_hist = zeros(Float32, 4,nel,numTS)
-        kappa_y_hist = zeros(Float32, 4,nel,numTS)
-        kappa_z_hist = zeros(Float32, 4,nel,numTS)
+        epsilon_x_hist = zeros(4,nel,numTS)
+        epsilon_y_hist = zeros(4,nel,numTS)
+        epsilon_z_hist = zeros(4,nel,numTS)
+        kappa_x_hist = zeros(4,nel,numTS)
+        kappa_y_hist = zeros(4,nel,numTS)
+        kappa_z_hist = zeros(4,nel,numTS)
     else
-        uHist = zeros(Float32, numTS, numDOFPerNode)
-        epsilon_x_hist = zeros(Float32, 4,1, numTS)
-        epsilon_y_hist = zeros(Float32, 4,1, numTS)
-        epsilon_z_hist = zeros(Float32, 4,1, numTS)
-        kappa_x_hist = zeros(Float32, 4,1, numTS)
-        kappa_y_hist = zeros(Float32, 4,1, numTS)
-        kappa_z_hist = zeros(Float32, 4,1, numTS)
+        uHist = zeros(numTS, numDOFPerNode)
+        epsilon_x_hist = zeros(4,1, numTS)
+        epsilon_y_hist = zeros(4,1, numTS)
+        epsilon_z_hist = zeros(4,1, numTS)
+        kappa_x_hist = zeros(4,1, numTS)
+        kappa_y_hist = zeros(4,1, numTS)
+        kappa_z_hist = zeros(4,1, numTS)
     end
+    
+    if topModel.return_all_reaction_forces
+        FReactionHist = zeros(numTS,topMesh.numNodes*6)
+    else
+        FReactionHist = zeros(numTS,6)
+    end
+    FTwrBsHist = zeros(numTS, 6)
+    aziHist = zeros(numTS)
+    OmegaHist = zeros(numTS)
+    OmegaDotHist = zeros(numTS)
+    gbHist = zeros(numTS)
+    gbDotHist = zeros(numTS)
+    gbDotDotHist = zeros(numTS)
+    genTorque = zeros(numTS)
+    genPower = zeros(numTS)
+    torqueDriveShaft = zeros(numTS)
 
-    FReactionHist = zeros(Float32, numTS,6) #TODO: these can go with the general init
-    FTwrBsHist = zeros(Float32, numTS, 6)
-    aziHist = zeros(Float32, numTS)
-    OmegaHist = zeros(Float32, numTS)
-    OmegaDotHist = zeros(Float32, numTS)
-    gbHist = zeros(Float32, numTS)
-    gbDotHist = zeros(Float32, numTS)
-    gbDotDotHist = zeros(Float32, numTS)
-    genTorque = zeros(Float32, numTS)
-    genPower = zeros(Float32, numTS)
-    torqueDriveShaft = zeros(Float32, numTS)
-
-    uHist_prp = zeros(Float32, numTS,numDOFPerNode)
-    FPtfmHist = zeros(Float32, numTS,numDOFPerNode)
-    FHydroHist = zeros(Float32, numTS,numDOFPerNode)
-    FMooringHist = zeros(Float32, numTS,numDOFPerNode)
+    uHist_prp = zeros(numTS,numDOFPerNode)
+    FPtfmHist = zeros(numTS,numDOFPerNode)
+    FHydroHist = zeros(numTS,numDOFPerNode)
+    FMooringHist = zeros(numTS,numDOFPerNode)
+    rbDataHist = zeros(numTS,9)
+    rbData = zeros(9)
 
     return uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,
     gbDotHist,gbDotDotHist,genTorque,genPower,torqueDriveShaft,uHist_prp,
-    FPtfmHist,FHydroHist,FMooringHist
+    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist
 end
