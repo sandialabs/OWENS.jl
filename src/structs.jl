@@ -19,6 +19,7 @@ mutable struct Inputs
     driveTrainOn
     generatorOn
     aeroLoadsOn
+    AD15On
     hydroOn
     topsideOn
     interpOrder
@@ -59,6 +60,7 @@ Inputs(;analysisType = "TNB",
     Omegaocp = [7.2,7.2] ./ 60,
     Vinfocp = [12.0,12.0],
     aeroLoadsOn = 1,
+    AD15On = false,
     driveTrainOn = false,
     generatorOn = false,
     hydroOn = false,
@@ -103,6 +105,7 @@ Model inputs for OWENS coupled analysis, struct
 * `Omegaocp::Array{<:float}`: = rotor speed points for rotor speed profile (Hz)
 * `Vinfocp::Array{<:float}`: = rotor speed points for specified Vinf profile (Hz)
 * `aeroLoadsOn::bool`: flag to trigger aero loads being applied
+* `AD15On::bool`: flag to use AD15 for aero
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
 * `hydroOn::bool`: flag to include platform coupling
@@ -148,6 +151,7 @@ function Inputs(;analysisType = "TNB",
     driveTrainOn = false,
     generatorOn = false,
     aeroLoadsOn = false, #this need to get cleaned up in the code
+    AD15On = false,
     hydroOn = false,
     topsideOn = true,
     interpOrder = 2,
@@ -179,7 +183,7 @@ function Inputs(;analysisType = "TNB",
     )
 
     return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    driveTrainOn,generatorOn,aeroLoadsOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
+    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings))
