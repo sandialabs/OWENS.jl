@@ -932,7 +932,7 @@ end
 function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j)
     # this is a very simple interface since AD15 does everything using the mesh in global coordinates
     println("   run_aero_with_deformAD15 --> this routine may not be complete yet")
-    deformAero(mesh,u_j,udot_j,uddot_j)
+    deformAero(mesh,u_j,udot_j,uddot_j,azi_j)
     # FIXME: aeroVals only includes the blades even though AD15 is returning values from the struts as well!!!!!
     aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
     return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm   #last 4 are experimental for "GX" solve (not yet working)
