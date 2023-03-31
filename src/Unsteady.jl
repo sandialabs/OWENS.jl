@@ -43,7 +43,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false,
     system=nothing,assembly=nothing, #TODO: should we initialize them in here? Unify the interface for ease?
-    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing)
+    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -294,20 +294,26 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # GENERATOR MODULE
                 #------------------
                 genTorque_j = 0
-                if inputs.generatorOn
-                        if inputs.useGeneratorFunction
+                if true#inputs.generatorOn
+                        if true#inputs.useGeneratorFunction
                             specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,inputs.tocp,inputs.Omegaocp,delta_t)
                             newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
-                            genTorqueHSS0,integrator_j,controlnamecurrent = userDefinedGenerator(newVinf,t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
+                            if isnothing(userDefinedGenerator)
+                                genTorqueHSS0,integrator_j,controlnamecurrent = internaluserDefinedGenerator(newVinf,t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
+                            else
+                                genTorqueHSS0,integrator_j,controlnamecurrent = userDefinedGenerator(newVinf,t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
+                            end
                         else
                             genTorqueHSS0 = simpleGenerator(inputs,Omega_j)
                         end
+                    
                     #should eventually account for Omega = gbDot*gearRatio here...
                     genTorque_j = genTorqueHSS0*inputs.gearRatio*inputs.gearBoxEfficiency #calculate generator torque on LSS side
+                    
                     #         genTorqueAppliedToTurbineRotor0 = -genTorque0
                     #         genTorqueAppliedToPlatform0 = genTorqueHSS0
                 end
-
+                
                 #-------------------
                 # DRIVETRAIN MODULE
                 #-------------------
@@ -333,7 +339,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                 # Update rotor speed
                 azi_jLast = azi_j
-                if inputs.omegaControl
+                if false #inputs.omegaControl
                     if (inputs.usingRotorSpeedFunction)
                         azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
                     else
@@ -422,7 +428,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                 if meshcontrolfunction !== nothing
                     # add to the loads based on the inputs, TODO: CN2H
-                    meshforces, meshdofs, timeconverged = meshcontrolfunction(topMesh,u_j)
+                    meshforces, meshdofs, timeconverged = meshcontrolfunction(topMesh,u_j,t[i])
                     for idx_main in aeroDOFs
                         for (idx,meshdof_idx) in enumerate(meshdofs)
                             if idx_main == meshdof_idx
@@ -740,7 +746,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     end
 
     outputData(inputs,t[1:i],aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
-    FReactionHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[:,1:i],uHist_prp[1:i,:],
+    FReactionHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],uHist_prp[1:i,:],
     epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],kappa_y_hist[:,:,1:i],
     kappa_z_hist[:,:,1:i])
 
