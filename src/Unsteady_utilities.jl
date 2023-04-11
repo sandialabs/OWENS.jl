@@ -32,7 +32,7 @@ Internal, generator definintion
 
 # If shutdown
 
-function userDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint)
+function internaluserDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint)
     # omega is in hz
     omega_RPM = omega*60
     omegalast_RPM = omegalast*60

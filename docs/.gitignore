@@ -1,3 +1,10 @@
 /VAWT*
 *.xlsx
 *.docx
+*.pdf
+*.out
+*.log
+*.bbl
+*.aux
+*.blg
+*.gz
