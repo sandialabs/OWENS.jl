@@ -1,6 +1,17 @@
 module OWENS
 
 # Custom unregistered (julia) packages
+try
+    import VAWTAero
+catch
+    try
+        import AD15aero
+    catch
+        @info "Using one way CACTUS Coupling"
+        #TODO: propogate logic
+    end
+end
+
 import GyricFEA
 import OpenFASTWrappers
 

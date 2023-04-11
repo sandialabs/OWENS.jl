@@ -387,7 +387,11 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             runaero = false
                         end
                         if runaero
-                            aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                            if inputs.AD15On
+                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j)
+                            else
+                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                            end
                         end
                     end
                 end
@@ -399,18 +403,23 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
                     end
 
-                    if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
-                        # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
-                        full_aeroVals = zeros(topMesh.numNodes*6)
-                        for i_idx = 1:length(aeroDOFs)
-                            full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
+                    if inputs.AD15On
+                        # AD15 is in global frame, so no frame conversion???
+                        topFexternal = aeroVals
+                    else
+                        if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
+                            # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
+                            full_aeroVals = zeros(topMesh.numNodes*6)
+                            for i_idx = 1:length(aeroDOFs)
+                                full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
+                            end
+                            aeroDOFs = collect(1:topMesh.numNodes*6)
+                            for iter_i = 1:floor(Int,length(full_aeroVals)/6)
+                                topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
+                            end
+                        else # the other aero input as a 2D array
+                            topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
                         end
-                        aeroDOFs = collect(1:topMesh.numNodes*6)
-                        for iter_i = 1:floor(Int,length(full_aeroVals)/6)
-                            topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
-                        end
-                    else # the other aero input as a 2D array
-                        topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
                     end
                 else
                     topFexternal = zeros(numDOFPerNode)
@@ -562,7 +571,11 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 runaero = false
                             end
                             if runaero
-                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                if inputs.AD15On
+                                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j)
+                                else
+                                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                end
                             end
                         end
                     end
@@ -920,6 +933,15 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
     deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
     aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
     return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm
+end
+
+function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j)
+    # this is a very simple interface since AD15 does everything using the mesh in global coordinates
+    println("   run_aero_with_deformAD15 --> this routine may not be complete yet")
+    deformAero(mesh,u_j,udot_j,uddot_j,azi_j)
+    # FIXME: aeroVals only includes the blades even though AD15 is returning values from the struts as well!!!!!
+    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
+    return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm   #last 4 are experimental for "GX" solve (not yet working)
 end
 
 function outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
