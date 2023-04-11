@@ -43,6 +43,7 @@ mutable struct Inputs
     outFilename
     bladeData
     driveShaftProps
+    iteration_parameters
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -84,6 +85,9 @@ Inputs(;analysisType = "TNB",
     numDofPerNode = 6,
     bladeData = [],
     driveShaftProps = DriveShaftProps(0.0,0.0)
+    TOl = 1e-4,
+    MAXITER = 300,
+    iterwarnings = true,
     )
 
 Model inputs for OWENS coupled analysis, struct
@@ -124,6 +128,9 @@ Model inputs for OWENS coupled analysis, struct
 * `numDofPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
+* `TOl::float`: gauss-seidel iteration tolerance
+* `MAXITER::int`: gauss-seidel maximum iterations
+* `iterwarnings::bool`: iteration warnings flag
 
 # Outputs:
 * `none`:
@@ -165,14 +172,17 @@ function Inputs(;analysisType = "TNB",
     numDofPerNode = 6,
     bladeData = [],
     rigid = false,
-    driveShaftProps = DriveShaftProps(0.0,0.0)
+    driveShaftProps = DriveShaftProps(0.0,0.0),
+    TOl = 1e-4,
+    MAXITER = 300,
+    iterwarnings = true,
     )
 
     return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
     driveTrainOn,generatorOn,aeroLoadsOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings))
 end
 
 """
@@ -181,6 +191,15 @@ Internal, driveshaft stiffness k and damping c
 mutable struct DriveShaftProps
     k
     c
+end
+
+"""
+Internal, gauss-seidel iteration parameters 
+"""
+mutable struct Iteration_Parameters            
+    TOL # = 1e-4  #gauss-seidel iteration tolerance for various modules
+    MAXITER # = 2 #max iteration for various modules
+    iterwarnings
 end
 
 # Cactus Related Structs
