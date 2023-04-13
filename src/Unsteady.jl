@@ -294,8 +294,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # GENERATOR MODULE
                 #------------------
                 genTorque_j = 0
-                if true#inputs.generatorOn
-                        if true#inputs.useGeneratorFunction
+                if inputs.generatorOn
+                        if inputs.useGeneratorFunction
                             specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,inputs.tocp,inputs.Omegaocp,delta_t)
                             newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
                             if isnothing(userDefinedGenerator)
@@ -339,7 +339,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                 # Update rotor speed
                 azi_jLast = azi_j
-                if false #inputs.omegaControl
+                if inputs.omegaControl
                     if (inputs.usingRotorSpeedFunction)
                         azi_j,Omega_j,OmegaDot_j = getRotorPosSpeedAccelAtTime(t[i],t[i+1],azi_s,delta_t)
                     else
@@ -758,26 +758,26 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
-    distributed_loads = Dict()
+    # distributed_loads = Dict()
 
-    height = maximum(mesh.z)
-    for jbld = 1:length(mesh.structuralElNumbers[:,1])
-        XpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Xp[jbld,end,:])#,GXz/maximum(GXz))
-        YpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Yp[jbld,end,:])#,GXz/maximum(GXz))
-        ZpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Zp[jbld,end,:])#,GXz/maximum(GXz))
+    # height = maximum(mesh.z)
+    # for jbld = 1:length(mesh.structuralElNumbers[:,1])
+    #     XpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Xp[jbld,end,:])#,GXz/maximum(GXz))
+    #     YpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Yp[jbld,end,:])#,GXz/maximum(GXz))
+    #     ZpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Zp[jbld,end,:])#,GXz/maximum(GXz))
 
-        for ipt = Int.(mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1])
-            iel = findfirst(x->x==ipt,assembly.start)
-            s1 = assembly.points[assembly.start[ipt]][3]
-            s2 = assembly.points[assembly.stop[ipt]][3]
-            if !isempty(iel)
-                distributed_loads[iel] = GXBeam.DistributedLoads(assembly,iel;s1,s2,fx = (s) -> XpGXspl1(s),
-                    fy = (s) -> YpGXspl1(s))#, fz = (s) -> ZpGXspl1(s))
-            else
-                println("Empty at $ipt")
-            end
-        end
-    end
+    #     for ipt = Int.(mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1])
+    #         iel = findfirst(x->x==ipt,assembly.start)
+    #         s1 = assembly.points[assembly.start[ipt]][3]
+    #         s2 = assembly.points[assembly.stop[ipt]][3]
+    #         if !isempty(iel)
+    #             distributed_loads[iel] = GXBeam.DistributedLoads(assembly,iel;s1,s2,fx = (s) -> XpGXspl1(s),
+    #                 fy = (s) -> YpGXspl1(s))#, fz = (s) -> ZpGXspl1(s))
+    #         else
+    #             println("Empty at $ipt")
+    #         end
+    #     end
+    # end
     #TODO: pull in parametrically from inputs.BC info
     prescribed_conditions = Dict(
         # fixed base
@@ -810,24 +810,51 @@ function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,ass
 
     if i == 1 && numIterations == 1
 
-        GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions, #TODO: just gravity and rotation for the first solve? Could add on forces in next solve below
+        system, state, converged = GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions, #TODO: just gravity and rotation for the first solve? Could add on forces in next solve below
         gravity,angular_velocity,linear=false,reset_state=true)
     end
 
+    initial_state = GXBeam.AssemblyState(system, assembly; prescribed_conditions)
+
     systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;
-    reset_state,initialize,linear_velocity,angular_velocity,linear_acceleration,
+    reset_state,initial_state,linear_velocity,angular_velocity,linear_acceleration,
     angular_acceleration,prescribed_conditions,gravity,linear=false)#!topModel.nlOn)
 
     if !converged
         println("GX failed to converge")
     end
     # elStrain
-    state = GXBeam.AssemblyState(systemout, assembly;
-    prescribed_conditions)
+    state = history[end]#GXBeam.AssemblyState(systemout, assembly;prescribed_conditions)
+
+    """
+    element_strain(element, F, M)
+
+    Calculate the strain of a beam element given the resultant forces and moments applied on
+    the element expressed in the deformed beam element frame
+    """
+    @inline function element_strain(element, F, M)
+        C = element.compliance
+        S11 = C[SVector{3}(1:3), SVector{3}(1:3)]
+        S12 = C[SVector{3}(1:3), SVector{3}(4:6)]
+        return S11*F + S12*M
+    end
+
+    """
+        element_curvature(element, F, M)
+
+    Calculate the curvature of a beam element given the resultant force and moments applied on
+    the element expressed in the deformed beam element frame
+    """
+    @inline function element_curvature(element, F, M)
+        C = element.compliance
+        S21 = C[SVector{3}(4:6), SVector{3}(1:3)]
+        S22 = C[SVector{3}(4:6), SVector{3}(4:6)]
+        return S21*F + S22*M
+    end
 
     for iel = 1:length(state.elements)
-        strainGX[:,iel] = GXBeam.element_strain(assembly.elements[iel],state.elements[iel].Fi,state.elements[iel].Mi)
-        curvGX[:,iel] = GXBeam.element_curvature(assembly.elements[iel],state.elements[iel].Fi,state.elements[iel].Mi)
+        strainGX[:,iel] = element_strain(assembly.elements[iel],state.elements[iel].Fi,state.elements[iel].Mi)
+        curvGX[:,iel] = element_curvature(assembly.elements[iel],state.elements[iel].Fi,state.elements[iel].Mi)
     end
 
     # disp

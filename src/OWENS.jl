@@ -1,17 +1,6 @@
 module OWENS
 
 # Custom unregistered (julia) packages
-try
-    import VAWTAero
-catch
-    try
-        import AD15aero
-    catch
-        @info "Using one way CACTUS Coupling"
-        #TODO: propogate logic
-    end
-end
-
 import GyricFEA
 import OpenFASTWrappers
 
@@ -20,6 +9,7 @@ import Statistics
 import DelimitedFiles
 import LinearAlgebra
 import SparseArrays
+using StaticArrays
 import FLOWMath
 import HDF5
 import GXBeam
