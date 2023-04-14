@@ -758,34 +758,51 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
-    # distributed_loads = Dict()
+    # pBC = [1 1 0
+    #         1 2 0
+    #         1 3 0
+    #         1 4 0
+    #         1 5 0
+    #         1 6 0
+    #         23 1 0
+    #         23 2 0
+    #         23 3 0]
+    prescribed_conditions = Dict()
+    for inode = 1:mesh.numNodes
+        if inode in topModel.BC.pBC[:,1]
+            ux = nothing
+            uy = nothing
+            uz = nothing
+            theta_x = nothing
+            theta_y = nothing
+            theta_z = nothing
+            Fx_follower = nothing
+            Fy_follower = nothing
+            Fz_follower = nothing
+            Mx_follower = nothing
+            My_follower = nothing
+            Mz_follower = nothing
+            for iBC = 1:length(topModel.BC.pBC[:,1])
+                if topModel.BC.pBC[iBC,1] == inode
+                    if topModel.BC.pBC[iBC,2] == 1
+                        ux = 0
+                    elseif topModel.BC.pBC[iBC,2] == 2
+                        uy = 0
+                    elseif topModel.BC.pBC[iBC,2] == 3
+                        uz = 0
+                    elseif topModel.BC.pBC[iBC,2] == 4
+                        theta_x = 0
+                    elseif topModel.BC.pBC[iBC,2] == 5
+                        theta_y = 0
+                    elseif topModel.BC.pBC[iBC,2] == 6
+                        theta_z = 0
+                    end
+                end
+            end
+            prescribed_conditions[inode] = GXBeam.PrescribedConditions(;ux, uy, uz, theta_x, theta_y, theta_z)
+        end
+    end
 
-    # height = maximum(mesh.z)
-    # for jbld = 1:length(mesh.structuralElNumbers[:,1])
-    #     XpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Xp[jbld,end,:])#,GXz/maximum(GXz))
-    #     YpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Yp[jbld,end,:])#,GXz/maximum(GXz))
-    #     ZpGXspl1 = FLOWMath.Akima(z3Dnorm.*height,Zp[jbld,end,:])#,GXz/maximum(GXz))
-
-    #     for ipt = Int.(mesh.structuralNodeNumbers[jbld,1]:mesh.structuralNodeNumbers[jbld,end-1])
-    #         iel = findfirst(x->x==ipt,assembly.start)
-    #         s1 = assembly.points[assembly.start[ipt]][3]
-    #         s2 = assembly.points[assembly.stop[ipt]][3]
-    #         if !isempty(iel)
-    #             distributed_loads[iel] = GXBeam.DistributedLoads(assembly,iel;s1,s2,fx = (s) -> XpGXspl1(s),
-    #                 fy = (s) -> YpGXspl1(s))#, fz = (s) -> ZpGXspl1(s))
-    #         else
-    #             println("Empty at $ipt")
-    #         end
-    #     end
-    # end
-    #TODO: pull in parametrically from inputs.BC info
-    prescribed_conditions = Dict(
-        # fixed base
-        1 => GXBeam.PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
-        # fixed top, but free to rotate around z-axis
-        # 50 => GXBeam.PrescribedConditions(Fx = 1e4*sin(20*t)),
-        23 => GXBeam.PrescribedConditions(ux=0, uy=0, uz=0),
-        )
 
     linear_velocity = [0.0,0.0,0.0]
     angular_velocity = [0.0,0.0,Omega_j*2*pi]
