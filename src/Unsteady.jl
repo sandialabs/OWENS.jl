@@ -757,19 +757,17 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topFexternal_hist[1:i,:],rbDataHist[1:i,:]
 end
 
-function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
-    # pBC = [1 1 0
-    #         1 2 0
-    #         1 3 0
-    #         1 4 0
-    #         1 5 0
-    #         1 6 0
-    #         23 1 0
-    #         23 2 0
-    #         23 3 0]
-    prescribed_conditions = Dict()
-    for inode = 1:mesh.numNodes
-        if inode in topModel.BC.pBC[:,1]
+function structuralDynamicsTransientGX(topModel,mesh,Fg_global,ForceDof,Fg,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+
+    function setPrescribedConditions(mesh;pBC=zeros(2,2),Fg_global=[],ForceDof=[])
+        Fx = Fg_global[1:6:end]
+        Fy = Fg_global[2:6:end]
+        Fz = Fg_global[3:6:end]
+        Mx = Fg_global[4:6:end]
+        My = Fg_global[5:6:end]
+        Mz = Fg_global[6:6:end]
+        prescribed_conditions = Dict()
+        for inode = 1:mesh.numNodes
             ux = nothing
             uy = nothing
             uz = nothing
@@ -782,25 +780,48 @@ function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,ass
             Mx_follower = nothing
             My_follower = nothing
             Mz_follower = nothing
-            for iBC = 1:length(topModel.BC.pBC[:,1])
-                if topModel.BC.pBC[iBC,1] == inode
-                    if topModel.BC.pBC[iBC,2] == 1
-                        ux = 0
-                    elseif topModel.BC.pBC[iBC,2] == 2
-                        uy = 0
-                    elseif topModel.BC.pBC[iBC,2] == 3
-                        uz = 0
-                    elseif topModel.BC.pBC[iBC,2] == 4
-                        theta_x = 0
-                    elseif topModel.BC.pBC[iBC,2] == 5
-                        theta_y = 0
-                    elseif topModel.BC.pBC[iBC,2] == 6
-                        theta_z = 0
+            if inode in pBC[:,1]
+                for iBC = 1:length(pBC[:,1])
+                    if pBC[iBC,1] == inode
+                        if pBC[iBC,2] == 1
+                            ux = pBC[iBC,3]
+                        elseif pBC[iBC,2] == 2
+                            uy = pBC[iBC,3]
+                        elseif pBC[iBC,2] == 3
+                            uz = pBC[iBC,3]
+                        elseif pBC[iBC,2] == 4
+                            theta_x = pBC[iBC,3]
+                        elseif pBC[iBC,2] == 5
+                            theta_y = pBC[iBC,3]
+                        elseif pBC[iBC,2] == 6
+                            theta_z = pBC[iBC,3]
+                        end
                     end
                 end
             end
-            prescribed_conditions[inode] = GXBeam.PrescribedConditions(;ux, uy, uz, theta_x, theta_y, theta_z)
+            if isnothing(ux) && !isempty(Fg_global) && Fx[inode]!=0.0
+                Fx_follower = Fx[inode]
+            end
+            if isnothing(uy) && !isempty(Fg_global) && Fy[inode]!=0.0
+                Fy_follower = Fy[inode]
+            end
+            if isnothing(uz) && !isempty(Fg_global) && Fz[inode]!=0.0
+                Fz_follower = Fz[inode]
+            end
+            if isnothing(theta_x) && !isempty(Fg_global) && Mx[inode]!=0.0
+                Mx_follower = Mx[inode]
+            end
+            if isnothing(theta_y) && !isempty(Fg_global) && My[inode]!=0.0
+                My_follower = My[inode]
+            end
+            if isnothing(theta_z) && !isempty(Fg_global) && Mz[inode]!=0.0
+                Mz_follower = Mz[inode]
+            end
+
+            prescribed_conditions[inode] = GXBeam.PrescribedConditions(;ux,uy,uz,theta_x,theta_y,theta_z,Fx_follower,Fy_follower,Fz_follower,Mx_follower,My_follower,Mz_follower)
+
         end
+        return prescribed_conditions
     end
 
 
@@ -826,11 +847,12 @@ function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,ass
     initialize = false
 
     if i == 1 && numIterations == 1
-
+        prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC)
         system, state, converged = GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions, #TODO: just gravity and rotation for the first solve? Could add on forces in next solve below
         gravity,angular_velocity,linear=false,reset_state=true)
     end
 
+    prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC,Fg_global,ForceDof)
     initial_state = GXBeam.AssemblyState(system, assembly; prescribed_conditions)
 
     systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;
@@ -876,18 +898,21 @@ function structuralDynamicsTransientGX(topModel,mesh,Xp,Yp,Zp,z3Dnorm,system,ass
 
     # disp
     disp_sp1 = zeros(length(history[end].points)*6)
+    dispdot_sp1 = zeros(length(history[end].points)*6)
     idx = 1
     for ipt = 1:length(history[end].points)
         for iu = 1:3
             disp_sp1[idx] = history[end].points[ipt].u[iu]
+            dispdot_sp1[idx] = history[end].points[ipt].udot[iu]
             idx += 1
         end
         for itheta = 1:3
             disp_sp1[idx] = history[end].points[ipt].theta[itheta]
+            dispdot_sp1[idx] = history[end].points[ipt].thetadot[itheta]
             idx += 1
         end
     end
-    dispOut = GyricFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,copy(disp_sp1).*0.0)
+    dispOut = GyricFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,dispdot_sp1)
     FReaction_j = [-history[end].points[1].F[1];-history[end].points[1].F[2];-history[end].points[1].F[3];
     -history[end].points[1].M[1];-history[end].points[1].M[2];-history[end].points[1].M[3]]
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
