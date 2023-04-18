@@ -396,6 +396,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
                 end
                 #################################################################
+                if isnan(maximum(aeroVals))
+                    @warn "Nan detected in aero forces"
+                end
                 if inputs.aeroLoadsOn > 0
                     if isnothing(aeroVals)
                         error("aeroVals must be specified if OWENS.Inputs.aeroLoadsOn")
@@ -492,6 +495,10 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 topDispData1 = GyricFEA.DispData(u_j, udot_j, uddot_j, u_sm1)
             end
 
+            if isnan(maximum(u_j))
+                @warn "Nan detected in displacements"
+                break
+            end
 
         end # if inputs.topsideOn
 
