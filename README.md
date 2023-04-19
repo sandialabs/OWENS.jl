@@ -1,14 +1,12 @@
 # OWENS (Offshore Wind ENergy Simulator)
 
 This repository is based on the original structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813).
-The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.
-The aerodynamics are provided by the VAWTAero.jl module (https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl)
+The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.  GXBeam.jl has also been integrated in beta form for geometrically exact beam solutions
+The aerodynamics are provided by the VAWTAero.jl module (https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl) in addition to a coupling to the OpenFAST AeroDyn module.
 
 ## Documentation
 
-The theory manual can be found in the docs folder along with the validation paper(s).
-Additionally, there is a lessons learned document regarding Matlab to C++ "automatic" translation.
-The test cases are the base material for the validation paper(s).
+In Work: Documentation can be found in the docs folder along with the validation paper(s).
 
 ## Using/Setting Up the Package
 1. Get access to repository and set up ssh keys
@@ -17,7 +15,7 @@ The test cases are the base material for the validation paper(s).
 ```bash
 ssh-keygen -t rsa -m PEM -C username@sandia.gov
 ```
-	Copy the id_rsa.pub key found in ~./ssh into your GitLab profile public key
+	Copy the resulting id_rsa.pub key found in ~./ssh into your Github profile public key
 
 2. To develop OWENS, the recommended setup is as follows:
 
@@ -37,8 +35,7 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 
 
     -	Install the custom packages in the following order to prevent precompilation dependency errors.
-				* GXBeam.jl (specifically the zip included here)
-				* OpenFASTWrappers.jl
+        * OpenFASTWrappers.jl
         * VAWTAero.jl
         * GyricFEA.jl
         * PreComp.jl
@@ -69,27 +66,16 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
         * ] update 				
 
 
-    -	Run your code either from a terminal via julia scriptname.jl or from within an IDE like the Atom/Juno IDE (http://docs.junolab.org/stable/man/installation/) where you can see variables, use the debugger with breakpoints similar to matlab (with a Juno.@enter in front of a function call) and run sections of code iteratively as desired.
+    -	Run your code either from a terminal via julia scriptname.jl or from within an IDE like VSCode where you can see variables, use the debugger with breakpoints similar to matlab and run sections of code iteratively as desired.
         * OWENS can be run from files, like in the test scripts, or without files (except the composite input and airfoils) using ModelGen (see the example folder in ModelGen.jl for a working example with turbulent inflow)
         * There are several plotting options in Julia, note that if you use PyPlot it does download anaconda and set up its own conda behind Julia. If you are using a proxy and have your proxy settings right (as described above) it will install smoothly (though it takes a while to download everything initially and when you use it the first time). 	
 
 
     -	All of the functions have docstrings describing the i/o and function purpose, which can be accessed by:
-        * Import module
+        * import module
         * ? module.function() 				
-    -	A note about julia debuggers – if you don’t want it to step through everything, you need to tell it what packages to not step through via the following code before the debug call. This will make the debugger comparable (if not faster) than Matlab in speed.
+    -	A note about julia debuggers – if you don’t want it to step through everything, you need to tell it what packages to compile vs while packages to step through. This will make the debugger comparable (if not faster) than Matlab in speed. In VSCode, this can be done in the debug pane.
 ```Julia
-# Don’t step through base
-import JuliaInterpreter
-visit(Base) do item
-    isa(item, Module) && push!(JuliaInterpreter.compiled_modules, item)
-    true
-end
-
-# Don’t step through your other used packages you’re not debugging
-import moduleyouusebutdonotwanttodebug
-push!(JuliaInterpreter.compiled_modules, moduleyouusebutdonotwanttodebug)
-```
 ## Software License
 
 Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS).

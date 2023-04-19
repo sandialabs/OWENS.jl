@@ -1,0 +1,53 @@
+&ConfigInputs
+
+	GPFlag  = 0
+
+	nr 	= 50
+	nti 	= 30
+	convrg	= -1
+	iut	= 0
+
+	ifc	= 0
+	ixterm = 1
+	xstop=8
+
+	ntif	= 60
+	iutf	= 0
+	nric 	= 24
+	convrgf	= -1
+	DSFlag = 1
+	PRFlag = 1
+
+/End
+
+
+&CaseInputs
+
+	jbtitle = '5MW VAWT LCDT'
+
+	rho 	= .002378
+	!rho = .0019024
+	vis 	= .3739E-6
+    tempr 	= 70.0
+	hBLRef 	= 10.0
+	slex 	= 0.0
+	hAG 	= 15.0
+
+
+	RPM 	= 7.2
+	Ut 	= 6.0
+
+	! Turbine geometry
+	GeomFilePath='./Simplified5MW2.geom'
+
+	! Airfoil section data
+	nSect 	= 1
+	AFDPath	= '../../../airfoils/NACA_0021.dat'
+
+/End
+
+&ConfigOutputs
+	OutputPath = './'
+	DiagOutFlag=1
+	BladeElemOutFlag=1
+/End
