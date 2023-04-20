@@ -55,7 +55,7 @@ for dd = 1:6
     # set up stiffness matrix
     cmkValues[dd,dd,2] = StiffVal[dd]
 end
-OWENS.writeOwensNDL(fname, nodes, cmkType, cmkValues)
+ModelGen.writeOwensNDL(fname, nodes, cmkType, cmkValues)
 
 # *********************************************************************
 # perform operations for the aerodynamic forces file generation

@@ -17,6 +17,54 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 ```
 	Copy the resulting id_rsa.pub key found in ~./ssh into your Github profile public key
 
+# Mac, to just install OWENS as a regular user, find the shetup.sh script in the test folder.  It will run homebrew to install the required software, build and compile the openfast inflowwind, hydrodyn, and moordyn dynamic libraries, and install the OWENS packages in the correct order.  There is also a VScode profile in the docs/setup folder that can be loaded into VSCode to set up the IDE for julia.
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+# Linux, same as mac except change the brew statements in the .sh script to apt-get.
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+# Windows, install the software manually by downloading the windows executables, be sure julia is on your path, and follow the windows compilation instructions for the openfast inflowwind, libraries. It is highly recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment.
+    - https://julialang.org/downloads/
+    - https://www.paraview.org/download/
+    - https://visualstudio.microsoft.com/downloads/
+
+    Then start julia, either from the command line, or from vscode
+    ```bash
+    julia
+    ```
+
+    And run the following:
+    ```julia
+    # Install OWENS and non-registered dependencies as a regular user
+
+    using Pkg
+    Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"))
+    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git"))
+    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git"))
+    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git"))
+    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git"))
+    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/ModelGen.jl.git"))
+    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))
+
+    # Add other registered packages for running the example scripts
+    Pkg.add("PyPlot")
+    Pkg.add("Statistics")
+    Pkg.add("DelimitedFiles")
+    Pkg.add("Dierckx")
+    Pkg.add("QuadGK")
+    Pkg.add("FLOWMath")
+    Pkg.add("HDF5")
+    # Build and test OWENS
+    Pkg.test("OWENS")
+    ```
+
+
 2. To develop OWENS, the recommended setup is as follows:
 
     -	Use linux, mac, or unix based system – the code works on windows, but you’ll find yourself taking 10x longer to setup and troubleshoot any custom compiled fortran libraries.
@@ -51,7 +99,7 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 
     -	Install custom repositories you don’t want to develop directly within Julia using:
         * ] add url2yourrepo
-        * You may need to set up ssh keys and use the ssh url depending on the repo setup.
+        * You may need to set up ssh keys and use the ssh url depending on the repo setup. To get updates to these packages, you need to tell julia to update, ie ] update thepackage
 
 
     -	Install other nonregistered packages using:
