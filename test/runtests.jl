@@ -8,3 +8,7 @@ end
 @testset "SNL34m With impulse load ROM test, Preprepared Input Files" begin
     include("$path/34mROMtest.jl")
 end
+
+@testset "SNL34m Campbell Diagram Test Against GXBeam" begin
+    include("$path/Fig4_5_campbell2.jl")
+end

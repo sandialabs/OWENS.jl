@@ -226,12 +226,12 @@ function owens(owensfile,analysisType;
 
     #model definitions
     #--------------------------------------------
-    mesh = readMesh(meshfilename) #read mesh file
-    bladeData,_,_,_ = readBladeData(blddatafilename) #reads overall blade data file
-    BC = readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
-    el = readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
+    mesh = ModelGen.readMesh(meshfilename) #read mesh file
+    bladeData,_,_,_ = ModelGen.readBladeData(blddatafilename) #reads overall blade data file
+    BC = ModelGen.readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
+    el = ModelGen.readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
-    nodalTerms = GyricFEA.readNodalTerms(filename=ndldatafilename) #read concentrated nodal terms file
+    nodalTerms = GyricFEA.applyConcentratedTerms(mesh.numNodes, 6;filename=ndldatafilename) #read concentrated nodal terms file
     initCond = []
 
     #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
@@ -240,14 +240,12 @@ function owens(owensfile,analysisType;
 
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #for transient analysis...
 
-        initCond = readInitCond(initcondfilename) #read initial conditions
-
         if !(occursin("[",generatorfilename)) #If there isn't a file
             useGeneratorFunction = true
             generatorProps = 0.0
         else
             useGeneratorFunction = false
-            generatorProps = readGeneratorProps(generatorfilename) #reads generator properties
+            generatorProps = ModelGen.readGeneratorProps(generatorfilename) #reads generator properties
         end
 
     end
@@ -259,10 +257,10 @@ function owens(owensfile,analysisType;
     nlParams = GyricFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Input(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,JgearBox,gearRatio,gearBoxEfficiency,
+    model = Inputs(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn=false,topsideOn=true,interpOrder,hd_input_file=[],md_input_file=[],JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,potflowfile=[],outFilename,bladeData,driveShaftProps)
 
     feamodel = GyricFEA.FEAModel(;analysisType,
     initCond,
@@ -313,6 +311,8 @@ function owens(owensfile,analysisType;
 
     if ((hydrodynLib!="none")||(moordynLib!="none")) # Map shared library paths for external dependencies
         bin = Bin(hydrodynLib, moordynLib)
+    else
+        bin = nothing
     end
 
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
@@ -331,7 +331,7 @@ function owens(owensfile,analysisType;
         aeroForces(t,azi) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
         deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1) = 0.0 #placeholder function
-        Unsteady(model,feamodel,mesh,el,bin,aeroForces,deformAero)
+        Unsteady(model;topModel=feamodel,topMesh=mesh,topEl=el,bin,aero=aeroForces,deformAero)
 
         return model
     end
@@ -436,7 +436,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #     RefAR = cactusGeom.RefAR*ft2m*ft2m
     RefR = cactusGeom.RefR*ft2m
     V = 25.0#6.787243728 #m/s #27.148993200000003
-    @warn "Velocity is hardcoded here at $V"
+    println("Velocity for the cacus test case is hardcoded here at $V")
 
     normTime = aero_data[:,1]
 
@@ -494,7 +494,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
         spanLocNorm[i,:] = blade[i].PEy[1:blade[1].NElem[1,1],1].*RefR[1,1]/(blade[i].QCy[blade[1].NElem[1,1]+1,1]*RefR[1,1])
     end
 
-    bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = readBladeData(bldFn)
+    bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = ModelGen.readBladeData(bldFn)
 
     #Initialize structuralLoad
     struct_N = zeros(cactusGeom.NBlade,numAeroTS,length(structuralElNumbers[1,:]))
@@ -515,8 +515,8 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #integrate over elements
 
     #read element aero_data in
-    mesh = readMesh(meshFn)
-    el = readElementData(mesh.numEl,elFn,ortFn,bladeData)
+    mesh = ModelGen.readMesh(meshFn)
+    el = ModelGen.readElementData(mesh.numEl,elFn,ortFn,bladeData)
     numDofPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6),numAeroTS)

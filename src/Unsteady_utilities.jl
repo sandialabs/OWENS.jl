@@ -261,7 +261,7 @@ function externalForcing(time,timeArray,ForceValHist,ForceDof)
     end
     Fdof = ForceDof
 
-    return Fexternal, Fdof
+    return Fexternal, Fdof, nothing, nothing, nothing, nothing
 end
 
 """

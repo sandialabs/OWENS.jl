@@ -1,7 +1,7 @@
-struct Bin
 """
 Inputs pointing to the file paths of compiled binaries of external libraries
 """
+struct Bin
     hydrodynLibPath
     moordynLibPath
 end
@@ -104,7 +104,7 @@ Model inputs for OWENS coupled analysis, struct
 * `delta_t::float`: timestep interval (s)
 * `Omegaocp::Array{<:float}`: = rotor speed points for rotor speed profile (Hz)
 * `Vinfocp::Array{<:float}`: = rotor speed points for specified Vinf profile (Hz)
-* `aeroLoadsOn::bool`: flag to trigger aero loads being applied
+* `aeroLoadsOn::bool`: #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
 * `AD15On::bool`: flag to use AD15 for aero
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
@@ -136,9 +136,8 @@ Model inputs for OWENS coupled analysis, struct
 * `iterwarnings::bool`: iteration warnings flag
 
 # Outputs:
-* `none`:
+* `OWENS.Inputs`:
 """
-
 function Inputs(;analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,

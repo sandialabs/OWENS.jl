@@ -29,10 +29,11 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-# Windows, install the software manually by downloading the windows executables, be sure julia is on your path, and follow the windows compilation instructions for the openfast inflowwind, libraries. It is highly recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment.
+# Windows, install the software manually by downloading the windows executables, be sure julia is on your path, and follow the windows compilation instructions for the openfast inflowwind, libraries. At this stage in the software's maturity, it is recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment.
     - https://julialang.org/downloads/
     - https://www.paraview.org/download/
     - https://visualstudio.microsoft.com/downloads/
+    - https://github.com/OpenFAST/openfast
 
     Then start julia, either from the command line, or from vscode
     ```bash

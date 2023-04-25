@@ -3,6 +3,7 @@ module OWENS
 # Custom unregistered (julia) packages
 import GyricFEA
 import OpenFASTWrappers
+import ModelGen
 
 # Github packages
 import Statistics

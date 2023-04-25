@@ -395,6 +395,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         end
                     end
                 end
+
                 #################################################################
                 if isnan(maximum(aeroVals))
                     @warn "Nan detected in aero forces"
@@ -428,6 +429,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     topFexternal = zeros(numDOFPerNode)
                     aeroDOFs = copy(topFexternal).*0.0
                 end
+                aeroVals = topFexternal
 
                 if meshcontrolfunction !== nothing
                     # add to the loads based on the inputs, TODO: CN2H
@@ -1008,6 +1010,7 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
     deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
     aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
+    # println(maximum(abs.(aeroVals)))
     return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm
 end
 
