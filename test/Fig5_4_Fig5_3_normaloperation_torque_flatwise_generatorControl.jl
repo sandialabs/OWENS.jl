@@ -115,7 +115,7 @@ Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
 tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
 Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
 
-model = OWENS.Inputs(;analysisType = "TNB",
+model = OWENS.Inputs(;analysisType = "ROM",
     outFilename = "none",
     tocp = [0.0;new_t.+offsetTime; 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
     Omegaocp,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
@@ -136,7 +136,7 @@ model = OWENS.Inputs(;analysisType = "TNB",
 
 println(sqrt(model.driveShaftProps.k/model.JgearBox)*60/2/pi/2)
 
-feamodel = GyricFEA.FEAModel(;analysisType = "TNB",
+feamodel = GyricFEA.FEAModel(;analysisType = "ROM",
     joint = myjoint,
     platformTurbineConnectionNodeNumber = 1,
     pBC,
@@ -154,7 +154,7 @@ model.Vinfocp = model.Vinfocp.*0.0
 feamodel.nlOn = true
 
 # Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
-eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,VAWTAero.deformTurb;steady=false)
+eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,VAWTAero.deformTurb;steady=true)
 
 #####
 ###****** SAND-88-1144 Specifies Bending Strains and Axial Strains Separate ****
@@ -167,15 +167,15 @@ lag_stress1grav = (kappa_z_grav[1,end-1,2:end].* thickness_lag .+ 0*eps_x_grav[1
 lag_stress2grav = (kappa_z_grav[2,end-1,1:end-1].* thickness_lag .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
 
 # println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.05)
+system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;damp_coef=0.05)
 
 
 model.Omegaocp = Omegaocp
 model.OmegaInit = Omegaocp[1]
 model.Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
 feamodel.nlOn = true
-feamodel.analysisType = "TNB"
-model.analysisType = "TNB"
+feamodel.analysisType = "ROM"
+model.analysisType = "ROM"
 
 eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist = runowens(model,feamodel,mymesh,myel,
 aeroForcesDMS,VAWTAero.deformTurb;steady=false,system,assembly,VTKFilename="$path/vtk/NormalOperation")
