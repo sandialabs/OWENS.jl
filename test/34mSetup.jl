@@ -51,16 +51,16 @@ mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=1e-5,
     # bshapey = sin.(LinRange(0,0,12)).*SNL34X,
     angularOffset = -pi/2)
 
-PyPlot.figure()
-PyPlot.plot(mymesh.x,mymesh.z,"b-")
- for myi = 1:length(mymesh.x)
-     PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
-     PyPlot.draw()
-     sleep(0.1)
- end
-PyPlot.xlabel("x")
-PyPlot.ylabel("y")
-# PyPlot.axis("equal")
+# PyPlot.figure()
+# PyPlot.plot(mymesh.x,mymesh.z,"b-")
+#  for myi = 1:length(mymesh.x)
+#      PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+#      PyPlot.draw()
+#      sleep(0.1)
+#  end
+# PyPlot.xlabel("x")
+# PyPlot.ylabel("y")
+# # PyPlot.axis("equal")
 
 nTwrElem = Int(mymesh.meshSeg[1])+1
 nBldElem = Int(mymesh.meshSeg[2])+1
