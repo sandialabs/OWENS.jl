@@ -13,7 +13,7 @@ map VAWTAero forces to OWENS mesh dofs
 * `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
 
 """
-function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true)
+function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,outputfile=nothing)
     CP,Rp,Tp,Zp,alpha,cl,cd_af,Vloc,Re,thetavec,n_steps,Fx_base,Fy_base,Fz_base,
     Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp = advanceTurb(t;azi=azi_j+3*pi/2,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
 
@@ -141,6 +141,63 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true)
             ForceDof[index] = i
             index = index + 1
         # end
+    end
+
+    if outputfile!=nothing
+        DelimitedFiles.open(string("$(outputfile)_fullmesh.txt"), "a") do io
+            if t==0
+                header1 = ["t" "azi" "nodenum" "Fx" "Fy" "Fz" "Mx" "My" "Mz"]
+                header2 = ["(s)" "(rad)" "(#)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+            
+                DelimitedFiles.writedlm(io, header1, '\t')
+                DelimitedFiles.writedlm(io, header2, '\t')
+            end
+            Fx = ForceValHist[1:6:end,end]
+            Fy = ForceValHist[2:6:end,end]
+            Fz = ForceValHist[3:6:end,end]
+            Mx = ForceValHist[4:6:end,end]
+            My = ForceValHist[5:6:end,end]
+            Mz = ForceValHist[6:6:end,end]
+            for inode = 1:Int(mesh.numNodes)
+
+                data = [t azi_j inode Fx[inode] Fy[inode] Fz[inode] Mx[inode] My[inode] Mz[inode]]
+        
+                DelimitedFiles.writedlm(io, data, '\t')
+        
+            end
+        
+        end
+
+        for j = 1:NBlade
+            DelimitedFiles.open(string("$(outputfile)_blade$j.txt"), "a") do io
+                if t==0
+                    header1 = ["t" "azi" "nodenum" "Fx" "Fy" "Fz" "Mx" "My" "Mz"]
+                    header2 = ["(s)" "(rad)" "(#)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+                
+                    DelimitedFiles.writedlm(io, header1, '\t')
+                    DelimitedFiles.writedlm(io, header2, '\t')
+                end
+                Fx = ForceValHist[1:6:end,end]
+                Fy = ForceValHist[2:6:end,end]
+                Fz = ForceValHist[3:6:end,end]
+                Mx = ForceValHist[4:6:end,end]
+                My = ForceValHist[5:6:end,end]
+                Mz = ForceValHist[6:6:end,end]
+                for k = 1:numNodesPerBlade
+                    #get element aero_data
+                    # orientation angle,xloc,sectionProps,element order]
+                    elNum = Int(structuralElNumbers[j,k])
+                    #get dof map
+                    inode = Int(structuralNodeNumbers[j,k])
+    
+                    data = [t azi_j inode Fx[inode] Fy[inode] Fz[inode] Mx[inode] My[inode] Mz[inode]]
+            
+                    DelimitedFiles.writedlm(io, data, '\t')
+            
+                end
+            
+            end
+        end
     end
 
     # return Fexternal, Fdof

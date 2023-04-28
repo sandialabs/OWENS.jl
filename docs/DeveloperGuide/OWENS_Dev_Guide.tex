@@ -187,6 +187,8 @@ Due to the nonlinearity and non-closed-form nature of the floating turbine probl
 
 \section{Global Frame of Reference}
 
+Thanks to some legacy VAWT frames of reference where wind was originally coming from the top down, and then from the left right, the convention was to simply rotate the axes instead of properly redefining the global frame of reference to match standard math convention again.  Therefore, an azimuth angle of 0, or yaw angle for standard VAWT frame of reference is top dead center.  Therefore, blade 1 of a vawt should also be top dead center, i.e. aligned with the y+ axis as shown below.
+
 \begin{figure}[H]
 \centering
 \vspace{-12pt}
@@ -197,6 +199,8 @@ Due to the nonlinearity and non-closed-form nature of the floating turbine probl
 \end{figure}
 
 \section{InflowWind and TurbSim Velocity Inflow}
+
+This is how it is defined in the manual, despite inverting the positive direction of rotation compared to standard notation.
 
 \begin{figure}[H]
 \centering
@@ -221,6 +225,8 @@ Due to the nonlinearity and non-closed-form nature of the floating turbine probl
 Note: CACTUS, does not fully follow this scheme and differs from the global frame of reference by switching the Y and Z axes for a VAWT.  Also, be careful with the geometry inputs; if the blade 1 starts out at the "south" position, as opposed to the north, then it will behave as though it were a north starting blade rotating clockwise, and a symmetric gust velocity will match (if the simple iec uniform gust is used).  All else for CACTUS follows the description above.
 
 \subsection{GyricFEA Structures}
+
+Yaw is equivalent to the global azimuth angle as above, and is denoted in the code as Psi. Zero is top dead center, right hand rule positive rotation.  The subscript D indicates degrees.  Theta is the element slope, or delta, and 
 
 The rotation sequence is a Roll (Rx) - Pitch (Ry) - Yaw (Rz) sequence in GyricFEA (R = Rz * Ry *Rx in multiplication order). This corresponds to Twist - Theta - Psi angle ordering.  In the matrix multiplication this is R = $R_{psi}$ * $R_{theta}$ * $R_{twist}$, which is a [3,2,1] matrix ordering.
  
