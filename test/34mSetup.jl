@@ -37,15 +37,15 @@ SNL34X = SNL34x.*radius
 
 Nbld = 2
 
-mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=1e-1,
+mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=0.5,
     Hb = height, #blade height
     R = radius, # m bade radius
     nblade = Nbld,
     ntelem = 20, #tower elements
     nbelem = 20, #blade elements
     nselem = 3,
-    strut_mountpointbot = 0.04,
-    strut_mountpointtop = 0.04,
+    strut_mountpointbot = 0.03,
+    strut_mountpointtop = 0.03,
     bshapex = SNL34X,#cos.(LinRange(0,0,12)).*SNL34X, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     bshapez = SNL34Z, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     # bshapey = sin.(LinRange(0,0,12)).*SNL34X,

@@ -415,10 +415,10 @@ for iel = 1:length(start)
     node2 = stop[iel]
     EA_points[node1] = stiffness[iel][1,1]
     EA_points[node2] = stiffness[iel][1,1]
-    EIyy_points[node1] = stiffness[iel][2,2]
-    EIyy_points[node2] = stiffness[iel][2,2]
-    EIzz_points[node1] = stiffness[iel][3,3]
-    EIzz_points[node2] = stiffness[iel][3,3]
+    EIyy_points[node1] = stiffness[iel][5,5]
+    EIyy_points[node2] = stiffness[iel][5,5]
+    EIzz_points[node1] = stiffness[iel][6,6]
+    EIzz_points[node2] = stiffness[iel][6,6]
 end
 
 # fill in the big matrix
@@ -437,7 +437,7 @@ end
 
 azi=[0.0,pi/8]#./aziHist*1e-6
 uHist = [zeros(length(points)*6) zeros(length(points)*6)]'
-saveName = "$path/vtk/pleasework"
+saveName = "$path/vtk/pleasework2"
 
 af = [100.0001 0
 100 0.221
