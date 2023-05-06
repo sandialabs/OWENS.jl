@@ -61,122 +61,122 @@ mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=0.5,
 # PyPlot.xlabel("x")
 # PyPlot.ylabel("y")
 # # PyPlot.axis("equal")
-visualize_orts = true
-if visualize_orts
-    import PyPlot
-    PyPlot.pygui(true)
-    PyPlot.rc("figure", figsize=(15, 15))
-    PyPlot.rc("font", size=10.0)
-    PyPlot.rc("lines", linewidth=1.5)
-    PyPlot.rc("lines", markersize=4.0)
-    PyPlot.rc("legend", frameon=true)
-    PyPlot.rc("axes.spines", right=false, top=false)
-    PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-    PyPlot.rc("figure",max_open_warning=500)
-    # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-    plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# visualize_orts = true
+# if visualize_orts
+#     import PyPlot
+#     PyPlot.pygui(true)
+#     PyPlot.rc("figure", figsize=(15, 15))
+#     PyPlot.rc("font", size=10.0)
+#     PyPlot.rc("lines", linewidth=1.5)
+#     PyPlot.rc("lines", markersize=4.0)
+#     PyPlot.rc("legend", frameon=true)
+#     PyPlot.rc("axes.spines", right=false, top=false)
+#     PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+#     PyPlot.rc("figure",max_open_warning=500)
+#     # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+#     plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-    ####################################################################################
-    ################## Plot for the elements #########################
-    ####################################################################################
+#     ####################################################################################
+#     ################## Plot for the elements #########################
+#     ####################################################################################
 
 
-    PyPlot.figure()
-    PyPlot.scatter3D(mymesh.x,mymesh.y,mymesh.z,color=plot_cycle[1])
-    # PyPlot.zlim(([90,120]))
+#     PyPlot.figure()
+#     PyPlot.scatter3D(mymesh.x,mymesh.y,mymesh.z,color=plot_cycle[1])
+#     # PyPlot.zlim(([90,120]))
 
-    # Allocate the node angle arrays
-    Psi_d_Nodes = zeros(mymesh.numNodes)
-    Theta_d_Nodes = zeros(mymesh.numNodes)
-    Twist_d_Nodes = zeros(mymesh.numNodes)
+#     # Allocate the node angle arrays
+#     Psi_d_Nodes = zeros(mymesh.numNodes)
+#     Theta_d_Nodes = zeros(mymesh.numNodes)
+#     Twist_d_Nodes = zeros(mymesh.numNodes)
 
-    function rotate_normal(i_el, mymesh, myort;vec=[0,1,0.0],normal_len=1)
-        # * `Psi_d::Array{<:float}`: length NumEl, element rotation about 3 in global FOR (deg) These angles are used to transform from the global coordinate frame to the local element/joint frame via a 3-2 Euler rotation sequence.
-        # * `Theta_d::Array{<:float}`: length NumEl, element rotation about 2 (deg)
-        # * `Twist_d::Array{<:float}`: length NumEl, element twist (deg)
+#     function rotate_normal(i_el, mymesh, myort;vec=[0,1,0.0],normal_len=1)
+#         # * `Psi_d::Array{<:float}`: length NumEl, element rotation about 3 in global FOR (deg) These angles are used to transform from the global coordinate frame to the local element/joint frame via a 3-2 Euler rotation sequence.
+#         # * `Theta_d::Array{<:float}`: length NumEl, element rotation about 2 (deg)
+#         # * `Twist_d::Array{<:float}`: length NumEl, element twist (deg)
         
-        # Map from element to node
-        nodenum1 = Int(mymesh.conn[i_el,1])
-        nodenum2 = Int(mymesh.conn[i_el,2])
+#         # Map from element to node
+#         nodenum1 = Int(mymesh.conn[i_el,1])
+#         nodenum2 = Int(mymesh.conn[i_el,2])
 
-        # Extract the element angles
-        Psi_d_el = myort.Psi_d[i_el]
-        Theta_d_el = myort.Theta_d[i_el]
-        Twist_d_el = myort.Twist_d[i_el]
+#         # Extract the element angles
+#         Psi_d_el = myort.Psi_d[i_el]
+#         Theta_d_el = myort.Theta_d[i_el]
+#         Twist_d_el = myort.Twist_d[i_el]
 
-        # Map the element angles to the node angles
-        Psi_d_Nodes[[nodenum1,nodenum2]] .= Psi_d_el
-        Theta_d_Nodes[[nodenum1,nodenum2]] .= Theta_d_el
-        Twist_d_Nodes[[nodenum1,nodenum2]] .= Twist_d_el
+#         # Map the element angles to the node angles
+#         Psi_d_Nodes[[nodenum1,nodenum2]] .= Psi_d_el
+#         Theta_d_Nodes[[nodenum1,nodenum2]] .= Theta_d_el
+#         Twist_d_Nodes[[nodenum1,nodenum2]] .= Twist_d_el
 
-        # Use a line and rotate it about the angles, different starting vectors show different angles.
-        myvec = vec.*normal_len
+#         # Use a line and rotate it about the angles, different starting vectors show different angles.
+#         myvec = vec.*normal_len
 
-        # apply the twist rotation, which is about the x (1) axis
-        DCM_roll = [1.0 0.0 0.0
-            0.0 cosd(Twist_d_el) -sind(Twist_d_el)
-            0.0 sind(Twist_d_el) cosd(Twist_d_el)]
+#         # apply the twist rotation, which is about the x (1) axis
+#         DCM_roll = [1.0 0.0 0.0
+#             0.0 cosd(Twist_d_el) -sind(Twist_d_el)
+#             0.0 sind(Twist_d_el) cosd(Twist_d_el)]
 
-        # apply theta rotation, which is the tilt angle, or about the y (2) axis in global
-        DCM_pitch = [cosd(Theta_d_el) 0.0 sind(Theta_d_el)
-            0.0 1.0 0.0
-            -sind(Theta_d_el) 0.0 cosd(Theta_d_el)]
+#         # apply theta rotation, which is the tilt angle, or about the y (2) axis in global
+#         DCM_pitch = [cosd(Theta_d_el) 0.0 sind(Theta_d_el)
+#             0.0 1.0 0.0
+#             -sind(Theta_d_el) 0.0 cosd(Theta_d_el)]
 
-        # apply Psi rotation, which is about Z (3) axis in global
-        DCM_yaw = [cosd(Psi_d_el) -sind(Psi_d_el) 0.0
-            sind(Psi_d_el) cosd(Psi_d_el) 0.0
-            0.0 0.0 1.0]
+#         # apply Psi rotation, which is about Z (3) axis in global
+#         DCM_yaw = [cosd(Psi_d_el) -sind(Psi_d_el) 0.0
+#             sind(Psi_d_el) cosd(Psi_d_el) 0.0
+#             0.0 0.0 1.0]
 
-        # Get the location of the element
-        x_el = (mymesh.x[nodenum1]+mymesh.x[nodenum2])/2
-        y_el = (mymesh.y[nodenum1]+mymesh.y[nodenum2])/2
-        z_el = (mymesh.z[nodenum1]+mymesh.z[nodenum2])/2
+#         # Get the location of the element
+#         x_el = (mymesh.x[nodenum1]+mymesh.x[nodenum2])/2
+#         y_el = (mymesh.y[nodenum1]+mymesh.y[nodenum2])/2
+#         z_el = (mymesh.z[nodenum1]+mymesh.z[nodenum2])/2
 
-        # Offset the myvector by the location of the element
-        myvec = DCM_yaw*DCM_pitch*DCM_roll*myvec + [x_el,y_el,z_el]
-        x_el_plot = [x_el,myvec[1]]
-        y_el_plot = [y_el,myvec[2]]
-        z_el_plot = [z_el,myvec[3]]
-        return x_el_plot, y_el_plot, z_el_plot
-    end
+#         # Offset the myvector by the location of the element
+#         myvec = DCM_yaw*DCM_pitch*DCM_roll*myvec + [x_el,y_el,z_el]
+#         x_el_plot = [x_el,myvec[1]]
+#         y_el_plot = [y_el,myvec[2]]
+#         z_el_plot = [z_el,myvec[3]]
+#         return x_el_plot, y_el_plot, z_el_plot
+#     end
 
-    # Add the orientation vectors, ort is on elements
-    for i_el = 1:mymesh.numEl
-        x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[10,0,0.0])
-        PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[2])
-    end
+#     # Add the orientation vectors, ort is on elements
+#     for i_el = 1:mymesh.numEl
+#         x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[10,0,0.0])
+#         PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[2])
+#     end
 
-    for i_el = 1:mymesh.numEl
-        x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[0,5,0.0])
-        PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[3])
-    end
+#     for i_el = 1:mymesh.numEl
+#         x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[0,5,0.0])
+#         PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[3])
+#     end
 
-    for i_el = 1:mymesh.numEl
-        x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[0,0,5.0])
-        PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[4])
-    end
+#     for i_el = 1:mymesh.numEl
+#         x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[0,0,5.0])
+#         PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[4])
+#     end
 
-    PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[2],label="X-norm")
-    PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[3],label="Y-norm")
-    PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[4],label="Z-norm")
-    PyPlot.legend()
-    # for i_joint = 1:length(myjoint[:,1])
-    #     i_el = findall(x->x==myjoint[i_joint,2],mymesh.conn[:,1])
-    #     if length(i_el)==0 #Use the other element associated with the joint
-    #         i_el = findall(x->x==myjoint[i_joint,2],mymesh.conn[:,2])
-    #     end
-    #     if length(i_el)==0 #Use the other element associated with the joint
-    #         i_el = findall(x->x==myjoint[i_joint,3],mymesh.conn[:,2])
-    #     end
-    #     x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el[1], mymesh, myort;normal_len=3)
-    #     PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[5])
-    # end
+#     PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[2],label="X-norm")
+#     PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[3],label="Y-norm")
+#     PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[4],label="Z-norm")
+#     PyPlot.legend()
+#     # for i_joint = 1:length(myjoint[:,1])
+#     #     i_el = findall(x->x==myjoint[i_joint,2],mymesh.conn[:,1])
+#     #     if length(i_el)==0 #Use the other element associated with the joint
+#     #         i_el = findall(x->x==myjoint[i_joint,2],mymesh.conn[:,2])
+#     #     end
+#     #     if length(i_el)==0 #Use the other element associated with the joint
+#     #         i_el = findall(x->x==myjoint[i_joint,3],mymesh.conn[:,2])
+#     #     end
+#     #     x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el[1], mymesh, myort;normal_len=3)
+#     #     PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[5])
+#     # end
 
-    PyPlot.xlabel("x")
-    PyPlot.ylabel("y")
-    PyPlot.zlabel("z")
-    PyPlot.axis("equal")
-end
+#     PyPlot.xlabel("x")
+#     PyPlot.ylabel("y")
+#     PyPlot.zlabel("z")
+#     PyPlot.axis("equal")
+# end
 
 nTwrElem = Int(mymesh.meshSeg[1])+1
 nBldElem = Int(mymesh.meshSeg[2])+1
