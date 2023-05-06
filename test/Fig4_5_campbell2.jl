@@ -12,7 +12,7 @@ path = splitdir(@__FILE__)[1]
 #Put in one place so its not repeated for all of the analyses
 include("$(path)/34mSetup.jl")
 
-system, assembly, sections, frames, points, start, stop = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.01,VTKmeshfilename="$path/vtk/SNL34m")
+system, assembly, sections, frames, points, start, stop, stiff, mass = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.01,VTKmeshfilename="$path/vtk/SNL34m")
 println("setup complete")
 function rotate_normal(i_el, points, start, stop, frames;vec=[0,1,0.0],normal_len=1)
 
@@ -654,10 +654,10 @@ stop2 = vcat(stop2, joints[:,2])
 frames2 = vcat(frame_t, frame_br, frame_bl, frame_sR, frame_sL, frame_sR, frame_sL, frame_j)
 
 # combine stiffness
-stiffness = vcat(stiff_t, stiff_b, stiff_b, stiff_s, stiff_s, stiff_s, stiff_s, stiff_j)
+stiff2 = vcat(stiff_t, stiff_b, stiff_b, stiff_s, stiff_s, stiff_s, stiff_s, stiff_j)
 
 # combine mass
-mass = vcat(mass_t, mass_b, mass_b, mass_s, mass_s, mass_s, mass_s, mass_j)
+mass2 = vcat(mass_t, mass_b, mass_b, mass_s, mass_s, mass_s, mass_s, mass_j)
 
 xplot = [point[1] for point in points2]
 yplot = [point[2] for point in points2]
@@ -726,9 +726,9 @@ PyPlot.zlabel("z")
 PyPlot.axis("equal")
 
 # create assembly
-assembly2 = Assembly(points2, start2, stop2;
-    frames=frames2,
-    stiffness=stiffness,
+assembly2 = Assembly(points, start, stop;
+    frames=frames,
+    stiffness=stiff,
     mass=mass)
 
 # --- Define Prescribed Conditions --- #
@@ -773,12 +773,12 @@ EIzz_points = zeros(length(points2))
 for iel = 1:length(start2)
     node1 = start2[iel]
     node2 = stop2[iel]
-    EA_points[node1] = stiffness[iel][1,1]
-    EA_points[node2] = stiffness[iel][1,1]
-    EIyy_points[node1] = stiffness[iel][5,5]
-    EIyy_points[node2] = stiffness[iel][5,5]
-    EIzz_points[node1] = stiffness[iel][6,6]
-    EIzz_points[node2] = stiffness[iel][6,6]
+    EA_points[node1] = stiff2[iel][1,1]
+    EA_points[node2] = stiff2[iel][1,1]
+    EIyy_points[node1] = stiff2[iel][5,5]
+    EIyy_points[node2] = stiff2[iel][5,5]
+    EIzz_points[node1] = stiff2[iel][6,6]
+    EIzz_points[node2] = stiff2[iel][6,6]
 end
 
 # fill in the big matrix
@@ -897,6 +897,10 @@ PyPlot.ylabel("z")
  end
 
 
+
+ for imass = 1:length(mass2)
+    println("$imass $(mass[imass][1].-mass2[imass][1])")
+ end
 
 # # storage for results
 # freq = zeros(length(rpm), nmode)
