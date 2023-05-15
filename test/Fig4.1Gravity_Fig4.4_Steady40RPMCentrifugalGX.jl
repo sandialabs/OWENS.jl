@@ -80,7 +80,7 @@ deformTurb(azi_j;newOmega=0,newVinf=0,bld_x=0,bld_z=0,bld_twist=0) = 0
 
 eps_xG,eps_zG,eps_yG,kappa_xG,kappa_yG,kappa_zG,t,FReactionHist,OmegaHist,genTorque,
 torqueDriveShaft,aziHist,uHist = runowens(model,feamodel,mymesh,myel,
-aeroForcesDMS,deformTurb;steady,system,assembly)
+aeroForcesDMS,deformTurb;steady)
 
 ##################################################################
 ########### FIG 4.1 Gravity Only #############
@@ -140,7 +140,7 @@ model.Omegaocp = [28.0, 28.0]./60
 model.OmegaInit = 28.0/60
 
 eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,
-torqueDriveShaft,aziHist,uHist  = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady,system,assembly)
+torqueDriveShaft,aziHist,uHist  = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady)
 
 
 # Load data
@@ -203,6 +203,7 @@ end
 
 azi=aziHist#./aziHist*1e-6
 saveName = "$path/vtk/two_blade"
+system, assembly, sections, frames, points, start, stop = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.05)
 ModelGen.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 ##################################################################
@@ -264,10 +265,6 @@ PyPlot.plot(t,FReactionHist[:,6])
 ############### GX ################################################################################################################################################################################################################################
 ############################################################################################################################################################################################################################################################
 ############################################################################################################################################################################################################################################################
-# include("$(path)/../../../OWENSKevin.jl/src/OWENS.jl")
-#Put in one place so its not repeated for all of the analyses
-include("$(path)/34mSetup.jl")
-# include("$(path)/speedupdebugger.jl")
 
 Vinf = 1e-2#mean(SNL34m_5_3_Vinf[:,2])
 TSR = omega*radius./Vinf

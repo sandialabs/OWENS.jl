@@ -386,6 +386,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         if (inputs.aeroLoadsOn==1 || inputs.aeroLoadsOn==1.5) && numIterations!=1
                             runaero = false
                         end
+                        
                         if runaero
                             if inputs.AD15On
                                 aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j)
