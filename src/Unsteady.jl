@@ -1018,7 +1018,9 @@ end
 function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j,OmegaDot_j)
     # this is a very simple interface since AD15 does everything using the mesh in global coordinates
     println("   run_aero_with_deformAD15 --> this routine may not be complete yet")
-    deformAero(mesh,u_j,udot_j,uddot_j,azi_j,Omega_j,OmegaDot_j)
+    hubPos   = [0,0,0]  # OWENS currently assumes hub is at (0,0,0)
+    hubAngle = [0,0,0]  # OWENS assumes hub is always vertical
+    deformAero(u_j,udot_j,uddot_j,azi_j,Omega_j,OmegaDot_j,hubPos,hubAngle)
     aeroVals,aeroDOFs = aero(t_i,azi_j)
     # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
     Xp = nothing
