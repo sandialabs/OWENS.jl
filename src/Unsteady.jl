@@ -389,7 +389,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         
                         if runaero
                             if inputs.AD15On
-                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j)
+                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                             else
                                 aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
                             end
@@ -582,7 +582,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             end
                             if runaero
                                 if inputs.AD15On
-                                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j)
+                                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                                 else
                                     aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
                                 end
@@ -1015,10 +1015,10 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
     return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm
 end
 
-function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j)
+function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j,OmegaDot_j)
     # this is a very simple interface since AD15 does everything using the mesh in global coordinates
     println("   run_aero_with_deformAD15 --> this routine may not be complete yet")
-    deformAero(mesh,u_j,udot_j,uddot_j,azi_j)
+    deformAero(mesh,u_j,udot_j,uddot_j,azi_j,Omega_j,OmegaDot_j)
     aeroVals,aeroDOFs = aero(t_i,azi_j)
     # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
     Xp = nothing
