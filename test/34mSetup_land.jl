@@ -178,7 +178,7 @@ mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=0.5,
 #     PyPlot.axis("equal")
 # end
 
-nTwrElem = Int(mymesh.meshSeg[1])+1
+nTwrElem = Int(mymesh.meshSeg[1])+2
 nBldElem = Int(mymesh.meshSeg[2])+1
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/SNL34mGeom.csv"

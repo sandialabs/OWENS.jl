@@ -173,7 +173,7 @@ system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPr
 model.Omegaocp = Omegaocp
 model.OmegaInit = Omegaocp[1]
 model.Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
-feamodel.nlOn = true
+feamodel.nlOn = false
 feamodel.analysisType = "ROM"
 model.analysisType = "ROM"
 
