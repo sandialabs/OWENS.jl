@@ -375,7 +375,7 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
 
         t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
         FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady(model;
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(model;
         topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesDMS,deformAero=deformTurb,system,assembly)
 
         meanepsilon_z_hist = mean(epsilon_z_hist,dims=1)
