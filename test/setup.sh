@@ -22,6 +22,7 @@ cmake -DBUILD_SHARED_LIBS=ON ..
 make ifw_c_binding
 make moordyn_c_binding
 make hydrodyn_c_binding
+make aerodyn_inflow_c_binding
 cd ../../
 
 # Install OWENS and non-registered dependencies as a regular user
