@@ -45,6 +45,6 @@ include("Unsteady_utilities.jl")
 include("structs.jl")
 include("./PostProcessing.jl")
 include("./visualization.jl")
-include("./VAWTAero2OWENSCoupling.jl")
+include("./AeroMapping.jl")
 
 end

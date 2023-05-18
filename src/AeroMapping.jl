@@ -1,5 +1,3 @@
-import GyricFEA
-
 """
     mapAD15(t,mesh)
 
