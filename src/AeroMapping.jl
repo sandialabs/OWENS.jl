@@ -1,3 +1,52 @@
+import GyricFEA
+
+"""
+    mapAD15(t,mesh)
+
+map AD15 forces to OWENS mesh dofs
+
+# Inputs
+* `t::float`: time at which to get the loads (can be called repeatedly at the same time or for large time gaps, will infill run as needed)
+* `mesh::GyricFEA.Mesh`: see ?GyricFEA.Mesh
+* `mesh::GyricFEA.El`: see ?GyricFEA.El
+
+# Outputs:
+* `ForceValHist::Array(<:float)`: Force or moment (N, N-m) at the time corresponding to the time specified
+* `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
+
+"""
+function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbosity=0)
+    n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,mesh,azi_j)
+
+    # NOTE on AD15 advanceTurb values (Fx,Fy,Fz,Mx,My,Mz)
+    #       - forces/moments are in hub coordinates (converted in advanceAD15)
+    #       - array length is the number of OWENS mesh points
+    #       - This includes the struts (and could include tower when we add that to the AD15 interface)
+
+    #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
+    ForceValHist = zeros(Int(mesh.numNodes*6),numAeroTS)
+
+    # Map loads over from advanceTurb
+    for i=1:mesh.numNodes
+        ForceValHist[(i-1)*6+1,:] = Fx[i,:]
+        ForceValHist[(i-1)*6+2,:] = Fy[i,:]
+        ForceValHist[(i-1)*6+3,:] = Fz[i,:]
+        ForceValHist[(i-1)*6+4,:] = Mx[i,:]
+        ForceValHist[(i-1)*6+5,:] = My[i,:]
+        ForceValHist[(i-1)*6+6,:] = Mz[i,:]
+    end
+    # DOFs are sequential through all nodes
+    ForceDof=collect(1:1:mesh.numNodes*6)
+
+    # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
+    X = nothing
+    Y = nothing
+    Z = nothing
+    z3Dnorm = nothing
+    return ForceValHist[:,1:numAeroTS],ForceDof,X,Y,Z,z3Dnorm
+end
+
+
 """
     mapACDMS(t,mesh,el)
 
@@ -13,7 +62,7 @@ map VAWTAero forces to OWENS mesh dofs
 * `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
 
 """
-function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,outputfile=nothing)
+function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,outputfile=nothing;offsetmomentarm=0.0)
     CP,Rp,Tp,Zp,alpha,cl,cd_af,Vloc,Re,thetavec,n_steps,Fx_base,Fy_base,Fz_base,
     Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp = advanceTurb(t;azi=azi_j+3*pi/2,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
 
@@ -38,7 +87,7 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
             for islice=1:Nslices
                 N[jbld,iTS,islice] = Rp[jbld,islice,t_idx] #Normal force on the structure is inward, VAWTAero normal is inward positive #we multiply by cos(delta) to go from force per height to force per span, and then divide by cos(delta) to go from radial to normal, so they cancel
                 T[jbld,iTS,islice] = -Tp[jbld,islice,t_idx]*cos(delta[jbld,islice]) ##Tangential force on the structure is against turbine rotation, VAWTAero tangential is with rotation positive # multiply by delta to convert from force per height to force per span
-                M25[jbld,iTS,islice] = 0.0#M25perSpan[index]
+                M25[jbld,iTS,islice] = Rp[jbld,islice,t_idx]*offsetmomentarm #0.0#M25perSpan[index]
                 X[jbld,iTS,islice] = Xp[jbld,islice,t_idx]#*cos(-azi_j) + Yp[jbld,islice,t_idx]*sin(-azi_j) #*cos(delta[jbld,islice]) 
                 Y[jbld,iTS,islice] = Yp[jbld,islice,t_idx]#*sin(-azi_j) + Yp[jbld,islice,t_idx]*cos(-azi_j)#*cos(delta[jbld,islice]) 
                 Z[jbld,iTS,islice] = Zp[jbld,islice,t_idx]#*cos(delta[jbld,islice])
