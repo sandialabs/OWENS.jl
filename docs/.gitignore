@@ -8,3 +8,6 @@
 *.aux
 *.blg
 *.gz
+build/
+site/
+examples/

@@ -373,24 +373,40 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
     if !steady
         println("running unsteady")
 
-        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(model;
+        topdata = OWENS.Unsteady_Land(model;
         topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesDMS,deformAero=deformTurb,system,assembly)
+
+        t = topdata[1].t
+        aziHist = topdata[1].aziHist
+        OmegaHist = topdata[1].OmegaHist
+        OmegaDotHist = topdata[1].OmegaDotHist
+        gbHist = topdata[1].gbHist
+        gbDotHist = topdata[1].gbDotHist
+        gbDotDotHist = topdata[1].gbDotDotHist
+        FReactionHist  = topdata[1].FReactionHist
+        FTwrBsHist = topdata[1].FTwrBsHist
+        genTorque = topdata[1].genTorque
+        genPower = topdata[1].genPower
+        torqueDriveShaft = topdata[1].torqueDriveShaft
+        uHist = topdata[1].uHist
+        uHist_prp = topdata[1].uHist_prp
+        epsilon_x_hist = topdata[1].epsilon_x_hist
+        epsilon_y_hist = topdata[1].epsilon_y_hist
+        epsilon_z_hist = topdata[1].epsilon_z_hist
+        kappa_x_hist = topdata[1].kappa_x_hist
+        kappa_y_hist = topdata[1].kappa_y_hist
+        kappa_z_hist = topdata[1].kappa_z_hist
+        FPtfmHist = topdata[1].FPtfmHist
+        FHydroHist = topdata[1].FHydroHist
+        FMooringHist = topdata[1].FMooringHist
 
         meanepsilon_z_hist = mean(epsilon_z_hist,dims=1)
         meanepsilon_y_hist = mean(epsilon_y_hist,dims=1)
 
-        # if system != nothing
-        #     println("Saving VTK time domain files")
-        #     ModelGen.gyricFEA_VTK(VTKFilename,t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
-
-        # end
-
     else
         println("here")
         println("running steady")
-
+        topdata = nothing
         feamodel.analysisType = "S"
 
         displ=zeros(mymesh.numNodes*6)
@@ -478,21 +494,5 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
         end
     end
 
-    # PyPlot.figure()
-    # PyPlot.plot(t[1:end-1],eps_x[1,:,15],label="eps_x")
-    # PyPlot.plot(t[1:end-1],eps_z[1,:,15],label="eps_z")
-    # PyPlot.plot(t[1:end-1],eps_y[1,:,15],label="eps_y")
-    # PyPlot.plot(t[1:end-1],kappa_x[1,:,15],label="kappa_x")
-    # PyPlot.plot(t[1:end-1],kappa_y[1,:,15],label="kappa_y")
-    # PyPlot.plot(t[1:end-1],kappa_z[1,:,15],label="kappa_z")
-    #
-    # PyPlot.plot(t[1:end-1],eps_x[2,:,15],":",label="eps_x2")
-    # PyPlot.plot(t[1:end-1],eps_z[2,:,15],":",label="eps_z2")
-    # PyPlot.plot(t[1:end-1],eps_y[2,:,15],":",label="eps_y2")
-    # PyPlot.plot(t[1:end-1],kappa_x[2,:,15],":",label="kappa_x2")
-    # PyPlot.plot(t[1:end-1],kappa_y[2,:,15],":",label="kappa_y2")
-    # PyPlot.plot(t[1:end-1],kappa_z[2,:,15],":",label="kappa_z2")
-    # PyPlot.legend()
-
-    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist
+    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,topdata
 end
