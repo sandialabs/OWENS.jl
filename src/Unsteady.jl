@@ -6,7 +6,7 @@ Executable function for transient analysis. Provides the interface of various
     external module with transient structural dynamics analysis capability.
 
     # Input
-    * `inputs::Model`: see ?Model
+    * `inputs::Inputs`: see ?Inputs
     * `topModel::FEAModel`: see ?GyricFEA.FEAModel
     * `mesh::Mesh`: see ?GyricFEA.Mesh
     * `el::El`: see ?GyricFEA.El
@@ -755,7 +755,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         OpenFASTWrappers.MD_End()
     end
 
-    outputData(inputs,t[1:i],aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
+    outputData(topMesh,inputs,t[1:i],aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
     FReactionHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],uHist_prp[1:i,:],
     epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],kappa_y_hist[:,:,1:i],
     kappa_z_hist[:,:,1:i])
@@ -1023,7 +1023,11 @@ function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inp
     hubAcc   = [0,0,0,0,0,OmegaDot_j]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
     Omega_rad    = Omega_j*2*pi     #AD15 uses omega in rad/s, so convert here
     OmegaDot_rad = OmegaDot_j*2*pi  #AD15 uses omegaDot in rad/s^2, so convert here
-    deformAero(u_j,udot_j,uddot_j,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
+    if inputs.aeroLoadsOn == 1.1 #one way so aero sees rigid structures
+        deformAero(u_j.*0.0,udot_j.*0.0,uddot_j.*0.0,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
+    else
+        deformAero(u_j,udot_j,uddot_j,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
+    end
     aeroVals,aeroDOFs = aero(t_i,azi_j)
     # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
     Xp = nothing
@@ -1033,11 +1037,11 @@ function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inp
     return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm   #last 4 are experimental for "GX" solve (not yet working)
 end
 
-function outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
+function outputData(mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
 
     #Writefile
     if inputs.outFilename!="none"
-        println("WRITING Verification File to $(inputs.outFilename)")
+        println("WRITING Output File to $(inputs.outFilename)")
 
         filename = string(inputs.outFilename[1:end-3], "h5")
         HDF5.h5open(filename, "w") do file
@@ -1062,6 +1066,46 @@ function outputData(inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbD
             HDF5.write(file,"kappa_y_hist",kappa_y_hist)
             HDF5.write(file,"kappa_z_hist",kappa_z_hist)
         end
+
+        filename = string(inputs.outFilename[1:end-3], "out")
+        DelimitedFiles.open(filename, "w") do io
+
+            header1 = ["t"]# "VinfX_hub" "VinfY_hub" "VinfZ_hub" "Fx1" "Fy1" "Fz1" "Mx1" "My1" "Mz1"]
+            header2 = ["(s)"]# "(m/s)" "(m/s)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+            # for i = 2:mymesh.numEl
+            #     header1 = [header1 "Fx$i" "Fy$i" "Fz$i" "Mx$i" "My$i" "Mz$i"]
+            #     header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+            # end
+
+            for ibld = 1:length(mymesh.structuralElNumbers[:,1])
+                for ibldel = 1:length(mymesh.structuralElNumbers[1,:])-1
+                    formattedelNum = lpad(ibldel,3,'0')#mymesh.structuralElNumbers[ibld,ibldel]
+                    header1 = [header1 "B$(ibld)N$(formattedelNum)Fx" "B$(ibld)N$(formattedelNum)Fy" "B$(ibld)N$(formattedelNum)Fz" "B$(ibld)N$(formattedelNum)Mx" "B$(ibld)N$(formattedelNum)My" "B$(ibld)N$(formattedelNum)Mz"]
+                    header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+                end
+            end
+
+            DelimitedFiles.writedlm(io, header1, '\t')
+            DelimitedFiles.writedlm(io, header2, '\t')
+
+            for i_t = 1:length(FReactionHist[:,1])
+                velocity = [1,2,3]#OpenFASTWrappers.ifwcalcoutput(hub_loc,t[i_t])
+                data = [t[i_t]]# velocity[1] velocity[2] velocity[3] FReactionHist[i_t,1] FReactionHist[i_t,2] FReactionHist[i_t,3] FReactionHist[i_t,4] FReactionHist[i_t,5] FReactionHist[i_t,6]]
+                # for i = 2:mymesh.numEl
+                #     data = [data FReactionHist[i_t,((i-1)*6)+1] FReactionHist[i_t,((i-1)*6)+2] FReactionHist[i_t,((i-1)*6)+3] FReactionHist[i_t,((i-1)*6)+4] FReactionHist[i_t,((i-1)*6)+5] FReactionHist[i_t,((i-1)*6)+6]]
+                # end
+
+                for ibld = 1:length(mymesh.structuralElNumbers[:,1])
+                    for ibldel = 1:length(mymesh.structuralElNumbers[1,:])-1
+                        elidx = Int(mymesh.structuralElNumbers[ibld,ibldel])
+                        data = [data FReactionHist[i_t,((elidx-1)*6)+1] FReactionHist[i_t,((elidx-1)*6)+2] FReactionHist[i_t,((elidx-1)*6)+3] FReactionHist[i_t,((elidx-1)*6)+4] FReactionHist[i_t,((elidx-1)*6)+5] FReactionHist[i_t,((elidx-1)*6)+6]]
+                    end
+                end
+
+                DelimitedFiles.writedlm(io, data, '\t')        
+            end     
+        end
+
     end
 end
 

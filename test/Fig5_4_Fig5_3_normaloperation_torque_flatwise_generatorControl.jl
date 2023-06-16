@@ -291,7 +291,7 @@ PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 ################################################################
 
 # println("Saving VTK time domain files")
-# ModelGen.gyricFEA_VTK("SNL34m_timedomain_gravityonly",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
+# ModelGen.gyricFEA_VTK("$path/vtk/SNL34m_timedomain",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4
