@@ -165,7 +165,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     top_rom,topJointTransformTrans,u_sRed,udot_sRed,uddot_sRed,
     topBC,u_s2,udot_s2,uddot_s2,top_invPhi,eta_s,etadot_s,
-    etaddot_s = initialize_ROM(topElStorage,topModel,topMesh,topEl,u_s,udot_s,uddot_s)
+    etaddot_s = initialize_ROM(deepcopy(topElStorage),deepcopy(topModel),deepcopy(topMesh),deepcopy(topEl),deepcopy(u_s),deepcopy(udot_s),deepcopy(uddot_s))
 
     topDispData1.eta_s = eta_s
     topDispData1.etadot_s = etadot_s
@@ -388,7 +388,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     
                     if runaero
                         if inputs.AD15On
-                            aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,topdata.u_j,topdata.udot_j,topdata.uddot_j,inputs,t[i],topdata.azi_j,topdata.Omega_j)
+                            aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,topdata.u_j,topdata.udot_j,topdata.uddot_j,inputs,t[i],topdata.azi_j,topdata.Omega_j,topdata.OmegaDot_j)
                         else
                             aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,topdata.u_j,inputs,numIterations,t[i],topdata.azi_j,topdata.Omega_j)
                         end
@@ -578,11 +578,11 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     println("Simulation Complete.")
 
-    outputData(inputs,t[1:i],topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
+    outputData(topMesh,inputs,t[1:i],topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
     topdata.FReactionHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],topdata.uHist_prp[1:i,:],
     topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],topdata.kappa_y_hist[:,:,1:i],
     topdata.kappa_z_hist[:,:,1:i])
-
+    
     return t[1:i], topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
     topdata.FReactionHist[1:i,:],topdata.FTwrBsHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],
     topdata.uHist_prp[1:i,:],topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],

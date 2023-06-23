@@ -1017,12 +1017,12 @@ end
 
 function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j,OmegaDot_j)
     # this is a very simple interface since AD15 does everything using the mesh in global coordinates
-    hubPos   = [0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
-    hubAngle = [0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
-    hubVel   = [0,0,0,0,0,Omega_j]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
-    hubAcc   = [0,0,0,0,0,OmegaDot_j]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
     Omega_rad    = Omega_j*2*pi     #AD15 uses omega in rad/s, so convert here
     OmegaDot_rad = OmegaDot_j*2*pi  #AD15 uses omegaDot in rad/s^2, so convert here
+    hubPos   = [0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
+    hubAngle = [0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
+    hubVel   = [0,0,0,0,0,Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
+    hubAcc   = [0,0,0,0,0,OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
     if inputs.aeroLoadsOn == 1.1 #one way so aero sees rigid structures
         deformAero(u_j.*0.0,udot_j.*0.0,uddot_j.*0.0,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
     else
