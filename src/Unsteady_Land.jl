@@ -153,7 +153,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     # Allocate memory for topside
     u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,
     gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,
-    torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
+    torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assembly)
 
     ## Rotor mode initialization
     rotorSpeedForGenStart = initialize_generator!(inputs)
@@ -210,7 +210,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topdata.OmegaHist[1] = topdata.Omega_s
     topdata.OmegaDotHist[1] = topdata.OmegaDot_s
     if topModel.return_all_reaction_forces
-        topdata.FReactionsm1 = zeros(topMesh.numNodes*6)
+        topdata.FReactionsm1 = zeros(length(topdata.u_s))
     else
         topdata.FReactionsm1 = zeros(6)
     end
@@ -449,8 +449,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             # println(Float64.(rbData))
             if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                 topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.top_rom,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData)
-            elseif inputs.analysisType=="GX"
-                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,topdata.Omega_j,topdata.OmegaDot_j,topdata.delta_t,numIterations,i,strainGX,curvGX)
+            elseif inputs.analysisType=="GX"                                                                                
+                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topdata.topFexternal,Int.(aeroDOFs),system,assembly,t,topdata.Omega_j,topdata.OmegaDot_j,topdata.delta_t,numIterations,i,strainGX,curvGX)
             else # evalulate structural dynamics using conventional representation
                 topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end

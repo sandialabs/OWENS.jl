@@ -73,7 +73,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         # Allocate memory for topside
         u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,
         gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,
-        torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
+        torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assembly)
     end
 
     ## Hydrodynamics/mooring module initialization and coupling variables
@@ -450,8 +450,8 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # println(Float64.(rbData))
                 if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
-                elseif inputs.analysisType=="GX"
-                    topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+                elseif inputs.analysisType=="GX"                                                        
+                    topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                 else # evalulate structural dynamics using conventional representation
                     topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
@@ -609,7 +609,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                         topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
                     elseif inputs.analysisType=="GX"
-                        topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topmesh,Xp,Yp,Zp,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+                        topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                     else # evalulate structural dynamics using conventional representation
                         topElStrain, topDispOut, topFReaction_j = GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                     end
@@ -767,15 +767,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topFexternal_hist[1:i,:],rbDataHist[1:i,:]
 end
 
-function structuralDynamicsTransientGX(topModel,mesh,Fg_global,ForceDof,Fg,z3Dnorm,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
 
-    function setPrescribedConditions(mesh;pBC=zeros(2,2),Fg_global=[],ForceDof=[])
-        Fx = Fg_global[1:6:end]
-        Fy = Fg_global[2:6:end]
-        Fz = Fg_global[3:6:end]
-        Mx = Fg_global[4:6:end]
-        My = Fg_global[5:6:end]
-        Mz = Fg_global[6:6:end]
+    function setPrescribedConditions(mesh;pBC=zeros(2,2),Fexternal=[],ForceDof=[])
+        Fx = Fexternal[1:6:end]
+        Fy = Fexternal[2:6:end]
+        Fz = Fexternal[3:6:end]
+        Mx = Fexternal[4:6:end]
+        My = Fexternal[5:6:end]
+        Mz = Fexternal[6:6:end]
         prescribed_conditions = Dict()
         for inode = 1:mesh.numNodes
             ux = nothing
@@ -809,22 +809,22 @@ function structuralDynamicsTransientGX(topModel,mesh,Fg_global,ForceDof,Fg,z3Dno
                     end
                 end
             end
-            if isnothing(ux) && !isempty(Fg_global) && Fx[inode]!=0.0
+            if isnothing(ux) && !isempty(Fexternal) && Fx[inode]!=0.0
                 Fx_follower = Fx[inode]
             end
-            if isnothing(uy) && !isempty(Fg_global) && Fy[inode]!=0.0
+            if isnothing(uy) && !isempty(Fexternal) && Fy[inode]!=0.0
                 Fy_follower = Fy[inode]
             end
-            if isnothing(uz) && !isempty(Fg_global) && Fz[inode]!=0.0
+            if isnothing(uz) && !isempty(Fexternal) && Fz[inode]!=0.0
                 Fz_follower = Fz[inode]
             end
-            if isnothing(theta_x) && !isempty(Fg_global) && Mx[inode]!=0.0
+            if isnothing(theta_x) && !isempty(Fexternal) && Mx[inode]!=0.0
                 Mx_follower = Mx[inode]
             end
-            if isnothing(theta_y) && !isempty(Fg_global) && My[inode]!=0.0
+            if isnothing(theta_y) && !isempty(Fexternal) && My[inode]!=0.0
                 My_follower = My[inode]
             end
-            if isnothing(theta_z) && !isempty(Fg_global) && Mz[inode]!=0.0
+            if isnothing(theta_z) && !isempty(Fexternal) && Mz[inode]!=0.0
                 Mz_follower = Mz[inode]
             end
 
@@ -856,13 +856,13 @@ function structuralDynamicsTransientGX(topModel,mesh,Fg_global,ForceDof,Fg,z3Dno
     reset_state = false
     initialize = false
 
-    if i == 1 && numIterations == 1
+    if i == 1 && numIterations == 1 # Do initial solve without external loads
         prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC)
-        system, state, converged = GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions, #TODO: just gravity and rotation for the first solve? Could add on forces in next solve below
+        system, state, converged = GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions,
         gravity,angular_velocity,linear=false,reset_state=true)
     end
 
-    prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC,Fg_global,ForceDof)
+    prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC,Fexternal,ForceDof)
     initial_state = GXBeam.AssemblyState(system, assembly; prescribed_conditions)
 
     systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;
@@ -923,8 +923,22 @@ function structuralDynamicsTransientGX(topModel,mesh,Fg_global,ForceDof,Fg,z3Dno
         end
     end
     dispOut = GyricFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,dispdot_sp1)
-    FReaction_j = [-history[end].points[1].F[1];-history[end].points[1].F[2];-history[end].points[1].F[3];
-    -history[end].points[1].M[1];-history[end].points[1].M[2];-history[end].points[1].M[3]]
+    if topModel.return_all_reaction_forces
+        FReaction_j = zeros(length(history[end].points)*6)
+        for iel = 1:length(history[end].points)
+            FReaction_j[(iel-1)*6+1:iel*6] = [
+            history[end].points[iel].F[1];
+            history[end].points[iel].F[2];
+            history[end].points[iel].F[3];
+            history[end].points[iel].M[1];
+            history[end].points[iel].M[2];
+            history[end].points[iel].M[3]
+            ]
+        end
+    else
+        FReaction_j = [-history[end].points[1].F[1];-history[end].points[1].F[2];-history[end].points[1].F[3];
+        -history[end].points[1].M[1];-history[end].points[1].M[2];-history[end].points[1].M[3]]
+    end
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
 end
 
@@ -1109,7 +1123,7 @@ function outputData(mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotH
     end
 end
 
-function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
+function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assembly)
     if isnothing(topModel)
         error("topMesh must be specified if OWENS.Inputs.topsideOn")
     elseif isnothing(topMesh)
@@ -1120,7 +1134,11 @@ function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s)
 
     top_totalNumDOF = topMesh.numNodes*numDOFPerNode
     if isnothing(u_s)
-        u_s = zeros(top_totalNumDOF)
+        if inputs.analysisType=="GX"
+            u_s = zeros(length(assembly.points)*numDOFPerNode)
+        else
+            u_s = zeros(top_totalNumDOF)
+        end
     end
     u_s = GyricFEA.setInitialConditions(topModel.initCond, u_s, numDOFPerNode)
     udot_s = copy(u_s).*0.0
@@ -1360,25 +1378,29 @@ function initialize_generator!(inputs)
 end
 
 function initialize_ROM(IElStorage,IModel,IMesh,IEl,u_s,udot_s,uddot_s)
-    I_rom = GyricFEA.reducedOrderModel(IElStorage,IModel,IMesh,IEl,u_s) #construct reduced order model
+    if IModel.analysisType=="GX"
+        return nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing
+    else
+        I_rom = GyricFEA.reducedOrderModel(IElStorage,IModel,IMesh,IEl,u_s) #construct reduced order model
 
-    #set up inital values in modal space
-    IjointTransformTrans = IModel.jointTransform'
-    u_sRed = IjointTransformTrans*u_s
-    udot_sRed = IjointTransformTrans*udot_s
-    uddot_sRed = IjointTransformTrans*uddot_s
+        #set up inital values in modal space
+        IjointTransformTrans = IModel.jointTransform'
+        u_sRed = IjointTransformTrans*u_s
+        udot_sRed = IjointTransformTrans*udot_s
+        uddot_sRed = IjointTransformTrans*uddot_s
 
-    IBC = IModel.BC
-    u_s2 = GyricFEA.applyBCModalVec(u_sRed,IBC.numpBC,IBC.map)
-    udot_s2 = GyricFEA.applyBCModalVec(udot_sRed,IBC.numpBC,IBC.map)
-    uddot_s2 = GyricFEA.applyBCModalVec(uddot_sRed,IBC.numpBC,IBC.map)
+        IBC = IModel.BC
+        u_s2 = GyricFEA.applyBCModalVec(u_sRed,IBC.numpBC,IBC.map)
+        udot_s2 = GyricFEA.applyBCModalVec(udot_sRed,IBC.numpBC,IBC.map)
+        uddot_s2 = GyricFEA.applyBCModalVec(uddot_sRed,IBC.numpBC,IBC.map)
 
-    I_invPhi = I_rom.invPhi
+        I_invPhi = I_rom.invPhi
 
-    eta_s      = I_invPhi*u_s2
-    etadot_s   = I_invPhi*udot_s2
-    etaddot_s  = I_invPhi*uddot_s2
-    return I_rom,IjointTransformTrans,u_sRed,udot_sRed,uddot_sRed,IBC,u_s2,udot_s2,uddot_s2,I_invPhi,eta_s,etadot_s,etaddot_s
+        eta_s      = I_invPhi*u_s2
+        etadot_s   = I_invPhi*udot_s2
+        etaddot_s  = I_invPhi*uddot_s2
+        return I_rom,IjointTransformTrans,u_sRed,udot_sRed,uddot_sRed,IBC,u_s2,udot_s2,uddot_s2,I_invPhi,eta_s,etadot_s,etaddot_s
+    end
 end
 
 function hydro_topside_nodal_coupling!(bottomModel,bottomMesh,topsideMass,topModel,topsideCG,topsideMOI,numDOFPerNode)
@@ -1417,11 +1439,12 @@ function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
 
     ## History array initialization
     if inputs.topsideOn
-        uHist = zeros(numTS, topMesh.numNodes*numDOFPerNode)
         if inputs.analysisType == "GX"
             nel = length(assembly.start) #TODO: these should be the same.
+            uHist = zeros(numTS, length(assembly.points)*numDOFPerNode)
         else
             nel = topMesh.numEl
+            uHist = zeros(numTS, topMesh.numNodes*numDOFPerNode)
         end
         epsilon_x_hist = zeros(4,nel,numTS)
         epsilon_y_hist = zeros(4,nel,numTS)
@@ -1440,7 +1463,7 @@ function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
     end
     
     if topModel.return_all_reaction_forces
-        FReactionHist = zeros(numTS,topMesh.numNodes*6)
+        FReactionHist = zeros(numTS,length(uHist[1,:]))
     else
         FReactionHist = zeros(numTS,6)
     end
