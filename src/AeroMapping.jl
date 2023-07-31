@@ -14,7 +14,8 @@ map AD15 forces to OWENS mesh dofs
 
 """
 function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbosity=0)
-    n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,mesh,azi_j)
+    n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,[mesh],[azi_j])
+    #TODO: multiple turbine Fx, etc.
 
     # NOTE on AD15 advanceTurb values (Fx,Fy,Fz,Mx,My,Mz)
     #       - forces/moments are in hub coordinates (converted in advanceAD15)
@@ -26,12 +27,12 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
 
     # Map loads over from advanceTurb
     for i=1:mesh.numNodes
-        ForceValHist[(i-1)*6+1,:] = Fx[i,:]
-        ForceValHist[(i-1)*6+2,:] = Fy[i,:]
-        ForceValHist[(i-1)*6+3,:] = Fz[i,:]
-        ForceValHist[(i-1)*6+4,:] = Mx[i,:]
-        ForceValHist[(i-1)*6+5,:] = My[i,:]
-        ForceValHist[(i-1)*6+6,:] = Mz[i,:]
+        ForceValHist[(i-1)*6+1,:] = Fx[1][i,:]
+        ForceValHist[(i-1)*6+2,:] = Fy[1][i,:]
+        ForceValHist[(i-1)*6+3,:] = Fz[1][i,:]
+        ForceValHist[(i-1)*6+4,:] = Mx[1][i,:]
+        ForceValHist[(i-1)*6+5,:] = My[1][i,:]
+        ForceValHist[(i-1)*6+6,:] = Mz[1][i,:]
     end
     # DOFs are sequential through all nodes
     ForceDof=collect(1:1:mesh.numNodes*6)
