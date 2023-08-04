@@ -1033,16 +1033,22 @@ function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inp
     # this is a very simple interface since AD15 does everything using the mesh in global coordinates
     Omega_rad    = Omega_j*2*pi     #AD15 uses omega in rad/s, so convert here
     OmegaDot_rad = OmegaDot_j*2*pi  #AD15 uses omegaDot in rad/s^2, so convert here
-    hubPos   = mesh.hubPos #[0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
-    hubAngle = mesh.hubAngle #[0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
-    hubVel   = [0,0,0,0,0,0.0]#Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
-    hubAcc   = [0,0,0,0,0,0.0]#OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
+    hubPos   = [0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
+    hubAngle = [0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
+    #hubPos   = mesh.hubPos #[0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
+    #hubAngle = mesh.hubAngle #[0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
+    #hubVel   = [0,0,0,0,0,0.0]#Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
+    #hubAcc   = [0,0,0,0,0,0.0]#OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
+    hubVel   = [0,0,0,0,0,Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
+    hubAcc   = [0,0,0,0,0,OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
     if inputs.aeroLoadsOn == 1.1 #one way so aero sees rigid structures
+        #deformAero(u_j.*0.0,udot_j.*0.0,uddot_j.*0.0,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
         deformAero([u_j.*0.0],[udot_j.*0.0],[uddot_j.*0.0],[azi_j],[Omega_rad],[OmegaDot_rad],[hubPos],[hubAngle],[hubVel],[hubAcc])
     else
+        #deformAero(u_j,udot_j,uddot_j,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
         deformAero([u_j],[udot_j],[uddot_j],[azi_j],[Omega_rad],[OmegaDot_rad],[hubPos],[hubAngle],[hubVel],[hubAcc])
     end
-    aeroVals,aeroDOFs = aero(t_i,azi_j)
+    aeroVals,aeroDOFs = aero(t_i,azi_j)     # AD15 can only be called once for all turbine rotors
     # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
     Xp = nothing
     Yp = nothing

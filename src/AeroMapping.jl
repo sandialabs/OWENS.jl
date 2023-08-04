@@ -25,14 +25,16 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     ForceValHist = zeros(Int(mesh.numNodes*6),numAeroTS)
 
+#FIXME: hack to get this running.  Need to fix for multi-turbine
+    iturb=1
     # Map loads over from advanceTurb
     for i=1:mesh.numNodes
-        ForceValHist[(i-1)*6+1,:] = Fx[1][i,:]
-        ForceValHist[(i-1)*6+2,:] = Fy[1][i,:]
-        ForceValHist[(i-1)*6+3,:] = Fz[1][i,:]
-        ForceValHist[(i-1)*6+4,:] = Mx[1][i,:]
-        ForceValHist[(i-1)*6+5,:] = My[1][i,:]
-        ForceValHist[(i-1)*6+6,:] = Mz[1][i,:]
+        ForceValHist[(i-1)*6+1,:] = Fx[iturb][i,:]
+        ForceValHist[(i-1)*6+2,:] = Fy[iturb][i,:]
+        ForceValHist[(i-1)*6+3,:] = Fz[iturb][i,:]
+        ForceValHist[(i-1)*6+4,:] = Mx[iturb][i,:]
+        ForceValHist[(i-1)*6+5,:] = My[iturb][i,:]
+        ForceValHist[(i-1)*6+6,:] = Mz[iturb][i,:]
     end
     # DOFs are sequential through all nodes
     ForceDof=collect(1:1:mesh.numNodes*6)
