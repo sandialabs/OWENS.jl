@@ -389,9 +389,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         
                         if runaero
                             if inputs.AD15On
-                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
+                                aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                             else
-                                aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
                             end
                         end
                     end
@@ -582,9 +582,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             end
                             if runaero
                                 if inputs.AD15On
-                                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
+                                    aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                                 else
-                                    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
                                 end
                             end
                         end
@@ -1024,37 +1024,38 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
 
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
     deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
-    aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm = aero(t_i,azi_j)
+    aeroVals,aeroDOFs = aero(t_i,azi_j)
     # println(maximum(abs.(aeroVals)))
-    return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm
+    return aeroVals,aeroDOFs
 end
 
-function run_aero_with_deformAD15(aero,deformAero,mesh,el,u_j,udot_j,uddot_j,inputs,t_i,azi_j,Omega_j,OmegaDot_j)
+function run_aero_with_deformAD15(aero,deformAero,mesh,el,topdata,inputs,t_i)
     # this is a very simple interface since AD15 does everything using the mesh in global coordinates
-    Omega_rad    = Omega_j*2*pi     #AD15 uses omega in rad/s, so convert here
-    OmegaDot_rad = OmegaDot_j*2*pi  #AD15 uses omegaDot in rad/s^2, so convert here
-    hubPos   = [0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
-    hubAngle = [0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
-    #hubPos   = mesh.hubPos #[0,0,0]                  # FIXME: this is the platform/hub position     in global coordinates!!!! m
-    #hubAngle = mesh.hubAngle #[0,0,0]                  # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
-    #hubVel   = [0,0,0,0,0,0.0]#Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
-    #hubAcc   = [0,0,0,0,0,0.0]#OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
-    hubVel   = [0,0,0,0,0,Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
-    hubAcc   = [0,0,0,0,0,OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
-    if inputs.aeroLoadsOn == 1.1 #one way so aero sees rigid structures
-        #deformAero(u_j.*0.0,udot_j.*0.0,uddot_j.*0.0,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
-        deformAero([u_j.*0.0],[udot_j.*0.0],[uddot_j.*0.0],[azi_j],[Omega_rad],[OmegaDot_rad],[hubPos],[hubAngle],[hubVel],[hubAcc])
-    else
-        #deformAero(u_j,udot_j,uddot_j,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
-        deformAero([u_j],[udot_j],[uddot_j],[azi_j],[Omega_rad],[OmegaDot_rad],[hubPos],[hubAngle],[hubVel],[hubAcc])
+    Nturb = 1
+    try 
+        Nturb = length(mesh)
+    catch
     end
-    aeroVals,aeroDOFs = aero(t_i,azi_j)     # AD15 can only be called once for all turbine rotors
-    # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
-    Xp = nothing
-    Yp = nothing
-    Zp = nothing
-    z3Dnorm = nothing
-    return aeroVals,aeroDOFs,Xp,Yp,Zp,z3Dnorm   #last 4 are experimental for "GX" solve (not yet working)
+
+    u_j = [topdata[iturb].u_j for iturb = 1:Nturb]
+    udot_j = [topdata[iturb].udot_j for iturb = 1:Nturb]
+    uddot_j = [topdata[iturb].uddot_j for iturb = 1:Nturb]
+    azi_j = [topdata[iturb].azi_j for iturb = 1:Nturb]
+    Omega_rad = [topdata[iturb].Omega_j*2*pi  for iturb = 1:Nturb]      #AD15 uses omega in rad/s, so convert here
+    OmegaDot_rad = [topdata[iturb].OmegaDot_j*2*pi  for iturb = 1:Nturb]   #AD15 uses omegaDot in rad/s^2, so convert here
+
+    hubPos   = [mesh[iturb].hubPos for iturb = 1:Nturb]     # FIXME: this is the platform/hub position     in global coordinates!!!! m
+    hubAngle = [mesh[iturb].hubAngle for iturb = 1:Nturb]     # FIXME: this is the platform/hub angle        in global coordinates!!!! rad
+    hubVel   = [[0,0,0,0,0,0.0] for iturb = 1:Nturb]#Omega_rad]      # FIXME: this is the platform/hub motion       in global coordinates!!!! rad/s
+    hubAcc   = [[0,0,0,0,0,0.0] for iturb = 1:Nturb]#OmegaDot_rad]   # FIXME: this is the platform/hub acceleration in global coordinates!!!! rad/s^2
+    if inputs[1].aeroLoadsOn == 1.1 #one way so aero sees rigid structures
+        deformAero(u_j.*0.0,udot_j.*0.0,uddot_j.*0.0,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
+    else
+        deformAero(u_j,udot_j,uddot_j,azi_j,Omega_rad,OmegaDot_rad,hubPos,hubAngle,hubVel,hubAcc)
+    end
+    aeroVals,aeroDOFs = aero(t_i,azi_j)
+    
+    return aeroVals,aeroDOFs   #last 4 are experimental for "GX" solve (not yet working)
 end
 
 function outputData(mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
