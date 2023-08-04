@@ -14,7 +14,8 @@ map AD15 forces to OWENS mesh dofs
 
 """
 function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbosity=0)
-    n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,[mesh],[azi_j])
+    Nturb = length(mesh)
+    n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,mesh,azi_j)
     #TODO: multiple turbine Fx, etc.
 
     # NOTE on AD15 advanceTurb values (Fx,Fy,Fz,Mx,My,Mz)
@@ -22,27 +23,25 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
     #       - array length is the number of OWENS mesh points
     #       - This includes the struts (and could include tower when we add that to the AD15 interface)
 
+    
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
-    ForceValHist = zeros(Int(mesh.numNodes*6),numAeroTS)
-
-    # Map loads over from advanceTurb
-    for i=1:mesh.numNodes
-        ForceValHist[(i-1)*6+1,:] = Fx[1][i,:]
-        ForceValHist[(i-1)*6+2,:] = Fy[1][i,:]
-        ForceValHist[(i-1)*6+3,:] = Fz[1][i,:]
-        ForceValHist[(i-1)*6+4,:] = Mx[1][i,:]
-        ForceValHist[(i-1)*6+5,:] = My[1][i,:]
-        ForceValHist[(i-1)*6+6,:] = Mz[1][i,:]
-    end
+    ForceValHist = [zeros(Int(mesh[iturb].numNodes*6),numAeroTS) for iturb = 1:Nturb]
     # DOFs are sequential through all nodes
-    ForceDof=collect(1:1:mesh.numNodes*6)
+    ForceDof=[collect(1:1:mesh[iturb].numNodes*6) for iturb = 1:Nturb]
 
-    # Initialize stuff needed by interface but only used by "GX" solve which is not functional yet (2023.01.25)
-    X = nothing
-    Y = nothing
-    Z = nothing
-    z3Dnorm = nothing
-    return ForceValHist[:,1:numAeroTS],ForceDof,X,Y,Z,z3Dnorm
+    for iturb = 1:Nturb
+        # Map loads over from advanceTurb
+        for i=1:mesh[iturb].numNodes
+            ForceValHist[iturb][(i-1)*6+1,:] = Fx[iturb][i,1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+2,:] = Fy[iturb][i,1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+3,:] = Fz[iturb][i,1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+4,:] = Mx[iturb][i,1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+5,:] = My[iturb][i,1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+6,:] = Mz[iturb][i,1:numAeroTS]
+        end
+    end
+    
+    return ForceValHist,ForceDof
 end
 
 
