@@ -121,7 +121,7 @@ model = OWENS.Inputs(;analysisType = "ROM",
     Omegaocp,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
     tocp_Vinf,
     Vinfocp,
-    numTS = 10,
+    numTS = 2000,
     delta_t = 0.05,#dt,
     aeroLoadsOn = 2,
     turbineStartup = 1,
@@ -173,11 +173,11 @@ system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPr
 model.Omegaocp = Omegaocp
 model.OmegaInit = Omegaocp[1]
 model.Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
-feamodel.nlOn = false
-feamodel.analysisType = "ROM"
-model.analysisType = "ROM"
+feamodel.nlOn = true
+feamodel.analysisType = "GX"
+model.analysisType = "GX"
 
-eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist,topdata = runowens(model,feamodel,mymesh,myel,
+eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist = runowens(model,feamodel,mymesh,myel,
 aeroForcesDMS,VAWTAero.deformTurb;steady=false,system,assembly,VTKFilename="$path/vtk/NormalOperation")
 
 # Get stress and "zero" out the loads from the initial 0-RPM

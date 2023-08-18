@@ -936,8 +936,8 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
             ]
         end
     else
-        FReaction_j = [-history[end].points[1].F[1];-history[end].points[1].F[2];-history[end].points[1].F[3];
-        -history[end].points[1].M[1];-history[end].points[1].M[2];-history[end].points[1].M[3]]
+        FReaction_j = [history[end].points[1].F[1];history[end].points[1].F[2];history[end].points[1].F[3];
+        history[end].points[1].M[1];history[end].points[1].M[2];history[end].points[1].M[3]]
     end
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
 end
