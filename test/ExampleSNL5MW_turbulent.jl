@@ -1,4 +1,5 @@
 import PyPlot
+PyPlot.pygui(true)
 PyPlot.close("all")
 PyPlot.rc("figure", figsize=(4.5, 3))
 PyPlot.rc("font", size=10.0)
@@ -257,12 +258,12 @@ PyPlot.plot(t,FReactionHist[:,6])
 PyPlot.ylabel("FReaction Hist 6")
 # PyPlot.savefig("$(path)/figs/AeroOnly/SNL5MW_FReaction6.pdf",transparent = true)
 
-PyPlot.figure()
-for ii = 1:length(uHist[1,:])
-PyPlot.plot(1:length(old_uHist[ii,:]),old_uHist[ii,:],"k-")
-    PyPlot.plot(1:length(uHist[ii,:]),uHist[ii,:],"k--")
-    if ii%10 == 0.0
-        # PyPlot.savefig("$(path)/figs/AeroOnly/SNL5MW_Uhist$ii.pdf",transparent = true)
-        PyPlot.figure()
-    end
-end
+# PyPlot.figure()
+# for ii = 1:length(uHist[1,:])
+# PyPlot.plot(1:length(old_uHist[ii,:]),old_uHist[ii,:],"k-")
+#     PyPlot.plot(1:length(uHist[ii,:]),uHist[ii,:],"k--")
+#     if ii%10 == 0.0
+#         # PyPlot.savefig("$(path)/figs/AeroOnly/SNL5MW_Uhist$ii.pdf",transparent = true)
+#         PyPlot.figure()
+#     end
+# end
