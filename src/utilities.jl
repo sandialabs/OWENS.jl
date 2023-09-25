@@ -226,10 +226,10 @@ function owens(owensfile,analysisType;
 
     #model definitions
     #--------------------------------------------
-    mesh = ModelGen.readMesh(meshfilename) #read mesh file
-    bladeData,_,_,_ = ModelGen.readBladeData(blddatafilename) #reads overall blade data file
-    BC = ModelGen.readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
-    el = ModelGen.readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
+    mesh = OWENS.readMesh(meshfilename) #read mesh file
+    bladeData,_,_,_ = OWENS.readBladeData(blddatafilename) #reads overall blade data file
+    BC = OWENS.readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
+    el = OWENS.readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
     nodalTerms = GyricFEA.applyConcentratedTerms(mesh.numNodes, 6;filename=ndldatafilename) #read concentrated nodal terms file
     initCond = []
@@ -245,7 +245,7 @@ function owens(owensfile,analysisType;
             generatorProps = 0.0
         else
             useGeneratorFunction = false
-            generatorProps = ModelGen.readGeneratorProps(generatorfilename) #reads generator properties
+            generatorProps = OWENS.readGeneratorProps(generatorfilename) #reads generator properties
         end
 
     end
@@ -494,7 +494,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
         spanLocNorm[i,:] = blade[i].PEy[1:blade[1].NElem[1,1],1].*RefR[1,1]/(blade[i].QCy[blade[1].NElem[1,1]+1,1]*RefR[1,1])
     end
 
-    bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = ModelGen.readBladeData(bldFn)
+    bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers = OWENS.readBladeData(bldFn)
 
     #Initialize structuralLoad
     struct_N = zeros(cactusGeom.NBlade,numAeroTS,length(structuralElNumbers[1,:]))
@@ -515,8 +515,8 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #integrate over elements
 
     #read element aero_data in
-    mesh = ModelGen.readMesh(meshFn)
-    el = ModelGen.readElementData(mesh.numEl,elFn,ortFn,bladeData)
+    mesh = OWENS.readMesh(meshFn)
+    el = OWENS.readElementData(mesh.numEl,elFn,ortFn,bladeData)
     numDofPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6),numAeroTS)

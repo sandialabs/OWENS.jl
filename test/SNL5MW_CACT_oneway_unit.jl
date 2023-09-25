@@ -1,7 +1,6 @@
 path = splitdir(@__FILE__)[1]
 
 import OWENS
-import ModelGen
 
 using Test
 import HDF5
@@ -57,7 +56,7 @@ for dd = 1:6
     # set up stiffness matrix
     cmkValues[dd,dd,2] = StiffVal[dd]
 end
-ModelGen.writeOwensNDL(fname, nodes, cmkType, cmkValues)
+OWENS.writeOwensNDL(fname, nodes, cmkType, cmkValues)
 
 # *********************************************************************
 # perform operations for the aerodynamic forces file generation
@@ -180,8 +179,8 @@ if test_modal
 
     numNodes = 82#mesh.numNodes
 
-    freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = ModelGen.readResultsModalOut(old_filename,numNodes)
-    freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = ModelGen.readResultsModalOut(new_filename,numNodes)
+    freqOLD,dampOLD,U_x_0OLD,U_y_0OLD,U_z_0OLD,theta_x_0OLD,theta_y_0OLD,theta_z_0OLD,U_x_90OLD,U_y_90OLD,U_z_90OLD,theta_x_90OLD,theta_y_90OLD,theta_z_90OLD = OWENS.readResultsModalOut(old_filename,numNodes)
+    freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = OWENS.readResultsModalOut(new_filename,numNodes)
 
     # tol = 1e-6 # This is covered by the campbell diagram test
     # for imode = 1:length(freq)

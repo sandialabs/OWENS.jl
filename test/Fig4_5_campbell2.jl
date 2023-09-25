@@ -1,7 +1,6 @@
 import MAT
 using Test
 import DelimitedFiles
-import ModelGen
 import FLOWMath
 import GyricFEA
 using GXBeam
@@ -12,7 +11,7 @@ path = splitdir(@__FILE__)[1]
 #Put in one place so its not repeated for all of the analyses
 include("$(path)/34mSetup.jl")
 
-system, assembly, sections, frames, points, start, stop, stiff, mass = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.01,VTKmeshfilename="$path/vtk/SNL34m")
+system, assembly, sections, frames, points, start, stop, stiff, mass = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.01,VTKmeshfilename="$path/vtk/SNL34m")
 println("setup complete")
 # function rotate_normal(i_el, points, start, stop, frames;vec=[0,1,0.0],normal_len=1)
 
@@ -116,7 +115,7 @@ end
 azi=[0.0,pi/8]#./aziHist*1e-6
 uHist = [zeros(mymesh.numNodes*6) zeros(mymesh.numNodes*6)]'
 saveName = "$path/vtk/pleasework"
-ModelGen.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+OWENS.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 
 # node, dof, bc
@@ -132,7 +131,7 @@ top_idx 2 0
 top_idx 3 0]
 
 # filename = "$(path)/data/newmesh_34m"
-# ModelGen.saveOWENSfiles(filename,mymesh,myort,myjoint,myel,pBC,numadIn_bld)
+# OWENS.saveOWENSfiles(filename,mymesh,myort,myjoint,myel,pBC,numadIn_bld)
 
 
 # if testModal

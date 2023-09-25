@@ -12,3 +12,7 @@ end
 @testset "SNL34m Campbell Diagram Test Against GXBeam" begin
     include("$path/Fig4_5_campbell2.jl")
 end
+
+@testset "Mesh Check" begin
+    include("$path/check_mesh.jl")
+end

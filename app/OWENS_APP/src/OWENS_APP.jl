@@ -10,7 +10,7 @@ using Test
 # import PyPlot
 import DelimitedFiles
 import FLOWMath
-import ModelGen
+import OWENS
 import GyricFEA
 import OWENS
 import VAWTAero
@@ -83,7 +83,7 @@ function real_main()
     
     Nbld = 2
     
-    mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=0.5,
+    mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=0.5,
         Hb = height, #blade height
         R = radius, # m bade radius
         nblade = Nbld,
@@ -101,23 +101,23 @@ function real_main()
     nBldElem = Int(mymesh.meshSeg[2])+1
     #Blades
     NuMad_geom_xlscsv_file = ARGS[1]#"$path/data/SNL34mGeom.csv"
-    numadIn_bld = ModelGen.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+    numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
     
     for (i,airfoil) in enumerate(numadIn_bld.airfoil)
         numadIn_bld.airfoil[i] = "$path/airfoils/$airfoil"
     end
     
     NuMad_mat_xlscsv_file = "$path/data/SNL34mMaterials.csv"
-    plyprops = ModelGen.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+    plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
     
     bld1start = Int(mymesh.structuralNodeNumbers[1,1])
     bld1end = Int(mymesh.structuralNodeNumbers[1,end])
     spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
     
-    bld_precompoutput,bld_precompinput = ModelGen.getPreCompOutput(numadIn_bld;plyprops)
-    sectionPropsArray_bld = ModelGen.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
+    bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
+    sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
     
-    stiff_bld, mass_bld = ModelGen.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
+    stiff_bld, mass_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
     
     # thickness_flap is distance from shear center x to top
     # thickness_lag is distance from shear center y to trailing edge
@@ -142,19 +142,19 @@ function real_main()
     
     
     NuMad_geom_xlscsv_file = "$path/data/NuMAD_34m_TowerGeom.csv"
-    numadIn = ModelGen.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+    numadIn = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
     
     for (i,airfoil) in enumerate(numadIn.airfoil)
         numadIn.airfoil[i] = "$path/airfoils/$airfoil"
     end
     
     NuMad_mat_xlscsv_file = "$path/data/NuMAD_34m_TowerMaterials.csv"
-    plyprops = ModelGen.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+    plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
     
-    precompoutput,precompinput = ModelGen.getPreCompOutput(numadIn;plyprops)
-    sectionPropsArray_twr = ModelGen.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;precompinputs=precompinput)
+    precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
+    sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;precompinputs=precompinput)
     
-    stiff_twr, mass_twr = ModelGen.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;GX=true)
+    stiff_twr, mass_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;GX=true)
     #Struts
     # They are the same as the end properties of the blades
     
@@ -226,9 +226,9 @@ function real_main()
     omega = RPM*2*pi/60
     
     # filename = "$(path)/data/legacyfiles/SNL34m"
-    # ModelGen.saveOWENSfiles(filename,mymesh,myort,myjoint,myel,pBC,numadIn_bld)
+    # OWENS.saveOWENSfiles(filename,mymesh,myort,myjoint,myel,pBC,numadIn_bld)
     
-    # system, assembly, sections, frames_ow = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="$path/vtk/SNL34m")
+    # system, assembly, sections, frames_ow = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="$path/vtk/SNL34m")
     
     function runmeOWENS()
         mass = 0.0
@@ -437,7 +437,7 @@ function real_main()
     lag_stress2grav = (kappa_z_grav[2,end-1,1:end-1].* thickness_lag .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
 
     # println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-    system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;damp_coef=0.05)
+    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;damp_coef=0.05)
 
 
     model.Omegaocp = Omegaocp
@@ -561,7 +561,7 @@ function real_main()
     ################################################################
 
     # println("Saving VTK time domain files")
-    # ModelGen.gyricFEA_VTK("$path/vtk/SNL34m_timedomain",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
+    # OWENS.gyricFEA_VTK("$path/vtk/SNL34m_timedomain",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
 
     # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
     # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4
@@ -586,7 +586,7 @@ function runowens(model,feamodel,mymesh,myel,aeroForces,deformTurb,Nbld;steady=t
 
         # if system != nothing
         #     println("Saving VTK time domain files")
-        #     ModelGen.gyricFEA_VTK(VTKFilename,t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+        #     OWENS.gyricFEA_VTK(VTKFilename,t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 
         # end
 

@@ -23,12 +23,12 @@ function viz(PyPlot;mesh=[],meshFile="none",resultsFile="none",selectedMode=10,s
     theta_z_90=nothing,savename="ModeShape$(selectedMode)_$(round(freq[selectedMode],digits=2))Hz.pdf")
 
     if meshFile!="none"
-        mesh = ModelGen.readMesh(meshFile) #read mesh file
+        mesh = OWENS.readMesh(meshFile) #read mesh file
     end
 
     if resultsFile!="none"
         #read in output file
-        freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = ModelGen.readResultsModalOut(resultsFile,mesh.numNodes)
+        freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90 = OWENS.readResultsModalOut(resultsFile,mesh.numNodes)
     end
     #add mode shape*scale factor + original components??
     deformedMesh = deepcopy(mesh)

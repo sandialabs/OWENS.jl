@@ -50,7 +50,6 @@ chmod +x setup.sh
     Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git"))
     Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git"))
     Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git"))
-    Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/ModelGen.jl.git"))
     Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))
 
     # Add other registered packages for running the example scripts
@@ -89,8 +88,7 @@ chmod +x setup.sh
         * GyricFEA.jl
         * PreComp.jl
         * Composites.jl (from https://github.com/byuflowlab/Composites.jl.git)
-        * OWENS.jl
-        * ModelGen.jl 				
+        * OWENS.jl			
 
 
     -	Install custom repositories you want to develop by starting Julia from the cloned directory and using the command:
@@ -116,7 +114,7 @@ chmod +x setup.sh
 
 
     -	Run your code either from a terminal via julia scriptname.jl or from within an IDE like VSCode where you can see variables, use the debugger with breakpoints similar to matlab and run sections of code iteratively as desired.
-        * OWENS can be run from files, like in the test scripts, or without files (except the composite input and airfoils) using ModelGen (see the example folder in ModelGen.jl for a working example with turbulent inflow)
+        * OWENS can be run from files, like in the test scripts, or without files (except the composite input and airfoils)
         * There are several plotting options in Julia, note that if you use PyPlot it does download anaconda and set up its own conda behind Julia. If you are using a proxy and have your proxy settings right (as described above) it will install smoothly (though it takes a while to download everything initially and when you use it the first time). 	
 
 

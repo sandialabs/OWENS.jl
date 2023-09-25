@@ -33,7 +33,7 @@ julia -e 'using Pkg;Pkg.add("PyCall");ENV["PYTHON"] = "/projects/struct_mech_too
  Pkg.add("HDF5")'
 
 # Install OWENS and non-registered dependencies as a regular user
-julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/OpenFASTWrappers.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/GyricFEA.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/ModelGen.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/OWENS.jl.git"))'
+julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/OpenFASTWrappers.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/GyricFEA.jl.git")); Pkg.add(PackageSpec(url="git@cee-gitlab.sandia.gov:8921-VAWT-TOOLS/OWENS.jl.git"))'
 
 using PyCall
 pygui(:qt5)

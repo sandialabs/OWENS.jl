@@ -5,7 +5,6 @@ import PyPlot
 import DelimitedFiles
 import QuadGK
 import FLOWMath
-import ModelGen
 import GyricFEA
 import Composites
 import OWENS
@@ -203,8 +202,8 @@ end
 
 azi=aziHist#./aziHist*1e-6
 saveName = "$path/vtk/two_blade"
-system, assembly, sections, frames, points, start, stop = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.05)
-ModelGen.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+system, assembly, sections, frames, points, start, stop = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;damp_coef=0.05)
+OWENS.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 ##################################################################
 ########### FIG 4.4 40RPM with Gravity Loads Tared out  ##########
@@ -217,7 +216,7 @@ eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,
 torqueDriveShaft,aziHist,uHist= runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady,system,assembly)
 
 # println("writing")
-# ModelGen.gyricFEA_VTK("SNL34m_test",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
+# OWENS.gyricFEA_VTK("SNL34m_test",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
 # println("done")
 
 # Load data
@@ -418,7 +417,7 @@ eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,
 torqueDriveShaft,aziHist,uHist= runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady,system,assembly)
 
 # println("writing")
-# ModelGen.gyricFEA_VTK("SNL34m_test",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
+# OWENS.gyricFEA_VTK("SNL34m_test",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
 # println("done")
 
 # Load data

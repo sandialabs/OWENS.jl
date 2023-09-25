@@ -5,7 +5,6 @@ import PyPlot
 import DelimitedFiles
 import QuadGK
 import FLOWMath
-import ModelGen
 import GyricFEA
 import Composites
 import OWENS
@@ -203,4 +202,4 @@ end
 
 azi=aziHist#./aziHist*1e-6
 saveName = "$path/vtk/two_blade"
-# ModelGen.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+# OWENS.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)

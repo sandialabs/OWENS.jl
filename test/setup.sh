@@ -26,7 +26,7 @@ make aerodyn_inflow_c_binding
 cd ../../
 
 # Install OWENS and non-registered dependencies as a regular user
-julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/ModelGen.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))'
+julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))'
 
 # Add other registered packages for running the example scripts
 julia -e 'using Pkg; Pkg.add("PyPlot");Pkg.add("Statistics");Pkg.add("DelimitedFiles");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("GXBeam")'

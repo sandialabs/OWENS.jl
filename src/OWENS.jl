@@ -16,6 +16,11 @@ import HDF5
 import GXBeam
 import QuadGK
 import Composites
+import YAML
+
+import PreComp
+import Dierckx
+using WriteVTK
 
 # using pyfloater
 # pyFloater = pyfloater.pyFloater.pyFloater #simplify the call
@@ -46,5 +51,10 @@ include("structs.jl")
 include("./PostProcessing.jl")
 include("./visualization.jl")
 include("./AeroMapping.jl")
+# include("./YAMLrun.jl")
+include("./fileio.jl")
+include("./meshing_utilities.jl")
+include("./gxbeam_conversion.jl")
+include("./SetupTurbine.jl")
 
 end

@@ -257,7 +257,7 @@ Where I have an additional rotation by -90 about the Y axis to align Z with X be
 This is almost consistent between blades and struts (have a +90 rotation on struts for some reason that I haven’t sorted out yet).
  
  
-%As for the gimbal lock case, it is an arbitrary decision to set either yaw or roll to zero, then calculate the other. It should make no difference whatsoever which is chosen, but the case does need to be explicitly handled.  I made some changes to the code for this and pushed it (meshing utilities.jl in ModelGen.  I think this should handle any number of blades now.
+%As for the gimbal lock case, it is an arbitrary decision to set either yaw or roll to zero, then calculate the other. It should make no difference whatsoever which is chosen, but the case does need to be explicitly handled.  
 
 Rotating Frame of Reference, 6 DOF where 1 = turbine vertical force, 2 = turbine 2D slice tangential force, 3 = turbine 2D slice normal force, 4 = blade M25 twisting moment, 5 = blade curvature twisting moment, 6 = blade sweep moment.
 

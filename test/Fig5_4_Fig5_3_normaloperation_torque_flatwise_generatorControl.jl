@@ -7,7 +7,6 @@ using Test
 import PyPlot
 import DelimitedFiles
 import FLOWMath
-import ModelGen
 import GyricFEA
 import OWENS
 import VAWTAero
@@ -167,7 +166,7 @@ lag_stress1grav = (kappa_z_grav[1,end-1,2:end].* thickness_lag .+ 0*eps_x_grav[1
 lag_stress2grav = (kappa_z_grav[2,end-1,1:end-1].* thickness_lag .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
 
 # println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;damp_coef=0.05)
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;damp_coef=0.05)
 
 
 model.Omegaocp = Omegaocp
@@ -291,7 +290,7 @@ PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 ################################################################
 
 # println("Saving VTK time domain files")
-# ModelGen.gyricFEA_VTK("$path/vtk/SNL34m_timedomain",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
+# OWENS.gyricFEA_VTK("$path/vtk/SNL34m_timedomain",t,uHist,system,assembly,sections;scaling=10)#,azi=aziHist)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4

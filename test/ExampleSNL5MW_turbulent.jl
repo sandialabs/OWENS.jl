@@ -19,7 +19,6 @@ import QuadGK
 import FLOWMath
 import HDF5
 
-import ModelGen
 import GyricFEA
 import OWENS
 import VAWTAero
@@ -28,7 +27,6 @@ import Composites
 path,_ = splitdir(@__FILE__)
 
 # include("$(path)/../../../../OWENS.jl/src/OWENS.jl")
-# include("$(path)/../../../../ModelGen.jl/src/ModelGen.jl")
 println("Set up Macro Geometry/Inputs")
 rho = 1.225
 Nslices = 30
@@ -74,7 +72,7 @@ ntheta,Nslices,rho,eta,RPI=true)
 ### Set up mesh
 #########################################
 println("Create Mesh")
-mymesh,myort,myjoint = ModelGen.create_mesh_struts(;Ht=15.0,
+mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=15.0,
 Hb = H, #blade height
 R, # m bade radius
 nblade = 2,
@@ -93,7 +91,7 @@ angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on he
 println("Calculate/Set up sectional properties")
 #Tower
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
-numadIn_twr = ModelGen.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 #Add the full path
 for (i,airfoil) in enumerate(numadIn_twr.airfoil)
@@ -101,32 +99,32 @@ for (i,airfoil) in enumerate(numadIn_twr.airfoil)
 end
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-plyprops_twr = ModelGen.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = ModelGen.getPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
+twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
 nTwrElem = Int(mymesh.meshSeg[1])+1
-sectionPropsArray_twr = ModelGen.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
-stiff_twr, mass_twr = ModelGen.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
+sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
+stiff_twr, mass_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
 
 #Blades
 NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-numadIn_bld = ModelGen.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
 for (i,airfoil) in enumerate(numadIn_bld.airfoil)
     numadIn_bld.airfoil[i] = "$path/airfoils/$airfoil"
 end
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-plyprops_bld = ModelGen.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops_bld = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
 # Get blade spanwise position
 bld1start = Int(mymesh.structuralNodeNumbers[1,1])
 bld1end = Int(mymesh.structuralNodeNumbers[1,end])
 spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 
-bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = ModelGen.getPreCompOutput(numadIn_bld;plyprops = plyprops_bld)
-sectionPropsArray_bld = ModelGen.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
-stiff_bld, mass_bld = ModelGen.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
+bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = OWENS.getPreCompOutput(numadIn_bld;plyprops = plyprops_bld)
+sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
+stiff_bld, mass_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
 
 #Struts
 # They are the same as the end properties of the blades
@@ -142,7 +140,7 @@ rotationalEffects = ones(mymesh.numEl)
 myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
 println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="$path/vtk/SNL5MW")
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="$path/vtk/SNL5MW")
 
 #########################################
 ### Create Aero Functions
@@ -207,7 +205,7 @@ epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMoor
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero=VAWTAero.deformTurb,system,assembly)
 
 println("Saving VTK time domain files")
-ModelGen.gyricFEA_VTK("$path/vtk/SNL5MW_timedomain",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+OWENS.gyricFEA_VTK("$path/vtk/SNL5MW_timedomain",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 
 ##########################################
 #### Get strain values at the blades #####

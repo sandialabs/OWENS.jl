@@ -5,7 +5,6 @@ import HDF5
 import DelimitedFiles
 import QuadGK
 import FLOWMath
-import ModelGen
 import GyricFEA
 import OWENS
 import VAWTAero
@@ -219,7 +218,7 @@ lag_stress1grav = (kappa_z_grav[2,end,1:end-1].* thickness_lag .+ 0*eps_x_grav[2
 # # PyPlot.savefig("$(path)/../figs/34m_fig4_1_GravityOnly_flapwise_Blade.pdf",transparent = true)
 
 println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = ModelGen.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)
 
 
 model.Omegaocp = Omegaocp
