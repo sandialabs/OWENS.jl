@@ -20,13 +20,13 @@ import FLOWMath
 import HDF5
 
 import GyricFEA
-import OWENS
+# import OWENS
 import VAWTAero
 import Composites
 
 path,_ = splitdir(@__FILE__)
 
-# include("$(path)/../../../../OWENS.jl/src/OWENS.jl")
+include("$(path)/../../OWENS.jl/src/OWENS.jl")
 println("Set up Macro Geometry/Inputs")
 rho = 1.225
 Nslices = 30
