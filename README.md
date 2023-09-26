@@ -1,8 +1,8 @@
 # OWENS (Offshore Wind ENergy Simulator)
 
 This repository is based on the original structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813).
-The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.  GXBeam.jl has also been integrated in beta form for geometrically exact beam solutions
-The aerodynamics are provided by the VAWTAero.jl module (https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl) in addition to a coupling to the OpenFAST AeroDyn module.
+The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.  GXBeam.jl has also been coupled for geometrically exact beam solutions
+The aerodynamics are provided by the VAWTAero.jl module (https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl) in addition to a coupling to the OpenFAST AeroDyn module. All codes that can be standalone (like the aerodynamics and structures) should be separate and handled through the dependency manager, other functions specific to the OWENS ontology should remain in this repository.
 
 ## Documentation
 

@@ -23,6 +23,7 @@ make ifw_c_binding
 make moordyn_c_binding
 make hydrodyn_c_binding
 make aerodyn_inflow_c_binding
+make aerodyn_driver
 cd ../../
 
 # Install OWENS and non-registered dependencies as a regular user

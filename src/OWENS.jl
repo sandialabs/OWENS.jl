@@ -28,6 +28,9 @@ using WriteVTK
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
 
 Modal = GyricFEA.modal
+FEAModel = GyricFEA.FEAModel
+Mesh = GyricFEA.Mesh
+El = GyricFEA.El
 export Unsteady #, UnsteadyROM
 export owens
 export Modal#, Flutter
