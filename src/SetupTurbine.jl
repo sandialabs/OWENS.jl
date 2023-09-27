@@ -25,12 +25,17 @@ function setupOWENS(VAWTAero,path;
     ntelem = 10, #tower elements
     nbelem = 60, #blade elements
     ncelem = 10,
+    nselem = 5,
+    strut_mountpointbot = 0.01,
+    strut_mountpointtop = 0.01,
     joint_type = 2,
     c_mount_ratio = 0.05,
+    angularOffset = -pi/2,
     AModel="DMS",
     DSModel="BV",
     RPI=true,
-    cables_connected_to_blade_base = true)
+    cables_connected_to_blade_base = true,
+    meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
 
     Nbld = B
     H = maximum(shapeY) #m,
@@ -55,21 +60,51 @@ function setupOWENS(VAWTAero,path;
     #########################################
     ### Set up mesh
     #########################################
-    # println("Create Mesh")
-    mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Ht,
-    Hb = H, #blade height
-    R, # m bade radius
-    nblade = Nbld,
-    ntelem, #tower elements
-    nbelem, #blade elements
-    ncelem,
-    c_mount_ratio,
-    bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    bshapez = shapeY,
-    joint_type, #hinged about y axis
-    cables_connected_to_blade_base,
-    angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-
+    if meshtype == "ARCUS" #TODO, for all of these propogate the AeroDyn additional output requirements
+        mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Ht,
+            Hb = H, #blade height
+            R, # m bade radius
+            nblade = Nbld,
+            ntelem, #tower elements
+            nbelem, #blade elements
+            ncelem,
+            c_mount_ratio,
+            bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+            bshapez = shapeY,
+            joint_type, #hinged about y axis
+            cables_connected_to_blade_base,
+            angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+    elseif meshtype == "Darrieus"
+        mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht,
+            Hb = H, #blade height
+            R, # m bade radius
+            nblade = Nbld,
+            ntelem, #tower elements
+            nbelem, #blade elements
+            nselem,
+            strut_mountpointbot, # This puts struts at top and bottom
+            strut_mountpointtop, # This puts struts at top and bottom
+            bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+            bshapez = shapeY,
+            bshapey = zeros(nbelem+1), # but magnitude for this is relevant
+            angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+        
+    elseif meshtype == "H-VAWT"
+        # mymesh,myort,myjoint = OWENS.create_mesh_HVAWT(;Ht = 15.0,
+        #     Hb = 147.148-15.0, #blade height
+        #     R = 54.014, # m bade radius
+        #     nblade = 3,
+        #     ntelem = 30, #tower elements
+        #     nbelem = 30, #blade elements
+        #     nselem = 4,
+        #     strut_mountpoint = 0.01, # This puts struts at top and bottom
+        #     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+        #     bshapez = zeros(nbelem+1),
+        #     angularOffset = 0.0) #Blade shape, magnitude is irrelevant, scaled based on height and radius above 
+    else #TODO unify with HAWT
+        error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
+    end
+    
     nTwrElem = Int(mymesh.meshSeg[1])+1
 
     # PyPlot.figure()

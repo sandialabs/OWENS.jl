@@ -31,6 +31,7 @@ Modal = GyricFEA.modal
 FEAModel = GyricFEA.FEAModel
 Mesh = GyricFEA.Mesh
 El = GyricFEA.El
+initialElementCalculations = GyricFEA.initialElementCalculations
 export Unsteady #, UnsteadyROM
 export owens
 export Modal#, Flutter
