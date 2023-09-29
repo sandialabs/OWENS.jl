@@ -533,7 +533,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_TU = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
     SF_buck_TU = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
 
-    calcSF(stress_TU,SF_ult_TU,SF_buck_TU,composites_span_twr,plyprops_twr,
+    topstrainout_tower_U = calcSF(stress_TU,SF_ult_TU,SF_buck_TU,composites_span_twr,plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
     kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true)
 
@@ -544,7 +544,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
     SF_buck_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
 
-    calcSF(stress_TL,SF_ult_TL,SF_buck_TL,composites_span_twr,plyprops_twr,
+    topstrainout_tower_L = calcSF(stress_TL,SF_ult_TL,SF_buck_TL,composites_span_twr,plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
     kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false)
 
@@ -583,5 +583,5 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     end
 
     return turb_masskg,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,
-    stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L
+    stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L
 end
