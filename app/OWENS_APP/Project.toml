@@ -1,0 +1,15 @@
+name = "OWENS_APP"
+uuid = "57d607d7-894d-4e28-a8e4-64d6c4bfe56d"
+authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
+version = "0.1.0"
+
+[deps]
+Composites = "d0d699f6-c662-11e8-0fb1-1b30104ab829"
+GXBeam = "974624c9-1acb-4ad6-a627-8ac40fc27a3e"
+GyricFEA = "3cd7cb04-a333-4aed-a1f1-c87982f3ae73"
+ImplicitAD = "e7cbb90b-9b31-4eb2-a8c8-45099c074ee1"
+OWENS = "51d15398-4eaf-40f9-a029-79ae1c4a3867"
+OpenFASTWrappers = "c94a8522-7796-4509-a98e-0a76268fb7dc"
+PreComp = "19f83dec-a593-11e8-1459-fbcca26c877b"
+VAWTAero = "513c2d6f-fecb-4566-aa46-de6170e5ba6d"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
