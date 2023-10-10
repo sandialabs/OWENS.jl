@@ -16,7 +16,6 @@ map AD15 forces to OWENS mesh dofs
 function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbosity=0)
     Nturb = length(mesh)
     n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,mesh,azi_j)
-    #TODO: multiple turbine Fx, etc.
 
     # NOTE on AD15 advanceTurb values (Fx,Fy,Fz,Mx,My,Mz)
     #       - forces/moments are in hub coordinates (converted in advanceAD15)

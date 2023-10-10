@@ -239,9 +239,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         if isinteger(t[i])
             now = Int(t[i])
             if now == 1
-                println("\nSimulation Time: $now second")
+                println("\nSimulation Time: $now second of $((numTS-1)*delta_t) seconds")
             else
-                println("\nSimulation Time: $now seconds")
+                println("\nSimulation Time: $now seconds of $((numTS-1)*delta_t) seconds")
             end
         end
 

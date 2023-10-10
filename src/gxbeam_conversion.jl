@@ -230,6 +230,16 @@ function gyricFEA_VTK(filename,tvec,uHist,system,assembly,sections;
         history[isave] = GXBeam.AssemblyState(points,elements)
     end
 
+    try #this should error if someone on windows uses backslash '\'
+        lastforwardslash = findlast(x->x=='/',filename)
+        filepath = filename[1:lastforwardslash-1]
+        if !isdir(filepath)
+            mkdir(filepath)
+        end
+    catch
+        info("Please manually create the directory to house $filename")
+    end
+
     mywrite_vtk(filename, assembly, history, tvec; scaling,
     sections,theta_z=azi,delta_x,delta_y,delta_z,userPointNames,userPointData)
 end

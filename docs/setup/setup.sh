@@ -18,12 +18,13 @@ cd ../../
 git clone --depth 1 https://github.com/OpenFAST/openfast.git
 mkdir openfast/build
 cd openfast/build
-cmake -DBUILD_SHARED_LIBS=ON ..
+cmake -DBUILD_SHARED_LIBS=ON -DOPENMP=ON ..
 make ifw_c_binding
 make moordyn_c_binding
 make hydrodyn_c_binding
 make aerodyn_inflow_c_binding
 make aerodyn_driver
+make turbsim
 cd ../../
 
 # Install OWENS and non-registered dependencies as a regular user

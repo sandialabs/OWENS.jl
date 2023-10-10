@@ -17,19 +17,19 @@ ssh-keygen -t rsa -m PEM -C username@sandia.gov
 ```
 	Copy the resulting id_rsa.pub key found in ~./ssh into your Github profile public key
 
-# Mac, to just install OWENS as a regular user, find the shetup.sh script in the test folder.  It will run homebrew to install the required software, build and compile the openfast inflowwind, hydrodyn, and moordyn dynamic libraries, and install the OWENS packages in the correct order.  There is also a VScode profile in the docs/setup folder that can be loaded into VSCode to set up the IDE for julia.
+ Mac, to just install OWENS as a regular user, find the shetup.sh script in the test folder.  It will run homebrew to install the required software, build and compile the openfast inflowwind, hydrodyn, and moordyn dynamic libraries, and install the OWENS packages in the correct order.  There is also a VScode profile in the docs/setup folder that can be loaded into VSCode to set up the IDE for julia.
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-# Linux, same as mac except change the brew statements in the .sh script to apt-get.
+ Linux, same as mac except change the brew statements in the .sh script to apt-get.
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-# Windows, install the software manually by downloading the windows executables, be sure julia is on your path, and follow the windows compilation instructions for the openfast inflowwind, libraries. At this stage in the software's maturity, it is recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment.
+ Windows, install the software manually by downloading the windows executables, be sure julia is on your path, and follow the windows compilation instructions for the openfast inflowwind, libraries. At this stage in the software's maturity, it is recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment.
     - https://julialang.org/downloads/
     - https://www.paraview.org/download/
     - https://visualstudio.microsoft.com/downloads/
