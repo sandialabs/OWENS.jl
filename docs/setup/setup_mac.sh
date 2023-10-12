@@ -14,7 +14,7 @@ brew upgrade
 brew install --cask julia
 
 # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
-cd ../../
+cd ../../../
 git clone --depth 1 https://github.com/OpenFAST/openfast.git
 mkdir openfast/build
 cd openfast/build
@@ -28,10 +28,11 @@ make turbsim
 cd ../../
 
 # Install OWENS and non-registered dependencies as a regular user
+julia -e 'using Pkg; Pkg.add(PackageSpec(url="git@github.com:kevmoor/GXBeam.jl.git"))'
 julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git")); Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))'
 
 # Add other registered packages for running the example scripts
-julia -e 'using Pkg; Pkg.add("PyPlot");Pkg.add("Statistics");Pkg.add("DelimitedFiles");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("GXBeam")'
+julia -e 'using Pkg; Pkg.add("PyPlot");Pkg.add("Statistics");Pkg.add("DelimitedFiles");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5")'
 
 # Run the example script
 julia ExampleSNL5MW_turbulent.jl

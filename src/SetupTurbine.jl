@@ -254,45 +254,6 @@ function setupOWENS(VAWTAero,path;
     
     
     # Calculate mass breakout of each material
-
-    function get_material_mass(plyprops_in,numadIn;int_start=numadIn.span[1],int_stop=numadIn.span[end])
-        # Get Relative contribution to mass by setting all but one of the materials to zero.
-        mass_component_material = zeros(length(plyprops_in.names))
-        for imat = 1:length(plyprops_in.names)
-            # Initialize array since it is immutable
-            plies = Array{Composites.Material}(undef,length(plyprops_in.names))
-
-            # Fill it in, setting all the rho's to zero except the one matching imat
-            for imat2 = 1:length(plyprops_in.names)
-                if imat != imat2
-                    plies[imat2] = Composites.Material(plyprops_in.plies[imat2].e1,
-                    plyprops_in.plies[imat2].e2,
-                    plyprops_in.plies[imat2].g12,
-                    plyprops_in.plies[imat2].nu12,
-                    0.0, #rho
-                    plyprops_in.plies[imat2].xt,
-                    plyprops_in.plies[imat2].xc,
-                    plyprops_in.plies[imat2].yt,
-                    plyprops_in.plies[imat2].yc,
-                    plyprops_in.plies[imat2].s,
-                    plyprops_in.plies[imat2].t)
-                else
-                    plies[imat2] = plyprops_in.plies[imat2]
-                end
-            end
-
-            plyprops = OWENS.plyproperties(plyprops_in.names,plies)
-            # Get the precomp output
-            precompoutput,_,_,_,_ = OWENS.getPreCompOutput(numadIn;plyprops)
-            mass_array = [precompoutput[iter].mass for iter=1:length(precompoutput)]
-            # Spline and integrate that output across the span
-            mass_spl = FLOWMath.Akima(numadIn.span,mass_array)
-            mass_component_material[imat], error = QuadGK.quadgk(mass_spl, int_start, int_stop, atol=1e-10)
-
-        end
-        return mass_component_material
-    end
-
     mass_breakout_bld = get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
     mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
@@ -302,6 +263,45 @@ function setupOWENS(VAWTAero,path;
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,RefArea,
     mass_breakout_blds,mass_breakout_twr
+end
+
+
+function get_material_mass(plyprops_in,numadIn;int_start=numadIn.span[1],int_stop=numadIn.span[end])
+    # Get Relative contribution to mass by setting all but one of the materials to zero.
+    mass_component_material = zeros(length(plyprops_in.names))
+    for imat = 1:length(plyprops_in.names)
+        # Initialize array since it is immutable
+        plies = Array{Composites.Material}(undef,length(plyprops_in.names))
+
+        # Fill it in, setting all the rho's to zero except the one matching imat
+        for imat2 = 1:length(plyprops_in.names)
+            if imat != imat2
+                plies[imat2] = Composites.Material(plyprops_in.plies[imat2].e1,
+                plyprops_in.plies[imat2].e2,
+                plyprops_in.plies[imat2].g12,
+                plyprops_in.plies[imat2].nu12,
+                0.0, #rho
+                plyprops_in.plies[imat2].xt,
+                plyprops_in.plies[imat2].xc,
+                plyprops_in.plies[imat2].yt,
+                plyprops_in.plies[imat2].yc,
+                plyprops_in.plies[imat2].s,
+                plyprops_in.plies[imat2].t)
+            else
+                plies[imat2] = plyprops_in.plies[imat2]
+            end
+        end
+
+        plyprops = OWENS.plyproperties(plyprops_in.names,plies)
+        # Get the precomp output
+        precompoutput,_,_,_,_ = OWENS.getPreCompOutput(numadIn;plyprops)
+        mass_array = [precompoutput[iter].mass for iter=1:length(precompoutput)]
+        # Spline and integrate that output across the span
+        mass_spl = FLOWMath.Akima(numadIn.span,mass_array)
+        mass_component_material[imat], error = QuadGK.quadgk(mass_spl, int_start, int_stop, atol=1e-10)
+
+    end
+    return mass_component_material
 end
 
 function setupOWENShawt(VAWTAero,path;

@@ -23,6 +23,10 @@ mutable struct MasterInput
     Blade_Radius
     numTS
     delta_t
+    NuMad_geom_xlscsv_file_twr
+    NuMad_mat_xlscsv_file_twr
+    NuMad_geom_xlscsv_file_bld
+    NuMad_mat_xlscsv_file_bld
 end
 
 function MasterInput(;
@@ -49,9 +53,16 @@ function MasterInput(;
     numTS = 100,
     delta_t = 0.01,
     turbsim_filename ="./data/turbsim/115mx115m_30x30_20.0msETM.bts",
+    NuMad_geom_xlscsv_file_twr = "$module_path/../test/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv",
+    NuMad_mat_xlscsv_file_twr = "$module_path/../test/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
+    NuMad_geom_xlscsv_file_bld = "$module_path/../test/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+    NuMad_mat_xlscsv_file_bld = "$module_path/../test/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
     )
 
-    return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,ifw,turbsim_filename,ifw_libfile,Blade_Height,Blade_Radius,numTS,delta_t)
+    return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,
+    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,ifw,turbsim_filename,ifw_libfile,
+    Blade_Height,Blade_Radius,numTS,delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
+    NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld)
 end
 
 function MasterInput(yamlInputfile)
@@ -122,6 +133,10 @@ function runOWENS(Inp,path;verbosity=2)
     Blade_Radius = Inp.Blade_Radius
     numTS = Inp.numTS
     delta_t = Inp.delta_t
+    NuMad_geom_xlscsv_file_twr = Inp.NuMad_geom_xlscsv_file_twr
+    NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
+    NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
+    NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
     
 
     println("Set up Turbine")
@@ -144,18 +159,18 @@ function runOWENS(Inp,path;verbosity=2)
         RPM,
         Vinf,
         eta,
-        B = Nbld,
-        H = 5.0,
-        R = 2.5,
+        B,
+        H,
+        R,
         shapeY,
         shapeX,
         ifw,
         turbsim_filename,
         ifw_libfile,
-        NuMad_geom_xlscsv_file_twr = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
-        NuMad_mat_xlscsv_file_twr = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
-        NuMad_geom_xlscsv_file_bld = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
-        NuMad_mat_xlscsv_file_bld = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+        NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
+        NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
+        NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
+        NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
         Ht=towerHeight,
         ntelem, 
         nbelem, 
@@ -266,14 +281,18 @@ function runOWENS(Inp,path;verbosity=2)
 
 end
 
+# # Test
+# Inp = OWENS.MasterInput(;numTS=3,ifw_libfile="$localpath/../../openfastandy/build/modules/inflowwind/libifw_c_binding")
+# OWENS.runDLC(["1_1","1_2"],Inp,localpath;Vinf_range=LinRange(5,20,2),regenTurbsim=true,pathtoturbsim="$localpath/../../openfastandy/build/modules/turbsim/turbsim")
+"""
 
-function runDLC(DLCs,Inp,path;
+runDLC(DLCs,Inp,path;
     Vinf_range=LinRange(5,20,16),
     IEC_std="\"2\"",
     WindChar="\"A\"",
     WindClass=1,
     turbsimpath="./turbsimfiles",
-    templatefile="$path/templateTurbSim.inp",
+    templatefile="./templateTurbSim.inp",
     pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
     NumGrid_Z=100,
     NumGrid_Y=100,
@@ -281,6 +300,43 @@ function runDLC(DLCs,Inp,path;
     Vdesign=11.0,
     grid_oversize=1.1,
     regenTurbsim=false)
+
+    # Input
+    * `DLCs`: ["1_1","1_2"]
+    * `Inp::MasterInput`: see ?OWENS.MasterInput
+    * `path`: desired path to run everything
+    * `Vinf_range`: =LinRange(5,20,16),
+    * `IEC_std`: ="\"2\"",
+    * `WindChar`: ="\"A\"",
+    * `WindClass`: =1,
+    * `turbsimpath`: ="./turbsimfiles", path where it dumps the turbsim files
+    * `templatefile`: ="./template_files/templateTurbSim.inp",
+    * `pathtoturbsim`: ="../../openfast/build/modules/turbsim/turbsim",
+    * `NumGrid_Z`: =100,
+    * `NumGrid_Y`: =100,
+    * `Vref`: =10.0,
+    * `Vdesign`: =11.0,
+    * `grid_oversize`: =1.1,
+    * `regenTurbsim`: =false
+
+    # Output
+    * `nothing`: 
+    """
+function runDLC(DLCs,Inp,path;
+    Vinf_range=LinRange(5,20,16),
+    IEC_std="\"2\"",
+    WindChar="\"A\"",
+    WindClass=1,
+    turbsimpath="./turbsimfiles",
+    templatefile="$module_path/template_files/templateTurbSim.inp",
+    pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
+    NumGrid_Z=100,
+    NumGrid_Y=100,
+    Vref=10.0,
+    Vdesign=11.0,
+    grid_oversize=1.1,
+    regenTurbsim=false,
+    runScript = OWENS.runOWENS)
 
     if !isdir(turbsimpath)
         mkdir(turbsimpath)
@@ -315,7 +371,7 @@ function runDLC(DLCs,Inp,path;
             Inp.turbsim_filename = "$(turbsimINPfilename[1:end-4]).bts"
 
             # run owens simulation
-            runOWENS(Inp,path)
+            runScript(Inp,path)
         end
     end
 end
@@ -359,10 +415,10 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     NumGrid_Y = Inp.ntelem+Inp.nbelem
 
     RandSeed1 = 40071 #TODO
-    HubHt = round(Blade_Height) #TODO
+    HubHt = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize/2 #TODO
     AnalysisTime = simtime
-    GridHeight = ceil((Inp.towerHeight+Inp.Blade_Height)*grid_oversize)
-    GridWidth = ceil((Blade_Radius) * 2.0 * 1.2)
+    GridHeight = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize
+    GridWidth = ceil((Blade_Radius) * 2.0 * grid_oversize)
     VFlowAng = 0.0
     HFlowAng = 0.0
     
