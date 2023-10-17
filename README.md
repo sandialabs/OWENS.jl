@@ -4,6 +4,9 @@ This repository is based on the original structural dynamics solver by Brian Owe
 The original code has been translated to Julia and revised for simplicity and performance while maintaining accuracy.  GXBeam.jl has also been coupled for geometrically exact beam solutions
 The aerodynamics are provided by the VAWTAero.jl module (https://gitlab.sandia.gov/8821-vawt-tools/VAWTAero.jl) in addition to a coupling to the OpenFAST AeroDyn module. All codes that can be standalone (like the aerodynamics and structures) should be separate and handled through the dependency manager, other functions specific to the OWENS ontology should remain in this repository.
 
+## Contributing
+Please make all feature changes and bug fixes as branches and then create pull requests against the dev branch.  The dev branch will be periodically pulled into master for significant version changes.
+
 ## Documentation
 
 In Work: Documentation can be found in the docs folder along with the validation paper(s).
