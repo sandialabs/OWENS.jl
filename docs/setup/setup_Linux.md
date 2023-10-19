@@ -1,81 +1,90 @@
 
-# This was tested using a M1 mac using docker so I had a fresh build, this will take 1-2 hours assuming no issues.
-docker run -i -t --platform linux/amd64 --name myUbuntuLinux2 ubuntu:latest
-# you should use whatever linux environment/workstation is most comfortable.  Note that the Docker instance can save plots, but I don't believe it can show them, at least not my setup.
+This was tested using a M1 mac using docker so I had a fresh build, this will take 1-2 hours assuming no issues.
 
-# make sure you have all the required compilers, etc.
-apt-get update -y
-apt-get install git -y
-apt-get install wget -y
-apt-get install vim -y
-apt-get install cmake -y
-apt-get install gfortran -y
-apt-get install build-essential -y
-apt-get install libblas-dev liblapack-dev -y
+docker run -i -t --platform linux/amd64 --name myUbuntuLinux2 ubuntu:latest
+
+you should use whatever linux environment/workstation is most comfortable.  Note that the Docker instance can save plots, but I don't believe it can show them, at least not my setup.
+
+# Required Compilers
+    apt-get update -y
+    apt-get install git -y
+    apt-get install wget -y
+    apt-get install vim -y
+    apt-get install cmake -y
+    apt-get install gfortran -y
+    apt-get install build-essential -y
+    apt-get install libblas-dev liblapack-dev -y
 
 # Install julia
-cd ~
-wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.3-linux-x86_64.tar.gz
-tar zxvf julia-1.9.3-linux-x86_64.tar.gz
-rm julia-1.9.3-linux-x86_64.tar.gz
-export PATH="$PATH:/root/julia-1.9.3/bin"
+    cd ~
+    wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.3-linux-x86_64.tar.gz
+    tar zxvf julia-1.9.3-linux-x86_64.tar.gz
+    rm julia-1.9.3-linux-x86_64.tar.gz
+    export PATH="$PATH:/root/julia-1.9.3/bin"
 
-# in your ~/.bashrc file, tell julia to use the command line git by inserting the following:
+in your ~/.bashrc file, tell julia to use the command line git by inserting the following:
+
 export JULIA_PKG_USE_CLI_GIT=true
 
-# If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or .bashrc or the equivalent
-        * http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
-        * git config --global http.proxy http://user:nopass@proxy.yourorg:number
-        * git config --global https.proxy http://user:nopass@proxy.yourorg:number
-        * export JULIA_SSL_CA_ROOTS_PATH=""
-        * export JULIA_SSL_NO_VERIFY_HOSTS="*.yourorgurl"
-        * export JULIA_PKG_USE_CLI_GIT=true 	
+# Proxy Setup
+If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or .bashrc or the equivalent
 
-# the following should get you in and out of the julia interactive repl
-# julia 
-# exit()
+    http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
+    git config --global http.proxy http://user:nopass@proxy.yourorg:number
+    git config --global https.proxy http://user:nopass@proxy.yourorg:number
+    export JULIA_SSL_CA_ROOTS_PATH=""
+    export JULIA_SSL_NO_VERIFY_HOSTS="*.yourorgurl"
+    export JULIA_PKG_USE_CLI_GIT=true 	
 
-# Now let's set up to install everything else
+# Test That Julia Runs
+the following should get you in and out of the julia interactive repl
 
-# Make ssh keys and put in the correct places
-# Go to your gihub account settings
-# left side, SSH and GPG keys
-# new ssh key
-# name: owensrepos
-# back in the linux terminal
-ssh-keygen -t rsa -m PEM -C username@youremail.gov
-# enter, enter, enter (i.e. use defaults)
-cd ~
-ls -a
-cd .ssh
-vim id_rsa.pub
-# copy the contents and paste them back in your browser to the ssh key box and create the key
-# esc : q enter to get out of vim
-cd ~
+    julia 
+    exit()
 
-mkdir coderepos
-cd coderepos
-# Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
-git clone --depth 1 git@github.com:andrew-platt/openfast.git
-# if this errors, you can clone git@github.com:OpenFAST/openfast.git it just doesn't have the latest updates from Andy, but the interface should be the same and should run.
-cd openfast
-git remote set-branches origin '*'
-git fetch --depth 1 origin f/ADI_c_binding_multiRotor
-git checkout f/ADI_c_binding_multiRotor
-mkdir build
-cd build
-# can also add -DOPENMP=ON if desired for acceleration of OLAF
-# you can rebuild later by removing the build folder and following these instructions again.
-cmake -DBUILD_SHARED_LIBS=ON ..
-make ifw_c_binding
-# make moordyn_c_binding
-# make hydrodyn_c_binding
-make aerodyn_inflow_c_binding
-make aerodyn_driver
-make turbsim
-cd ../../
+# Set up SSH Keys
 
-# Now open the julia interactive repl and run the following blocks, obviously a multi-line block should be entered as one.
+    # Make ssh keys and put in the correct places
+    # Go to your gihub account settings
+    # left side, SSH and GPG keys
+    # new ssh key
+    # name: owensrepos # or whatever you'd like
+    # back in the linux terminal
+    ssh-keygen -t rsa -m PEM -C username@youremail.gov
+    # enter, enter, enter (i.e. use defaults)
+    cd ~
+    ls -a
+    cd .ssh
+    vim id_rsa.pub
+    #copy the contents and paste them back in your browser to the ssh key box and create the key
+    # esc : q enter # to get out of vim
+    cd ~
+
+# Install Optional OpenFAST Dependices
+    mkdir coderepos
+    cd coderepos
+    # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
+    git clone --depth 1 git@github.com:andrew-platt/openfast.git
+    # if this errors, you can clone git@github.com:OpenFAST/openfast.git it just doesn't have the latest updates from Andy, but the interface should be the same and should run.
+    cd openfast
+    git remote set-branches origin '*'
+    git fetch --depth 1 origin f/ADI_c_binding_multiRotor
+    git checkout f/ADI_c_binding_multiRotor
+    mkdir build
+    cd build
+    # can also add -DOPENMP=ON if desired for acceleration of OLAF
+    # you can rebuild later by removing the build folder and following these instructions again.
+    cmake -DBUILD_SHARED_LIBS=ON ..
+    make ifw_c_binding
+    # make moordyn_c_binding
+    # make hydrodyn_c_binding
+    make aerodyn_inflow_c_binding
+    make aerodyn_driver
+    make turbsim
+    cd ../../
+
+# Brief Julia Primer and OWENS Installation
+Now open the julia interactive repl and run the following blocks, obviously a multi-line block should be entered as one.
 
 julia
 
@@ -258,25 +267,67 @@ Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))
 
 ```
 
-# clone the xflow repository which contains example run scripts, the xflow mesh, and multi-turbine capability
-git clone git@github.com:xflow-ian/xflow-aemodel.git
+# Testing Your Build of OWENS
 
-# change the path to openfast in the scripts, most of these are adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
+clone the owens repository which contains example run scripts, the turbine mesh generator
 
-#cd into whichever folder you would like to run, if you went into the single aerostructural folder, then
-#julia XFlow_25kW_single.jl
+    git clone git@github.com:SNL-WaterPower/OWENS.jl
 
-# or you can run it more interactively by starting the repl
-# julia
-# include("path/to/file.jl)
+change the path to openfast in the scripts, most of these are: 
+```julia
+adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
+```
 
-# or you can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/setup/OWENS_Julia_VS.code-profile). If you want to clear out all the variables and restart do cmd-j cmd-k, if you want to clear out the console cmd-j cmd-c, open the workspace cmd-j cmd-w, run highlighted code shift-enter, run the currently selected file cmd-shift-enter.  You can also use the gui.
+    cd OWENS.jl/test
+    julia Fig5_4_Fig5_3_normaloperation_torque_flatwise_generatorControl_Land.jl
 
-# For debugging, it is a lot like matlab, but you are working with a compiled code, so in the debugger portion of the vscode gui, you need to check which code is compiled and which is interpereted, and turn off the compilation for the packages you are trying to debug.  The debugger will not step through compiled code. Also, some lines of code have many instructions, particularly function calls with conversions on the inputs, etc, so if you are trying to use the step in gui button, you may need to click it multiple times.
+or you can run it more interactively by starting the repl
 
-# if you are working on a module and want it to reload with your most recent local changes without committing to master, pushing, and telling julia to update the package which is pointing to the git repo:
-    -	Install custom repositories you want to develop - start Julia from the cloned directory and use the command:
-        * ] dev .
-        * This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update. You are developing the current directory
+    julia
 
-# alternatively, instead of using or import to get access to the module, do include("path/to/module.jl/source/module.jl"), then you don't even have to restart julia when you make changes, but be careful to only do this for a limited number of modules, and if you are changing constants, like c library interfaces, or the libraries themselves, then you need to restart julia to get it to pick up the most recent changes.
+```julia
+    include("path/to/file.jl")
+```
+
+or you can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/setup/OWENS_Julia_VS.code-profile). 
+
+With the sample profile loaded into VSCode, If you want to clear out all the variables and restart do 
+
+    cmd-j cmd-k, 
+    
+if you want to clear out the console 
+
+    cmd-j cmd-c
+
+open the workspace 
+
+    cmd-j cmd-w
+    
+run highlighted code 
+    
+    shift-enter
+
+run the currently selected file
+    
+    cmd-shift-enter
+    
+You can also use the gui buttons.
+
+**For debugging**, it is a lot like matlab, but you are working with a compiled code, so in the debugger portion of the vscode gui, you need to check which code is compiled and which is interpereted, and turn off the compilation for the packages you are trying to debug.  The debugger will not step through compiled code. Also, some lines of code have many instructions, particularly function calls with conversions on the inputs, etc, so if you are trying to use the step in gui button, you may need to click it multiple times.
+
+If you are working on a module and want it to reload with your most recent local changes without committing to master, pushing, and telling julia to update the package which is pointing to the git repo:
+
+# Install custom repositories you want to develop
+
+start Julia from the cloned directory and use the command:
+
+    ] dev .
+    
+This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update. You are developing the current directory
+
+# alternatively, instead of using or import to get access to the module, within julia
+
+```julia
+include("path/to/module.jl/source/module.jl")
+```
+then you don't even have to restart julia when you make changes, but be careful to only do this for a limited number of modules, and if you are changing constants, like c library interfaces, or the libraries themselves, then you need to restart julia to get it to pick up the most recent changes.
