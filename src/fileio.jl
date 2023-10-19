@@ -167,7 +167,7 @@ function saveOWENSfiles(filename,mymesh,myort,myjoint,myEl,pBC,numadIn_bld)
 
     # Save Ort
     DelimitedFiles.open("$filename.ort", "w") do io
-           DelimitedFiles.writedlm(io, [myort.elNum myort.Psi_d myort.Theta_d myort.Twist_d myort.Length myort.Offset'], ' ')
+           DelimitedFiles.writedlm(io, [myort.elNum[:,1] myort.Psi_d myort.Theta_d myort.Twist_d myort.Length myort.Offset'], ' ')
        end
 
     # Save pBC

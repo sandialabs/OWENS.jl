@@ -61,7 +61,7 @@
   script:
     # Let's run the tests. Substitute `coverage = false` below, if you do not
     # want coverage results.
-    - julia -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="./OpenFASTWrappers.jl")); Pkg.add(PackageSpec(url="./PreComp.jl")); Pkg.add(PackageSpec(url="./VAWTAero.jl")); Pkg.add(PackageSpec(url="./GyricFEA.jl")); Pkg.add(PackageSpec(url=pwd())); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
+    - julia -e 'using Pkg; Pkg.add(PackageSpec(url="git@github.com:kevmoor/GXBeam.jl.git")); Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git")); Pkg.add(PackageSpec(url="./OpenFASTWrappers.jl")); Pkg.add(PackageSpec(url="./PreComp.jl")); Pkg.add(PackageSpec(url="./VAWTAero.jl")); Pkg.add(PackageSpec(url="./GyricFEA.jl")); Pkg.add(PackageSpec(url=pwd())); Pkg.build("OWENS"); Pkg.test("OWENS";coverage=true)'
     # Comment out below if you do not want coverage results.
     - julia -e 'using Pkg; Pkg.add("Coverage");
       import OWENS; cd(joinpath(dirname(pathof(OWENS)), ".."));

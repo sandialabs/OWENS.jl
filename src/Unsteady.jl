@@ -1098,8 +1098,8 @@ function outputData(mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotH
             #     header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
             # end
 
-            for ibld = 1:length(mymesh.structuralElNumbers[:,1])
-                for ibldel = 1:length(mymesh.structuralElNumbers[1,:])-1
+            for ibld = 1:length(mymesh.meshSeg)
+                for ibldel = 1:mymesh.meshSeg[ibld]
                     formattedelNum = lpad(ibldel,3,'0')#mymesh.structuralElNumbers[ibld,ibldel]
                     header1 = [header1 "B$(ibld)N$(formattedelNum)Fx" "B$(ibld)N$(formattedelNum)Fy" "B$(ibld)N$(formattedelNum)Fz" "B$(ibld)N$(formattedelNum)Mx" "B$(ibld)N$(formattedelNum)My" "B$(ibld)N$(formattedelNum)Mz"]
                     header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
@@ -1116,10 +1116,12 @@ function outputData(mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotH
                 #     data = [data FReactionHist[i_t,((i-1)*6)+1] FReactionHist[i_t,((i-1)*6)+2] FReactionHist[i_t,((i-1)*6)+3] FReactionHist[i_t,((i-1)*6)+4] FReactionHist[i_t,((i-1)*6)+5] FReactionHist[i_t,((i-1)*6)+6]]
                 # end
 
-                for ibld = 1:length(mymesh.structuralElNumbers[:,1])
-                    for ibldel = 1:length(mymesh.structuralElNumbers[1,:])-1
-                        elidx = Int(mymesh.structuralElNumbers[ibld,ibldel])
-                        data = [data FReactionHist[i_t,((elidx-1)*6)+1] FReactionHist[i_t,((elidx-1)*6)+2] FReactionHist[i_t,((elidx-1)*6)+3] FReactionHist[i_t,((elidx-1)*6)+4] FReactionHist[i_t,((elidx-1)*6)+5] FReactionHist[i_t,((elidx-1)*6)+6]]
+                for ibld = 1:length(mymesh.meshSeg)
+                    for ibldel = 1:mymesh.meshSeg[ibld]
+                        if mymesh.structuralElNumbers!=0 #TODO: this is due to cactus run option with legacy files, but should we get rid of it all?
+                            elidx = Int(mymesh.structuralElNumbers[ibld,ibldel])
+                            data = [data FReactionHist[i_t,((elidx-1)*6)+1] FReactionHist[i_t,((elidx-1)*6)+2] FReactionHist[i_t,((elidx-1)*6)+3] FReactionHist[i_t,((elidx-1)*6)+4] FReactionHist[i_t,((elidx-1)*6)+5] FReactionHist[i_t,((elidx-1)*6)+6]]
+                        end
                     end
                 end
 
