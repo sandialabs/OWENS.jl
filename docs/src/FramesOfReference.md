@@ -1,3 +1,17 @@
+
+OWENS
+X is outwards on blade, y is trailing edge always
+
+Struts, CCW, z is inwards, y trailing, and CW z is outwards
+
+Aerodyn 
+
+if CW z is up, y is trailing (root at bottom) blades, z is outwards and y is towards trailing edge.  If struts have asymmetric, then you need to align your desired suction side with the x-vector, which means you might have to invert your airfoil lookup tables for struts that the suction side isn’t where you want it.
+
+Aerodyn if CCW, root is at top and z is down, y is trailing edge, for struts, z is outwards, and y is trailing edge. 
+
+Hub is rotated such that the axis of rotation is x. So for a VAWT hub-x points up, and hawt hub-x point in x.
+
 ![](figs/image1.png){width="4.917280183727034in"
 height="4.585993000874891in"}![](figs/image2.png){width="5.469136045494313in"
 height="5.071805555555556in"}Meet porcupine the OWENS element

@@ -213,12 +213,12 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         i += 1
         # println(i)
         ## Print current simulation time to terminal
-        if isinteger(t[i])
-            now = Int(t[i])
+        if isapprox((t[i]*10)%1,0;atol=5e-2)
+            now = round(t[i];digits=1)
             if now == 1
-                println("\nSimulation Time: $now second of $((numTS-1)*delta_t) seconds")
+                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
             else
-                println("\nSimulation Time: $now seconds of $((numTS-1)*delta_t) seconds")
+                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
             end
         end
 

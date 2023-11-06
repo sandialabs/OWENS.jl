@@ -1,7 +1,18 @@
 
+# Installation Instructions
+
+The OWENS software has been developed and designed to operate in the paradigm similar to modern open source software, leveraging tools such as the terminal, git, public software repositories, and automated package management both for the operating system and the programming language. Before attempting these instructions, if you are not familiar with these types of tools, please consider becoming familiar with them prior to proceeding.  Here are some of the first google hits for guides:
+
+- https://www.redhat.com/sysadmin/beginners-guide-vim
+- https://www.freecodecamp.org/news/the-beginners-guide-to-git-github/
+- https://www.howtogeek.com/63997/how-to-install-programs-in-ubuntu-in-the-command-line/
+
+
+Future distributions are planned to also include a precompiled binary for each of the three major operating systems, with the aspiration of being able to reduce the required knowledge to the OWENS inputs, outputs, and operation. Until then, here are installation instructions for the three major operating instructions.  **ORDER OF OPERATIONS AND DETAILS ARE IMPORTANT FOR A SUCCESSFUL BUILD, DO NOT SKIP STEPS**
+
 ## Windows
 
-At this stage in the software's maturity, it is recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment. We are also currently testing the Linux Shell for Windows, which should be the same process as the Linux instructions below, but has not been tested yet.
+At this stage in the software's maturity, it is recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment. The WSL (windows subsystem for linux) can also be installed (https://allthings.how/how-to-use-linux-terminal-in-windows-11/) and can be set up to run via just the terminal or also set up to use the graphical capabilities of your machine, and the memory can be mapped back and forth as described in the link above.
 
 Install julia, paraview, and visual studio manually by downloading the windows executables for
 
@@ -20,13 +31,7 @@ Same installation as Linux except we recommend using the homebrew package manage
 
 ## Linux
 
-This was tested using a M1 mac using docker so I had a fresh build, this will take 1-2 hours assuming no issues. If you do decide to use Docker, be sure to specify the correct platform so you don't loose performance via emulation.  This is what I used on my M1 mac:
-
-docker run -i -t --platform linux/amd64 --name myUbuntuLinux2 ubuntu:latest
-
-you should use whatever linux environment/workstation is most comfortable.  Note that the Docker instance can save plots, but I don't believe it can show them, at least not my setup.
-
-# Required Compilers
+# Install/Update Required Compilers and Programs
     apt-get update -y
     apt-get install git -y
     apt-get install wget -y
@@ -46,6 +51,10 @@ you should use whatever linux environment/workstation is most comfortable.  Note
 in your ~/.bashrc file, tell julia to use the command line git by inserting the following:
 
 export JULIA_PKG_USE_CLI_GIT=true
+
+Additionally, if you are not finding that your path is being appended to, you can instead create an alias by also appending to the ~/.bashrc
+
+alias julia="path/to/your/julia-1.x.x/bin/julia"
 
 # Proxy Setup
 If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or .bashrc or the equivalent
@@ -81,6 +90,12 @@ the following should get you in and out of the julia interactive repl
     # esc : q enter # to get out of vim
     cd ~
 
+Additionally, if you find that your ssh is erroring when you try to install packages, try editing your ~/.ssh/config and add:
+
+    Host *
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    PubkeyAcceptedAlgorithms +ssh-ed25519
+
 # Install Optional OpenFAST Dependices
     mkdir coderepos
     cd coderepos
@@ -104,7 +119,7 @@ the following should get you in and out of the julia interactive repl
     make turbsim
     cd ../../
 
-# Brief Julia Primer and OWENS Installation
+# Brief Julia Primer
 Now open the julia interactive repl and run the following blocks, obviously a multi-line block should be entered as one.
 
 julia
@@ -272,9 +287,15 @@ rm("delim_file.txt") # julia's function that does the same thing
 ###############################################################
 ###############################################################
 ###############################################################
+```
+
+## OWENS Installation
+```julia
+
+using Pkg
 
 println("\n#####################")
-println("Package Manager with Custom Packages")
+println("Install OWENS")
 println("#####################")
 
 Pkg.add("Statistics");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("ImplicitAD");
@@ -286,6 +307,13 @@ Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))
 
+# Install PyPlot if not already installed
+Pkg.add("PyPlot") #Note, this will take a while (maybe 10 min depending on your connection) since it is pulling conda and installing it behind the ~/.julia folder 
+# if you want to use your already installed python, you can instead run
+# ENV["PYTHON"] = "path to your desired python install"
+# Pkg.add("PyCall")
+# Pkg.add("PyPlot")
+
 ```
 
 # Testing Your Build of OWENS
@@ -294,7 +322,7 @@ clone the owens repository which contains example run scripts, the turbine mesh 
 
     git clone git@github.com:SNL-WaterPower/OWENS.jl
 
-change the path to openfast in the scripts, most of these are: 
+If you get an error about attempting to access library xyz, but it doesn't exist, check the path to openfast in the scripts at the top level of the error to make sure the path and library file matches, most of these are: 
 ```julia
 adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
 ```
@@ -305,7 +333,7 @@ adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
 You can visualize the output vtk/vtu/pvd paraview files with paraview, install paraview via
     apt-get -y install paraview
 
-or you can run it more interactively by starting the repl
+You can also run julia more interactively and maintain variables in scope for inspections etc if you don't have an ide set up (but be careful of assuming a variable was cleared when it wasn't!) by starting the repl and essentially copying and pasing the run script via
 
     julia
 
@@ -313,7 +341,9 @@ or you can run it more interactively by starting the repl
     include("path/to/file.jl")
 ```
 
-or you can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/setup/OWENS_Julia_VS.code-profile). 
+# Visual Studio Code IDE
+
+You can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/setup/OWENS_Julia_VS.code-profile). 
 
 With the sample profile loaded into VSCode, If you want to clear out all the variables and restart do 
 
@@ -337,11 +367,12 @@ run the currently selected file
     
 You can also use the gui buttons.
 
-**For debugging**, it is a lot like matlab, but you are working with a compiled code, so in the debugger portion of the vscode gui, you need to check which code is compiled and which is interpereted, and turn off the compilation for the packages you are trying to debug.  The debugger will not step through compiled code. Also, some lines of code have many instructions, particularly function calls with conversions on the inputs, etc, so if you are trying to use the step in gui button, you may need to click it multiple times.
+## VSCode Julia Debugger
+It is a lot like matlab, but you are working with a compiled code, so in the debugger portion of the vscode gui, you need to check which code is compiled and which is interpereted, and turn off the compilation for the packages you are trying to debug.  The debugger will not step through compiled code. Also, some lines of code have many instructions, particularly function calls with conversions on the inputs, etc, so if you are trying to use the step in gui button, you may need to click it multiple times.
 
 If you are working on a module and want it to reload with your most recent local changes without committing to master, pushing, and telling julia to update the package which is pointing to the git repo:
 
-# Install custom repositories you want to develop
+## Install custom repositories you want to develop
 
 start Julia from the cloned directory and use the command:
 
@@ -349,7 +380,7 @@ start Julia from the cloned directory and use the command:
     
 This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update. You are developing the current directory
 
-# alternatively, instead of using or import to get access to the module, within julia
+alternatively, instead of using or import to get access to the module, within julia
 
 ```julia
 include("path/to/module.jl/source/module.jl")

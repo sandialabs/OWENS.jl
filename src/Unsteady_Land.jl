@@ -235,13 +235,13 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
         # println(i)
-        ## Print current simulation time to terminal
-        if isinteger(t[i])
-            now = Int(t[i])
+        ## Print current simulation time to terminal at each .1 second
+        if isapprox((t[i]*10)%1,0;atol=5e-2)
+            now = round(t[i];digits=1)
             if now == 1
-                println("\nSimulation Time: $now second of $((numTS-1)*delta_t) seconds")
+                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
             else
-                println("\nSimulation Time: $now seconds of $((numTS-1)*delta_t) seconds")
+                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
             end
         end
 
