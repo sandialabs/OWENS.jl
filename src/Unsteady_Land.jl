@@ -106,7 +106,7 @@ Executable function for transient analysis. Provides the interface of various
     * `gbHist`: gearbox position history array
     * `gbDotHist`: gearbox velocity history array
     * `gbDotDotHist`: gearbox acceleration history array
-    * `FReactionHist`: Base reaction 6dof forces history
+    * `FReactionHist`: Nodal reaction 6dof forces history
     * `rigidDof`:
     * `genTorque`: generator torque history
     * `genPower`: generator power history
@@ -209,11 +209,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topdata.aziHist[1] = topdata.azi_s
     topdata.OmegaHist[1] = topdata.Omega_s
     topdata.OmegaDotHist[1] = topdata.OmegaDot_s
-    if topModel.return_all_reaction_forces
-        topdata.FReactionsm1 = zeros(length(topdata.u_s))
-    else
-        topdata.FReactionsm1 = zeros(6)
-    end
+    topdata.FReactionsm1 = zeros(length(topdata.u_s))
     topdata.FReactionHist[1,:] = topdata.FReactionsm1
     topdata.topFReaction_j = topdata.FReactionsm1
     # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used
@@ -235,13 +231,13 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
         # println(i)
-        ## Print current simulation time to terminal
-        if isinteger(t[i])
-            now = Int(t[i])
+        ## Print current simulation time to terminal at each .1 second
+        if isapprox((t[i]*10)%1,0;atol=5e-2)
+            now = round(t[i];digits=1)
             if now == 1
-                println("\nSimulation Time: $now second of $((numTS-1)*delta_t) seconds")
+                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
             else
-                println("\nSimulation Time: $now seconds of $((numTS-1)*delta_t) seconds")
+                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
             end
         end
 
