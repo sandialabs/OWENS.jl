@@ -25,7 +25,7 @@ Executable function for transient analysis. Provides the interface of various
     * `gbHist`: gearbox position history array
     * `gbDotHist`: gearbox velocity history array
     * `gbDotDotHist`: gearbox acceleration history array
-    * `FReactionHist`: Base reaction 6dof forces history
+    * `FReactionHist`: Nodal reaction 6dof forces history
     * `rigidDof`:
     * `genTorque`: generator torque history
     * `genPower`: generator power history
@@ -134,11 +134,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         aziHist[1] = azi_s
         OmegaHist[1] = Omega_s
         OmegaDotHist[1] = OmegaDot_s
-        if topModel.return_all_reaction_forces
-            FReactionsm1 = zeros(topMesh.numNodes*6)
-        else
-            FReactionsm1 = zeros(6)
-        end
+        FReactionsm1 = zeros(topMesh.numNodes*6)
         FReactionHist[1,:] = FReactionsm1
         topFReaction_j = FReactionsm1
         # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used
@@ -510,7 +506,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         #------------------------------------
         if inputs.hydroOn
             if inputs.topsideOn
-                bottomFexternal = frame_convert(-1*topFReaction_j, LinearAlgebra.transpose(CN2H)) # in hub frame already
+                bottomFexternal = frame_convert(-1*topFReaction_j[1:6], LinearAlgebra.transpose(CN2H)) # in hub frame already
                 # bottomFexternal = zeros(6)
             end
 
@@ -923,21 +919,17 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
         end
     end
     dispOut = GyricFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,dispdot_sp1)
-    if topModel.return_all_reaction_forces
-        FReaction_j = zeros(length(history[end].points)*6)
-        for iel = 1:length(history[end].points)
-            FReaction_j[(iel-1)*6+1:iel*6] = [
-            history[end].points[iel].F[1];
-            history[end].points[iel].F[2];
-            history[end].points[iel].F[3];
-            history[end].points[iel].M[1];
-            history[end].points[iel].M[2];
-            history[end].points[iel].M[3]
-            ]
-        end
-    else
-        FReaction_j = [history[end].points[1].F[1];history[end].points[1].F[2];history[end].points[1].F[3];
-        history[end].points[1].M[1];history[end].points[1].M[2];history[end].points[1].M[3]]
+    
+    FReaction_j = zeros(length(history[end].points)*6)
+    for iel = 1:length(history[end].points)
+        FReaction_j[(iel-1)*6+1:iel*6] = [
+        history[end].points[iel].F[1];
+        history[end].points[iel].F[2];
+        history[end].points[iel].F[3];
+        history[end].points[iel].M[1];
+        history[end].points[iel].M[2];
+        history[end].points[iel].M[3]
+        ]
     end
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
 end
@@ -1471,11 +1463,8 @@ function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
         kappa_z_hist = zeros(4,1, numTS)
     end
     
-    if topModel.return_all_reaction_forces
-        FReactionHist = zeros(numTS,length(uHist[1,:]))
-    else
-        FReactionHist = zeros(numTS,6)
-    end
+
+    FReactionHist = zeros(numTS,length(uHist[1,:]))
     FTwrBsHist = zeros(numTS, 6)
     aziHist = zeros(numTS)
     OmegaHist = zeros(numTS)

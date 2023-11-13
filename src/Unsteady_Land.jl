@@ -106,7 +106,7 @@ Executable function for transient analysis. Provides the interface of various
     * `gbHist`: gearbox position history array
     * `gbDotHist`: gearbox velocity history array
     * `gbDotDotHist`: gearbox acceleration history array
-    * `FReactionHist`: Base reaction 6dof forces history
+    * `FReactionHist`: Nodal reaction 6dof forces history
     * `rigidDof`:
     * `genTorque`: generator torque history
     * `genPower`: generator power history
@@ -209,11 +209,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topdata.aziHist[1] = topdata.azi_s
     topdata.OmegaHist[1] = topdata.Omega_s
     topdata.OmegaDotHist[1] = topdata.OmegaDot_s
-    if topModel.return_all_reaction_forces
-        topdata.FReactionsm1 = zeros(length(topdata.u_s))
-    else
-        topdata.FReactionsm1 = zeros(6)
-    end
+    topdata.FReactionsm1 = zeros(length(topdata.u_s))
     topdata.FReactionHist[1,:] = topdata.FReactionsm1
     topdata.topFReaction_j = topdata.FReactionsm1
     # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used

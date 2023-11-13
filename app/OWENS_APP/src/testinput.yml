@@ -177,4 +177,4 @@ GyricFEA_FEAModel:
   minLoadStepDelta: nothing #minLoadStepDelta: used in static (steady state) analysis
   minLoadStep: nothing #minLoadStep: used in static (steady state) analysis
   prescribedLoadStep: nothing #prescribedLoadStep: used in static (steady state) analysis
-  predef: nothing #predef::Bool: will update the elStorage array if passed into Unsteady() with the nonlinear strain stiffening, to be used for subsequent analysesreturn_all_reaction_forces::Bool = return a 2D array of all reaction forces at all timesteps as opposed to the reaction force at a single point.
+  predef: nothing #predef::Bool: will update the elStorage array if passed into Unsteady() with the nonlinear strain stiffening, to be used for subsequent analyses
