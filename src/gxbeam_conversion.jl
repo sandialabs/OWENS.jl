@@ -142,7 +142,16 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, 
 
     end
 
-    if VTKmeshfilename != nothing
+    if !isnothing(VTKmeshfilename)
+        try #this should error if someone on windows uses backslash '\'
+            lastforwardslash = findlast(x->x=='/',VTKmeshfilename)
+            filepath = VTKmeshfilename[1:lastforwardslash-1]
+            if !isdir(filepath)
+                mkdir(filepath)
+            end
+        catch
+            @info "Please manually create the directory to house $VTKmeshfilename"
+        end
         mywrite_vtk(VTKmeshfilename, assembly;sections)
     end
 
@@ -237,7 +246,7 @@ function gyricFEA_VTK(filename,tvec,uHist,system,assembly,sections;
             mkdir(filepath)
         end
     catch
-        info("Please manually create the directory to house $filename")
+        @info "Please manually create the directory to house $filename"
     end
 
     mywrite_vtk(filename, assembly, history, tvec; scaling,

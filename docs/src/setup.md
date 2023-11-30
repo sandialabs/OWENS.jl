@@ -8,7 +8,7 @@ The OWENS software has been developed and designed to operate in the paradigm si
 - https://www.howtogeek.com/63997/how-to-install-programs-in-ubuntu-in-the-command-line/
 
 
-Future distributions are planned to also include a precompiled binary for each of the three major operating systems, with the aspiration of being able to reduce the required knowledge to the OWENS inputs, outputs, and operation. Until then, here are installation instructions for the three major operating instructions.  **ORDER OF OPERATIONS AND DETAILS ARE IMPORTANT FOR A SUCCESSFUL BUILD, DO NOT SKIP STEPS**
+Future distributions are planned to also include a precompiled binary for each of the three major operating systems, with the aspiration of being able to reduce the required knowledge to the OWENS inputs, outputs, and operation. Until then, here are installation instructions for the three major operating systems.  **ORDER OF OPERATIONS AND DETAILS ARE IMPORTANT FOR A SUCCESSFUL BUILD, DO NOT SKIP STEPS**
 
 ## Windows
 

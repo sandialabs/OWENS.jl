@@ -27,6 +27,8 @@ mutable struct MasterInput
     NuMad_mat_xlscsv_file_twr
     NuMad_geom_xlscsv_file_bld
     NuMad_mat_xlscsv_file_bld
+    NuMad_geom_xlscsv_file_strut
+    NuMad_mat_xlscsv_file_strut
 end
 
 function MasterInput(;
@@ -52,17 +54,19 @@ function MasterInput(;
     ifw_libfile = "./../openfast/build/modules/inflowwind/libifw_c_binding",
     numTS = 100,
     delta_t = 0.01,
-    turbsim_filename ="./data/turbsim/115mx115m_30x30_20.0msETM.bts",
-    NuMad_geom_xlscsv_file_twr = "$module_path/../test/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv",
-    NuMad_mat_xlscsv_file_twr = "$module_path/../test/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
-    NuMad_geom_xlscsv_file_bld = "$module_path/../test/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
-    NuMad_mat_xlscsv_file_bld = "$module_path/../test/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+    turbsim_filename ="$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
+    NuMad_geom_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv",
+    NuMad_mat_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
+    NuMad_geom_xlscsv_file_bld = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+    NuMad_mat_xlscsv_file_bld = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
+    NuMad_geom_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_Struts.csv",
+    NuMad_mat_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv"
     )
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,
     RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,ifw,turbsim_filename,ifw_libfile,
     Blade_Height,Blade_Radius,numTS,delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
-    NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld)
+    NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
 function MasterInput(yamlInputfile)
@@ -82,12 +86,12 @@ function MasterInput(yamlInputfile)
     operationParameters = yamlInput["operationParameters"]
         rho = operationParameters["rho"]
         Vinf = operationParameters["Vinf"]
-        numTS = operationParameters["numTS"]
-        delta_t = operationParameters["delta_t"]
 
     controlParameters = yamlInput["controlParameters"]
         controlStrategy = controlParameters["controlStrategy"]
         RPM = controlParameters["RPM"]
+        numTS = controlParameters["numTS"]
+        delta_t = controlParameters["delta_t"]
 
     VAWTAeroParameters = yamlInput["VAWTAeroParameters"]
         Nslices = VAWTAeroParameters["Nslices"]
@@ -104,8 +108,18 @@ function MasterInput(yamlInputfile)
         nbelem = structuralParameters["nbelem"]
         ncelem = structuralParameters["ncelem"]
         nselem = structuralParameters["nselem"]
+        NuMad_geom_xlscsv_file_twr = structuralParameters["NuMad_geom_xlscsv_file_twr"]
+        NuMad_mat_xlscsv_file_twr = structuralParameters["NuMad_mat_xlscsv_file_twr"]
+        NuMad_geom_xlscsv_file_bld = structuralParameters["NuMad_geom_xlscsv_file_bld"]
+        NuMad_mat_xlscsv_file_bld = structuralParameters["NuMad_mat_xlscsv_file_bld"]
+        NuMad_geom_xlscsv_file_strut = structuralParameters["NuMad_geom_xlscsv_file_strut"]
+        NuMad_mat_xlscsv_file_strut = structuralParameters["NuMad_mat_xlscsv_file_strut"]
 
-    return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,ifw,turbsim_filename,ifw_libfile,Blade_Height,Blade_Radius,numTS,delta_t)
+    return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,
+    controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
+    nselem,ifw,turbsim_filename,ifw_libfile,Blade_Height,Blade_Radius,numTS,
+    delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
+    NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
 function runOWENS(Inp,path;verbosity=2)
@@ -137,6 +151,8 @@ function runOWENS(Inp,path;verbosity=2)
     NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
     NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
     NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
+    NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
+    NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
     
 
     println("Set up Turbine")
@@ -171,6 +187,8 @@ function runOWENS(Inp,path;verbosity=2)
         NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
         NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
         NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+        NuMad_geom_xlscsv_file_strut,
+        NuMad_mat_xlscsv_file_strut,
         Ht=towerHeight,
         ntelem, 
         nbelem, 
@@ -276,7 +294,7 @@ function runOWENS(Inp,path;verbosity=2)
     # DEL
 
     ##########################################
-    #### Data Dump #####
+    #### Data Dump in OpenFAST Format #####
     ##########################################
 
 end

@@ -17,6 +17,8 @@ function setupOWENS(VAWTAero,path;
     NuMad_mat_xlscsv_file_twr = nothing,
     NuMad_geom_xlscsv_file_bld = nothing,
     NuMad_mat_xlscsv_file_bld = nothing,
+    NuMad_geom_xlscsv_file_strut = nothing,
+    NuMad_mat_xlscsv_file_strut = nothing,
     stack_layers_bld = nothing,
     stack_layers_scale = [1.0,1.0],
     chord_scale = [1.0,1.0],
@@ -37,25 +39,23 @@ function setupOWENS(VAWTAero,path;
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
 
+    
+    # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
+    # We do some intermediate calculations on the blade shape and angles
+
+    Nstrutperbld = 2 #TODO: generalize and propogate
+
     Nbld = B
     H = maximum(shapeY) #m,
     R = maximum(shapeX) #m,
     omega = RPM / 60 * 2 * pi
     tsr = omega*R/Vinf
 
-    shapeX_spline = FLOWMath.Akima(shapeY, shapeX)
-    bladelen = sum(sqrt.((shapeX[2:end].-shapeX[1:end-1]).^2 .+ (shapeY[2:end].-shapeY[1:end-1]).^2 ))
-    # println("bladelen 161.06: $bladelen")
-    h_frac = (shapeY[2:end] - shapeY[1:end-1])./shapeY[end];
-    h_elem = (shapeY[2:end] - shapeY[1:end-1])
-    h = (shapeY[2:end] + shapeY[1:end-1])/2.0;
+    nothing # make this literate compatible and the same as in the example
 
-    RefArea_half, error = QuadGK.quadgk(shapeX_spline, 0, H, atol=1e-10)
-    RefArea = RefArea_half*2
-    delta_xs = shapeX[2:end] - shapeX[1:end-1]
-    delta_zs = shapeY[2:end] - shapeY[1:end-1]
-
-    delta3D = atan.(delta_xs./delta_zs)
+    # Here we set up the mesh using one of the pre-made meshing functions.  For this case, there is a function for the ARCUS, as 
+    # well as for towered VAWTs where you can have an arbitrary blade shape with connected struts, and if the blade tips touch
+    # the tower, then you can tell it to constrain them to the tower thus allowing for both H-VAWT and Darrieus designs.
 
     #########################################
     ### Set up mesh
@@ -74,55 +74,59 @@ function setupOWENS(VAWTAero,path;
             joint_type, #hinged about y axis
             cables_connected_to_blade_base,
             angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    elseif meshtype == "Darrieus"
-        mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht,
+    elseif meshtype == "Darrieus" || meshtype == "H-VAWT"
+        
+        if meshtype == "Darrieus"
+            connectBldTips2Twr = true
+        else
+            connectBldTips2Twr = false
+        end
+
+        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Ht,
             Hb = H, #blade height
             R, # m bade radius
+            AD15hubR = 2.0, #TODO: AD15 file generation
             nblade = Nbld,
             ntelem, #tower elements
             nbelem, #blade elements
             nselem,
-            strut_mountpointbot, # This puts struts at top and bottom
-            strut_mountpointtop, # This puts struts at top and bottom
+            strut_twr_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
+            strut_twr_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
+            strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
+            strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
             bshapez = shapeY,
             bshapey = zeros(nbelem+1), # but magnitude for this is relevant
-            angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-        
-    elseif meshtype == "H-VAWT"
-        # mymesh,myort,myjoint = OWENS.create_mesh_HVAWT(;Ht = 15.0,
-        #     Hb = 147.148-15.0, #blade height
-        #     R = 54.014, # m bade radius
-        #     nblade = 3,
-        #     ntelem = 30, #tower elements
-        #     nbelem = 30, #blade elements
-        #     nselem = 4,
-        #     strut_mountpoint = 0.01, # This puts struts at top and bottom
-        #     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-        #     bshapez = zeros(nbelem+1),
-        #     angularOffset = 0.0) #Blade shape, magnitude is irrelevant, scaled based on height and radius above 
+            angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+            AD15_ccw = true,
+            verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
+            connectBldTips2Twr)
     else #TODO unify with HAWT
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
-    
+
     nTwrElem = Int(mymesh.meshSeg[1])+1
 
-    # PyPlot.figure()
-    # PyPlot.plot(mymesh.x,mymesh.z,"b-")
-    #  for myi = 1:length(mymesh.x)
-    #      PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
-    #      PyPlot.draw()
-    #      sleep(0.1)
-    #  end
-    # PyPlot.xlabel("x")
-    # PyPlot.ylabel("y")
-    # # PyPlot.axis("equal")
+    nothing
+
+    # Here is a way that you can visualize the nodal numbers of the mesh
+
+    PyPlot.figure()
+    PyPlot.plot(mymesh.x,mymesh.z,"b-")
+    for myi = 1:length(mymesh.x)
+        PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+        PyPlot.draw()
+        #sleep(0.1)
+    end
+    PyPlot.xlabel("x")
+    PyPlot.ylabel("y")
+
+    # This is where the sectional properties for the tower are either read in from the file, or are directly input and could be manuplated here in the script
 
     #########################################
     ### Set up Sectional Properties
     #########################################
-    # println("Calculate/Set up sectional properties")
-    #Tower
+
     if !isnothing(NuMad_geom_xlscsv_file_twr)
         numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr)
     else
@@ -152,6 +156,10 @@ function setupOWENS(VAWTAero,path;
         numadIn_twr.airfoil[i] = "$path/airfoils/$airfoil"
     end
 
+    nothing
+
+    # Here is where the material properties for the tower are either read in from the file, or directly input
+
     if !isnothing(NuMad_mat_xlscsv_file_twr)
         plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_twr)
     else
@@ -160,11 +168,15 @@ function setupOWENS(VAWTAero,path;
         plyprops_twr = OWENS.plyproperties(names,plies)
     end
 
+    # Then this is where precomp.jl is called to get first the precomp outputs, then formatting those into the OWENS format, and then in the GXBeam.jl format for if GXBeam is used as the structural solver.
+
     twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
     sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
     stiff_twr, mass_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
 
-    #Blades
+    nothing
+
+    # For the blades, we repeat what was done for the tower, but also include some simple design options for scaling thicknesses,
     if !isnothing(NuMad_geom_xlscsv_file_bld)
         numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld)
     else
@@ -209,8 +221,7 @@ function setupOWENS(VAWTAero,path;
         plyprops_bld = OWENS.plyproperties(names,plies)
     end
 
-    # Get blade spanwise position
-    bld1start = Int(mymesh.structuralNodeNumbers[1,1])
+    bld1start = Int(mymesh.structuralNodeNumbers[1,1]) #Get blade spanwise position
     bld1end = Int(mymesh.structuralNodeNumbers[1,end])
     spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 
@@ -224,25 +235,93 @@ function setupOWENS(VAWTAero,path;
     sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
     stiff_bld, mass_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
 
-    #Struts
-    # They are the same as the end properties of the blades
+    nothing
 
-    # Combined Section Props
-    Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
+    # Similarly for the struts, we do what was done for the blades
+    if !isnothing(NuMad_geom_xlscsv_file_strut)
+        numadIn_strut = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut)
+    else
+        n_web = 1
+        n_stack = 7
+        n_segments = 12
+        span = [0.0, 6.607, 13.215, 19.822, 26.43, 33.037, 39.645, 46.252, 52.859, 59.467, 66.074, 72.682, 79.289, 85.896, 92.504, 99.111, 105.719, 112.326, 118.934, 125.541, 132.148]
+        airfoil = ["circular", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021", "NACA_0021"]
+        te_type = ["round", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp", "sharp"]
+        twist_d = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        chord = [10.0, 10.0, 9.0, 8.0, 8.0, 7.0, 7.0, 6.0, 6.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+        xoffset = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+        aerocenter = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+        stack_mat_types = [8, 2, 4, 8, 8, 8, 4]
+        if isnothing(stack_layers_strut)
+            stack_layers = [30.0 2.0 15.0 25.0 25.0 2.0 13.0; 15.0 2.0 10.0 13.0 11.0 2.0 11.0; 10.0 1.0 8.0 10.0 10.0 2.0 10.0; 8.0 1.0 6.0 9.0 10.0 1.0 9.0; 7.0 1.0 5.0 8.0 9.0 1.0 7.0; 6.0 1.0 4.0 8.0 9.0 1.0 6.0; 6.0 1.0 4.0 8.0 8.0 1.0 5.0; 6.0 1.0 4.0 7.0 7.0 1.0 5.0; 7.0 1.0 3.0 6.0 6.0 1.0 5.0; 8.0 1.0 3.0 6.0 6.0 1.0 5.0; 8.0 1.0 3.0 6.0 6.0 1.0 5.0; 7.0 1.0 3.0 6.0 6.0 1.0 5.0; 7.0 1.0 3.0 6.0 6.0 2.0 5.0; 7.0 1.0 3.0 6.0 6.0 2.0 5.0; 7.0 1.0 3.0 7.0 8.0 3.0 5.0; 7.0 2.0 3.0 9.0 12.0 3.0 6.0; 10.0 3.0 4.0 11.0 15.0 3.0 6.0; 12.0 3.0 4.0 13.0 15.0 3.0 6.0; 12.0 3.0 4.0 15.0 15.0 3.0 6.0; 12.0 3.0 4.0 15.0 15.0 3.0 6.0; 10.0 1.0 4.0 10.0 12.0 1.0 5.0]
+        else
+            stack_layers = stack_layers_strut
+        end
+        segments = [-1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0]
+        DPtypes = ["" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""]
+        skin_seq = [Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2])]
+        web_seq = [Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]);;]
+        web_dp = [Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]);;]
+
+        numadIn_strut = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+    end
+    for icol = 1:length(numadIn_strut.stack_layers[1,:])
+        numadIn_strut.stack_layers[:,icol] .*= LinRange(stack_layers_scale[1],stack_layers_scale[2],length(numadIn_strut.chord))
+    end
+    numadIn_strut.chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut.chord))
+
+    for (i,airfoil) in enumerate(numadIn_strut.airfoil)
+        numadIn_strut.airfoil[i] = "$path/airfoils/$airfoil"
+    end
+
+    if !isnothing(NuMad_mat_xlscsv_file_strut)
+        plyprops_strut = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_strut)
+    else
+        names = ["CLA_5500", "CBX_2400", "ETLX_2400", "Airex_C70_55", "EBX_2400_x10", "ETLX_2400_x10", "Airex_C70_55_x10", "CFP-baseline"]
+        plies = [Composites.Material{Float64}(9.824e10, 5.102e9, 4.274e9, 0.3, 1540.0, 8.75634139e8, 5.92949102e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(1.4931e10, 1.4931e10, 2.389e10, 0.3, 1530.0, 4.55053962e8, 4.55053962e8, 1.0e8, 1.0e8, 1.0e8, 0.0008100000000000001), Composites.Material{Float64}(2.0333e10, 9.305e9, 4.756e9, 0.3, 1900.0, 5.30896289e8, 5.30896289e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(4.5e7, 4.5e7, 2.2e7, 0.2, 59.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 0.001), Composites.Material{Float64}(9.824e11, 5.102e10, 4.274e10, 0.3, 15300.0, 4.55053962e9, 4.55053962e9, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.4931e11, 1.4931e11, 2.389e11, 0.3, 19000.0, 5.30896289e9, 5.30896289e9, 1.0e8, 1.0e8, 1.0e8, 8.0e-5), Composites.Material{Float64}(2.03335e11, 9.3051e10, 4.756e10, 0.2, 590.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.576e11, 9.1e9, 3.3e9, 0.263, 1600.0, 2.236e9, 1.528e9, 1.0e8, 1.0e8, 1.0e8, 0.00066)]
+        plyprops_strut = OWENS.plyproperties(names,plies)
+    end
+
+    #TODO: not straight struts
+    spanpos = LinRange(0,1,nselem+1)#[0.0;cumsum(sqrt.(diff(mymesh.x[strut1start:strut1end]).^2 .+ diff(mymesh.z[strut1start:strut1end]).^2))]
+
+    if length(thickness_scale)==2
+        yscale = collect(LinRange(thickness_scale[1],thickness_scale[2],length(numadIn_strut.span)))
+    elseif length(thickness_scale)==length(numadIn_strut.span)
+        yscale = thickness_scale
+    end
+
+    strut_precompoutput,strut_precompinput,lam_U_strut,lam_L_strut,lam_W_strut = OWENS.getPreCompOutput(numadIn_strut;yscale,plyprops = plyprops_strut)
+    sectionPropsArray_strut = OWENS.getSectPropsFromPreComp(spanpos,numadIn_strut,strut_precompoutput;precompinputs=strut_precompinput)
+    stiff_strut, mass_strut = OWENS.getSectPropsFromPreComp(spanpos,numadIn_strut,strut_precompoutput;GX=true)
+
+    nothing
+
+    # Here we combine the section properties into an array matching the mesh elements
     bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
-    cable_secprop = sectionPropsArray_twr[end]
-    sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
-    # sectionPropsArray = fill(sectionPropsArray[end],length(sectionPropsArray))
-    rotationalEffects = ones(mymesh.numEl)
+    strutssecprops = collect(Iterators.flatten(fill(sectionPropsArray_strut, Nstrutperbld*Nbld)))
+
+    if meshtype == "ARCUS"
+        cable_secprop = sectionPropsArray_twr[end]
+        Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
+        sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+    else
+        sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+    end
+    rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
 
     #store data in element object
     myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
+    nothing
+
+    # Set up the VAWTAero aerodynamics if used
+
     #########################################
     ### Set up aero forces
     #########################################
-    # println("Initialize Aerodynamics")
     chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
+
     VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
     afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
     ifw,
@@ -251,12 +330,13 @@ function setupOWENS(VAWTAero,path;
     ntheta,Nslices,rho,eta,RPI)
 
     aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
-    
-    
+
+    nothing
+
     # Calculate mass breakout of each material
-    mass_breakout_bld = get_material_mass(plyprops_bld,numadIn_bld)
+    mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
-    mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
+    mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
 
     return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
     stiff_twr, stiff_bld,RefArea,bld_precompinput,
@@ -292,9 +372,9 @@ function get_material_mass(plyprops_in,numadIn;int_start=numadIn.span[1],int_sto
             end
         end
 
-        plyprops = OWENS.plyproperties(plyprops_in.names,plies)
+        plyprops = plyproperties(plyprops_in.names,plies)
         # Get the precomp output
-        precompoutput,_,_,_,_ = OWENS.getPreCompOutput(numadIn;plyprops)
+        precompoutput,_,_,_,_ = getPreCompOutput(numadIn;plyprops)
         mass_array = [precompoutput[iter].mass for iter=1:length(precompoutput)]
         # Spline and integrate that output across the span
         mass_spl = FLOWMath.Akima(numadIn.span,mass_array)
@@ -430,7 +510,7 @@ function setupOWENShawt(VAWTAero,path;
     # println("Calculate/Set up sectional properties")
     #Tower
     if !isnothing(NuMad_geom_xlscsv_file_twr)
-        numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr)
+        numadIn_twr = readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr)
     else
         n_web = 0
         n_stack = 2
@@ -446,11 +526,11 @@ function setupOWENShawt(VAWTAero,path;
         stack_layers = [70 3; 70 3; 70 3; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03; 30.303 3.03]
         segments = [-1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0; -1.0 0.0 1.0]
         DPtypes = ["" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""; "" "" ""]
-        skin_seq = [OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]); OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2])]
-        web_seq = Array{OWENS.Seq, 2}(undef, length(twist_d),0) #can be any number of stack nums, so we have to make non-square containers
-        web_dp = Array{OWENS.Seq, 2}(undef, length(twist_d),0) #this is fixed size square, but it's easier to do it this way
+        skin_seq = [Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2]); Seq([2, 1, 2]) Seq([2, 1, 2])]
+        web_seq = Array{Seq, 2}(undef, length(twist_d),0) #can be any number of stack nums, so we have to make non-square containers
+        web_dp = Array{Seq, 2}(undef, length(twist_d),0) #this is fixed size square, but it's easier to do it this way
 
-        numadIn_twr = OWENS.NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+        numadIn_twr = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
     end
 
     #Add the full path
@@ -459,20 +539,20 @@ function setupOWENShawt(VAWTAero,path;
     end
 
     if !isnothing(NuMad_mat_xlscsv_file_twr)
-        plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_twr)
+        plyprops_twr = readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_twr)
     else
         names = ["CLA_5500", "CBX_2400", "ETLX_2400", "Airex_C70_55", "EBX_2400_x10", "ETLX_2400_x10", "Airex_C70_55_x10", "CFP-baseline"]
         plies = [Composites.Material{Float64}(9.824e10, 5.102e9, 4.274e9, 0.3, 1540.0, 8.75634139e8, 5.92949102e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(1.4931e10, 1.4931e10, 2.389e10, 0.3, 1530.0, 4.55053962e8, 4.55053962e8, 1.0e8, 1.0e8, 1.0e8, 0.0008100000000000001), Composites.Material{Float64}(2.0333e10, 9.305e9, 4.756e9, 0.3, 1900.0, 5.30896289e8, 5.30896289e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(4.5e7, 4.5e7, 2.2e7, 0.2, 59.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 0.001), Composites.Material{Float64}(9.824e11, 5.102e10, 4.274e10, 0.3, 15300.0, 4.55053962e9, 4.55053962e9, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.4931e11, 1.4931e11, 2.389e11, 0.3, 19000.0, 5.30896289e9, 5.30896289e9, 1.0e8, 1.0e8, 1.0e8, 8.0e-5), Composites.Material{Float64}(2.03335e11, 9.3051e10, 4.756e10, 0.2, 590.0, 1.0e9, 1.0e9, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.576e11, 9.1e9, 3.3e9, 0.263, 1600.0, 2.236e9, 1.528e9, 1.0e8, 1.0e8, 1.0e8, 0.00066)]
-        plyprops_twr = OWENS.plyproperties(names,plies)
+        plyprops_twr = plyproperties(names,plies)
     end
 
-    twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
-    sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
-    stiff_twr, mass_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
+    twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = getPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
+    sectionPropsArray_twr = getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
+    stiff_twr, mass_twr = getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
 
     #Blades
     if !isnothing(NuMad_geom_xlscsv_file_bld)
-        numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld)
+        numadIn_bld = readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld)
     else
         n_web = 1
         n_stack = 7
@@ -492,11 +572,11 @@ function setupOWENShawt(VAWTAero,path;
         end
         segments = [-1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0; -1.0 -0.95 -0.5 -0.3 -0.1 -0.095 0.0 0.095 0.1 0.3 0.5 0.95 1.0]
         DPtypes = ["" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""; "" "" "" "" "" "" "" "" "" "" "" "" ""]
-        skin_seq = [OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2]); OWENS.Seq([2, 5, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 1, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 4, 2]) OWENS.Seq([2, 3, 2]) OWENS.Seq([2, 5, 2])]
-        web_seq = [OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]); OWENS.Seq([6, 7, 6]);;]
-        web_dp = [OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]); OWENS.Seq([9, 3, 3, 9]);;]
+        skin_seq = [Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2]); Seq([2, 5, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 1, 2]) Seq([2, 1, 2]) Seq([2, 3, 2]) Seq([2, 4, 2]) Seq([2, 4, 2]) Seq([2, 3, 2]) Seq([2, 5, 2])]
+        web_seq = [Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]); Seq([6, 7, 6]);;]
+        web_dp = [Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]); Seq([9, 3, 3, 9]);;]
 
-        numadIn_bld = OWENS.NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+        numadIn_bld = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
     end
     for icol = 1:length(numadIn_bld.stack_layers[1,:])
         numadIn_bld.stack_layers[:,icol] .*= LinRange(stack_layers_scale[1],stack_layers_scale[2],length(numadIn_bld.chord))
@@ -508,11 +588,11 @@ function setupOWENShawt(VAWTAero,path;
     end
 
     if !isnothing(NuMad_mat_xlscsv_file_bld)
-        plyprops_bld = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_bld)
+        plyprops_bld = readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_bld)
     else
         names = ["CLA_5500", "CBX_2400", "ETLX_2400", "Airex_C70_55", "EBX_2400_x10", "ETLX_2400_x10", "Airex_C70_55_x10", "CFP-baseline"]
         plies = [Composites.Material{Float64}(9.824e10, 5.102e9, 4.274e9, 0.3, 1540.0, 8.75634139e8, 5.92949102e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(1.4931e10, 1.4931e10, 2.389e10, 0.3, 1530.0, 4.55053962e8, 4.55053962e8, 1.0e8, 1.0e8, 1.0e8, 0.0008100000000000001), Composites.Material{Float64}(2.0333e10, 9.305e9, 4.756e9, 0.3, 1900.0, 5.30896289e8, 5.30896289e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(4.5e7, 4.5e7, 2.2e7, 0.2, 59.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 0.001), Composites.Material{Float64}(9.824e11, 5.102e10, 4.274e10, 0.3, 15300.0, 4.55053962e9, 4.55053962e9, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.4931e11, 1.4931e11, 2.389e11, 0.3, 19000.0, 5.30896289e9, 5.30896289e9, 1.0e8, 1.0e8, 1.0e8, 8.0e-5), Composites.Material{Float64}(2.03335e11, 9.3051e10, 4.756e10, 0.2, 590.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.576e11, 9.1e9, 3.3e9, 0.263, 1600.0, 2.236e9, 1.528e9, 1.0e8, 1.0e8, 1.0e8, 0.00066)]
-        plyprops_bld = OWENS.plyproperties(names,plies)
+        plyprops_bld = plyproperties(names,plies)
     end
 
     # Get blade spanwise position
@@ -526,9 +606,9 @@ function setupOWENShawt(VAWTAero,path;
         yscale = thickness_scale
     end
 
-    bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = OWENS.getPreCompOutput(numadIn_bld;yscale,plyprops = plyprops_bld)
-    sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
-    stiff_bld, mass_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
+    bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = getPreCompOutput(numadIn_bld;yscale,plyprops = plyprops_bld)
+    sectionPropsArray_bld = getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
+    stiff_bld, mass_bld = getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
 
     #Struts
     # They are the same as the end properties of the blades
@@ -554,7 +634,7 @@ function setupOWENShawt(VAWTAero,path;
     # ifw_libfile,
     # ntheta,Nslices,rho,eta,RPI)
 
-    aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+    aeroForces(t,azi) = mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
     
     
     # Calculate mass breakout of each material
@@ -585,9 +665,9 @@ function setupOWENShawt(VAWTAero,path;
                 end
             end
 
-            plyprops = OWENS.plyproperties(plyprops_in.names,plies)
+            plyprops = plyproperties(plyprops_in.names,plies)
             # Get the precomp output
-            precompoutput,_,_,_,_ = OWENS.getPreCompOutput(numadIn;plyprops)
+            precompoutput,_,_,_,_ = getPreCompOutput(numadIn;plyprops)
             mass_array = [precompoutput[iter].mass for iter=1:length(precompoutput)]
             # Spline and integrate that output across the span
             mass_spl = FLOWMath.Akima(numadIn.span,mass_array)
@@ -601,7 +681,7 @@ function setupOWENShawt(VAWTAero,path;
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
     mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
 
-    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;nblade=Nbld,struts=false)#,VTKmeshfilename="vtk_fvw/HAWT1")
+    system, assembly, sections = owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;nblade=Nbld,struts=false)#,VTKmeshfilename="vtk_fvw/HAWT1")
 
 
     return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,

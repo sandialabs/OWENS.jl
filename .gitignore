@@ -4,3 +4,4 @@ Manifest.toml
 *.vtu
 *.pvd
 new*
+*vtk*
