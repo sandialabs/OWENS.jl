@@ -18,6 +18,8 @@ import VAWTAero
 import QuadGK
 import FLOWMath
 import PyPlot
+PyPlot.pygui(true)
+import OpenFASTWrappers
  
 
 path = runpath = "./"  #splitdir(@__FILE__)[1]
@@ -43,6 +45,7 @@ nbelem = Inp.nbelem
 ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
+AModel = Inp.AModel
 turbsim_filename = Inp.turbsim_filename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
@@ -58,6 +61,9 @@ NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
 
 println("Set up Turbine")
 
+AD15On = true
+adi_lib = "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" #change this to match your local path of the AeroDyn DLL
+adi_rootname = "./ExampleC"
 B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m
 H = Blade_Height#1.02*R*2 #m
@@ -71,12 +77,16 @@ stack_layers_scale = [1.0,1.0]
 chord_scale = [1.0,1.0]
 thickness_scale = [1.0,1.0]
 Ht=towerHeight
-strut_mountpointbot = 0.01
-strut_mountpointtop = 0.01
+strut_mountpointbot = 0.11
+strut_mountpointtop = 0.11
 joint_type = 0
 c_mount_ratio = 0.05
 angularOffset = -pi/2
-AModel="DMS"
+if AModel=="AD" #TODO: unify flag
+    AD15On=true #AD for AeroDyn, DMS for double multiple streamtube, AC for actuator cylinder
+else
+    AD15On=false
+end
 DSModel="BV"
 RPI=true
 cables_connected_to_blade_base = true
@@ -361,19 +371,119 @@ nothing
 
 # Set up the VAWTAero aerodynamics if used
 
-#########################################
-### Set up aero forces
-#########################################
-chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
+if !AD15On
+    #########################################
+    ### Set up aero forces
+    #########################################
+    chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
 
-VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
-afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
-ifw,
-turbsim_filename,
-ifw_libfile,
-ntheta,Nslices,rho,eta,RPI)
+    VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
+    afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
+    ifw,
+    turbsim_filename,
+    ifw_libfile,
+    ntheta,Nslices,rho,eta,RPI)
 
-aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+    aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+    deformAero = VAWTAero.deformTurb
+end
+nothing
+
+# Set up AeroDyn if used
+# Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str
+# Then by initializing AeroDyn and grabbing the backend functionality with a function handle
+if AD15On
+    ad_input_file="$path/ADInputFile_SingleTurbine2.dat"
+    ifw_input_file="$path/IW2.dat"
+    blade_filename="$path/blade2.dat"
+    lower_strut_filename="$path/lower_arm2.dat"
+    upper_strut_filename="$path/upper_arm2.dat"
+    airfoil_filenames = "$path/airfoils/NACA_0018_AllRe.dat"
+    OLAF_filename = "$path/OLAF2.dat"
+
+    NumADBldNds = NumADStrutNds = 10 
+
+    bldchord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
+    
+    if meshtype == "ARCUS" 
+        blade_filenames = [blade_filename for i=1:Nbld]
+        blade_chords = [bldchord_spl for i=1:Nbld]
+        blade_Nnodes = [NumADBldNds for i=1:Nbld]
+    else
+        blade_filenames = [[blade_filename for i=1:Nbld];[lower_strut_filename for i=1:Nbld];[upper_strut_filename for i=1:Nbld]]
+        strutchord_spl = FLOWMath.akima(numadIn_strut.span./maximum(numadIn_strut.span), numadIn_strut.chord,LinRange(0,1,NumADStrutNds))
+        blade_chords = [[bldchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld]]
+        blade_Nnodes = [[NumADBldNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld]]
+    end
+
+    OpenFASTWrappers.writeADinputFile(ad_input_file,blade_filenames,airfoil_filenames,OLAF_filename)
+
+    NumADBody = length(AD15bldNdIdxRng[:,1])
+    bld_len = zeros(NumADBody)
+    for (iADBody,filename) in enumerate(blade_filenames)
+        strt_idx = AD15bldNdIdxRng[iADBody,1]
+        end_idx = AD15bldNdIdxRng[iADBody,2]
+        if end_idx<strt_idx
+            tmp_end = end_idx
+            end_idx = strt_idx
+            strt_idx = tmp_end
+        end
+
+        #Get the blade length
+        x1 = mymesh.x[strt_idx]
+        x2 = mymesh.x[end_idx]
+        y1 = mymesh.y[strt_idx]
+        y2 = mymesh.y[end_idx]
+        z1 = mymesh.z[strt_idx]
+        z2 = mymesh.z[end_idx]
+        bld_len[iADBody] = sqrt((x2-x1)^2+(y2-y1)^2+(z2-z1)^2)
+
+        #Get the blade shape
+        ADshapeY = collect(LinRange(0,H,NumADBldNds))
+        xmesh = mymesh.x[strt_idx:end_idx]
+        ymesh = mymesh.y[strt_idx:end_idx]
+        ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
+        ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeY)
+        
+        if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically
+            BlSpn=ADshapeY
+            BlCrvAC=ADshapeXspl
+        else # while the arms/struts are assumed to be straight and are oriented by the mesh angle
+            BlSpn=collect(LinRange(0,bld_len[iADBody],blade_Nnodes[iADBody]))
+            BlCrvAC=zeros(blade_Nnodes[iADBody])
+        end
+        BlSwpAC=zeros(blade_Nnodes[iADBody])
+        BlCrvAng=zeros(blade_Nnodes[iADBody])
+        BlTwist=zeros(blade_Nnodes[iADBody])
+        BlChord=blade_chords[iADBody]
+        BlAFID=ones(Int,blade_Nnodes[iADBody])
+        OpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
+    end
+
+    OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
+
+    OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;turbsim_filename=nothing)
+
+    OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
+            rho     = rho,
+            adi_dt  = delta_t,
+            adi_tmax= numTS*delta_t,
+            omega   = [omega],
+            adi_wrOuts = 1,     # write output file [0 none, 1 txt, 2 binary, 3 both]
+            adi_DT_Outs = delta_t,   # output frequency
+            numTurbines = 1,
+            refPos=[[0,0,0]],
+            hubPos=[[0,0,0.0]],
+            hubAngle=[[0,0,0]],
+            nacPos=[[0,0,0]],
+            adi_nstrut=[2],
+            adi_debug=0,
+            isHAWT = false     # true for HAWT, false for crossflow or VAWT
+            )
+
+    aeroForces(t,azi) = OWENS.mapAD15(t,azi,[mymesh],OpenFASTWrappers.advanceAD15;alwaysrecalc=true,verbosity=1)
+    deformAero=OpenFASTWrappers.deformAD15
+end
 
 nothing
 
@@ -425,6 +535,7 @@ tocp_Vinf = [0.0,100000.1],
 Vinfocp = [Vinf,Vinf],
 numTS,
 delta_t,
+AD15On,
 aeroLoadsOn = 2)
 
 feamodel = OWENS.FEAModel(;analysisType = structuralModel,
@@ -442,8 +553,12 @@ predef = "update")
 println("Running Unsteady")
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady(inputs;system,assembly,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero=VAWTAero.deformTurb)
+epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+
+if AD15On #TODO: move this into the run functions
+    OpenFASTWrappers.endTurb()
+end
 
 println("Saving VTK time domain files")
 OWENS.gyricFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)

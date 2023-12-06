@@ -11,6 +11,10 @@ function setupOWENS(VAWTAero,path;
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
     ifw=false,
+    delta_t = 0.01,
+    numTS = 100,
+    adi_lib = "$(path)../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
+    adi_rootname = "./Example",
     turbsim_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
     ifw_libfile = "$(path)/bin/libifw_c_binding",
     NuMad_geom_xlscsv_file_twr = nothing,
@@ -28,8 +32,8 @@ function setupOWENS(VAWTAero,path;
     nbelem = 60, #blade elements
     ncelem = 10,
     nselem = 5,
-    strut_mountpointbot = 0.01,
-    strut_mountpointtop = 0.01,
+    strut_mountpointbot = 0.11,
+    strut_mountpointtop = 0.11,
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -39,7 +43,12 @@ function setupOWENS(VAWTAero,path;
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
 
-    
+    if AModel=="AD"
+        AD15On = true
+    else
+        AD15On = false
+    end
+
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
     # We do some intermediate calculations on the blade shape and angles
 
@@ -50,13 +59,13 @@ function setupOWENS(VAWTAero,path;
     R = maximum(shapeX) #m,
     omega = RPM / 60 * 2 * pi
     tsr = omega*R/Vinf
-
-    nothing # make this literate compatible and the same as in the example
-
+    
+    nothing
+    
     # Here we set up the mesh using one of the pre-made meshing functions.  For this case, there is a function for the ARCUS, as 
     # well as for towered VAWTs where you can have an arbitrary blade shape with connected struts, and if the blade tips touch
     # the tower, then you can tell it to constrain them to the tower thus allowing for both H-VAWT and Darrieus designs.
-
+    
     #########################################
     ### Set up mesh
     #########################################
@@ -81,11 +90,11 @@ function setupOWENS(VAWTAero,path;
         else
             connectBldTips2Twr = false
         end
-
+    
         mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Ht,
             Hb = H, #blade height
             R, # m bade radius
-            AD15hubR = 2.0, #TODO: AD15 file generation
+            AD15hubR = 2.0, #TODO: hook up with AD15 file generation
             nblade = Nbld,
             ntelem, #tower elements
             nbelem, #blade elements
@@ -104,22 +113,22 @@ function setupOWENS(VAWTAero,path;
     else #TODO unify with HAWT
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
-
+    
     nTwrElem = Int(mymesh.meshSeg[1])+1
-
+    
     nothing
 
     # Here is a way that you can visualize the nodal numbers of the mesh
 
-    PyPlot.figure()
-    PyPlot.plot(mymesh.x,mymesh.z,"b-")
-    for myi = 1:length(mymesh.x)
-        PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
-        PyPlot.draw()
-        #sleep(0.1)
-    end
-    PyPlot.xlabel("x")
-    PyPlot.ylabel("y")
+    # PyPlot.figure()
+    # PyPlot.plot(mymesh.x,mymesh.z,"b-")
+    # for myi = 1:length(mymesh.x)
+    #     PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+    #     PyPlot.draw()
+    #     #sleep(0.1)
+    # end
+    # PyPlot.xlabel("x")
+    # PyPlot.ylabel("y")
 
     # This is where the sectional properties for the tower are either read in from the file, or are directly input and could be manuplated here in the script
 
@@ -316,20 +325,119 @@ function setupOWENS(VAWTAero,path;
     nothing
 
     # Set up the VAWTAero aerodynamics if used
+    if !AD15On
+        #########################################
+        ### Set up aero forces
+        #########################################
+        chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
 
-    #########################################
-    ### Set up aero forces
-    #########################################
-    chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
+        VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
+        afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
+        ifw,
+        turbsim_filename,
+        ifw_libfile,
+        ntheta,Nslices,rho,eta,RPI)
 
-    VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
-    afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
-    ifw,
-    turbsim_filename,
-    ifw_libfile,
-    ntheta,Nslices,rho,eta,RPI)
+        aeroForcesACDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+        deformAeroACDMS = VAWTAero.deformTurb
+    end
+    nothing
 
-    aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+    # Set up AeroDyn if used
+    # Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str
+    # Then by initializing AeroDyn and grabbing the backend functionality with a function handle
+    if AD15On
+        ad_input_file="$path/ADInputFile_SingleTurbine2.dat"
+        ifw_input_file="$path/IW2.dat"
+        blade_filename="$path/blade2.dat"
+        lower_strut_filename="$path/lower_arm2.dat"
+        upper_strut_filename="$path/upper_arm2.dat"
+        airfoil_filenames = "$path/airfoils/NACA_0018_AllRe.dat"
+        OLAF_filename = "$path/OLAF2.dat"
+
+        NumADBldNds = NumADStrutNds = 10 
+
+        bldchord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
+        
+        if meshtype == "ARCUS" 
+            blade_filenames = [blade_filename for i=1:Nbld]
+            blade_chords = [bldchord_spl for i=1:Nbld]
+            blade_Nnodes = [NumADBldNds for i=1:Nbld]
+        else
+            blade_filenames = [[blade_filename for i=1:Nbld];[lower_strut_filename for i=1:Nbld];[upper_strut_filename for i=1:Nbld]]
+            strutchord_spl = FLOWMath.akima(numadIn_strut.span./maximum(numadIn_strut.span), numadIn_strut.chord,LinRange(0,1,NumADStrutNds))
+            blade_chords = [[bldchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld]]
+            blade_Nnodes = [[NumADBldNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld]]
+        end
+
+        OpenFASTWrappers.writeADinputFile(ad_input_file,blade_filenames,airfoil_filenames,OLAF_filename)
+
+        NumADBody = length(AD15bldNdIdxRng[:,1])
+        bld_len = zeros(NumADBody)
+        for (iADBody,filename) in enumerate(blade_filenames)
+            strt_idx = AD15bldNdIdxRng[iADBody,1]
+            end_idx = AD15bldNdIdxRng[iADBody,2]
+            if end_idx<strt_idx
+                tmp_end = end_idx
+                end_idx = strt_idx
+                strt_idx = tmp_end
+            end
+
+            #Get the blade length
+            x1 = mymesh.x[strt_idx]
+            x2 = mymesh.x[end_idx]
+            y1 = mymesh.y[strt_idx]
+            y2 = mymesh.y[end_idx]
+            z1 = mymesh.z[strt_idx]
+            z2 = mymesh.z[end_idx]
+            bld_len[iADBody] = sqrt((x2-x1)^2+(y2-y1)^2+(z2-z1)^2)
+
+            #Get the blade shape
+            ADshapeY = collect(LinRange(0,H,NumADBldNds))
+            xmesh = mymesh.x[strt_idx:end_idx]
+            ymesh = mymesh.y[strt_idx:end_idx]
+            ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
+            ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeY)
+            
+            if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically
+                BlSpn=ADshapeY
+                BlCrvAC=ADshapeXspl
+            else # while the arms/struts are assumed to be straight and are oriented by the mesh angle
+                BlSpn=collect(LinRange(0,bld_len[iADBody],blade_Nnodes[iADBody]))
+                BlCrvAC=zeros(blade_Nnodes[iADBody])
+            end
+            BlSwpAC=zeros(blade_Nnodes[iADBody])
+            BlCrvAng=zeros(blade_Nnodes[iADBody])
+            BlTwist=zeros(blade_Nnodes[iADBody])
+            BlChord=blade_chords[iADBody]
+            BlAFID=ones(Int,blade_Nnodes[iADBody])
+            OpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
+        end
+
+        OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
+
+        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;turbsim_filename=nothing)
+
+        OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
+                rho     = rho,
+                adi_dt  = delta_t,
+                adi_tmax= numTS*delta_t,
+                omega   = [omega],
+                adi_wrOuts = 1,     # write output file [0 none, 1 txt, 2 binary, 3 both]
+                adi_DT_Outs = delta_t,   # output frequency
+                numTurbines = 1,
+                refPos=[[0,0,0]],
+                hubPos=[[0,0,0.0]],
+                hubAngle=[[0,0,0]],
+                nacPos=[[0,0,0]],
+                adi_nstrut=[2],
+                adi_debug=0,
+                isHAWT = false     # true for HAWT, false for crossflow or VAWT
+                )
+
+        aeroForcesAD(t,azi) = OWENS.mapAD15(t,azi,[mymesh],OpenFASTWrappers.advanceAD15;alwaysrecalc=true,verbosity=1)
+        deformAeroAD=OpenFASTWrappers.deformAD15
+    end
 
     nothing
 
@@ -338,11 +446,19 @@ function setupOWENS(VAWTAero,path;
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
     mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
 
-    return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
-    stiff_twr, stiff_bld,RefArea,bld_precompinput,
-    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,RefArea,
-    mass_breakout_blds,mass_breakout_twr
+    if AD15On
+        return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+        stiff_twr, stiff_bld,bld_precompinput,
+        bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+        twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesAD,deformAeroAD,
+        mass_breakout_blds,mass_breakout_twr
+    else
+        return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+        stiff_twr, stiff_bld,bld_precompinput,
+        bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+        twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesACDMS,deformAeroACDMS,
+        mass_breakout_blds,mass_breakout_twr
+    end
 end
 
 
@@ -685,8 +801,8 @@ function setupOWENShawt(VAWTAero,path;
 
 
     return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
-    stiff_twr, stiff_bld,RefArea,bld_precompinput,
+    stiff_twr, stiff_bld,bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,RefArea,
+    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,
     mass_breakout_blds,mass_breakout_twr,bladeIdx,bladeElem,system,assembly,sections 
 end

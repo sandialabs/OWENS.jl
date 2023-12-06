@@ -16,6 +16,7 @@ mutable struct MasterInput
     nbelem
     ncelem
     nselem
+    AModel
     ifw
     turbsim_filename
     ifw_libfile
@@ -50,6 +51,7 @@ function MasterInput(;
     nbelem =  60, #blade elements in each 
     ncelem =  10, #central cable elements in each if turbineType is ARCUS
     nselem =  5, #strut elements in each if turbineType has struts
+    AModel = "AD",
     ifw = false,
     ifw_libfile = "./../openfast/build/modules/inflowwind/libifw_c_binding",
     numTS = 100,
@@ -64,7 +66,7 @@ function MasterInput(;
     )
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,
-    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,ifw,turbsim_filename,ifw_libfile,
+    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AModel,ifw,turbsim_filename,ifw_libfile,
     Blade_Height,Blade_Radius,numTS,delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -93,9 +95,10 @@ function MasterInput(yamlInputfile)
         numTS = controlParameters["numTS"]
         delta_t = controlParameters["delta_t"]
 
-    VAWTAeroParameters = yamlInput["VAWTAeroParameters"]
-        Nslices = VAWTAeroParameters["Nslices"]
-        ntheta = VAWTAeroParameters["ntheta"]
+    AeroParameters = yamlInput["AeroParameters"]
+        Nslices = AeroParameters["Nslices"]
+        ntheta = AeroParameters["ntheta"]
+        AModel = AeroParameters["AModel"]
 
     turbulentInflow = yamlInput["turbulentInflow"]
         ifw = turbulentInflow["ifw"]
@@ -117,7 +120,7 @@ function MasterInput(yamlInputfile)
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,
     controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
-    nselem,ifw,turbsim_filename,ifw_libfile,Blade_Height,Blade_Radius,numTS,
+    nselem,AModel,ifw,turbsim_filename,ifw_libfile,Blade_Height,Blade_Radius,numTS,
     delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -140,6 +143,7 @@ function runOWENS(Inp,path;verbosity=2)
     nbelem = Inp.nbelem
     ncelem = Inp.ncelem
     nselem = Inp.nselem
+    AModel = Inp.AModel
     ifw = Inp.ifw
     turbsim_filename = Inp.turbsim_filename
     ifw_libfile = Inp.ifw_libfile
@@ -154,6 +158,8 @@ function runOWENS(Inp,path;verbosity=2)
     NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
     NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
     
+    adi_lib = "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
+    adi_rootname = "./ExampleB"
 
     println("Set up Turbine")
 
@@ -165,9 +171,9 @@ function runOWENS(Inp,path;verbosity=2)
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
 
     mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
-    stiff_twr, stiff_bld,RefArea,bld_precompinput,
+    stiff_twr, stiff_bld,bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesDMS,RefArea,
+    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
     mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
         rho,
         Nslices,
@@ -181,6 +187,10 @@ function runOWENS(Inp,path;verbosity=2)
         shapeY,
         shapeX,
         ifw,
+        delta_t,
+        numTS,
+        adi_lib,
+        adi_rootname,
         turbsim_filename,
         ifw_libfile,
         NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
@@ -193,16 +203,17 @@ function runOWENS(Inp,path;verbosity=2)
         ntelem, 
         nbelem, 
         ncelem,
+        nselem,
         joint_type = 0,
         c_mount_ratio = 0.05,
-        AModel="DMS",
+        AModel, #AD, DMS, AC
         DSModel="BV",
         RPI=true,
         cables_connected_to_blade_base = true,
-        meshtype = "Darrieus")
+        meshtype = turbineType)
 
     println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="ARCUS5MW")
+    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;VTKmeshfilename="ARCUS5MW")
 
     if verbosity>0
         # Print Blades and Tower Materials Breakdown and Costs
@@ -237,6 +248,13 @@ function runOWENS(Inp,path;verbosity=2)
     1 5 0
     1 6 0]
 
+
+    if AModel=="AD"
+        AD15On = true
+    else
+        AD15On = false
+    end
+
     inputs = OWENS.Inputs(;analysisType = structuralModel,
     tocp = [0.0,100000.1],
     Omegaocp = [RPM,RPM] ./ 60,
@@ -244,6 +262,7 @@ function runOWENS(Inp,path;verbosity=2)
     Vinfocp = [Vinf,Vinf],
     numTS,
     delta_t,
+    AD15On,
     aeroLoadsOn = 2)
 
     feamodel = OWENS.FEAModel(;analysisType = structuralModel,
@@ -258,16 +277,12 @@ function runOWENS(Inp,path;verbosity=2)
     iterationType = "DI",
     predef = "update")
 
-    # Choose which aeroforces
-    # aeroForces = aeroForcesCACTUS
-    aeroForces = aeroForcesDMS
-
     println("Running Unsteady")
     t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
     FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady(inputs;system,assembly,
-    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero=VAWTAero.deformTurb)
-
+    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+    
     println("Saving VTK time domain files")
     OWENS.gyricFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 

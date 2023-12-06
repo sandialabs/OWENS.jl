@@ -386,3 +386,10 @@ alternatively, instead of using or import to get access to the module, within ju
 include("path/to/module.jl/source/module.jl")
 ```
 then you don't even have to restart julia when you make changes, but be careful to only do this for a limited number of modules, and if you are changing constants, like c library interfaces, or the libraries themselves, then you need to restart julia to get it to pick up the most recent changes.
+
+You can also install a specific branch of a remote repository package without having to clone the repo and checkout the branch:
+
+```julia
+using Pkg
+Pkg.add(url = "git@github.com:SNL-WaterPower/OWENS.jl.git", rev = "dev")
+```

@@ -16,8 +16,9 @@
 
 import OWENS
 import VAWTAero
+# import PyPlot
 
-path = runpath = "./"  #splitdir(@__FILE__)[1]
+path = runpath = "./" #splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("./sampleOWENS.yml")
 
@@ -44,6 +45,7 @@ nbelem = Inp.nbelem
 ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
+AModel = Inp.AModel
 turbsim_filename = Inp.turbsim_filename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
@@ -56,6 +58,9 @@ NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
 NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
 NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
 NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+
+adi_lib = "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
+adi_rootname = "./ExampleB"
 
 B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m
@@ -70,9 +75,9 @@ nothing
 # and aligns the sectional properties to the mesh elements, 
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
-stiff_twr, stiff_bld,RefArea,bld_precompinput,
+stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesDMS,RefArea,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
 mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
     rho,
     Nslices,
@@ -86,6 +91,10 @@ mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
     shapeY,
     shapeX,
     ifw,
+    delta_t,
+    numTS,
+    adi_lib,
+    adi_rootname,
     turbsim_filename,
     ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
@@ -101,11 +110,11 @@ mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
     nselem,
     joint_type = 0,
     c_mount_ratio = 0.05,
-    AModel="DMS",
+    AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
-    meshtype = "Darrieus")
+    meshtype = turbineType)
 
 nothing
 
@@ -115,7 +124,7 @@ nothing
 # to work with OWENS inputs as well.
 
 println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="ARCUS5MW")
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;VTKmeshfilename="ARCUS5MW")
 
 nothing
 
@@ -157,6 +166,12 @@ nothing
 
 # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
+if AModel=="AD"
+    AD15On = true
+else
+    AD15On = false
+end
+
 inputs = OWENS.Inputs(;analysisType = structuralModel,
 tocp = [0.0,100000.1],
 Omegaocp = [RPM,RPM] ./ 60,
@@ -164,6 +179,7 @@ tocp_Vinf = [0.0,100000.1],
 Vinfocp = [Vinf,Vinf],
 numTS,
 delta_t,
+AD15On,
 aeroLoadsOn = 2)
 
 nothing
@@ -182,8 +198,6 @@ RayleighBeta = 0.05,
 iterationType = "DI",
 predef = "update")
 
-aeroForces = aeroForcesDMS
-
 nothing
 
 # Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together
@@ -192,8 +206,8 @@ nothing
 println("Running Unsteady")
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady(inputs;system,assembly,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero=VAWTAero.deformTurb)
+epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
 
 nothing
 

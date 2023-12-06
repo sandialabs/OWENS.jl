@@ -677,6 +677,10 @@ function create_mesh_struts(;Ht = 15.0,
             idx1 = findlast(x->x==AD15bldNdIdxRng[i,1], mymesh.conn[:,2])
             idx2 = findlast(x->x==AD15bldNdIdxRng[i,2], mymesh.conn[:,1])
         end
+
+        if isnothing(idx2)
+            idx2 = findlast(x->x==AD15bldNdIdxRng[i,2], mymesh.conn[:,2])
+        end
         AD15bldElIdxRng = [AD15bldElIdxRng; idx1 idx2]
     end
     return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng
