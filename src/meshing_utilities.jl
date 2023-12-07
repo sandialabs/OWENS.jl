@@ -642,8 +642,9 @@ function create_mesh_struts(;Ht = 15.0,
     end
     
     # Reduce the matrix based on if the blades got connected or not, throwing out all the zero rows
-    jointconn = jointconn[jointconn[:,1] .!= 0.0,:]
-    jointtype = jointtype[jointconn[:,1] .!= 0.0]
+    bitlogic = jointconn[:,1] .!= 0.0
+    jointconn = jointconn[bitlogic,:]
+    jointtype = jointtype[bitlogic]
 
    
 

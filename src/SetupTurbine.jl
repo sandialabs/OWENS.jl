@@ -397,6 +397,7 @@ function setupOWENS(VAWTAero,path;
             xmesh = mymesh.x[strt_idx:end_idx]
             ymesh = mymesh.y[strt_idx:end_idx]
             ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
+            ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
             ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeY)
             
             if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically

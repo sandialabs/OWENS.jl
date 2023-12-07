@@ -31,7 +31,7 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, 
 
         nodeNum = start[ielem] # Get node number
         elNum = findfirst(x->x==nodeNum,mymesh.conn[:,1]) # Get element number
-        if isnothing(elNum)
+        if isnothing(elNum) || elNum>length(sectionPropsArray)
             elNum = findfirst(x->x==nodeNum,mymesh.conn[:,2]) # Get element number
         end
         yaw = (myort.Psi_d[elNum]) * pi/180 #deg to rad
