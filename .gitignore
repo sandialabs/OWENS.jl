@@ -4,3 +4,8 @@ Manifest.toml
 *.vtu
 *.pvd
 new*
+*vtk*
+*.sum
+*.ech
+*2.dat
+*.docx
