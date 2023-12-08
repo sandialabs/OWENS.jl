@@ -18,11 +18,14 @@ mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=15.0,
 Hb = 147.148-15.0, #blade height
 R = 54.014, # m bade radius
 nblade = 2,
+AD15hubR=0.0,
 ntelem = 20, #tower elements
 nbelem = 20, #blade elements
 nselem = 2,
-strut_mountpointtop = 0.1,
-strut_mountpointbot = 0.1,
+strut_twr_mountpointbot = 0.1,
+strut_twr_mountpointtop = 0.1,
+strut_bld_mountpointbot = 0.1,
+strut_bld_mountpointtop = 0.1,
 bshapex = SNL5MW_bld_x, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 bshapez = SNL5MW_bld_z,
 angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
