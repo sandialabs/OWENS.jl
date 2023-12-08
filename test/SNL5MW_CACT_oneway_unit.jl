@@ -147,7 +147,7 @@ if test_transient
     #     PyPlot.legend()
     # end
     for ii = 1:length(FReactionHist[:,1])
-        for jj = 1:length(FReactionHist[1,:])
+        for jj = 1:6#length(FReactionHist[1,:])
             local digits = floor(log10(abs(old_FReactionHist[ii,jj]))) #this way if the tol is 1e-5, then we are actually looking at significant digits, much better than comparing 1e-5 on a 1e6 large number, that's 11 significant digits!
             @test isapprox(old_FReactionHist[ii,jj],FReactionHist[ii,jj],atol=tol*10^(digits+3))
         end

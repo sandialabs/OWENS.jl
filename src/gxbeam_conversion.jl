@@ -31,7 +31,7 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, 
 
         nodeNum = start[ielem] # Get node number
         elNum = findfirst(x->x==nodeNum,mymesh.conn[:,1]) # Get element number
-        if isnothing(elNum)
+        if isnothing(elNum) || elNum>length(sectionPropsArray)
             elNum = findfirst(x->x==nodeNum,mymesh.conn[:,2]) # Get element number
         end
         yaw = (myort.Psi_d[elNum]) * pi/180 #deg to rad
@@ -142,7 +142,16 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, 
 
     end
 
-    if VTKmeshfilename != nothing
+    if !isnothing(VTKmeshfilename)
+        try #this should error if someone on windows uses backslash '\'
+            lastforwardslash = findlast(x->x=='/',VTKmeshfilename)
+            filepath = VTKmeshfilename[1:lastforwardslash-1]
+            if !isdir(filepath)
+                mkdir(filepath)
+            end
+        catch
+            @info "Please manually create the directory to house $VTKmeshfilename"
+        end
         mywrite_vtk(VTKmeshfilename, assembly;sections)
     end
 
@@ -237,7 +246,7 @@ function gyricFEA_VTK(filename,tvec,uHist,system,assembly,sections;
             mkdir(filepath)
         end
     catch
-        info("Please manually create the directory to house $filename")
+        @info "Please manually create the directory to house $filename"
     end
 
     mywrite_vtk(filename, assembly, history, tvec; scaling,

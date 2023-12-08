@@ -40,12 +40,15 @@ Nbld = 2
 mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=0.5,
     Hb = height, #blade height
     R = radius, # m bade radius
+    AD15hubR=0.0,
     nblade = Nbld,
     ntelem = 20, #tower elements
     nbelem = 60, #blade elements
     nselem = 3,
-    strut_mountpointbot = 0.03,
-    strut_mountpointtop = 0.03,
+    strut_twr_mountpointbot = 0.03,
+    strut_twr_mountpointtop = 0.03,
+    strut_bld_mountpointbot = 0.03,
+    strut_bld_mountpointtop = 0.03,
     bshapex = SNL34X,#cos.(LinRange(0,0,12)).*SNL34X, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     bshapez = SNL34Z, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     # bshapey = sin.(LinRange(0,0,12)).*SNL34X,
