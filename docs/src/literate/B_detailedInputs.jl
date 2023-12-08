@@ -58,9 +58,8 @@ NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
 NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
 NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
 NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
-
-adi_lib = "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
-adi_rootname = "./ExampleB"
+adi_lib = Inp.adi_lib
+adi_rootname = Inp.adi_rootname
 
 B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m

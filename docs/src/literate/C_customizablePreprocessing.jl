@@ -58,12 +58,12 @@ NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
 NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
 NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
 NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+adi_lib = Inp.adi_lib
+adi_rootname = Inp.adi_rootname
 
 println("Set up Turbine")
 
 AD15On = true
-adi_lib = "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" #change this to match your local path of the AeroDyn DLL
-adi_rootname = "./ExampleC"
 B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m
 H = Blade_Height#1.02*R*2 #m
