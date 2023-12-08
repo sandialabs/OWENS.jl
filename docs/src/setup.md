@@ -298,8 +298,7 @@ println("\n#####################")
 println("Install OWENS")
 println("#####################")
 
-Pkg.add("Statistics");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("ImplicitAD");
-Pkg.add(PackageSpec(url="git@github.com:kevmoor/GXBeam.jl.git"))
+Pkg.add("Statistics");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("ImplicitAD");Pkg.add("GXBeam");
 Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git"))
