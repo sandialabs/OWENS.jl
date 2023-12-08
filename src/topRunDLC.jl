@@ -20,6 +20,8 @@ mutable struct MasterInput
     ifw
     turbsim_filename
     ifw_libfile
+    adi_lib
+    adi_rootname
     Blade_Height
     Blade_Radius
     numTS
@@ -66,7 +68,7 @@ function MasterInput(;
     )
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,
-    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AModel,ifw,turbsim_filename,ifw_libfile,
+    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AModel,ifw,turbsim_filename,ifw_libfile,adi_lib,adi_rootname,
     Blade_Height,Blade_Radius,numTS,delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -99,6 +101,8 @@ function MasterInput(yamlInputfile)
         Nslices = AeroParameters["Nslices"]
         ntheta = AeroParameters["ntheta"]
         AModel = AeroParameters["AModel"]
+        adi_lib = AeroParameters["adi_lib"]
+        adi_rootname = AeroParameters["adi_rootname"]
 
     turbulentInflow = yamlInput["turbulentInflow"]
         ifw = turbulentInflow["ifw"]
@@ -120,7 +124,7 @@ function MasterInput(yamlInputfile)
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,
     controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
-    nselem,AModel,ifw,turbsim_filename,ifw_libfile,Blade_Height,Blade_Radius,numTS,
+    nselem,AModel,ifw,turbsim_filename,ifw_libfile,adi_lib,adi_rootname,Blade_Height,Blade_Radius,numTS,
     delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -157,9 +161,8 @@ function runOWENS(Inp,path;verbosity=2)
     NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
     NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
     NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
-    
-    adi_lib = "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
-    adi_rootname = "./ExampleB"
+    adi_lib = Inp.adi_lib
+    adi_rootname = Inp.adi_rootname
 
     println("Set up Turbine")
 

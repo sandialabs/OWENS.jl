@@ -30,6 +30,8 @@ AeroParameters:
   Nslices: 30 # number of VAWTAero discritizations #TODO: AD parameters
   ntheta: 30 # number of VAWTAero azimuthal discretizations
   AModel: AD # AD, DMS, AC
+  adi_lib: "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
+  adi_rootname: "./ExampleB"
   
 structuralParameters:
   structuralModel: GX #GX, TNB, ROM
