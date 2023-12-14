@@ -16,7 +16,8 @@ operationParameters:
 
 turbulentInflow:
   ifw: false
-  turbsim_filename: ./data/turbsim/115mx115m_30x30_20.0msETM.bts
+  WindType: 3
+  wind_filename: ./data/turbsim/115mx115m_30x30_20.0msETM.bts
   ifw_libfile: ./../openfast/build/modules/inflowwind/libifw_c_binding
 
 controlParameters:

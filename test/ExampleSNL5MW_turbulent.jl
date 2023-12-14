@@ -65,7 +65,7 @@ VAWTAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
 afname = "$(path)/airfoils/NACA_0021.dat",
 ifw=true,
 ifw_libfile = joinpath("$(path)/../../openfast/build/modules/inflowwind/libifw_c_binding"),
-turbsim_filename="$(path)/data/300mx300m12msETM_Coarse.bts",
+wind_filename="$(path)/data/300mx300m12msETM_Coarse.bts",
 ntheta,Nslices,rho,eta,RPI=true)
 
 #########################################

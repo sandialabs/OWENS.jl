@@ -18,7 +18,8 @@ mutable struct MasterInput
     nselem
     AModel
     ifw
-    turbsim_filename
+    WindType
+    windINPfilename
     ifw_libfile
     adi_lib
     adi_rootname
@@ -55,10 +56,13 @@ function MasterInput(;
     nselem =  5, #strut elements in each if turbineType has struts
     AModel = "AD",
     ifw = false,
+    WindType = 1,
     ifw_libfile = "./../openfast/build/modules/inflowwind/libifw_c_binding",
+    adi_lib = "./../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
+    adi_rootname = "./Example",
     numTS = 100,
     delta_t = 0.01,
-    turbsim_filename ="$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
+    windINPfilename ="$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
     NuMad_geom_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv",
     NuMad_mat_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
     NuMad_geom_xlscsv_file_bld = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
@@ -68,7 +72,7 @@ function MasterInput(;
     )
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,
-    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AModel,ifw,turbsim_filename,ifw_libfile,adi_lib,adi_rootname,
+    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,
     Blade_Height,Blade_Radius,numTS,delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -106,7 +110,8 @@ function MasterInput(yamlInputfile)
 
     turbulentInflow = yamlInput["turbulentInflow"]
         ifw = turbulentInflow["ifw"]
-        turbsim_filename = turbulentInflow["turbsim_filename"]
+        WindType = turbulentInflow["WindType"]
+        windINPfilename = turbulentInflow["windINPfilename"]
         ifw_libfile = turbulentInflow["ifw_libfile"]
 
     structuralParameters = yamlInput["structuralParameters"]
@@ -124,7 +129,7 @@ function MasterInput(yamlInputfile)
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,
     controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
-    nselem,AModel,ifw,turbsim_filename,ifw_libfile,adi_lib,adi_rootname,Blade_Height,Blade_Radius,numTS,
+    nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,Blade_Height,Blade_Radius,numTS,
     delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -149,7 +154,8 @@ function runOWENS(Inp,path;verbosity=2)
     nselem = Inp.nselem
     AModel = Inp.AModel
     ifw = Inp.ifw
-    turbsim_filename = Inp.turbsim_filename
+    WindType = Inp.WindType
+    windINPfilename = Inp.windINPfilename
     ifw_libfile = Inp.ifw_libfile
     Blade_Height = Inp.Blade_Height
     Blade_Radius = Inp.Blade_Radius
@@ -190,11 +196,12 @@ function runOWENS(Inp,path;verbosity=2)
         shapeY,
         shapeX,
         ifw,
+        WindType,
         delta_t,
         numTS,
         adi_lib,
         adi_rootname,
-        turbsim_filename,
+        windINPfilename,
         ifw_libfile,
         NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
         NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
@@ -319,7 +326,7 @@ end
 
 # # Test
 # Inp = OWENS.MasterInput(;numTS=3,ifw_libfile="$localpath/../../openfastandy/build/modules/inflowwind/libifw_c_binding")
-# OWENS.runDLC(["1_1","1_2"],Inp,localpath;Vinf_range=LinRange(5,20,2),regenTurbsim=true,pathtoturbsim="$localpath/../../openfastandy/build/modules/turbsim/turbsim")
+# OWENS.runDLC(["1_1","1_2"],Inp,localpath;Vinf_range=LinRange(5,20,2),regenWindFiles=true,pathtoturbsim="$localpath/../../openfastandy/build/modules/turbsim/turbsim")
 """
 
 runDLC(DLCs,Inp,path;
@@ -335,7 +342,7 @@ runDLC(DLCs,Inp,path;
     Vref=10.0,
     Vdesign=11.0,
     grid_oversize=1.1,
-    regenTurbsim=false)
+    regenWindFiles=false)
 
     # Input
     * `DLCs`: ["1_1","1_2"]
@@ -351,16 +358,16 @@ runDLC(DLCs,Inp,path;
     * `NumGrid_Z`: =100,
     * `NumGrid_Y`: =100,
     * `Vref`: =10.0,
-    * `Vdesign`: =11.0,
+    * `Vdesign`: =11.0, # Design or rated speed
     * `grid_oversize`: =1.1,
-    * `regenTurbsim`: =false
+    * `regenWindFiles`: =false
 
     # Output
     * `nothing`: 
     """
 function runDLC(DLCs,Inp,path;
     Vinf_range=LinRange(5,20,16),
-    IEC_std="\"2\"",
+    IEC_std="\"1-ED3\"",
     WindChar="\"A\"",
     WindClass=1,
     turbsimpath="./turbsimfiles",
@@ -369,9 +376,9 @@ function runDLC(DLCs,Inp,path;
     NumGrid_Z=100,
     NumGrid_Y=100,
     Vref=10.0,
-    Vdesign=11.0,
+    Vdesign=11.0, # Design or rated speed
     grid_oversize=1.1,
-    regenTurbsim=false,
+    regenWindFiles=false,
     runScript = OWENS.runOWENS)
 
     if !isdir(turbsimpath)
@@ -382,11 +389,9 @@ function runDLC(DLCs,Inp,path;
     DLCParams = Array{DLCParameters, 1}(undef, length(DLCs))
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
-        if IEC_std=="\"2\""
-            DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize)
-        else
-            error("Only IEC61400_2 is currently implemented")
-        end
+
+        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize)
+
 
         # Run Simulation at each Wind Speed
         for windspeed in DLCParams[iDLC].Vinf_range_used #TODO: parallelize this
@@ -398,14 +403,21 @@ function runDLC(DLCs,Inp,path;
             windspeedStr = round(windspeed;digits=2)
             windspeedStr = lpad(windspeedStr,4,"0")
             println("Running DLC $DLC at Vinf $windspeedStr m/s")
-            turbsimINPfilename = "$turbsimpath/DLC$(DLC)Vinf$(windspeedStr).inp"
-            if !isfile(turbsimINPfilename) || regenTurbsim
-                generateTurbsimBTS(DLCParams[iDLC],turbsimINPfilename,pathtoturbsim;templatefile)
+            windINPfilename = "$turbsimpath/DLC$(DLC)Vinf$(windspeedStr).inp"
+            if !isfile(windINPfilename) || regenWindFiles
+                if contains(DLCParams[iDLC].IEC_WindType, "NTM") || contains(DLCParams[iDLC].IEC_WindType, "ETM") || contains(DLCParams[iDLC].IEC_WindType, "EWM")
+                    generateTurbsimBTS(DLCParams[iDLC],windINPfilename,pathtoturbsim;templatefile)
+                    Inp.WindType = 3
+                    Inp.windINPfilename = "$(windINPfilename[1:end-4]).bts"
+                else
+                    generateUniformwind(DLCParams[iDLC],windINPfilename)
+                    Inp.windINPfilename = windINPfilename
+                    Inp.WindType = 2
+                end
             end
 
-            Inp.ifw = true #TODO: steady non-ifw?
-            Inp.turbsim_filename = "$(turbsimINPfilename[1:end-4]).bts"
-
+            Inp.ifw = true
+            Inp.controlStrategy = DLCParams[iDLC].controlStrategy
             # run owens simulation
             runScript(Inp,path)
         end
@@ -415,7 +427,7 @@ end
 mutable struct DLCParameters
     Vinf_range_used
     analysis_type # "U", "F", "UF"
-    TorqController # "constRPM", function handle
+    controlStrategy # "constRPM", function handle
     RandSeed1 # Turbulent Random Seed Number
     NumGrid_Z # Vertical grid-point matrix dimension
     NumGrid_Y # Horizontal grid-point matrix dimension
@@ -432,6 +444,15 @@ mutable struct DLCParameters
     IEC_WindType # IEC turbulence type ("NTM", "xETM", "xEWM1", or "xEWM50" for x=class 1, 2, or 3)
     RefHt # Height of the reference wind speed [m]
     URef # Mean wind speed at the reference height [m/s] [must be 1-hr mean for API model]
+    time
+    windvel
+    winddir
+    windvertvel
+    horizshear
+    pwrLawVertShear
+    LinVertShear
+    gustvel
+    UpflowAngle
 end
 
 
@@ -451,7 +472,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     NumGrid_Y = Inp.ntelem+Inp.nbelem
 
     RandSeed1 = 40071 #TODO
-    HubHt = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize/2 #TODO
+    HubHt = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize/2 + 1e-6 #TODO
     AnalysisTime = simtime
     GridHeight = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize
     GridWidth = ceil((Blade_Radius) * 2.0 * grid_oversize)
@@ -467,117 +488,350 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
 
     TimeStep = delta_t
 
-    if DLC == "1_1"
-        TorqController = "normal"
-        Vinf_range_used = Vinf_range
-        analysis_type = "UF"
-        IEC_WindType = "\"$(WindClass)NTM\""
-        
+    time = LinRange(0,10,10)
+    windvel = nothing  
+    winddir = nothing  
+    windvertvel = nothing  
+    horizshear = nothing  
+    pwrLawVertShear = nothing  
+    LinVertShear = nothing  
+    gustvel = nothing  
+    UpflowAngle = nothing  
 
-    elseif DLC == "1_2"
-        TorqController = "normal"
-        Vinf_range_used = [Vdesign]
-        analysis_type = "F"
-        IEC_WindType = "\"$(WindClass)ECD\""
-        
+    if contains(IEC_std,"1-")
+        if DLC == "1_1" || DLC == "1_2"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "UF"
+            IEC_WindType = "\"$(WindClass)NTM\""                        
 
-    elseif DLC == "1_3"
-        TorqController = "normal"
-        Vinf_range_used = Vinf_range
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)EOG50\""
-        
+        elseif DLC == "1_3"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)ETM\""
+            
+        elseif DLC == "1_4"
+            ControlStrategy = "normal"
+            Vinf_range_used = [Vdesign-2.0,Vdesign+2.0]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)ECD\""
 
-    elseif DLC == "1_4"
-        TorqController = "normal"
-        Vinf_range_used = Vinf_range
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)ECD50\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  #gets supersceded
+            winddir = LinRange(0,90,10)  
+            windvertvel = zeros(10)  
+            horizshear = zeros(10)  
+            pwrLawVertShear = zeros(10)  
+            LinVertShear = zeros(10)  
+            gustvel = ones(10).*15.0  
+            UpflowAngle = zeros(10)  
+            
 
-    elseif DLC == "1_5"
-        TorqController = "normal"
-        Vinf_range_used = [Vdesign]
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)ECG\""
-        
+        elseif DLC == "1_5"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWS\""
 
-    elseif DLC == "2_1"
-        TorqController = "freewheelatNormalOperatingRPM"
-        Vinf_range_used = [Vdesign]
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)NWP\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = ones(10).*10.0   
+            pwrLawVertShear = ones(10)   
+            LinVertShear = ones(10).*10.0  
+            gustvel = zeros(10)   
+            UpflowAngle = zeros(10)   
+            
 
-    elseif DLC == "2_2"
-        TorqController = "freewheelatNormalOperatingRPM"
-        Vinf_range_used = Vinf_range
-        analysis_type = "UF"
-        IEC_WindType = "\"$(WindClass)NTM\""
-        
+        elseif DLC == "2_1"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
 
-    elseif DLC == "2_3"
-        TorqController = "freewheelatNormalOperatingRPM"
-        Vinf_range_used = Vinf_range
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)EOG1\""
-        
+        elseif DLC == "2_2"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
 
-    elseif DLC == "3_1"
-        TorqController = "shutdown"
-        Vinf_range_used = Vinf_range
-        analysis_type = "F"
-        IEC_WindType = "\"$(WindClass)NTM\""
-        
+        elseif DLC == "2_3"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EOG\""
 
-    elseif DLC == "3_2"
-        TorqController = "shutdown"
-        Vinf_range_used = [Vinf_range[end]]
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)EOG1\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = zeros(10)
+            pwrLawVertShear = zeros(10)   
+            LinVertShear = zeros(10)
+            gustvel = ones(10).*1.0
+            UpflowAngle = zeros(10)  
+            
+        elseif DLC == "2_4"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = Vinf_range
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)EOG\""
 
-    elseif DLC == "4_1"
-        TorqController = "shutdown"
-        Vinf_range_used = [Vdesign]
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)NTM\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = zeros(10)
+            pwrLawVertShear = zeros(10)   
+            LinVertShear = zeros(10)
+            gustvel = ones(10).*1.0
+            UpflowAngle = zeros(10)  
+            
+        elseif DLC == "3_1"
+            ControlStrategy = "startup"
+            Vinf_range_used = Vinf_range
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NWP\""
 
-    elseif DLC == "5_1"
-        TorqController = "freewheelatIdle"
-        Vinf_range_used = [Ve50]
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)EWM\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = zeros(10)
+            pwrLawVertShear = ones(10).*0.2  
+            LinVertShear = zeros(10)
+            gustvel = ones(10).*1.0
+            UpflowAngle = zeros(10)  
+            
+        elseif DLC == "3_2"
+            ControlStrategy = "startup"
+            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EOG\""
 
-    elseif DLC == "5_2"
-        TorqController = "idle"
-        Vinf_range_used = [Vdesign]
-        analysis_type = "F"
-        IEC_WindType = "\"$(WindClass)NTM\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = zeros(10)
+            pwrLawVertShear = zeros(10)   
+            LinVertShear = zeros(10)
+            gustvel = ones(10).*1.0
+            UpflowAngle = zeros(10)  
+            
+        elseif DLC == "3_3"
+            ControlStrategy = "startup"
+            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)ECD\""
 
-    elseif DLC == "6_1"
-        TorqController = "parked"
-        Vinf_range_used = [Ve1]
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)EWM\""
-        
-    elseif DLC == "8_1" #Startup
-        TorqController = "startup"
-        Vinf_range_used = Vinf_range
-        analysis_type = "U"
-        IEC_WindType = "\"$(WindClass)EWM\""
-        
+            time = LinRange(0,10,10)
+            windvel = nothing  #gets supersceded
+            winddir = LinRange(0,90,10)  
+            windvertvel = zeros(10)  
+            horizshear = zeros(10)  
+            pwrLawVertShear = zeros(10)  
+            LinVertShear = zeros(10)  
+            gustvel = ones(10).*15.0  
+            UpflowAngle = zeros(10) 
+            
+        elseif DLC == "4_1"
+            ControlStrategy = "shutdown"
+            Vinf_range_used = Vinf_range
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NWP\""
+
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = zeros(10)
+            pwrLawVertShear = ones(10).*0.2  
+            LinVertShear = zeros(10)
+            gustvel = ones(10).*1.0
+            UpflowAngle = zeros(10)  
+            
+        elseif DLC == "4_2"
+            ControlStrategy = "shutdown"
+            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EOG\""
+
+            time = LinRange(0,10,10)
+            windvel = nothing  
+            winddir = zeros(10)  
+            windvertvel = zeros(10)   
+            horizshear = zeros(10)
+            pwrLawVertShear = zeros(10)   
+            LinVertShear = zeros(10)
+            gustvel = ones(10).*1.0
+            UpflowAngle = zeros(10)  
+            
+        elseif DLC == "5_1"
+            ControlStrategy = "emergencyshutdown"
+            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
+        elseif DLC == "6_1"
+            ControlStrategy = "parked"
+            Vinf_range_used = [Ve50]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM50\""
+            
+        elseif DLC == "6_2"
+            ControlStrategy = "parked_idle"
+            Vinf_range_used = [Ve50]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM50\""
+
+        elseif DLC == "6_3"
+            ControlStrategy = "parked_yaw"
+            Vinf_range_used = [Ve1]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM1\""
+
+        elseif DLC == "6_4"
+            ControlStrategy = "parked"
+            Vinf_range_used = [0.7*Vdesign]
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NTM\""
+
+        elseif DLC == "7_1"
+            ControlStrategy = "parked"
+            Vinf_range_used = [Ve1]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM1\""
+            
+        elseif DLC == "8_1" #Startup
+            ControlStrategy = "transport"
+            Vinf_range_used = [Vdesign]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM1\""
+            
+        else
+            error("IEC61400_1 DLCs such as 1_1, 1_2 defined, you requested $DLC")
+        end
+
+    elseif contains(IEC_std,"2")
+        if DLC == "1_1"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "UF"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
+
+        elseif DLC == "1_2"
+            ControlStrategy = "normal"
+            Vinf_range_used = [Vdesign]
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)ECD\""
+            
+
+        elseif DLC == "1_3"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EOG50\""
+            
+
+        elseif DLC == "1_4"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)ECD50\""
+            
+
+        elseif DLC == "1_5"
+            ControlStrategy = "normal"
+            Vinf_range_used = [Vdesign]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)ECG\""
+            
+
+        elseif DLC == "2_1"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = [Vdesign]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)NWP\""
+            
+
+        elseif DLC == "2_2"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = Vinf_range
+            analysis_type = "UF"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
+
+        elseif DLC == "2_3"
+            ControlStrategy = "freewheelatNormalOperatingRPM"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EOG1\""
+            
+
+        elseif DLC == "3_1"
+            ControlStrategy = "shutdown"
+            Vinf_range_used = Vinf_range
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
+
+        elseif DLC == "3_2"
+            ControlStrategy = "shutdown"
+            Vinf_range_used = [Vinf_range[end]]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EOG1\""
+            
+
+        elseif DLC == "4_1"
+            ControlStrategy = "shutdown"
+            Vinf_range_used = [Vdesign]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
+
+        elseif DLC == "5_1"
+            ControlStrategy = "freewheelatIdle"
+            Vinf_range_used = [Ve50]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM\""
+            
+
+        elseif DLC == "5_2"
+            ControlStrategy = "idle"
+            Vinf_range_used = [Vdesign]
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NTM\""
+            
+
+        elseif DLC == "6_1"
+            ControlStrategy = "parked"
+            Vinf_range_used = [Ve1]
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM\""
+            
+        elseif DLC == "8_1" #Startup
+            ControlStrategy = "startup"
+            Vinf_range_used = Vinf_range
+            analysis_type = "U"
+            IEC_WindType = "\"$(WindClass)EWM\""
+            
+        else
+            error("IEC61400_2 DLCs [1.1,1.2,1.3,1.4,1.5,2.1,2.2,2.3,3.1,3.2,4.1,5.1,5.2,6.1] defined, you requested $DLC")
+        end
     else
-        error("IEC61400_2 DLCs [1.1,1.2,1.3,1.4,1.5,2.1,2.2,2.3,3.1,3.2,4.1,5.1,5.2,6.1] defined, you requested $DLC")
+        error("IEC_std 61400 1-ED3 and 2 defined, you requested $IEC_std")
     end
 
     return DLCParameters(
         Vinf_range_used,
         analysis_type, # array of windspeeds m/s
-        TorqController, # "constRPM", function handle
+        ControlStrategy, # "constRPM", function handle
         RandSeed1, # Turbulent Random Seed Number
         NumGrid_Z, # Vertical grid-point matrix dimension
         NumGrid_Y, # Horizontal grid-point matrix dimension
@@ -594,17 +848,67 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
         IEC_WindType, # IEC turbulence type ("NTM", "xETM", "xEWM1", or "xEWM50" for x=class 1, 2, or 3)
         RefHt, # Height of the reference wind speed [m]
         URef, # Mean wind speed at the reference height [m/s] [must be 1-hr mean for API model]
+        time,
+        windvel,
+        winddir,
+        windvertvel,
+        horizshear,
+        pwrLawVertShear,
+        LinVertShear,
+        gustvel,
+        UpflowAngle,
     )
 end
 
-function generateTurbsimBTS(DLCParams,turbsimINPfilename,pathtoturbsim;templatefile="$localpath/templateTurbSim.inp") 
+function generateUniformwind(DLCParams,windINPfilename)
+
+    time = DLCParams.time
+    windvel = ones(length(DLCParams.time)) .* DLCParams.URef
+    winddir = DLCParams.winddir
+    windvertvel = DLCParams.windvertvel
+    horizShear = DLCParams.horizshear
+    pwrLawVertShear = DLCParams.pwrLawVertShear
+    LinVertShear = DLCParams.LinVertShear
+    gustvel = DLCParams.gustvel
+    UpflowAngle = DLCParams.UpflowAngle
+
+    lines = ["! OpenFAST Deterministic Wind File",
+    "#",
+    "# Comment lines begin with \"!\" or \"#\" or \"%\", then the data lines must contain the following columns:",
+    "#",
+    "# If there are only 8 columns, upflow is assumed to be 0.",
+    "#",
+    "# Parameters are interpolated linearly between time steps; using nearest neighbor before the first time ",
+    "# listed in this file and after the last time listed in the file. ",
+    "#",
+    "! Time     Wind    Wind    Vertical    Horiz.      Pwr.Law     Lin.Vert.   Gust     Upflow",
+    "!          Speed   Dir     Speed       Shear       Vert.Shr    Shear       Speed    Angle ",
+    "! (sec)    (m/s)   (Deg)   (m/s)                                            (m/s)   (deg)"]
+    # "0.000000   10   0.000000   0          0.000000   0.300000   0.000000   0.000000      8",
+    # "10.000000   12   0.000000   0          0.000000   0.300000   0.000000   0.000000      8",
+
+    for itime = 1:length(time)
+        lines = [lines; "$(time[itime]) $(windvel[itime]) $(winddir[itime]) $(windvertvel[itime]) $(horizShear[itime]) $(pwrLawVertShear[itime]) $(LinVertShear[itime]) $(gustvel[itime]) $(UpflowAngle[itime])"]
+    end
+
+    
+    # Write the new file
+    open(windINPfilename, "w") do file
+        # Write new data to file
+        for line in lines
+            write(file, "$(line)\n")
+        end
+    end
+end
+
+function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile="$localpath/templateTurbSim.inp") 
 
     lines = readlines(templatefile)
 
     for fieldname in fieldnames(typeof(DLCParams))
         turbsimKeyName = String(fieldname)
         myvalue = getfield(DLCParams,fieldname)
-        if turbsimKeyName != "Vinf_range_used" || turbsimKeyName != "analysis_type" || turbsimKeyName != "TorqController"# || other strings
+        if turbsimKeyName != "Vinf_range_used" || turbsimKeyName != "analysis_type" || turbsimKeyName != "ControlStrategy"# || other strings
             for (iline,line) in enumerate(lines)
                 if contains(line," - ") #TODO: this assumes that the keys aren't in the comments
                     linenocomments,comments = split(line," - ")
@@ -620,16 +924,16 @@ function generateTurbsimBTS(DLCParams,turbsimINPfilename,pathtoturbsim;templatef
     end
     
     # Write the new file
-    open(turbsimINPfilename, "w") do file
+    open(windINPfilename, "w") do file
         # Write new data to file
         for line in lines
             write(file, "$(line)\n")
         end
     end
 
-    run(`$pathtoturbsim $turbsimINPfilename`)
+    run(`$pathtoturbsim $windINPfilename`)
 end
 
 # # Test
 # Inp = OWENS.MasterInput(;numTS=3,ifw_libfile="$localpath/../../openfastandy/build/modules/inflowwind/libifw_c_binding")
-# OWENS.runDLC(["1_1","1_2"],Inp,localpath;Vinf_range=LinRange(5,20,2),regenTurbsim=true,pathtoturbsim="$localpath/../../openfastandy/build/modules/turbsim/turbsim")
+# OWENS.runDLC(["1_1","1_2"],Inp,localpath;Vinf_range=LinRange(5,20,2),regenWindFiles=true,pathtoturbsim="$localpath/../../openfastandy/build/modules/turbsim/turbsim")

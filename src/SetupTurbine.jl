@@ -11,11 +11,12 @@ function setupOWENS(VAWTAero,path;
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
     ifw=false,
+    WindType=1,
     delta_t = 0.01,
     numTS = 100,
     adi_lib = "$(path)../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
     adi_rootname = "./Example",
-    turbsim_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
+    wind_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
     ifw_libfile = "$(path)/bin/libifw_c_binding",
     NuMad_geom_xlscsv_file_twr = nothing,
     NuMad_mat_xlscsv_file_twr = nothing,
@@ -333,8 +334,8 @@ function setupOWENS(VAWTAero,path;
 
         VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
         afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
-        ifw,
-        turbsim_filename,
+        ifw, #TODO: propogate WindType
+        wind_filename,
         ifw_libfile,
         ntheta,Nslices,rho,eta,RPI)
 
@@ -417,7 +418,7 @@ function setupOWENS(VAWTAero,path;
 
         OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
-        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;turbsim_filename=nothing)
+        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;WindType,wind_filename=nothing)
 
         OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
                 rho     = rho,
@@ -515,7 +516,7 @@ function setupOWENShawt(VAWTAero,path;
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
     ifw=false,
-    turbsim_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
+    wind_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
     ifw_libfile = "$(path)/bin/libifw_c_binding",
     NuMad_geom_xlscsv_file_twr = nothing,
     NuMad_mat_xlscsv_file_twr = nothing,
@@ -747,7 +748,7 @@ function setupOWENShawt(VAWTAero,path;
     # VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
     # afname = "$path/Airfoils/NACA_0021.dat", #TODO: map to the numad input
     # ifw,
-    # turbsim_filename,
+    # wind_filename,
     # ifw_libfile,
     # ntheta,Nslices,rho,eta,RPI)
 

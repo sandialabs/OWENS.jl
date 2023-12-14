@@ -46,7 +46,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 AModel = Inp.AModel
-turbsim_filename = Inp.turbsim_filename
+wind_filename = Inp.wind_filename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
@@ -380,7 +380,7 @@ if !AD15On
     VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
     afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
     ifw,
-    turbsim_filename,
+    wind_filename,
     ifw_libfile,
     ntheta,Nslices,rho,eta,RPI)
 
@@ -462,7 +462,7 @@ if AD15On
 
     OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
-    OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;turbsim_filename=nothing)
+    OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;wind_filename=nothing)
 
     OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
             rho     = rho,

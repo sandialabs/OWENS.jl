@@ -9,3 +9,5 @@ new*
 *.ech
 *2.dat
 *.docx
+*.out
+*COMPILED*
