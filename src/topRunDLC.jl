@@ -489,7 +489,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     TimeStep = delta_t
 
     time = LinRange(0,10,10)
-    windvel = nothing  
+    windvel = nothing # gets supersceded   
     winddir = nothing  
     windvertvel = nothing  
     horizshear = nothing  
@@ -518,7 +518,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)ECD\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  #gets supersceded
             winddir = LinRange(0,90,10)  
             windvertvel = zeros(10)  
             horizshear = zeros(10)  
@@ -535,7 +534,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EWS\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = ones(10).*10.0   
@@ -566,7 +564,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = zeros(10)
@@ -582,7 +579,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = zeros(10)
@@ -598,7 +594,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)NWP\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = zeros(10)
@@ -614,7 +609,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = zeros(10)
@@ -630,7 +624,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)ECD\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  #gets supersceded
             winddir = LinRange(0,90,10)  
             windvertvel = zeros(10)  
             horizshear = zeros(10)  
@@ -646,7 +639,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)NWP\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = zeros(10)
@@ -662,7 +654,6 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,10,10)
-            windvel = nothing  
             winddir = zeros(10)  
             windvertvel = zeros(10)   
             horizshear = zeros(10)
@@ -932,6 +923,28 @@ function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile
     end
 
     run(`$pathtoturbsim $windINPfilename`)
+end
+
+"""
+* `time::TF`: in seconds
+* `nominalVinf::TF`: Nominal velocity used to calculate the IEC gust size (m/s)
+* `R::TF`: Turbine Radius (m)
+* `G_amp::TF`: IEC gust amplitude (m/s)
+* `gustT::TF`: IEC gust duration (s)
+* `gustDelayT::TF`: IEC gust delay time
+"""
+function getGustVel(time,nominalVinf,R,G_amp,gustT,gustDelayT)
+    ele_x = 0.0 #TODO: I don't think inflowwind takes in account the 3D nature of a vawt
+
+    gustT = gustT * nominalVinf / R
+    tr = time .- ele_x .- gustDelayT / R
+    if (tr >= 0) && (tr<=gustT)
+        IECGustFactor = 1.0 - 0.37 * G_amp/nominalVinf * sin(3*pi*tr/gustT)  * (1.0 - cos(2*pi*tr/gustT))
+        return nominalVinf*IECGustFactor
+    else
+        return nominalVinf
+    end
+
 end
 
 # # Test
