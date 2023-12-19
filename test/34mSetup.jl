@@ -440,8 +440,8 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
         kappa_z_hist[1,:,2] = kappa_z
 
         FReactionHist = zeros(2,6)
-        FReactionHist[1,:] = FReaction
-        FReactionHist[2,:] = FReaction
+        FReactionHist[1,:] = FReaction[1:6]
+        FReactionHist[2,:] = FReaction[1:6]
 
         OmegaHist = [model.OmegaInit,model.OmegaInit]
         genTorque = FReactionHist[:,6]
