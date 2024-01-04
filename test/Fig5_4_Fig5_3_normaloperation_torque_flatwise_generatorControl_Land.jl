@@ -795,3 +795,48 @@ PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4
+
+
+println("Saving VTK time domain files")
+userPointNames=["EA","EIyy","EIzz"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+# userPointData[iname,it,ipt] = Float64
+
+# map el props to points using con
+userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
+EA_points = zeros(mymesh.numNodes)
+EIyy_points = zeros(mymesh.numNodes)
+EIzz_points = zeros(mymesh.numNodes)
+
+# Time-invariant data
+for iel = 1:length(myel.props)
+    # iel = 1
+    nodes = mymesh.conn[iel,:]
+    EA_points[Int.(nodes)] = myel.props[iel].EA
+    EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
+    EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
+end
+
+# fill in the big matrix
+for it = 1:length(t)
+
+    userPointData[1,it,:] = EA_points
+    userPointData[2,it,:] = EIyy_points
+    userPointData[3,it,:] = EIzz_points
+    # userPointData[4,it,:] = FReactionHist[it,1:6:end]
+    # userPointData[5,it,:] = FReactionHist[it,2:6:end]
+    # userPointData[6,it,:] = FReactionHist[it,3:6:end]
+    # userPointData[7,it,:] = FReactionHist[it,4:6:end]
+    # userPointData[8,it,:] = FReactionHist[it,5:6:end]
+    # userPointData[9,it,:] = FReactionHist[it,6:6:end]
+end
+
+azi=aziHist#./aziHist*1e-6
+saveName = "$path/oldProps"
+OWENS.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+
+
+PyPlot.figure()
+PyPlot.plot(mymesh.x,mymesh.z,"bo")
+PyPlot.plot(mymesh2.x,mymesh2.z,"r+")
+PyPlot.xlabel("x")
+PyPlot.ylabel("y")

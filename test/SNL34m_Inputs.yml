@@ -23,14 +23,14 @@ turbulentInflow:
 controlParameters:
   controlStrategy: constantRPM # TODO: incorporate the others
   RPM: 34.0 #RPM
-  numTS: 300 #
+  numTS: 600 #
   delta_t: 0.05 # s
 
 
 AeroParameters:
   Nslices: 35 # number of VAWTAero discritizations #TODO: AD parameters
   ntheta: 30 # number of VAWTAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
+  AModel: AD # AD, DMS, AC
   adi_lib: "/Users/kevmoor/Documents/coderepos/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
   adi_rootname: "./SNL34m"
   

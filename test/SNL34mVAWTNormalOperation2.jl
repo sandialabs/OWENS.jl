@@ -86,9 +86,6 @@ Vinf_spec = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
 tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
 Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
 
-# tocp_Vinf = [0.0;new_t.+offsetTime; 1e6]
-# Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
-
 controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
 
 # z_shape = collect(LinRange(0,41.9,length(x_shape)))
@@ -106,133 +103,50 @@ SNL34X = SNL34x.*Blade_Radius
 shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
 shapeX = SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
 
-#Put in one place so its not repeated for all of the analyses
-import QuadGK
-##############################################
-# Setup Structures
-#############################################
-starttime = time()
-# # SNL34_unit_xz = DelimitedFiles.readdlm("$(path)/data/SNL34m_unit_blade_shape.txt",'\t',skipstart = 0)
-# # include("$(path)/34mBladeshapeAnalytical2.jl")
-# # Optimized
-# # z_shape = collect(LinRange(0,41.9,12))
-# # x_shape =[0.0, 6.366614283571894, 10.845274468506549, 14.262299623370412, 16.295669420203165, 17.329613328115716, 17.158774783226303, 15.813537149178769, 13.479124754351849, 10.04333990055769, 5.606817958279066,0.0]
-# # Old 3.5%
-# # controlpts =[3.256322421104705, 5.774184885976885, 8.647885597459139, 11.186664047211988, 13.145770457622106, 14.674641597073201, 15.804683728982331, 16.61865064561603, 17.108011791043822, 17.296713936456687, 17.19399803467357, 16.803560229287708, 16.108240799302397, 15.118450192780204, 13.803814107334938, 12.21986771504199, 10.359459126160356, 8.205302489986666, 5.765600261682509, 2.975874178673999]
-# # New 2.15#
-# controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
-
-# # z_shape = collect(LinRange(0,41.9,length(x_shape)))
-# z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
-# x_shape1 = [0.0;controlpts;0.0]
-# z_shape = collect(LinRange(0,41.9,60))
-# x_shape = FLOWMath.akima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
-# toweroffset = 4.3953443986241725
-# # Analytical
-# # z_shape = [0.0, 0.4027099927689326, 0.8054199855378652, 1.2081299783067978, 1.6108399710757304, 2.013549963844663, 2.4162599566135956, 2.818969949382528, 3.221679942151461, 3.624389934920394, 4.027099927689326, 4.429809920458259, 4.832519913227191, 5.235229905996124, 5.637939898765056, 6.221683770581164, 6.821719178571302, 7.437583162221221, 8.068800548394838, 8.714884317956601, 9.375335981533686, 10.049645964128134, 10.737293998282153, 11.437749525493246, 12.305529745531164, 13.201631116890074, 14.122956691386433, 15.066322345375763, 16.028467784161606, 17.00606780965343, 17.995743812332336, 18.994075447807884, 19.997612457611687, 21.002886593374797, 22.006423603178604, 23.004755238654155, 23.99443124133306, 24.97203126682489, 25.934176705610724, 26.877542359600053, 27.79886793409642, 28.694969305455324, 29.562749525493246, 30.263205052704336, 30.950853086858352, 31.62516306945281, 32.285614733029895, 32.93169850259165, 33.56291588876527, 34.1787798724152, 34.77881528040533, 35.362559152221436, 35.821422444858186, 36.280285737494935, 36.739149030131685, 37.198012322768435, 37.656875615405184, 38.11573890804193, 38.57460220067868, 39.03346549331543, 39.49232878595218, 39.951192078588925, 40.410055371225674, 40.868918663862424, 41.32778195649917, 41.78664524913592]
-# # x_shape = [0.0, 0.6201190084429031, 1.2402380168858063, 1.8603570253287094, 2.4804760337716125, 3.1005950422145157, 3.720714050657419, 4.340833059100322, 4.960952067543225, 5.581071075986128, 6.201190084429031, 6.821309092871934, 7.441428101314838, 8.061547109757742, 8.681666118200644, 9.276344926168852, 9.854581297981857, 10.41592909228786, 10.959955198206961, 11.48623986950018, 11.994377048426914, 12.4839746790409, 12.954655009683117, 13.406054884438076, 13.913532546749641, 14.369140295018864, 14.771303537761444, 15.118632389006988, 15.409926471778816, 15.644179066626025, 15.820580590870494, 15.938521396544312, 15.997593877348054, 15.997593877348054, 15.938521396544312, 15.820580590870494, 15.644179066626029, 15.409926471778816, 15.118632389006992, 14.771303537761447, 14.369140295018864, 13.913532546749645, 13.406054884438078, 12.954655009683123, 12.483974679040909, 11.994377048426916, 11.486239869500185, 10.959955198206966, 10.415929092287865, 9.85458129798186, 9.276344926168857, 8.681666118200653, 8.061547968581657, 7.441429818962661, 6.821311669343665, 6.201193519724669, 5.581075370105673, 4.960957220486675, 4.340839070867679, 3.7207209212486827, 3.1006027716296867, 2.480484622010689, 1.8603664723916928, 1.2402483227726968, 0.6201301731537008, 1.2023534704752592e-5]
-# # y_shape = zero(x_shape)
-
-# SNL34_unit_xz = [x_shape;;z_shape]
-# #Ensure the data is fully unitized since the hand picking process is only good to one or two significant digits.
-# SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
-# SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
-
-#Scale the turbine to the full dimensions
-height = Blade_Height#41.9 #m
-radius = Blade_Radius#17.1 #m
-# SNL34Z = SNL34z.*height
-# SNL34X = SNL34x.*radius
-
-# Nbld = 2
-
-mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=towerHeight,
-    Hb = height, #blade height
-    R = radius, # m bade radius
-    AD15hubR=0.0,
-    nblade = Nbld,
-    ntelem,# = 20, #tower elements
-    nbelem,# = 60, #blade elements
-    nselem,# = 3,
-    strut_twr_mountpointbot = 0.03,
-    strut_twr_mountpointtop = 0.03,
-    strut_bld_mountpointbot = 0.03,
-    strut_bld_mountpointtop = 0.03,
-    bshapex = SNL34X,#cos.(LinRange(0,0,12)).*SNL34X, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    bshapez = SNL34Z, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    # bshapey = sin.(LinRange(0,0,12)).*SNL34X,
-    angularOffset = pi/2)
-
-nTwrElem = Int(mymesh.meshSeg[1])+2
-nBldElem = Int(mymesh.meshSeg[2])+1
-#Blades
-# NuMad_geom_xlscsv_file = "$path/data/SNL34mGeom.csv"
-numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld)
-
-for (i,airfoil) in enumerate(numadIn_bld.airfoil)
-    numadIn_bld.airfoil[i] = "$path/airfoils/$airfoil"
-end
-
-# NuMad_mat_xlscsv_file = "$path/data/SNL34mMaterials.csv"
-plyprops_bld = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_bld)
-
-bld1start = Int(mymesh.structuralNodeNumbers[1,1])
-bld1end = Int(mymesh.structuralNodeNumbers[1,end])
-spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
-
-bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops=plyprops_bld)
-sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
-
-stiff_bld, mass_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
-
-# thickness_flap is distance from shear center x to top
-# thickness_lag is distance from shear center y to trailing edge
-# shear center is relative to the blade reference axis
-# blade reference axis is from leading edge to le_loc*chord and along the chord line
-# reference axes Y is along the chord, and X is perpendicular to the chord
-
-thickness_precomp_lag = zeros(length(bld_precompinput))
-thickness_precomp_flap = zeros(length(bld_precompinput))
-for ipc = 1:length(bld_precompinput)
-    refY = bld_precompinput[ipc].le_loc*bld_precompinput[ipc].chord
-                                # Negative distance for lag, to align with SAND-88-1144
-    thickness_precomp_lag[ipc] = -(bld_precompinput[ipc].chord-(refY+bld_precompoutput[ipc].y_sc))
-    thickness_precomp_flap[ipc] = maximum(bld_precompinput[ipc].ynode)*bld_precompinput[ipc].chord - bld_precompoutput[ipc].x_sc
-end
-# PyPlot.figure()
-# PyPlot.plot(bld_precompinput[1].ynode,bld_precompinput[1].ynode)
-spanposmid = cumsum(diff(spanpos))
-thickness = FLOWMath.akima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
-thickness_lag = FLOWMath.akima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
-# thickness = thicknessGX[1:end-1]
-
-
-# NuMad_geom_xlscsv_file = "$path/data/NuMAD_34m_TowerGeom.csv"
-numadIn = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr)
-
-for (i,airfoil) in enumerate(numadIn.airfoil)
-    numadIn.airfoil[i] = "$path/airfoils/$airfoil"
-end
-
-# NuMad_mat_xlscsv_file = "$path/data/NuMAD_34m_TowerMaterials.csv"
-plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file_twr)
-
-precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops=plyprops_twr)
-sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;precompinputs=precompinput)
-
-stiff_twr, mass_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;GX=true)
-#Struts
-# They are the same as the end properties of the blades
-
-# Combined Section Props
-bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
-Nremain = mymesh.numEl-length(sectionPropsArray_twr)-length(bldssecprops) #strut elements remain
-sectionPropsArray = [sectionPropsArray_twr;bldssecprops;fill(sectionPropsArray_bld[end],Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
-
-rotationalEffects = ones(mymesh.numEl)
-
-#store data in element object
-myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+stiff_twr, stiff_bld,bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
+mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
+    rho,
+    Nslices,
+    ntheta,
+    RPM,
+    Vinf,
+    eta,
+    B = Nbld,
+    H = Blade_Height,
+    R = Blade_Radius,
+    shapeY,
+    shapeX,
+    ifw,
+    delta_t,
+    numTS,
+    adi_lib,
+    adi_rootname,
+    AD15hubR = 0.0,
+    windINPfilename,
+    ifw_libfile,
+    NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
+    NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
+    NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
+    NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+    NuMad_geom_xlscsv_file_strut,
+    NuMad_mat_xlscsv_file_strut,
+    Ht=towerHeight,
+    ntelem, 
+    nbelem, 
+    ncelem,
+    nselem,
+    joint_type = 0,
+    strut_mountpointbot = 0.03,
+    strut_mountpointtop = 0.03,
+    AModel, #AD, DMS, AC
+    DSModel="BV",
+    RPI=true,
+    cables_connected_to_blade_base = true,
+    angularOffset = pi/2,
+    meshtype = turbineType)
 
 top_idx = 23#Int(myjoint[7,2])
 pBC = [1 1 0
@@ -246,90 +160,6 @@ top_idx 2 0
 top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
-# top_idx 6 0]
-
-##############################################
-# Setup Aero
-#############################################
-
-
-shapeX_spline = FLOWMath.Akima(SNL34Z, SNL34X)
-RefArea_half, error = QuadGK.quadgk(shapeX_spline, 0, height, atol=1e-10)
-RefArea = RefArea_half*2*0.95
-
-B = 2
-Nslices = 35
-
-T1 = round(Int,(5.8/height)*Nslices)
-T2 = round(Int,(11.1/height)*Nslices)
-T3 = round(Int,(29.0/height)*Nslices)
-T4 = round(Int,(34.7/height)*Nslices)
-
-airfoils = fill("$(path)/airfoils/NACA_0021.dat",Nslices)
-airfoils[T1:T4] .= "$(path)/airfoils/Sandia_001850.dat"
-
-chord = fill(1.22,Nslices)
-chord[T1:T4] .= 1.07
-chord[T2:T3] .= 0.9191
-#TODO: when twist introduced, aero should pull it from the precomp input data
-rho = 0.94 # for texas site (3880 ft) at 80F
-
-RPM = 34.0
-omega = RPM*2*pi/60
-
-# filename = "$(path)/data/legacyfiles/SNL34m"
-# OWENS.saveOWENSfiles(filename,mymesh,myort,myjoint,myel,pBC,numadIn_bld)
-
-# system, assembly, sections, frames_ow = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="$path/vtk/SNL34m")
-
-function runmeOWENS()
-    mass = 0.0
-    for (i,sectionProp) in enumerate(sectionPropsArray)
-        lenEl = 0
-        try
-            lenEl = myort.Length[i]
-        catch
-            lenEl = myort.Length[i-1]
-        end
-        rhoA = sectionProp.rhoA[1]
-        mass += lenEl*rhoA
-    end
-return mass
-end
-
-massOwens = runmeOWENS()
-
-println("Mass")
-println("massOwens $massOwens")
-
-
-
-Vinf = mean(SNL34m_5_3_Vinf[:,2])
-TSR = omega*radius./Vinf
-windpower = 0.5*rho*Vinf.^3*RefArea
-ntheta = 30#176
-
-VAWTAero.setupTurb(SNL34X,SNL34Z,B,chord,TSR,Vinf;
-    eta = 0.5,
-    rho,
-    mu = 1.7894e-5,
-    ntheta,
-    Nslices,
-    ifw = false,
-    turbsim_filename = "$path/data/40mx40mVinf10_41ms10percturb.bts",
-    RPI = true,
-    DSModel = "BV",
-    AModel = "DMS",
-    tau = [1e-5,1e-5],
-    afname = airfoils)
-
-dt = 1/(RPM/60*ntheta)
-
-aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
-deformAero = VAWTAero.deformTurb
-
-# offsetTime = 20.0
-# Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
 
 if AModel=="AD"
     AD15On = true
@@ -467,8 +297,8 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
     kappa_z = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
 
     for ibld = 1:Nbld
-        start = Int(mymesh.structuralNodeNumbers[ibld,1])
-        stop = Int(mymesh.structuralNodeNumbers[ibld,end])
+        start = Int(mymesh.structuralElNumbers[ibld,1])
+        stop = Int(mymesh.structuralElNumbers[ibld,end-1])+1
         x = mymesh.z[start:stop]
         x = x.-x[1] #zero
         x = x./x[end] #normalize
@@ -581,9 +411,9 @@ exp_std_flap = Statistics.std(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_std_flap $exp_std_flap")
 exp_mean_flap = Statistics.mean(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_mean_flap $exp_mean_flap")
-sim_std_flap = Statistics.std(flatwise_stress1[:,end-4]./1e6)
+sim_std_flap = Statistics.std(flatwise_stress1[:,end-5]./1e6)
 println("sim_std_flap $sim_std_flap")
-sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-4]./1e6)
+sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-5]./1e6)
 println("sim_mean_flap $sim_mean_flap")
 
 SNL34m_5_4_LeadLagStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.4AML.csv",',',skipstart = 1)
@@ -601,9 +431,9 @@ exp_std_lag = Statistics.std(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_std_lag $exp_std_lag")
 exp_mean_lag = Statistics.mean(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_mean_lag $exp_mean_lag")
-sim_std_lag = Statistics.std(lag_stress1[:,end-4]./1e6)
+sim_std_lag = Statistics.std(lag_stress1[:,end-5]./1e6)
 println("sim_std_lag $sim_std_lag")
-sim_mean_lag = Statistics.mean(lag_stress1[:,end-4]./1e6)
+sim_mean_lag = Statistics.mean(lag_stress1[:,end-5]./1e6)
 println("sim_mean_lag $sim_mean_lag")
 
 ##########################################
@@ -698,3 +528,51 @@ nothing
 # @profview runprofilefunction()
 
 # @profview runprofilefunction()
+
+
+# println("Saving VTK time domain files")
+# userPointNames=["EA","EIyy","EIzz"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+# # userPointData[iname,it,ipt] = Float64
+
+# # map el props to points using con
+# userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
+# EA_points = zeros(mymesh.numNodes)
+# EIyy_points = zeros(mymesh.numNodes)
+# EIzz_points = zeros(mymesh.numNodes)
+
+# # Time-invariant data
+# for iel = 1:length(myel.props)
+#     # iel = 1
+#     nodes = mymesh.conn[iel,:]
+#     EA_points[Int.(nodes)] = myel.props[iel].EA
+#     EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
+#     EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
+# end
+
+# # fill in the big matrix
+# for it = 1:length(t)
+
+#     userPointData[1,it,:] = EA_points
+#     userPointData[2,it,:] = EIyy_points
+#     userPointData[3,it,:] = EIzz_points
+#     # userPointData[4,it,:] = FReactionHist[it,1:6:end]
+#     # userPointData[5,it,:] = FReactionHist[it,2:6:end]
+#     # userPointData[6,it,:] = FReactionHist[it,3:6:end]
+#     # userPointData[7,it,:] = FReactionHist[it,4:6:end]
+#     # userPointData[8,it,:] = FReactionHist[it,5:6:end]
+#     # userPointData[9,it,:] = FReactionHist[it,6:6:end]
+# end
+
+# azi=aziHist#./aziHist*1e-6
+# saveName = "$path/newProps/newProps"
+# OWENS.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+
+# PyPlot.figure()
+# PyPlot.plot(mymesh.x,mymesh.z,"b-")
+#  for myi = 1:length(mymesh.y)
+#      PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+#      PyPlot.draw()
+#      sleep(0.1)
+#  end
+# PyPlot.xlabel("x")
+# PyPlot.ylabel("y")
