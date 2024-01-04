@@ -11,12 +11,13 @@ function setupOWENS(VAWTAero,path;
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
     ifw=false,
+    AD15hubR = 0.1,
     WindType=1,
     delta_t = 0.01,
     numTS = 100,
     adi_lib = "$(path)../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
     adi_rootname = "./Example",
-    wind_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
+    windINPfilename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
     ifw_libfile = "$(path)/bin/libifw_c_binding",
     NuMad_geom_xlscsv_file_twr = nothing,
     NuMad_mat_xlscsv_file_twr = nothing,
@@ -95,7 +96,7 @@ function setupOWENS(VAWTAero,path;
         mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Ht,
             Hb = H, #blade height
             R, # m bade radius
-            AD15hubR = 2.0, #TODO: hook up with AD15 file generation
+            AD15hubR, #TODO: hook up with AD15 file generation
             nblade = Nbld,
             ntelem, #tower elements
             nbelem, #blade elements
@@ -332,12 +333,28 @@ function setupOWENS(VAWTAero,path;
         #########################################
         chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
 
-        VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
-        afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
+        T1 = round(Int,(5.8/H)*Nslices)
+        T2 = round(Int,(11.1/H)*Nslices)
+        T3 = round(Int,(29.0/H)*Nslices)
+        T4 = round(Int,(34.7/H)*Nslices)
+        airfoils = fill("$(path)/airfoils/NACA_0021.dat",Nslices)
+        airfoils[T1:T4] .= "$(path)/airfoils/Sandia_001850.dat"
+        
+        chord = fill(1.22,Nslices) #TODO: link chord to numad and height as opposed to span
+        chord[T1:T4] .= 1.07
+        chord[T2:T3] .= 0.9191
+
+        VAWTAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel,DSModel,
+        afname = airfoils, #TODO: map to the numad input
+        rho,
+        eta,
         ifw, #TODO: propogate WindType
-        wind_filename,
+        turbsim_filename = windINPfilename,
         ifw_libfile,
-        ntheta,Nslices,rho,eta,RPI)
+        tau = [1e-5,1e-5],
+        ntheta,
+        Nslices,
+        RPI)
 
         aeroForcesACDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
         deformAeroACDMS = VAWTAero.deformTurb
@@ -418,7 +435,7 @@ function setupOWENS(VAWTAero,path;
 
         OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
-        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;WindType,wind_filename=nothing)
+        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;WindType,windINPfilename=nothing)
 
         OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
                 rho     = rho,
@@ -516,7 +533,7 @@ function setupOWENShawt(VAWTAero,path;
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
     ifw=false,
-    wind_filename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
+    windINPfilename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
     ifw_libfile = "$(path)/bin/libifw_c_binding",
     NuMad_geom_xlscsv_file_twr = nothing,
     NuMad_mat_xlscsv_file_twr = nothing,
@@ -609,7 +626,7 @@ function setupOWENShawt(VAWTAero,path;
             angularOffset = -pi/2)
     end
 
-    nTwrElem = Int(mymesh.meshSeg[1])+1
+    nTwrElem = Int(mymesh.meshSeg[1])+2
 
     # PyPlot.figure()
     # PyPlot.plot(mymesh.x,mymesh.z,"b-")
@@ -748,7 +765,7 @@ function setupOWENShawt(VAWTAero,path;
     # VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
     # afname = "$path/Airfoils/NACA_0021.dat", #TODO: map to the numad input
     # ifw,
-    # wind_filename,
+    # windINPfilename,
     # ifw_libfile,
     # ntheta,Nslices,rho,eta,RPI)
 
