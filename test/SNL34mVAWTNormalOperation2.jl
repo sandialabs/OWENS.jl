@@ -33,20 +33,6 @@ SNL34m_5_3_Vinf = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_Vin
 SNL34m_5_3_RPM = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_RPM.csv",',',skipstart = 0)
 SNL34m_5_3_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_Torque.csv",',',skipstart = 0)
 
-
-# Plot
-PyPlot.rc("figure", figsize=(4.5, 3))
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.85, right=.9)
-PyPlot.figure()
-PyPlot.plot(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],"k.-",label="Windspeed (m/s)")
-PyPlot.xlabel("Time (s)")
-PyPlot.ylabel("Windspeed (m/s)")
-PyPlot.ylim([0,12.0])
-PyPlot.xlim([0,100.0])
-# PyPlot.legend(loc=(.4,.3))
-# PyPlot.savefig("$(path)/../figs/NormalOperation_Vinf.pdf",transparent = true)
-
 new_t = LinRange(SNL34m_5_3_RPM[1,1],SNL34m_5_3_RPM[end,1],100)
 new_RPM = FLOWMath.akima(SNL34m_5_3_RPM[:,1],SNL34m_5_3_RPM[:,2],new_t)
 
@@ -56,32 +42,7 @@ Vinf_spec = FLOWMath.akima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
 
 t_Vinf = [0;new_t;1e6]
 Vinf_spec = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
-# PyPlot.figure()
-# PyPlot.plot(new_RPM,new_Torque,".",label="Orig")
-# PyPlot.xlabel("RPM")
-# PyPlot.ylabel("Torque")
-#
-# PyPlot.figure()
-# PyPlot.plot(Vinf_spec,new_Torque,".",label="Orig")
-# PyPlot.xlabel("Vinf")
-# PyPlot.ylabel("Torque")
-#
-# PyPlot.figure()
-# PyPlot.plot(new_t,new_Torque,".-",label="Orig")
-# PyPlot.xlabel("t")
-# PyPlot.ylabel("Torque")
-#
-# PyPlot.figure()
-# PyPlot.plot(new_t,new_RPM,".-",label="Orig")
-# PyPlot.xlabel("t")
-# PyPlot.ylabel("RPM")
-#
-# PyPlot.figure()
-# PyPlot.plot(new_t,Vinf_spec,".-",label="Orig")
-# PyPlot.xlabel("t")
-# PyPlot.ylabel("Vinf")
-# PyPlot.plot(t_Vinf,Vinf_spec,label="New")
-# PyPlot.legend()
+
 
 #Put in one place so its not repeated for all of the analyses
 import QuadGK
@@ -139,133 +100,6 @@ mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=0.5,
     bshapez = SNL34Z, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     # bshapey = sin.(LinRange(0,0,12)).*SNL34X,
     angularOffset = pi/2)
-
-# PyPlot.figure()
-# PyPlot.plot(mymesh.x,mymesh.z,"b-")
-#  for myi = 1:length(mymesh.y)
-#      PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
-#      PyPlot.draw()
-#      sleep(0.1)
-#  end
-# PyPlot.xlabel("x")
-# PyPlot.ylabel("y")
-# # PyPlot.axis("equal")
-# visualize_orts = true
-# if visualize_orts
-#     import PyPlot
-#     PyPlot.pygui(true)
-#     PyPlot.rc("figure", figsize=(15, 15))
-#     PyPlot.rc("font", size=10.0)
-#     PyPlot.rc("lines", linewidth=1.5)
-#     PyPlot.rc("lines", markersize=4.0)
-#     PyPlot.rc("legend", frameon=true)
-#     PyPlot.rc("axes.spines", right=false, top=false)
-#     PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-#     PyPlot.rc("figure",max_open_warning=500)
-#     # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-#     plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
-
-#     ####################################################################################
-#     ################## Plot for the elements #########################
-#     ####################################################################################
-
-
-#     PyPlot.figure()
-#     PyPlot.scatter3D(mymesh.x,mymesh.y,mymesh.z,color=plot_cycle[1])
-#     # PyPlot.zlim(([90,120]))
-
-#     # Allocate the node angle arrays
-#     Psi_d_Nodes = zeros(mymesh.numNodes)
-#     Theta_d_Nodes = zeros(mymesh.numNodes)
-#     Twist_d_Nodes = zeros(mymesh.numNodes)
-
-#     function rotate_normal(i_el, mymesh, myort;vec=[0,1,0.0],normal_len=1)
-#         # * `Psi_d::Array{<:float}`: length NumEl, element rotation about 3 in global FOR (deg) These angles are used to transform from the global coordinate frame to the local element/joint frame via a 3-2 Euler rotation sequence.
-#         # * `Theta_d::Array{<:float}`: length NumEl, element rotation about 2 (deg)
-#         # * `Twist_d::Array{<:float}`: length NumEl, element twist (deg)
-        
-#         # Map from element to node
-#         nodenum1 = Int(mymesh.conn[i_el,1])
-#         nodenum2 = Int(mymesh.conn[i_el,2])
-
-#         # Extract the element angles
-#         Psi_d_el = myort.Psi_d[i_el]
-#         Theta_d_el = myort.Theta_d[i_el]
-#         Twist_d_el = myort.Twist_d[i_el]
-
-#         # Map the element angles to the node angles
-#         Psi_d_Nodes[[nodenum1,nodenum2]] .= Psi_d_el
-#         Theta_d_Nodes[[nodenum1,nodenum2]] .= Theta_d_el
-#         Twist_d_Nodes[[nodenum1,nodenum2]] .= Twist_d_el
-
-#         # Use a line and rotate it about the angles, different starting vectors show different angles.
-#         myvec = vec.*normal_len
-
-#         # apply the twist rotation, which is about the x (1) axis
-#         DCM_roll = [1.0 0.0 0.0
-#             0.0 cosd(Twist_d_el) -sind(Twist_d_el)
-#             0.0 sind(Twist_d_el) cosd(Twist_d_el)]
-
-#         # apply theta rotation, which is the tilt angle, or about the y (2) axis in global
-#         DCM_pitch = [cosd(Theta_d_el) 0.0 sind(Theta_d_el)
-#             0.0 1.0 0.0
-#             -sind(Theta_d_el) 0.0 cosd(Theta_d_el)]
-
-#         # apply Psi rotation, which is about Z (3) axis in global
-#         DCM_yaw = [cosd(Psi_d_el) -sind(Psi_d_el) 0.0
-#             sind(Psi_d_el) cosd(Psi_d_el) 0.0
-#             0.0 0.0 1.0]
-
-#         # Get the location of the element
-#         x_el = (mymesh.x[nodenum1]+mymesh.x[nodenum2])/2
-#         y_el = (mymesh.y[nodenum1]+mymesh.y[nodenum2])/2
-#         z_el = (mymesh.z[nodenum1]+mymesh.z[nodenum2])/2
-
-#         # Offset the myvector by the location of the element
-#         myvec = DCM_yaw*DCM_pitch*DCM_roll*myvec + [x_el,y_el,z_el]
-#         x_el_plot = [x_el,myvec[1]]
-#         y_el_plot = [y_el,myvec[2]]
-#         z_el_plot = [z_el,myvec[3]]
-#         return x_el_plot, y_el_plot, z_el_plot
-#     end
-
-#     # Add the orientation vectors, ort is on elements
-#     for i_el = 1:mymesh.numEl
-#         x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[10,0,0.0])
-#         PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[2])
-#     end
-
-#     for i_el = 1:mymesh.numEl
-#         x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[0,5,0.0])
-#         PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[3])
-#     end
-
-#     for i_el = 1:mymesh.numEl
-#         x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el, mymesh, myort;vec=[0,0,5.0])
-#         PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[4])
-#     end
-
-#     PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[2],label="X-norm")
-#     PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[3],label="Y-norm")
-#     PyPlot.plot3D([0.0],[0.0],[0.0],"-",color=plot_cycle[4],label="Z-norm")
-#     PyPlot.legend()
-#     # for i_joint = 1:length(myjoint[:,1])
-#     #     i_el = findall(x->x==myjoint[i_joint,2],mymesh.conn[:,1])
-#     #     if length(i_el)==0 #Use the other element associated with the joint
-#     #         i_el = findall(x->x==myjoint[i_joint,2],mymesh.conn[:,2])
-#     #     end
-#     #     if length(i_el)==0 #Use the other element associated with the joint
-#     #         i_el = findall(x->x==myjoint[i_joint,3],mymesh.conn[:,2])
-#     #     end
-#     #     x_el_plot, y_el_plot, z_el_plot = rotate_normal(i_el[1], mymesh, myort;normal_len=3)
-#     #     PyPlot.plot3D(x_el_plot,y_el_plot,z_el_plot,"-",color=plot_cycle[5])
-#     # end
-
-#     PyPlot.xlabel("x")
-#     PyPlot.ylabel("y")
-#     PyPlot.zlabel("z")
-#     PyPlot.axis("equal")
-# end
 
 nTwrElem = Int(mymesh.meshSeg[1])+2
 nBldElem = Int(mymesh.meshSeg[2])+1
@@ -335,20 +169,6 @@ sectionPropsArray = [sectionPropsArray_twr;bldssecprops;fill(sectionPropsArray_b
 
 rotationalEffects = ones(mymesh.numEl)
 
-for i = 1:length(sectionPropsArray)
-    # sectionPropsArray[i].rhoA .*= 0.25
-    # sectionPropsArray[i].EIyy .*= 5.0
-    # sectionPropsArray[i].EIzz .*= 5.0
-    # sectionPropsArray[i].EIyz .*= 5.0
-    # sectionPropsArray[i].GJ .*= 5.0
-    # sectionPropsArray[i].EA .*= 5.0
-    # sectionPropsArray[i].rhoIyy .*= 0.1
-    # sectionPropsArray[i].rhoIzz .*= 0.1
-    # sectionPropsArray[i].rhoIyz .*= 0.1
-    # sectionPropsArray[i].rhoJ .*= 0.1
-end
-
-
 #store data in element object
 myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
@@ -416,56 +236,85 @@ return mass
 end
 
 massOwens = runmeOWENS()
-#
-# function runmeGX()
-#     mass = 0.0
-#     for element in assembly.elements
-#         mass += element.L*element.mass[1,1]
-#     end
-# return mass
-# end
-#
-# massGX = runmeGX()
-#
+
 println("Mass")
 println("massOwens $massOwens")
-# println("massGX $massGX")
-#
-# ei_flap_exp_base = 1.649e7
-# ei_flap_exp_mid = 5.197e6
-# ei_flap_exp_center = 3.153e6
-#
-# ei_lag_exp_base = 2.744e8
-# ei_lag_exp_mid = 1.125e8
-# ei_lag_exp_center = 6.674e7
-#
-# ea_exp_base = 2.632e9
-# ea_exp_mid = 1.478e9
-# ea_exp_center = 1.185e9
-#
-#
-# println("1 ei_flap: $(bld_precompoutput[1].ei_flap) exp: $ei_flap_exp_base")
-# println("1 ei_lag: $(bld_precompoutput[1].ei_lag) exp: $ei_lag_exp_base")
-# println("1 ea: $(bld_precompoutput[1].ea) exp: $ea_exp_base")
-# println()
-# println("5 ei_flap: $(bld_precompoutput[5].ei_flap) exp: $ei_flap_exp_mid")
-# println("5 ei_lag: $(bld_precompoutput[5].ei_lag) exp: $ei_lag_exp_mid")
-# println("5 ea: $(bld_precompoutput[5].ea) exp: $ea_exp_mid")
-# println()
-# println("12 ei_flap: $(bld_precompoutput[12].ei_flap) exp: $ei_flap_exp_center")
-# println("12 ei_lag: $(bld_precompoutput[12].ei_lag) exp: $ei_lag_exp_center")
-# println("12 ea: $(bld_precompoutput[12].ea) exp: $ea_exp_center")
-# println()
 
-function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=true,system=nothing,assembly=nothing,VTKFilename="./outvtk")
+
+
+Vinf = mean(SNL34m_5_3_Vinf[:,2])
+TSR = omega*radius./Vinf
+windpower = 0.5*rho*Vinf.^3*RefArea
+ntheta = 30#176
+
+VAWTAero.setupTurb(SNL34X,SNL34Z,B,chord,TSR,Vinf;
+    eta = 0.5,
+    rho,
+    mu = 1.7894e-5,
+    ntheta,
+    Nslices,
+    ifw = false,
+    turbsim_filename = "$path/data/40mx40mVinf10_41ms10percturb.bts",
+    RPI = true,
+    DSModel = "BV",
+    AModel = "DMS",
+    tau = [1e-5,1e-5],
+    afname = airfoils)
+
+dt = 1/(RPM/60*ntheta)
+
+aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+deformAero = VAWTAero.deformTurb
+
+offsetTime = 20.0
+Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
+tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
+Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
+
+inputs = OWENS.Inputs(;analysisType = "ROM",
+    outFilename = "none",
+    tocp = [0.0;new_t.+offsetTime; 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
+    Omegaocp,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
+    tocp_Vinf,
+    Vinfocp,
+    numTS = 300,
+    delta_t = 0.05,#dt,
+    aeroLoadsOn = 2,
+    turbineStartup = 1,
+    generatorOn = true,
+    useGeneratorFunction = true,
+    driveTrainOn = true,
+    JgearBox = 250.0,#(2.15e3+25.7)/12*1.35582*100,
+    gearRatio = 1.0,
+    gearBoxEfficiency = 1.0,
+    driveShaftProps = OWENS.DriveShaftProps(10000,1.5e2), #8.636e5*1.35582*0.6
+    OmegaInit = Omegaocp[1]/60)
+
+println(sqrt(inputs.driveShaftProps.k/inputs.JgearBox)*60/2/pi/2)
+
+feamodel = GyricFEA.FEAModel(;analysisType = "ROM",
+    joint = myjoint,
+    platformTurbineConnectionNodeNumber = 1,
+    pBC,
+    nlOn=false,
+    numNodes = mymesh.numNodes,
+    numModes = 200,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    iterationType = "DI")
+
+println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;VTKmeshfilename="ARCUS5MW")
+
+function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,system=nothing,assembly=nothing,VTKFilename="./outvtk")
 
     if !steady
         println("running unsteady")
 
         t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
         FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(model;
-        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesDMS,deformAero=deformTurb,system,assembly)
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
         meanepsilon_z_hist = mean(epsilon_z_hist,dims=1)
         meanepsilon_y_hist = mean(epsilon_y_hist,dims=1)
@@ -483,8 +332,8 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
         feamodel.analysisType = "S"
 
         displ=zeros(mymesh.numNodes*6)
-        elStorage = GyricFEA.initialElementCalculations(feamodel,myel,mymesh)
-        displ,elStrain,staticAnalysisSuccessful,FReaction = GyricFEA.staticAnalysis(feamodel,mymesh,myel,displ,model.OmegaInit,model.OmegaInit,elStorage)
+        elStorage = OWENS.GyricFEA.initialElementCalculations(feamodel,myel,mymesh)
+        displ,elStrain,staticAnalysisSuccessful,FReaction = OWENS.GyricFEA.staticAnalysis(feamodel,mymesh,myel,displ,inputs.OmegaInit,inputs.OmegaInit,elStorage)
 
         # format to match the unsteady method
         eps_x = [elStrain[i].epsilon_x[1] for i = 1:length(elStrain)]
@@ -529,7 +378,7 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
         FReactionHist[1,:] = FReaction[1:6]
         FReactionHist[2,:] = FReaction[1:6]
 
-        OmegaHist = [model.OmegaInit,model.OmegaInit]
+        OmegaHist = [inputs.OmegaInit,inputs.OmegaInit]
         genTorque = FReactionHist[:,6]
         t = [0.0,1.0]
         torqueDriveShaft = [0.0]
@@ -583,102 +432,54 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
     # PyPlot.plot(t[1:end-1],kappa_z[2,:,15],":",label="kappa_z2")
     # PyPlot.legend()
 
-    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist
+    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist
 end
 
-
-Vinf = mean(SNL34m_5_3_Vinf[:,2])
-TSR = omega*radius./Vinf
-windpower = 0.5*rho*Vinf.^3*RefArea
-ntheta = 30#176
-
-VAWTAero.setupTurb(SNL34X,SNL34Z,B,chord,TSR,Vinf;
-    eta = 0.5,
-    rho,
-    mu = 1.7894e-5,
-    ntheta,
-    Nslices,
-    ifw = false,
-    turbsim_filename = "$path/data/40mx40mVinf10_41ms10percturb.bts",
-    RPI = true,
-    DSModel = "BV",
-    AModel = "DMS",
-    tau = [1e-5,1e-5],
-    afname = airfoils)
-
-dt = 1/(RPM/60*ntheta)
-
-aeroForcesDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
-
-offsetTime = 20.0
-Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
-tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
-Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
-
-model = OWENS.Inputs(;analysisType = "ROM",
-    outFilename = "none",
-    tocp = [0.0;new_t.+offsetTime; 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
-    Omegaocp,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
-    tocp_Vinf,
-    Vinfocp,
-    numTS = 300,
-    delta_t = 0.05,#dt,
-    aeroLoadsOn = 2,
-    turbineStartup = 1,
-    generatorOn = true,
-    useGeneratorFunction = true,
-    driveTrainOn = true,
-    JgearBox = 250.0,#(2.15e3+25.7)/12*1.35582*100,
-    gearRatio = 1.0,
-    gearBoxEfficiency = 1.0,
-    driveShaftProps = OWENS.DriveShaftProps(10000,1.5e2), #8.636e5*1.35582*0.6
-    OmegaInit = Omegaocp[1]/60)
-
-println(sqrt(model.driveShaftProps.k/model.JgearBox)*60/2/pi/2)
-
-feamodel = GyricFEA.FEAModel(;analysisType = "ROM",
-    joint = myjoint,
-    platformTurbineConnectionNodeNumber = 1,
-    pBC,
-    nlOn=false,
-    numNodes = mymesh.numNodes,
-    numModes = 200,
-    RayleighAlpha = 0.05,
-    RayleighBeta = 0.05,
-    iterationType = "DI")
-
 # Get Gravity Loads
-model.Omegaocp = model.Omegaocp.*0.0
-model.OmegaInit = model.OmegaInit.*0.0
-model.Vinfocp = model.Vinfocp.*0.0
+inputs.Omegaocp = inputs.Omegaocp.*0.0
+inputs.OmegaInit = inputs.OmegaInit.*0.0
+inputs.Vinfocp = inputs.Vinfocp.*0.0
 feamodel.nlOn = true
 
-# Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
-eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,VAWTAero.deformTurb;steady=true)
+## Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
+eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true)
 
 #####
 ###****** SAND-88-1144 Specifies Bending Strains and Axial Strains Separate ****
 #####
 
 Ealuminum = plyprops_bld.plies[end].e1
+thickness_precomp_lag = zeros(length(bld_precompinput))
+thickness_precomp_flap = zeros(length(bld_precompinput))
+for ipc = 1:length(bld_precompinput)
+    refY = bld_precompinput[ipc].le_loc*bld_precompinput[ipc].chord
+                                # Negative distance for lag, to align with SAND-88-1144
+    thickness_precomp_lag[ipc] = -(bld_precompinput[ipc].chord-(refY+bld_precompoutput[ipc].y_sc))
+    thickness_precomp_flap[ipc] = maximum(bld_precompinput[ipc].ynode)*bld_precompinput[ipc].chord - bld_precompoutput[ipc].x_sc
+end
+bld1start = Int(mymesh.structuralNodeNumbers[1,1])
+bld1end = Int(mymesh.structuralNodeNumbers[1,end])
+spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
+spanposmid = cumsum(diff(spanpos))
+thickness = FLOWMath.akima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
+thickness_lag = FLOWMath.akima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
+
 flatwise_stress1grav = (kappa_y_grav[1,end-1,2:end].* thickness .+ 0*eps_x_grav[1,end-1,2:end]) .* Ealuminum
 flatwise_stress2grav = (kappa_y_grav[2,end-1,1:end-1].* thickness .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
 lag_stress1grav = (kappa_z_grav[1,end-1,2:end].* thickness_lag .+ 0*eps_x_grav[1,end-1,2:end]) .* Ealuminum
 lag_stress2grav = (kappa_z_grav[2,end-1,1:end-1].* thickness_lag .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
 
-# println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;damp_coef=0.05)
 
 
-model.Omegaocp = Omegaocp
-model.OmegaInit = Omegaocp[1]
-model.Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
+inputs.Omegaocp = Omegaocp
+inputs.OmegaInit = Omegaocp[1]
+inputs.Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
 feamodel.nlOn = false
 feamodel.analysisType = "ROM"
-model.analysisType = "ROM"
+inputs.analysisType = "ROM"
 
-eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist = runowens(model,feamodel,mymesh,myel,
-aeroForcesDMS,VAWTAero.deformTurb;steady=false,system,assembly,VTKFilename="$path/vtk/NormalOperation")
+eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = run34m(inputs,feamodel,mymesh,myel,
+aeroForces,deformAero;steady=false,system,assembly,VTKFilename="$path/vtk/NormalOperation")
 
 # Get stress and "zero" out the loads from the initial 0-RPM
 flatwise_stress1 = zeros(length(eps_x[1,:,1]),length(eps_x[1,1,1:end-1]))
@@ -795,3 +596,37 @@ PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4
+
+##########################################
+#### Ultimate Failure #####
+##########################################
+
+massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+topstrainout_tower_U,topstrainout_tower_L = OWENS.extractSF(bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
+LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
+Twr_LE_U_idx=1,Twr_LE_L_idx=1) #TODO: add in ability to have material safety factors and load safety factors
+
+nothing
+
+# The following sections are in work: TODO
+
+##########################################
+#### Fatigue #####
+##########################################
+
+##### DEL
+
+##########################################
+#### Data Dump in OpenFAST Format #####
+##########################################
+# end
+
+# @profview runprofilefunction()
+
+# @profview runprofilefunction()
