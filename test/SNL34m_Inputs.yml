@@ -30,7 +30,7 @@ controlParameters:
 AeroParameters:
   Nslices: 35 # number of VAWTAero discritizations #TODO: AD parameters
   ntheta: 30 # number of VAWTAero azimuthal discretizations
-  AModel: AD # AD, DMS, AC
+  AModel: DMS # AD, DMS, AC
   adi_lib: "/Users/kevmoor/Documents/coderepos/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
   adi_rootname: "./SNL34m"
   

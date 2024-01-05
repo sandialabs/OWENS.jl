@@ -327,7 +327,7 @@ adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
 ```
 
     cd OWENS.jl/test
-    julia Fig5_4_Fig5_3_normaloperation_torque_flatwise_generatorControl_Land.jl
+    julia SNL34mVAWTNormalOperation.jl
 
 You can visualize the output vtk/vtu/pvd paraview files with paraview, install paraview via
     apt-get -y install paraview

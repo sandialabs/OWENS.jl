@@ -1,18 +1,3 @@
-# # [Detailed Inputs](@id simple2)
-# 
-# In this example, we show the second level of what is going on behind the precompiled binary
-# This would be appropriate if you need more customization in the run and design parameters than the
-# input file currently allows, but your design still fits within the setupOWENS helper function etc.
-#-
-#md # !!! tip
-#md #     This example is also available as a Jupyter notebook todo: get link working:
-#-
-
-# First we import the packages.  If "using" was employed, then all of the functions of the packages
-# specified would be made available, but "import" requires PackageName.FunctionName to be used unless
-# the function was explicitely exported in the package.  If "include("filepath/filename.jl)" is used, 
-# that is the same as copying and pasting.  Please see the respective page on YAML input (TODO) for a
-# description of the YAML inputs
 
 import OWENS
 import GyricFEA
@@ -80,7 +65,7 @@ adi_lib = Inp.adi_lib
 adi_rootname = Inp.adi_rootname
 
 ##############################################
-# Experimental Data and Inputs
+# Setup
 #############################################
 
 SNL34m_5_3_Vinf = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_Vinf.csv",',',skipstart = 0)
@@ -96,10 +81,14 @@ Vinf_spec = FLOWMath.akima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
 offsetTime = 20.0 # seconds
 tocp = [0.0;new_t.+offsetTime; 1e6]
 Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
-tocp_Vinf = [0.0;new_t.+offsetTime; 1e6]
+t_Vinf = [0;new_t;1e6]
+Vinf_spec = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
+tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
 Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
 
 controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
+
+# z_shape = collect(LinRange(0,41.9,length(x_shape)))
 z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
 x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
@@ -113,11 +102,6 @@ SNL34X = SNL34x.*Blade_Radius
 
 shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
 shapeX = SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
-
-nothing
-
-# Call the helper function that builds the mesh, calculates the sectional properties,
-# and aligns the sectional properties to the mesh elements, 
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
@@ -164,83 +148,6 @@ mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
     angularOffset = pi/2,
     meshtype = turbineType)
 
-# include("$(path)/34mSetup_land.jl")
-
-# Vinf = mean(SNL34m_5_3_Vinf[:,2])
-# TSR = 5.0#omega*radius./Vinf
-# ntheta = 30#176
-
-
-# T1 = round(Int,(5.8/Blade_Height)*Nslices)
-# T2 = round(Int,(11.1/Blade_Height)*Nslices)
-# T3 = round(Int,(29.0/Blade_Height)*Nslices)
-# T4 = round(Int,(34.7/Blade_Height)*Nslices)
-
-# airfoils = fill("$(path)/airfoils/NACA_0021.dat",Nslices)
-# airfoils[T1:T4] .= "$(path)/airfoils/Sandia_001850.dat"
-
-# chord = fill(1.22,Nslices)
-# chord[T1:T4] .= 1.07
-# chord[T2:T3] .= 0.9191
-
-# VAWTAero.setupTurb(SNL34X,SNL34Z,Nbld,chord,TSR,Vinf;
-#     eta = 0.5,
-#     rho,
-#     mu = 1.7894e-5,
-#     ntheta,
-#     Nslices,
-#     ifw = false,
-#     turbsim_filename = "$path/data/40mx40mVinf10_41ms10percturb.bts",
-#     RPI = true,
-#     DSModel = "BV",
-#     AModel = "DMS",
-#     tau = [1e-5,1e-5],
-#     afname = airfoils)
-
-# dt = 1/(RPM/60*ntheta)
-
-# aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,VAWTAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
-# deformAero = VAWTAero.deformTurb
-
-nothing
-
-# Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl
-# this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also
-# includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface
-# to work with OWENS inputs as well.
-
-println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;VTKmeshfilename="ARCUS5MW")
-
-nothing
-
-# If the sectional properties material files includes cost information, that is combined with the density 
-# to estimate the overall material cost of of materials in the blades
-
-# if verbosity>0
-    
-#     println("\nBlades' Mass Breakout")
-#     for (i,name) in enumerate(plyprops_bld.names)
-#         println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
-#     end
-    
-#     println("\nTower Mass Breakout")
-#     for (i,name) in enumerate(plyprops_twr.names)
-#         println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
-#     end
-    
-#     println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
-#     println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
-#     println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
-    
-# end
-
-nothing
-
-# Here we apply the boundary conditions.  For this case, with a regular cantelever tower, the tower base node which is 
-# 1 is constrained in all 6 degrees of freedom to have a displacement of 0.  You can change this displacement to allow for things
-# like pretension, and you can apply boundary conditions to any node.
-
 top_idx = 23#Int(myjoint[7,2])
 pBC = [1 1 0
 1 2 0
@@ -254,10 +161,6 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-nothing
-
-# There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
-
 if AModel=="AD"
     AD15On = true
 else
@@ -265,48 +168,41 @@ else
 end
 
 inputs = OWENS.Inputs(;analysisType = structuralModel,
-tocp,
-Omegaocp,
-tocp_Vinf,
-Vinfocp,
-numTS,
-delta_t,
-AD15On,
-aeroLoadsOn = 2,
-turbineStartup = 1,
-generatorOn = true,
-useGeneratorFunction = true,
-driveTrainOn = true,
-JgearBox = 250.0,#(2.15e3+25.7)/12*1.35582*100,
-gearRatio = 1.0,
-gearBoxEfficiency = 1.0,
-driveShaftProps = OWENS.DriveShaftProps(10000,1.5e2), #8.636e5*1.35582*0.6
-OmegaInit = Omegaocp[1]/60)
+    tocp,
+    Omegaocp,
+    tocp_Vinf,
+    Vinfocp,
+    numTS,
+    delta_t,
+    AD15On,
+    aeroLoadsOn = 2,
+    turbineStartup = 1,
+    generatorOn = true,
+    useGeneratorFunction = true,
+    driveTrainOn = true,
+    JgearBox = 250.0,#(2.15e3+25.7)/12*1.35582*100,
+    gearRatio = 1.0,
+    gearBoxEfficiency = 1.0,
+    driveShaftProps = OWENS.DriveShaftProps(10000,1.5e2), #8.636e5*1.35582*0.6
+    OmegaInit = Omegaocp[1]/60)
 
 nothing
 
 # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
 feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-outFilename = "none",
-joint = myjoint,
-platformTurbineConnectionNodeNumber = 1,
-pBC,
-nlOn = false,
-numNodes = mymesh.numNodes,
-numModes = 200,
-RayleighAlpha = 0.05,
-RayleighBeta = 0.05,
-iterationType = "DI")
+    joint = myjoint,
+    platformTurbineConnectionNodeNumber = 1,
+    pBC,
+    nlOn=false,
+    numNodes = mymesh.numNodes,
+    numModes = 200,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    iterationType = "DI")
 
-nothing
-
-# Get Gravity Loads
-inputs.Omegaocp = inputs.Omegaocp.*0.0
-inputs.OmegaInit = inputs.OmegaInit.*0.0
-inputs.Vinfocp = inputs.Vinfocp.*0.0
-feamodel.nlOn = true
-
+println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;VTKmeshfilename="ARCUS5MW")
 
 function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,system=nothing,assembly=nothing,VTKFilename="./outvtk")
 
@@ -316,7 +212,7 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
         t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
         FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
         epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
-        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly,verbosity=3)
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
         meanepsilon_z_hist = mean(epsilon_z_hist,dims=1)
         meanepsilon_y_hist = mean(epsilon_y_hist,dims=1)
@@ -401,8 +297,8 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
     kappa_z = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
 
     for ibld = 1:Nbld
-        start = Int(mymesh.structuralNodeNumbers[ibld,1])
-        stop = Int(mymesh.structuralNodeNumbers[ibld,end])
+        start = Int(mymesh.structuralElNumbers[ibld,1])
+        stop = Int(mymesh.structuralElNumbers[ibld,end-1])+1
         x = mymesh.z[start:stop]
         x = x.-x[1] #zero
         x = x./x[end] #normalize
@@ -436,6 +332,12 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
 
     return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist
 end
+
+# Get Gravity Loads
+inputs.Omegaocp = inputs.Omegaocp.*0.0
+inputs.OmegaInit = inputs.OmegaInit.*0.0
+inputs.Vinfocp = inputs.Vinfocp.*0.0
+feamodel.nlOn = true
 
 ## Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
 eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true)
@@ -509,9 +411,9 @@ exp_std_flap = Statistics.std(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_std_flap $exp_std_flap")
 exp_mean_flap = Statistics.mean(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_mean_flap $exp_mean_flap")
-sim_std_flap = Statistics.std(flatwise_stress1[:,end-4]./1e6)
+sim_std_flap = Statistics.std(flatwise_stress1[:,end-5]./1e6)
 println("sim_std_flap $sim_std_flap")
-sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-4]./1e6)
+sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-5]./1e6)
 println("sim_mean_flap $sim_mean_flap")
 
 SNL34m_5_4_LeadLagStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.4AML.csv",',',skipstart = 1)
@@ -529,9 +431,9 @@ exp_std_lag = Statistics.std(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_std_lag $exp_std_lag")
 exp_mean_lag = Statistics.mean(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_mean_lag $exp_mean_lag")
-sim_std_lag = Statistics.std(lag_stress1[:,end-4]./1e6)
+sim_std_lag = Statistics.std(lag_stress1[:,end-5]./1e6)
 println("sim_std_lag $sim_std_lag")
-sim_mean_lag = Statistics.mean(lag_stress1[:,end-4]./1e6)
+sim_mean_lag = Statistics.mean(lag_stress1[:,end-5]./1e6)
 println("sim_mean_lag $sim_mean_lag")
 
 ##########################################
@@ -593,20 +495,6 @@ PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4
 
-nothing
-
-# Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 
-# deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
-# for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
-
-println("Saving VTK time domain files")
-## OWENS.gyricFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
-
-nothing
-
-# This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina
-# it also calculates analytical simply supported buckling safety factors
-
 ##########################################
 #### Ultimate Failure #####
 ##########################################
@@ -640,3 +528,51 @@ nothing
 # @profview runprofilefunction()
 
 # @profview runprofilefunction()
+
+
+# println("Saving VTK time domain files")
+# userPointNames=["EA","EIyy","EIzz"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+# # userPointData[iname,it,ipt] = Float64
+
+# # map el props to points using con
+# userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
+# EA_points = zeros(mymesh.numNodes)
+# EIyy_points = zeros(mymesh.numNodes)
+# EIzz_points = zeros(mymesh.numNodes)
+
+# # Time-invariant data
+# for iel = 1:length(myel.props)
+#     # iel = 1
+#     nodes = mymesh.conn[iel,:]
+#     EA_points[Int.(nodes)] = myel.props[iel].EA
+#     EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
+#     EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
+# end
+
+# # fill in the big matrix
+# for it = 1:length(t)
+
+#     userPointData[1,it,:] = EA_points
+#     userPointData[2,it,:] = EIyy_points
+#     userPointData[3,it,:] = EIzz_points
+#     # userPointData[4,it,:] = FReactionHist[it,1:6:end]
+#     # userPointData[5,it,:] = FReactionHist[it,2:6:end]
+#     # userPointData[6,it,:] = FReactionHist[it,3:6:end]
+#     # userPointData[7,it,:] = FReactionHist[it,4:6:end]
+#     # userPointData[8,it,:] = FReactionHist[it,5:6:end]
+#     # userPointData[9,it,:] = FReactionHist[it,6:6:end]
+# end
+
+# azi=aziHist#./aziHist*1e-6
+# saveName = "$path/newProps/newProps"
+# OWENS.gyricFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+
+# PyPlot.figure()
+# PyPlot.plot(mymesh.x,mymesh.z,"b-")
+#  for myi = 1:length(mymesh.y)
+#      PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+#      PyPlot.draw()
+#      sleep(0.1)
+#  end
+# PyPlot.xlabel("x")
+# PyPlot.ylabel("y")
