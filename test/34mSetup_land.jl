@@ -192,13 +192,13 @@ for (i,airfoil) in enumerate(numadIn_bld.airfoil)
 end
 
 NuMad_mat_xlscsv_file = "$path/data/SNL34mMaterials.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops_bld = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
 bld1start = Int(mymesh.structuralNodeNumbers[1,1])
 bld1end = Int(mymesh.structuralNodeNumbers[1,end])
 spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 
-bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops)
+bld_precompoutput,bld_precompinput = OWENS.getPreCompOutput(numadIn_bld;plyprops=plyprops_bld)
 sectionPropsArray_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
 
 stiff_bld, mass_bld = OWENS.getSectPropsFromPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
@@ -233,9 +233,9 @@ for (i,airfoil) in enumerate(numadIn.airfoil)
 end
 
 NuMad_mat_xlscsv_file = "$path/data/NuMAD_34m_TowerMaterials.csv"
-plyprops = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops)
+precompoutput,precompinput = OWENS.getPreCompOutput(numadIn;plyprops=plyprops_twr)
 sectionPropsArray_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;precompinputs=precompinput)
 
 stiff_twr, mass_twr = OWENS.getSectPropsFromPreComp(LinRange(0,1,nTwrElem),numadIn,precompoutput;GX=true)
@@ -440,8 +440,8 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
         kappa_z_hist[1,:,2] = kappa_z
 
         FReactionHist = zeros(2,6)
-        FReactionHist[1,:] = FReaction
-        FReactionHist[2,:] = FReaction
+        FReactionHist[1,:] = FReaction[1:6]
+        FReactionHist[2,:] = FReaction[1:6]
 
         OmegaHist = [model.OmegaInit,model.OmegaInit]
         genTorque = FReactionHist[:,6]

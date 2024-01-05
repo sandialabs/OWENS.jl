@@ -122,7 +122,7 @@ Executable function for transient analysis. Provides the interface of various
 function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     aeroVals=nothing,aeroDOFs=nothing,aero=nothing,deformAero=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
-    getLinearizedMatrices=false,
+    getLinearizedMatrices=false, verbosity=0,
     system=nothing,assembly=nothing, #TODO: should we initialize them in here? Unify the interface for ease?
     topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing)
 
@@ -461,7 +461,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             ## calculate norms
             uNorm = LinearAlgebra.norm(topdata.u_j .- u_jLast)/LinearAlgebra.norm(topdata.u_j)            #structural dynamics displacement iteration norm
             aziNorm = LinearAlgebra.norm(topdata.azi_j .- azi_jLast)/LinearAlgebra.norm(topdata.azi_j)  #rotor azimuth iteration norm
-            gbNorm = LinearAlgebra.norm(topdata.gb_j .- gb_jLast)/LinearAlgebra.norm(topdata.gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+            if inputs.generatorOn
+                gbNorm = LinearAlgebra.norm(topdata.gb_j .- gb_jLast)/LinearAlgebra.norm(topdata.gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+            end
 
             numIterations = numIterations + 1
 
@@ -474,8 +476,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topdata.topElStorage,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
-            #TODO: verbosity
-            # println("$(numIterations)   uNorm: $(uNorm) ")
+            if verbosity>=2
+                println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm)")
+            end
 
             if numIterations==MAXITER
                 if inputs.iteration_parameters.iterwarnings

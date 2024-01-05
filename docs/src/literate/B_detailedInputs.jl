@@ -46,7 +46,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 AModel = Inp.AModel
-turbsim_filename = Inp.turbsim_filename
+wind_filename = Inp.wind_filename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
@@ -94,7 +94,7 @@ mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
     numTS,
     adi_lib,
     adi_rootname,
-    turbsim_filename,
+    wind_filename,
     ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
     NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
