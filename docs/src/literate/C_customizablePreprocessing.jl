@@ -46,7 +46,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 AModel = Inp.AModel
-wind_filename = Inp.wind_filename
+windINPfilename = Inp.windINPfilename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
@@ -159,7 +159,7 @@ else #TODO unify with HAWT
     error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
 end
 
-nTwrElem = Int(mymesh.meshSeg[1])+1
+nTwrElem = Int(mymesh.meshSeg[1])
 
 nothing
 
@@ -359,13 +359,32 @@ if meshtype == "ARCUS"
     cable_secprop = sectionPropsArray_twr[end]
     Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
     sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+
+    # GXBeam sectional properties
+    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+    stiff_cables = fill(stiff_twr[end],Nremain)
+    stiff_array = [stiff_twr; stiff_blds; stiff_cables]
+
+    mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+    mass_cables = fill(mass_twr[end],Nremain)
+    mass_array = [mass_twr; mass_blds; mass_cables]
 else
     sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+    
+    # GXBeam sectional properties
+    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+    stiff_struts = collect(Iterators.flatten(fill(stiff_strut, Nstrutperbld*Nbld)))
+    stiff_array = [stiff_twr; stiff_blds; stiff_struts]
+
+    mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+    mass_struts = collect(Iterators.flatten(fill(mass_strut, Nstrutperbld*Nbld)))
+    mass_array = [mass_twr; mass_blds; mass_struts]
 end
 rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
 
 #store data in element object
 myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)#;VTKmeshfilename="ExampleC")
 
 nothing
 
@@ -380,7 +399,7 @@ if !AD15On
     VAWTAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
     afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
     ifw,
-    wind_filename,
+    wind_filename=windINPfilename,
     ifw_libfile,
     ntheta,Nslices,rho,eta,RPI)
 
@@ -462,7 +481,7 @@ if AD15On
 
     OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
-    OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;wind_filename=nothing)
+    OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
 
     OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
             rho     = rho,
@@ -499,10 +518,6 @@ mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0
 nothing 
 
 # Then the rest of this example is the same as example B
-
-println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="ARCUS5MW")
-
 if verbosity>0
     
     println("\nBlades' Mass Breakout")

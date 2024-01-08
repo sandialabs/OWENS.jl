@@ -4,7 +4,7 @@
 const e1 = SVector(1, 0, 0)
 const e2 = SVector(0, 1, 0)
 const e3 = SVector(0, 0, 1)
-function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;nblade=2,VTKmeshfilename=nothing,struts=true,damp_coef=0.05,inf_stiff=false)
+function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array;VTKmeshfilename=nothing,damp_coef=0.05,inf_stiff=false)
 
     # Space out the mesh so no two points are exactly on top of one another.
     Noverlap = 1e8
@@ -63,31 +63,12 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, 
     end
 
     #Combine everything
-    stiff = vcat(stiff_twr)
-    mass = vcat(mass_twr)
-    for ibld = 1:nblade
-        stiff = vcat(stiff,stiff_bld)
-        mass = vcat(mass,mass_bld)
-    end
-
-    if struts
-        Nremain_struts = length(mymesh.conn[:,1])-length(stiff_twr)-length(stiff_bld)*nblade
-
-        #Give the remaining, which are the joints, the blade properties at the base
-        stiff_struts = fill(stiff_bld[end], Nremain_struts)
-        mass_struts = fill(mass_bld[end], Nremain_struts)
-
-        stiff = vcat(stiff,stiff_struts)
-        mass = vcat(mass,mass_struts)
-    end
-
     Nremain_joints = length(myjoint[:,2])
     stiff_joints = fill(zeros(6,6), Nremain_joints) #infinite mass and stiffness for joints
     mass_joints = fill(zeros(6,6), Nremain_joints)
 
-    stiff = vcat(stiff,stiff_joints)
-    mass = vcat(mass,mass_joints)
-
+    stiff = vcat(stiff_array,stiff_joints)
+    mass = vcat(mass_array,mass_joints)
 
     if inf_stiff
         stiff = zero.(stiff)

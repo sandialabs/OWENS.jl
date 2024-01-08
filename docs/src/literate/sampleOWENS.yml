@@ -17,7 +17,7 @@ operationParameters:
 turbulentInflow:
   ifw: false
   WindType: 3
-  wind_filename: ./data/turbsim/115mx115m_30x30_20.0msETM.bts
+  windINPfilename: ./data/turbsim/115mx115m_30x30_20.0msETM.bts
   ifw_libfile: ./../openfast/build/modules/inflowwind/libifw_c_binding
 
 controlParameters:
@@ -36,6 +36,7 @@ AeroParameters:
   
 structuralParameters:
   structuralModel: GX #GX, TNB, ROM
+  nonlinear: false #TODO: propogate
   ntelem: 10 #tower elements in each 
   nbelem: 60 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
