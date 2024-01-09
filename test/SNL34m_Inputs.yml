@@ -37,10 +37,10 @@ AeroParameters:
 structuralParameters:
   structuralModel: ROM #GX, TNB, ROM
   nonlinear: false #TODO: propogate
-  ntelem: 20 #tower elements in each 
+  ntelem: 10 #tower elements in each 
   nbelem: 60 #blade elements in each 
-  ncelem: 0 #central cable elements in each if turbineType is ARCUS
-  nselem: 3 #strut elements in each if turbineType has struts
+  ncelem: 10 #central cable elements in each if turbineType is ARCUS
+  nselem: 5 #strut elements in each if turbineType has struts
   NuMad_geom_xlscsv_file_twr: ./test/data/NuMAD_34m_TowerGeom.csv
   NuMad_mat_xlscsv_file_twr: ./test/data/NuMAD_34m_TowerMaterials.csv
   NuMad_geom_xlscsv_file_bld: ./test/data/NuMAD_SNL34mGeomBlades.csv

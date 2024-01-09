@@ -116,7 +116,10 @@ function setupOWENS(VAWTAero,path;
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
     
-    nTwrElem = Int(mymesh.meshSeg[1])+1
+    nTwrElem = Int(mymesh.meshSeg[1])
+    if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
+        nTwrElem = Int(mymesh.meshSeg[1])+1
+    end
     
     nothing
 
@@ -316,13 +319,32 @@ function setupOWENS(VAWTAero,path;
         cable_secprop = sectionPropsArray_twr[end]
         Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
         sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+
+        # GXBeam sectional properties
+        stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+        stiff_cables = fill(stiff_twr[end],Nremain)
+        stiff_array = [stiff_twr; stiff_blds; stiff_cables]
+
+        mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+        mass_cables = fill(mass_twr[end],Nremain)
+        mass_array = [mass_twr; mass_blds; mass_cables]
     else
         sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+        
+        # GXBeam sectional properties
+        stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+        stiff_struts = collect(Iterators.flatten(fill(stiff_strut, Nstrutperbld*Nbld)))
+        stiff_array = [stiff_twr; stiff_blds; stiff_struts]
+
+        mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+        mass_struts = collect(Iterators.flatten(fill(mass_strut, Nstrutperbld*Nbld)))
+        mass_array = [mass_twr; mass_blds; mass_struts]
     end
     rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
 
     #store data in element object
     myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
     nothing
 
@@ -435,7 +457,7 @@ function setupOWENS(VAWTAero,path;
 
         OpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
-        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;WindType,windINPfilename=nothing)
+        OpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
 
         OpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
                 rho     = rho,
@@ -470,13 +492,13 @@ function setupOWENS(VAWTAero,path;
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesAD,deformAeroAD,
-        mass_breakout_blds,mass_breakout_twr
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections 
     else
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesACDMS,deformAeroACDMS,
-        mass_breakout_blds,mass_breakout_twr
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections 
     end
 end
 
@@ -754,6 +776,15 @@ function setupOWENShawt(VAWTAero,path;
     # sectionPropsArray = fill(sectionPropsArray[end],length(sectionPropsArray))
     rotationalEffects = ones(mymesh.numEl)
 
+    # GXBeam sectional properties
+    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+    stiff_array = [stiff_twr; stiff_blds]
+
+    mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+    mass_array = [mass_twr; mass_blds]
+
+    system, assembly, sections = owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
+
     #store data in element object
     myel = GyricFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
@@ -815,9 +846,6 @@ function setupOWENShawt(VAWTAero,path;
     mass_breakout_bld = get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
     mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
-
-    system, assembly, sections = owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;nblade=Nbld,struts=false)#,VTKmeshfilename="vtk_fvw/HAWT1")
-
 
     return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
     stiff_twr, stiff_bld,bld_precompinput,

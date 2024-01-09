@@ -578,7 +578,7 @@ function create_mesh_struts(;Ht = 15.0,
     meshSeg = zeros(Int,1+nblade+nstrut*nblade) #tower, blades, and struts
 
     if connectBldTips2Twr == false
-        meshSeg[1] = ntelem+nstrut
+        meshSeg[1] = ntelem+nstrut+1
     else
         meshSeg[1] = ntelem+nstrut*nblade-nblade+1 #connects at top node
     end

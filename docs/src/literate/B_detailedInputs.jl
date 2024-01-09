@@ -46,7 +46,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 AModel = Inp.AModel
-wind_filename = Inp.wind_filename
+windINPfilename = Inp.windINPfilename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
@@ -77,7 +77,7 @@ mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
+mass_breakout_blds,mass_breakout_twr,system,assembly,sections = OWENS.setupOWENS(VAWTAero,path;
     rho,
     Nslices,
     ntheta,
@@ -94,7 +94,7 @@ mass_breakout_blds,mass_breakout_twr = OWENS.setupOWENS(VAWTAero,path;
     numTS,
     adi_lib,
     adi_rootname,
-    wind_filename,
+    windINPfilename,
     ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
     NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
@@ -121,9 +121,6 @@ nothing
 # this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also
 # includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface
 # to work with OWENS inputs as well.
-
-println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld)#;VTKmeshfilename="ARCUS5MW")
 
 nothing
 
