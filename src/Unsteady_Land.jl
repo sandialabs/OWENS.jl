@@ -300,11 +300,11 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             if inputs.generatorOn
                     if inputs.useGeneratorFunction
                         specifiedOmega,_,_ = omegaSpecCheck(t[i]+topdata.delta_t,inputs.tocp,inputs.Omegaocp,topdata.delta_t)
-                        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
+                        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                         if isnothing(userDefinedGenerator)
                             genTorqueHSS0,topdata.integrator_j,controlnamecurrent = internaluserDefinedGenerator(newVinf,t[i],topdata.azi_j,topdata.Omega_j,topdata.OmegaHist[i],topdata.OmegaDot_j,topdata.OmegaDotHist[i],topdata.delta_t,topdata.integrator,specifiedOmega) #;operPhase
                         else
-                            genTorqueHSS0,topdata.integrator_j,controlnamecurrent = userDefinedGenerator(newVinf,t[i],topdata.azi_j,topdata.Omega_j,topdata.OmegaHist[i],topdata.OmegaDot_j,topdata.OmegaDotHist[i],topdata.delta_t,topdata.integrator,specifiedOmega) #;operPhase
+                            genTorqueHSS0 = userDefinedGenerator(t[i],topdata.Omega_j*60,newVinf) #;operPhase
                         end
                     else
                         genTorqueHSS0 = simpleGenerator(inputs,topdata.Omega_j)
