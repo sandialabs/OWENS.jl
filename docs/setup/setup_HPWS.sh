@@ -2,10 +2,7 @@
 #!/usr/bin/env bash
 
 # Install julia
-wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.3-linux-x86_64.tar.gz
-tar zxvf julia-1.9.3-linux-x86_64.tar.gz
-y | rm julia-1.9.3-linux-x86_64.tar.gz
-mv julia-1.9.3 ../../
+curl -fsSL https://install.julialang.org | sh
 
 # Load required modules to compile openfast libraries
 module load sparc-cmake/3.23.2
@@ -23,6 +20,8 @@ make ifw_c_binding
 make moordyn_c_binding
 make hydrodyn_c_binding
 make aerodyn_inflow_c_binding
+make aerodyn_driver
+make turbsim
 cd ../../
 
 julia -e 'using Pkg;Pkg.develop(url="../../GXBeam.jl")'

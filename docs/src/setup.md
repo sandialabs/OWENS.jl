@@ -31,7 +31,7 @@ Same installation as Linux except we recommend using the homebrew package manage
 
 ## Linux
 
-# Install/Update Required Compilers and Programs
+# Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
     apt-get update -y
     apt-get install git -y
     apt-get install wget -y
