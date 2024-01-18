@@ -483,7 +483,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topdata.topElStorage,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
-            if verbosity>=2
+            if verbosity>4
                 println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm)")
             end
 

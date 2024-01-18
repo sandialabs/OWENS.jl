@@ -411,7 +411,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     epsilon_z_hist_1=nothing,kappa_x_hist_1=nothing,epsilon_y_hist_1=nothing,verbosity=2,
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-    Twr_LE_U_idx=1,Twr_LE_L_idx=1)
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=0)
 
     # Linearly Superimpose the Strains
     epsilon_x_hist = copy(epsilon_x_hist_ps).*0.0
@@ -423,7 +423,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     if epsilon_x_hist_1!=nothing
         for ipt = 1:4
-            for jts = 1:length(epsilon_x_hist_ps[1,1,:])
+            for jts = throwawayTimeSteps:length(epsilon_x_hist_ps[1,1,:])
                 epsilon_x_hist[ipt,:,jts] = epsilon_x_hist_ps[ipt,:,jts] + epsilon_x_hist_1[ipt,:,end]
                 kappa_y_hist[ipt,:,jts] = kappa_y_hist_ps[ipt,:,jts] + kappa_y_hist_1[ipt,:,end]
                 kappa_z_hist[ipt,:,jts] = kappa_z_hist_ps[ipt,:,jts] + kappa_z_hist_1[ipt,:,end]
@@ -433,12 +433,12 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             end
         end
     else
-        epsilon_x_hist = epsilon_x_hist_ps
-        kappa_y_hist = kappa_y_hist_ps
-        kappa_z_hist = kappa_z_hist_ps
-        epsilon_z_hist = epsilon_z_hist_ps
-        kappa_x_hist = kappa_x_hist_ps
-        epsilon_y_hist = epsilon_y_hist_ps
+        epsilon_x_hist[:,:,throwawayTimeSteps:end] = epsilon_x_hist_ps[:,:,throwawayTimeSteps:end]
+        kappa_y_hist[:,:,throwawayTimeSteps:end] = kappa_y_hist_ps[:,:,throwawayTimeSteps:end]
+        kappa_z_hist[:,:,throwawayTimeSteps:end] = kappa_z_hist_ps[:,:,throwawayTimeSteps:end]
+        epsilon_z_hist[:,:,throwawayTimeSteps:end] = epsilon_z_hist_ps[:,:,throwawayTimeSteps:end]
+        kappa_x_hist[:,:,throwawayTimeSteps:end] = kappa_x_hist_ps[:,:,throwawayTimeSteps:end]
+        epsilon_y_hist[:,:,throwawayTimeSteps:end] = epsilon_y_hist_ps[:,:,throwawayTimeSteps:end]
     end
 
     ##########################################
