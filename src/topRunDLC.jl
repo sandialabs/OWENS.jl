@@ -401,16 +401,19 @@ function runDLC(DLCs,Inp,path;
             windspeedStr = lpad(windspeedStr,4,"0")
             println("Running DLC $DLC at Vinf $windspeedStr m/s")
             windINPfilename = "$turbsimpath/DLC$(DLC)Vinf$(windspeedStr).inp"
-            if !isfile(windINPfilename) || regenWindFiles
-                if contains(DLCParams[iDLC].IEC_WindType, "NTM") || contains(DLCParams[iDLC].IEC_WindType, "ETM") || contains(DLCParams[iDLC].IEC_WindType, "EWM")
+            
+            if contains(DLCParams[iDLC].IEC_WindType, "NTM") || contains(DLCParams[iDLC].IEC_WindType, "ETM") || contains(DLCParams[iDLC].IEC_WindType, "EWM")
+                if !isfile(windINPfilename) || regenWindFiles
                     generateTurbsimBTS(DLCParams[iDLC],windINPfilename,pathtoturbsim;templatefile)
-                    Inp.WindType = 3
-                    Inp.windINPfilename = "$(windINPfilename[1:end-4]).bts"
-                else
-                    generateUniformwind(DLCParams[iDLC],windINPfilename)
-                    Inp.windINPfilename = windINPfilename
-                    Inp.WindType = 2
                 end
+                Inp.WindType = 3
+                Inp.windINPfilename = "$(windINPfilename[1:end-4]).bts"
+            else
+                if !isfile(windINPfilename) || regenWindFiles
+                    generateUniformwind(DLCParams[iDLC],windINPfilename)
+                end
+                Inp.windINPfilename = windINPfilename
+                Inp.WindType = 2
             end
 
             Inp.ifw = true
