@@ -304,6 +304,7 @@ Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git"))
+Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/Rainflow.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))
 
 # Install PyPlot if not already installed

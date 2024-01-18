@@ -138,6 +138,8 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
     kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1)
     topstrainout = zeros(length(eps_x[1,:,1]),length(composites_span),length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
+
+    damage = zeros(length(composites_span),length(lam_in[1,:])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
     for i_station = 1:length(composites_span)
         # i_station = 1
         ibld = 1
@@ -177,6 +179,18 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
 
             offset = [0.0,offsety,offsetz]
 
+            lam = lam_in[i_station,j_lam]
+
+            stress_eachlayer = zeros(length(eps_x[1,:,1]),length(lam.nply),3) #all timesteps for each stack layer
+
+            mat_idx = [numadIn.stack_mat_types[imat] for imat in lam.matid] # Map from the stack number to the material number
+            materials = [plyprops.plies[imat] for imat in mat_idx] # Then get the actual material used
+            SN_stressMpa = [plyprops.SN_stressMpa[imat,:] for imat in mat_idx]
+            Log_SN_cycles2Fail = [plyprops.Log_SN_cycles2Fail[imat,:] for imat in mat_idx]
+            # Map the stack number to the material number
+
+            q = Composites.getQ.(materials,lam.theta)
+
             for its = 1:length(eps_x[1,:,1])
                 # j_lam = 5
                 # its = 1
@@ -189,16 +203,7 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
                 kappa_y[ibld,its,i_station],
                 kappa_z[ibld,its,i_station]]
 
-                lam = lam_in[i_station,j_lam] #TODO: make this as an input
-
-                mat_idx = [numadIn.stack_mat_types[imat] for imat in lam.matid] # Map from the stack number to the material number
-                materials = [plyprops.plies[imat] for imat in mat_idx] # Then get the actual material used
-                
-                # Map the stack number to the material number
-
-                q = Composites.getQ.(materials,lam.theta)
-
-                #TODO: if we are doing the lower surface, should we use the lower plystrain?
+                #TODO: if we are doing the lower surface, should we use the lower plystrain? Or is it relative to the outer surface
                 lowerplystrain, upperplystrain = my_getplystrain(lam, resultantstrain, offset)
                 topstrainout[its,i_station,j_lam,1:3] = upperplystrain[1]
                 topstrainout[its,i_station,j_lam,4:end] = resultantstrain[:]
@@ -206,6 +211,10 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
                 out = Composites.getmatfail.(upperplystress,materials,failmethod)
                 fail = [out[iii][1] for iii = 1:length(out)]
                 sf = [out[iii][2] for iii = 1:length(out)]
+
+                for ilayer = 1:length(lam.nply)
+                    stress_eachlayer[its,ilayer,:] = upperplystress[ilayer]
+                end
 
                 if failmethod == "maxstress"
                     try
@@ -252,18 +261,47 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
                 # cylinder_uniaxial_local_buckling_stress = Composites.cylinder_uniaxial_local_buckling(A, D, R, laminate_h)
                 # cylinder_bending_local_buckling_stress = Composites.cylinder_bending_local_buckling(A, D, R, laminate_h)
             end
+            
+            # Miner's Damage
+            damage_layers = zeros(length(lam.nply))
+            for ilayer = 1:length(lam.nply)
+                #TODO: multiple mean ranges and goodman correction, also non-principal stress
+                stressForFatigue = stress_eachlayer[:,ilayer,1]
+                Ncycles,meanIntervals,rangeIntervals,_ = Rainflow.rainflow(stressForFatigue;nbins_range=20,nbins_mean=1,m=3,Teq=1)
+                imean = 1
+                cyclesatStressRanges = Ncycles[imean,:]
+                stress_levels = (rangeIntervals[1:end-1] .+ rangeIntervals[2:end])./2 #from intervals to mean between the interval
+
+                SN_stressMpa1 = SN_stressMpa[ilayer]
+                Log_SN_cycles2Fail1 = Log_SN_cycles2Fail[ilayer]
+
+                if Log_SN_cycles2Fail1[2]>Log_SN_cycles2Fail1[1]
+                    reverse!(SN_stressMpa1)
+                    reverse!(Log_SN_cycles2Fail1)
+                end
+
+                logcycles2fail = FLOWMath.akima(SN_stressMpa1.*1e6,Log_SN_cycles2Fail1,stress_levels)
+                cycles2fail = 10.0 .^ logcycles2fail
+                damage_layers[ilayer] = sum(cyclesatStressRanges./cycles2fail)
+            end
+            #TODO: print statistics on damage including which layer was worst
+            damage[i_station,j_lam] = maximum(damage_layers)
         end
     end
-    return topstrainout
+    return topstrainout,damage
 end
 
-function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span_bld,lam_used)
+function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span_bld,lam_used,damage)
     # verbosity: 0 Nothing, 1 summary, 2 summary and spar, 3 everything except bucking, 4 everything
     #Ultimate
     mymin,idx = findmin(SF_ult)
+    damagemax, idxdamage = findmax(damage)
     if verbosity>0
         println("\nMinimum Safety Factor on Surface: $(minimum(SF_ult))")
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld)) at lam $(idx[3]) of $(length(lam_used[idx[2],:]))")
+
+        println("Maximum Damage: $damagemax")
+        println("At composite station $(idxdamage[1]) of $(length(composites_span_bld)) at lam $(idxdamage[2]) of $(length(lam_used[idxdamage[1],:]))")
     end
     #Buckling
     if !isempty(SF_buck[SF_buck.>0.0])
@@ -287,79 +325,49 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         end
     end
 
-    mymin,idx = findmin(SF_ult[:,:,SparCap_idx])
-    if verbosity>0
-        println("\nSpar Cap SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
+    function printlamInfo(SF_ultin,damagein,lam_idx,name,composites_span_bld,verbosity)
 
-    if verbosity>1
-        println("\nSpar")
-        for SF in SF_ult[idx[1],:,SparCap_idx]
-            println(SF)
+        mymin,idx = findmin(SF_ultin[:,:,lam_idx])
+        damagemax, idxdamage = findmax(damagein[:,lam_idx])
+        if verbosity>0
+            println("\n$name SF min: $mymin")
+            println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+
+            println("$name Damage max: $damagemax")
+            println("At composite station $(idxdamage[1]) of $(length(composites_span_bld))")
+        end
+
+        if verbosity>1
+            println("\n$name SF")
+            for SF in SF_ultin[idx[1],:,lam_idx]
+                println(SF)
+            end
+
+            println("\n$name Damage")
+            for DMGE in damagein[:,lam_idx]
+                println(DMGE)
+            end
         end
     end
 
-    mymin,idx = findmin(SF_ult[:,:,LE_idx])
-    if verbosity>0
-        println("\nLeading Edge SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
+    printlamInfo(SF_ult,damage,SparCap_idx,"Spar Cap",composites_span_bld,verbosity)
+    printlamInfo(SF_ult,damage,LE_idx,"Leading Edge",composites_span_bld,verbosity)
+    printlamInfo(SF_ult,damage,TE_idx,"Trailing Edge",composites_span_bld,verbosity)
+    printlamInfo(SF_ult,damage,ForePanel_idx,"Fore Panel",composites_span_bld,verbosity)
+    printlamInfo(SF_ult,damage,AftPanel_idx,"Aft Panel",composites_span_bld,verbosity)
 
-    if verbosity>2
-        println("Leading Edge")
-        for SF in SF_ult[idx[1],:,LE_idx]
-            println(SF)
-        end
-    end
-
-    mymin,idx = findmin(SF_ult[:,:,TE_idx])
-    if verbosity>0
-        println("\nTrailling Edge SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    if verbosity>2
-        println("Trailing Edge")
-        for SF in SF_ult[idx[1],:,TE_idx]
-            println(SF)
-        end
-    end
-
-    mymin,idx = findmin(SF_ult[:,:,ForePanel_idx])
-    if verbosity>0
-        println("\nFore Panel SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    if verbosity>2
-        println("Fore Panel")
-        for SF in SF_ult[idx[1],:,ForePanel_idx]
-            println(SF)
-        end
-    end
-
-    mymin,idx = findmin(SF_ult[:,:,AftPanel_idx])
-    if verbosity>0
-        println("\nAft Panel SF min: $mymin")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
-    end
-
-    if verbosity>2
-        println("Aft Panel")
-        for SF in SF_ult[idx[1],:,AftPanel_idx]
-            println(SF)
-        end
-    end
 end
 
-function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Twr_LE_idx)
+function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Twr_LE_idx,damage)
 
     #Ultimate
     mymin,idx = findmin(SF_ult_T)
+    damagemax, idxdamage = findmax(damage)
     if verbosity>2
         println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_T))")
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_twr)) at lam $(idx[3]) of $(length(lam_twr[idx[2],:]))")
+        println("Maximum Damage: $damagemax")
+        println("At composite station $(idxdamage[1]) of $(length(composites_span_bld)) at lam $(idxdamage[2]) of $(length(lam_used[idxdamage[1],:]))")
     end
     #Buckling
     if !isempty(SF_buck_T[SF_buck_T.>0.0])
@@ -384,9 +392,14 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Tw
     end
 
     if verbosity>3
-        println("\nLeading Edge")
+        println("\nLeading Edge SF")
         for SF in SF_ult_T[idx[1],:,Twr_LE_idx]
             println(SF)
+        end
+
+        println("\nLeading Edge Damage")
+        for DMGE in damagein[:,Twr_LE_idx]
+            println(DMGE)
         end
     end
 end
@@ -502,7 +515,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_U = zeros(N_ts,length(composites_span_bld),length(lam_U_bld[1,:]))
     SF_buck_U = zeros(N_ts,length(composites_span_bld),length(lam_U_bld[1,:]))
 
-    topstrainout_blade_U = calcSF(stress_U,SF_ult_U,SF_buck_U,composites_span_bld,plyprops_bld,
+    topstrainout_blade_U,topDamage_blade_U = calcSF(stress_U,SF_ult_U,SF_buck_U,composites_span_bld,plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_U_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
     kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=true)
 
@@ -510,20 +523,20 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         println("Composite Ultimate and Buckling Safety Factors")
         println("\n\nUPPER BLADE SURFACE")
     end
-    printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_U_bld)
+    printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_U_bld,topDamage_blade_U)
 
     stress_L = zeros(N_ts,length(composites_span_bld),length(lam_U_bld[1,:]),3)
     SF_ult_L = zeros(N_ts,length(composites_span_bld),length(lam_L_bld[1,:]))
     SF_buck_L = zeros(N_ts,length(composites_span_bld),length(lam_L_bld[1,:]))
 
-    topstrainout_blade_L = calcSF(stress_L,SF_ult_L,SF_buck_L,composites_span_bld,plyprops_bld,
+    topstrainout_blade_L,topDamage_blade_L = calcSF(stress_L,SF_ult_L,SF_buck_L,composites_span_bld,plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_L_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
     kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=false)
 
     if verbosity>0
         println("\n\nLOWER BLADE SURFACE")
     end
-    printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_L_bld)
+    printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_L_bld,topDamage_blade_L)
 
     ##########################################
     #### Calculate Stress At the Tower
@@ -533,23 +546,23 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_TU = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
     SF_buck_TU = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
 
-    topstrainout_tower_U = calcSF(stress_TU,SF_ult_TU,SF_buck_TU,composites_span_twr,plyprops_twr,
+    topstrainout_tower_U,topDamage_tower_U = calcSF(stress_TU,SF_ult_TU,SF_buck_TU,composites_span_twr,plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
     kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true)
 
     println("\n\nUPPER TOWER")
-    printsf_twr(verbosity,lam_U_twr,SF_ult_TU,SF_buck_TU,composites_span_twr,Twr_LE_U_idx)
+    printsf_twr(verbosity,lam_U_twr,SF_ult_TU,SF_buck_TU,composites_span_twr,Twr_LE_U_idx,topDamage_tower_U)
 
     stress_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]),3)
     SF_ult_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
     SF_buck_TL = zeros(N_ts,length(composites_span_twr),length(lam_U_twr[1,:]))
 
-    topstrainout_tower_L = calcSF(stress_TL,SF_ult_TL,SF_buck_TL,composites_span_twr,plyprops_twr,
+    topstrainout_tower_L,topDamage_tower_L = calcSF(stress_TL,SF_ult_TL,SF_buck_TL,composites_span_twr,plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
     kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false)
 
     println("\n\nLower TOWER")
-    printsf_twr(verbosity,lam_L_twr,SF_ult_TL,SF_buck_TL,composites_span_twr,Twr_LE_L_idx)
+    printsf_twr(verbosity,lam_L_twr,SF_ult_TL,SF_buck_TL,composites_span_twr,Twr_LE_L_idx,topDamage_tower_L)
    
     ##########################################
     #### Calculate Mass
@@ -583,5 +596,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     end
 
     return turb_masskg,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,
-    stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L
+    stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,
+    topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
+    topDamage_blade_L,topDamage_tower_U,topDamage_tower_L
 end

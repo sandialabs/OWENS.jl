@@ -339,8 +339,10 @@ struct plyproperties
     names#::Array{String,1}
     plies#::Array{Composites.Material,1}
     costs#::Array{Float,1}
+    SN_stressMpa # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
+    Log_SN_cycles2Fail # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
 end
-plyproperties(names,plies) = plyproperties(names,plies,zeros(length(names))) #Backwards compatible convenience function
+plyproperties(names,plies) = plyproperties(names,plies,zeros(length(names)),collect(LinRange(1e12,0,6)),collect(LinRange(0,7,6))) #Backwards compatible convenience function
 
 """
 Struct containing
