@@ -289,6 +289,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             curvGX = zeros(3,length(assembly.elements))
         end
 
+        newVinf = 0.0 #TODO
+
         ## Gauss-Seidel predictor-corrector loop
         while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
             # println("Iteration $numIterations")
@@ -297,6 +299,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             # GENERATOR MODULE
             #------------------
             topdata.genTorque_j = 0
+
             if inputs.generatorOn
                     if inputs.useGeneratorFunction
                         specifiedOmega,_,_ = omegaSpecCheck(t[i]+topdata.delta_t,inputs.tocp,inputs.Omegaocp,topdata.delta_t)
@@ -307,7 +310,6 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             if !isnothing(turbsimfile) #&& inputs.AD15On
                                 velocity = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
                                 newVinf = velocity[1]
-                                println(newVinf)
                             end
                             genTorqueHSS0 = userDefinedGenerator(t[i],topdata.Omega_j*60,newVinf) #;operPhase
                         end
@@ -493,6 +495,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
         end #end iteration while loop
+
+        if verbosity >=1
+            println("Gen Torque: $(topdata.genTorque_j)")
+            println("RPM: $(topdata.Omega_j*60)")
+            println("Vinf: $(newVinf)")
+        end
 
         if inputs.analysisType=="ROM"
             eta_j = topdata.topDispOut.eta_sp1 #eta_j

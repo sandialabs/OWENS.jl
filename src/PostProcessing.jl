@@ -367,7 +367,7 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Tw
         println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_T))")
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_twr)) at lam $(idx[3]) of $(length(lam_twr[idx[2],:]))")
         println("Maximum Damage: $damagemax")
-        println("At composite station $(idxdamage[1]) of $(length(composites_span_bld)) at lam $(idxdamage[2]) of $(length(lam_used[idxdamage[1],:]))")
+        println("At composite station $(idxdamage[1]) of $(length(composites_span_bld)) at lam $(idxdamage[2]) of $(length(lam_twr[idxdamage[1],:]))")
     end
     #Buckling
     if !isempty(SF_buck_T[SF_buck_T.>0.0])
@@ -398,7 +398,7 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Tw
         end
 
         println("\nLeading Edge Damage")
-        for DMGE in damagein[:,Twr_LE_idx]
+        for DMGE in damage[:,Twr_LE_idx]
             println(DMGE)
         end
     end
