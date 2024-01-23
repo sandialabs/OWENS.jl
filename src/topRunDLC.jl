@@ -535,9 +535,9 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             time = [0,10,15,20,25,30,10000.0]#LinRange(0,10,10)
             winddir = zeros(length(time))  
             windvertvel = zeros(length(time))   
-            horizshear = [0,0,5,0,0,0,0]#ones(10).*10.0   
+            horizshear = [0,0,5,0,0,0,0]#ones(length(time)).*10.0   
             pwrLawVertShear = zeros(length(time))   
-            LinVertShear = [0,0,0,0,5,0,0]#ones(10).*10.0 
+            LinVertShear = [0,0,0,0,5,0,0]#ones(length(time)).*10.0 
             gustvel = zeros(length(time))   
             UpflowAngle = zeros(length(time))  
             
@@ -556,12 +556,12 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,30,100)
-            winddir = zeros(10)  
-            windvertvel = zeros(10)   
-            horizshear = zeros(10)
-            pwrLawVertShear = zeros(10)   
-            LinVertShear = zeros(10)
-            UpflowAngle = zeros(10)  
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = zeros(length(time))      
+            LinVertShear = zeros(length(time))   
+            UpflowAngle = zeros(length(time))     
 
             time_delay = 10.0 #sec
             time_delay2 = 20.0
@@ -576,13 +576,13 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)NWP\""
 
             time = LinRange(0,30,10)
-            winddir = zeros(10)  
-            windvertvel = zeros(10)   
-            horizshear = zeros(10)
-            pwrLawVertShear = ones(10).*0.2  
-            LinVertShear = zeros(10)
-            gustvel = zeros(10)
-            UpflowAngle = zeros(10)  
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = ones(length(time)).*0.2  
+            LinVertShear = zeros(length(time))   
+            gustvel = zeros(length(time))   
+            UpflowAngle = zeros(length(time))     
             
         elseif DLC == "3_2"
             ControlStrategy = "startup"
@@ -591,12 +591,12 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,30,100)
-            winddir = zeros(10)  
-            windvertvel = zeros(10)   
-            horizshear = zeros(10)
-            pwrLawVertShear = zeros(10)   
-            LinVertShear = zeros(10)
-            UpflowAngle = zeros(10)  
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = zeros(length(time))      
+            LinVertShear = zeros(length(time))   
+            UpflowAngle = zeros(length(time))     
 
             time_delay = 10.0 #sec
             time_delay2 = 20.0
@@ -626,13 +626,13 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)NWP\""
 
             time = LinRange(0,30,10)
-            winddir = zeros(10)  
-            windvertvel = zeros(10)   
-            horizshear = zeros(10)
-            pwrLawVertShear = ones(10).*0.2  
-            LinVertShear = zeros(10)
-            gustvel = zeros(10)
-            UpflowAngle = zeros(10)  
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = ones(length(time)).*0.2  
+            LinVertShear = zeros(length(time))   
+            gustvel = zeros(length(time))   
+            UpflowAngle = zeros(length(time))     
             
         elseif DLC == "4_2"
             ControlStrategy = "shutdown"
@@ -641,12 +641,12 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             IEC_WindType = "\"$(WindClass)EOG\""
 
             time = LinRange(0,30,100)
-            winddir = zeros(10)  
-            windvertvel = zeros(10)   
-            horizshear = zeros(10)
-            pwrLawVertShear = zeros(10)   
-            LinVertShear = zeros(10)
-            UpflowAngle = zeros(10)  
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = zeros(length(time))      
+            LinVertShear = zeros(length(time))   
+            UpflowAngle = zeros(length(time))     
 
             time_delay = 10.0 #sec
             time_delay2 = 20.0
