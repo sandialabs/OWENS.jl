@@ -458,7 +458,7 @@ end
 
 function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2)
 
-    Ve50 = 50.0 #TODO
+    Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
 
     numTS = Inp.numTS
@@ -681,7 +681,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
 
         elseif DLC == "6_4"
             ControlStrategy = "parked"
-            Vinf_range_used = [0.7*Vdesign]
+            Vinf_range_used = [0.7*Ve50]
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NTM\""
 

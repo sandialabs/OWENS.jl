@@ -518,13 +518,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         ## update timestepping variables and other states, store in history arrays
         ## calculate converged generator torque/power
-        genTorquePlot = 0
-        if (inputs.useGeneratorFunction)
-            if (inputs.generatorOn || (inputs.turbineStartup==0))
-                genTorqueHSS0 = simpleGenerator(inputs,Omega_j)
-            end
-        end
-        genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*inputs.gearRatio
+
+        genPowerPlot = topdata.genTorque_s*(gbDot_j*2*pi)*inputs.gearRatio
 
         topdata.u_sm1 = copy(topdata.u_s)
         topdata.u_s = topdata.u_j
@@ -556,7 +551,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         topdata.gbDotDotHist[i+1] = topdata.gbDotDot_s
 
         #genTorque[i+1] = genTorque_s
-        topdata.genTorque[i+1] = genTorquePlot
+        topdata.genTorque[i+1] = topdata.genTorque_s
         topdata.genPower[i+1] = genPowerPlot
         topdata.torqueDriveShaft[i+1] = topdata.torqueDriveShaft_s
 
