@@ -31,7 +31,8 @@ Essentially the same installation as Linux except we recommend using the homebre
 
 ## Linux
 
-# Install/Update Required Compilers and Programs if Necessary (If you already can build OpenFAST, then you should be good)
+# Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
+
     apt-get update -y
     apt-get install git -y
     apt-get install wget -y
@@ -301,6 +302,7 @@ Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/PreComp.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OpenFASTWrappers.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/VAWTAero.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/GyricFEA.jl.git"))
+Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/Rainflow.jl.git"))
 Pkg.add(PackageSpec(url="git@github.com:SNL-WaterPower/OWENS.jl.git"))
 
 # Install PyPlot if not already installed

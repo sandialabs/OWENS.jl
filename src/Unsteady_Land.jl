@@ -124,7 +124,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false, verbosity=0,
     system=nothing,assembly=nothing, #TODO: should we initialize them in here? Unify the interface for ease?
-    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing)
+    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -289,6 +289,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             curvGX = zeros(3,length(assembly.elements))
         end
 
+        newVinf = 0.0 #TODO
+
         ## Gauss-Seidel predictor-corrector loop
         while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
             # println("Iteration $numIterations")
@@ -297,14 +299,19 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             # GENERATOR MODULE
             #------------------
             topdata.genTorque_j = 0
+
             if inputs.generatorOn
                     if inputs.useGeneratorFunction
                         specifiedOmega,_,_ = omegaSpecCheck(t[i]+topdata.delta_t,inputs.tocp,inputs.Omegaocp,topdata.delta_t)
-                        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
+                        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                         if isnothing(userDefinedGenerator)
                             genTorqueHSS0,topdata.integrator_j,controlnamecurrent = internaluserDefinedGenerator(newVinf,t[i],topdata.azi_j,topdata.Omega_j,topdata.OmegaHist[i],topdata.OmegaDot_j,topdata.OmegaDotHist[i],topdata.delta_t,topdata.integrator,specifiedOmega) #;operPhase
                         else
-                            genTorqueHSS0,topdata.integrator_j,controlnamecurrent = userDefinedGenerator(newVinf,t[i],topdata.azi_j,topdata.Omega_j,topdata.OmegaHist[i],topdata.OmegaDot_j,topdata.OmegaDotHist[i],topdata.delta_t,topdata.integrator,specifiedOmega) #;operPhase
+                            if !isnothing(turbsimfile) #&& inputs.AD15On
+                                velocity = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
+                                newVinf = velocity[1]
+                            end
+                            genTorqueHSS0 = userDefinedGenerator(t[i],topdata.Omega_j*60,newVinf) #;operPhase
                         end
                     else
                         genTorqueHSS0 = simpleGenerator(inputs,topdata.Omega_j)
@@ -476,7 +483,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 GyricFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topdata.topElStorage,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
-            if verbosity>=2
+            if verbosity>4
                 println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm)")
             end
 
@@ -488,6 +495,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
         end #end iteration while loop
+
+        if verbosity >=1
+            println("Gen Torque: $(topdata.genTorque_j)")
+            println("RPM: $(topdata.Omega_j*60)")
+            println("Vinf: $(newVinf)")
+        end
 
         if inputs.analysisType=="ROM"
             eta_j = topdata.topDispOut.eta_sp1 #eta_j
@@ -505,13 +518,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         ## update timestepping variables and other states, store in history arrays
         ## calculate converged generator torque/power
-        genTorquePlot = 0
-        if (inputs.useGeneratorFunction)
-            if (inputs.generatorOn || (inputs.turbineStartup==0))
-                genTorqueHSS0 = simpleGenerator(inputs,Omega_j)
-            end
-        end
-        genPowerPlot = genTorquePlot*(gbDot_j*2*pi)*inputs.gearRatio
+
+        genPowerPlot = topdata.genTorque_s*(gbDot_j*2*pi)*inputs.gearRatio
 
         topdata.u_sm1 = copy(topdata.u_s)
         topdata.u_s = topdata.u_j
@@ -543,7 +551,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         topdata.gbDotDotHist[i+1] = topdata.gbDotDot_s
 
         #genTorque[i+1] = genTorque_s
-        topdata.genTorque[i+1] = genTorquePlot
+        topdata.genTorque[i+1] = topdata.genTorque_s
         topdata.genPower[i+1] = genPowerPlot
         topdata.torqueDriveShaft[i+1] = topdata.torqueDriveShaft_s
 

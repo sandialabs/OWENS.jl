@@ -126,15 +126,25 @@ function readNuMadMaterialsCSV(NuMad_materials_xlscsv_file)
         yt = abs.(Float64.(csvdata[data_start:data_end,17]) .* 1e6)  #pa
         yc = abs.(Float64.(csvdata[data_start:data_end,18]) .* 1e6)  #pa, abs since composites is looking for positive failure values and handles the negative.
         costs = Float64.(csvdata[data_start:data_end,21]) #$/kg
+        try
+            SN_stressMpa = Float64.(csvdata[data_start:data_end,23:28])
+            Log_SN_cycles2Fail = Float64.(csvdata[data_start:data_end,29:34])
+        catch
+            SN_stressMpa = collect(LinRange(1e12,0,6))
+            Log_SN_cycles2Fail = collect(LinRange(0,7,6))
+            @warn "Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10"
+        end
     else
         yt = ones(length(e1)) .* 100.0e6 #made up
         yc = ones(length(e1)) .* 100.0e6  #made up, abs since composites is looking for positive failure values and handles the negative.
         costs = zeros(length(e1)) #$/kg
+        SN_stressMpa = collect(LinRange(1e12,0,6))
+        Log_SN_cycles2Fail = collect(LinRange(0,7,6))
     end
 
     s = abs.(ones(length(e1)) .* 100.0e6)  #made up, abs since composites.jl is expecting positive failure values
 
-    return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness),costs)
+    return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness),costs,SN_stressMpa,Log_SN_cycles2Fail)
 
 end
 

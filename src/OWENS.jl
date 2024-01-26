@@ -4,6 +4,7 @@ module OWENS
 import GyricFEA
 import OpenFASTWrappers
 import VAWTAero
+import Rainflow
 
 # Github packages
 import Statistics
