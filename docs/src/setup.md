@@ -27,11 +27,12 @@ Be sure julia is on your path, and follow the windows compilation instructions f
 
 ## Mac
 
-Same installation as Linux except we recommend using the homebrew package manager, so exchange all "apt-get" with "brew" 
+Essentially the same installation as Linux except we recommend using the homebrew package manager, so exchange all "apt-get" with "brew" 
 
 ## Linux
 
 # Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
+
     apt-get update -y
     apt-get install git -y
     apt-get install wget -y
@@ -43,10 +44,7 @@ Same installation as Linux except we recommend using the homebrew package manage
 
 # Install julia
     cd ~
-    wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.3-linux-x86_64.tar.gz
-    tar zxvf julia-1.9.3-linux-x86_64.tar.gz
-    rm julia-1.9.3-linux-x86_64.tar.gz
-    export PATH="$PATH:/root/julia-1.9.3/bin"
+    curl -fsSL https://install.julialang.org | sh
 
 in your ~/.bashrc file, tell julia to use the command line git by inserting the following:
 
