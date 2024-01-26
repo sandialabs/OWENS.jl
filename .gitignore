@@ -11,3 +11,4 @@ new*
 *.docx
 *COMPILED*
 *.out
+*.h5
