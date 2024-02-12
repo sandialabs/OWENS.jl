@@ -309,7 +309,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         SF_buck[:,:,LE_idx] .= 1e6 #ignore leading edge
         SF_buck[:,:,TE_idx] .= 1e6 #ignore trailing edge
         minbuck_sf,minbuck_sfidx = findmin(SF_buck)
-        if verbosity>0
+        if verbosity>2
             println("\nWorst buckling safety factor $(minbuck_sf)")
             println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_bld)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
         end
@@ -320,7 +320,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
             end
         end
     else
-        if verbosity>3
+        if verbosity>2
             println("Buckling not a factor, no sections in compression")
         end
     end
@@ -350,12 +350,13 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         end
     end
 
-    printlamInfo(SF_ult,damage,SparCap_idx,"Spar Cap",composites_span_bld,verbosity)
-    printlamInfo(SF_ult,damage,LE_idx,"Leading Edge",composites_span_bld,verbosity)
-    printlamInfo(SF_ult,damage,TE_idx,"Trailing Edge",composites_span_bld,verbosity)
-    printlamInfo(SF_ult,damage,ForePanel_idx,"Fore Panel",composites_span_bld,verbosity)
-    printlamInfo(SF_ult,damage,AftPanel_idx,"Aft Panel",composites_span_bld,verbosity)
-
+    if verbosity>1
+        printlamInfo(SF_ult,damage,SparCap_idx,"Spar Cap",composites_span_bld,verbosity)
+        printlamInfo(SF_ult,damage,LE_idx,"Leading Edge",composites_span_bld,verbosity)
+        printlamInfo(SF_ult,damage,TE_idx,"Trailing Edge",composites_span_bld,verbosity)
+        printlamInfo(SF_ult,damage,ForePanel_idx,"Fore Panel",composites_span_bld,verbosity)
+        printlamInfo(SF_ult,damage,AftPanel_idx,"Aft Panel",composites_span_bld,verbosity)
+    end
 end
 
 function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Twr_LE_idx,damage)
@@ -411,15 +412,16 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     epsilon_z_hist_1=nothing,kappa_x_hist_1=nothing,epsilon_y_hist_1=nothing,verbosity=2,
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-    Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=0)
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=0,AD15bldNdIdxRng=nothing,AD15bldElIdxRng=nothing,
+    strut_precompoutput=nothing,strut_precompinput=nothing,plyprops_strut=nothing,numadIn_strut=nothing,lam_U_strut=nothing,lam_L_strut=nothing)
 
     # Linearly Superimpose the Strains
-    epsilon_x_hist = copy(epsilon_x_hist_ps).*0.0
-    kappa_y_hist = copy(kappa_y_hist_ps).*0.0
-    kappa_z_hist = copy(kappa_z_hist_ps).*0.0
-    epsilon_z_hist = copy(epsilon_z_hist_ps).*0.0
-    kappa_x_hist = copy(kappa_x_hist_ps).*0.0
-    epsilon_y_hist = copy(epsilon_y_hist_ps).*0.0
+    epsilon_x_hist = epsilon_x_hist_ps#copy(epsilon_x_hist_ps).*0.0
+    kappa_y_hist = kappa_y_hist_ps#copy(kappa_y_hist_ps).*0.0
+    kappa_z_hist = kappa_z_hist_ps#copy(kappa_z_hist_ps).*0.0
+    epsilon_z_hist = epsilon_z_hist_ps#copy(epsilon_z_hist_ps).*0.0
+    kappa_x_hist = kappa_x_hist_ps#copy(kappa_x_hist_ps).*0.0
+    epsilon_y_hist = epsilon_y_hist_ps#copy(epsilon_y_hist_ps).*0.0
 
     if epsilon_x_hist_1!=nothing
         for ipt = 1:4
@@ -441,9 +443,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         epsilon_y_hist[:,:,throwawayTimeSteps:end] = epsilon_y_hist_ps[:,:,throwawayTimeSteps:end]
     end
 
-    ##########################################
-    #### Get strain values at the blades #####
-    ##########################################
+    #############################################
+    #### Get strain values at the blades ########
+    #############################################
 
     meanepsilon_z_hist = Statistics.mean(epsilon_z_hist,dims=1)
     meanepsilon_y_hist = Statistics.mean(epsilon_y_hist,dims=1)
@@ -458,15 +460,20 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     mesh_span_bld = zeros(length(mymesh.structuralNodeNumbers[1,:]))
     composites_span_bld = zeros(length(bld_precompinput))
     for ibld = 1:Nbld
-        start = Int(mymesh.structuralNodeNumbers[ibld,1])
-        stop = Int(mymesh.structuralNodeNumbers[ibld,end])
+        start = Int(AD15bldNdIdxRng[ibld,1])
+        stop = Int(AD15bldNdIdxRng[ibld,2])
+        if stop < start
+            temp = stop
+            stop = start
+            start = temp
+        end
         x = mymesh.z[start:stop]
         x = x.-x[1] #zero
         x = x./x[end] #normalize
         mesh_span_bld[:] = mymesh.z[start:stop].-mymesh.z[start]
         global composites_span_bld = FLOWMath.akima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,length(bld_precompinput)))
         for its = 1:N_ts
-            # Interpolate to the composite inputs
+            # Interpolate to the composite inputs #TODO: verify node vs el in strain
             eps_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,epsilon_x_hist[1,start:stop,its],composites_span_bld)
             eps_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,meanepsilon_z_hist[1,start:stop,its],composites_span_bld)
             eps_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,meanepsilon_y_hist[1,start:stop,its],composites_span_bld)
@@ -476,6 +483,47 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         end
     end
 
+    if !isnothing(strut_precompoutput)
+        ####################################################
+        #### Get strain values at the struts ########
+        ####################################################
+
+        eps_x_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
+        eps_z_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
+        eps_y_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
+        kappa_x_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
+        kappa_y_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
+        kappa_z_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
+        mesh_span_strut = zeros(abs(diff(AD15bldNdIdxRng[Nbld+1,:])[1])+1) # number of strut nodes
+        composites_span_strut = zeros(length(strut_precompinput))
+        istrut = 0
+        for ibld = Nbld+1:length(AD15bldNdIdxRng[:,1])
+            istrut += 1
+
+            start = Int(AD15bldNdIdxRng[ibld,1])
+            stop = Int(AD15bldNdIdxRng[ibld,2])
+            if stop < start
+                temp = stop
+                stop = start
+                start = temp
+            end
+
+            x = mymesh.z[start:stop]
+            x = x.-x[1] #zero
+            x = x./x[end] #normalize
+            mesh_span_strut[:] = abs.(mymesh.z[start:stop].-mymesh.z[start])
+            global composites_span_strut = FLOWMath.akima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,length(strut_precompinput)))
+            for its = 1:N_ts
+                # Interpolate to the composite inputs #TODO: verify node vs el in strain
+                eps_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,epsilon_x_hist[1,start:stop,its],composites_span_strut)
+                eps_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,meanepsilon_z_hist[1,start:stop,its],composites_span_strut)
+                eps_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,meanepsilon_y_hist[1,start:stop,its],composites_span_strut)
+                kappa_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,kappa_x_hist[1,start:stop,its],composites_span_strut)
+                kappa_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,kappa_y_hist[1,start:stop,its],composites_span_strut)
+                kappa_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,kappa_z_hist[1,start:stop,its],composites_span_strut)
+            end
+        end
+    end
 
     ##########################################
     #### Get strain values at the tower #####
@@ -537,6 +585,39 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         println("\n\nLOWER BLADE SURFACE")
     end
     printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_bld,lam_L_bld,topDamage_blade_L)
+
+    if !isnothing(strut_precompoutput)
+        ##########################################
+        #### Calculate Stress At the Struts
+        ##########################################
+
+        stress_U = zeros(N_ts,length(composites_span_strut),length(lam_U_strut[1,:]),3)
+        SF_ult_U = zeros(N_ts,length(composites_span_strut),length(lam_U_strut[1,:]))
+        SF_buck_U = zeros(N_ts,length(composites_span_strut),length(lam_U_strut[1,:]))
+
+        topstrainout_strut_U,topDamage_strut_U = calcSF(stress_U,SF_ult_U,SF_buck_U,composites_span_strut,plyprops_strut,
+        strut_precompinput,strut_precompoutput,lam_U_strut,eps_x_strut,eps_z_strut,eps_y_strut,kappa_x_strut,
+        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=true)
+
+        if verbosity>0
+            println("Composite Ultimate and Buckling Safety Factors")
+            println("\n\nUPPER STRUT SURFACE")
+        end
+        printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_strut,lam_U_strut,topDamage_strut_U)
+
+        stress_L = zeros(N_ts,length(composites_span_strut),length(lam_U_strut[1,:]),3)
+        SF_ult_L = zeros(N_ts,length(composites_span_strut),length(lam_L_strut[1,:]))
+        SF_buck_L = zeros(N_ts,length(composites_span_strut),length(lam_L_strut[1,:]))
+
+        topstrainout_strut_L,topDamage_strut_L = calcSF(stress_L,SF_ult_L,SF_buck_L,composites_span_strut,plyprops_strut,
+        strut_precompinput,strut_precompoutput,lam_L_strut,eps_x_strut,eps_z_strut,eps_y_strut,kappa_x_strut,
+        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=false)
+
+        if verbosity>0
+            println("\n\nLOWER STRUT SURFACE")
+        end
+        printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_strut,lam_L_strut,topDamage_strut_L)
+    end
 
     ##########################################
     #### Calculate Stress At the Tower
