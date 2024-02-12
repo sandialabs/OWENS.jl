@@ -376,6 +376,7 @@ function runDLC(DLCs,Inp,path;
     Vdesign=11.0, # Design or rated speed
     grid_oversize=1.1,
     regenWindFiles=false,
+    delta_t_turbsim=nothing,
     runScript = OWENS.runOWENS)
 
     if !isdir(turbsimpath)
@@ -387,7 +388,7 @@ function runDLC(DLCs,Inp,path;
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize)
+        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,delta_t_turbsim)
 
 
         # Run Simulation at each Wind Speed
@@ -431,6 +432,7 @@ mutable struct DLCParameters
     RandSeed1 # Turbulent Random Seed Number
     NumGrid_Z # Vertical grid-point matrix dimension
     NumGrid_Y # Horizontal grid-point matrix dimension
+    TimeStepSim # Time step [s]
     TimeStep # Time step [s]
     HubHt # Hub height [m] (should be > 0.5*GridHeight)
     AnalysisTime # Length of analysis time series [s] (program will add time if necessary)
@@ -456,7 +458,7 @@ mutable struct DLCParameters
 end
 
 
-function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2)
+function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,delta_t_turbsim=nothing)
 
     Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
@@ -486,7 +488,12 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     RefHt = round(Blade_Height) #TODO
     URef = 0.0 #gets filled in later from the Vinf_range when the .bst is generated
 
-    TimeStep = delta_t
+    TimeStepSim = delta_t
+    if !isnothing(delta_t_turbsim)
+        TimeStep = delta_t_turbsim
+    else
+        TimeStep = delta_t
+    end
 
     time = LinRange(0,10,10)
     windvel = nothing # gets supersceded   
@@ -819,7 +826,8 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
         RandSeed1, # Turbulent Random Seed Number
         NumGrid_Z, # Vertical grid-point matrix dimension
         NumGrid_Y, # Horizontal grid-point matrix dimension
-        TimeStep, # Time step [s]
+        TimeStepSim, # Time step [s]
+        TimeStep, # Turbsim time step [s]
         HubHt, # Hub height [m] (should be > 0.5*GridHeight)
         AnalysisTime, # Length of analysis time series [s] (program will add time if necessary)
         GridHeight, # Grid height [m]
