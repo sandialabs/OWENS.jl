@@ -562,8 +562,7 @@ nlOn = true,
 numNodes = mymesh.numNodes,
 RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
-iterationType = "DI",
-predef = "update")
+iterationType = "DI")
 
 println("Running Unsteady")
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,

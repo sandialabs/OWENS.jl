@@ -281,8 +281,7 @@ function runOWENS(Inp,path;verbosity=2)
     numNodes = mymesh.numNodes,
     RayleighAlpha = 0.05,
     RayleighBeta = 0.05,
-    iterationType = "DI",
-    predef = "update")
+    iterationType = "DI")
 
     println("Running Unsteady")
     t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
@@ -370,8 +369,8 @@ function runDLC(DLCs,Inp,path;
     turbsimpath="./turbsimfiles",
     templatefile="$module_path/template_files/templateTurbSim.inp",
     pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
-    NumGrid_Z=100,
-    NumGrid_Y=100,
+    NumGrid_Z=nothing,
+    NumGrid_Y=nothing,
     Vref=10.0,
     Vdesign=11.0, # Design or rated speed
     grid_oversize=1.1,
@@ -389,7 +388,7 @@ function runDLC(DLCs,Inp,path;
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim)
+        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y)
 
 
         # Run Simulation at each Wind Speed
@@ -459,7 +458,7 @@ mutable struct DLCParameters
 end
 
 
-function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,simtime_turbsim=nothing,delta_t_turbsim=nothing)
+function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,simtime_turbsim=nothing,delta_t_turbsim=nothing,NumGrid_Z=nothing,NumGrid_Y=nothing)
 
     Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
@@ -468,21 +467,26 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     delta_t = Inp.delta_t
     simtime = numTS*delta_t
 
-    Blade_Radius = Inp.Blade_Radius
-    Blade_Height = Inp.Blade_Height
+    GridHeight = (Inp.towerHeight-Inp.Blade_Height/2+Inp.Blade_Height)*grid_oversize
+    GridWidth = Inp.Blade_Radius * 2.0 * grid_oversize
+    HubHt = GridHeight*2/3
 
-    NumGrid_Z = Inp.ntelem+Inp.nbelem
-    NumGrid_Y = Inp.ntelem+Inp.nbelem
+    if !isnothing(NumGrid_Z)
+        NumGrid_Z = NumGrid_Z #Inp.ntelem+Inp.nbelem
+        NumGrid_Y = NumGrid_Y #Inp.ntelem+Inp.nbelem
+    else
+        NumGrid_Z = Inp.ntelem+Inp.nbelem
+        NumGrid_Y = Inp.nbelem
+    end
 
     RandSeed1 = 40071 #TODO
-    HubHt = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize/2 + 1e-6 #TODO
+    
     if !isnothing(simtime_turbsim)
         AnalysisTime = simtime_turbsim
     else
         AnalysisTime = simtime
     end
-    GridHeight = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize
-    GridWidth = ceil((Blade_Radius) * 2.0 * grid_oversize)
+
     VFlowAng = 0.0
     HFlowAng = 0.0
     
@@ -490,7 +494,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     IECturbc = WindChar
     TurbModel = "\"IECKAI\""
     
-    RefHt = round(Blade_Height) #TODO
+    RefHt = round(Inp.towerHeight) #TODO: what if tower doesn't extend into blade z level
     URef = 0.0 #gets filled in later from the Vinf_range when the .bst is generated
 
     TimeStepSim = delta_t

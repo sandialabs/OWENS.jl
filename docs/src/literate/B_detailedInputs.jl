@@ -191,8 +191,7 @@ nlOn = true,
 numNodes = mymesh.numNodes,
 RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
-iterationType = "DI",
-predef = "update")
+iterationType = "DI")
 
 nothing
 
