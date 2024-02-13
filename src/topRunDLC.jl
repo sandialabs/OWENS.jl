@@ -377,6 +377,7 @@ function runDLC(DLCs,Inp,path;
     grid_oversize=1.1,
     regenWindFiles=false,
     delta_t_turbsim=nothing,
+    simtime_turbsim=nothing,
     runScript = OWENS.runOWENS)
 
     if !isdir(turbsimpath)
@@ -388,7 +389,7 @@ function runDLC(DLCs,Inp,path;
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,delta_t_turbsim)
+        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim)
 
 
         # Run Simulation at each Wind Speed
@@ -458,7 +459,7 @@ mutable struct DLCParameters
 end
 
 
-function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,delta_t_turbsim=nothing)
+function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,simtime_turbsim=nothing,delta_t_turbsim=nothing)
 
     Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
@@ -475,7 +476,11 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
 
     RandSeed1 = 40071 #TODO
     HubHt = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize/2 + 1e-6 #TODO
-    AnalysisTime = simtime
+    if !isnothing(simtime_turbsim)
+        AnalysisTime = simtime_turbsim
+    else
+        AnalysisTime = simtime
+    end
     GridHeight = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize
     GridWidth = ceil((Blade_Radius) * 2.0 * grid_oversize)
     VFlowAng = 0.0
