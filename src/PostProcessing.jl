@@ -284,24 +284,23 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
                 cycles2fail = 10.0 .^ logcycles2fail
                 damage_layers[ilayer] = sum(cyclesatStressRanges./cycles2fail)
             end
-            #TODO: print statistics on damage including which layer was worst
             damage[i_station,j_lam] = maximum(damage_layers)
         end
     end
     return topstrainout,damage
 end
 
-function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span_bld,lam_used,damage)
+function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span,lam_used,damage)
     # verbosity: 0 Nothing, 1 summary, 2 summary and spar, 3 everything except bucking, 4 everything
     #Ultimate
     mymin,idx = findmin(SF_ult)
     damagemax, idxdamage = findmax(damage)
     if verbosity>0
         println("\nMinimum Safety Factor on Surface: $(minimum(SF_ult))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld)) at lam $(idx[3]) of $(length(lam_used[idx[2],:]))")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span)) at lam $(idx[3]) of $(length(lam_used[idx[2],:]))")
 
         println("Maximum Damage: $damagemax")
-        println("At composite station $(idxdamage[1]) of $(length(composites_span_bld)) at lam $(idxdamage[2]) of $(length(lam_used[idxdamage[1],:]))")
+        println("At composite station $(idxdamage[1]) of $(length(composites_span)) at lam $(idxdamage[2]) of $(length(lam_used[idxdamage[1],:]))")
     end
     #Buckling
     if !isempty(SF_buck[SF_buck.>0.0])
@@ -311,11 +310,11 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         minbuck_sf,minbuck_sfidx = findmin(SF_buck)
         if verbosity>2
             println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_bld)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
+            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
         end
         if verbosity>3
             println("Buckling")
-            for istation = 1:length(composites_span_bld)
+            for istation = 1:length(composites_span)
                 println(minimum(SF_buck[minbuck_sfidx[1],istation,:]))
             end
         end
@@ -325,16 +324,16 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         end
     end
 
-    function printlamInfo(SF_ultin,damagein,lam_idx,name,composites_span_bld,verbosity)
+    function printlamInfo(SF_ultin,damagein,lam_idx,name,composites_span,verbosity)
 
         mymin,idx = findmin(SF_ultin[:,:,lam_idx])
         damagemax, idxdamage = findmax(damagein[:,lam_idx])
         if verbosity>0
             println("\n$name SF min: $mymin")
-            println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_bld))")
+            println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span))")
 
             println("$name Damage max: $damagemax")
-            println("At composite station $(idxdamage[1]) of $(length(composites_span_bld))")
+            println("At composite station $(idxdamage[1]) of $(length(composites_span))")
         end
 
         if verbosity>1
@@ -351,24 +350,24 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
     end
 
     if verbosity>1
-        printlamInfo(SF_ult,damage,SparCap_idx,"Spar Cap",composites_span_bld,verbosity)
-        printlamInfo(SF_ult,damage,LE_idx,"Leading Edge",composites_span_bld,verbosity)
-        printlamInfo(SF_ult,damage,TE_idx,"Trailing Edge",composites_span_bld,verbosity)
-        printlamInfo(SF_ult,damage,ForePanel_idx,"Fore Panel",composites_span_bld,verbosity)
-        printlamInfo(SF_ult,damage,AftPanel_idx,"Aft Panel",composites_span_bld,verbosity)
+        printlamInfo(SF_ult,damage,SparCap_idx,"Spar Cap",composites_span,verbosity)
+        printlamInfo(SF_ult,damage,LE_idx,"Leading Edge",composites_span,verbosity)
+        printlamInfo(SF_ult,damage,TE_idx,"Trailing Edge",composites_span,verbosity)
+        printlamInfo(SF_ult,damage,ForePanel_idx,"Fore Panel",composites_span,verbosity)
+        printlamInfo(SF_ult,damage,AftPanel_idx,"Aft Panel",composites_span,verbosity)
     end
 end
 
-function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Twr_LE_idx,damage)
+function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span,Twr_LE_idx,damage)
 
     #Ultimate
     mymin,idx = findmin(SF_ult_T)
     damagemax, idxdamage = findmax(damage)
     if verbosity>2
         println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_T))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span_twr)) at lam $(idx[3]) of $(length(lam_twr[idx[2],:]))")
+        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span)) at lam $(idx[3]) of $(length(lam_twr[idx[2],:]))")
         println("Maximum Damage: $damagemax")
-        println("At composite station $(idxdamage[1]) of $(length(composites_span_bld)) at lam $(idxdamage[2]) of $(length(lam_twr[idxdamage[1],:]))")
+        println("At composite station $(idxdamage[1]) of $(length(composites_span)) at lam $(idxdamage[2]) of $(length(lam_twr[idxdamage[1],:]))")
     end
     #Buckling
     if !isempty(SF_buck_T[SF_buck_T.>0.0])
@@ -378,10 +377,10 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span_twr,Tw
         minbuck_sf,minbuck_sfidx = findmin(SF_buck_T)
         if verbosity>3
             println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span_twr)) at lam $(minbuck_sfidx[3]) of $(length(lam_twr[minbuck_sfidx[2],:]))")
+            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span)) at lam $(minbuck_sfidx[3]) of $(length(lam_twr[minbuck_sfidx[2],:]))")
         elseif verbosity>1
             println("Buckling")
-            for istation = 1:length(composites_span_twr)
+            for istation = 1:length(composites_span)
                 println(minimum(SF_buck_T[minbuck_sfidx[1],istation,:]))
             end
         end
