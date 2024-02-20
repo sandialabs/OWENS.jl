@@ -456,29 +456,36 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     kappa_x_bld = zeros(Nbld,N_ts,length(bld_precompinput))
     kappa_y_bld = zeros(Nbld,N_ts,length(bld_precompinput))
     kappa_z_bld = zeros(Nbld,N_ts,length(bld_precompinput))
-    mesh_span_bld = zeros(length(mymesh.structuralNodeNumbers[1,:]))
     composites_span_bld = zeros(length(bld_precompinput))
     for ibld = 1:Nbld
-        start = Int(AD15bldNdIdxRng[ibld,1])
-        stop = Int(AD15bldNdIdxRng[ibld,2])
-        if stop < start
-            temp = stop
-            stop = start
-            start = temp
+        startN = Int(AD15bldNdIdxRng[ibld,1])
+        stopN = Int(AD15bldNdIdxRng[ibld,2])
+        if stopN < startN
+            temp = stopN
+            stopN = startN
+            startN = temp
         end
-        x = mymesh.z[start:stop]
-        x = x.-x[1] #zero
-        x = x./x[end] #normalize
-        mesh_span_bld[:] = mymesh.z[start:stop].-mymesh.z[start]
+
+        startE = Int(AD15bldElIdxRng[ibld,1])
+        stopE = Int(AD15bldElIdxRng[ibld,2])
+        if stopE < startE
+            temp = stopE
+            stopE = startE
+            startE = temp
+        end
+
+        mesh_span_bld = mymesh.z[startN:stopN].-mymesh.z[startN]
+        mesh_span_bld_el = FLOWMath.akima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,stopE-startE+1))
         global composites_span_bld = FLOWMath.akima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,length(bld_precompinput)))
+
         for its = 1:N_ts
             # Interpolate to the composite inputs #TODO: verify node vs el in strain
-            eps_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,epsilon_x_hist[1,start:stop,its],composites_span_bld)
-            eps_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,meanepsilon_z_hist[1,start:stop,its],composites_span_bld)
-            eps_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,meanepsilon_y_hist[1,start:stop,its],composites_span_bld)
-            kappa_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,kappa_x_hist[1,start:stop,its],composites_span_bld)
-            kappa_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,kappa_y_hist[1,start:stop,its],composites_span_bld)
-            kappa_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld,kappa_z_hist[1,start:stop,its],composites_span_bld)
+            eps_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,epsilon_x_hist[1,startE:stopE,its],composites_span_bld)
+            eps_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,meanepsilon_z_hist[1,startE:stopE,its],composites_span_bld)
+            eps_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,meanepsilon_y_hist[1,startE:stopE,its],composites_span_bld)
+            kappa_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,kappa_x_hist[1,startE:stopE,its],composites_span_bld)
+            kappa_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,kappa_y_hist[1,startE:stopE,its],composites_span_bld)
+            kappa_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,kappa_z_hist[1,startE:stopE,its],composites_span_bld)
         end
     end
 
@@ -493,33 +500,39 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         kappa_x_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
         kappa_y_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
         kappa_z_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
-        mesh_span_strut = zeros(abs(diff(AD15bldNdIdxRng[Nbld+1,:])[1])+1) # number of strut nodes
         composites_span_strut = zeros(length(strut_precompinput))
         istrut = 0
         for ibld = Nbld+1:length(AD15bldNdIdxRng[:,1])
             istrut += 1
 
-            start = Int(AD15bldNdIdxRng[ibld,1])
-            stop = Int(AD15bldNdIdxRng[ibld,2])
-            if stop < start
-                temp = stop
-                stop = start
-                start = temp
+            startN = Int(AD15bldElIdxRng[ibld,1])
+            stopN = Int(AD15bldElIdxRng[ibld,2])
+            if stopN < startN
+                temp = stopN
+                stopN = startN
+                startN = temp
             end
 
-            x = mymesh.z[start:stop]
-            x = x.-x[1] #zero
-            x = x./x[end] #normalize
-            mesh_span_strut[:] = abs.(mymesh.z[start:stop].-mymesh.z[start])
+            startE = Int(AD15bldElIdxRng[ibld,1])
+            stopE = Int(AD15bldElIdxRng[ibld,2])
+            if stopE < startE
+                temp = stopE
+                stopE = startE
+                startE = temp
+            end
+
+            mesh_span_strut = abs.(mymesh.z[startN:stopN].-mymesh.z[startN])
+            mesh_span_strut_el = FLOWMath.akima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,stopE-startE+1))
             global composites_span_strut = FLOWMath.akima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,length(strut_precompinput)))
+
             for its = 1:N_ts
                 # Interpolate to the composite inputs #TODO: verify node vs el in strain
-                eps_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,epsilon_x_hist[1,start:stop,its],composites_span_strut)
-                eps_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,meanepsilon_z_hist[1,start:stop,its],composites_span_strut)
-                eps_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,meanepsilon_y_hist[1,start:stop,its],composites_span_strut)
-                kappa_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,kappa_x_hist[1,start:stop,its],composites_span_strut)
-                kappa_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,kappa_y_hist[1,start:stop,its],composites_span_strut)
-                kappa_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut,kappa_z_hist[1,start:stop,its],composites_span_strut)
+                eps_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,epsilon_x_hist[1,startE:stopE,its],composites_span_strut)
+                eps_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,meanepsilon_z_hist[1,startE:stopE,its],composites_span_strut)
+                eps_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,meanepsilon_y_hist[1,startE:stopE,its],composites_span_strut)
+                kappa_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,kappa_x_hist[1,startE:stopE,its],composites_span_strut)
+                kappa_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,kappa_y_hist[1,startE:stopE,its],composites_span_strut)
+                kappa_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,kappa_z_hist[1,startE:stopE,its],composites_span_strut)
             end
         end
     end
