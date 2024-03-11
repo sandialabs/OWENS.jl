@@ -551,7 +551,7 @@ function setupOWENShawt(VAWTAero,path;
     B = 3,
     H = 5.0,
     R = 2.5,
-    hubR = 2.0,
+    AD15hubR = 2.0,
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
     ifw=false,
@@ -616,7 +616,7 @@ function setupOWENShawt(VAWTAero,path;
         mymesh,myort,myjoint,bladeIdx,bladeElem = create_hawt_mesh(;hub_depth=Ht,
         tip_precone = H, #blade height
         R, # m bade radius
-        hubR,
+        AD15hubR,
         nblade = Nbld,
         AD15_ccw,
         ntelem, #tower elements
@@ -648,7 +648,7 @@ function setupOWENShawt(VAWTAero,path;
             angularOffset = -pi/2)
     end
 
-    nTwrElem = Int(mymesh.meshSeg[1])+2
+    nTwrElem = Int(mymesh.meshSeg[1])+1
 
     # PyPlot.figure()
     # PyPlot.plot(mymesh.x,mymesh.z,"b-")

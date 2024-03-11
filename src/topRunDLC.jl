@@ -318,6 +318,8 @@ function runOWENS(Inp,path;verbosity=2)
     #### Data Dump in OpenFAST Format #####
     ##########################################
 
+    return [1.0,2.0,3.0]
+
 end
 
 # # Test
