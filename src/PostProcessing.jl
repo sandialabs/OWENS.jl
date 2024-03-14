@@ -295,13 +295,26 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
     #Ultimate
     mymin,idx = findmin(SF_ult)
     damagemax, idxdamage = findmax(damage)
+    idx1 = idx[1]
+    idx2 = idx[2]
+    idx3 = idx[3]
+    idxdamage1 = idxdamage[1]
+    idxdamage2 = idxdamage[2]
+    # idxdamage3 = idxdamage[3]
+    # if useStation != 0 
+    #     println("Using Specified composite station $useStation")
+    #     idx2 = useStation
+    #     idxdamage1 = useStation
+    # end
+    
     if verbosity>0
         println("\nMinimum Safety Factor on Surface: $(minimum(SF_ult))")
-        println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span)) at lam $(idx[3]) of $(length(lam_used[idx[2],:]))")
+        println("At time $(idx1*0.05)s at composite station $(idx2) of $(length(composites_span)) at lam $(idx[3]) of $(length(lam_used[idx2,:]))")
 
         println("Maximum Damage: $damagemax")
-        println("At composite station $(idxdamage[1]) of $(length(composites_span)) at lam $(idxdamage[2]) of $(length(lam_used[idxdamage[1],:]))")
+        println("At composite station $(idxdamage1) of $(length(composites_span)) at lam $(idxdamage2) of $(length(lam_used[idxdamage1,:]))")
     end
+
     #Buckling
     if !isempty(SF_buck[SF_buck.>0.0])
         SF_buck[SF_buck.<0.0] .= 1e6
@@ -310,7 +323,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         minbuck_sf,minbuck_sfidx = findmin(SF_buck)
         if verbosity>2
             println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
+            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx2) of $(length(composites_span)) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx2,:]))")
         end
         if verbosity>3
             println("Buckling")
@@ -328,7 +341,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
 
         mymin,idx = findmin(SF_ultin[:,:,lam_idx])
         damagemax, idxdamage = findmax(damagein[:,lam_idx])
-        if verbosity>0
+        if verbosity>1
             println("\n$name SF min: $mymin")
             println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span))")
 
@@ -336,7 +349,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
             println("At composite station $(idxdamage[1]) of $(length(composites_span))")
         end
 
-        if verbosity>1
+        if verbosity>2
             println("\n$name SF")
             for SF in SF_ultin[idx[1],:,lam_idx]
                 println(SF)
@@ -363,7 +376,7 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span,Twr_LE
     #Ultimate
     mymin,idx = findmin(SF_ult_T)
     damagemax, idxdamage = findmax(damage)
-    if verbosity>2
+    if verbosity>1
         println("\nMinimum Safety Factor on tower Surface: $(minimum(SF_ult_T))")
         println("At time $(idx[1]*0.05)s at composite station $(idx[2]) of $(length(composites_span)) at lam $(idx[3]) of $(length(lam_twr[idx[2],:]))")
         println("Maximum Damage: $damagemax")
@@ -378,7 +391,7 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,composites_span,Twr_LE
         if verbosity>3
             println("\nWorst buckling safety factor $(minbuck_sf)")
             println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(length(composites_span)) at lam $(minbuck_sfidx[3]) of $(length(lam_twr[minbuck_sfidx[2],:]))")
-        elseif verbosity>1
+        elseif verbosity>3
             println("Buckling")
             for istation = 1:length(composites_span)
                 println(minimum(SF_buck_T[minbuck_sfidx[1],istation,:]))
@@ -476,7 +489,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
         mesh_span_bld = mymesh.z[startN:stopN].-mymesh.z[startN]
         mesh_span_bld_el = FLOWMath.akima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,stopE-startE+1))
-        global composites_span_bld = FLOWMath.akima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,length(bld_precompinput)))
+        global composites_span_bld = numadIn_bld.span/maximum(numadIn_bld.span)*maximum(mesh_span_bld_el) #TODO: this assumes struts and blades are straight, should be mapped for all potential cases, also need to input hub offset
 
         for its = 1:N_ts
             # Interpolate to the composite inputs #TODO: verify node vs el in strain
@@ -505,8 +518,8 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         for ibld = Nbld+1:length(AD15bldNdIdxRng[:,1])
             istrut += 1
 
-            startN = Int(AD15bldElIdxRng[ibld,1])
-            stopN = Int(AD15bldElIdxRng[ibld,2])
+            startN = Int(AD15bldNdIdxRng[ibld,1])
+            stopN = Int(AD15bldNdIdxRng[ibld,2])
             if stopN < startN
                 temp = stopN
                 stopN = startN
@@ -523,7 +536,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
             mesh_span_strut = abs.(mymesh.z[startN:stopN].-mymesh.z[startN])
             mesh_span_strut_el = FLOWMath.akima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,stopE-startE+1))
-            global composites_span_strut = FLOWMath.akima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,length(strut_precompinput)))
+            global composites_span_strut = numadIn_strut.span/maximum(numadIn_strut.span)*maximum(mesh_span_strut_el) #TODO: this assumes struts and blades are straight, should be mapped for all potential cases, also need to input hub offset
 
             for its = 1:N_ts
                 # Interpolate to the composite inputs #TODO: verify node vs el in strain
