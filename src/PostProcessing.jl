@@ -290,7 +290,7 @@ function calcSF(stress,SF_ult,SF_buck,composites_span,plyprops,
     return topstrainout,damage
 end
 
-function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span,lam_used,damage)
+function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,composites_span,lam_used,damage;useStation=0)
     # verbosity: 0 Nothing, 1 summary, 2 summary and spar, 3 everything except bucking, 4 everything
     #Ultimate
     mymin,idx = findmin(SF_ult)
@@ -300,12 +300,12 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
     idx3 = idx[3]
     idxdamage1 = idxdamage[1]
     idxdamage2 = idxdamage[2]
-    # idxdamage3 = idxdamage[3]
-    # if useStation != 0 
-    #     println("Using Specified composite station $useStation")
-    #     idx2 = useStation
-    #     idxdamage1 = useStation
-    # end
+    
+    if useStation != 0 
+        println("Using Specified composite station $useStation")
+        idx2 = useStation
+        idxdamage1 = useStation
+    end
     
     if verbosity>0
         println("\nMinimum Safety Factor on Surface: $(minimum(SF_ult))")
@@ -424,7 +424,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     epsilon_z_hist_1=nothing,kappa_x_hist_1=nothing,epsilon_y_hist_1=nothing,verbosity=2,
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-    Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=0,AD15bldNdIdxRng=nothing,AD15bldElIdxRng=nothing,
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=1,AD15bldNdIdxRng=nothing,AD15bldElIdxRng=nothing,
     strut_precompoutput=nothing,strut_precompinput=nothing,plyprops_strut=nothing,numadIn_strut=nothing,lam_U_strut=nothing,lam_L_strut=nothing)
 
     # Linearly Superimpose the Strains
@@ -628,7 +628,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             println("Composite Ultimate and Buckling Safety Factors")
             println("\n\nUPPER STRUT SURFACE")
         end
-        printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_strut,lam_U_strut,topDamage_strut_U)
+        printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_strut,lam_U_strut,topDamage_strut_U;useStation=2)
 
         stress_L = zeros(N_ts,length(composites_span_strut),length(lam_U_strut[1,:]),3)
         SF_ult_L = zeros(N_ts,length(composites_span_strut),length(lam_L_strut[1,:]))
@@ -641,7 +641,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         if verbosity>0
             println("\n\nLOWER STRUT SURFACE")
         end
-        printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_strut,lam_L_strut,topDamage_strut_L)
+        printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,composites_span_strut,lam_L_strut,topDamage_strut_L;useStation=2)
     end
 
     ##########################################
