@@ -1,0 +1,12 @@
+_15mTower_transient_dvawt_c_2_lcdt.mesh
+_15mTower_transient_dvawt_c_2_lcdt.el
+_15mTower_transient_dvawt_c_2_lcdt.ort
+_15mTower_transient_dvawt_c_2_lcdt.jnt
+[concentrated_nodal_term_file]
+_15mTower_transient_dvawt_c_2_lcdt.bc
+0 [platform_property_file]
+[initial_conditions_file]
+1 _15mTower_transient_dvawt_c_2_lcdt.bld [aero_loads_file]
+0 [drivetrain_property_file]
+[generator_property_file]
+0.000000	0.000000	

@@ -1,0 +1,11 @@
+/VAWT*
+*.xlsx
+*.out
+*.log
+*.bbl
+*.aux
+*.blg
+*.gz
+build/
+site/
+examples/

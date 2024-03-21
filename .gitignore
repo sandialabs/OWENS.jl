@@ -1,0 +1,14 @@
+*.DS_Store
+Manifest.toml
+*.vscode
+*.vtu
+*.pvd
+new*
+*vtk*
+*.sum
+*.ech
+*2.dat
+*.docx
+*COMPILED*
+*.out
+*.h5
