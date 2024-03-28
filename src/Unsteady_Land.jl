@@ -322,6 +322,11 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 
                 #         genTorqueAppliedToTurbineRotor0 = -genTorque0
                 #         genTorqueAppliedToPlatform0 = genTorqueHSS0
+            else
+                if !isnothing(turbsimfile) && verbosity >=1#&& inputs.AD15On
+                    velocity = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
+                    newVinf = velocity[1]
+                end
             end
             
             #-------------------
@@ -500,6 +505,10 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             println("Gen Torque: $(topdata.genTorque_j)")
             println("RPM: $(topdata.Omega_j*60)")
             println("Vinf: $(newVinf)")
+            # velocitymid = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/2],t[i])
+            # velocityquarter = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/4],t[i])
+            # println("Velocity mid: $(velocitymid[1])")
+            # println("Velocity quarter: $(velocityquarter[1])")
         end
 
         if inputs.analysisType=="ROM"

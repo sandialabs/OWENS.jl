@@ -47,8 +47,8 @@ function MasterInput(;
     Vinf =  17.2, # m/s
     controlStrategy = "constantRPM", # TODO: incorporate the others
     RPM =  17.2, #RPM
-    Nslices =  30, # number of OWENSAero discritizations 
-    ntheta =  30, # number of OWENSAero azimuthal discretizations
+    Nslices =  30, # number of VAWTAero discritizations 
+    ntheta =  30, # number of VAWTAero azimuthal discretizations
     structuralModel = "GX", #GX, TNB, ROM
     ntelem =  10, #tower elements in each 
     nbelem =  60, #blade elements in each 
@@ -183,7 +183,8 @@ function runOWENS(Inp,path;verbosity=2)
     stiff_twr, stiff_bld,bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-    mass_breakout_blds,mass_breakout_twr,system,assembly,sections = OWENS.setupOWENS(OWENSAero,path;
+    mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD15bldElIdxRng,
+    strut_precompoutput,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut  = OWENS.setupOWENS(OWENSAero,path;
         rho,
         Nslices,
         ntheta,
@@ -281,8 +282,7 @@ function runOWENS(Inp,path;verbosity=2)
     numNodes = mymesh.numNodes,
     RayleighAlpha = 0.05,
     RayleighBeta = 0.05,
-    iterationType = "DI",
-    predef = "update")
+    iterationType = "DI")
 
     println("Running Unsteady")
     t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
@@ -299,16 +299,17 @@ function runOWENS(Inp,path;verbosity=2)
 
     massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
     SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-    topstrainout_tower_U,topstrainout_tower_L = OWENS.extractSF(bld_precompinput,
+    topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
+    topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
     mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-    kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor
-    # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+    kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-    Twr_LE_U_idx=1,Twr_LE_L_idx=1) #TODO: add in ability to have material safety factors and load safety factors
-
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
+    #TODO: get struts with darrieus working in fatigue output
     ##########################################
     #### Fatigue #####
     ##########################################
@@ -318,6 +319,8 @@ function runOWENS(Inp,path;verbosity=2)
     ##########################################
     #### Data Dump in OpenFAST Format #####
     ##########################################
+
+    return [1.0,2.0,3.0]
 
 end
 
@@ -370,12 +373,14 @@ function runDLC(DLCs,Inp,path;
     turbsimpath="./turbsimfiles",
     templatefile="$module_path/template_files/templateTurbSim.inp",
     pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
-    NumGrid_Z=100,
-    NumGrid_Y=100,
+    NumGrid_Z=nothing,
+    NumGrid_Y=nothing,
     Vref=10.0,
     Vdesign=11.0, # Design or rated speed
     grid_oversize=1.1,
     regenWindFiles=false,
+    delta_t_turbsim=nothing,
+    simtime_turbsim=nothing,
     runScript = OWENS.runOWENS)
 
     if !isdir(turbsimpath)
@@ -387,7 +392,7 @@ function runDLC(DLCs,Inp,path;
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize)
+        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y)
 
 
         # Run Simulation at each Wind Speed
@@ -431,6 +436,7 @@ mutable struct DLCParameters
     RandSeed1 # Turbulent Random Seed Number
     NumGrid_Z # Vertical grid-point matrix dimension
     NumGrid_Y # Horizontal grid-point matrix dimension
+    TimeStepSim # Time step [s]
     TimeStep # Time step [s]
     HubHt # Hub height [m] (should be > 0.5*GridHeight)
     AnalysisTime # Length of analysis time series [s] (program will add time if necessary)
@@ -456,7 +462,7 @@ mutable struct DLCParameters
 end
 
 
-function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2)
+function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,simtime_turbsim=nothing,delta_t_turbsim=nothing,NumGrid_Z=nothing,NumGrid_Y=nothing)
 
     Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
@@ -465,17 +471,26 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     delta_t = Inp.delta_t
     simtime = numTS*delta_t
 
-    Blade_Radius = Inp.Blade_Radius
-    Blade_Height = Inp.Blade_Height
+    GridHeight = (Inp.towerHeight-Inp.Blade_Height/2+Inp.Blade_Height)*grid_oversize
+    GridWidth = Inp.Blade_Radius * 2.0 * grid_oversize
+    HubHt = GridHeight*2/3
 
-    NumGrid_Z = Inp.ntelem+Inp.nbelem
-    NumGrid_Y = Inp.ntelem+Inp.nbelem
+    if !isnothing(NumGrid_Z)
+        NumGrid_Z = NumGrid_Z #Inp.ntelem+Inp.nbelem
+        NumGrid_Y = NumGrid_Y #Inp.ntelem+Inp.nbelem
+    else
+        NumGrid_Z = Inp.ntelem+Inp.nbelem
+        NumGrid_Y = Inp.nbelem
+    end
 
     RandSeed1 = 40071 #TODO
-    HubHt = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize/2 + 1e-6 #TODO
-    AnalysisTime = simtime
-    GridHeight = (Inp.towerHeight+Inp.Blade_Height)*grid_oversize
-    GridWidth = ceil((Blade_Radius) * 2.0 * grid_oversize)
+    
+    if !isnothing(simtime_turbsim)
+        AnalysisTime = simtime_turbsim
+    else
+        AnalysisTime = simtime
+    end
+
     VFlowAng = 0.0
     HFlowAng = 0.0
     
@@ -483,10 +498,15 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     IECturbc = WindChar
     TurbModel = "\"IECKAI\""
     
-    RefHt = round(Blade_Height) #TODO
+    RefHt = round(Inp.towerHeight) #TODO: what if tower doesn't extend into blade z level
     URef = 0.0 #gets filled in later from the Vinf_range when the .bst is generated
 
-    TimeStep = delta_t
+    TimeStepSim = delta_t
+    if !isnothing(delta_t_turbsim)
+        TimeStep = delta_t_turbsim
+    else
+        TimeStep = delta_t
+    end
 
     time = LinRange(0,10,10)
     windvel = nothing # gets supersceded   
@@ -535,9 +555,9 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             time = [0,10,15,20,25,30,10000.0]#LinRange(0,10,10)
             winddir = zeros(length(time))  
             windvertvel = zeros(length(time))   
-            horizshear = [0,0,5,0,0,0,0]#ones(length(time)).*10.0   
+            horizshear = [0,0,5.0,0,0,0,0]#ones(length(time)).*10.0   
             pwrLawVertShear = zeros(length(time))   
-            LinVertShear = [0,0,0,0,5,0,0]#ones(length(time)).*10.0 
+            LinVertShear = [0,0,0,0,5.0,0,0]#ones(length(time)).*10.0 
             gustvel = zeros(length(time))   
             UpflowAngle = zeros(length(time))  
             
@@ -551,7 +571,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
 
         elseif DLC == "2_3"
             ControlStrategy = "freewheelatNormalOperatingRPM"
-            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG\""
 
@@ -586,7 +606,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             
         elseif DLC == "3_2"
             ControlStrategy = "startup"
-            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG\""
 
@@ -606,7 +626,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             
         elseif DLC == "3_3"
             ControlStrategy = "startup"
-            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECD\""
 
@@ -636,7 +656,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             
         elseif DLC == "4_2"
             ControlStrategy = "shutdown"
-            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG\""
 
@@ -657,7 +677,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             
         elseif DLC == "5_1"
             ControlStrategy = "emergencyshutdown"
-            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,5));Vinf_range[end]]
+            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
             
@@ -702,6 +722,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
         end
 
     elseif contains(IEC_std,"2")
+        error("IEC61400_2 DLCs are not fully defined")
         if DLC == "1_1"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
@@ -819,7 +840,8 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
         RandSeed1, # Turbulent Random Seed Number
         NumGrid_Z, # Vertical grid-point matrix dimension
         NumGrid_Y, # Horizontal grid-point matrix dimension
-        TimeStep, # Time step [s]
+        TimeStepSim, # Time step [s]
+        TimeStep, # Turbsim time step [s]
         HubHt, # Hub height [m] (should be > 0.5*GridHeight)
         AnalysisTime, # Length of analysis time series [s] (program will add time if necessary)
         GridHeight, # Grid height [m]

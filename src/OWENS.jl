@@ -4,7 +4,6 @@ module OWENS
 import OWENSFEA
 import OWENSOpenFASTWrappers
 import OWENSAero
-import Rainflow
 
 # Github packages
 import Statistics
@@ -18,6 +17,7 @@ import GXBeam
 import QuadGK
 import Composites
 import YAML
+import Base.show
 
 import OWENSPreComp
 import Dierckx
