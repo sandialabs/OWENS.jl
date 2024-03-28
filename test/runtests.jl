@@ -14,5 +14,9 @@ end
 end
 
 @testset "Mesh Check" begin
+    include("$path/testrainflow.jl")
+end
+
+@testset "Mesh Check" begin
     include("$path/check_mesh.jl")
 end

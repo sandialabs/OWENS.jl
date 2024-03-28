@@ -5,6 +5,7 @@ import FLOWMath
 import DelimitedFiles
 using Statistics:mean
 using Statistics
+using GXBeam
 
 import PyPlot
 PyPlot.pygui(true)
