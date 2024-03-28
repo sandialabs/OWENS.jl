@@ -130,16 +130,16 @@ function readNuMadMaterialsCSV(NuMad_materials_xlscsv_file)
             SN_stressMpa = Float64.(csvdata[data_start:data_end,23:28])
             Log_SN_cycles2Fail = Float64.(csvdata[data_start:data_end,29:34])
         catch
-            SN_stressMpa = collect(LinRange(1e12,0,6))
-            Log_SN_cycles2Fail = collect(LinRange(0,7,6))
+            SN_stressMpa = collect(cat(fill(collect(LinRange(1e12,0,6)),length(names))[:,:]...,dims=2)')
+            Log_SN_cycles2Fail = collect(cat(fill(collect(LinRange(0,7,6)),length(names))[:,:]...,dims=2)')
             @warn "Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10"
         end
     else
         yt = ones(length(e1)) .* 100.0e6 #made up
         yc = ones(length(e1)) .* 100.0e6  #made up, abs since composites is looking for positive failure values and handles the negative.
         costs = zeros(length(e1)) #$/kg
-        SN_stressMpa = collect(LinRange(1e12,0,6))
-        Log_SN_cycles2Fail = collect(LinRange(0,7,6))
+        SN_stressMpa = collect(cat(fill(collect(LinRange(1e12,0,6)),length(names))[:,:]...,dims=2)')
+        Log_SN_cycles2Fail = collect(cat(fill(collect(LinRange(0,7,6)),length(names))[:,:]...,dims=2)')
     end
 
     s = abs.(ones(length(e1)) .* 100.0e6)  #made up, abs since composites.jl is expecting positive failure values
