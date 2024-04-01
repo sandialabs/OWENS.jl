@@ -56,7 +56,7 @@ Essentially the same installation as Linux except we recommend using the homebre
     cd ~
     curl -fsSL https://install.julialang.org | sh
 
-in your ~/.bashrc file, tell julia to use the command line git by inserting the following:
+in your ~/.bashrc file (.zshrc on Mac), tell julia to use the command line git by inserting the following:
 
 export JULIA_PKG_USE_CLI_GIT=true
 
