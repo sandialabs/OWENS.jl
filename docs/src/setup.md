@@ -94,7 +94,7 @@ the following should get you in and out of the julia interactive repl
     ls -a
     cd .ssh
     vim id_rsa.pub
-    #copy the contents and paste them back in your browser to the ssh key box and create the key
+    #copy the contents to github.com (User icon > Settings > SSH and GPG > New SSH Key) and paste them back in your browser to the ssh key box and create the key
     # esc : q enter # to get out of vim
     cd ~
 
