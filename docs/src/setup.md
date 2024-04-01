@@ -298,6 +298,7 @@ rm("delim_file.txt") # julia's function that does the same thing
 ```
 
 ## OWENS Installation
+These steps require privileges to each package through github. This should be setup by an existing Owens code contributor.
 ```julia
 
 using Pkg
