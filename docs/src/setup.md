@@ -35,7 +35,9 @@ Essentially the same installation as Linux except we recommend using the homebre
     brew install cmake
     brew install gfortran
     brew install build-essential
-    brew install libblas-dev liblapack-dev
+    brew install openblas
+    brew install lapack
+
 
 ## Linux
 
