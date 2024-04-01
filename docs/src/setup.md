@@ -29,6 +29,14 @@ Be sure julia is on your path, and follow the windows compilation instructions f
 
 Essentially the same installation as Linux except we recommend using the homebrew package manager, so exchange all "apt-get" with "brew" 
 
+    brew install git
+    brew install wget
+    brew install vim
+    brew install cmake
+    brew install gfortran
+    brew install build-essential
+    brew install libblas-dev liblapack-dev
+
 ## Linux
 
 # Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
