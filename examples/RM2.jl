@@ -7,6 +7,9 @@ import DelimitedFiles
 using Statistics:mean
 using Test
 import HDF5
+import YAML
+using StructTypes
+import OrderedCollections
 
 import PyPlot
 PyPlot.pygui(true)
@@ -26,7 +29,26 @@ path = runpath = splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$path/RM2_OWENS_modeling_options.yaml")
 
-nothing
+windio = YAML.load_file("$path/RM1.yaml"; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+
+
+# mutable struct myTest
+#     can_log
+#     sys_log
+#     version
+#     info
+#     myfloat
+#     myTest() = new()
+# end
+
+# yamlInputtest = YAML.load_file("$path/testdata.yaml"; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+# test_dict = yamlInputtest[:tests][1]
+# println(test_dict)
+
+# StructTypes.StructType(::Type{myTest}) = StructTypes.Mutable()
+# test = StructTypes.constructfrom(myTest, test_dict)
+
+
 
 # Unpack inputs, or you could directly input them here and bypass the file 
 
@@ -70,11 +92,12 @@ adi_rootname = Inp.adi_rootname
 #############################################
 
 tocp = [0.0;10.0; 1e6]
-Omegaocp = [34.0; 34.0; 34.0]./60
+Omegaocp = [34.0; 34.0; 34.0]./60 #control inputs
 
 tocp_Vinf = [0.0;10.0; 1e6]
 Vinfocp = [10.0;10.0;10.0]
 
+# windio
 controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
 
 # z_shape = collect(LinRange(0,41.9,length(x_shape)))
@@ -86,8 +109,8 @@ toweroffset = 4.3953443986241725
 SNL34_unit_xz = [x_shape;;z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
 SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
-SNL34Z = SNL34z.*Blade_Height
-SNL34X = SNL34x.*Blade_Radius
+SNL34Z = SNL34z.*Blade_Height #windio
+SNL34X = SNL34x.*Blade_Radius #windio
 
 shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
 shapeX = SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
@@ -97,31 +120,31 @@ stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
 mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWENS(OWENSAero,path;
-    rho,
-    Nslices,
-    ntheta,
-    RPM,
-    Vinf,
-    eta,
-    B = Nbld,
-    H = Blade_Height,
-    R = Blade_Radius,
-    shapeY,
-    shapeX,
-    ifw,
-    delta_t,
-    numTS,
-    adi_lib,
-    adi_rootname,
-    AD15hubR = 0.0,
-    windINPfilename,
-    ifw_libfile,
-    NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
-    NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
-    NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
-    NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
-    NuMad_geom_xlscsv_file_strut,
-    NuMad_mat_xlscsv_file_strut,
+    rho, #windio
+    Nslices, #modeling options
+    ntheta, #modeling options
+    RPM, #remove
+    Vinf, #remove
+    eta, #windio
+    B = Nbld, #windio
+    H = Blade_Height, #windio
+    R = Blade_Radius, #windio
+    shapeY, #windio
+    shapeX, #windio
+    ifw, #modeling options
+    delta_t, #modeling options
+    numTS, #modeling options
+    adi_lib, #remove - make smart enough to find
+    adi_rootname, #modeling options
+    AD15hubR = 0.0, #modeling options
+    windINPfilename, #modeling options
+    ifw_libfile, #remove - make smart enough to find
+    NuMad_geom_xlscsv_file_twr,#windio
+    NuMad_mat_xlscsv_file_twr,#windio
+    NuMad_geom_xlscsv_file_bld,#windio
+    NuMad_mat_xlscsv_file_bld,#windio
+    NuMad_geom_xlscsv_file_strut,#windio
+    NuMad_mat_xlscsv_file_strut,#windio
     Ht=towerHeight,
     ntelem, 
     nbelem, 
