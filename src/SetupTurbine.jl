@@ -492,13 +492,13 @@ function setupOWENS(OWENSAero,path;
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesAD,deformAeroAD,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections 
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng 
     else
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesACDMS,deformAeroACDMS,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections 
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng 
     end
 end
 

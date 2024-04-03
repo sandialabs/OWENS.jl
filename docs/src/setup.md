@@ -29,6 +29,16 @@ Be sure julia is on your path, and follow the windows compilation instructions f
 
 Essentially the same installation as Linux except we recommend using the homebrew package manager, so exchange all "apt-get" with "brew" 
 
+    brew install git
+    brew install wget
+    brew install vim
+    brew install cmake
+    brew install gfortran
+    brew install build-essential
+    brew install openblas
+    brew install lapack
+
+
 ## Linux
 
 # Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
@@ -46,7 +56,7 @@ Essentially the same installation as Linux except we recommend using the homebre
     cd ~
     curl -fsSL https://install.julialang.org | sh
 
-in your ~/.bashrc file, tell julia to use the command line git by inserting the following:
+in your ~/.bashrc file (.zshrc on Mac), tell julia to use the command line git by inserting the following:
 
 export JULIA_PKG_USE_CLI_GIT=true
 
@@ -71,7 +81,7 @@ the following should get you in and out of the julia interactive repl
     exit()
 
 # Set up SSH Keys
-
+    # Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1
     # Make ssh keys and put in the correct places
     # Go to your gihub account settings
     # left side, SSH and GPG keys
@@ -84,7 +94,7 @@ the following should get you in and out of the julia interactive repl
     ls -a
     cd .ssh
     vim id_rsa.pub
-    #copy the contents and paste them back in your browser to the ssh key box and create the key
+    #copy the contents to github.com (User icon > Settings > SSH and GPG > New SSH Key) and paste them back in your browser to the ssh key box and create the key
     # esc : q enter # to get out of vim
     cd ~
 
@@ -288,6 +298,7 @@ rm("delim_file.txt") # julia's function that does the same thing
 ```
 
 ## OWENS Installation
+These steps require privileges to each package through github. This should be setup by an existing Owens code contributor.
 ```julia
 
 using Pkg
