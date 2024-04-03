@@ -107,7 +107,7 @@ mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWENS(OWENSAero,path;
+mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
     rho,
     Nslices,
     ntheta,
@@ -505,7 +505,7 @@ mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
 kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
 LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
 LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-Twr_LE_U_idx=1,Twr_LE_L_idx=1) #TODO: add in ability to have material safety factors and load safety factors
+Twr_LE_U_idx=1,Twr_LE_L_idx=1,AD15bldNdIdxRng, AD15bldElIdxRng ) #TODO: add in ability to have material safety factors and load safety factors
 
 nothing
 
@@ -526,50 +526,63 @@ nothing
 
 # @profview runprofilefunction()
 
+println("Saving VTK time domain files")
+userPointNames=["EA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+# userPointData[iname,it,ipt] = Float64
 
-# println("Saving VTK time domain files")
-# userPointNames=["EA","EIyy","EIzz"]#,"Fx","Fy","Fz","Mx","My","Mz"]
-# # userPointData[iname,it,ipt] = Float64
+# map el props to points using con
+userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
+EA_points = zeros(mymesh.numNodes)
+EIyy_points = zeros(mymesh.numNodes)
+EIzz_points = zeros(mymesh.numNodes)
 
-# # map el props to points using con
-# userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
-# EA_points = zeros(mymesh.numNodes)
-# EIyy_points = zeros(mymesh.numNodes)
-# EIzz_points = zeros(mymesh.numNodes)
+# Time-invariant data
+for iel = 1:length(myel.props)
+    # iel = 1
+    nodes = mymesh.conn[iel,:]
+    EA_points[Int.(nodes)] = myel.props[iel].EA
+    EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
+    EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
+end
 
-# # Time-invariant data
-# for iel = 1:length(myel.props)
-#     # iel = 1
-#     nodes = mymesh.conn[iel,:]
-#     EA_points[Int.(nodes)] = myel.props[iel].EA
-#     EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
-#     EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
-# end
 
-# # fill in the big matrix
-# for it = 1:length(t)
+epsilon_x_histused = mean(epsilon_x_hist;dims=1)
+epsilon_y_histused = mean(epsilon_y_hist;dims=1)
+epsilon_z_histused = mean(epsilon_z_hist;dims=1)
+kappa_x_histused = mean(kappa_x_hist;dims=1)
+kappa_y_histused = mean(kappa_y_hist;dims=1)
+kappa_z_histused = mean(kappa_z_hist;dims=1)
 
-#     userPointData[1,it,:] = EA_points
-#     userPointData[2,it,:] = EIyy_points
-#     userPointData[3,it,:] = EIzz_points
-#     # userPointData[4,it,:] = FReactionHist[it,1:6:end]
-#     # userPointData[5,it,:] = FReactionHist[it,2:6:end]
-#     # userPointData[6,it,:] = FReactionHist[it,3:6:end]
-#     # userPointData[7,it,:] = FReactionHist[it,4:6:end]
-#     # userPointData[8,it,:] = FReactionHist[it,5:6:end]
-#     # userPointData[9,it,:] = FReactionHist[it,6:6:end]
-# end
+# fill in the big matrix
+for it = 1:length(t)
 
-# azi=aziHist#./aziHist*1e-6
-# saveName = "$path/newProps/newProps"
-# OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+    userPointData[1,it,:] = EA_points
+    userPointData[2,it,:] = EIyy_points
+    userPointData[3,it,:] = EIzz_points
+    for iel = 1:length(myel.props)
+        nodes = mymesh.conn[iel,:]
+        userPointData[4,it,Int.(nodes)] .= epsilon_x_histused[1,iel,it] 
+        userPointData[5,it,Int.(nodes)] .= epsilon_y_histused[1,iel,it] 
+        userPointData[6,it,Int.(nodes)] .= epsilon_z_histused[1,iel,it] 
+        userPointData[7,it,Int.(nodes)] .= kappa_x_histused[1,iel,it] 
+        userPointData[8,it,Int.(nodes)] .= kappa_y_histused[1,iel,it] 
+        userPointData[9,it,Int.(nodes)] .= kappa_z_histused[1,iel,it] 
+    end
+    userPointData[10,it,:] .= FReactionHist[it,1:6:end]
+    userPointData[11,it,:] .= FReactionHist[it,2:6:end]
+    userPointData[12,it,:] .= FReactionHist[it,3:6:end]
+    userPointData[13,it,:] .= FReactionHist[it,4:6:end]
+    userPointData[14,it,:] .= FReactionHist[it,5:6:end]
+    userPointData[15,it,:] .= FReactionHist[it,6:6:end]
+    
+    # userPointData[4,it,:] = FReactionHist[it,1:6:end]
+    # userPointData[5,it,:] = FReactionHist[it,2:6:end]
+    # userPointData[6,it,:] = FReactionHist[it,3:6:end]
+    # userPointData[7,it,:] = FReactionHist[it,4:6:end]
+    # userPointData[8,it,:] = FReactionHist[it,5:6:end]
+    # userPointData[9,it,:] = FReactionHist[it,6:6:end]
+end
 
-# PyPlot.figure()
-# PyPlot.plot(mymesh.x,mymesh.z,"b-")
-#  for myi = 1:length(mymesh.y)
-#      PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
-#      PyPlot.draw()
-#      sleep(0.1)
-#  end
-# PyPlot.xlabel("x")
-# PyPlot.ylabel("y")
+azi=aziHist#./aziHist*1e-6
+saveName = "$path/vtk/SNL34mVAWTNormalOperation"
+OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)

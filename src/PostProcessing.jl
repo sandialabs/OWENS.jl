@@ -860,6 +860,15 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             println("minimum strut stress: $(minimum(stress_L_strut[:,usestationStrut,8,1]))")
         end
         printSF(verbosity,SF_ult_L_strut,SF_buck_L_strut,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,length(strut_precompinput),lam_L_strut,topDamage_strut_L,delta_t,total_t;useStation=usestationStrut)
+    else
+        topDamage_strut_U = nothing
+        topDamage_strut_L  = nothing
+        stress_U_strut = nothing
+        SF_ult_U_strut = nothing
+        SF_buck_U_strut = nothing
+        stress_L_strut = nothing
+        SF_ult_L_strut = nothing
+        SF_buck_L_strut = nothing
     end
 
     ##########################################
