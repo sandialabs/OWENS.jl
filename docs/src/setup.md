@@ -81,7 +81,7 @@ the following should get you in and out of the julia interactive repl
     exit()
 
 # Set up SSH Keys
-
+    # Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1
     # Make ssh keys and put in the correct places
     # Go to your gihub account settings
     # left side, SSH and GPG keys
