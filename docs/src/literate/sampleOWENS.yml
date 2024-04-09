@@ -17,8 +17,8 @@ operationParameters:
 turbulentInflow:
   ifw: false
   WindType: 3
-  windINPfilename: ./data/turbsim/115mx115m_30x30_20.0msETM.bts
-  ifw_libfile: ./../openfast/build/modules/inflowwind/libifw_c_binding
+  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: nothing
 
 controlParameters:
   controlStrategy: constantRPM # TODO: incorporate the others
@@ -30,9 +30,9 @@ controlParameters:
 AeroParameters:
   Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: AD # AD, DMS, AC
-  adi_lib: "./../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
-  adi_rootname: "./ExampleB"
+  AModel: DMS # AD, DMS, AC
+  adi_lib: nothing
+  adi_rootname: "/ExampleB"
   
 structuralParameters:
   structuralModel: GX #GX, TNB, ROM
@@ -41,9 +41,9 @@ structuralParameters:
   nbelem: 60 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
   nselem: 5 #strut elements in each if turbineType has struts
-  NuMad_geom_xlscsv_file_twr: ./data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv
-  NuMad_mat_xlscsv_file_twr: ./data/NuMAD_Materials_SNL_5MW.csv
-  NuMad_geom_xlscsv_file_bld: ./data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv
-  NuMad_mat_xlscsv_file_bld: ./data/NuMAD_Materials_SNL_5MW.csv
-  NuMad_geom_xlscsv_file_strut: ./data/NuMAD_Geom_SNL_5MW_Struts.csv
-  NuMad_mat_xlscsv_file_strut: ./data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_twr: /data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv
+  NuMad_mat_xlscsv_file_twr: /data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_bld: /data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv
+  NuMad_mat_xlscsv_file_bld: /data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_strut: /data/NuMAD_Geom_SNL_5MW_Struts.csv
+  NuMad_mat_xlscsv_file_strut: /data/NuMAD_Materials_SNL_5MW.csv

@@ -18,9 +18,9 @@ import OWENS
 import OWENSAero
 # import PyPlot
 
-path = runpath = "./" #splitdir(@__FILE__)[1]
+path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
 
-Inp = OWENS.MasterInput("./sampleOWENS.yml")
+Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
 nothing
 
@@ -45,21 +45,28 @@ nbelem = Inp.nbelem
 ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
+WindType = Inp.WindType
 AModel = Inp.AModel
-windINPfilename = Inp.windINPfilename
+windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
+if ifw_libfile == "nothing"
+    ifw_libfile = nothing
+end
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
 numTS = Inp.numTS
 delta_t = Inp.delta_t
-NuMad_geom_xlscsv_file_twr = Inp.NuMad_geom_xlscsv_file_twr
-NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
-NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
-NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
-NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
-NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
+NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
+NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
+NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
+NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
+NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
 adi_lib = Inp.adi_lib
-adi_rootname = Inp.adi_rootname
+if adi_lib == "nothing"
+    adi_lib = nothing
+end
+adi_rootname = "$(path)$(Inp.adi_rootname)"
 
 B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m
@@ -77,7 +84,7 @@ mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system,assembly,sections = OWENS.setupOWENS(OWENSAero,path;
+mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
     rho,
     Nslices,
     ntheta,
@@ -90,6 +97,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections = OWENS.setupOWENS
     shapeY,
     shapeX,
     ifw,
+    WindType,
     delta_t,
     numTS,
     adi_lib,
@@ -191,8 +199,7 @@ nlOn = true,
 numNodes = mymesh.numNodes,
 RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
-iterationType = "DI",
-predef = "update")
+iterationType = "DI")
 
 nothing
 
@@ -225,25 +232,15 @@ nothing
 
 massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
 SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-topstrainout_tower_U,topstrainout_tower_L = OWENS.extractSF(bld_precompinput,
+topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
+topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
 mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
 kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
 LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
 LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-Twr_LE_U_idx=1,Twr_LE_L_idx=1) #TODO: add in ability to have material safety factors and load safety factors
+Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 
 nothing
-
-# The following sections are in work: TODO
-
-##########################################
-#### Fatigue #####
-##########################################
-
-##### DEL
-
-##########################################
-#### Data Dump in OpenFAST Format #####
-##########################################

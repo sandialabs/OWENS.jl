@@ -135,7 +135,6 @@ function MasterInput(yamlInputfile)
 end
 
 function runOWENS(Inp,path;verbosity=2)
-    # Unpack inputs
     analysisType = Inp.analysisType
     turbineType = Inp.turbineType
     eta = Inp.eta
@@ -152,25 +151,29 @@ function runOWENS(Inp,path;verbosity=2)
     nbelem = Inp.nbelem
     ncelem = Inp.ncelem
     nselem = Inp.nselem
-    AModel = Inp.AModel
     ifw = Inp.ifw
     WindType = Inp.WindType
-    windINPfilename = Inp.windINPfilename
+    AModel = Inp.AModel
+    windINPfilename = "$(path)$(Inp.windINPfilename)"
     ifw_libfile = Inp.ifw_libfile
+    if ifw_libfile == "nothing"
+        ifw_libfile = nothing
+    end
     Blade_Height = Inp.Blade_Height
     Blade_Radius = Inp.Blade_Radius
     numTS = Inp.numTS
     delta_t = Inp.delta_t
-    NuMad_geom_xlscsv_file_twr = Inp.NuMad_geom_xlscsv_file_twr
-    NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
-    NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
-    NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
-    NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
-    NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+    NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
+    NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
+    NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
+    NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
+    NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
+    NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
     adi_lib = Inp.adi_lib
-    adi_rootname = Inp.adi_rootname
-
-    println("Set up Turbine")
+    if adi_lib == "nothing"
+        adi_lib = nothing
+    end
+    adi_rootname = "$(path)$(Inp.adi_rootname)"
 
     B = Nbld
     R = Blade_Radius#177.2022*0.3048 #m
@@ -179,52 +182,69 @@ function runOWENS(Inp,path;verbosity=2)
     shapeY = collect(LinRange(0,H,Nslices+1))
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
 
-    mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
-    stiff_twr, stiff_bld,bld_precompinput,
-    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-    mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD15bldElIdxRng,
-    strut_precompoutput,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut  = OWENS.setupOWENS(OWENSAero,path;
-        rho,
-        Nslices,
-        ntheta,
-        RPM,
-        Vinf,
-        eta,
-        B,
-        H,
-        R,
-        shapeY,
-        shapeX,
-        ifw,
-        WindType,
-        delta_t,
-        numTS,
-        adi_lib,
-        adi_rootname,
-        windINPfilename,
-        ifw_libfile,
-        NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
-        NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
-        NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
-        NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
-        NuMad_geom_xlscsv_file_strut,
-        NuMad_mat_xlscsv_file_strut,
-        Ht=towerHeight,
-        ntelem, 
-        nbelem, 
-        ncelem,
-        nselem,
-        joint_type = 0,
-        c_mount_ratio = 0.05,
-        AModel, #AD, DMS, AC
-        DSModel="BV",
-        RPI=true,
-        cables_connected_to_blade_base = true,
-        meshtype = turbineType)
+    nothing
+
+    # Call the helper function that builds the mesh, calculates the sectional properties,
+    # and aligns the sectional properties to the mesh elements, 
+
+
+mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+stiff_twr, stiff_bld,bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
+mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+    rho,
+    Nslices,
+    ntheta,
+    RPM,
+    Vinf,
+    eta,
+    B,
+    H,
+    R,
+    shapeY,
+    shapeX,
+    ifw,
+    WindType,
+    delta_t,
+    numTS,
+    adi_lib,
+    adi_rootname,
+    windINPfilename,
+    ifw_libfile,
+    NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
+    NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
+    NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
+    NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+    NuMad_geom_xlscsv_file_strut,
+    NuMad_mat_xlscsv_file_strut,
+    Ht=towerHeight,
+    ntelem, 
+    nbelem, 
+    ncelem,
+    nselem,
+    joint_type = 0,
+    c_mount_ratio = 0.05,
+    AModel, #AD, DMS, AC
+    DSModel="BV",
+    RPI=true,
+    cables_connected_to_blade_base = true,
+    meshtype = turbineType)
+
+    nothing
+
+    # Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl
+    # this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also
+    # includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface
+    # to work with OWENS inputs as well.
+
+    nothing
+
+    # If the sectional properties material files includes cost information, that is combined with the density 
+    # to estimate the overall material cost of of materials in the blades
 
     if verbosity>0
-        # Print Blades and Tower Materials Breakdown and Costs
+        
         println("\nBlades' Mass Breakout")
         for (i,name) in enumerate(plyprops_bld.names)
             println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
@@ -239,15 +259,13 @@ function runOWENS(Inp,path;verbosity=2)
         println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
         println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
         
-        # println("\nBlades' Material Max Strain")
-        # for (i,name) in enumerate(plyprops_bld.names)
-        #     println("$name $(plyprops_bld.plies[i].xt/plyprops_bld.plies[i].e1) xt $(plyprops_bld.plies[i].xc/plyprops_bld.plies[i].e1) xc $(plyprops_bld.plies[i].yt/plyprops_bld.plies[i].e2) yt $(plyprops_bld.plies[i].yc/plyprops_bld.plies[i].e2) yc")
-        # end
     end
 
-    ######################################
-    #### Perform Aerostructural One Way Test
-    #######################################
+    nothing
+
+    # Here we apply the boundary conditions.  For this case, with a regular cantelever tower, the tower base node which is 
+    # 1 is constrained in all 6 degrees of freedom to have a displacement of 0.  You can change this displacement to allow for things
+    # like pretension, and you can apply boundary conditions to any node.
 
     pBC = [1 1 0
     1 2 0
@@ -256,6 +274,9 @@ function runOWENS(Inp,path;verbosity=2)
     1 5 0
     1 6 0]
 
+    nothing
+
+    # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
     if AModel=="AD"
         AD15On = true
@@ -273,6 +294,10 @@ function runOWENS(Inp,path;verbosity=2)
     AD15On,
     aeroLoadsOn = 2)
 
+    nothing
+
+    # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
+
     feamodel = OWENS.FEAModel(;analysisType = structuralModel,
     outFilename = "none",
     joint = myjoint,
@@ -284,14 +309,30 @@ function runOWENS(Inp,path;verbosity=2)
     RayleighBeta = 0.05,
     iterationType = "DI")
 
+    nothing
+
+    # Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together
+    # and propogates things in time.
+
     println("Running Unsteady")
     t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
     FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
     epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
     topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
-    
+
+    nothing
+
+    # Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 
+    # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
+    # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
+
     println("Saving VTK time domain files")
     OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+
+    nothing
+
+    # This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina
+    # it also calculates analytical simply supported buckling safety factors
 
     ##########################################
     #### Ultimate Failure #####
@@ -308,17 +349,7 @@ function runOWENS(Inp,path;verbosity=2)
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
-    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
-    #TODO: get struts with darrieus working in fatigue output
-    ##########################################
-    #### Fatigue #####
-    ##########################################
-
-    # DEL
-
-    ##########################################
-    #### Data Dump in OpenFAST Format #####
-    ##########################################
+    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 
     return [1.0,2.0,3.0]
 

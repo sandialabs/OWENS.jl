@@ -49,20 +49,26 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 AModel = Inp.AModel
-windINPfilename = Inp.windINPfilename
+windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
+if ifw_libfile == "nothing"
+    ifw_libfile = nothing
+end
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
 numTS = Inp.numTS
 delta_t = Inp.delta_t
-NuMad_geom_xlscsv_file_twr = Inp.NuMad_geom_xlscsv_file_twr
-NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
-NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
-NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
-NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
-NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
+NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
+NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
+NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
+NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
+NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
 adi_lib = Inp.adi_lib
-adi_rootname = Inp.adi_rootname
+if adi_lib == "nothing"
+    adi_lib = nothing
+end
+adi_rootname = "$(path)$(Inp.adi_rootname)"
 
 ##############################################
 # Setup
