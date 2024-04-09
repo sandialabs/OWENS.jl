@@ -5,19 +5,21 @@ import FLOWMath
 import DelimitedFiles
 using Statistics:mean
 using Statistics
+using GXBeam
+using Test
 
-import PyPlot
-PyPlot.pygui(true)
-PyPlot.rc("figure", figsize=(4.5, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-PyPlot.rc("figure",max_open_warning=500)
-# PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# import PyPlot
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
@@ -48,20 +50,35 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 AModel = Inp.AModel
-windINPfilename = Inp.windINPfilename
+windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
+if ifw_libfile == "nothing"
+    ifw_libfile = nothing
+end
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
 numTS = Inp.numTS
 delta_t = Inp.delta_t
-NuMad_geom_xlscsv_file_twr = Inp.NuMad_geom_xlscsv_file_twr
-NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
-NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
-NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
-NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
-NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
+NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
+NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
+NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
+NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
+NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
 adi_lib = Inp.adi_lib
-adi_rootname = Inp.adi_rootname
+if adi_lib == "nothing"
+    adi_lib = nothing
+end
+adi_rootname = "$(path)$(Inp.adi_rootname)"
+
+windINPfilename
+adi_rootname
+NuMad_geom_xlscsv_file_twr
+NuMad_mat_xlscsv_file_twr
+NuMad_geom_xlscsv_file_bld
+NuMad_mat_xlscsv_file_bld
+NuMad_geom_xlscsv_file_strut
+NuMad_mat_xlscsv_file_strut
 
 ##############################################
 # Setup
@@ -93,7 +110,7 @@ x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
 x_shape = FLOWMath.akima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
 toweroffset = 4.3953443986241725
-SNL34_unit_xz = [x_shape;;z_shape]
+SNL34_unit_xz = [x_shape z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
 SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
 SNL34Z = SNL34z.*Blade_Height

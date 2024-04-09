@@ -25,6 +25,10 @@ makedocs(;
     remotes = nothing
 )
 
+deploydocs(
+    repo = "github.com/sandialabs/OWENS.jl.git",
+)
+
 # ## Documentation
 # Until public hosting of the documentation is set up, a readthedocs style webpage can be built via:
 
