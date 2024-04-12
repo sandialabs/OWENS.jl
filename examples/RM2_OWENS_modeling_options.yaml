@@ -34,7 +34,7 @@ AeroParameters:
   adi_rootname: "./SNL34m"
   
 structuralParameters:
-  structuralModel: ROM #GX, TNB, ROM
+  structuralModel: GX #GX, TNB, ROM
   nonlinear: false #TODO: propogate
   ntelem: 10 #tower elements in each 
   nbelem: 60 #blade elements in each 
