@@ -18,13 +18,17 @@ import OWENSAero
 import QuadGK
 import FLOWMath
 import PyPlot
-PyPlot.pygui(true)
+# PyPlot.pygui(true)
 import OWENSOpenFASTWrappers
  
 
-path = runpath = "./"  #splitdir(@__FILE__)[1]
+path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
 
-Inp = OWENS.MasterInput("./sampleOWENS.yml")
+Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
+
+nothing
+
+# Unpack inputs, or you could directly input them here and bypass the file 
 
 verbosity = 1
 
@@ -45,21 +49,28 @@ nbelem = Inp.nbelem
 ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
+WindType = Inp.WindType
 AModel = Inp.AModel
-windINPfilename = Inp.windINPfilename
+windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
+if ifw_libfile == "nothing"
+    ifw_libfile = nothing
+end
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
 numTS = Inp.numTS
 delta_t = Inp.delta_t
-NuMad_geom_xlscsv_file_twr = Inp.NuMad_geom_xlscsv_file_twr
-NuMad_mat_xlscsv_file_twr = Inp.NuMad_mat_xlscsv_file_twr
-NuMad_geom_xlscsv_file_bld = Inp.NuMad_geom_xlscsv_file_bld
-NuMad_mat_xlscsv_file_bld = Inp.NuMad_mat_xlscsv_file_bld
-NuMad_geom_xlscsv_file_strut = Inp.NuMad_geom_xlscsv_file_strut
-NuMad_mat_xlscsv_file_strut = Inp.NuMad_mat_xlscsv_file_strut
+NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
+NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
+NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
+NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
+NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
+NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
 adi_lib = Inp.adi_lib
-adi_rootname = Inp.adi_rootname
+if adi_lib == "nothing"
+    adi_lib = nothing
+end
+adi_rootname = "$(path)$(Inp.adi_rootname)"
 
 println("Set up Turbine")
 
@@ -139,7 +150,7 @@ elseif meshtype == "Darrieus" || meshtype == "H-VAWT"
     mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Ht,
         Hb = H, #blade height
         R, # m bade radius
-        AD15hubR = 2.0, #TODO: AD15 file generation
+        AD15hubR=2.0,
         nblade = Nbld,
         ntelem, #tower elements
         nbelem, #blade elements
@@ -160,6 +171,9 @@ else #TODO unify with HAWT
 end
 
 nTwrElem = Int(mymesh.meshSeg[1])
+if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
+    nTwrElem = Int(mymesh.meshSeg[1])+1
+end
 
 nothing
 
@@ -360,8 +374,7 @@ if meshtype == "ARCUS"
     Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
     sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
-    # GXBeam sectional properties
-    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))    # GXBeam sectional properties
     stiff_cables = fill(stiff_twr[end],Nremain)
     stiff_array = [stiff_twr; stiff_blds; stiff_cables]
 
@@ -371,8 +384,7 @@ if meshtype == "ARCUS"
 else
     sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
     
-    # GXBeam sectional properties
-    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+    stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld))) # GXBeam sectional properties
     stiff_struts = collect(Iterators.flatten(fill(stiff_strut, Nstrutperbld*Nbld)))
     stiff_array = [stiff_twr; stiff_blds; stiff_struts]
 
@@ -382,9 +394,8 @@ else
 end
 rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
 
-#store data in element object
-myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)#;VTKmeshfilename="ExampleC")
+myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects) #store data in element object
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
 nothing
 
@@ -396,15 +407,31 @@ if !AD15On
     #########################################
     chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
 
-    OWENSAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
-    afname = "$path/airfoils/NACA_0021.dat", #TODO: map to the numad input
-    ifw,
-    wind_filename=windINPfilename,
-    ifw_libfile,
-    ntheta,Nslices,rho,eta,RPI)
+    T1 = round(Int,(5.8/H)*Nslices)
+    T2 = round(Int,(11.1/H)*Nslices)
+    T3 = round(Int,(29.0/H)*Nslices)
+    T4 = round(Int,(34.7/H)*Nslices)
+    airfoils = fill("$(path)/airfoils/NACA_0021.dat",Nslices)
+    airfoils[T1:T4] .= "$(path)/airfoils/Sandia_001850.dat"
+    
+    chord = fill(1.22,Nslices) #TODO: link chord to numad and height as opposed to span
+    chord[T1:T4] .= 1.07
+    chord[T2:T3] .= 0.9191
 
-    aeroForces(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
-    deformAero = OWENSAero.deformTurb
+    OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel,DSModel,
+    afname = airfoils, #TODO: map to the numad input
+    rho,
+    eta,
+    ifw, #TODO: propogate WindType
+    turbsim_filename = windINPfilename,
+    ifw_libfile,
+    tau = [1e-5,1e-5],
+    ntheta,
+    Nslices,
+    RPI)
+
+    aeroForcesACDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+    deformAeroACDMS = OWENSAero.deformTurb
 end
 nothing
 
@@ -462,6 +489,7 @@ if AD15On
         xmesh = mymesh.x[strt_idx:end_idx]
         ymesh = mymesh.y[strt_idx:end_idx]
         ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
+        ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
         ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeY)
         
         if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically
@@ -500,8 +528,8 @@ if AD15On
             isHAWT = false     # true for HAWT, false for crossflow or VAWT
             )
 
-    aeroForces(t,azi) = OWENS.mapAD15(t,azi,[mymesh],OWENSOpenFASTWrappers.advanceAD15;alwaysrecalc=true,verbosity=1)
-    deformAero=OWENSOpenFASTWrappers.deformAD15
+    aeroForcesAD(t,azi) = OWENS.mapAD15(t,azi,[mymesh],OWENSOpenFASTWrappers.advanceAD15;alwaysrecalc=true,verbosity=1)
+    deformAeroAD=OWENSOpenFASTWrappers.deformAD15
 end
 
 nothing
@@ -562,14 +590,20 @@ nlOn = true,
 numNodes = mymesh.numNodes,
 RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
-iterationType = "DI",
-predef = "update")
+iterationType = "DI")
 
 println("Running Unsteady")
-t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+if AD15On
+    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesAD,deformAero=deformAeroAD)
+else
+    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesACDMS,deformAero=deformAeroACDMS)
+end
 
 if AD15On #TODO: move this into the run functions
     OWENSOpenFASTWrappers.endTurb()
@@ -585,23 +619,15 @@ OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,a
 
 massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
 SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-topstrainout_tower_U,topstrainout_tower_L = OWENS.extractSF(bld_precompinput,
+topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
+topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
 mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
 kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
 LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
 LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-Twr_LE_U_idx=1,Twr_LE_L_idx=1) #TODO: add in ability to have material safety factors and load safety factors
-
-##########################################
-#### Fatigue #####
-##########################################
-
-##### DEL
-
-##########################################
-#### Data Dump in OpenFAST Format #####
-##########################################
+Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
 
 nothing

@@ -21,8 +21,8 @@
 
 import OWENS
 
-runpath = "./"  #splitdir(@__FILE__)[1]
+runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
 
-Inp = OWENS.MasterInput("./sampleOWENS.yml")
+Inp = OWENS.MasterInput("/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate/sampleOWENS.yml")
 
 OWENS.runOWENS(Inp,runpath)
