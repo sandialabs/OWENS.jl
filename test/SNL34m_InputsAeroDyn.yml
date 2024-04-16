@@ -43,7 +43,7 @@ structuralParameters:
   nselem: 5 #strut elements in each if turbineType has struts
   NuMad_geom_xlscsv_file_twr: /data/NuMAD_34m_TowerGeom.csv
   NuMad_mat_xlscsv_file_twr: /data/NuMAD_34m_TowerMaterials.csv
-  NuMad_geom_xlscsv_file_bld: /data/NuMAD_SNL34mGeomBlades.csv
+  NuMad_geom_xlscsv_file_bld: /data/NuMAD_SNL34mGeomBlades_AD.csv
   NuMad_mat_xlscsv_file_bld: /data/NuMAD_SNL34mMaterials.csv
   NuMad_geom_xlscsv_file_strut: /data/NuMAD_SNL34mGeomStruts.csv
   NuMad_mat_xlscsv_file_strut: /data/NuMAD_SNL34mMaterials.csv
