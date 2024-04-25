@@ -19,12 +19,12 @@ and can easily lead to confusion or mistake (like how the aerodynamics
 uses inflow data; is it just simple based on the mean hub velocity, or
 in the rotating blade frame of reference? If the latter, what is that
 frame of reference so that we make sure we don't incorrectly map the
-vectors?) This document is intended as a developers guide for the intent
+vectors?) This document is intended as a developers' guide for the intent
 of clearing up the relative ambiguity between the many moving and
 modular pieces. It is not a full theory document or users guide. For
-theory and use, please see the theory and user guides respectively.
+theory and use, please see the theory and user guides, respectively.
 Within this document, we give enough detail about the operations of the
-\"glue\" code, the frames of reference, and coupling methods to aid
+"glue" code, the frames of reference, and coupling methods to aid
 further development.
 
 # Contributing
@@ -37,11 +37,13 @@ periodically pulled into master.
 
 Due to the nonlinearity and non-closed-form nature of the floating
 turbine problem in both the design and temporal space, OWENS uses many
-types of iterative solution methods, specific to the physics involved.
+types of iterative solution methods specific to the physics involved.
 Loose or Gauss-Seidel iteration is used for the coupling between the
-modules. gives an overview of the general code structure for transient
+modules. [WHAT?] gives an overview of the general code structure for transient
 analysis, with the main equations being solved and the relative location
 of the iteration loops.
+
+[Need to figure out what this is supposed to be]
 
 ::: algorithm
 ::: spacing
@@ -64,7 +66,7 @@ displacements$_\text{guess}$ with the calculated displacements
 
 # Global Frame of Reference
 
-Thanks to some legacy VAWT frames of reference where wind was originally
+Due to some legacy VAWT frames of reference where wind was originally
 coming from the top down, and then from the left right, the convention
 was to simply rotate the axes instead of properly redefining the global
 frame of reference to match standard math convention again. Therefore,
@@ -80,7 +82,8 @@ frame of reference. Therefore, the turbine stays stationary in its
 initial meshed position, excepting deformations, and inertial effects
 are calculated. The developer must use the calculated rotational
 position to map to the other models as
-necessary.](./figs/global_FOR3.png){#fig:ac_velocities width="60%"}
+necessary.](./figs/global_FOR3.png)
+![{#fig:ac_velocities width="60%"}]
 
 # InflowWind and TurbSim Velocity Inflow
 
