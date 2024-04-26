@@ -36,6 +36,8 @@ function setupOWENS(OWENSAero,path;
     nselem = 5,
     strut_mountpointbot = 0.11,
     strut_mountpointtop = 0.11,
+    strut_mountpointbottwr = 0.21,
+    strut_mountpointtoptwr = 0.21,
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -101,8 +103,8 @@ function setupOWENS(OWENSAero,path;
             ntelem, #tower elements
             nbelem, #blade elements
             nselem,
-            strut_twr_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
-            strut_twr_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
+            strut_twr_mountpointbot = strut_mountpointbottwr, # This puts struts at top and bottom
+            strut_twr_mountpointtop = strut_mountpointtoptwr, # This puts struts at top and bottom
             strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
             strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
