@@ -119,7 +119,7 @@ mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWENS(OWENSAero,path;
+mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng, AD15bldElIdxRng  = OWENS.setupOWENS(OWENSAero,path;
     rho, #windio
     Nslices, #modeling options
     ntheta, #modeling options
@@ -220,119 +220,88 @@ FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,ep
 epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
-dataDumpFilename = "$path/unit_test.h5"
-
-HDF5.h5open(dataDumpFilename, "w") do file
-    HDF5.write(file,"t",collect(t))
-    HDF5.write(file,"uHist",uHist)
-end
-
-
-uHist = HDF5.h5read(dataDumpFilename,"uHist")
-uHist_orig = HDF5.h5read("$path/unit_test_orig.h5","uHist")
-
-@test isapprox(uHist,uHist_orig;atol=1e-6)
-
-
 ################################################################
 ################ SAVE VTK TIME DOMAIN OUTPUT ###################
 ################################################################
 
 
-# println("Saving VTK time domain files")
-# userPointNames=["EA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction"]#,"Fx","Fy","Fz","Mx","My","Mz"]
-# # userPointData[iname,it,ipt] = Float64
+println("Saving VTK time domain files")
+userPointNames=["EA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+# userPointData[iname,it,ipt] = Float64
 
-# # map el props to points using con
-# userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
-# EA_points = zeros(mymesh.numNodes)
-# EIyy_points = zeros(mymesh.numNodes)
-# EIzz_points = zeros(mymesh.numNodes)
+# map el props to points using con
+userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
+EA_points = zeros(mymesh.numNodes)
+EIyy_points = zeros(mymesh.numNodes)
+EIzz_points = zeros(mymesh.numNodes)
 
-# # Time-invariant data
-# for iel = 1:length(myel.props)
-#     # iel = 1
-#     nodes = mymesh.conn[iel,:]
-#     EA_points[Int.(nodes)] = myel.props[iel].EA
-#     EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
-#     EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
-# end
+# Time-invariant data
+for iel = 1:length(myel.props)
+    # iel = 1
+    nodes = mymesh.conn[iel,:]
+    EA_points[Int.(nodes)] = myel.props[iel].EA
+    EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
+    EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
+end
 
 
-# epsilon_x_histused = mean(epsilon_x_hist;dims=1)
-# epsilon_y_histused = mean(epsilon_y_hist;dims=1)
-# epsilon_z_histused = mean(epsilon_z_hist;dims=1)
-# kappa_x_histused = mean(kappa_x_hist;dims=1)
-# kappa_y_histused = mean(kappa_y_hist;dims=1)
-# kappa_z_histused = mean(kappa_z_hist;dims=1)
+epsilon_x_histused = mean(epsilon_x_hist;dims=1)
+epsilon_y_histused = mean(epsilon_y_hist;dims=1)
+epsilon_z_histused = mean(epsilon_z_hist;dims=1)
+kappa_x_histused = mean(kappa_x_hist;dims=1)
+kappa_y_histused = mean(kappa_y_hist;dims=1)
+kappa_z_histused = mean(kappa_z_hist;dims=1)
 
-# # fill in the big matrix
-# for it = 1:length(t)
+# fill in the big matrix
+for it = 1:length(t)
 
-#     userPointData[1,it,:] = EA_points
-#     userPointData[2,it,:] = EIyy_points
-#     userPointData[3,it,:] = EIzz_points
-#     for iel = 1:length(myel.props)
-#         nodes = mymesh.conn[iel,:]
-#         userPointData[4,it,Int.(nodes)] .= epsilon_x_histused[1,iel,it] 
-#         userPointData[5,it,Int.(nodes)] .= epsilon_y_histused[1,iel,it] 
-#         userPointData[6,it,Int.(nodes)] .= epsilon_z_histused[1,iel,it] 
-#         userPointData[7,it,Int.(nodes)] .= kappa_x_histused[1,iel,it] 
-#         userPointData[8,it,Int.(nodes)] .= kappa_y_histused[1,iel,it] 
-#         userPointData[9,it,Int.(nodes)] .= kappa_z_histused[1,iel,it] 
-#     end
-#     userPointData[10,it,:] .= FReactionHist[it,1:6:end]
-#     userPointData[11,it,:] .= FReactionHist[it,2:6:end]
-#     userPointData[12,it,:] .= FReactionHist[it,3:6:end]
-#     userPointData[13,it,:] .= FReactionHist[it,4:6:end]
-#     userPointData[14,it,:] .= FReactionHist[it,5:6:end]
-#     userPointData[15,it,:] .= FReactionHist[it,6:6:end]
+    userPointData[1,it,:] = EA_points
+    userPointData[2,it,:] = EIyy_points
+    userPointData[3,it,:] = EIzz_points
+    for iel = 1:length(myel.props)
+        nodes = mymesh.conn[iel,:]
+        userPointData[4,it,Int.(nodes)] .= epsilon_x_histused[1,iel,it] 
+        userPointData[5,it,Int.(nodes)] .= epsilon_y_histused[1,iel,it] 
+        userPointData[6,it,Int.(nodes)] .= epsilon_z_histused[1,iel,it] 
+        userPointData[7,it,Int.(nodes)] .= kappa_x_histused[1,iel,it] 
+        userPointData[8,it,Int.(nodes)] .= kappa_y_histused[1,iel,it] 
+        userPointData[9,it,Int.(nodes)] .= kappa_z_histused[1,iel,it] 
+    end
+    userPointData[10,it,:] .= FReactionHist[it,1:6:end]
+    userPointData[11,it,:] .= FReactionHist[it,2:6:end]
+    userPointData[12,it,:] .= FReactionHist[it,3:6:end]
+    userPointData[13,it,:] .= FReactionHist[it,4:6:end]
+    userPointData[14,it,:] .= FReactionHist[it,5:6:end]
+    userPointData[15,it,:] .= FReactionHist[it,6:6:end]
     
-#     # userPointData[4,it,:] = FReactionHist[it,1:6:end]
-#     # userPointData[5,it,:] = FReactionHist[it,2:6:end]
-#     # userPointData[6,it,:] = FReactionHist[it,3:6:end]
-#     # userPointData[7,it,:] = FReactionHist[it,4:6:end]
-#     # userPointData[8,it,:] = FReactionHist[it,5:6:end]
-#     # userPointData[9,it,:] = FReactionHist[it,6:6:end]
-# end
+    # userPointData[4,it,:] = FReactionHist[it,1:6:end]
+    # userPointData[5,it,:] = FReactionHist[it,2:6:end]
+    # userPointData[6,it,:] = FReactionHist[it,3:6:end]
+    # userPointData[7,it,:] = FReactionHist[it,4:6:end]
+    # userPointData[8,it,:] = FReactionHist[it,5:6:end]
+    # userPointData[9,it,:] = FReactionHist[it,6:6:end]
+end
 
-# azi=aziHist#./aziHist*1e-6
-# saveName = "$path/vtk/$(windINPfilename[1:end-4])"
-# OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+azi=aziHist#./aziHist*1e-6
+saveName = "$path/vtk/RM2"
+OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4
 
-##########################################
-#### Ultimate Failure #####
-##########################################
+#########################################
+### Ultimate Failure #####
+#########################################
 
-# massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-# SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-# topstrainout_tower_U,topstrainout_tower_L = OWENS.extractSF(bld_precompinput,
-# bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-# twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-# mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-# kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-# LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-# LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-# Twr_LE_U_idx=1,Twr_LE_L_idx=1) #TODO: add in ability to have material safety factors and load safety factors
+massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+topstrainout_tower_U,topstrainout_tower_L = OWENS.extractSF(bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
+LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
+Twr_LE_U_idx=1,Twr_LE_L_idx=1,AD15bldNdIdxRng,AD15bldElIdxRng) #TODO: add in ability to have material safety factors and load safety factors
 
-# nothing
-
-# The following sections are in work: TODO
-
-##########################################
-#### Fatigue #####
-##########################################
-
-##### DEL
-
-##########################################
-#### Data Dump in OpenFAST Format #####
-##########################################
-# end
-
-# @profview runprofilefunction()
-
-# @profview runprofilefunction()
+nothing
