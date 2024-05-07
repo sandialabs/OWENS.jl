@@ -36,8 +36,8 @@ function setupOWENS(OWENSAero,path;
     nselem = 5,
     strut_mountpointbot = 0.11,
     strut_mountpointtop = 0.11,
-    strut_mountpointbottwr = 0.21,
-    strut_mountpointtoptwr = 0.21,
+    strut_mountpointbottwr = nothing,
+    strut_mountpointtoptwr = nothing,
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -47,6 +47,14 @@ function setupOWENS(OWENSAero,path;
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
 
+    if isnothing(strut_mountpointbottwr)
+        strut_mountpointbottwr = strut_mountpointbot
+    end
+
+    if isnothing(strut_mountpointtoptwr)
+        strut_mountpointtoptwr = strut_mountpointtop
+    end
+    
     if AModel=="AD"
         AD15On = true
     else
