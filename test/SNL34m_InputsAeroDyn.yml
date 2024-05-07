@@ -23,14 +23,14 @@ turbulentInflow:
 controlParameters:
   controlStrategy: constantRPM # TODO: incorporate the others
   RPM: 34.0 #RPM
-  numTS: 10 #
+  numTS: 100 #
   delta_t: 0.05 # s
 
 
 AeroParameters:
   Nslices: 35 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
+  AModel: AD # AD, DMS, AC
   adi_lib: nothing
   adi_rootname: "/SNL34m"
   
@@ -43,7 +43,7 @@ structuralParameters:
   nselem: 5 #strut elements in each if turbineType has struts
   NuMad_geom_xlscsv_file_twr: /data/NuMAD_34m_TowerGeom.csv
   NuMad_mat_xlscsv_file_twr: /data/NuMAD_34m_TowerMaterials.csv
-  NuMad_geom_xlscsv_file_bld: /data/NuMAD_SNL34mGeomBlades.csv
+  NuMad_geom_xlscsv_file_bld: /data/NuMAD_SNL34mGeomBlades_AD.csv
   NuMad_mat_xlscsv_file_bld: /data/NuMAD_SNL34mMaterials.csv
   NuMad_geom_xlscsv_file_strut: /data/NuMAD_SNL34mGeomStruts.csv
   NuMad_mat_xlscsv_file_strut: /data/NuMAD_SNL34mMaterials.csv

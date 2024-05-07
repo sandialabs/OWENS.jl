@@ -36,6 +36,8 @@ function setupOWENS(OWENSAero,path;
     nselem = 5,
     strut_mountpointbot = 0.11,
     strut_mountpointtop = 0.11,
+    strut_mountpointbottwr = nothing,
+    strut_mountpointtoptwr = nothing,
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -45,6 +47,14 @@ function setupOWENS(OWENSAero,path;
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
 
+    if isnothing(strut_mountpointbottwr)
+        strut_mountpointbottwr = strut_mountpointbot
+    end
+
+    if isnothing(strut_mountpointtoptwr)
+        strut_mountpointtoptwr = strut_mountpointtop
+    end
+    
     if AModel=="AD"
         AD15On = true
     else
@@ -101,8 +111,8 @@ function setupOWENS(OWENSAero,path;
             ntelem, #tower elements
             nbelem, #blade elements
             nselem,
-            strut_twr_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
-            strut_twr_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
+            strut_twr_mountpointbot = strut_mountpointbottwr, # This puts struts at top and bottom
+            strut_twr_mountpointtop = strut_mountpointtoptwr, # This puts struts at top and bottom
             strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
             strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
@@ -353,18 +363,27 @@ function setupOWENS(OWENSAero,path;
         #########################################
         ### Set up aero forces
         #########################################
-        chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
+        # translate from blade span to blade height between the numad definition and the vertical slice positions
+        # First get the angles from the overall geometry npoints and go to the numad npoints
+        delta_xs = shapeX[2:end] - shapeX[1:end-1]
+        delta_zs = shapeY[2:end] - shapeY[1:end-1]
+        delta3D = atan.(delta_xs./delta_zs)
+        delta3D_spl = FLOWMath.akima(shapeY[1:end-1]./maximum(shapeY[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
+        # now convert the numad span to a height
+        bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
 
-        T1 = round(Int,(5.8/H)*Nslices)
-        T2 = round(Int,(11.1/H)*Nslices)
-        T3 = round(Int,(29.0/H)*Nslices)
-        T4 = round(Int,(34.7/H)*Nslices)
-        airfoils = fill("$(path)/airfoils/NACA_0021.dat",Nslices)
-        airfoils[T1:T4] .= "$(path)/airfoils/Sandia_001850.dat"
-        
-        chord = fill(1.22,Nslices) #TODO: link chord to numad and height as opposed to span
-        chord[T1:T4] .= 1.07
-        chord[T2:T3] .= 0.9191
+        # now we can use it to access the numad data 
+        chord = FLOWMath.akima(bld_height_numad./maximum(bld_height_numad), numadIn_bld.chord,LinRange(0,1,Nslices))
+        airfoils = fill("nothing",Nslices)
+
+        # Discretely assign the airfoils
+        for (iheight_numad,height_numad) in enumerate(bld_height_numad./maximum(bld_height_numad))
+            for (iheight,height_slices) in enumerate(collect(LinRange(0,1,Nslices)))
+                if airfoils[iheight]=="nothing" && height_slices<=height_numad
+                    airfoils[iheight] = "$(numadIn_bld.airfoil[iheight_numad]).dat"
+                end
+            end
+        end
 
         OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel,DSModel,
         afname = airfoils, #TODO: map to the numad input
@@ -392,12 +411,21 @@ function setupOWENS(OWENSAero,path;
         blade_filename="$path/blade2.dat"
         lower_strut_filename="$path/lower_arm2.dat"
         upper_strut_filename="$path/upper_arm2.dat"
-        airfoil_filenames = "$path/airfoils/NACA_0018_AllRe.dat"
         OLAF_filename = "$path/OLAF2.dat"
 
         NumADBldNds = NumADStrutNds = 10 
 
         bldchord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
+
+        # Discretely assign the airfoils #TODO: separate out struts
+        airfoil_filenames = fill("nothing",NumADBldNds)
+        for (ispan_numad,span_numad) in enumerate(numadIn_bld.span./maximum(numadIn_bld.span))
+            for (ispan,span_slices) in enumerate(collect(LinRange(0,1,NumADBldNds)))
+                if airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
+                    airfoil_filenames[ispan] = "$(numadIn_bld.airfoil[ispan_numad]).dat"
+                end
+            end
+        end
         
         if meshtype == "ARCUS" 
             blade_filenames = [blade_filename for i=1:Nbld]
@@ -451,7 +479,7 @@ function setupOWENS(OWENSAero,path;
             BlCrvAng=zeros(blade_Nnodes[iADBody])
             BlTwist=zeros(blade_Nnodes[iADBody])
             BlChord=blade_chords[iADBody]
-            BlAFID=ones(Int,blade_Nnodes[iADBody])
+            BlAFID=collect(1:length(airfoil_filenames))
             OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
         end
 

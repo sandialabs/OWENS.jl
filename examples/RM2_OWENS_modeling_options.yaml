@@ -1,4 +1,3 @@
-
 general:
   analysisType: unsteady # unsteady, steady, modal
   turbineType: Darrieus #Darrieus, H-VAWT, ARCUS
@@ -17,13 +16,13 @@ operationParameters:
 turbulentInflow:
   ifw: false
   WindType: 3
-  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
-  ifw_libfile: nothing
+  windINPfilename: ./test/data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: ./../openfast/build/modules/inflowwind/libifw_c_binding
 
 controlParameters:
   controlStrategy: constantRPM # TODO: incorporate the others
   RPM: 34.0 #RPM
-  numTS: 10 #
+  numTS: 6 #
   delta_t: 0.05 # s
 
 
@@ -31,19 +30,19 @@ AeroParameters:
   Nslices: 35 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
   AModel: DMS # AD, DMS, AC
-  adi_lib: nothing
-  adi_rootname: "/SNL34m"
+  adi_lib: "/Users/kevmoor/Documents/coderepos/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
+  adi_rootname: "./SNL34m"
   
 structuralParameters:
-  structuralModel: ROM #GX, TNB, ROM
+  structuralModel: GX #GX, TNB, ROM
   nonlinear: false #TODO: propogate
   ntelem: 10 #tower elements in each 
   nbelem: 60 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
   nselem: 5 #strut elements in each if turbineType has struts
-  NuMad_geom_xlscsv_file_twr: /data/NuMAD_34m_TowerGeom.csv
-  NuMad_mat_xlscsv_file_twr: /data/NuMAD_34m_TowerMaterials.csv
-  NuMad_geom_xlscsv_file_bld: /data/NuMAD_SNL34mGeomBlades.csv
-  NuMad_mat_xlscsv_file_bld: /data/NuMAD_SNL34mMaterials.csv
-  NuMad_geom_xlscsv_file_strut: /data/NuMAD_SNL34mGeomStruts.csv
-  NuMad_mat_xlscsv_file_strut: /data/NuMAD_SNL34mMaterials.csv
+  NuMad_geom_xlscsv_file_twr: ./test/data/NuMAD_34m_TowerGeom.csv
+  NuMad_mat_xlscsv_file_twr: ./test/data/NuMAD_34m_TowerMaterials.csv
+  NuMad_geom_xlscsv_file_bld: ./test/data/NuMAD_SNL34mGeomBlades.csv
+  NuMad_mat_xlscsv_file_bld: ./test/data/NuMAD_SNL34mMaterials.csv
+  NuMad_geom_xlscsv_file_strut: ./test/data/NuMAD_SNL34mGeomStruts.csv
+  NuMad_mat_xlscsv_file_strut: ./test/data/NuMAD_SNL34mMaterials.csv

@@ -23,8 +23,8 @@ plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
 
-Inp = OWENS.MasterInput("$path/SNL34m_Inputs.yml")
-# Inp = OWENS.MasterInput("$path/SNL34m_InputsAeroDyn.yml")
+# Inp = OWENS.MasterInput("$path/SNL34m_Inputs.yml")
+Inp = OWENS.MasterInput("$path/SNL34m_InputsAeroDyn.yml")
 
 nothing
 
@@ -33,7 +33,7 @@ nothing
 verbosity = 1
 
 analysisType = Inp.analysisType
-turbineType = Inp.turbineType
+turbineType = "H-VAWT"#Inp.turbineType
 eta = Inp.eta
 Nbld = Inp.Nbld
 towerHeight = Inp.towerHeight
@@ -105,7 +105,7 @@ SNL34_unit_xz = [x_shape;;z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
 SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
 SNL34Z = SNL34z.*Blade_Height
-SNL34X = SNL34x.*Blade_Radius
+SNL34X = ones(length(SNL34x)).*Blade_Radius
 
 shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
 shapeX = SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
@@ -146,8 +146,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     ncelem,
     nselem,
     joint_type = 0,
-    strut_mountpointbot = 0.03,
-    strut_mountpointtop = 0.03,
+    strut_mountpointbot = 0.25,
+    strut_mountpointtop = 0.25,
     AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,
