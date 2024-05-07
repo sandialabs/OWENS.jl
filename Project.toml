@@ -25,6 +25,7 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
 GXBeam = "0.5.1"
+YAML = "0.4"
 HDF5 = "0.17"
 Statistics = "1"
 FLOWMath = "0.3"
