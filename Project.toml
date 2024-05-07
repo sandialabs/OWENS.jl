@@ -26,6 +26,9 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 [compat]
 GXBeam = "0.5.1"
 MAT = "0.10"
+DelimitedFiles = "1"
+Dierckx = "0.5"
+GXBeam = "0.5.1"
 julia = "1"
 
 [extras]
