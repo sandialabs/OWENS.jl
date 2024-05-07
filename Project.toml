@@ -25,6 +25,7 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
 DelimitedFiles = "1"
+Dierckx = "0.5"
 GXBeam = "0.5.1"
 julia = "1"
 
