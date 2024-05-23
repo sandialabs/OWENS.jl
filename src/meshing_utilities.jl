@@ -443,7 +443,7 @@ function create_mesh_struts(;Ht = 15.0,
         myangle = (ibld-1)*2.0*pi/nblade + angularOffset
         b_Z = [b_Z;bld_Z]
         b_X = [b_X;bld_Y.*sin(myangle).+bld_X.*cos(myangle)]
-        b_Y = [b_Y;bld_X.*sin(myangle).+bld_Y.*cos(myangle)]
+        b_Y = [b_Y;-bld_X.*sin(myangle).+bld_Y.*cos(myangle)]
 
         # Element joint indices
         b_botidx[ibld] = length(mesh_z)+1 + length(bld_Z)*(ibld-1)
