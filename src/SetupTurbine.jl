@@ -10,6 +10,10 @@ function setupOWENS(OWENSAero,path;
     R = 2.5,
     shapeY = collect(LinRange(0,H,Nslices+1)),
     shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
+    ntelem = 10, #tower elements
+    nbelem = 60, #blade elements
+    ncelem = 10,
+    nselem = 5,
     bshapey = zeros(nbelem+1),
     ifw=false,
     AD15hubR = 0.1,
@@ -31,10 +35,6 @@ function setupOWENS(OWENSAero,path;
     chord_scale = [1.0,1.0],
     thickness_scale = [1.0,1.0],
     Ht=2.0,
-    ntelem = 10, #tower elements
-    nbelem = 60, #blade elements
-    ncelem = 10,
-    nselem = 5,
     strut_mountpointbot = 0.11,
     strut_mountpointtop = 0.11,
     strut_mountpointbottwr = nothing,
