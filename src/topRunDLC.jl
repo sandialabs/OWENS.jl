@@ -3,7 +3,7 @@ mutable struct MasterInput
     analysisType
     turbineType
     eta
-    Nbld
+    Nbld #WindIO
     towerHeight
     rho
     Vinf
@@ -362,125 +362,131 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     println("Running: $(windio[:name])")
 
     # Assembly
-    turbine_class = windio[:assembly][:turbine_class]
-    turbulence_class = windio[:assembly][:turbulence_class]
-    drivetrain = windio[:assembly][:drivetrain]
-    rotor_orientation = windio[:assembly][:rotor_orientation]
-    number_of_blades = windio[:assembly][:number_of_blades]
-    hub_height = windio[:assembly][:hub_height]
-    rotor_diameter = windio[:assembly][:rotor_diameter]
-    rated_power = windio[:assembly][:rated_power]
-    lifetime = windio[:assembly][:lifetime]
-    marine_hydro = windio[:assembly][:marine_hydro]
+    # turbine_class = windio[:assembly][:turbine_class]
+    # turbulence_class = windio[:assembly][:turbulence_class]
+    # drivetrain = windio[:assembly][:drivetrain]
+    # rotor_orientation = windio[:assembly][:rotor_orientation]
+    number_of_blades = windio[:assembly][:number_of_blades] #Used
+    # hub_height = windio[:assembly][:hub_height]
+    # rotor_diameter = windio[:assembly][:rotor_diameter]
+    # rated_power = windio[:assembly][:rated_power]
+    # lifetime = windio[:assembly][:lifetime]
+    # marine_hydro = windio[:assembly][:marine_hydro]
     
     # Components
+    # blade_x_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:grid]
+    blade_x = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:values] #Used
+
+    # blade_y_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:y][:grid]
+    blade_y = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:y][:values] #Used
+
+    # blade_z_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:z][:grid]
+    blade_z = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:z][:values] #Used
 
     # Airfoils
 
     # materials
 
     # Control
-    Vin = windio[:control][:supervisory][:Vin] 
-    Vout = windio[:control][:supervisory][:Vout] 
-    maxTS = windio[:control][:supervisory][:maxTS] 
+    # Vin = windio[:control][:supervisory][:Vin] 
+    # Vout = windio[:control][:supervisory][:Vout] 
+    # maxTS = windio[:control][:supervisory][:maxTS] 
  
-    PC_zeta = windio[:control][:pitch][:PC_zeta]
-    PC_omega = windio[:control][:pitch][:PC_omega]
-    ps_percent = windio[:control][:pitch][:ps_percent]
-    max_pitch = windio[:control][:pitch][:max_pitch]
-    max_pitch_rate = windio[:control][:pitch][:max_pitch_rate]
-    min_pitch = windio[:control][:pitch][:min_pitch]
+    # PC_zeta = windio[:control][:pitch][:PC_zeta]
+    # PC_omega = windio[:control][:pitch][:PC_omega]
+    # ps_percent = windio[:control][:pitch][:ps_percent]
+    # max_pitch = windio[:control][:pitch][:max_pitch]
+    # max_pitch_rate = windio[:control][:pitch][:max_pitch_rate]
+    # min_pitch = windio[:control][:pitch][:min_pitch]
 
-    control_type = windio[:control][:torque][:control_type]
-    tsr = windio[:control][:torque][:tsr]
-    VS_zeta = windio[:control][:torque][:VS_zeta]
-    VS_omega = windio[:control][:torque][:VS_omega]
-    max_torque_rate = windio[:control][:torque][:max_torque_rate]
-    VS_minspd = windio[:control][:torque][:VS_minspd]
-    VS_maxspd = windio[:control][:torque][:VS_maxspd]
+    # control_type = windio[:control][:torque][:control_type]
+    # tsr = windio[:control][:torque][:tsr]
+    # VS_zeta = windio[:control][:torque][:VS_zeta]
+    # VS_omega = windio[:control][:torque][:VS_omega]
+    # max_torque_rate = windio[:control][:torque][:max_torque_rate]
+    # VS_minspd = windio[:control][:torque][:VS_minspd]
+    # VS_maxspd = windio[:control][:torque][:VS_maxspd]
     
-    ss_vsgain = windio[:control][:setpoint_smooth][:ss_vsgain]
-    ss_pcgain = windio[:control][:setpoint_smooth][:ss_pcgain]
+    # ss_vsgain = windio[:control][:setpoint_smooth][:ss_vsgain]
+    # ss_pcgain = windio[:control][:setpoint_smooth][:ss_pcgain]
     
-    limit_type = windio[:control][:shutdown][:limit_type]
-    limit_value = windio[:control][:shutdown][:limit_value]
+    # limit_type = windio[:control][:shutdown][:limit_type]
+    # limit_value = windio[:control][:shutdown][:limit_value]
     
     # Environment
-    air_density = windio[:environment][:air_density]
-    air_dyn_viscosity = windio[:environment][:air_dyn_viscosity]
-    air_speed_sound = windio[:environment][:air_speed_sound]
-    shear_exp = windio[:environment][:shear_exp]
-    gravity = windio[:environment][:gravity]
-    weib_shape_parameter = windio[:environment][:weib_shape_parameter]
-    water_density = windio[:environment][:water_density]
-    water_dyn_viscosity = windio[:environment][:water_dyn_viscosity]
-    soil_shear_modulus = windio[:environment][:soil_shear_modulus]
-    soil_poisson = windio[:environment][:soil_poisson]
-    water_depth = windio[:environment][:water_depth]
-    air_pressure = windio[:environment][:air_pressure]
-    air_vapor_pressure = windio[:environment][:air_vapor_pressure]
-    significant_wave_height = windio[:environment][:significant_wave_height]
-    significant_wave_period = windio[:environment][:significant_wave_period]
+    air_density = windio[:environment][:air_density] #used
+    air_dyn_viscosity = windio[:environment][:air_dyn_viscosity] #used
+    # air_speed_sound = windio[:environment][:air_speed_sound]
+    # shear_exp = windio[:environment][:shear_exp]
+    gravity = windio[:environment][:gravity] #used
+    # weib_shape_parameter = windio[:environment][:weib_shape_parameter]
+    # water_density = windio[:environment][:water_density]
+    # water_dyn_viscosity = windio[:environment][:water_dyn_viscosity]
+    # soil_shear_modulus = windio[:environment][:soil_shear_modulus]
+    # soil_poisson = windio[:environment][:soil_poisson]
+    # water_depth = windio[:environment][:water_depth]
+    # air_pressure = windio[:environment][:air_pressure]
+    # air_vapor_pressure = windio[:environment][:air_vapor_pressure]
+    # significant_wave_height = windio[:environment][:significant_wave_height]
+    # significant_wave_period = windio[:environment][:significant_wave_period]
     
     # BOS
-    plant_turbine_spacing = windio[:bos][:plant_turbine_spacing]
-    plant_row_spacing = windio[:bos][:plant_row_spacing]
-    commissioning_pct = windio[:bos][:commissioning_pct]
-    decommissioning_pct = windio[:bos][:decommissioning_pct]
-    distance_to_substation = windio[:bos][:distance_to_substation]
-    distance_to_interconnection = windio[:bos][:distance_to_interconnection]
-    interconnect_voltage = windio[:bos][:interconnect_voltage]
-    distance_to_site = windio[:bos][:distance_to_site]
-    distance_to_landfall = windio[:bos][:distance_to_landfall]
-    port_cost_per_month = windio[:bos][:port_cost_per_month]
-    site_auction_price = windio[:bos][:site_auction_price]
-    site_assessment_plan_cost = windio[:bos][:site_assessment_plan_cost]
-    site_assessment_cost = windio[:bos][:site_assessment_cost]
-    construction_operations_plan_cost = windio[:bos][:construction_operations_plan_cost]
-    boem_review_cost = windio[:bos][:boem_review_cost]
-    design_install_plan_cost = windio[:bos][:design_install_plan_cost]
+    # plant_turbine_spacing = windio[:bos][:plant_turbine_spacing]
+    # plant_row_spacing = windio[:bos][:plant_row_spacing]
+    # commissioning_pct = windio[:bos][:commissioning_pct]
+    # decommissioning_pct = windio[:bos][:decommissioning_pct]
+    # distance_to_substation = windio[:bos][:distance_to_substation]
+    # distance_to_interconnection = windio[:bos][:distance_to_interconnection]
+    # interconnect_voltage = windio[:bos][:interconnect_voltage]
+    # distance_to_site = windio[:bos][:distance_to_site]
+    # distance_to_landfall = windio[:bos][:distance_to_landfall]
+    # port_cost_per_month = windio[:bos][:port_cost_per_month]
+    # site_auction_price = windio[:bos][:site_auction_price]
+    # site_assessment_plan_cost = windio[:bos][:site_assessment_plan_cost]
+    # site_assessment_cost = windio[:bos][:site_assessment_cost]
+    # construction_operations_plan_cost = windio[:bos][:construction_operations_plan_cost]
+    # boem_review_cost = windio[:bos][:boem_review_cost]
+    # design_install_plan_cost = windio[:bos][:design_install_plan_cost]
 
     # Costs
-    wake_loss_factor = windio[:costs][:wake_loss_factor]
-    fixed_charge_rate = windio[:costs][:fixed_charge_rate]
-    bos_per_kW = windio[:costs][:bos_per_kW]
-    opex_per_kW = windio[:costs][:opex_per_kW]
-    turbine_number = windio[:costs][:turbine_number]
-    labor_rate = windio[:costs][:labor_rate]
-    painting_rate = windio[:costs][:painting_rate]
-    blade_mass_cost_coeff = windio[:costs][:blade_mass_cost_coeff]
-    hub_mass_cost_coeff = windio[:costs][:hub_mass_cost_coeff]
-    pitch_system_mass_cost_coeff = windio[:costs][:pitch_system_mass_cost_coeff]
-    spinner_mass_cost_coeff = windio[:costs][:spinner_mass_cost_coeff]
-    lss_mass_cost_coeff = windio[:costs][:lss_mass_cost_coeff]
-    bearing_mass_cost_coeff = windio[:costs][:bearing_mass_cost_coeff]
-    gearbox_mass_cost_coeff = windio[:costs][:gearbox_mass_cost_coeff]
-    hss_mass_cost_coeff = windio[:costs][:hss_mass_cost_coeff]
-    generator_mass_cost_coeff = windio[:costs][:generator_mass_cost_coeff]
-    bedplate_mass_cost_coeff = windio[:costs][:bedplate_mass_cost_coeff]
-    yaw_mass_cost_coeff = windio[:costs][:yaw_mass_cost_coeff]
-    converter_mass_cost_coeff = windio[:costs][:converter_mass_cost_coeff]
-    transformer_mass_cost_coeff = windio[:costs][:transformer_mass_cost_coeff]
-    hvac_mass_cost_coeff = windio[:costs][:hvac_mass_cost_coeff]
-    cover_mass_cost_coeff = windio[:costs][:cover_mass_cost_coeff]
-    elec_connec_machine_rating_cost_coeff = windio[:costs][:elec_connec_machine_rating_cost_coeff]
-    platforms_mass_cost_coeff = windio[:costs][:platforms_mass_cost_coeff]
-    tower_mass_cost_coeff = windio[:costs][:tower_mass_cost_coeff]
-    controls_machine_rating_cost_coeff = windio[:costs][:controls_machine_rating_cost_coeff]
-    crane_cost = windio[:costs][:crane_cost]
-    electricity_price = windio[:costs][:electricity_price]
-    reserve_margin_price = windio[:costs][:reserve_margin_price]
-    capacity_credit = windio[:costs][:capacity_credit]
-    benchmark_price = windio[:costs][:benchmark_price]
+    # wake_loss_factor = windio[:costs][:wake_loss_factor]
+    # fixed_charge_rate = windio[:costs][:fixed_charge_rate]
+    # bos_per_kW = windio[:costs][:bos_per_kW]
+    # opex_per_kW = windio[:costs][:opex_per_kW]
+    # turbine_number = windio[:costs][:turbine_number]
+    # labor_rate = windio[:costs][:labor_rate]
+    # painting_rate = windio[:costs][:painting_rate]
+    # blade_mass_cost_coeff = windio[:costs][:blade_mass_cost_coeff]
+    # hub_mass_cost_coeff = windio[:costs][:hub_mass_cost_coeff]
+    # pitch_system_mass_cost_coeff = windio[:costs][:pitch_system_mass_cost_coeff]
+    # spinner_mass_cost_coeff = windio[:costs][:spinner_mass_cost_coeff]
+    # lss_mass_cost_coeff = windio[:costs][:lss_mass_cost_coeff]
+    # bearing_mass_cost_coeff = windio[:costs][:bearing_mass_cost_coeff]
+    # gearbox_mass_cost_coeff = windio[:costs][:gearbox_mass_cost_coeff]
+    # hss_mass_cost_coeff = windio[:costs][:hss_mass_cost_coeff]
+    # generator_mass_cost_coeff = windio[:costs][:generator_mass_cost_coeff]
+    # bedplate_mass_cost_coeff = windio[:costs][:bedplate_mass_cost_coeff]
+    # yaw_mass_cost_coeff = windio[:costs][:yaw_mass_cost_coeff]
+    # converter_mass_cost_coeff = windio[:costs][:converter_mass_cost_coeff]
+    # transformer_mass_cost_coeff = windio[:costs][:transformer_mass_cost_coeff]
+    # hvac_mass_cost_coeff = windio[:costs][:hvac_mass_cost_coeff]
+    # cover_mass_cost_coeff = windio[:costs][:cover_mass_cost_coeff]
+    # elec_connec_machine_rating_cost_coeff = windio[:costs][:elec_connec_machine_rating_cost_coeff]
+    # platforms_mass_cost_coeff = windio[:costs][:platforms_mass_cost_coeff]
+    # tower_mass_cost_coeff = windio[:costs][:tower_mass_cost_coeff]
+    # controls_machine_rating_cost_coeff = windio[:costs][:controls_machine_rating_cost_coeff]
+    # crane_cost = windio[:costs][:crane_cost]
+    # electricity_price = windio[:costs][:electricity_price]
+    # reserve_margin_price = windio[:costs][:reserve_margin_price]
+    # capacity_credit = windio[:costs][:capacity_credit]
+    # benchmark_price = windio[:costs][:benchmark_price]
 
 
 
     analysisType = Inp.analysisType
     turbineType = Inp.turbineType
     eta = Inp.eta
-    Nbld = Inp.Nbld
     towerHeight = Inp.towerHeight
-    rho = Inp.rho
     Vinf = Inp.Vinf
     controlStrategy = Inp.controlStrategy
     RPM = Inp.RPM
@@ -499,8 +505,8 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     if ifw_libfile == "nothing"
         ifw_libfile = nothing
     end
-    Blade_Height = Inp.Blade_Height
-    Blade_Radius = Inp.Blade_Radius
+    Blade_Height = Inp.Blade_Height # WindIO TODO: resolve DLC dependence
+    Blade_Radius = Inp.Blade_Radius # WindIO TODO: resolve DLC dependence
     numTS = Inp.numTS
     delta_t = Inp.delta_t
     NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
@@ -515,12 +521,12 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     end
     adi_rootname = "$(path)$(Inp.adi_rootname)"
 
-    B = Nbld
-    R = Blade_Radius#177.2022*0.3048 #m
-    H = Blade_Height#1.02*R*2 #m
+    shapeY = blade_z#collect(LinRange(0,H,Nslices+1))
+    shapeX = blade_x#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
+    bshapey = blade_y
 
-    shapeY = collect(LinRange(0,H,Nslices+1))
-    shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
+    R = maximum(blade_x) #m 
+    H = maximum(blade_z) #m
 
     nothing
 
@@ -533,17 +539,19 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
     mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
-        rho,
+        rho=air_density,
+        mu=air_dyn_viscosity,
         Nslices,
         ntheta,
         RPM,
         Vinf,
         eta,
-        B,
+        B=number_of_blades,
         H,
         R,
-        shapeY,
+        shapeY, #TODO: rename to shape Z
         shapeX,
+        bshapey, #TODO: rename to shapeY
         ifw,
         WindType,
         delta_t,
@@ -644,6 +652,7 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     platformTurbineConnectionNodeNumber = 1,
     pBC,
     nlOn = true,
+    gravityOn = [0,0,gravity],
     numNodes = mymesh.numNodes,
     RayleighAlpha = 0.05,
     RayleighBeta = 0.05,
@@ -750,7 +759,7 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-    mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+    mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
     kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,

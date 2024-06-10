@@ -1,5 +1,6 @@
 function setupOWENS(OWENSAero,path;
     rho = 1.225,
+    mu = 1.7894e-5,
     Nslices = 30,
     ntheta = 30,
     RPM = 1e-6,
@@ -389,6 +390,7 @@ function setupOWENS(OWENSAero,path;
         OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel,DSModel,
         afname = airfoils, #TODO: map to the numad input
         rho,
+        mu,
         eta,
         ifw, #TODO: propogate WindType
         turbsim_filename = windINPfilename,
