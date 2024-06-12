@@ -48,7 +48,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = true
-AModel = "AD"
+AModel = "DMS"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 41.9
@@ -89,10 +89,10 @@ SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
 SNL34Z = SNL34z.*Blade_Height #windio
 SNL34X = SNL34x.*Blade_Radius #windio
 
-shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
-helix_angle = pi/2
-shapeX = sin.(shapeY/maximum(shapeY)*helix_angle).*Blade_Radius#SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY) ones(length(shapeY)).*Blade_Radius#
-bshapey =cos.(shapeY/maximum(shapeY)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
+shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
+helix_angle = pi/4
+shapeX = cos.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius#SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ) ones(length(shapeZ)).*Blade_Radius#
+shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
@@ -110,7 +110,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     R = Blade_Radius, #windio
     shapeY, #windio
     shapeX, #windio
-    bshapey,
+    shapeZ,
     ifw, #modeling options
     delta_t, #modeling options
     numTS, #modeling options
@@ -137,7 +137,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     DSModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
-    angularOffset = pi/2,
+    angularOffset = 0.0,#pi/2,
     meshtype = turbineType)
 
 
@@ -153,9 +153,12 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
 
 PyPlot.figure()
 PyPlot.scatter3D(mymesh.x,mymesh.y,mymesh.z)
-PyPlot.scatter3D(shapeX,bshapey,shapeY,color="red")
+PyPlot.scatter3D(shapeY,shapeX,shapeZ,color="red")
+PyPlot.xlabel("x")
+PyPlot.ylabel("y")
+PyPlot.zlabel("z")
 
-top_idx = 23#Int(myjoint[7,2])
+top_idx = Int(myjoint[6,1])
 pBC = [1 1 0
 1 2 0
 1 3 0
