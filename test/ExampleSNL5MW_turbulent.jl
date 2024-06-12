@@ -65,7 +65,7 @@ OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
 afname = "$(path)/airfoils/NACA_0021.dat",
 ifw=true,
 ifw_libfile = nothing,
-wind_filename="$(path)/data/300mx300m12msETM_Coarse.bts",
+turbsim_filename="$(path)/data/300mx300m12msETM_Coarse.bts",
 ntheta,Nslices,rho,eta,RPI=true)
 
 #########################################

@@ -120,7 +120,7 @@ OWENSAero.setupTurb(SNL34X,SNL34Z,B,chord,TSR,Vinf;
     ntheta,
     Nslices,
     ifw = false,
-    wind_filename = "$path/data/40mx40mVinf10_41ms10percturb.bts",
+    turbsim_filename = "$path/data/40mx40mVinf10_41ms10percturb.bts",
     RPI = true,
     DSModel = "BV",
     AModel = "DMS",
