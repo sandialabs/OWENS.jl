@@ -845,7 +845,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     end
 
     if eltype(topModel.gravityOn) == Float64
-        gravity = feamodel.gravityOn
+        gravity = topModel.gravityOn
     end
 
 
@@ -1379,7 +1379,7 @@ function initialize_generator!(inputs)
 end
 
 function initialize_ROM(IElStorage,IModel,IMesh,IEl,u_s,udot_s,uddot_s)
-    if IModel.analysisType=="GX"
+    if IModel.analysisType!="ROM"
         return nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing,nothing
     else
         I_rom = OWENSFEA.reducedOrderModel(IElStorage,IModel,IMesh,IEl,u_s) #construct reduced order model

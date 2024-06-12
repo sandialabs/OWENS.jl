@@ -653,9 +653,16 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         epsilon_z_hist[:,:,throwawayTimeSteps:end] = epsilon_z_hist_ps[:,:,throwawayTimeSteps:end]
         kappa_x_hist[:,:,throwawayTimeSteps:end] = kappa_x_hist_ps[:,:,throwawayTimeSteps:end]
         epsilon_y_hist[:,:,throwawayTimeSteps:end] = epsilon_y_hist_ps[:,:,throwawayTimeSteps:end]
+
+        epsilon_x_hist[:,:,1:throwawayTimeSteps-1] .= 0.0
+        kappa_y_hist[:,:,1:throwawayTimeSteps-1] .= 0.0
+        kappa_z_hist[:,:,1:throwawayTimeSteps-1] .= 0.0
+        epsilon_z_hist[:,:,1:throwawayTimeSteps-1] .= 0.0
+        kappa_x_hist[:,:,1:throwawayTimeSteps-1] .= 0.0
+        epsilon_y_hist[:,:,1:throwawayTimeSteps-1] .= 0.0
     end
 
-    total_t = length(epsilon_x_hist[1,1,:])*delta_t
+    total_t = length(epsilon_x_hist[1,1,throwawayTimeSteps:end])*delta_t # for damage rate
     #############################################
     #### Get strain values at the blades ########
     #############################################

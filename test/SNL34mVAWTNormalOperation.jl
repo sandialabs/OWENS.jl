@@ -24,6 +24,7 @@ plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 path = runpath = splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$path/SNL34m_Inputs.yml")
+# Inp = OWENS.MasterInput("$path/SNL34m_InputsAeroDyn.yml")
 
 nothing
 
