@@ -78,7 +78,7 @@ iterationType = "DI")
 deformTurb(azi_j;newOmega=0,newVinf=0,bld_x=0,bld_z=0,bld_twist=0) = 0
 
 eps_xG,eps_zG,eps_yG,kappa_xG,kappa_yG,kappa_zG,t,FReactionHist,OmegaHist,genTorque,
-torqueDriveShaft,aziHist,uHist = runowens(model,feamodel,mymesh,myel,
+torqueDriveShaft,aziHist,uHist = OWENS.run34m(model,feamodel,mymesh,myel,
 aeroForcesDMS,deformTurb;steady,system,assembly)
 
 ##################################################################
@@ -139,7 +139,7 @@ model.Omegaocp = [28.0, 28.0]./60
 model.OmegaInit = 28.0/60
 
 eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,
-torqueDriveShaft,aziHist,uHist  = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady,system,assembly)
+torqueDriveShaft,aziHist,uHist  = OWENS.run34m(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady,system,assembly)
 
 
 # Load data

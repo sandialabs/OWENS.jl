@@ -153,7 +153,7 @@ model.Vinfocp = model.Vinfocp.*0.0
 feamodel.nlOn = true
 
 # Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
-eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = runowens(model,feamodel,mymesh,myel,aeroForcesDMS,OWENSAero.deformTurb;steady=true)
+eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = OWENS.run34m(model,feamodel,mymesh,myel,aeroForcesDMS,OWENSAero.deformTurb;steady=true)
 
 #####
 ###****** SAND-88-1144 Specifies Bending Strains and Axial Strains Separate ****
@@ -176,7 +176,7 @@ feamodel.nlOn = false
 feamodel.analysisType = "ROM"
 model.analysisType = "ROM"
 
-eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist = runowens(model,feamodel,mymesh,myel,
+eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist = OWENS.run34m(model,feamodel,mymesh,myel,
 aeroForcesDMS,OWENSAero.deformTurb;steady=false,system,assembly,VTKFilename="$path/vtk/NormalOperation")
 
 # Get stress and "zero" out the loads from the initial 0-RPM

@@ -116,8 +116,8 @@ SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
 SNL34Z = SNL34z.*Blade_Height
 SNL34X = SNL34x.*Blade_Radius
 
-shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
-shapeX = SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
+shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
+shapeX = SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
@@ -133,7 +133,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     B = Nbld,
     H = Blade_Height,
     R = Blade_Radius,
-    shapeY,
+    shapeZ,
     shapeX,
     ifw,
     delta_t,

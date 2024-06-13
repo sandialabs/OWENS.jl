@@ -13,7 +13,7 @@ end
     include("$path/Fig4_5_campbell2.jl")
 end
 
-@testset "Mesh Check" begin
+@testset "Rainflow Check" begin
     include("$path/testrainflow.jl")
 end
 

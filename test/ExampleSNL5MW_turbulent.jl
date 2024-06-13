@@ -43,17 +43,17 @@ chord = 5.0*ones(Nslices)
 omega = RPM / 60 * 2 * pi
 tsr = omega*R/Vinf
 
-shapeY = collect(LinRange(0,H,Nslices+1))
-shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
-shapeX_spline = FLOWMath.Akima(shapeY, shapeX)
-h_frac = (shapeY[2:end] - shapeY[1:end-1])./shapeY[end];
-h_elem = (shapeY[2:end] - shapeY[1:end-1])
-h = (shapeY[2:end] + shapeY[1:end-1])/2.0;
+shapeZ = collect(LinRange(0,H,Nslices+1))
+shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
+shapeX_spline = FLOWMath.Akima(shapeZ, shapeX)
+h_frac = (shapeZ[2:end] - shapeZ[1:end-1])./shapeZ[end];
+h_elem = (shapeZ[2:end] - shapeZ[1:end-1])
+h = (shapeZ[2:end] + shapeZ[1:end-1])/2.0;
 
 RefArea_half, error = QuadGK.quadgk(shapeX_spline, 0, H, atol=1e-10)
 RefArea = RefArea_half*2
 delta_xs = shapeX[2:end] - shapeX[1:end-1]
-delta_zs = shapeY[2:end] - shapeY[1:end-1]
+delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
 
 delta3D = atan.(delta_xs./delta_zs)
 
@@ -61,7 +61,7 @@ delta3D = atan.(delta_xs./delta_zs)
 ### Set up aero forces
 #########################################
 println("Initialize Aerodynamics")
-OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
+OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
 afname = "$(path)/airfoils/NACA_0021.dat",
 ifw=true,
 ifw_libfile = nothing,
@@ -82,7 +82,7 @@ nselem = 10,
 strut_mountpointbot = 0.1,
 strut_mountpointtop = 0.1,
 bshapex = bshapex=shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-bshapez = shapeY,
+bshapez = shapeZ,
 angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 
 #########################################
