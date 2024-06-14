@@ -47,7 +47,7 @@ ntelem = 10
 nbelem = 60
 ncelem = 10
 nselem = 5
-ifw = true
+ifw = false
 AModel = "DMS"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
@@ -92,7 +92,7 @@ SNL34X = SNL34x.*Blade_Radius #windio
 shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
 helix_angle = pi/4
 shapeX = cos.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius#SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ) ones(length(shapeZ)).*Blade_Radius#
-shapeZ = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
+shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
@@ -110,7 +110,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     R = Blade_Radius, #windio
     shapeZ, #windio
     shapeX, #windio
-    shapeZ,
+    shapeY,
     ifw, #modeling options
     delta_t, #modeling options
     numTS, #modeling options
@@ -153,7 +153,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
 
 PyPlot.figure()
 PyPlot.scatter3D(mymesh.x,mymesh.y,mymesh.z)
-PyPlot.scatter3D(shapeZ,shapeX,shapeZ,color="red")
+PyPlot.scatter3D(shapeY,shapeX,shapeZ,color="red")
 PyPlot.xlabel("x")
 PyPlot.ylabel("y")
 PyPlot.zlabel("z")
