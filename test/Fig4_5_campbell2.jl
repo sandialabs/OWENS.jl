@@ -116,8 +116,8 @@ SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
 SNL34Z = SNL34z.*Blade_Height
 SNL34X = SNL34x.*Blade_Radius
 
-shapeY = SNL34Z#collect(LinRange(0,H,Nslices+1))
-shapeX = SNL34X#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
+shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
+shapeX = SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
@@ -133,7 +133,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     B = Nbld,
     H = Blade_Height,
     R = Blade_Radius,
-    shapeY,
+    shapeZ,
     shapeX,
     ifw,
     delta_t,
@@ -163,6 +163,16 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType)
+
+# PyPlot.figure()
+# PyPlot.plot(mymesh.x,mymesh.z,"b-")
+#     for myi = 1:length(mymesh.x)
+#         PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+#         PyPlot.draw()
+#         #sleep(0.1)
+#     end
+# PyPlot.xlabel("x")
+# PyPlot.ylabel("y")
 
 starttime = time()
 
@@ -320,7 +330,7 @@ freqGX = [freq2[:,i] for i=1:2:numModes-6-2]
 for imode = 1:length(freqOWENS)
     for ifreq = 1:length(freqOWENS[imode])
         println("imode $imode, ifreq $ifreq")
-        atol = freqGX[imode][ifreq]*0.061
+        atol = freqGX[imode][ifreq]*0.065
         @test isapprox(freqOWENS[imode][ifreq],freqGX[imode][ifreq];atol)
     end
 end

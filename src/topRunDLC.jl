@@ -179,8 +179,8 @@ function runOWENS(Inp,path;verbosity=2)
     R = Blade_Radius#177.2022*0.3048 #m
     H = Blade_Height#1.02*R*2 #m
 
-    shapeY = collect(LinRange(0,H,Nslices+1))
-    shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
+    shapeZ = collect(LinRange(0,H,Nslices+1))
+    shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
     nothing
 
@@ -202,7 +202,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     B,
     H,
     R,
-    shapeY,
+    shapeZ,
     shapeX,
     ifw,
     WindType,
@@ -521,9 +521,9 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
     end
     adi_rootname = "$(path)$(Inp.adi_rootname)"
 
-    shapeY = blade_z#collect(LinRange(0,H,Nslices+1))
-    shapeX = blade_x#R.*(1.0.-4.0.*(shapeY/H.-.5).^2)#shapeX_spline(shapeY)
-    bshapey = blade_y
+    shapeZ = blade_z#collect(LinRange(0,H,Nslices+1))
+    shapeX = blade_x#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
+    shapeY = blade_y
 
     R = maximum(blade_x) #m 
     H = maximum(blade_z) #m
@@ -549,9 +549,9 @@ function runOWENSWINDIO(WINDIO_filename,Inp,path;verbosity=2)
         B=number_of_blades,
         H,
         R,
-        shapeY, #TODO: rename to shape Z
+        shapeZ, 
         shapeX,
-        bshapey, #TODO: rename to shapeY
+        shapeY, 
         ifw,
         WindType,
         delta_t,

@@ -79,8 +79,8 @@ B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m
 H = Blade_Height#1.02*R*2 #m
 
-shapeY = collect(LinRange(0,H,Nslices+1))
-shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2)
+shapeZ = collect(LinRange(0,H,Nslices+1))
+shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)
 
 
 stack_layers_bld = nothing
@@ -111,7 +111,7 @@ nothing
 Nstrutperbld = 2 #TODO: generalize and propogate
 
 Nbld = B
-H = maximum(shapeY) #m,
+H = maximum(shapeZ) #m,
 R = maximum(shapeX) #m,
 omega = RPM / 60 * 2 * pi
 tsr = omega*R/Vinf
@@ -135,7 +135,7 @@ if meshtype == "ARCUS" #TODO, for all of these propogate the AeroDyn additional 
         ncelem,
         c_mount_ratio,
         bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-        bshapez = shapeY,
+        bshapez = shapeZ,
         joint_type, #hinged about y axis
         cables_connected_to_blade_base,
         angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
@@ -160,7 +160,7 @@ elseif meshtype == "Darrieus" || meshtype == "H-VAWT"
         strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
         strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
         bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-        bshapez = shapeY,
+        bshapez = shapeZ,
         bshapey = zeros(nbelem+1), # but magnitude for this is relevant
         angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
         AD15_ccw = true,
@@ -408,9 +408,9 @@ if !AD15On
     ### translate from blade span to blade height between the numad definition and the vertical slice positions
     ### First get the angles from the overall geometry npoints and go to the numad npoints
     delta_xs = shapeX[2:end] - shapeX[1:end-1]
-    delta_zs = shapeY[2:end] - shapeY[1:end-1]
+    delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
     delta3D = atan.(delta_xs./delta_zs)
-    delta3D_spl = FLOWMath.akima(shapeY[1:end-1]./maximum(shapeY[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
+    delta3D_spl = FLOWMath.akima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
     
     bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl)))) # now convert the numad span to a height
 
@@ -425,7 +425,7 @@ if !AD15On
         end
     end
 
-    OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel,DSModel,
+    OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
     afname = airfoils, #TODO: map to the numad input
     rho,
     eta,
@@ -500,15 +500,15 @@ if AD15On
         bld_len[iADBody] = sqrt((x2-x1)^2+(y2-y1)^2+(z2-z1)^2)
 
         #Get the blade shape
-        ADshapeY = collect(LinRange(0,H,NumADBldNds))
+        ADshapeZ = collect(LinRange(0,H,NumADBldNds))
         xmesh = mymesh.x[strt_idx:end_idx]
         ymesh = mymesh.y[strt_idx:end_idx]
         ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
         ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
-        ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeY)
+        ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
         
         if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically
-            BlSpn=ADshapeY
+            BlSpn=ADshapeZ
             BlCrvAC=ADshapeXspl
         else # while the arms/struts are assumed to be straight and are oriented by the mesh angle
             BlSpn=collect(LinRange(0,bld_len[iADBody],blade_Nnodes[iADBody]))
@@ -526,7 +526,7 @@ if AD15On
 
     OWENSOpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
 
-    OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
+    OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
             rho     = rho,
             adi_dt  = delta_t,
             adi_tmax= numTS*delta_t,
