@@ -20,13 +20,12 @@ import FLOWMath
 import HDF5
 
 import OWENSFEA
-# import OWENS
+import OWENS
 import OWENSAero
 import Composites
 
 path,_ = splitdir(@__FILE__)
 
-include("$(path)/../../OWENS.jl/src/OWENS.jl")
 println("Set up Macro Geometry/Inputs")
 rho = 1.225
 Nslices = 30
@@ -79,9 +78,11 @@ nblade = 2,
 ntelem = 30, #tower elements
 nbelem = 60, #blade elements
 nselem = 10,
-strut_mountpointbot = 0.1,
-strut_mountpointtop = 0.1,
-bshapex = bshapex=shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+strut_twr_mountpointbot = 0.1, # This puts struts at top and bottom
+strut_twr_mountpointtop = 0.1, # This puts struts at top and bottom
+strut_bld_mountpointbot = 0.1, # This puts struts at top and bottom
+strut_bld_mountpointtop = 0.1, # This puts struts at top and bottom
+bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 bshapez = shapeZ,
 angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 
@@ -132,7 +133,18 @@ stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld
 # Combined Section Props
 bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
 Nremain = mymesh.numEl-length(sectionPropsArray_twr)-length(bldssecprops) #strut elements remain
-sectionPropsArray = [sectionPropsArray_twr;bldssecprops;fill(sectionPropsArray_bld[end],Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+strutssecprops = fill(sectionPropsArray_bld[end],Nremain)
+
+sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+        
+# GXBeam sectional properties
+stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+stiff_struts = fill(stiff_bld[end],Nremain)#collect(Iterators.flatten(fill(stiff_strut, Nstrutperbld*Nbld)))
+stiff_array = [stiff_twr; stiff_blds; stiff_struts]
+
+mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+mass_struts = fill(mass_bld[end],Nremain)#collect(Iterators.flatten(fill(mass_strut, Nstrutperbld*Nbld)))
+mass_array = [mass_twr; mass_blds; mass_struts]
 
 rotationalEffects = ones(mymesh.numEl)
 
@@ -140,7 +152,7 @@ rotationalEffects = ones(mymesh.numEl)
 myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
 println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,mass_twr, mass_bld, stiff_twr, stiff_bld;VTKmeshfilename="$path/vtk/SNL5MW")
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
 #########################################
 ### Create Aero Functions
@@ -211,16 +223,16 @@ OWENS.OWENSFEA_VTK("$path/vtk/SNL5MW_timedomain",t,uHist,system,assembly,section
 #### Get strain values at the blades #####
 ##########################################
 
-massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL = OWENS.extractSF(bld_precompinput,
-bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-kappa_x_hist,epsilon_y_hist;verbosity=1, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor
-# epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-Twr_LE_U_idx=1,Twr_LE_L_idx=1)
+# massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+# SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL = OWENS.extractSF(bld_precompinput,
+# bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+# twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+# mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+# kappa_x_hist,epsilon_y_hist;verbosity=1, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor
+# # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+# LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
+# LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
+# Twr_LE_U_idx=1,Twr_LE_L_idx=1)
 
 ######################################
 #### Plot

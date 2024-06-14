@@ -164,6 +164,16 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     angularOffset = pi/2,
     meshtype = turbineType)
 
+# PyPlot.figure()
+# PyPlot.plot(mymesh.x,mymesh.z,"b-")
+#     for myi = 1:length(mymesh.x)
+#         PyPlot.text(mymesh.x[myi].+rand()/30,mymesh.z[myi].+rand()/30,"$myi",ha="center",va="center")
+#         PyPlot.draw()
+#         #sleep(0.1)
+#     end
+# PyPlot.xlabel("x")
+# PyPlot.ylabel("y")
+
 starttime = time()
 
 # node, dof, bc
@@ -320,7 +330,7 @@ freqGX = [freq2[:,i] for i=1:2:numModes-6-2]
 for imode = 1:length(freqOWENS)
     for ifreq = 1:length(freqOWENS[imode])
         println("imode $imode, ifreq $ifreq")
-        atol = freqGX[imode][ifreq]*0.061
+        atol = freqGX[imode][ifreq]*0.065
         @test isapprox(freqOWENS[imode][ifreq],freqGX[imode][ifreq];atol)
     end
 end

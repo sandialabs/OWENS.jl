@@ -34,8 +34,6 @@ plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 nothing
 
-# Unpack inputs, or you could directly input them here and bypass the file 
-
 verbosity = 1
 
 turbineType = "Darrieus"
@@ -48,7 +46,7 @@ ntheta = 30
 ntelem = 20
 nbelem = 60
 ncelem = 10
-nselem = 5
+nselem = 5 
 ifw = false
 AModel = "DMS"
 windINPfilename = nothing
@@ -110,6 +108,7 @@ Vinf_spec = FLOWMath.akima(SNL34m_5_11_Vinf[:,1].-SNL34m_5_11_RPM[1,1],SNL34m_5_
 offsetTime = 20.0
 t_Vinf = [0;t_Vinf.+offsetTime;t_Vinf[end]*10]
 Vinf_spec = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
+
 PyPlot.figure()
 PyPlot.plot(t_Vinf,Vinf_spec,".-",label="Orig")
 PyPlot.xlabel("t")
@@ -120,26 +119,6 @@ PyPlot.plot(new_t,new_RPM,".-",label="Orig")
 PyPlot.plot(new_t[1:end-1],diff(new_RPM),".-",label="Orig")
 PyPlot.xlabel("t")
 PyPlot.ylabel("RPM")
-#
-# PyPlot.figure()
-# PyPlot.plot(new_t,new_Torque,".-",label="Orig")
-# PyPlot.xlabel("t")
-# PyPlot.ylabel("Torque")
-#
-# PyPlot.figure()
-# PyPlot.plot(new_t,new_RPM,".-",label="Orig")
-# PyPlot.xlabel("t")
-# PyPlot.ylabel("RPM")
-#
-# PyPlot.figure()
-# PyPlot.plot(new_t,Vinf_spec,".-",label="Orig")
-# PyPlot.xlabel("t")
-# PyPlot.ylabel("Vinf")
-# PyPlot.plot(t_Vinf,Vinf_spec,label="New")
-# PyPlot.legend()
-
-#Put in one place so its not repeated for all of the analyses
-# include("$(path)/34mSetup.jl")
 
 
 controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
@@ -248,8 +227,6 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-aeroForcesDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
-
 Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60
 
 model = OWENS.Inputs(;analysisType = "ROM",
@@ -284,7 +261,7 @@ model.Vinfocp = model.Vinfocp.*0.0
 feamodel.nlOn = true
 
 # Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
-eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = OWENS.run34m(model,feamodel,mymesh,myel,aeroForcesDMS,OWENSAero.deformTurb;steady=true)
+eps_x_grav,eps_z_grav,eps_y_grav,kappa_x_grav,kappa_y_grav,kappa_z_grav,t,FReactionHist_grav = OWENS.run34m(model,feamodel,mymesh,myel,aeroForces,deformAero;steady=true)
 
 Ealuminum = plyprops_bld.plies[end].e1
 flatwise_stress1grav = (kappa_y_grav[1,end,1:end-1].* thickness .+ 0*eps_x_grav[1,end,1:end-1]) .* Ealuminum
@@ -297,7 +274,7 @@ model.Vinfocp = Vinf_spec
 feamodel.nlOn = false
 model.analysisType = "ROM"
 feamodel.analysisType = "ROM"
-eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist = OWENS.run34m(model,feamodel,mymesh,myel,aeroForcesDMS,OWENSAero.deformTurb;steady=false,system,assembly,VTKFilename="$path/vtk/EmergencyStop")
+eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist = OWENS.run34m(model,feamodel,mymesh,myel,aeroForces,deformAero;steady=false,system,assembly,VTKFilename="$path/vtk/EmergencyStop")
 
 # Get stress and "zero" out the loads from the initial 0-RPM
 flatwise_stress1 = zeros(length(eps_x[1,:,1]),length(eps_x[1,1,1:end-1]))
@@ -309,6 +286,28 @@ for its = 1:length(eps_x[1,:,1])
 
     lag_stress1[its,:] = (kappa_z[1,its,1:end-1].* thickness_lag .+ 0*eps_x[1,its,1:end-1]) .* Ealuminum .- lag_stress1grav
 end
+
+
+
+# UnitFilename = "$path/data/EmergencyStop34m_UNIT.h5"
+
+# HDF5.h5open(UnitFilename, "w") do file
+#     HDF5.write(file,"t",t)
+#     HDF5.write(file,"flatwise_stress1",flatwise_stress1)
+#     HDF5.write(file,"lag_stress1",lag_stress1)
+# end
+
+# t_UNIT = HDF5.h5read(UnitFilename,"t")
+# flatwise_stress1_UNIT = HDF5.h5read(UnitFilename,"flatwise_stress1")
+# lag_stress1_UNIT = HDF5.h5read(UnitFilename,"lag_stress1")
+
+# for (i_t,t) in enumerate(t)
+#     @test isapprox(t[i_t],t_UNIT[i_t];atol = abs(t_UNIT[i_t])*0.001)
+#     for iel = 1:length(flatwise_stress1[i_t,:])
+#         @test isapprox(flatwise_stress1[i_t,iel],flatwise_stress1_UNIT[i_t,iel];atol = abs(flatwise_stress1_UNIT[i_t,iel])*0.001)
+#         @test isapprox(lag_stress1[i_t,iel],lag_stress1_UNIT[i_t,iel];atol = abs(lag_stress1_UNIT[i_t,iel])*0.001)
+#     end
+# end
 
 # Load in experimentat data
 SNL34m_5_11_FlatwiseStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.12_EmergStopFlap.csv",',',skipstart = 1)
