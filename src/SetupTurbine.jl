@@ -1,5 +1,6 @@
 function setupOWENS(OWENSAero,path;
     rho = 1.225,
+    mu = 1.7894e-5,
     Nslices = 30,
     ntheta = 30,
     RPM = 1e-6,
@@ -8,8 +9,13 @@ function setupOWENS(OWENSAero,path;
     B = 3,
     H = 5.0,
     R = 2.5,
-    shapeY = collect(LinRange(0,H,Nslices+1)),
-    shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
+    shapeZ = collect(LinRange(0,H,Nslices+1)),
+    shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2),#shapeX_spline(shapeZ)
+    ntelem = 10, #tower elements
+    nbelem = 60, #blade elements
+    ncelem = 10,
+    nselem = 5,
+    shapeY = zeros(nbelem+1),
     ifw=false,
     AD15hubR = 0.1,
     WindType=1,
@@ -30,10 +36,6 @@ function setupOWENS(OWENSAero,path;
     chord_scale = [1.0,1.0],
     thickness_scale = [1.0,1.0],
     Ht=2.0,
-    ntelem = 10, #tower elements
-    nbelem = 60, #blade elements
-    ncelem = 10,
-    nselem = 5,
     strut_mountpointbot = 0.11,
     strut_mountpointtop = 0.11,
     strut_mountpointbottwr = nothing,
@@ -67,7 +69,7 @@ function setupOWENS(OWENSAero,path;
     Nstrutperbld = 2 #TODO: generalize and propogate
 
     Nbld = B
-    H = maximum(shapeY) #m,
+    H = maximum(shapeZ) #m,
     R = maximum(shapeX) #m,
     omega = RPM / 60 * 2 * pi
     tsr = omega*R/Vinf
@@ -91,7 +93,7 @@ function setupOWENS(OWENSAero,path;
             ncelem,
             c_mount_ratio,
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-            bshapez = shapeY,
+            bshapez = shapeZ,
             joint_type, #hinged about y axis
             cables_connected_to_blade_base,
             angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
@@ -116,8 +118,8 @@ function setupOWENS(OWENSAero,path;
             strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
             strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-            bshapez = shapeY,
-            bshapey = zeros(nbelem+1), # but magnitude for this is relevant
+            bshapez = shapeZ,
+            bshapey = shapeY, # but magnitude for this is relevant
             angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
             AD15_ccw = true,
             verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
@@ -366,9 +368,9 @@ function setupOWENS(OWENSAero,path;
         # translate from blade span to blade height between the numad definition and the vertical slice positions
         # First get the angles from the overall geometry npoints and go to the numad npoints
         delta_xs = shapeX[2:end] - shapeX[1:end-1]
-        delta_zs = shapeY[2:end] - shapeY[1:end-1]
+        delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
         delta3D = atan.(delta_xs./delta_zs)
-        delta3D_spl = FLOWMath.akima(shapeY[1:end-1]./maximum(shapeY[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
+        delta3D_spl = FLOWMath.akima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
         # now convert the numad span to a height
         bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
 
@@ -385,9 +387,11 @@ function setupOWENS(OWENSAero,path;
             end
         end
 
-        OWENSAero.setupTurb(shapeX,shapeY,B,chord,tsr,Vinf;AModel,DSModel,
+        OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
         afname = airfoils, #TODO: map to the numad input
+        bld_y = shapeY,
         rho,
+        mu,
         eta,
         ifw, #TODO: propogate WindType
         turbsim_filename = windINPfilename,
@@ -442,6 +446,7 @@ function setupOWENS(OWENSAero,path;
 
         NumADBody = length(AD15bldNdIdxRng[:,1])
         bld_len = zeros(NumADBody)
+        bladefileissaved = false
         for (iADBody,filename) in enumerate(blade_filenames)
             strt_idx = AD15bldNdIdxRng[iADBody,1]
             end_idx = AD15bldNdIdxRng[iADBody,2]
@@ -461,33 +466,60 @@ function setupOWENS(OWENSAero,path;
             bld_len[iADBody] = sqrt((x2-x1)^2+(y2-y1)^2+(z2-z1)^2)
 
             #Get the blade shape
-            ADshapeY = collect(LinRange(0,H,NumADBldNds))
+            ADshapeZ = collect(LinRange(0,H,NumADBldNds))
             xmesh = mymesh.x[strt_idx:end_idx]
             ymesh = mymesh.y[strt_idx:end_idx]
             ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
             ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
-            ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeY)
+            ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
             
-            if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically
-                BlSpn=ADshapeY
-                BlCrvAC=ADshapeXspl
-            else # while the arms/struts are assumed to be straight and are oriented by the mesh angle
+            if iADBody<=Nbld && !bladefileissaved#Note that the blades can be curved and are assumed to be oriented vertically
+                bladefileissaved = true
+                BlSpn0=ADshapeZ
+                BlCrvAC0=ADshapeXspl
+
+                bladeangle = (iADBody-1)*2.0*pi/Nbld + angularOffset
+
+                BlSpn = ADshapeZ#ymesh.*sin(-bladeangle).+xmesh.*cos(-bladeangle)
+                blade_twist = atan.(xmesh,ymesh).-bladeangle
+
+                BlCrvACinput = -ymesh.*sin(bladeangle).+xmesh.*cos(bladeangle)
+                BlCrvACinput = BlCrvACinput .- BlCrvACinput[1]
+                BlCrvAC = FLOWMath.akima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)
+
+                BlSwpACinput = xmesh.*sin(bladeangle).+ymesh.*cos(bladeangle)
+                BlSwpACinput = BlSwpACinput .- BlSwpACinput[1]
+                BlSwpAC = FLOWMath.akima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
+
+                BlCrvAnginput = -blade_twist*180/pi#zeros(blade_Nnodes[iADBody])
+                BlCrvAng = zeros(blade_Nnodes[iADBody])#FLOWMath.akima(LinRange(0,H,length(BlCrvAnginput)),BlCrvAnginput,ADshapeZ)
+
+                BlTwistinput =(blade_twist.-blade_twist[1])*180/pi
+                BlTwist = FLOWMath.akima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
+
+                BlChord=blade_chords[iADBody]
+                BlAFID=collect(1:length(airfoil_filenames))
+
+                OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
+            elseif iADBody>Nbld # while the arms/struts are assumed to be straight and are oriented by the mesh angle
                 BlSpn=collect(LinRange(0,bld_len[iADBody],blade_Nnodes[iADBody]))
                 BlCrvAC=zeros(blade_Nnodes[iADBody])
+                BlSwpAC=zeros(blade_Nnodes[iADBody])
+                BlCrvAng=zeros(blade_Nnodes[iADBody])
+                BlTwist=zeros(blade_Nnodes[iADBody])
+                BlChord=blade_chords[iADBody]
+                BlAFID=collect(1:length(airfoil_filenames))
+                OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
             end
-            BlSwpAC=zeros(blade_Nnodes[iADBody])
-            BlCrvAng=zeros(blade_Nnodes[iADBody])
-            BlTwist=zeros(blade_Nnodes[iADBody])
-            BlChord=blade_chords[iADBody]
-            BlAFID=collect(1:length(airfoil_filenames))
-            OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
+            
+            
         end
 
         OWENSOpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
         OWENSOpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
 
-        OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeY],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
+        OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
                 rho     = rho,
                 adi_dt  = delta_t,
                 adi_tmax= numTS*delta_t,
@@ -580,8 +612,8 @@ function setupOWENShawt(OWENSAero,path;
     H = 5.0,
     R = 2.5,
     hubR = 2.0,
-    shapeY = collect(LinRange(0,H,Nslices+1)),
-    shapeX = R.*(1.0.-4.0.*(shapeY/H.-.5).^2),#shapeX_spline(shapeY)
+    shapeZ = collect(LinRange(0,H,Nslices+1)),
+    shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2),#shapeX_spline(shapeZ)
     ifw=false,
     windINPfilename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
     ifw_libfile = "$(path)/bin/libifw_c_binding",
@@ -623,17 +655,17 @@ function setupOWENShawt(OWENSAero,path;
     )
 
     Nbld = B
-    H = maximum(shapeY) #m,
+    H = maximum(shapeZ) #m,
     R = maximum(shapeX) #m,
     omega = RPM / 60 * 2 * pi
     tsr = omega*R/Vinf
 
-    shapeX_spline = FLOWMath.Akima(shapeY, shapeX)
-    bladelen = sum(sqrt.((shapeX[2:end].-shapeX[1:end-1]).^2 .+ (shapeY[2:end].-shapeY[1:end-1]).^2 ))
+    shapeX_spline = FLOWMath.Akima(shapeZ, shapeX)
+    bladelen = sum(sqrt.((shapeX[2:end].-shapeX[1:end-1]).^2 .+ (shapeZ[2:end].-shapeZ[1:end-1]).^2 ))
     # println("bladelen 161.06: $bladelen")
-    h_frac = (shapeY[2:end] - shapeY[1:end-1])./shapeY[end];
-    h_elem = (shapeY[2:end] - shapeY[1:end-1])
-    h = (shapeY[2:end] + shapeY[1:end-1])/2.0;
+    h_frac = (shapeZ[2:end] - shapeZ[1:end-1])./shapeZ[end];
+    h_elem = (shapeZ[2:end] - shapeZ[1:end-1])
+    h = (shapeZ[2:end] + shapeZ[1:end-1])/2.0;
 
     RefArea = pi*R^2
     #########################################
@@ -644,13 +676,13 @@ function setupOWENShawt(OWENSAero,path;
         mymesh,myort,myjoint,bladeIdx,bladeElem = create_hawt_mesh(;hub_depth=Ht,
         tip_precone = H, #blade height
         R, # m bade radius
-        hubR,
+        AD15hubR=hubR,
         nblade = Nbld,
         AD15_ccw,
         ntelem, #tower elements
         nbelem, #blade elements
         bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-        bshapez = shapeY,
+        bshapez = shapeZ,
         joint_type, #hinged about y axis
         angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     else
@@ -821,7 +853,7 @@ function setupOWENShawt(OWENSAero,path;
     #########################################
     # println("Initialize Aerodynamics")
     # chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
-    # OWENSAero.setupTurb(shapeX,shapeY,B,chord_spl,tsr,Vinf;AModel,DSModel,
+    # OWENSAero.setupTurb(shapeX,shapeZ,B,chord_spl,tsr,Vinf;AModel,DSModel,
     # afname = "$path/Airfoils/NACA_0021.dat", #TODO: map to the numad input
     # ifw,
     # windINPfilename,
