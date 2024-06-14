@@ -24,61 +24,39 @@ using Test
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
 
-Inp = OWENS.MasterInput("$path/SNL34m_Inputs.yml")
-
 nothing
 
 # Unpack inputs, or you could directly input them here and bypass the file 
 
 verbosity = 1
 
-analysisType = Inp.analysisType
-turbineType = Inp.turbineType
-eta = Inp.eta
-Nbld = Inp.Nbld
-towerHeight = Inp.towerHeight
-rho = Inp.rho
-Vinf = Inp.Vinf
-controlStrategy = Inp.controlStrategy
-RPM = Inp.RPM
-Nslices = Inp.Nslices
-ntheta = Inp.ntheta
-structuralModel = Inp.structuralModel
-ntelem = Inp.ntelem
-nbelem = Inp.nbelem
-ncelem = Inp.ncelem
-nselem = Inp.nselem
-ifw = Inp.ifw
-AModel = Inp.AModel
-windINPfilename = "$(path)$(Inp.windINPfilename)"
-ifw_libfile = Inp.ifw_libfile
-if ifw_libfile == "nothing"
-    ifw_libfile = nothing
-end
-Blade_Height = Inp.Blade_Height
-Blade_Radius = Inp.Blade_Radius
-numTS = Inp.numTS
-delta_t = Inp.delta_t
-NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
-NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
-NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
-NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
-NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
-NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
-adi_lib = Inp.adi_lib
-if adi_lib == "nothing"
-    adi_lib = nothing
-end
-adi_rootname = "$(path)$(Inp.adi_rootname)"
-
-windINPfilename
-adi_rootname
-NuMad_geom_xlscsv_file_twr
-NuMad_mat_xlscsv_file_twr
-NuMad_geom_xlscsv_file_bld
-NuMad_mat_xlscsv_file_bld
-NuMad_geom_xlscsv_file_strut
-NuMad_mat_xlscsv_file_strut
+turbineType = "Darrieus"
+eta = 0.5
+Nbld = 2
+towerHeight = 0.5
+rho = 0.94
+Nslices = 35
+ntheta = 30
+ntelem = 20
+nbelem = 60
+ncelem = 10
+nselem = 5 
+ifw = false
+AModel = "DMS"
+windINPfilename = nothing
+ifw_libfile = nothing
+Blade_Height = 41.9
+Blade_Radius = 17.1
+numTS = 2000
+delta_t = 0.05
+NuMad_geom_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerGeom.csv"
+NuMad_mat_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerMaterials.csv"
+NuMad_geom_xlscsv_file_bld = "$(path)/data/NuMAD_SNL34mGeomBlades.csv"
+NuMad_mat_xlscsv_file_bld = "$(path)/data/NuMAD_SNL34mMaterials.csv"
+NuMad_geom_xlscsv_file_strut = "$(path)/data/NuMAD_SNL34mGeomStruts.csv"
+NuMad_mat_xlscsv_file_strut = "$(path)/data/NuMAD_SNL34mMaterials.csv"
+adi_lib = nothing
+adi_rootname = "$(path)/SNL34m"
 
 ##############################################
 # Setup
@@ -127,8 +105,6 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     rho,
     Nslices,
     ntheta,
-    RPM,
-    Vinf,
     eta,
     B = Nbld,
     H = Blade_Height,
@@ -320,7 +296,18 @@ println("GX: $elapsedtime2")
 
 state = AssemblyState(system, assembly; prescribed_conditions=prescribed_conditions)
 
-write_vtk("$path/vtk/Campbell5_34m", assembly, state, 
+filename = "$path/vtk/Campbell5_34m"
+try #this should error if someone on windows uses backslash '\'
+    lastforwardslash = findlast(x->x=='/',filename)
+    filepath = filename[1:lastforwardslash-1]
+    if !isdir(filepath)
+        mkdir(filepath)
+    end
+catch
+    @info "Please manually create the directory to house $filename"
+end
+
+write_vtk(filename, assembly, state, 
     λ[5], eigenstates[5]; sections,mode_scaling = 500.0)
 
     
