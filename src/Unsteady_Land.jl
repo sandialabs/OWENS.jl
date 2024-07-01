@@ -324,7 +324,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 #         genTorqueAppliedToPlatform0 = genTorqueHSS0
             else
                 if !isnothing(turbsimfile) && verbosity >=1#&& inputs.AD15On
-                    velocity = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
+                    velocity = OWENSOpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
                     newVinf = velocity[1]
                 end
             end

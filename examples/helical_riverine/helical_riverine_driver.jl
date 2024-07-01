@@ -53,7 +53,7 @@ windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 41.9
 Blade_Radius = 6.0
-numTS = 100
+numTS = 10
 delta_t = 0.05
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -75,7 +75,7 @@ tocp_Vinf = [0.0;10.0; 1e6]
 Vinfocp = [10.0;10.0;10.0]
 
 shapeZ = collect(LinRange(0,Blade_Height,Nslices+1))
-helix_angle = pi/4
+helix_angle = -pi/4
 shapeX = cos.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius#SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ) ones(length(shapeZ)).*Blade_Radius#
 shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
 
@@ -87,8 +87,6 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     rho, #windio
     Nslices, #modeling options
     ntheta, #modeling options
-    RPM, #remove
-    Vinf, #remove
     eta, #windio
     B = Nbld, #windio
     H = Blade_Height, #windio

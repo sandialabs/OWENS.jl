@@ -708,7 +708,7 @@ function setupOWENShawt(OWENSAero,path;
             angularOffset = -pi/2)
     end
 
-    nTwrElem = Int(mymesh.meshSeg[1])+2
+    nTwrElem = Int(mymesh.meshSeg[1])+1
 
     # PyPlot.figure()
     # PyPlot.plot(mymesh.x,mymesh.z,"b-")
