@@ -40,7 +40,6 @@ R = 177.2022*0.3048 #m
 H = 1.02*R*2 #m
 chord = 5.0*ones(Nslices)
 omega = RPM / 60 * 2 * pi
-tsr = omega*R/Vinf
 
 shapeZ = collect(LinRange(0,H,Nslices+1))
 shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
@@ -60,7 +59,7 @@ delta3D = atan.(delta_xs./delta_zs)
 ### Set up aero forces
 #########################################
 println("Initialize Aerodynamics")
-OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
+OWENSAero.setupTurb(shapeX,shapeZ,B,chord,omega,Vinf;AModel="DMS",DSModel="BV",
 afname = "$(path)/airfoils/NACA_0021.dat",
 ifw=true,
 ifw_libfile = nothing,

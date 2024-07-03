@@ -380,7 +380,7 @@ PyPlot.plot(t,FReactionHist[:,6])
 # TSR = 0.001
 # ntheta = 200#176
 
-# OWENSAero.setupTurb(SNL34X,SNL34Z,B,chord,TSR,Vinf;
+# OWENSAero.setupTurb(SNL34X,SNL34Z,B,chord,omega,Vinf;
 #     eta = 0.25,
 #     rho,
 #     mu = 1.7894e-5,

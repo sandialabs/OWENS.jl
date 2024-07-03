@@ -114,7 +114,6 @@ Nbld = B
 H = maximum(shapeZ) #m,
 R = maximum(shapeX) #m,
 omega = RPM / 60 * 2 * pi
-tsr = omega*R/Vinf
 
 nothing
 
@@ -425,7 +424,7 @@ if !AD15On
         end
     end
 
-    OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
+    OWENSAero.setupTurb(shapeX,shapeZ,B,chord,omega,Vinf;AModel,DSModel,
     afname = airfoils, #TODO: map to the numad input
     rho,
     eta,

@@ -72,7 +72,6 @@ function setupOWENS(OWENSAero,path;
     H = maximum(shapeZ) #m,
     R = maximum(shapeX) #m,
     omega = RPM / 60 * 2 * pi
-    tsr = omega*R/Vinf
     
     nothing
     
@@ -387,7 +386,7 @@ function setupOWENS(OWENSAero,path;
             end
         end
 
-        OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
+        OWENSAero.setupTurb(shapeX,shapeZ,B,chord,omega,Vinf;AModel,DSModel,
         afname = airfoils, #TODO: map to the numad input
         bld_y = shapeY,
         rho,
@@ -658,7 +657,6 @@ function setupOWENShawt(OWENSAero,path;
     H = maximum(shapeZ) #m,
     R = maximum(shapeX) #m,
     omega = RPM / 60 * 2 * pi
-    tsr = omega*R/Vinf
 
     shapeX_spline = FLOWMath.Akima(shapeZ, shapeX)
     bladelen = sum(sqrt.((shapeX[2:end].-shapeX[1:end-1]).^2 .+ (shapeZ[2:end].-shapeZ[1:end-1]).^2 ))
@@ -853,7 +851,7 @@ function setupOWENShawt(OWENSAero,path;
     #########################################
     # println("Initialize Aerodynamics")
     # chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
-    # OWENSAero.setupTurb(shapeX,shapeZ,B,chord_spl,tsr,Vinf;AModel,DSModel,
+    # OWENSAero.setupTurb(shapeX,shapeZ,B,chord_spl,omega,Vinf;AModel,DSModel,
     # afname = "$path/Airfoils/NACA_0021.dat", #TODO: map to the numad input
     # ifw,
     # windINPfilename,
