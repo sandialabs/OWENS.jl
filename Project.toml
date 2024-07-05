@@ -27,7 +27,7 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 [compat]
 DelimitedFiles = "1"
 Dierckx = "0.5"
-FLOWMath = "0.3"
+FLOWMath = "0.3, 0.4"
 GXBeam = "0.5.1"
 HDF5 = "0.17"
 MAT = "0.10"
