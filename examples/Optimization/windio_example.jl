@@ -22,14 +22,19 @@
 import OWENS
 using HDF5
 using Test
+using YAML
+using OrderedCollections
 
 runpath = splitdir(@__FILE__)[1]
 
-Inp = OWENS.MasterInput("$runpath/modeling_options_OWENS_windioExample.yml")
+OWENS_Options = OWENS.MasterInput("$runpath/modeling_options_OWENS_windioExample.yml")
 
 WINDIO_filename = "$runpath/WINDIO_example.yaml"
+windio = YAML.load_file(WINDIO_filename; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
 
-OWENS.runOWENSWINDIO(WINDIO_filename,Inp,runpath)
+OWENS.runOWENSWINDIO(windio,OWENS_Options,runpath)
+
+# Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
 
 file = "$runpath/InitialDataOutputs_UNIT.h5"
 t_UNIT = HDF5.h5read(file,"t")
