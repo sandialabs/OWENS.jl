@@ -61,7 +61,6 @@ function messyoptfun!(constraints,Vars)
 
     OWENS_Options = OWENS.MasterInput("$runpath/modeling_options_OWENS_windioExample.yml")
     # These options are the OWENS specific runtime options, as opposed to the design options coming from the WindIO
-    # These include 
 
     WINDIO_filename = "$runpath/WINDIO_example.yaml"
     windio = YAML.load_file(WINDIO_filename; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
@@ -136,17 +135,21 @@ function messyoptfun!(constraints,Vars)
     topDamage_tower_L = HDF5.h5read(file,"topDamage_tower_L") # for the tower lower, like above
 
     # Formulate our objective function to be a pseudo LCOE.  You should consider scaling your outputs to achieve well scaled gradients
-    power = (mean(FReactionHist[:6])*(RPM*2*pi/60))
+    power = (mean(-FReactionHist[:6])*(RPM*2*pi/60))
     pseudoLCOE = massOwens/power
 
     # Constraints on the minimum allowable safety factor, the minimum allowable lifetime damage, and that the power must be greater than 0.0 so the optimizer doesn't invert the LCOE equation.
     minSF = FLOWMath.ksmin(SF_ult_U)
-    maxFatiguePerHour = FLOWMath.ksmax(topDamage_blade_U)/t[end]*60*60
-    maxFatiguePer20yr = maxFatiguePerHour*20*365*24
+    println(FLOWMath.ksmax(topDamage_blade_U))
+    maxFatiguePer20yr = FLOWMath.ksmax(topDamage_blade_U/t[end]*60*60*20*365*24,1e10)
 
     constraints[1] = 1.0 - minSF # 1.0<SF
     constraints[2] = maxFatiguePer20yr - 1.0 # fatigueDamage < 1.0
     constraints[3] = 0.0 - power # 0<power i.e. power must be positive
+
+    println("Vars: $Vars")
+    println("Obj: $pseudoLCOE")
+    println("Con: $constraints")
 
     return pseudoLCOE
 
@@ -162,19 +165,19 @@ objective = messyoptfun!(constraints,Vars)
 println("Objective: $objective")
 println("constraints: $constraints")
 
-# Now let's throw a real optimizer at it.  !!!NOTE!!!: This example may need more design freedom and variables to produce a feasible design.
+# # Now let's throw a real optimizer at it.  !!!NOTE!!!: This example may need more design freedom and variables to produce a feasible design.
 
-x0 = [24.0; 42.0; 15.0]  # starting point
-lx = [10.0; 20.0; 5.0]  # lower bounds on x
-ux = [20.0; 60.0; 30.0]  # upper bounds on x
-ng = 3  # number of constraints
-lg = -Inf*ones(ng)  # lower bounds on g
-ug = zeros(ng)  # upper bounds on g
-options = Options(solver=IPOPT())  # choosing IPOPT solver
+# x0 = [24.0; 42.0; 15.0]  # starting point
+# lx = [10.0; 20.0; 5.0]  # lower bounds on x
+# ux = [20.0; 60.0; 30.0]  # upper bounds on x
+# ng = 3  # number of constraints
+# lg = -Inf*ones(ng)  # lower bounds on g
+# ug = zeros(ng)  # upper bounds on g
+# options = Options(solver=IPOPT())  # choosing IPOPT solver
 
-# Run the optimization
-xopt, fopt, info = minimize(messyoptfun!, x0, ng, lx, ux, lg, ug, options)
+# # Run the optimization
+# xopt, fopt, info = minimize(messyoptfun!, x0, ng, lx, ux, lg, ug, options)
 
-println("xstar = ", xopt)
-println("fstar = ", fopt)
-println("info = ", info)
+# println("xstar = ", xopt)
+# println("fstar = ", fopt)
+# println("info = ", info)
