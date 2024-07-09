@@ -335,7 +335,7 @@ If you get an error about attempting to access library xyz, but it doesn't exist
 adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
 ```
 
-    cd OWENS.jl/test
+    cd OWENS.jl/examples/SNL34m
     julia SNL34mVAWTNormalOperation.jl
 
 You can visualize the output vtk/vtu/pvd paraview files with paraview, install paraview via
