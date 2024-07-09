@@ -14,7 +14,7 @@ joint = DelimitedFiles.readdlm("$(path)/data/unit_test_5MW.jnt",'\t',skipstart =
 SNL5MW_bld_z = [15.0, 21.61004296, 28.20951408, 28.2148, 34.81955704, 41.4296, 48.03964296, 54.63911408, 61.24915704, 67.8592, 74.46924296, 81.06871408, 87.67875704, 94.2888, 100.89884296, 107.49831408, 114.10835704, 120.7184, 127.32844296, 133.92791408, 133.9332, 140.53795704, 147.148].-15.0
 SNL5MW_bld_x = -[0.0, -10.201, -20.361, -20.368290684, -29.478, -36.575, -42.579, -47.177, -50.555, -52.809, -53.953, -54.014, -53.031, -51.024, -47.979, -43.942, -38.768, -32.91, -25.587, -17.587, -17.580079568, -8.933, 8.0917312607e-15]
 
-mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=15.0,
+mymesh,myort,myjoint = OWENS.create_mesh_struts(;Htwr_base=15.0,
 Hbld = 147.148-15.0, #blade height
 R = 54.014, # m bade radius
 nblade = 2,
@@ -22,10 +22,8 @@ AD15hubR=0.0,
 ntelem = 20, #tower elements
 nbelem = 20, #blade elements
 nselem = 2,
-strut_twr_mountpointbot = 0.1,
-strut_twr_mountpointtop = 0.1,
-strut_bld_mountpointbot = 0.1,
-strut_bld_mountpointtop = 0.1,
+strut_twr_mountpoint = [0.1,0.9],
+strut_bld_mountpoint = [0.1,0.9],
 bshapex = SNL5MW_bld_x, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 bshapez = SNL5MW_bld_z,
 angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
@@ -77,6 +75,9 @@ end
 #     PyPlot.axis("equal")
 #     sleep(0.2)
 # end
+
+# PyPlot.scatter3D(mymesh.x,mymesh.y,mymesh.z)
+# PyPlot.scatter3D(mesh.x,mesh.y,mesh.z)
 
 # PyPlot.figure()
 # PyPlot.plot(mymesh.y,mymesh.z,"k.-",markersize=10.0)

@@ -525,8 +525,8 @@ function create_mesh_struts(;Htwr_base = 15.0,
     s2t_idx = zeros(Int,nblade,Nstrut)
 
     # Bottom Struts
-    for ibld = 1:nblade
-        for istrut = 1:Nstrut
+    for istrut = 1:Nstrut
+        for ibld = 1:nblade
             s2t_idx[ibld,istrut],s2b_idx[ibld,istrut],mesh_x,mesh_y,mesh_z,conn,hubIsectIdx = createstrut(t2s_idx[istrut],b2s_idx[ibld,istrut],mesh_x,mesh_y,mesh_z,conn,AD15hubR)
             
             AD15bldNdIdxRng = [AD15bldNdIdxRng; hubIsectIdx  s2b_idx[ibld,istrut]] #AD15 struts always start at hub regardless of rotation, but watch out for airfoil orientation!

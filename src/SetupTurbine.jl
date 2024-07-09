@@ -59,7 +59,7 @@ function setupOWENS(OWENSAero,path;
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
     # We do some intermediate calculations on the blade shape and angles
 
-    Nstrutperbld = 2 #TODO: generalize and propogate
+    Nstrutperbld = length(strut_twr_mountpoint) #TODO: generalize and propogate
 
     Nbld = B
     H = maximum(shapeZ) #m,
@@ -119,11 +119,6 @@ function setupOWENS(OWENSAero,path;
     else #TODO unify with HAWT
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
-    
-return mymesh
-end
-
-function dummyfun()
 
     nTwrElem = Int(mymesh.meshSeg[1])
     if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
