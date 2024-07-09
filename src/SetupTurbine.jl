@@ -1,3 +1,5 @@
+# * `strut_twr_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the tower # This puts struts at top and bottom, as a fraction of the blade position
+# * `strut_bld_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the blade # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
 function setupOWENS(OWENSAero,path;
     rho = 1.225,
     mu = 1.7894e-5,
@@ -35,11 +37,10 @@ function setupOWENS(OWENSAero,path;
     stack_layers_scale = [1.0,1.0],
     chord_scale = [1.0,1.0],
     thickness_scale = [1.0,1.0],
-    Ht=2.0,
-    strut_mountpointbot = 0.11,
-    strut_mountpointtop = 0.11,
-    strut_mountpointbottwr = nothing,
-    strut_mountpointtoptwr = nothing,
+    Htwr_base = 2.0,
+    Htwr_blds = H,
+    strut_twr_mountpoint = [0.25,0.75],
+    strut_bld_mountpoint = [0.25,0.75],
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -48,14 +49,6 @@ function setupOWENS(OWENSAero,path;
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
-
-    if isnothing(strut_mountpointbottwr)
-        strut_mountpointbottwr = strut_mountpointbot
-    end
-
-    if isnothing(strut_mountpointtoptwr)
-        strut_mountpointtoptwr = strut_mountpointtop
-    end
     
     if AModel=="AD"
         AD15On = true
@@ -84,8 +77,8 @@ function setupOWENS(OWENSAero,path;
     ### Set up mesh
     #########################################
     if meshtype == "ARCUS" #TODO, for all of these propogate the AeroDyn additional output requirements
-        mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Ht,
-            Hb = H, #blade height
+        mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Htwr_base,
+            Hbld = H, #blade height
             R, # m bade radius
             nblade = Nbld,
             ntelem, #tower elements
@@ -105,18 +98,17 @@ function setupOWENS(OWENSAero,path;
             connectBldTips2Twr = false
         end
     
-        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Ht,
-            Hb = H, #blade height
+        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Htwr_base,
+            Htwr_blds,
+            Hbld = H, #blade height
             R, # m bade radius
             AD15hubR, #TODO: hook up with AD15 file generation
             nblade = Nbld,
             ntelem, #tower elements
             nbelem, #blade elements
             nselem,
-            strut_twr_mountpointbot = strut_mountpointbottwr, # This puts struts at top and bottom
-            strut_twr_mountpointtop = strut_mountpointtoptwr, # This puts struts at top and bottom
-            strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
-            strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
+            strut_twr_mountpoint,
+            strut_bld_mountpoint,
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
             bshapez = shapeZ,
             bshapey = shapeY, # but magnitude for this is relevant
@@ -128,6 +120,11 @@ function setupOWENS(OWENSAero,path;
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
     
+return mymesh
+end
+
+function dummyfun()
+
     nTwrElem = Int(mymesh.meshSeg[1])
     if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
         nTwrElem = Int(mymesh.meshSeg[1])+1
@@ -519,7 +516,7 @@ function setupOWENS(OWENSAero,path;
 
         OWENSOpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
 
-        OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
+        OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Htwr_base],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
                 rho     = rho,
                 adi_dt  = delta_t,
                 adi_tmax= numTS*delta_t,
@@ -545,7 +542,7 @@ function setupOWENS(OWENSAero,path;
     # Calculate mass breakout of each material
     mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
-    mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
+    mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)
 
     if AD15On
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
@@ -625,7 +622,7 @@ function setupOWENShawt(OWENSAero,path;
     stack_layers_scale = [1.0,1.0],
     chord_scale = [1.0,1.0],
     thickness_scale = [1.0,1.0],
-    Ht=2.0,
+    Htwr_base=2.0,
     ntelem = 10, #tower elements
     nbelem = 60, #blade elements
     ncelem = 10,
@@ -673,7 +670,7 @@ function setupOWENShawt(OWENSAero,path;
     #########################################
     # println("Create Mesh")
     if !biwing
-        mymesh,myort,myjoint,bladeIdx,bladeElem = create_hawt_mesh(;hub_depth=Ht,
+        mymesh,myort,myjoint,bladeIdx,bladeElem = create_hawt_mesh(;hub_depth=Htwr_base,
         tip_precone = H, #blade height
         R, # m bade radius
         AD15hubR=hubR,
@@ -910,7 +907,7 @@ function setupOWENShawt(OWENSAero,path;
 
     mass_breakout_bld = get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
-    mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
+    mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)
 
     return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
     stiff_twr, stiff_bld,bld_precompinput,

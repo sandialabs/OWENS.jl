@@ -218,7 +218,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
     NuMad_geom_xlscsv_file_strut,
     NuMad_mat_xlscsv_file_strut,
-    Ht=towerHeight,
+    Htwr_base=towerHeight,
     ntelem, 
     nbelem, 
     ncelem,

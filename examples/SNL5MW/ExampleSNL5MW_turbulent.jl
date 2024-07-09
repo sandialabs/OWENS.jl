@@ -72,16 +72,14 @@ ntheta,Nslices,rho,eta,RPI=true)
 #########################################
 println("Create Mesh")
 mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=15.0,
-Hb = H, #blade height
+Hbld = H, #blade height
 R, # m bade radius
 nblade = 2,
 ntelem = 30, #tower elements
 nbelem = 60, #blade elements
 nselem = 10,
-strut_twr_mountpointbot = 0.1, # This puts struts at top and bottom
-strut_twr_mountpointtop = 0.1, # This puts struts at top and bottom
-strut_bld_mountpointbot = 0.1, # This puts struts at top and bottom
-strut_bld_mountpointtop = 0.1, # This puts struts at top and bottom
+strut_twr_mountpoint = [0.1,0.9], # This puts struts at top and bottom
+strut_bld_mountpoint = [0.1,0.9], # This puts struts at top and bottom
 bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 bshapez = shapeZ,
 angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
