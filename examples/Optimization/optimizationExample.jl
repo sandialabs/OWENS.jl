@@ -74,6 +74,13 @@ function messyoptfun!(constraints,Vars)
     max_radius = Vars[2]#42.0
     RPM = Vars[3]#25.0
 
+    # Additional design variables recommended for initial point design
+    # chord control points
+    # composite thickness control points
+    # twist offset control points
+
+    # Additional design varibles recommended for other critical DLCs (parked and emergency shutdown)
+
     # Since we are using constant RPM and there isn't a constant RPM option in the WindIO control block, it is within the OWENS Options
     OWENS_Options.RPM = RPM
 
@@ -135,7 +142,7 @@ function messyoptfun!(constraints,Vars)
     topDamage_tower_L = HDF5.h5read(file,"topDamage_tower_L") # for the tower lower, like above
 
     # Formulate our objective function to be a pseudo LCOE.  You should consider scaling your outputs to achieve well scaled gradients
-    power = (mean(-FReactionHist[:6])*(RPM*2*pi/60))
+    power = (mean(-FReactionHist[:,6])*(RPM*2*pi/60))
     pseudoLCOE = massOwens/power
 
     # Constraints on the minimum allowable safety factor, the minimum allowable lifetime damage, and that the power must be greater than 0.0 so the optimizer doesn't invert the LCOE equation.
@@ -181,3 +188,5 @@ println("constraints: $constraints")
 # println("xstar = ", xopt)
 # println("fstar = ", fopt)
 # println("info = ", info)
+
+# Formatting for 

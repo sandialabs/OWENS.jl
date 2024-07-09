@@ -708,7 +708,7 @@ function setupOWENShawt(OWENSAero,path;
             angularOffset = -pi/2)
     end
 
-    nTwrElem = Int(mymesh.meshSeg[1])+2
+    nTwrElem = Int(mymesh.meshSeg[1])+1
 
     # PyPlot.figure()
     # PyPlot.plot(mymesh.x,mymesh.z,"b-")
@@ -815,7 +815,12 @@ function setupOWENShawt(OWENSAero,path;
     # Get blade spanwise position
     bld1start = Int(mymesh.structuralNodeNumbers[1,1])
     bld1end = Int(mymesh.structuralNodeNumbers[1,end])
-    spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
+    spanpos = [0.0;cumsum(sqrt.(diff(mymesh.y[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
+
+    #TODO: fix this, it is a hack
+    if biwing
+        spanpos = collect(LinRange(0,spanpos[end],length(spanpos)-3))
+    end
 
     if length(thickness_scale)==2
         yscale = collect(LinRange(thickness_scale[1],thickness_scale[2],length(numadIn_bld.span)))
@@ -843,7 +848,7 @@ function setupOWENShawt(OWENSAero,path;
     mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
     mass_array = [mass_twr; mass_blds]
 
-    system, assembly, sections = owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
+    system, assembly, sections = owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array;VTKmeshfilename="$path/vtk/HAWT_biwing")
 
     #store data in element object
     myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
