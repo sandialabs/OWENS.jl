@@ -75,7 +75,7 @@ tocp_Vinf = [0.0;10.0; 1e6]
 Vinfocp = [10.0;10.0;10.0]
 
 shapeZ = collect(LinRange(0,Blade_Height,Nslices+1))
-helix_angle = pi/4
+helix_angle = -pi/4
 shapeX = cos.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius#SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ) ones(length(shapeZ)).*Blade_Radius#
 shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
 

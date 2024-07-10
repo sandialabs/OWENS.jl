@@ -60,7 +60,7 @@ function setupOWENS(OWENSAero,path;
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
     # We do some intermediate calculations on the blade shape and angles
 
-    Nstrutperbld = length(strut_twr_mountpoint) #TODO: generalize and propogate
+    Nstrutperbld = length(strut_twr_mountpoint)
 
     Nbld = B
     H = maximum(shapeZ) #m,
@@ -506,13 +506,14 @@ function setupOWENS(OWENSAero,path;
                 BlSpn = ADshapeZ
                 blade_twist = atan.(xmesh,ymesh).-bladeangle
 
+                #TODO: reevalueate these equations and make sure they are robust against varying designs
                 BlCrvACinput = -ymesh.*sin(bladeangle).+xmesh.*cos(bladeangle)
                 BlCrvACinput = BlCrvACinput .- BlCrvACinput[1]
-                BlCrvAC = FLOWMath.akima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)
+                BlSwpAC = -FLOWMath.akima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)
 
                 BlSwpACinput = xmesh.*sin(bladeangle).+ymesh.*cos(bladeangle)
                 BlSwpACinput = BlSwpACinput .- BlSwpACinput[1]
-                BlSwpAC = FLOWMath.akima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
+                BlCrvAC = FLOWMath.akima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
 
                 BlCrvAng = zeros(blade_Nnodes[iADBody])
 
