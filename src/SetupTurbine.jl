@@ -425,7 +425,7 @@ function setupOWENS(OWENSAero,path;
     if AD15On
         ad_input_file = "$path/ADInputFile_SingleTurbine2.dat"
         ifw_input_file = "$path/IW2.dat"
-        blade_filename = "$path/blade2.dat"
+        # blade_filename = "$path/blade2.dat"
         # strut_filenames = Array{String,1}(undef, Nstrutperbld)
         # for istrut = 1:Nstrutperbld
         #     strut_filenames[istrut] = "$path/strut$istrut.dat"
@@ -447,18 +447,18 @@ function setupOWENS(OWENSAero,path;
         end
         
         if meshtype == "ARCUS" 
-            blade_filenames = [blade_filename for i=1:Nbld]
+            blade_filenames = ["$path/blade$i.dat" for i=1:Nbld]
             blade_chords = [bldchord_spl for i=1:Nbld]
             blade_Nnodes = [NumADBldNds for i=1:Nbld]
         else
-            blade_filenames = [blade_filename for i=1:Nbld]
+            blade_filenames = ["$path/blade$i.dat" for i=1:Nbld]
             blade_chords = [bldchord_spl for i=1:Nbld]
             blade_Nnodes = [NumADBldNds for i=1:Nbld]
             
             for istrut = 1:Nstrutperbld
                 strutchord_spl = FLOWMath.akima(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span), numadIn_strut[istrut].chord,LinRange(0,1,NumADStrutNds))
                 for ibld = 1:Nbld
-                    blade_filenames = [blade_filenames;"$path/strut$istrut.dat"]
+                    blade_filenames = [blade_filenames;"$path/strut$(istrut)_bld$ibld.dat"]
                     blade_chords = [blade_chords;[strutchord_spl]]
                     blade_Nnodes = [blade_Nnodes;NumADStrutNds]
                 end
@@ -469,7 +469,7 @@ function setupOWENS(OWENSAero,path;
 
         NumADBody = length(AD15bldNdIdxRng[:,1])
         bld_len = zeros(NumADBody)
-        bladefileissaved = false
+        # bladefileissaved = false
         for (iADBody,filename) in enumerate(blade_filenames)
             strt_idx = AD15bldNdIdxRng[iADBody,1]
             end_idx = AD15bldNdIdxRng[iADBody,2]
@@ -496,12 +496,12 @@ function setupOWENS(OWENSAero,path;
             ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
             ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
             
-            if iADBody<=Nbld && !bladefileissaved#Note that the blades can be curved and are assumed to be oriented vertically
-                bladefileissaved = true
+            if iADBody<=Nbld #&& !bladefileissaved#Note that the blades can be curved and are assumed to be oriented vertically
+                # bladefileissaved = true
                 BlSpn0=ADshapeZ
                 BlCrvAC0=ADshapeXspl
 
-                bladeangle = (iADBody-1)*2.0*pi/Nbld + angularOffset
+                bladeangle = (iADBody-1)*2.0*pi/Nbld + angularOffset #TODO: pitch offset and twist offset that isn't from the helical
 
                 BlSpn = ADshapeZ
                 blade_twist = atan.(xmesh,ymesh).-bladeangle
