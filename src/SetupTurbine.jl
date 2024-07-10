@@ -425,23 +425,18 @@ function setupOWENS(OWENSAero,path;
     if AD15On
         ad_input_file = "$path/ADInputFile_SingleTurbine2.dat"
         ifw_input_file = "$path/IW2.dat"
-        # blade_filename = "$path/blade2.dat"
-        # strut_filenames = Array{String,1}(undef, Nstrutperbld)
-        # for istrut = 1:Nstrutperbld
-        #     strut_filenames[istrut] = "$path/strut$istrut.dat"
-        # end
         OLAF_filename = "$path/OLAF2.dat"
 
         NumADBldNds = NumADStrutNds = 10 
 
         bldchord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
 
-        # Discretely assign the airfoils #TODO: separate out struts
-        airfoil_filenames = fill("nothing",NumADBldNds)
+        # Discretely assign the blade airfoils based on the next closest neighbor
+        bld_airfoil_filenames = fill("nothing",NumADBldNds) #TODO: cable drag?
         for (ispan_numad,span_numad) in enumerate(numadIn_bld.span./maximum(numadIn_bld.span))
             for (ispan,span_slices) in enumerate(collect(LinRange(0,1,NumADBldNds)))
-                if airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
-                    airfoil_filenames[ispan] = "$(numadIn_bld.airfoil[ispan_numad]).dat"
+                if bld_airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
+                    bld_airfoil_filenames[ispan] = "$(numadIn_bld.airfoil[ispan_numad]).dat"
                 end
             end
         end
@@ -450,10 +445,13 @@ function setupOWENS(OWENSAero,path;
             blade_filenames = ["$path/blade$i.dat" for i=1:Nbld]
             blade_chords = [bldchord_spl for i=1:Nbld]
             blade_Nnodes = [NumADBldNds for i=1:Nbld]
+            airfoil_filenames = [bld_airfoil_filenames for i=1:Nbld]
+            
         else
             blade_filenames = ["$path/blade$i.dat" for i=1:Nbld]
             blade_chords = [bldchord_spl for i=1:Nbld]
             blade_Nnodes = [NumADBldNds for i=1:Nbld]
+            airfoil_filenames = collect(Iterators.flatten([bld_airfoil_filenames for i=1:Nbld]))
             
             for istrut = 1:Nstrutperbld
                 strutchord_spl = FLOWMath.akima(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span), numadIn_strut[istrut].chord,LinRange(0,1,NumADStrutNds))
@@ -461,6 +459,19 @@ function setupOWENS(OWENSAero,path;
                     blade_filenames = [blade_filenames;"$path/strut$(istrut)_bld$ibld.dat"]
                     blade_chords = [blade_chords;[strutchord_spl]]
                     blade_Nnodes = [blade_Nnodes;NumADStrutNds]
+
+                    # Discretely assign the strut airfoils based on the next closest neighbor
+                    strut_airfoil_filenames = fill("nothing",NumADStrutNds)
+                    for (ispan_numad,span_numad) in enumerate(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span))
+                        for (ispan,span_slices) in enumerate(collect(LinRange(0,1,NumADBldNds)))
+                            if strut_airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
+                                strut_airfoil_filenames[ispan] = "$(numadIn_strut[istrut].airfoil[ispan_numad]).dat"
+                            end
+                        end
+                    end
+
+                    airfoil_filenames = [airfoil_filenames; strut_airfoil_filenames]
+
                 end
             end
         end
@@ -521,9 +532,9 @@ function setupOWENS(OWENSAero,path;
                 BlTwist = FLOWMath.akima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
 
                 BlChord=blade_chords[iADBody]
-                BlAFID=collect(1:length(airfoil_filenames))
 
-                OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
+                BlAFID=collect((iADBody-1)*NumADBldNds+1:iADBody*NumADBldNds)
+
             elseif iADBody>Nbld # while the arms/struts are assumed to be straight and are oriented by the mesh angle
                 BlSpn=collect(LinRange(0,bld_len[iADBody],blade_Nnodes[iADBody]))
                 BlCrvAC=zeros(blade_Nnodes[iADBody])
@@ -531,9 +542,9 @@ function setupOWENS(OWENSAero,path;
                 BlCrvAng=zeros(blade_Nnodes[iADBody])
                 BlTwist=zeros(blade_Nnodes[iADBody])
                 BlChord=blade_chords[iADBody]
-                BlAFID=collect(1:length(airfoil_filenames))
-                OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
-            end           
+                BlAFID=collect((iADBody-1)*NumADStrutNds+1:iADBody*NumADStrutNds)
+            end      
+            OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)     
         end
 
         OWENSOpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
