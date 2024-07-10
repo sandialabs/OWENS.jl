@@ -423,11 +423,13 @@ function setupOWENS(OWENSAero,path;
     # Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str
     # Then by initializing AeroDyn and grabbing the backend functionality with a function handle
     if AD15On
-        ad_input_file="$path/ADInputFile_SingleTurbine2.dat"
-        ifw_input_file="$path/IW2.dat"
-        blade_filename="$path/blade2.dat"
-        lower_strut_filename="$path/lower_arm2.dat"
-        upper_strut_filename="$path/upper_arm2.dat"
+        ad_input_file = "$path/ADInputFile_SingleTurbine2.dat"
+        ifw_input_file = "$path/IW2.dat"
+        blade_filename = "$path/blade2.dat"
+        # strut_filenames = Array{String,1}(undef, Nstrutperbld)
+        # for istrut = 1:Nstrutperbld
+        #     strut_filenames[istrut] = "$path/strut$istrut.dat"
+        # end
         OLAF_filename = "$path/OLAF2.dat"
 
         NumADBldNds = NumADStrutNds = 10 
@@ -449,14 +451,17 @@ function setupOWENS(OWENSAero,path;
             blade_chords = [bldchord_spl for i=1:Nbld]
             blade_Nnodes = [NumADBldNds for i=1:Nbld]
         else
-            blade_filenames = [[blade_filename for i=1:Nbld];[lower_strut_filename for i=1:Nbld];[upper_strut_filename for i=1:Nbld]]
-            blade_chords = [[bldchord_spl for i=1:Nbld]]#;[strutchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld]]
-            blade_Nnodes = [[NumADBldNds for i=1:Nbld]]#;[NumADStrutNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld]]
+            blade_filenames = [blade_filename for i=1:Nbld]
+            blade_chords = [bldchord_spl for i=1:Nbld]
+            blade_Nnodes = [NumADBldNds for i=1:Nbld]
             
             for istrut = 1:Nstrutperbld
                 strutchord_spl = FLOWMath.akima(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span), numadIn_strut[istrut].chord,LinRange(0,1,NumADStrutNds))
-                blade_chords = [blade_chords;[strutchord_spl for i=1:Nbld]]
-                blade_Nnodes = [blade_Nnodes;[NumADStrutNds for i=1:Nbld]]
+                for ibld = 1:Nbld
+                    blade_filenames = [blade_filenames;"$path/strut$istrut.dat"]
+                    blade_chords = [blade_chords;[strutchord_spl]]
+                    blade_Nnodes = [blade_Nnodes;NumADStrutNds]
+                end
             end
         end
 
@@ -498,7 +503,7 @@ function setupOWENS(OWENSAero,path;
 
                 bladeangle = (iADBody-1)*2.0*pi/Nbld + angularOffset
 
-                BlSpn = ADshapeZ#ymesh.*sin(-bladeangle).+xmesh.*cos(-bladeangle)
+                BlSpn = ADshapeZ
                 blade_twist = atan.(xmesh,ymesh).-bladeangle
 
                 BlCrvACinput = -ymesh.*sin(bladeangle).+xmesh.*cos(bladeangle)
@@ -509,8 +514,7 @@ function setupOWENS(OWENSAero,path;
                 BlSwpACinput = BlSwpACinput .- BlSwpACinput[1]
                 BlSwpAC = FLOWMath.akima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
 
-                BlCrvAnginput = -blade_twist*180/pi#zeros(blade_Nnodes[iADBody])
-                BlCrvAng = zeros(blade_Nnodes[iADBody])#FLOWMath.akima(LinRange(0,H,length(BlCrvAnginput)),BlCrvAnginput,ADshapeZ)
+                BlCrvAng = zeros(blade_Nnodes[iADBody])
 
                 BlTwistinput =(blade_twist.-blade_twist[1])*180/pi
                 BlTwist = FLOWMath.akima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
@@ -528,9 +532,7 @@ function setupOWENS(OWENSAero,path;
                 BlChord=blade_chords[iADBody]
                 BlAFID=collect(1:length(airfoil_filenames))
                 OWENSOpenFASTWrappers.writeADbladeFile(filename;NumBlNds=blade_Nnodes[iADBody],BlSpn,BlCrvAC,BlSwpAC,BlCrvAng,BlTwist,BlChord,BlAFID)
-            end
-            
-            
+            end           
         end
 
         OWENSOpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
@@ -549,7 +551,7 @@ function setupOWENS(OWENSAero,path;
                 hubPos=[[0,0,0.0]],
                 hubAngle=[[0,0,0]],
                 nacPos=[[0,0,0]],
-                adi_nstrut=[2],
+                adi_nstrut=[Nstrutperbld],
                 adi_debug=0,
                 isHAWT = false     # true for HAWT, false for crossflow or VAWT
                 )
