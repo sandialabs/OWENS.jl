@@ -1266,8 +1266,11 @@ Takes numad formatted inputs for composite layup and material properties and run
 * `plyprops::plyproperties()`: see ?plyproperties for input material properties
 
 #Outputs
-* `precompoutput::OWENSPreComp.Input`: see ?OWENSPreComp.Input
-* `precompinput::OWENSPreComp.properties`: see ?OWENSPreComp.properties
+* `precompoutput::OWENSPreComp.Output`: see ?OWENSPreComp.Input
+* `precompinput::OWENSPreComp.Input`: see ?OWENSPreComp.properties
+* `lam_U::Composites.Laminate`: laminate stacks used for post processing, size (n_stations, n_upper chorwise stations), upper surface, see ?Composites.Laminate
+* `lam_L::Composites.Laminate`: laminate stacks used for post processing, size (n_stations, n_lower chorwise stations), lower surface, see ?Composites.Laminate
+* `lam_W::Composites.Laminate`: laminate stacks used for post processing, size (n_stations, n_webs), shear webs, see ?Composites.Laminate
 """
 function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
     # Assume each station has the same number of segments and webs (some of which may be of zero width/thickness)
