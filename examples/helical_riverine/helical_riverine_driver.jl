@@ -48,7 +48,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = false
-AModel = "DMS"
+AModel = "AD"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 41.9
@@ -108,14 +108,14 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     NuMad_mat_xlscsv_file_bld,#windio
     NuMad_geom_xlscsv_file_strut,#windio
     NuMad_mat_xlscsv_file_strut,#windio
-    Ht=towerHeight,
+    Htwr_base=towerHeight,
     ntelem, 
     nbelem, 
     ncelem,
     nselem,
     joint_type = 0,
-    strut_mountpointbot = 0.03,
-    strut_mountpointtop = 0.03,
+    strut_twr_mountpoint = [0.1,0.5,0.9],
+    strut_bld_mountpoint = [0.05,0.5,0.95],
     AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,

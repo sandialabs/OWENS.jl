@@ -87,9 +87,9 @@ stack_layers_bld = nothing
 stack_layers_scale = [1.0,1.0]
 chord_scale = [1.0,1.0]
 thickness_scale = [1.0,1.0]
-Ht=towerHeight
+Htwr_base=towerHeight
 strut_mountpointbot = 0.11
-strut_mountpointtop = 0.11
+strut_mountpointtop = 0.89
 joint_type = 0
 c_mount_ratio = 0.05
 angularOffset = -pi/2
@@ -126,8 +126,8 @@ nothing
 ### Set up mesh
 #########################################
 if meshtype == "ARCUS" #TODO, for all of these propogate the AeroDyn additional output requirements
-    mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Ht,
-        Hb = H, #blade height
+    mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Htwr_base,
+        Hbld = H, #blade height
         R, # m bade radius
         nblade = Nbld,
         ntelem, #tower elements
@@ -147,18 +147,16 @@ elseif meshtype == "Darrieus" || meshtype == "H-VAWT"
         connectBldTips2Twr = false
     end
 
-    mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Ht,
-        Hb = H, #blade height
+    mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_mesh_struts(;Htwr_base,
+        Hbld = H, #blade height
         R, # m bade radius
         AD15hubR=2.0,
         nblade = Nbld,
         ntelem, #tower elements
         nbelem, #blade elements
         nselem,
-        strut_twr_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
-        strut_twr_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
-        strut_bld_mountpointbot = strut_mountpointbot, # This puts struts at top and bottom
-        strut_bld_mountpointtop = strut_mountpointtop, # This puts struts at top and bottom
+        strut_twr_mountpoint = [strut_mountpointbot,strut_mountpointtop], # This puts struts at top and bottom
+        strut_bld_mountpoint = [strut_mountpointbot,strut_mountpointtop], # This puts struts at top and bottom
         bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
         bshapez = shapeZ,
         bshapey = zeros(nbelem+1), # but magnitude for this is relevant
@@ -526,7 +524,7 @@ if AD15On
 
     OWENSOpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
 
-    OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Ht],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
+    OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Htwr_base],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
             rho     = rho,
             adi_dt  = delta_t,
             adi_tmax= numTS*delta_t,
@@ -552,7 +550,7 @@ nothing
 # Calculate mass breakout of each material
 mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
 mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
-mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Ht)
+mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)
 
 ################################
 ##### End setupOWENS

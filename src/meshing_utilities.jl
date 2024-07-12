@@ -267,18 +267,17 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
 end
 
 """
-return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_struts(;Ht = 15.0,
-    Hb = 147.148-15.0, #blade height
+return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_struts(;Htwr_base = 15.0,
+Htwr_blds = 147.148-15.0,
+    Hbld = 147.148-15.0, #blade height
     R = 54.014, # m bade radius
     AD15hubR = 2.0,
     nblade = 3,
     ntelem = 30, #tower elements
     nbelem = 30, #blade elements
     nselem = 4,
-    strut_twr_mountpointbot = 0.01, # This puts struts at top and bottom
-    strut_twr_mountpointtop = 0.99, # This puts struts at top and bottom
-    strut_bld_mountpointbot = 0.01, # This puts struts at top and bottom
-    strut_bld_mountpointtop = 0.99, # This puts struts at top and bottom
+    strut_twr_mountpoint = [0.01,0.5,0.9],
+    strut_bld_mountpoint = [0.01,0.5,0.9],
     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     bshapez = zeros(nbelem+1),
     bshapey = zeros(nbelem+1), # but magnitude for this is relevant
@@ -290,17 +289,16 @@ return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_st
 Standard Mesh Matching 5MW, 34m configurations
 
 #Inputs
-* `Ht::float`: height of tower before blades attach (m)
-* `Hb::float`: blade height (m)
+* `Htwr_base::float`: height of tower before blades attach (m)
+* `Htwr_blds::float`: height of the tower once the blades attach (m)
+* `Hbld::float`: blade height (m)
 * `R::float`: bade radius (m)
 * `nblade::int`: number of blades
 * `ntelem::int`: number of tower elements
 * `nbelem::int`: number of blade elements
 * `nselem::int`: number of strut elements
-* `strut_twr_mountpointbot::float` = 0.01, # factor of blade height where the bottom strut attaches on the tower
-* `strut_twr_mountpointtop::float` = 0.99, # factor of blade height where the top strut attaches on the tower
-* `strut_bld_mountpointbot::float` = 0.01, # factor of blade height where the bottom strut attaches on the blade
-* `strut_bld_mountpointtop::float` = 0.99, # factor of blade height where the top strut attaches on the blade
+* `strut_twr_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the tower # This puts struts at top and bottom, as a fraction of the blade position
+* `strut_bld_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the blade # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
 * `bshapex::Array{<:float}`: Blade shape, magnitude is irrelevant, scaled based on height and radius above
 * `bshapez::Array{<:float}`: Blade shape, magnitude is irrelevant, scaled based on height and radius above
 * `bshapey::Array{<:float}`: Blade shape, magnitude IS relevant #TODO: resolve this
@@ -317,27 +315,30 @@ Standard Mesh Matching 5MW, 34m configurations
 * `AD15bldNdIdxRng`: indices for start and end of all blades for AD15 (includes struts).  Note that strut start nodes may be inside the strut (strut connects to tower, AD15 blade connects to hub wich is a few nodes away from tower)
 * `AD15bldElIdxRng`: range of elements for start and end of all AD15 blades (includes struts)
 """
-function create_mesh_struts(;Ht = 15.0,
-    Hb = 147.148-15.0, #blade height
+function create_mesh_struts(;Htwr_base = 15.0,
+    Htwr_blds = 147.148-15.0,
+    Hbld = 147.148-15.0, #blade height
     R = 54.014, # m bade radius
     AD15hubR = 2.0,
     nblade = 3,
     ntelem = 30, #tower elements
     nbelem = 30, #blade elements
     nselem = 4,
-    strut_twr_mountpointbot = 0.01, # This puts struts at top and bottom
-    strut_twr_mountpointtop = 0.99, # This puts struts at top and bottom
-    strut_bld_mountpointbot = 0.01, # This puts struts at top and bottom
-    strut_bld_mountpointtop = 0.99, # This puts struts at top and bottom
+    strut_twr_mountpoint = [0.125,0.5,0.95], # This puts struts at top and bottom, as a fraction of the blade position
+    strut_bld_mountpoint = [0.25,0.5,0.75], # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     bshapez = zeros(nbelem+1),
     bshapey = zeros(nbelem+1), # but magnitude for this is relevant
     angularOffset = 0.0, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     AD15_ccw = false,
-    verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
-    connectBldTips2Twr =true)
+    verbosity = 0, # 0 nothing, 1 basic, 2 lots: amount of printed information
+    connectBldTips2Twr = true)
 
-    nstrut = 2
+    Nstrut = length(strut_bld_mountpoint)
+
+    if length(strut_bld_mountpoint) != length(strut_twr_mountpoint)
+        error("strut_twr_mountpoint must be the same length as strut_bld_mountpoint")
+    end
 
     ##################################
     #             _
@@ -347,40 +348,30 @@ function create_mesh_struts(;Ht = 15.0,
     ####################################
     ###------------Tower--------------##
     ####################################
-    mesh_z = collect(LinRange(0,Hb+Ht,ntelem+1))
+    mesh_z = collect(LinRange(0,Htwr_blds+Htwr_base,ntelem+1))
 
     # Insert mount point base
-    mesh_z = sort([mesh_z;Ht])
-    t_botidx = findall(x->isapprox(x,Ht,atol=1e-5),mesh_z)[1]#:nblade]
+    mesh_z = sort([mesh_z;Htwr_base])
+    t_botidx = findall(x->isapprox(x,Htwr_base,atol=1e-5),mesh_z)[1]#:nblade]
 
-    # Insert bottom strut mount point
-    # for ibld = 1:nblade
-        if maximum(Hb*strut_twr_mountpointbot+Ht .== mesh_z) # if we are at exactly an existing node, then offset our mount point
+    t2s_idx = zeros(Int, Nstrut)
+    # Insert strut mount points
+    for istrut = 1:Nstrut
+        if maximum(Hbld*strut_twr_mountpoint[istrut]+Htwr_base .== mesh_z) # if we are at exactly an existing node, then offset our mount point
             @warn "Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh"
-            strut_twr_mountpointbot += 1e-6
+            strut_twr_mountpoint[istrut] += 1e-6
         end
-        mesh_z = sort([mesh_z;Hb*strut_twr_mountpointbot+Ht])
-    # end
+        mesh_z = sort([mesh_z;Hbld*strut_twr_mountpoint[istrut]+Htwr_base])
 
-    # pick out the strut mounting indices
-    t2s_botidx = findall(x->isapprox(x,Hb*strut_twr_mountpointbot+Ht,atol=1e-5*Hb),mesh_z)[1]#:nblade]
-
-    # Insert top strut mount point
-    # for ibld = 1:nblade
-        if maximum(Hb*(1-strut_twr_mountpointtop)+Ht .== mesh_z) # if we are at exactly an existing node, then offset our mount point
-            @warn "Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh"
-            strut_twr_mountpointtop += 1e-6
-        end
-        mesh_z = sort([mesh_z;Hb*(1-strut_twr_mountpointtop)+Ht])
-    # end
+        # pick out the strut mounting indices
+        t2s_idx[istrut] = findall(x->isapprox(x,Hbld*strut_twr_mountpoint[istrut]+Htwr_base,atol=1e-5*Hbld),mesh_z)[1]
+    end
 
     # Create the x and y components of same size as mesh_z now that the strut mount points are inserted
     mesh_x = zero(mesh_z)
     mesh_y = zero(mesh_z)
 
-    # pick out the strut mounting indices
-    t2s_topidx = findall(x->isapprox(x,Hb*(1-strut_twr_mountpointtop)+Ht,atol=1e-5*Hb),mesh_z)[1]#:nblade]
-
+    # pick out the tower top index
     t_topidx = length(mesh_z)
 
     # intra-tower connectivity
@@ -392,31 +383,24 @@ function create_mesh_struts(;Ht = 15.0,
     ###------------Blades--------------##
     #####################################
 
-    #connection points on tower are simply the bottom of the tower connecting to the bottom of the blades
-    bld_Z = collect(LinRange(0.0,Hb,nbelem+1))
+    #connection points on tower are simply the bottom of the tower offset connecting to the bottom of the blades, which is jointed if Darrieus in the joint matrix below
+    bld_Z = collect(LinRange(0.0,Hbld,nbelem+1))
 
     # Insert bottom strut mount point
-    strut_bld_mountpointbot1 = strut_bld_mountpointbot
-    if maximum(Hb*strut_bld_mountpointbot .== bld_Z) # if we are at exactly an existing node, then offset our mount point
-        @warn "Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh"
-        strut_bld_mountpointbot1 -= 1e-6
+    for istrut = 1:Nstrut
+        if maximum(Hbld*strut_bld_mountpoint[istrut] .== bld_Z) # if we are at exactly an existing node, then offset our mount point
+            @warn "Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh"
+            strut_bld_mountpoint[istrut] -= 1e-6
+        end
+        bld_Z = sort([bld_Z;Hbld*strut_bld_mountpoint[istrut]])
     end
-    bld_Z = sort([bld_Z;Hb*strut_bld_mountpointbot1])
-
-    # Insert top strut mount point
-    strut_bld_mountpointtop2 = strut_bld_mountpointtop
-    if maximum(Hb*(1-strut_bld_mountpointtop) .== bld_Z) # if we are at exactly an existing node, then offset our mount point
-        @warn "Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh"
-        strut_bld_mountpointtop2 -= 1e-6
-    end
-    bld_Z = sort([bld_Z;Hb*(1-strut_bld_mountpointtop2)])
 
     if bshapex == zeros(nbelem+1)
-        bld_Y = R.*(1.0.-4.0.*(bld_Z/Hb.-.5).^2)
+        bld_Y = R.*(1.0.-4.0.*(bld_Z/Hbld.-.5).^2)
     else
         # Ensure the blade shape conforms to the turbine height and radius specs
         bshapex = R .* bshapex./maximum(bshapex)
-        bshapez = Hb .* bshapez./maximum(bshapez)
+        bshapez = Hbld .* bshapez./maximum(bshapez)
         bld_Y = FLOWMath.akima(bshapez,bshapex,bld_Z)
     end
 
@@ -429,7 +413,7 @@ function create_mesh_struts(;Ht = 15.0,
     # AeroDyn Compatability
     AD15bldNdIdxRng = zeros(Int64,0,2)
 
-    bld_Z .+= Ht
+    bld_Z .+= Htwr_base
 
     b_Z = []
     b_X = []
@@ -462,9 +446,10 @@ function create_mesh_struts(;Ht = 15.0,
     end
 
     # pick out the strut mounting indices
-    b2s_botidx = findall(x->x==Hb*strut_bld_mountpointbot1+Ht,b_Z)[1:nblade] .+ length(mesh_z)
-    # pick out the strut mounting indices
-    b2s_topidx = findall(x->x==Hb*(1-strut_bld_mountpointtop2)+Ht,b_Z)[1:nblade] .+ length(mesh_z)
+    b2s_idx = zeros(Int,nblade,Nstrut)
+    for istrut = 1:Nstrut
+        b2s_idx[:,istrut] = findall(x->x==Hbld*strut_bld_mountpoint[istrut]+Htwr_base,b_Z)[1:nblade] .+ length(mesh_z)
+    end
 
     # Add to the mesh
     mesh_z = [mesh_z;b_Z]
@@ -517,8 +502,8 @@ function create_mesh_struts(;Ht = 15.0,
         hubIdx += length(mesh_z)
 
         # joint connections
-        s2b_idx = length(mesh_z)+1
-        s2t_idx = s2b_idx+length(s_z)-1
+        s2b_idx_internal = length(mesh_z)+1
+        s2t_idx_internal = s2b_idx_internal+length(s_z)-1
 
         # and add to the mesh
         mesh_x = [mesh_x;s_x]
@@ -527,30 +512,25 @@ function create_mesh_struts(;Ht = 15.0,
 
         # Intraconnectivity
         conn_s = zeros(nselem,2)
-        conn_s[:,1] = collect(s2b_idx:1:s2t_idx-1)
-        conn_s[:,2] = collect(s2b_idx+1:1:s2t_idx)
+        conn_s[:,1] = collect(s2b_idx_internal:1:s2t_idx_internal-1)
+        conn_s[:,2] = collect(s2b_idx_internal+1:1:s2t_idx_internal)
         conn = [conn;conn_s]
 
-        return s2b_idx,s2t_idx,mesh_x,mesh_y,mesh_z,conn,hubIdx
+        return s2b_idx_internal,s2t_idx_internal,mesh_x,mesh_y,mesh_z,conn,hubIdx
     end
 
     #Connect from the tower to the blades
     # For each blade, find the mounting location and draw a line
-    s2b_botidx = zeros(Int,nblade)
-    s2b_topidx = zeros(Int,nblade)
-    s2t_botidx = zeros(Int,nblade)
-    s2t_topidx = zeros(Int,nblade)
+    s2b_idx = zeros(Int,nblade,Nstrut)
+    s2t_idx = zeros(Int,nblade,Nstrut)
 
     # Bottom Struts
-    for ibld = 1:nblade
-        s2t_botidx[ibld],s2b_botidx[ibld],mesh_x,mesh_y,mesh_z,conn,hubIsectIdx = createstrut(t2s_botidx,b2s_botidx[ibld],mesh_x,mesh_y,mesh_z,conn,AD15hubR)
-        AD15bldNdIdxRng = [AD15bldNdIdxRng; hubIsectIdx  s2b_botidx[ibld]] #AD15 struts always start at hub regardless of rotation, but watch out for airfoil orientation!
-    end
-
-    # Top Struts
-    for ibld = 1:nblade
-        s2t_topidx[ibld],s2b_topidx[ibld],mesh_x,mesh_y,mesh_z,conn,hubIsectIdx = createstrut(t2s_topidx,b2s_topidx[ibld],mesh_x,mesh_y,mesh_z,conn,AD15hubR)
-        AD15bldNdIdxRng = [AD15bldNdIdxRng; hubIsectIdx  s2b_topidx[ibld]] #AD15 struts always start at hub regardless of rotation, but watch out for airfoil orientation!
+    for istrut = 1:Nstrut
+        for ibld = 1:nblade
+            s2t_idx[ibld,istrut],s2b_idx[ibld,istrut],mesh_x,mesh_y,mesh_z,conn,hubIsectIdx = createstrut(t2s_idx[istrut],b2s_idx[ibld,istrut],mesh_x,mesh_y,mesh_z,conn,AD15hubR)
+            
+            AD15bldNdIdxRng = [AD15bldNdIdxRng; hubIsectIdx  s2b_idx[ibld,istrut]] #AD15 struts always start at hub regardless of rotation, but watch out for airfoil orientation!
+        end
     end
 
     #######################################
@@ -574,15 +554,14 @@ function create_mesh_struts(;Ht = 15.0,
     # .bld equivalent
     #########################
 
-    # For a single blade
-    meshSeg = zeros(Int,1+nblade+nstrut*nblade) #tower, blades, and struts
+    meshSeg = zeros(Int,1+nblade+Nstrut*nblade) #tower, blades, and struts
 
     if connectBldTips2Twr == false
-        meshSeg[1] = ntelem+nstrut+1
+        meshSeg[1] = ntelem+Nstrut+1
     else
-        meshSeg[1] = ntelem+nstrut*nblade-nblade+1 #connects at top node
+        meshSeg[1] = ntelem+Nstrut*nblade-nblade+1 #connects at top node
     end
-    meshSeg[2:nblade+1] .= nbelem+nstrut #+nstrut for strut mount points
+    meshSeg[2:nblade+1] .= nbelem+Nstrut #+Nstrut for strut mount points
     meshSeg[nblade+2:end] .= nselem
 
     # For each blade
@@ -593,7 +572,7 @@ function create_mesh_struts(;Ht = 15.0,
     for iblade = 1:nblade
 
         # Normalized Span
-        span_len = bld_Z.-Ht#sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Ht).^2.0)
+        span_len = bld_Z.-Htwr_base#sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Htwr_base).^2.0)
         structuralSpanLocNorm[iblade,:] = span_len./maximum(span_len)
 
         # Node Numbers
@@ -613,7 +592,7 @@ function create_mesh_struts(;Ht = 15.0,
     # Connect Tower Top to Blades bottom, then each cable to each blade bottom
     # Then each cable to each blade top, then the latter two blade tops to the first
 
-    njoint = nblade*2+nstrut*nblade*2
+    njoint = nblade*2+Nstrut*nblade*2 #create the full array and then pull out zeros below if H-VAWT where the blades aren't connected to the tower.
     jointconn = zeros(Int,njoint,2)
     jointtype = zeros(njoint)
     for ibld = 1:nblade
@@ -622,25 +601,22 @@ function create_mesh_struts(;Ht = 15.0,
             jointconn[ibld,:] = [t_botidx b_botidx[ibld]]
         end
 
-        # connect tower to strut bottom
-        jointconn[ibld+nblade,:] = [t2s_botidx s2t_botidx[ibld]]
-
-        # connect tower to strut top
-        jointconn[ibld+nblade*2,:] = [t2s_topidx s2t_topidx[ibld]]
+        for istrut = 1:Nstrut
+            # connect tower to each strut
+            jointconn[ibld+nblade*istrut,:] = [t2s_idx[istrut] s2t_idx[ibld,istrut]]
+        end
 
         if connectBldTips2Twr
             # connect tower to blades tops
-            jointconn[ibld+nblade*3,:] = [t_topidx b_topidx[ibld]]
+            jointconn[ibld+nblade*(Nstrut+1),:] = [t_topidx b_topidx[ibld]]
         end
 
-        # connect strut to blade bottom
-        jointconn[ibld+nblade*4,:] = [s2b_botidx[ibld] b2s_botidx[ibld]]
-
-        # connect strut to blade top
-        jointconn[ibld+nblade*5,:] = [s2b_topidx[ibld] b2s_topidx[ibld]]
-
+        for istrut = 1:Nstrut
+            # connect strut to blade bottom
+            jointconn[ibld+nblade*(Nstrut+1+istrut),:] = [s2b_idx[ibld,istrut] b2s_idx[ibld,istrut]]
+        end
     end
-    
+
     # Reduce the matrix based on if the blades got connected or not, throwing out all the zero rows
     bitlogic = jointconn[:,1] .!= 0.0
     jointconn = jointconn[bitlogic,:]
@@ -669,6 +645,7 @@ function create_mesh_struts(;Ht = 15.0,
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn jointtype zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
 
+    # Blade and strut starting and ending node and element numbers
     AD15bldElIdxRng = zeros(Int64,0,2)
     for i = 1:size(AD15bldNdIdxRng,1)
         if AD15bldNdIdxRng[i,2] > AD15bldNdIdxRng[i,1]  # ascending order
@@ -688,8 +665,8 @@ function create_mesh_struts(;Ht = 15.0,
 end
 
 """
-create_arcus_mesh(;Ht = 15.0,
-    Hb = 147.148-15.0, #blade height
+create_arcus_mesh(;Htwr_base = 15.0,
+    Hbld = 147.148-15.0, #blade height
     R = 54.014, # m bade radius
     nblade = 3,
     ntelem = 30, #tower elements
@@ -706,8 +683,8 @@ create_arcus_mesh(;Ht = 15.0,
 ARCUS mesh configuration: no tower between blades, no struts, but cables from top center attaching to specified blade mount point at base
 
 #Inputs
-* `Ht::float`: height of tower before blades attach (m)
-* `Hb::float`: blade height (m)
+* `Htwr_base::float`: height of tower before blades attach (m)
+* `Hbld::float`: blade height (m)
 * `R::float`: bade radius (m)
 * `nblade::int`: number of blades
 * `ntelem::int`: number of tower elements
@@ -727,8 +704,8 @@ ARCUS mesh configuration: no tower between blades, no struts, but cables from to
 
 """
 function create_arcus_mesh(;
-    Ht = 15.0, #tower height before blades attach
-    Hb = 147.148-15.0, #blade height
+    Htwr_base = 15.0, #tower height before blades attach
+    Hbld = 147.148-15.0, #blade height
     R = 54.014, # m bade radius
     nblade = 3,
     ntelem = 4, #tower elements
@@ -751,7 +728,7 @@ function create_arcus_mesh(;
     ####################################
     ###------------Tower--------------##
     ####################################
-    mesh_z = collect(LinRange(0,Ht,ntelem+1))
+    mesh_z = collect(LinRange(0,Htwr_base,ntelem+1))
     # Create the x and y components
     mesh_x = zero(mesh_z)
     mesh_y = zero(mesh_z)
@@ -768,25 +745,25 @@ function create_arcus_mesh(;
     #####################################
 
     #connection points on tower are simply the top of the tower connecting to the bottom of the blades
-    bld_Z = collect(LinRange(0.0,Hb,nbelem+1))
+    bld_Z = collect(LinRange(0.0,Hbld,nbelem+1))
 
     # The cable connections must be added though
-    if maximum(Hb*c_mount_ratio .== bld_Z) # if we are at exactly an existing node, then offset our mount point
+    if maximum(Hbld*c_mount_ratio .== bld_Z) # if we are at exactly an existing node, then offset our mount point
         c_mount_ratio += 1e-6
     end
-    bld_Z = sort([bld_Z;Hb*c_mount_ratio])
+    bld_Z = sort([bld_Z;Hbld*c_mount_ratio])
 
     if bshapex == zeros(nbelem+1)
         bshapex = R .* bshapex./maximum(bshapex)
-        bshapez = Hb .* bshapez./maximum(bshapez)
-        bld_Y = R.*(1.0.-4.0.*(bld_Z/Hb.-.5).^2)
+        bshapez = Hbld .* bshapez./maximum(bshapez)
+        bld_Y = R.*(1.0.-4.0.*(bld_Z/Hbld.-.5).^2)
     else
         # Ensure the blade shape conforms to the turbine height and radius specs
         bld_Y = FLOWMath.akima(bshapez,bshapex,bld_Z)
     end
     bld_X = zero(bld_Y)
 
-    bld_Z .+= Ht
+    bld_Z .+= Htwr_base
 
     b_Z = []
     b_X = []
@@ -818,7 +795,7 @@ function create_arcus_mesh(;
     mesh_y = [mesh_y;b_Y]
 
     # pick out the blade to cable mounting indices
-    b2c_botidx = findall(x->x==Hb*c_mount_ratio+Ht,mesh_z)[1:nblade]
+    b2c_botidx = findall(x->x==Hbld*c_mount_ratio+Htwr_base,mesh_z)[1:nblade]
 
 
     #####################################
@@ -839,7 +816,7 @@ function create_arcus_mesh(;
         # x y z end are at the top of the tower
         cxend = 0.0
         cyend = 0.0
-        czend = Ht + Hb
+        czend = Htwr_base + Hbld
 
         # Now draw the lines
         c_x = collect(LinRange(cxstart,cxend,ncelem+1))
@@ -906,7 +883,7 @@ function create_arcus_mesh(;
     for iblade = 1:nblade
 
         # Normalized Span
-        span_len = bld_Z.-Ht#sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Ht).^2.0)
+        span_len = bld_Z.-Htwr_base#sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Htwr_base).^2.0)
         structuralSpanLocNorm[iblade,:] = span_len./maximum(span_len)
 
         # Node Numbers
@@ -1289,8 +1266,11 @@ Takes numad formatted inputs for composite layup and material properties and run
 * `plyprops::plyproperties()`: see ?plyproperties for input material properties
 
 #Outputs
-* `precompoutput::OWENSPreComp.Input`: see ?OWENSPreComp.Input
-* `precompinput::OWENSPreComp.properties`: see ?OWENSPreComp.properties
+* `precompoutput::OWENSPreComp.Output`: see ?OWENSPreComp.Input
+* `precompinput::OWENSPreComp.Input`: see ?OWENSPreComp.properties
+* `lam_U::Composites.Laminate`: laminate stacks used for post processing, size (n_stations, n_upper chorwise stations), upper surface, see ?Composites.Laminate
+* `lam_L::Composites.Laminate`: laminate stacks used for post processing, size (n_stations, n_lower chorwise stations), lower surface, see ?Composites.Laminate
+* `lam_W::Composites.Laminate`: laminate stacks used for post processing, size (n_stations, n_webs), shear webs, see ?Composites.Laminate
 """
 function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
     # Assume each station has the same number of segments and webs (some of which may be of zero width/thickness)
