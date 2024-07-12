@@ -46,7 +46,7 @@ Turbulent inflow is provided by OWENSOpenFASTWrappers.jl and the inflowwind and 
 Rainflow counting was provided by Rainflow.jl, however, this package became orphained and was pulled into the OWENS code base.
 
 ## Installation
-Please follow the instructions on the setup page
+Please follow the instructions on the setup page in the documentation.
 
 ## Documentation
 - https://sandialabs.github.io/OWENS.jl
