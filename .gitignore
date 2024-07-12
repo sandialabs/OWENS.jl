@@ -7,7 +7,7 @@ new*
 *vtk*
 *.sum
 *.ech
-*2.dat
+*.dat
 *.docx
 *COMPILED*
 *.out

@@ -508,7 +508,7 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
         minbuck_sf,minbuck_sfidx = findmin(SF_buck)
         if verbosity>2
             println("\nWorst buckling safety factor $(minbuck_sf)")
-            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx2) of $(lencomposites_span) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx2,:]))")
+            println("At time $(minbuck_sfidx[1]*0.05)s at composite station $(minbuck_sfidx[2]) of $(lencomposites_span) at lam $(minbuck_sfidx[3]) of $(length(lam_used[minbuck_sfidx[2],:]))")
         end
         if verbosity>3
             println("Buckling")

@@ -48,19 +48,19 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = false
-AModel = "DMS"
+AModel = "AD"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 41.9
 Blade_Radius = 6.0
-numTS = 100
+numTS = 10
 delta_t = 0.05
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
-NuMad_geom_xlscsv_file_bld = "$path/GeomBlades_AD.csv"
-NuMad_mat_xlscsv_file_bld = "$path/NuMAD_SNL34mMaterials.csv"
+NuMad_geom_xlscsv_file_bld = "$path/GeomBlades.csv"
+NuMad_mat_xlscsv_file_bld = "$path/Materials34m.csv"
 NuMad_geom_xlscsv_file_strut = "$path/GeomStruts.csv"
-NuMad_mat_xlscsv_file_strut = "$path/NuMAD_SNL34mMaterials.csv"
+NuMad_mat_xlscsv_file_strut = "$path/Materials34m.csv"
 adi_lib = nothing#"$path/../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
 adi_rootname = "$path/helical"
 
@@ -74,23 +74,8 @@ Omegaocp = [34.0; 34.0; 34.0]./60 #control inputs
 tocp_Vinf = [0.0;10.0; 1e6]
 Vinfocp = [10.0;10.0;10.0]
 
-# windio
-controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
-
-# z_shape = collect(LinRange(0,41.9,length(x_shape)))
-z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
-x_shape1 = [0.0;controlpts;0.0]
-z_shape = collect(LinRange(0,41.9,60))
-x_shape = FLOWMath.akima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
-toweroffset = 4.3953443986241725
-SNL34_unit_xz = [x_shape;;z_shape]
-SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
-SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
-SNL34Z = SNL34z.*Blade_Height #windio
-SNL34X = SNL34x.*Blade_Radius #windio
-
-shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
-helix_angle = pi/4
+shapeZ = collect(LinRange(0,Blade_Height,Nslices+1))
+helix_angle = -pi/4
 shapeX = cos.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius#SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ) ones(length(shapeZ)).*Blade_Radius#
 shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(shapeX))#
 
@@ -102,8 +87,6 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     rho, #windio
     Nslices, #modeling options
     ntheta, #modeling options
-    RPM, #remove
-    Vinf, #remove
     eta, #windio
     B = Nbld, #windio
     H = Blade_Height, #windio
@@ -125,14 +108,14 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     NuMad_mat_xlscsv_file_bld,#windio
     NuMad_geom_xlscsv_file_strut,#windio
     NuMad_mat_xlscsv_file_strut,#windio
-    Ht=towerHeight,
+    Htwr_base=towerHeight,
     ntelem, 
     nbelem, 
     ncelem,
     nselem,
     joint_type = 0,
-    strut_mountpointbot = 0.03,
-    strut_mountpointtop = 0.03,
+    strut_twr_mountpoint = [0.1,0.5,0.9],
+    strut_bld_mountpoint = [0.05,0.5,0.95],
     AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,
@@ -281,7 +264,7 @@ for it = 1:length(t)
 end
 
 azi=aziHist#./aziHist*1e-6
-saveName = "$path/vtk/RM2"
+saveName = "$path/vtk/helical"
 OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)

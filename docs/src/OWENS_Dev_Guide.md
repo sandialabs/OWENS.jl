@@ -112,6 +112,12 @@ though it were a north starting blade rotating clockwise, and a
 symmetric gust velocity will match (if the simple iec uniform gust is
 used). All else for CACTUS follows the description above.
 
+Aerodynamics forces are radial inward positive and tangential in direction of rotation positive.
+So, the blade local accelerations in the radial will be outward positive and in the tangential 
+will be in the opposite direction of rotation for a CCW rotor.  CW rotors are still in work and
+would need to have the local frame of reference rotation verified.  Therefor, for the added mass
+ equations, the forces should be negated. 
+
 ## OWENSFEA Structures
 
 Yaw is equivalent to the global azimuth angle as above, and is denoted
