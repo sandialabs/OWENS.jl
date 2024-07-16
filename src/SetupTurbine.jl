@@ -49,7 +49,8 @@ function setupOWENS(OWENSAero,path;
     DSModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
-    meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
+    meshtype = "Darrieus",
+    custommesh = nothing) #Darrieus, H-VAWT, ARCUS
     
     if AModel=="AD"
         AD15On = true
@@ -77,7 +78,7 @@ function setupOWENS(OWENSAero,path;
     #########################################
     ### Set up mesh
     #########################################
-    if meshtype == "ARCUS" #TODO, for all of these propogate the AeroDyn additional output requirements
+    if meshtype == "ARCUS" && custommesh == nothing #TODO, for all of these propogate the AeroDyn additional output requirements
         mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Htwr_base,
             Hbld = H, #blade height
             R, # m bade radius
@@ -91,7 +92,7 @@ function setupOWENS(OWENSAero,path;
             joint_type, #hinged about y axis
             cables_connected_to_blade_base,
             angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    elseif meshtype == "Darrieus" || meshtype == "H-VAWT"
+    elseif (meshtype == "Darrieus" || meshtype == "H-VAWT") && custommesh == nothing
         
         if meshtype == "Darrieus"
             connectBldTips2Twr = true
@@ -117,6 +118,25 @@ function setupOWENS(OWENSAero,path;
             AD15_ccw = true,
             verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
             connectBldTips2Twr)
+    elseif custommesh != nothing
+        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = custommesh(;Htwr_base,
+        Htwr_blds,
+        Hbld = H, #blade height
+        R, # m bade radius
+        AD15hubR, #TODO: hook up with AD15 file generation
+        nblade = Nbld,
+        ntelem, #tower elements
+        nbelem, #blade elements
+        nselem,
+        strut_twr_mountpoint,
+        strut_bld_mountpoint,
+        bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+        bshapez = shapeZ,
+        bshapey = shapeY, # but magnitude for this is relevant
+        angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+        AD15_ccw = true,
+        verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information)
+        )
     else #TODO unify with HAWT
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
@@ -366,6 +386,14 @@ function setupOWENS(OWENSAero,path;
         end
     end
     rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
+
+    if length(sectionPropsArray)<mymesh.numEl
+        @warn "There are more mesh elements than sectional properties, applying the last strut's sectional properties to the remaining"
+        n_diff = mymesh.numEl - length(sectionPropsArray)
+        sectionPropsArray = [sectionPropsArray; fill(sectionPropsArray_strut[end][2],n_diff)]
+        stiff_array = [stiff_array;fill(stiff_strut[end][2],n_diff)]
+        mass_array = [mass_array;fill(mass_strut[end][2],n_diff)]
+    end
 
     #store data in element object
     myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
