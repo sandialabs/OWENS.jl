@@ -1,19 +1,63 @@
 
 """
-readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+readNuMadGeomCSV(NuMad_geom_file)
 
 Parameters defining the rotor (apply to all sections).
 
 **Arguments**
-- `NuMad_geom_xlscsv_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+- `NuMad_geom_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+- `NuMad_geom_file::OrderedCollections.OrderedDict{Symbol, Any}`: Alternatively, the already loaded in dictionary of windio inputs
 
 
 **Returns**
 - `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
 """
-function readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol, Any};section=:blade)
+    println("works?")
+
+    sec_Dict = NuMad_geom_file[:components][section][:internal_structure_2d_fem]
+    
+    # internal_structure_2d_fem:
+    # reference_axis:
+    #     x:
+    #         grid: [0.0, 0.03333333333333333, 0.06666666666666667, 0.1, 0.13333333333333333, 0.16666666666666666, 0.2, 0.23333333333333334, 0.26666666666666666, 0.3, 0.3333333333333333, 0.36666666666666664, 0.4, 0.43333333333333335, 0.4666666666666667, 0.5, 0.5333333333333333, 0.5666666666666667, 0.6, 0.6333333333333333, 0.6666666666666666, 0.7, 0.7333333333333333, 0.7666666666666667, 0.8, 0.8333333333333334, 0.8666666666666667, 0.9, 0.9333333333333333, 0.9666666666666667, 1.0]
+    #         values: [0.0, 6.961447494399997, 13.442795161599998, 19.444043001599994, 24.965191014399995, 30.006239199999996, 34.5671875584, 38.6480360896, 42.248784793599995, 45.3694336704, 48.00998272, 50.1704319424, 51.8507813376, 53.0510309056, 53.7711806464, 54.01123056, 53.7711806464, 53.0510309056, 51.8507813376, 50.1704319424, 48.009982720000004, 45.36943367040001, 42.24878479360001, 38.6480360896, 34.56718755839999, 30.006239199999996, 24.965191014399995, 19.444043001599994, 13.442795161599998, 6.961447494399997, 0.0]
+    #     y:
+    #         grid: [0.0, 0.03333333333333333, 0.06666666666666667, 0.1, 0.13333333333333333, 0.16666666666666666, 0.2, 0.23333333333333334, 0.26666666666666666, 0.3, 0.3333333333333333, 0.36666666666666664, 0.4, 0.43333333333333335, 0.4666666666666667, 0.5, 0.5333333333333333, 0.5666666666666667, 0.6, 0.6333333333333333, 0.6666666666666666, 0.7, 0.7333333333333333, 0.7666666666666667, 0.8, 0.8333333333333334, 0.8666666666666667, 0.9, 0.9333333333333333, 0.9666666666666667, 1.0]
+    #         values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    #     z:
+    #         grid: [0.0, 0.03333333333333333, 0.06666666666666667, 0.1, 0.13333333333333333, 0.16666666666666666, 0.2, 0.23333333333333334, 0.26666666666666666, 0.3, 0.3333333333333333, 0.36666666666666664, 0.4, 0.43333333333333335, 0.4666666666666667, 0.5, 0.5333333333333333, 0.5666666666666667, 0.6, 0.6333333333333333, 0.6666666666666666, 0.7, 0.7333333333333333, 0.7666666666666667, 0.8, 0.8333333333333334, 0.8666666666666667, 0.9, 0.9333333333333333, 0.9666666666666667, 1.0]
+    #         values: [0.0, 3.67276364, 7.34552728, 11.01829092, 14.69105456, 18.363818199999997, 22.03658184, 25.70934548, 29.38210912, 33.054872759999995, 36.727636399999994, 40.400400039999994, 44.07316368, 47.74592732, 51.41869096, 55.0914546, 58.76421824, 62.43698188, 66.10974551999999, 69.78250915999999, 73.45527279999999, 77.12803643999999, 80.80080007999999, 84.47356372, 88.14632736, 91.819091, 95.49185464, 99.16461828, 102.83738192, 106.51014556, 110.1829092]
+    
+    # Note that the input for the composite inputs is like a square blanket with shortened sections to make it any "shape" of composite inputs.  While it is possible to not define things along the blade/strut/tower etc depending on height, that makes non-square matrices which is more complex to code for and has not been propogated throughout.  It is also not condusive to continuous changes to the composite input.  Rather, just define the inputs as square (same number of chordwise stations along each spanwise position) and just set the thicknesses or distances between control points to be numerically 0.
+
+    # So, the windio does not direcly have stack sequences, so if you want to do a sandwitch with foam inside, you have to define the layer material twice.  The ordered dictionary keeps everything in sequence, so we just assume the layers are defined from outer to inner.
+    # Pull together all the keypoints, and then number them, and then read everything in and apply to square arrays, with zero thickness/layers where it isn't defined.
+    # note that the keypoints are 0 to 1, trailing edge to trailing edge, with a leading edge position note.
+
+    # n_web = size(sec_Dict[:webs]) # number of shear webs
+    # n_stack = size(sec_Dict[:layers])
+    # n_segments = 
+    # span = 
+    # airfoil = 
+    # te_type = 
+    # twist_d = 
+    # chord = 
+    # xoffset = 
+    # aerocenter = 
+    # stack_mat_types = 
+    # stack_layers = 
+    # segments = 
+    # DPtypes = 
+    # skin_seq = 
+    # web_seq = 
+    # web_dp = 
+
+    # return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+end
+function readNuMadGeomCSV(NuMad_geom_file::String)
     #TODO: add composite orientation
-    csvdata = DelimitedFiles.readdlm(NuMad_geom_xlscsv_file,',',skipstart = 0)
+    csvdata = DelimitedFiles.readdlm(NuMad_geom_file,',',skipstart = 0)
 
     n_station = length(csvdata[4:end,1])- sum(isempty.(csvdata[4:end,1]))
     n_web = Int(csvdata[1,6])

@@ -217,8 +217,8 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
         nselem,
         joint_type = 0,
         c_mount_ratio = 0.05,
-        strut_twr_mountpoint = [0.03,0.97],
-        strut_bld_mountpoint = [0.03,0.97],
+        strut_twr_mountpoint = [0.11,0.89], #TODO
+        strut_bld_mountpoint = [0.11,0.89],
         AModel, #AD, DMS, AC
         DSModel="BV",
         RPI=true,
