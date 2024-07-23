@@ -31,7 +31,7 @@ OWENS_Options = OWENS.MasterInput("$runpath/modeling_options_OWENS_windioExample
 
 WINDIO_filename = "$runpath/WINDIO_example.yaml"
 windio = YAML.load_file(WINDIO_filename; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
-
+NuMad_materials_xlscsv_file = windio
 OWENS.runOWENSWINDIO(windio,OWENS_Options,runpath)
 
 # Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)

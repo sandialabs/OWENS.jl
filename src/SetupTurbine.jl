@@ -122,8 +122,12 @@ function setupOWENS(OWENSAero,path;
     end
 
     nTwrElem = Int(mymesh.meshSeg[1])
-    if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
-        nTwrElem = Int(mymesh.meshSeg[1])+1
+    try
+        if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
+            nTwrElem = Int(mymesh.meshSeg[1])+1
+        end
+    catch
+        nTwrElem = Int(mymesh.meshSeg[1])
     end
     
     nothing

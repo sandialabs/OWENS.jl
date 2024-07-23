@@ -1422,7 +1422,7 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         n_laminaW = zeros(Int,numadIn.n_web)
         # println("You must define shear webs at each spanwise station, just set the ply thicknesses to zero if not desired")
         for web_idx = 1:numadIn.n_web
-            idx_loc_web= numadIn.web_dp[i_station,web_idx].seq[1]+1
+            idx_loc_web= numadIn.web_dp[i_station,web_idx].seq[1]+1 
             loc_web[web_idx] = abs(numadIn.segments[i_station,idx_loc_web])
             n_laminaW[web_idx] = length(numadIn.web_seq[i_station,web_idx].seq)
         end
