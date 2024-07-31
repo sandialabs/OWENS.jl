@@ -18,9 +18,9 @@ Executable function for transient analysis. Provides the interface of various
 
 
     # Output
-    * `t`: time array
-    * `aziHist`: azimuthal history array
-    * `OmegaHist`: rotational speed array history
+    * `t`: time array (s)
+    * `aziHist`: azimuthal history array 
+    * `OmegaHist`: rotational speed array history (hz)
     * `OmegaDotHist`: rotational acceleration array history
     * `gbHist`: gearbox position history array
     * `gbDotHist`: gearbox velocity history array

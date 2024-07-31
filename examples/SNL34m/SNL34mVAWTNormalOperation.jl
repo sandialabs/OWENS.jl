@@ -1,4 +1,4 @@
-
+import QuadGK
 import OWENS
 import OWENSFEA
 import OWENSAero
@@ -110,6 +110,10 @@ SNL34X = SNL34x.*Blade_Radius
 shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
 shapeX = SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
+shapeX_spline = FLOWMath.Akima(SNL34Z, SNL34X)
+RefArea_half, error = QuadGK.quadgk(shapeX_spline, 0, Blade_Height, atol=1e-10)
+RefArea = RefArea_half*2
+
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
@@ -154,6 +158,120 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType)
+
+
+RPM = 34.0
+omega = RPM*2*pi/60
+nVinf = 20
+Vinfvec = collect(LinRange(4.0,25.0,nVinf))
+torque = zeros(nVinf)
+thrust = zeros(nVinf)
+torque2 = zeros(nVinf)
+power = zeros(nVinf)
+power2= zeros(nVinf)
+TSRvec = omega*Blade_Radius./Vinfvec
+windpower = 0.5*rho*Vinfvec.^3*RefArea
+for (i,Vinf) in enumerate(Vinfvec)
+    # Vinf = 10.0
+    println("$i of $(length(Vinfvec))")
+    CP,Rp,Tp,Zp,alpha,cl_af,cd_af,Vloc,Re,thetavec,nstep,Fx_base,Fy_base,Fz_base,
+    Mx_base,My_base,Mz_base,power[i],power2[i],torque[i] = OWENSAero.steadyTurb(;omega,Vinf)
+    thrust[i] = mean(Fx_base)
+    torque2[i] = mean(Mz_base)
+end
+
+##########################################
+#### Torque Plot
+##########################################
+
+SNL34m_3_6_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/3.6.csv",',',skipstart = 0)
+
+exptorque = SNL34m_3_6_Torque[:,2]
+greyidx = exptorque.<0.25*maximum(exptorque)
+regidx = exptorque.>=0.25*maximum(exptorque)
+torquegrey = exptorque[greyidx]
+torquereg = exptorque[regidx]
+
+Vinfarray = SNL34m_3_6_Torque[:,1]
+Vinfgrey = Vinfarray[greyidx]
+Vinfreg = Vinfarray[regidx]
+
+PyPlot.figure()
+PyPlot.plot(Vinfvec,torque./1000,color=plot_cycle[1],label="OWENS Predictions")
+# PyPlot.plot(Vinfvec,torque2./1000,"+",label="DMS Aero Only2")
+# PyPlot.plot(Vinfgrey,torquegrey,".",color="0.5",label="Experimental < 25% Peak")
+# PyPlot.plot(Vinfreg,torquereg,"k.",label="Experimental > 25% Peak")
+PyPlot.plot(Vinfarray,exptorque,"k.",label="VAWT Test Data")
+PyPlot.xlabel("Wind Speed (m/s)")
+PyPlot.ylabel("Torque (kN-m)")
+# PyPlot.grid(linestyle="--")
+PyPlot.xlim([0.0,25.0])
+PyPlot.ylim([-25.0,150.0])
+PyPlot.legend()
+# PyPlot.savefig("$(path)/../figs/34m_fig3_6.pdf",transparent = true)
+
+##########################################
+#### Power Plot
+##########################################
+
+SNL34m_3_7_Power = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/3.7.csv",',',skipstart = 0)
+
+PyPlot.figure()
+PyPlot.plot(Vinfvec,power./1000,color=plot_cycle[1],label="DMS Aero Only 1")
+# PyPlot.plot(Vinfvec,power2./1000,label="DMS Aero Only 2")
+PyPlot.plot(SNL34m_3_7_Power[:,1],SNL34m_3_7_Power[:,2],"k.",label="Experimental")
+PyPlot.xlabel("Wind Speed (m/s)")
+PyPlot.ylabel("Power (kW)")
+PyPlot.xlim([0.0,25.0])
+PyPlot.ylim([-100.0,600.0])
+PyPlot.grid(linestyle="--")
+PyPlot.legend()
+# PyPlot.savefig("$(path)/../figs/34m_fig3_7.pdf",transparent = true)
+
+##########################################
+#### CP Plot
+##########################################
+
+TSRvecExpGrey = omega*Blade_Radius./SNL34m_3_6_Torque[greyidx,1]
+windpowerexp = 0.5*rho*SNL34m_3_6_Torque[greyidx,1].^3*RefArea
+Cp2expGrey = SNL34m_3_6_Torque[greyidx,2]*omega*1000.0./windpowerexp
+
+TSRvecExpReg = omega*Blade_Radius./SNL34m_3_6_Torque[regidx,1]
+windpowerexp = 0.5*rho*SNL34m_3_6_Torque[regidx,1].^3*RefArea
+Cp2expReg = SNL34m_3_6_Torque[regidx,2]*omega*1000.0./windpowerexp
+
+SNL34m_3_7_Cp = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/3.8.csv",',',skipstart = 0)
+
+PyPlot.rc("figure.subplot", left=.15, bottom=.17, top=0.9, right=.9)
+PyPlot.figure()
+PyPlot.plot(TSRvec,power./windpower,color=plot_cycle[2],label="Aero Only (DMS)")
+PyPlot.plot(SNL34m_3_7_Cp[:,1],SNL34m_3_7_Cp[:,2]/1000,"ko",label="Exp. From CP Plot")
+# PyPlot.plot(TSRvecExpGrey,Cp2expGrey,".",color="0.5",label="Exp. From Torque < 0.25% Peak Torque")
+# PyPlot.plot(TSRvecExpReg,Cp2expReg,"k.",label="Exp. From Torque > 0.25% Peak Torque")
+PyPlot.xlabel("Tip Speed Ratio")
+PyPlot.ylabel("Power Coefficient")
+PyPlot.xlim([0,13])
+PyPlot.ylim([0,0.8])
+PyPlot.legend()
+# PyPlot.savefig("$(path)/../figs/34m_fig3_8.pdf",transparent = true)
+
+##########################################
+#### CT Plot
+##########################################
+
+
+PyPlot.figure()
+PyPlot.plot(TSRvec,-thrust./(windpower./Vinfvec),color=plot_cycle[1],label="DMS Aero Only")
+PyPlot.xlabel("Tip Speed Ratio")
+PyPlot.ylabel("Thrust Coefficient")
+PyPlot.xlim([0,15])
+PyPlot.ylim([0,0.9])
+PyPlot.legend()
+# PyPlot.savefig("$(path)/../figs/34m_figCT_34RPM.pdf",transparent = true)
+
+##########################################
+############ AeroElastic #################
+##########################################
 
 top_idx = 23#Int(myjoint[7,2])
 pBC = [1 1 0

@@ -321,7 +321,7 @@ function setupOWENS(OWENSAero,path;
         for icol = 1:length(numadIn_strut[istrut].stack_layers[1,:])
             numadIn_strut[istrut].stack_layers[:,icol] .*= LinRange(stack_layers_scale[1],stack_layers_scale[2],length(numadIn_strut[istrut].chord))
         end
-        numadIn_strut[istrut].chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut[istrut].chord))
+        # numadIn_strut[istrut].chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut[istrut].chord))
 
         for (i,airfoil) in enumerate(numadIn_strut[istrut].airfoil)
             numadIn_strut[istrut].airfoil[i] = "$path/airfoils/$airfoil"
