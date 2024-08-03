@@ -75,7 +75,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,
         torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assembly)
     end
-
     ## Hydrodynamics/mooring module initialization and coupling variables
     if inputs.hydroOn
         bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,
@@ -153,7 +152,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #..................................................................
     #                          INITIAL SOLVE
     #..................................................................
-
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
     if inputs.hydroOn
     # function initial_solve_hydro(inputs,bottom_totalNumDOF,numDOFPerNode,FHydro_n,FMooring_n,t,delta_t)
@@ -251,7 +249,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             genTorque_j = genTorque_s
             torqueDriveShaft_j = torqueDriveShaft_s
         end
-
         ## Extrapolate platform motions at t+dt to send to HydroDyn/MoorDyn #TODO: use Adams-Bashforth method if i > 4?
         if inputs.hydroOn
             top_grav_setting = copy(topModel.gravityOn)
@@ -374,7 +371,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 end
                 CH2N = LinearAlgebra.transpose(CN2H)
 
-
                 #################################################################
                 if !isnothing(aero)
                     if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
@@ -426,7 +422,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     topFexternal = zeros(numDOFPerNode)
                     aeroDOFs = copy(topFexternal).*0.0
                 end
-                aeroVals = topFexternal
 
                 if meshcontrolfunction !== nothing
                     # add to the loads based on the inputs, TODO: CN2H
@@ -439,7 +434,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         end
                     end
                 end
-
                 #------------------------------------
                 # TOPSIDE STRUCTURAL MODULE
                 #------------------------------------
@@ -451,7 +445,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 else # evalulate structural dynamics using conventional representation
                     topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
-
                 u_jLast = copy(u_j)
                 u_j = topDispOut.displ_sp1
                 udot_j = topDispOut.displdot_sp1
