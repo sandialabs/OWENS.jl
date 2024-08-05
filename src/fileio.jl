@@ -203,8 +203,8 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
     for istack = 1:n_stack 
         layer_Dict = sec_Dict[:internal_structure_2d_fem][:layers][istack]
         
-        println(istack)
-        println(layer_Dict[:name])
+        # println(istack)
+        # println(layer_Dict[:name])
 
         # Fill in the material types, which are in order based on the material names inputs
         stack_mat_types[istack] = findfirst(x->x==layer_Dict[:material],input_material_names)
