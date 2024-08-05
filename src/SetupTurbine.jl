@@ -151,7 +151,7 @@ function setupOWENS(OWENSAero,path;
     #########################################
 
     if !isnothing(NuMad_geom_xlscsv_file_twr)
-        numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr)
+        numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr;section=:tower)
     else
         n_web = 0
         n_stack = 2
@@ -201,7 +201,7 @@ function setupOWENS(OWENSAero,path;
 
     # For the blades, we repeat what was done for the tower, but also include some simple design options for scaling thicknesses,
     if !isnothing(NuMad_geom_xlscsv_file_bld)
-        numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld)
+        numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld;section=:blade)
     else
         n_web = 1
         n_stack = 7
@@ -274,6 +274,12 @@ function setupOWENS(OWENSAero,path;
         if !isnothing(NuMad_geom_xlscsv_file_strut)
             if typeof(NuMad_geom_xlscsv_file_strut)==String
                 numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut)
+            elseif typeof(NuMad_geom_xlscsv_file_strut) == OrderedCollections.OrderedDict{Symbol, Any}
+                if length(NuMad_geom_xlscsv_file_strut[:components][:struts])==1
+                    numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut;section=:struts,subsection=1)
+                else
+                    numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut;section=:struts,subsection=istrut)
+                end
             else
                 numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut[istrut])
             end
