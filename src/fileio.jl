@@ -218,7 +218,8 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
             for ispan = 1:length(span)
                 for iseg=1:length(common_segments)
                     # check that the layer is active for the span position, and that it is active for the chordwise position for the given span
-                    if (span[ispan]>=start_nd_arc_grid[1] && span[ispan]<=end_nd_arc_grid[end]) && (common_segments[iseg]>=start_nd_arc[ispan] && common_segments[iseg]<=end_nd_arc[ispan])
+                    # Note that the code assumes -1 numad position (1 position windio) is the starting point, so the numad assumes the prior position is the starting point, and the defined position is the ending point.  The logic below translates windio which defines both the starting and ending positions to that numad assumption
+                    if (span[ispan]>=start_nd_arc_grid[1] && span[ispan]<=end_nd_arc_grid[end]) && (common_segments[iseg]>=start_nd_arc[ispan] && common_segments[iseg]<end_nd_arc[ispan])
                         stacks_active_windio_bld[ispan,iseg,istack] = 1
                     end
                 end
@@ -286,8 +287,8 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
             # now to from windio chordwise station to numad chordwise station by reversing the numbering
             # 1 2 3 4 5 6 7 8
             # 8 7 6 5 4 3 2 1
-            web_lp_idx_temp = length(segments_windio[ispan,:])-web_lp_idx_windio + 1
-            web_hp_idx_temp = length(segments_windio[ispan,:])-web_hp_idx_windio + 1
+            web_lp_idx_temp = length(segments_windio[ispan,:])-web_lp_idx_windio
+            web_hp_idx_temp = length(segments_windio[ispan,:])-web_hp_idx_windio
 
             # then since numad reuses the high pressure trailing edge position as the low pressure trailing edge (that is windio's last position), it is the first in numad, so offset everything by 1 to align
             web_lp_idx = web_lp_idx_temp
@@ -297,7 +298,7 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
         end
     end
 
-    return NuMad(n_web,n_stack,n_segments-1,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+    return NuMad(n_web,n_stack,n_segments-1,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq[:,2:end],web_seq,web_dp)
 end
 
     # segments_bld = Array{Any,2}(undef,n_stack,2)
