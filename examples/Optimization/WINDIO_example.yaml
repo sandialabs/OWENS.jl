@@ -232,7 +232,7 @@ components:
       - name: strut1
         outer_shape_bem:
             airfoil_position:
-                grid: &id002 [0.0, 0.3333165170013117, 0.6666834829986883, 1.0]
+                grid: &id002 [0, 6.607, 13.215, 19.822]
                 labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021]
             chord:
                 grid: *id002
@@ -293,10 +293,10 @@ components:
                       grid: *id002
                       values: [12,12,12,12]
                   start_nd_arc:
-                      values: [0.5,0.5,0.5,0.5]
+                      values: [0.4525,0.4525,0.4525,0.4525]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.4525,0.4525,0.4525,0.4525]
+                      values: [0.5475,0.5475,0.5475,0.5475]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -307,10 +307,10 @@ components:
                       grid: *id002
                       values: [8,8,8,8]
                   start_nd_arc:
-                      values: [0.975,0.975,0.975,0.975]
+                      values: [0.75,0.75,0.75,0.75]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.75,0.75,0.75,0.75]
+                      values: [0.975,0.975,0.975,0.975]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -321,10 +321,10 @@ components:
                       grid: *id002
                       values: [8,8,8,8]
                   start_nd_arc:
-                      values: [0.55,0.55,0.55,0.55]
+                      values: [0.5475,0.5475,0.5475,0.5475]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.5475,0.5475,0.5475,0.5475]
+                      values: [0.55,0.55,0.55,0.55]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -335,10 +335,10 @@ components:
                       grid: *id002
                       values: [8,8,8,8]
                   start_nd_arc:
-                      values: [0.4525,0.4525,0.4525,0.4525]
+                      values: [0.45,0.45,0.45,0.45]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.45,0.45,0.45,0.45]
+                      values: [0.4525,0.4525,0.4525,0.4525]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -349,10 +349,10 @@ components:
                       grid: *id002
                       values: [8,8,8,8]
                   start_nd_arc:
-                      values: [0.25,0.25,0.25,0.25]
+                      values: [0.025,0.025,0.025,0.025]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.025,0.025,0.025,0.025]
+                      values: [0.25,0.25,0.25,0.25]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -363,10 +363,10 @@ components:
                       grid: *id002
                       values: [12,12,12,12]
                   start_nd_arc:
-                      values: [0.65,0.65,0.65,0.65]
+                      values: [0.55,0.55,0.55,0.55]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.5475,0.5475,0.5475,0.5475]
+                      values: [0.75,0.75,0.75,0.75]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -377,10 +377,10 @@ components:
                       grid: *id002
                       values: [12,12,12,12]
                   start_nd_arc:
-                      values: [0.45,0.45,0.45,0.45]
+                      values: [0.25,0.25,0.25,0.25]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.25,0.25,0.25,0.25]
+                      values: [0.45,0.45,0.45,0.45]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]
@@ -405,10 +405,10 @@ components:
                       grid: *id002
                       values: [12,12,12,12]
                   start_nd_arc:
-                      values: [0.025,0.025,0.025,0.025]
+                      values: [0.0,0.0,0.0,0.0]
                       grid: *id002
                   end_nd_arc:
-                      values: [0.0,0.0,0.0,0.0]
+                      values: [0.025,0.025,0.025,0.025]
                       grid: *id002
                   fiber_orientation:
                       values: [0.0,0.0,0.0,0.0]

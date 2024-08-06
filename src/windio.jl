@@ -158,7 +158,7 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
     NuMad_mat_xlscsv_file_twr = windio #"$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
     NuMad_geom_xlscsv_file_bld = windio #"$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
     NuMad_mat_xlscsv_file_bld = windio #"$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
-    NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)" #reference_axis
+    NuMad_geom_xlscsv_file_strut = windio #"$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
     NuMad_mat_xlscsv_file_strut = windio #"$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
     adi_lib = Inp.adi_lib
     if adi_lib == "nothing"

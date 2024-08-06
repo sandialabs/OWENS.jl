@@ -33,20 +33,20 @@ WINDIO_filename = "$runpath/WINDIO_example.yaml"
 
 windio = YAML.load_file(WINDIO_filename; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
 
-numadIn_bld_old = OWENS.readNuMadGeomCSV("$(runpath)$(OWENS_Options.NuMad_geom_xlscsv_file_bld)";section=:blade)
-numadIn_bld_new = OWENS.readNuMadGeomCSV(windio;section=:blade)
+# numadIn_bld_old = OWENS.readNuMadGeomCSV("$(runpath)$(OWENS_Options.NuMad_geom_xlscsv_file_bld)";section=:blade)
+# numadIn_bld_new = OWENS.readNuMadGeomCSV(windio;section=:blade)
 
-for key in fieldnames(typeof(numadIn_bld_old))
-    old_data = getfield(numadIn_bld_old,key)
-    new_data = getfield(numadIn_bld_new,key)
+# for key in fieldnames(typeof(numadIn_bld_old))
+#     old_data = getfield(numadIn_bld_old,key)
+#     new_data = getfield(numadIn_bld_new,key)
 
-    if old_data!=new_data
-        println(key)
-        println(old_data)
-        println(new_data)
-    end
-    # println(isapprox(old_data,new_data))
-end
+#     if old_data!=new_data
+#         println(key)
+#         println(old_data)
+#         println(new_data)
+#     end
+#     # println(isapprox(old_data,new_data))
+# end
 
 OWENS.runOWENSWINDIO(windio,OWENS_Options,runpath)
 
@@ -165,7 +165,7 @@ ipass = 0
 for i = 1:length(stress_U_UNIT)
     # println("$i of $(length(stress_U_UNIT))")
     if isapprox(stress_U_UNIT[i],stress_U[i];atol=maximum(abs.(stress_U_UNIT[i]))*frac)
-        ipass += 1
+        global ipass += 1
     end
 end
 println("Percent Stress Pass: $(ipass/length(stress_U_UNIT)*100)%")
