@@ -53,7 +53,12 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
         end
     end
 
-    n_web = size(sec_Dict[:internal_structure_2d_fem][:webs])[1] # number of shear webs
+    n_web = 0
+    try
+        n_web = size(sec_Dict[:internal_structure_2d_fem][:webs])[1] # number of shear webs
+    catch   
+    end
+    println("NUMBER OF WEBS**************** $n_web")
     n_stack = size(sec_Dict[:internal_structure_2d_fem][:layers])[1] # number of stacks, note the to comply with the current windio, all layers are considered a stack
 
     te_type = nothing # this is unused and is not in the windio file.
