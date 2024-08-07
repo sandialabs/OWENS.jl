@@ -246,6 +246,13 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
         end
     end
 
+    ForceValHist[1,1:numAeroTS] .= Fx_base
+    ForceValHist[2,1:numAeroTS] .= Fy_base
+    ForceValHist[3,1:numAeroTS] .= Fz_base
+    ForceValHist[4,1:numAeroTS] .= Mx_base
+    ForceValHist[5,1:numAeroTS] .= My_base
+    ForceValHist[6,1:numAeroTS] .= Mz_base
+
     # return Fexternal, Fdof
     return ForceValHist[:,1:numAeroTS],ForceDof,Fg_global,ForceDof,ForceValHist[:,1:numAeroTS],z3Dnorm
 end

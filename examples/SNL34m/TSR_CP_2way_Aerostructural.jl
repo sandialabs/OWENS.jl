@@ -248,7 +248,7 @@ controlStrategy = "constantRPM"
 RPM = 34.0
 Nslices = 35
 ntheta = 30
-structuralModel = "GX"
+structuralModel = "ROM"
 ntelem = 10
 nbelem = 60
 ncelem = 10
@@ -291,7 +291,7 @@ Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
 t_Vinf = [0;new_t;1e6]
 Vinf_spec = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
 tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
-Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
+Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
 
 controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
 
@@ -391,10 +391,10 @@ inputs = OWENS.Inputs(;analysisType = structuralModel,
     delta_t,
     AD15On,
     aeroLoadsOn = 2,
-    turbineStartup = 1,
-    generatorOn = true,
-    useGeneratorFunction = true,
-    driveTrainOn = true,
+    turbineStartup = 0,
+    generatorOn = false,
+    useGeneratorFunction = false,
+    driveTrainOn = false,
     JgearBox = 250.0,#(2.15e3+25.7)/12*1.35582*100,
     gearRatio = 1.0,
     gearBoxEfficiency = 1.0,
@@ -430,8 +430,59 @@ feamodel = OWENS.FEAModel(;analysisType = structuralModel,
 
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
+epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
+
+
+# Reset and run aero only
+# OWENSAero.setupTurb(SNL34X,SNL34Z,B,chord,TSRvec[1],Vinf_array[1];
+#     eta = 0.5,
+#     rho,
+#     mu = 1.7894e-5,
+#     ntheta = 30,
+#     Nslices,
+#     RPI=true,
+#     ifw = false,
+#     DSModel = "BV",
+#     AModel = "DMS",
+#     tau = [1e-5,1e-5],
+#     afname = airfoils)
+
+# t = 0:0.05:30
+
+RPMsetpoint = 34.0
+omega = RPMsetpoint/60*2*pi
+Mz_base = zero(t)
+Xpbase = zero(t)
+Ypbase = zero(t)
+Xpbase2 = zero(t)
+Ypbase2 = zero(t)
+myazi = zero(t)
+for (i,myt) in enumerate(t)
+    azi = omega*myt + 270/360*2*pi +0.1780235837034216
+    myazi[i] = azi
+    CP,Rp,Tp,Zp,alpha,cl,cd_af,Vloc,Re,thetavec,_,Fx_base,Fy_base,Fz_base,Mx_base,My_base,Mz_base[i],power,power2,_,z3Dnorm,delta,Xp,Yp = OWENSAero.AdvanceTurbineInterpolate(myt;azi,alwaysrecalc=false)
+    for ibld = 1:length(Xp[:,1,1])
+        Xpbase[i] += OWENSAero.trapz(z3Dnorm.*Blade_Height,Xp[ibld,:,end])
+        Ypbase[i] += OWENSAero.trapz(z3Dnorm.*Blade_Height,Yp[ibld,:,end])
+        Xpbase2[i] = Xpbase[i]*cos(-azi) + Ypbase[i]*sin(-azi)
+        Ypbase2[i] = -Xpbase[i]*sin(-azi) + Ypbase[i]*cos(-azi)
+    end
+end
+
+
+CPsteady,Rpsteady,Tpsteady,Zpsteady,alphasteady,cl_afsteady,cd_afsteady,Vlocsteady,Resteady,thetavecsteady,nstepsteady,Fx_basesteady,Fy_basesteady,Fz_basesteady,
+Mx_basesteady,My_basesteady,Mz_basesteady,powersteady,power2steady,torquesteady = OWENSAero.steadyTurb()
+tsteady = (thetavecsteady.+(270/360*2*pi))./omega
+
+# PyPlot.figure()
+# PyPlot.plot(myazi,Xpbase,"k-",label="Xp")
+# PyPlot.plot(myazi,Xpbase2,"k--",label="Xp2")
+# PyPlot.plot(myazi,Ypbase,"b-",label="Yp")
+# PyPlot.plot(myazi,Ypbase2,"b--",label="Yp2")
+# PyPlot.legend()
+
 
 ##########################################
 #### Torque Plot
@@ -441,15 +492,21 @@ SNL34m_5_3_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_T
 
 PyPlot.ion()
 PyPlot.figure()
-PyPlot.plot(t.-offsetTime,torqueDriveShaft/1000 ,color=plot_cycle[1],label="Simulated Drive Shaft")
-PyPlot.plot([-20,80],ones(2).*mean(torqueDriveShaft/1000) ,color=plot_cycle[2],label="Simulated Drive Shaft Mean")
+# PyPlot.plot(t.-offsetTime,torqueDriveShaft/1000 ,color=plot_cycle[1],label="Simulated Drive Shaft")
+# PyPlot.plot([-20,80],ones(2).*mean(torqueDriveShaft/1000) ,color=plot_cycle[2],label="Simulated Drive Shaft Mean")
 PyPlot.plot(t.-offsetTime,-FReactionHist[:,6]/1000 ,color=plot_cycle[3],label="Reaction Force")
 PyPlot.plot([-20,80],ones(2).*mean(-FReactionHist[:,6]/1000) ,color=plot_cycle[3],label="Reaction Force Mean")
 usedLogic = SNL34m_5_3_Torque[:,1].<100
-PyPlot.plot(SNL34m_5_3_Torque[usedLogic,1],SNL34m_5_3_Torque[usedLogic,2],"k-",label="Experimental")
-PyPlot.plot(t.-offsetTime,OmegaHist.*60,"k--",label="OmegaHist RPM")
+# PyPlot.plot(SNL34m_5_3_Torque[usedLogic,1],SNL34m_5_3_Torque[usedLogic,2],"k-",label="Experimental")
+PyPlot.plot(t.-offsetTime,topFexternal_hist[:,6]/1000,"k--",label="Aero Torque1")
+PyPlot.plot([-20,80],ones(2).*mean(topFexternal_hist[:,6]/1000),"k--",label="Aero Mean1")
+# PyPlot.plot(t.-offsetTime,OmegaHist.*60,"k--",label="OmegaHist RPM")
+PyPlot.plot(t.-offsetTime,Mz_base./1000,"+-" ,color=plot_cycle[2],label="aeroOnlydirect")
+PyPlot.plot([t[1],t[end]].-offsetTime,mean(Mz_base[15:end]./1000).*ones(2),"+-" ,color=plot_cycle[2],label="aeroOnlymeandirect")
+PyPlot.plot(tsteady.-offsetTime,Mz_basesteady./1000 ,color=plot_cycle[1],label="aeroOnlysteadydirect")
+PyPlot.plot([tsteady[1],tsteady[end]].-offsetTime,mean(Mz_basesteady[:]./1000).*ones(2),"--" ,color=plot_cycle[1],label="aeroOnlymeansteadydirect")
 PyPlot.xlabel("Time (s)")
-PyPlot.xlim([0,100])
+PyPlot.xlim([-20,0])
 PyPlot.ylabel("Torque (kN-m)")
 PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 # PyPlot.savefig("$(path)/../figs/34m_fig5_32Way.pdf",transparent = true)
