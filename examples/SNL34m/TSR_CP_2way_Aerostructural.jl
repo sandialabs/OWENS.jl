@@ -283,7 +283,7 @@ tsteady = (thetavecsteady.+(270/360*2*pi))./omega
 ##########################################
 
 SNL34m_5_3_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_Torque2.csv",',',skipstart = 0)
-
+offsetTime = 0
 PyPlot.ion()
 PyPlot.figure()
 # PyPlot.plot(t.-offsetTime,torqueDriveShaft/1000 ,color=plot_cycle[1],label="Simulated Drive Shaft")
@@ -295,12 +295,12 @@ PyPlot.plot(SNL34m_5_3_Torque[usedLogic,1],SNL34m_5_3_Torque[usedLogic,2],"k-",l
 PyPlot.plot(t.-offsetTime,topFexternal_hist[:,6]/1000,color=plot_cycle[4],"--",label="Aero elastic aero loads")
 PyPlot.plot([-20,80],ones(2).*mean(topFexternal_hist[:,6]/1000),color=plot_cycle[4],"--",label="Aero elastic mean aero loads")
 # PyPlot.plot(t.-offsetTime,OmegaHist.*60,"k--",label="OmegaHist RPM")
-PyPlot.plot(t.-offsetTime,Mz_base./1000,"+-" ,color=plot_cycle[2],label="aeroOnly direct aero call")
-PyPlot.plot([t[1],t[end]].-offsetTime,mean(Mz_base[15:end]./1000).*ones(2),"+-" ,color=plot_cycle[2],label="aeroOnlymean direct aero call")
+PyPlot.plot(t[11:end].-offsetTime,Mz_base[11:end]./1000,"+-" ,color=plot_cycle[2],label="aeroOnly direct aero call")
+PyPlot.plot([t[1],t[end]].-offsetTime,mean(Mz_base[11:end]./1000).*ones(2),"+-" ,color=plot_cycle[2],label="aeroOnlymean direct aero call")
 PyPlot.plot(tsteady.-offsetTime,Mz_basesteady./1000 ,color=plot_cycle[1],label="aeroOnlysteady direct aero call")
 PyPlot.plot([tsteady[1],tsteady[end]].-offsetTime,mean(Mz_basesteady[:]./1000).*ones(2),"--" ,color=plot_cycle[1],label="aeroOnlymeansteady direct aero call")
 PyPlot.xlabel("Time (s)")
-# PyPlot.xlim([-20,0])
+PyPlot.xlim([0,20])
 PyPlot.ylabel("Torque (kN-m)")
 PyPlot.legend()#loc = (0.06,1.0),ncol=2)
 # PyPlot.savefig("$(path)/../figs/34m_fig5_32Way.pdf",transparent = true)
