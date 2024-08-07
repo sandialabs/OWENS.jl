@@ -248,7 +248,7 @@ controlStrategy = "constantRPM"
 RPM = 34.0
 Nslices = 35
 ntheta = 30
-structuralModel = "ROM"
+structuralModel = "GX"
 ntelem = 10
 nbelem = 60
 ncelem = 10
@@ -259,7 +259,7 @@ windINPfilename = "$(path)/data/turbsim/115mx115m_30x30_20.0msETM.bts"
 ifw_libfile = nothing
 Blade_Height = 41.9
 Blade_Radius = 17.1
-numTS = 500
+numTS = 400
 delta_t = 0.05
 NuMad_geom_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerMaterials.csv"
@@ -391,10 +391,10 @@ inputs = OWENS.Inputs(;analysisType = structuralModel,
     delta_t,
     AD15On,
     aeroLoadsOn = 2,
-    turbineStartup = 0,
-    generatorOn = false,
-    useGeneratorFunction = false,
-    driveTrainOn = false,
+    turbineStartup = 1,
+    generatorOn = true,
+    useGeneratorFunction = true,
+    driveTrainOn = true,
     JgearBox = 250.0,#(2.15e3+25.7)/12*1.35582*100,
     gearRatio = 1.0,
     gearBoxEfficiency = 1.0,
@@ -447,6 +447,7 @@ PyPlot.plot(t.-offsetTime,-FReactionHist[:,6]/1000 ,color=plot_cycle[3],label="R
 PyPlot.plot([-20,80],ones(2).*mean(-FReactionHist[:,6]/1000) ,color=plot_cycle[3],label="Reaction Force Mean")
 usedLogic = SNL34m_5_3_Torque[:,1].<100
 PyPlot.plot(SNL34m_5_3_Torque[usedLogic,1],SNL34m_5_3_Torque[usedLogic,2],"k-",label="Experimental")
+PyPlot.plot(t.-offsetTime,OmegaHist.*60,"k--",label="OmegaHist RPM")
 PyPlot.xlabel("Time (s)")
 PyPlot.xlim([0,100])
 PyPlot.ylabel("Torque (kN-m)")
