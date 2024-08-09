@@ -83,7 +83,7 @@ function setupOWENS(OWENSAero,path;
     ### Set up mesh
     #########################################
     if meshtype == "ARCUS" && custommesh == nothing #TODO, for all of these propogate the AeroDyn additional output requirements
-        mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Htwr_base,
+        mymesh,myort,myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_arcus_mesh(;Htwr_base,
             Hbld = H, #blade height
             R, # m bade radius
             nblade = Nbld,
@@ -93,6 +93,7 @@ function setupOWENS(OWENSAero,path;
             c_mount_ratio,
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
             bshapez = shapeZ,
+            AD15_ccw = true,
             joint_type, #hinged about y axis
             cables_connected_to_blade_base,
             angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
@@ -360,18 +361,19 @@ function setupOWENS(OWENSAero,path;
     # strutssecprops = collect(Iterators.flatten(fill(sectionPropsArray_strut, Nstrutperbld*Nbld)))
 
     if meshtype == "ARCUS"
-        cable_secprop = sectionPropsArray_twr[end]
-        Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
-        sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+        sectionPropsArray = [sectionPropsArray_twr; bldssecprops]#; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
-        # GXBeam sectional properties
         stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
-        stiff_cables = fill(stiff_twr[end],Nremain)
-        stiff_array = [stiff_twr; stiff_blds; stiff_cables]
+        stiff_array = [stiff_twr; stiff_blds]#; stiff_struts]
 
         mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
-        mass_cables = fill(mass_twr[end],Nremain)
-        mass_array = [mass_twr; mass_blds; mass_cables]
+        mass_array = [mass_twr; mass_blds]#; mass_struts]
+
+        for icable = 1:Nbld
+            sectionPropsArray = [sectionPropsArray; sectionPropsArray_strut[1]]
+            stiff_array = [stiff_array;stiff_strut[1]]
+            mass_array = [mass_array;mass_strut[1]]
+        end
     else
         sectionPropsArray = [sectionPropsArray_twr; bldssecprops]#; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
