@@ -45,6 +45,7 @@ mutable struct Inputs
     bladeData
     driveShaftProps
     iteration_parameters
+    ss_input_file
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -111,6 +112,7 @@ Model inputs for OWENS coupled analysis, struct
 * `hydroOn::bool`: flag to include platform coupling
 * `interpOrder::int`: order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
 * `hd_input_file::string`: file path to the HydroDyn .dat input file
+* `ss_input_file::string`: file path to the HydroDyn sea states input file
 * `md_input_file::string`: file path to the MoorDyn .dat input file
 * `JgearBox::float`: gearbox intertia, standard SI units
 * `gearRatio::float`: gearbox gear ratio
@@ -135,6 +137,7 @@ Model inputs for OWENS coupled analysis, struct
 * `MAXITER::int`: gauss-seidel maximum iterations
 * `iterwarnings::bool`: iteration warnings flag
 
+
 # Outputs:
 * `OWENS.Inputs`:
 """
@@ -155,6 +158,7 @@ function Inputs(;analysisType = "TNB",
     topsideOn = true,
     interpOrder = 2,
     hd_input_file = "none",
+    ss_input_file = "none",
     md_input_file = "none",
     JgearBox = 0.0,
     gearRatio = 1.0,
@@ -185,7 +189,7 @@ function Inputs(;analysisType = "TNB",
     driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings))
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file)
 end
 
 """
