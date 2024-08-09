@@ -58,6 +58,10 @@ function setupOWENS(OWENSAero,path;
         AD15On = false
     end
 
+    if minimum(shapeZ)!=0
+        @error "blade shapeZ must start at 0.0"
+    end
+
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
     # We do some intermediate calculations on the blade shape and angles
 

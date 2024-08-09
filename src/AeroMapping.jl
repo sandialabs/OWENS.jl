@@ -246,6 +246,7 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
         end
     end
 
+    # This assumes that the 1st node is the tower connection node, which is constrained so it enables passing of values without using them on the structural side
     ForceValHist[1,1:numAeroTS] .= Fx_base
     ForceValHist[2,1:numAeroTS] .= Fy_base
     ForceValHist[3,1:numAeroTS] .= Fz_base
