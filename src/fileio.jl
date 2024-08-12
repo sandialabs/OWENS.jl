@@ -705,3 +705,81 @@ function readResultsModalOut(resultsFile,numNodes)
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
 end
+
+"""
+
+    OWENSVTK(savename,t,uHist,system,assembly,sections,aziHist,mymesh,myel,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FReactionHist)
+
+Formats and outputs OWENS data into VTK format
+
+#Intput
+
+#Output
+* `none`:
+
+"""
+function OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FReactionHist,topFexternal_hist)
+
+    println("Saving VTK time domain files")
+    userPointNames=["EA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction",
+    "Fx_Applied","Fy_Applied","Fz_Applied","Mx_Applied","My_Applied","Mz_Applied"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+    # userPointData[iname,it,ipt] = Float64
+
+    # map el props to points using con
+    userPointData = zeros(length(userPointNames),length(t),mymesh.numNodes)
+    EA_points = zeros(mymesh.numNodes)
+    EIyy_points = zeros(mymesh.numNodes)
+    EIzz_points = zeros(mymesh.numNodes)
+
+    # Time-invariant data
+    for iel = 1:length(myel.props)
+        # iel = 1
+        nodes = mymesh.conn[iel,:]
+        EA_points[Int.(nodes)] = myel.props[iel].EA
+        EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
+        EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
+    end
+
+
+    epsilon_x_histused = mean(epsilon_x_hist;dims=1)
+    epsilon_y_histused = mean(epsilon_y_hist;dims=1)
+    epsilon_z_histused = mean(epsilon_z_hist;dims=1)
+    kappa_x_histused = mean(kappa_x_hist;dims=1)
+    kappa_y_histused = mean(kappa_y_hist;dims=1)
+    kappa_z_histused = mean(kappa_z_hist;dims=1)
+
+    # fill in the big matrix
+    for it = 1:length(t)
+
+        userPointData[1,it,:] = EA_points
+        userPointData[2,it,:] = EIyy_points
+        userPointData[3,it,:] = EIzz_points
+        for iel = 1:length(myel.props)
+            nodes = mymesh.conn[iel,:]
+            userPointData[4,it,Int.(nodes)] .= epsilon_x_histused[1,iel,it] 
+            userPointData[5,it,Int.(nodes)] .= epsilon_y_histused[1,iel,it] 
+            userPointData[6,it,Int.(nodes)] .= epsilon_z_histused[1,iel,it] 
+            userPointData[7,it,Int.(nodes)] .= kappa_x_histused[1,iel,it] 
+            userPointData[8,it,Int.(nodes)] .= kappa_y_histused[1,iel,it] 
+            userPointData[9,it,Int.(nodes)] .= kappa_z_histused[1,iel,it] 
+        end
+        userPointData[10,it,:] .= FReactionHist[it,1:6:end]
+        userPointData[11,it,:] .= FReactionHist[it,2:6:end]
+        userPointData[12,it,:] .= FReactionHist[it,3:6:end]
+        userPointData[13,it,:] .= FReactionHist[it,4:6:end]
+        userPointData[14,it,:] .= FReactionHist[it,5:6:end]
+        userPointData[15,it,:] .= FReactionHist[it,6:6:end]
+        
+        userPointData[16,it,:] .= topFexternal_hist[it,1:6:end]
+        userPointData[17,it,:] .= topFexternal_hist[it,2:6:end]
+        userPointData[18,it,:] .= topFexternal_hist[it,3:6:end]
+        userPointData[19,it,:] .= topFexternal_hist[it,4:6:end]
+        userPointData[20,it,:] .= topFexternal_hist[it,5:6:end]
+        userPointData[21,it,:] .= topFexternal_hist[it,6:6:end]
+    end
+
+    azi=aziHist#./aziHist*1e-6
+    # saveName = "$path/vtk/$(windINPfilename[1:end-4])"
+    OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+
+end
