@@ -18,7 +18,7 @@ function setupOWENS(OWENSAero,path;
     nbelem = 60, #blade elements
     ncelem = 10,
     nselem = 5,
-    shapeY = zeros(nbelem+1),
+    shapeY = zeros(Nslices+1),
     ifw=false,
     AD15hubR = 0.1,
     WindType=1,
@@ -147,7 +147,7 @@ function setupOWENS(OWENSAero,path;
     end
 
     nTwrElem = Int(mymesh.meshSeg[1])
-    if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
+    if contains(NuMad_mat_xlscsv_file_bld,"34m") || meshtype == "ARCUS" #TODO: this is really odd, 
         nTwrElem = Int(mymesh.meshSeg[1])+1
     end
     
