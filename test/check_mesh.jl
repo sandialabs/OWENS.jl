@@ -180,34 +180,34 @@ newspan2 = (newspan[1:end-1]+newspan[2:end])/2
 newspan2 = newspan2.-newspan2[1]
 
 tw_aero_new = [sectionPropsArray_bld[ii].twist[1] for ii = 1:length(sectionPropsArray_bld)]
-tw_aero_spl = FLOWMath.akima(newspan2,tw_aero_new,span_loc)
+tw_aero_spl = safeakima(newspan2,tw_aero_new,span_loc)
 
 ei_flap_new = [sectionPropsArray_bld[ii].EIyy[1] for ii = 1:length(sectionPropsArray_bld)]
-ei_flap_spl = FLOWMath.akima(newspan2,ei_flap_new,span_loc)
+ei_flap_spl = safeakima(newspan2,ei_flap_new,span_loc)
 
 ei_lag_new = [sectionPropsArray_bld[ii].EIzz[1] for ii = 1:length(sectionPropsArray_bld)]
-ei_lag_spl = FLOWMath.akima(newspan2,ei_lag_new,span_loc)
+ei_lag_spl = safeakima(newspan2,ei_lag_new,span_loc)
 
 gj_new = [sectionPropsArray_bld[ii].GJ[1] for ii = 1:length(sectionPropsArray_bld)]
-gj_spl = FLOWMath.akima(newspan2,gj_new,span_loc)
+gj_spl = safeakima(newspan2,gj_new,span_loc)
 
 ea_new = [sectionPropsArray_bld[ii].EA[1] for ii = 1:length(sectionPropsArray_bld)]
-ea_spl = FLOWMath.akima(newspan2,ea_new,span_loc)
+ea_spl = safeakima(newspan2,ea_new,span_loc)
 
 mass_new = [sectionPropsArray_bld[ii].rhoA[1] for ii = 1:length(sectionPropsArray_bld)]
-mass_spl = FLOWMath.akima(newspan2,mass_new,span_loc)
+mass_spl = safeakima(newspan2,mass_new,span_loc)
 
 flap_iner_new = [sectionPropsArray_bld[ii].rhoIyy[1] for ii = 1:length(sectionPropsArray_bld)]
-flap_iner_spl = FLOWMath.akima(newspan2,flap_iner_new,span_loc)
+flap_iner_spl = safeakima(newspan2,flap_iner_new,span_loc)
 
 lag_iner_new = [sectionPropsArray_bld[ii].rhoIzz[1] for ii = 1:length(sectionPropsArray_bld)]
-lag_iner_spl = FLOWMath.akima(newspan2,lag_iner_new,span_loc)
+lag_iner_spl = safeakima(newspan2,lag_iner_new,span_loc)
 
 x_cm_new = [sectionPropsArray_bld[ii].zcm[1] for ii = 1:length(sectionPropsArray_bld)]
-x_cm_spl = FLOWMath.akima(newspan2,x_cm_new,span_loc)
+x_cm_spl = safeakima(newspan2,x_cm_new,span_loc)
 
 y_cm_new = [sectionPropsArray_bld[ii].ycm[1] for ii = 1:length(sectionPropsArray_bld)]
-y_cm_spl = FLOWMath.akima(newspan2,y_cm_new,span_loc)
+y_cm_spl = safeakima(newspan2,y_cm_new,span_loc)
 
 
 for ii = 1:length(sectionPropsArray_bld)

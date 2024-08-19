@@ -290,7 +290,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 if inputs.generatorOn
                         if inputs.useGeneratorFunction
                             specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,inputs.tocp,inputs.Omegaocp,delta_t)
-                            newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
+                            newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
                             if isnothing(userDefinedGenerator)
                                 genTorqueHSS0,integrator_j,controlnamecurrent = internaluserDefinedGenerator(newVinf,t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
                             else
@@ -938,7 +938,7 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
     if inputs.tocp_Vinf == -1
         newVinf = -1
     else
-        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t_i)
+        newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t_i)
     end
 
     if inputs.aeroLoadsOn > 1

@@ -17,7 +17,7 @@ controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.44933
 z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
 x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
-x_shape = FLOWMath.akima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
+x_shape = safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
 toweroffset = 4.3953443986241725
 # Analytical
 # z_shape = [0.0, 0.4027099927689326, 0.8054199855378652, 1.2081299783067978, 1.6108399710757304, 2.013549963844663, 2.4162599566135956, 2.818969949382528, 3.221679942151461, 3.624389934920394, 4.027099927689326, 4.429809920458259, 4.832519913227191, 5.235229905996124, 5.637939898765056, 6.221683770581164, 6.821719178571302, 7.437583162221221, 8.068800548394838, 8.714884317956601, 9.375335981533686, 10.049645964128134, 10.737293998282153, 11.437749525493246, 12.305529745531164, 13.201631116890074, 14.122956691386433, 15.066322345375763, 16.028467784161606, 17.00606780965343, 17.995743812332336, 18.994075447807884, 19.997612457611687, 21.002886593374797, 22.006423603178604, 23.004755238654155, 23.99443124133306, 24.97203126682489, 25.934176705610724, 26.877542359600053, 27.79886793409642, 28.694969305455324, 29.562749525493246, 30.263205052704336, 30.950853086858352, 31.62516306945281, 32.285614733029895, 32.93169850259165, 33.56291588876527, 34.1787798724152, 34.77881528040533, 35.362559152221436, 35.821422444858186, 36.280285737494935, 36.739149030131685, 37.198012322768435, 37.656875615405184, 38.11573890804193, 38.57460220067868, 39.03346549331543, 39.49232878595218, 39.951192078588925, 40.410055371225674, 40.868918663862424, 41.32778195649917, 41.78664524913592]
@@ -102,8 +102,8 @@ end
 # PyPlot.figure()
 # PyPlot.plot(bld_OWENSPreCompinput[1].ynode,bld_OWENSPreCompinput[1].ynode)
 spanposmid = cumsum(diff(spanpos))
-thickness = FLOWMath.akima(numadIn_bld.span,thickness_OWENSPreComp_flap,spanposmid)
-thickness_lag = FLOWMath.akima(numadIn_bld.span,thickness_OWENSPreComp_lag,spanposmid)
+thickness = safeakima(numadIn_bld.span,thickness_OWENSPreComp_flap,spanposmid)
+thickness_lag = safeakima(numadIn_bld.span,thickness_OWENSPreComp_lag,spanposmid)
 # thickness = thicknessGX[1:end-1]
 
 
@@ -363,12 +363,12 @@ function runowens(model,feamodel,mymesh,myel,aeroForcesDMS,deformTurb;steady=tru
         # samplepts = numadIn_bld.span./maximum(numadIn_bld.span) #normalize #TODO: this is spanwise, while everything else is vertical-wise
         for its = 1:N_ts
             #TODO: there are strain values at each quad point, should be better than just choosing one
-            eps_x[ibld,its,:] = epsilon_x_hist[1,start:stop,its]#FLOWMath.akima(x,epsilon_x_hist[1,start:stop,its],samplepts)
-            eps_z[ibld,its,:] = meanepsilon_z_hist[1,start:stop,its]#FLOWMath.akima(x,meanepsilon_z_hist[1,start:stop,its],samplepts)
-            eps_y[ibld,its,:] = meanepsilon_y_hist[1,start:stop,its]#FLOWMath.akima(x,meanepsilon_y_hist[1,start:stop,its],samplepts)
-            kappa_x[ibld,its,:] = kappa_x_hist[1,start:stop,its]#FLOWMath.akima(x,kappa_x_hist[1,start:stop,its],samplepts)
-            kappa_y[ibld,its,:] = kappa_y_hist[1,start:stop,its]#FLOWMath.akima(x,kappa_y_hist[1,start:stop,its],samplepts)
-            kappa_z[ibld,its,:] = kappa_z_hist[1,start:stop,its]#FLOWMath.akima(x,kappa_z_hist[1,start:stop,its],samplepts)
+            eps_x[ibld,its,:] = epsilon_x_hist[1,start:stop,its]#safeakima(x,epsilon_x_hist[1,start:stop,its],samplepts)
+            eps_z[ibld,its,:] = meanepsilon_z_hist[1,start:stop,its]#safeakima(x,meanepsilon_z_hist[1,start:stop,its],samplepts)
+            eps_y[ibld,its,:] = meanepsilon_y_hist[1,start:stop,its]#safeakima(x,meanepsilon_y_hist[1,start:stop,its],samplepts)
+            kappa_x[ibld,its,:] = kappa_x_hist[1,start:stop,its]#safeakima(x,kappa_x_hist[1,start:stop,its],samplepts)
+            kappa_y[ibld,its,:] = kappa_y_hist[1,start:stop,its]#safeakima(x,kappa_y_hist[1,start:stop,its],samplepts)
+            kappa_z[ibld,its,:] = kappa_z_hist[1,start:stop,its]#safeakima(x,kappa_z_hist[1,start:stop,its],samplepts)
         end
     end
 

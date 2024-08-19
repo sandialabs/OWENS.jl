@@ -761,3 +761,11 @@ end
 #     end
 #     return plystress
 # end #stress_calc
+
+function safeakima(x,y,xpt)
+    if minimum(xpt)<minimum(x) || maximum(xpt)>maximum(x)
+        msg="Extrapolating on akima spline results in undefined solutions minimum(xpt)<minimum(x) $(minimum(xpt))<$(minimum(x)) or maximum(xpt)<maximum(x) $(maximum(xpt))>$(maximum(x))"
+        throw(OverflowError(msg))
+    end
+    return FLOWMath.akima(x,y,xpt)
+end
