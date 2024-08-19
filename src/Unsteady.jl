@@ -412,7 +412,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 for i_idx = 1:length(aeroDOFs)
                                     full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
                                 end
-                                aeroDOFs = collect(1:topMesh.numNodes*6)
+                                full_aeroDOFs = collect(1:topMesh.numNodes*6)
                                 for iter_i = 1:floor(Int,length(full_aeroVals)/6)
                                     topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                                 end
@@ -422,14 +422,14 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         end
                     else
                         topFexternal = zeros(numDOFPerNode)
-                        aeroDOFs = copy(topFexternal).*0.0
+                        full_aeroDOFs = copy(topFexternal).*0.0
                     end
                 end
 
                 if meshcontrolfunction !== nothing
                     # add to the loads based on the inputs, TODO: CN2H
                     meshforces, meshdofs, timeconverged = meshcontrolfunction(topMesh,u_j,t[i])
-                    for idx_main in aeroDOFs
+                    for idx_main in full_aeroDOFs
                         for (idx,meshdof_idx) in enumerate(meshdofs)
                             if idx_main == meshdof_idx
                                 topFexternal[idx_main] += meshforces[idx]
@@ -442,11 +442,11 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 #------------------------------------
                 # println(Float64.(rbData))
                 if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                    topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                    topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(full_aeroDOFs),CN2H,rbData)
                 elseif inputs.analysisType=="GX"                                                        
-                    topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+                    topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(full_aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                 else # evalulate structural dynamics using conventional representation
-                    topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
+                    topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(full_aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
                 u_jLast = copy(u_j)
                 u_j = topDispOut.displ_sp1
@@ -466,7 +466,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                 # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
                 if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-                    OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
+                    OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(full_aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
 
                 #TODO: verbosity
@@ -591,7 +591,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 for i_idx = 1:length(aeroDOFs)
                                     full_aeroVals[aeroDOFs[i_idx]] = aeroVals[i_idx]
                                 end
-                                aeroDOFs = collect(1:topMesh.numNodes*6)
+                                full_aeroDOFs = collect(1:topMesh.numNodes*6)
                                 for iter_i = 1:floor(Int,length(aeroVals)/6)
                                     topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                                 end
@@ -602,11 +602,11 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     end
 
                     if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                        topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(aeroDOFs),CN2H,rbData)
+                        topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(full_aeroDOFs),CN2H,rbData)
                     elseif inputs.analysisType=="GX"
-                        topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+                        topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(full_aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                     else # evalulate structural dynamics using conventional representation
-                        topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
+                        topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(full_aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                     end
 
                     u_jLast = copy(u_j)
@@ -620,7 +620,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                     # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
                     if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-                        OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
+                        OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData2,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(full_aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                     end
 
                     ## calculate norms

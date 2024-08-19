@@ -111,6 +111,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     R = Blade_Radius,
     shapeZ,
     shapeX,
+    shapeY=zero(shapeX),
     ifw,
     delta_t,
     numTS,
