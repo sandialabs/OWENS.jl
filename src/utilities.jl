@@ -519,7 +519,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     el = OWENS.readElementData(mesh.numEl,elFn,ortFn,bladeData)
     numDofPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
-    Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6),numAeroTS)
+    Fg = zeros(mesh.numNodes*6,numAeroTS)
     for i=1:numAeroTS
         for j = 1:cactusGeom.NBlade
             for k = 1:numNodesPerBlade-1
@@ -563,7 +563,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     ForceValHist = zeros(length(Fg[:,1]),length(Fg[1,:]))
     ForceDof = zeros(length(Fg[:,1]),1)
     index = 1
-    for i=1:Int(maximum(maximum(structuralNodeNumbers))*6)
+    for i=1:Int(mesh.numNodes*6)
         # if !isempty(findall(x->x!=0,Fg[i,:]))
 
             ForceValHist[index,:] = Fg[i,:]
