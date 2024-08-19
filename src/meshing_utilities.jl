@@ -715,6 +715,7 @@ function create_arcus_mesh(;
     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     bshapez = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     joint_type = 0,
+    AD15_ccw = false,
     cables_connected_to_blade_base = true,
     angularOffset = 0.0)
 
@@ -765,6 +766,9 @@ function create_arcus_mesh(;
 
     bld_Z .+= Htwr_base
 
+    # AeroDyn Compatability
+    AD15bldNdIdxRng = zeros(Int64,0,2)
+
     b_Z = []
     b_X = []
     b_Y = []
@@ -787,6 +791,12 @@ function create_arcus_mesh(;
         conn_b[:,1] = collect(b_botidx[ibld]:1:b_topidx[ibld]-1)
         conn_b[:,2] = collect(b_botidx[ibld]+1:1:b_topidx[ibld])
         conn = [conn;conn_b]
+
+        if AD15_ccw #Clockwise, the blades roots are at the top, trailing edge is always positive y
+            AD15bldNdIdxRng = [AD15bldNdIdxRng; b_topidx[ibld] b_botidx[ibld]]    # top of blade is root 
+        elseif !(AD15_ccw) #Clockwise, the blades roots are at the bottom
+            AD15bldNdIdxRng = [AD15bldNdIdxRng; b_botidx[ibld] b_topidx[ibld]]    # bottom of blade is root
+        end
     end
 
     # Add to the mesh
@@ -962,7 +972,25 @@ function create_arcus_mesh(;
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn zeros(njoint).+joint_type zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
 
-    return mymesh, ort, myjoint
+
+     # Blade and strut starting and ending node and element numbers
+     AD15bldElIdxRng = zeros(Int64,0,2)
+     for i = 1:size(AD15bldNdIdxRng,1)
+         if AD15bldNdIdxRng[i,2] > AD15bldNdIdxRng[i,1]  # ascending order
+             idx1 = findfirst(x->x==AD15bldNdIdxRng[i,1], mymesh.conn[:,1])
+             idx2 = findfirst(x->x==AD15bldNdIdxRng[i,2], mymesh.conn[:,2])
+         else    # upside down oriented blade
+             idx1 = findlast(x->x==AD15bldNdIdxRng[i,1], mymesh.conn[:,2])
+             idx2 = findlast(x->x==AD15bldNdIdxRng[i,2], mymesh.conn[:,1])
+         end
+ 
+         if isnothing(idx2)
+             idx2 = findlast(x->x==AD15bldNdIdxRng[i,2], mymesh.conn[:,2])
+         end
+         AD15bldElIdxRng = [AD15bldElIdxRng; idx1 idx2]
+     end
+
+    return mymesh, ort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng
 end
 
 function calculateElementOrientation2(mesh)
@@ -1422,7 +1450,7 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         n_laminaW = zeros(Int,numadIn.n_web)
         # println("You must define shear webs at each spanwise station, just set the ply thicknesses to zero if not desired")
         for web_idx = 1:numadIn.n_web
-            idx_loc_web= numadIn.web_dp[i_station,web_idx].seq[1]+1
+            idx_loc_web= numadIn.web_dp[i_station,web_idx].seq[1]+1 
             loc_web[web_idx] = abs(numadIn.segments[i_station,idx_loc_web])
             n_laminaW[web_idx] = length(numadIn.web_seq[i_station,web_idx].seq)
         end

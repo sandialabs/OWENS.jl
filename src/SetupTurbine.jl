@@ -18,7 +18,7 @@ function setupOWENS(OWENSAero,path;
     nbelem = 60, #blade elements
     ncelem = 10,
     nselem = 5,
-    shapeY = zeros(nbelem+1),
+    shapeY = zeros(Nslices+1),
     ifw=false,
     AD15hubR = 0.1,
     WindType=1,
@@ -49,12 +49,17 @@ function setupOWENS(OWENSAero,path;
     DSModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
-    meshtype = "Darrieus") #Darrieus, H-VAWT, ARCUS
+    meshtype = "Darrieus",
+    custommesh = nothing) #Darrieus, H-VAWT, ARCUS
     
     if AModel=="AD"
         AD15On = true
     else
         AD15On = false
+    end
+
+    if minimum(shapeZ)!=0
+        @error "blade shapeZ must start at 0.0"
     end
 
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
@@ -77,8 +82,8 @@ function setupOWENS(OWENSAero,path;
     #########################################
     ### Set up mesh
     #########################################
-    if meshtype == "ARCUS" #TODO, for all of these propogate the AeroDyn additional output requirements
-        mymesh,myort,myjoint = OWENS.create_arcus_mesh(;Htwr_base,
+    if meshtype == "ARCUS" && custommesh == nothing #TODO, for all of these propogate the AeroDyn additional output requirements
+        mymesh,myort,myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.create_arcus_mesh(;Htwr_base,
             Hbld = H, #blade height
             R, # m bade radius
             nblade = Nbld,
@@ -88,10 +93,11 @@ function setupOWENS(OWENSAero,path;
             c_mount_ratio,
             bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
             bshapez = shapeZ,
+            AD15_ccw = true,
             joint_type, #hinged about y axis
             cables_connected_to_blade_base,
             angularOffset) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    elseif meshtype == "Darrieus" || meshtype == "H-VAWT"
+    elseif (meshtype == "Darrieus" || meshtype == "H-VAWT") && custommesh == nothing
         
         if meshtype == "Darrieus"
             connectBldTips2Twr = true
@@ -117,13 +123,36 @@ function setupOWENS(OWENSAero,path;
             AD15_ccw = true,
             verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
             connectBldTips2Twr)
+    elseif custommesh != nothing
+        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = custommesh(;Htwr_base,
+        Htwr_blds,
+        Hbld = H, #blade height
+        R, # m bade radius
+        AD15hubR, #TODO: hook up with AD15 file generation
+        nblade = Nbld,
+        ntelem, #tower elements
+        nbelem, #blade elements
+        nselem,
+        strut_twr_mountpoint,
+        strut_bld_mountpoint,
+        bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+        bshapez = shapeZ,
+        bshapey = shapeY, # but magnitude for this is relevant
+        angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+        AD15_ccw = true,
+        verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information)
+        )
     else #TODO unify with HAWT
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
 
     nTwrElem = Int(mymesh.meshSeg[1])
-    if contains(NuMad_mat_xlscsv_file_bld,"34m") #TODO: this is really odd, 
-        nTwrElem = Int(mymesh.meshSeg[1])+1
+    try
+        if contains(NuMad_mat_xlscsv_file_bld,"34m") || meshtype == "ARCUS" #TODO: this is really odd, 
+            nTwrElem = Int(mymesh.meshSeg[1])+1
+        end
+    catch
+        nTwrElem = Int(mymesh.meshSeg[1])
     end
     
     nothing
@@ -147,7 +176,7 @@ function setupOWENS(OWENSAero,path;
     #########################################
 
     if !isnothing(NuMad_geom_xlscsv_file_twr)
-        numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr)
+        numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_twr;section=:tower)
     else
         n_web = 0
         n_stack = 2
@@ -197,7 +226,7 @@ function setupOWENS(OWENSAero,path;
 
     # For the blades, we repeat what was done for the tower, but also include some simple design options for scaling thicknesses,
     if !isnothing(NuMad_geom_xlscsv_file_bld)
-        numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld)
+        numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_bld;section=:blade)
     else
         n_web = 1
         n_stack = 7
@@ -270,6 +299,12 @@ function setupOWENS(OWENSAero,path;
         if !isnothing(NuMad_geom_xlscsv_file_strut)
             if typeof(NuMad_geom_xlscsv_file_strut)==String
                 numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut)
+            elseif typeof(NuMad_geom_xlscsv_file_strut) == OrderedCollections.OrderedDict{Symbol, Any}
+                if length(NuMad_geom_xlscsv_file_strut[:components][:struts])==1
+                    numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut;section=:struts,subsection=1)
+                else
+                    numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut;section=:struts,subsection=istrut)
+                end
             else
                 numadIn_strut[istrut] = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file_strut[istrut])
             end
@@ -301,7 +336,7 @@ function setupOWENS(OWENSAero,path;
         for icol = 1:length(numadIn_strut[istrut].stack_layers[1,:])
             numadIn_strut[istrut].stack_layers[:,icol] .*= LinRange(stack_layers_scale[1],stack_layers_scale[2],length(numadIn_strut[istrut].chord))
         end
-        numadIn_strut[istrut].chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut[istrut].chord))
+        # numadIn_strut[istrut].chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut[istrut].chord))
 
         for (i,airfoil) in enumerate(numadIn_strut[istrut].airfoil)
             numadIn_strut[istrut].airfoil[i] = "$path/airfoils/$airfoil"
@@ -336,18 +371,19 @@ function setupOWENS(OWENSAero,path;
     # strutssecprops = collect(Iterators.flatten(fill(sectionPropsArray_strut, Nstrutperbld*Nbld)))
 
     if meshtype == "ARCUS"
-        cable_secprop = sectionPropsArray_twr[end]
-        Nremain = sum(Int,mymesh.meshSeg[Nbld+1+1:end]) #strut elements remain
-        sectionPropsArray = [fill(sectionPropsArray_twr[1],length(sectionPropsArray_twr));bldssecprops; fill(cable_secprop,Nremain)]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+        sectionPropsArray = [sectionPropsArray_twr; bldssecprops]#; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
-        # GXBeam sectional properties
         stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
-        stiff_cables = fill(stiff_twr[end],Nremain)
-        stiff_array = [stiff_twr; stiff_blds; stiff_cables]
+        stiff_array = [stiff_twr; stiff_blds]#; stiff_struts]
 
         mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
-        mass_cables = fill(mass_twr[end],Nremain)
-        mass_array = [mass_twr; mass_blds; mass_cables]
+        mass_array = [mass_twr; mass_blds]#; mass_struts]
+
+        for icable = 1:Nbld
+            sectionPropsArray = [sectionPropsArray; sectionPropsArray_strut[1]]
+            stiff_array = [stiff_array;stiff_strut[1]]
+            mass_array = [mass_array;mass_strut[1]]
+        end
     else
         sectionPropsArray = [sectionPropsArray_twr; bldssecprops]#; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
@@ -366,6 +402,14 @@ function setupOWENS(OWENSAero,path;
         end
     end
     rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
+
+    if length(sectionPropsArray)<mymesh.numEl
+        @warn "There are more mesh elements than sectional properties, applying the last strut's sectional properties to the remaining"
+        n_diff = mymesh.numEl - length(sectionPropsArray)
+        sectionPropsArray = [sectionPropsArray; fill(sectionPropsArray_strut[end][2],n_diff)]
+        stiff_array = [stiff_array;fill(stiff_strut[end][2],n_diff)]
+        mass_array = [mass_array;fill(mass_strut[end][2],n_diff)]
+    end
 
     #store data in element object
     myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)

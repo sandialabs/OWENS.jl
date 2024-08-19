@@ -7,6 +7,7 @@ import OWENSAero
 
 # Github packages
 import Statistics
+import Statistics:mean
 import DelimitedFiles
 import LinearAlgebra
 import SparseArrays

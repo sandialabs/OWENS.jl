@@ -410,41 +410,42 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             if isnan(maximum(aeroVals))
                 @warn "Nan detected in aero forces"
             end
-            if inputs.aeroLoadsOn > 0
-                if isnothing(aeroVals)
-                    error("aeroVals must be specified if OWENS.Inputs.aeroLoadsOn")
-                elseif isnothing(aeroDOFs)
-                    error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
-                end
-
-                if inputs.AD15On
-                    # AD15 is in global frame, so no frame conversion???
-                    topdata.topFexternal = aeroVals
-                else
-                    if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
-                        # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
-                        full_aeroVals = zeros(topMesh.numNodes*6)
-                        for i_idx = 1:length(aeroDOFs)
-                            full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
-                        end
-                        aeroDOFs = collect(1:topMesh.numNodes*6)
-                        for iter_i = 1:floor(Int,length(full_aeroVals)/6)
-                            topdata.topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
-                        end
-                    else # the other aero input as a 2D array
-                        topdata.topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+            if runaero || !isnothing(aeroVals)
+                if inputs.aeroLoadsOn > 0
+                    if isnothing(aeroVals)
+                        error("aeroVals must be specified if OWENS.Inputs.aeroLoadsOn")
+                    elseif isnothing(aeroDOFs)
+                        error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
                     end
+
+                    if inputs.AD15On
+                        # AD15 is in global frame, so no frame conversion???
+                        topdata.topFexternal = aeroVals
+                    else
+                        if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
+                            # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
+                            full_aeroVals = zeros(topMesh.numNodes*6)
+                            for i_idx = 1:length(aeroDOFs)
+                                full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
+                            end
+                            full_aeroDOFs = collect(1:topMesh.numNodes*6)
+                            for iter_i = 1:floor(Int,length(full_aeroVals)/6)
+                                topdata.topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
+                            end
+                        else # the other aero input as a 2D array
+                            topdata.topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+                        end
+                    end
+                else
+                    topdata.topFexternal = zeros(numDOFPerNode)
+                    full_aeroDOFs = copy(topdata.topFexternal).*0.0
                 end
-            else
-                topdata.topFexternal = zeros(numDOFPerNode)
-                aeroDOFs = copy(topdata.topFexternal).*0.0
             end
-            aeroVals = topdata.topFexternal
 
             if meshcontrolfunction !== nothing
                 # add to the loads based on the inputs, TODO: CN2H
                 meshforces, meshdofs, timeconverged = meshcontrolfunction(topMesh,u_j,t[i])
-                for idx_main in aeroDOFs
+                for idx_main in full_aeroDOFs
                     for (idx,meshdof_idx) in enumerate(meshdofs)
                         if idx_main == meshdof_idx
                             topdata.topFexternal[idx_main] += meshforces[idx]
@@ -458,11 +459,11 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             #------------------------------------
             # println(Float64.(rbData))
             if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
-                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.top_rom,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData)
+                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.top_rom,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData)
             elseif inputs.analysisType=="GX"                                                                                
-                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topdata.topFexternal,Int.(aeroDOFs),system,assembly,t,topdata.Omega_j,topdata.OmegaDot_j,topdata.delta_t,numIterations,i,strainGX,curvGX)
+                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topdata.topFexternal,Int.(full_aeroDOFs),system,assembly,t,topdata.Omega_j,topdata.OmegaDot_j,topdata.delta_t,numIterations,i,strainGX,curvGX)
             else # evalulate structural dynamics using conventional representation
-                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
+                topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
             u_jLast = copy(topdata.u_j)
@@ -485,7 +486,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             # Strain stiffening, save at the end of the simulation, at the last while loop iteration, mutates elStorage
             if (i==numTS-1 || timeconverged == true) && inputs.analysisType=="TNB" && topModel.nlParams.predef=="update" && (!(uNorm > TOL || platNorm > TOL || aziNorm > TOL || gbNorm > TOL) || (numIterations >= MAXITER))
-                OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topdata.topElStorage,topdata.topFexternal,Int.(aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
+                OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
             if verbosity>4
