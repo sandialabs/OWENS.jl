@@ -22,7 +22,7 @@ import PyPlot
 import OWENSOpenFASTWrappers
  
 
-path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
+path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #bld_height_numadsplitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
@@ -408,11 +408,11 @@ if !AD15On
     delta_xs = shapeX[2:end] - shapeX[1:end-1]
     delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
     delta3D = atan.(delta_xs./delta_zs)
-    delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
+    delta3D_spl = OWENS.safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
     
     bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl)))) # now convert the numad span to a height
 
-    chord = safeakima(bld_height_numad./maximum(bld_height_numad), numadIn_bld.chord,LinRange(0,1,Nslices)) # now we can use it to access the numad data 
+    chord = OWENS.safeakima(bld_height_numad./maximum(bld_height_numad), numadIn_bld.chord,LinRange(minimum(bld_height_numad),1,Nslices)) # now we can use it to access the numad data 
     airfoils = fill("nothing",Nslices)
 
     for (iheight_numad,height_numad) in enumerate(bld_height_numad./maximum(bld_height_numad)) # Discretely assign the airfoils
@@ -453,7 +453,7 @@ if AD15On
 
     NumADBldNds = NumADStrutNds = 10 
 
-    bldchord_spl = safeakima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
+    bldchord_spl = OWENS.safeakima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
 
     airfoil_filenames = fill("nothing",NumADBldNds) # Discretely assign the airfoils #TODO: separate out struts
     for (ispan_numad,span_numad) in enumerate(numadIn_bld.span./maximum(numadIn_bld.span))
@@ -470,7 +470,7 @@ if AD15On
         blade_Nnodes = [NumADBldNds for i=1:Nbld]
     else
         blade_filenames = [[blade_filename for i=1:Nbld];[lower_strut_filename for i=1:Nbld];[upper_strut_filename for i=1:Nbld]]
-        strutchord_spl = safeakima(numadIn_strut.span./maximum(numadIn_strut.span), numadIn_strut.chord,LinRange(0,1,NumADStrutNds))
+        strutchord_spl = OWENS.safeakima(numadIn_strut.span./maximum(numadIn_strut.span), numadIn_strut.chord,LinRange(0,1,NumADStrutNds))
         blade_chords = [[bldchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld];[strutchord_spl for i=1:Nbld]]
         blade_Nnodes = [[NumADBldNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld];[NumADStrutNds for i=1:Nbld]]
     end
@@ -503,7 +503,7 @@ if AD15On
         ymesh = mymesh.y[strt_idx:end_idx]
         ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
         ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
-        ADshapeXspl = safeakima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
+        ADshapeXspl = OWENS.safeakima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
         
         if iADBody<=Nbld #Note that the blades can be curved and are assumed to be oriented vertically
             BlSpn=ADshapeZ
