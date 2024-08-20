@@ -401,7 +401,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         elseif isnothing(aeroDOFs)
                             error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
                         end
-    
+                        full_aeroDOFs = collect(1:topMesh.numNodes*6)
                         if inputs.AD15On
                             # AD15 is in global frame, so no frame conversion???
                             topFexternal = aeroVals
@@ -412,7 +412,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 for i_idx = 1:length(aeroDOFs)
                                     full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
                                 end
-                                full_aeroDOFs = collect(1:topMesh.numNodes*6)
+                                
                                 for iter_i = 1:floor(Int,length(full_aeroVals)/6)
                                     topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                                 end
@@ -585,13 +585,13 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                     if runaero || !isnothing(aeroVals)
                         if inputs.aeroLoadsOn > 0
+                            full_aeroDOFs = collect(1:topMesh.numNodes*6)
                             if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
                                 # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
                                 full_aeroVals = zeros(topMesh.numNodes*6)
                                 for i_idx = 1:length(aeroDOFs)
                                     full_aeroVals[aeroDOFs[i_idx]] = aeroVals[i_idx]
                                 end
-                                full_aeroDOFs = collect(1:topMesh.numNodes*6)
                                 for iter_i = 1:floor(Int,length(aeroVals)/6)
                                     topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                                 end
