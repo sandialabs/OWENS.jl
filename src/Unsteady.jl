@@ -1201,8 +1201,22 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
     mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
-    OWENSOpenFASTWrappers.HD_Init(;hdlib_filename=bin.hydrodynLibPath, output_root_name=hd_outFilename, hd_input_file=inputs.hd_input_file, ss_input_file=inputs.ss_input_file,PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
-    OWENSOpenFASTWrappers.MD_Init(;mdlib_filename=bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
+    OWENSOpenFASTWrappers.HD_Init(;
+                                  hdlib_filename=bin.hydrodynLibPath,
+                                  output_root_name=hd_outFilename,
+                                  hd_input_file=inputs.hd_input_file,
+                                  ss_input_file=inputs.ss_input_file,
+                                  PotFile=inputs.potflowfile,
+                                  t_initial=t[1],
+                                  dt=delta_t,
+                                  t_max=t[1]+(numTS-1)*delta_t,
+                                  interp_order=inputs.interpOrder)
+    OWENSOpenFASTWrappers.MD_Init(;
+                                  mdlib_filename=bin.moordynLibPath,
+                                  md_input_file=inputs.md_input_file,
+                                  init_ptfm_pos=u_s_prp_n,
+                                  interp_order=inputs.interpOrder,
+                                  WtrDpth=200)
 
     return bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,udot_s_prp_n,uddot_s_prp_n,jac,numMooringLines,FHydro_n,FMooring_n,outVals,mooringTensions
 end

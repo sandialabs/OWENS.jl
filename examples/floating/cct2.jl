@@ -266,9 +266,9 @@ function runSim(;
 
     # Setting library paths
     if !moordyn_on
-        moordynLib = nothing
+        md_lib = nothing
     end
-    bin = OWENS.Bin(hydrodynLib, moordynLib)
+    bin = OWENS.Bin(hd_lib, md_lib)
 
     inputs = OWENS.Inputs(analysisType = "TNB",
     outFilename = "none",
@@ -281,6 +281,7 @@ function runSim(;
     numTS = num_ts,
     delta_t = dt,
     hd_input_file = hd_input_file,
+    ss_input_file = ss_input_file,
     md_input_file = md_input_file,
     potflowfile = potflowfile)
 
@@ -379,6 +380,6 @@ runSim(outfile_root="owens_wn_prescribed_20240819",
     hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
     ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",
     md_input_file = "$path/data/MoorDyn_CCT2_test.dat",
-    hd_lib = "$path/bin/HydroDyn_c_binding_x64", #"$path/bin/HydroDyn_c_binding_x64.old"
-    md_lib = "$path/bin/MoorDyn_c_binding_x64")  #"$path/bin/MoorDyn_c_binding_x64.old"
+    hd_lib = "$path/../../../OpenFAST/andrew-platt/openfast/build/bin/HydroDyn_c_binding_x64", #"$path/bin/HydroDyn_c_binding_x64.old"
+    md_lib = "$path/../../../OpenFAST/main/openfast/build/bin/MoorDyn_c_binding_x64")  #"$path/bin/MoorDyn_c_binding_x64.old"
 
