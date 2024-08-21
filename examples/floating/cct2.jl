@@ -375,7 +375,7 @@ function runSim(;
     DelimitedFiles.writedlm(outfile_root * "_FReaction.csv", FReactionHist, ',')
 end
 
-runSim(outfile_root="owens_wn_prescribed_20240819",
+runSim(outfile_root="owens_wn_prescribed_20240821",
     potflowfile = "$path/data/potential_flow_data/marin_semi",
     hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
     ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",

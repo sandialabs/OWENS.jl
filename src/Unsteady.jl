@@ -401,7 +401,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         elseif isnothing(aeroDOFs)
                             error("aeroDOFs must be specified if OWENS.Inputs.aeroLoadsOn")
                         end
-                        full_aeroDOFs = collect(1:topMesh.numNodes*6)
                         if inputs.AD15On
                             # AD15 is in global frame, so no frame conversion???
                             topFexternal = aeroVals
@@ -412,12 +411,13 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 for i_idx = 1:length(aeroDOFs)
                                     full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
                                 end
-                                
+                                full_aeroDOFs = collect(1:topMesh.numNodes*6)
                                 for iter_i = 1:floor(Int,length(full_aeroVals)/6)
                                     topFexternal[6*(iter_i-1)+1:6*(iter_i-1)+6] = frame_convert(full_aeroVals[6*(iter_i-1)+1:6*(iter_i-1)+6], CN2H_no_azi)
                                 end
                             else # the other aero input as a 2D array
                                 topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+                                full_aeroDOFs = collect(aeroDOFs)
                             end
                         end
                     else
