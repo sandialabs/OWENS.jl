@@ -421,6 +421,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     if inputs.AD15On
                         # AD15 is in global frame, so no frame conversion???
                         topdata.topFexternal = aeroVals
+                        full_aeroDOFs = aeroDOFs
                     else
                         if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
                             # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
