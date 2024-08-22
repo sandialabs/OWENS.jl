@@ -427,16 +427,16 @@ function setupOWENS(OWENSAero,path;
         delta_xs = shapeX[2:end] - shapeX[1:end-1]
         delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
         delta3D = atan.(delta_xs./delta_zs)
-        delta3D_spl = FLOWMath.akima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
+        delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
         # now convert the numad span to a height
         bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
-
+        bld_height_numad_unit = bld_height_numad./maximum(bld_height_numad)
         # now we can use it to access the numad data 
-        chord = FLOWMath.akima(bld_height_numad./maximum(bld_height_numad), numadIn_bld.chord,LinRange(0,1,Nslices))
+        chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],1,Nslices))
         airfoils = fill("nothing",Nslices)
 
         # Discretely assign the airfoils
-        for (iheight_numad,height_numad) in enumerate(bld_height_numad./maximum(bld_height_numad))
+        for (iheight_numad,height_numad) in enumerate(bld_height_numad_unit)
             for (iheight,height_slices) in enumerate(collect(LinRange(0,1,Nslices)))
                 if airfoils[iheight]=="nothing" && height_slices<=height_numad
                     airfoils[iheight] = "$(numadIn_bld.airfoil[iheight_numad]).dat"
@@ -473,7 +473,7 @@ function setupOWENS(OWENSAero,path;
 
         NumADBldNds = NumADStrutNds = 10 
 
-        bldchord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
+        bldchord_spl = safeakima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
 
         # Discretely assign the blade airfoils based on the next closest neighbor
         bld_airfoil_filenames = fill("nothing",NumADBldNds) #TODO: cable drag?
@@ -498,7 +498,7 @@ function setupOWENS(OWENSAero,path;
             airfoil_filenames = collect(Iterators.flatten([bld_airfoil_filenames for i=1:Nbld]))
             
             for istrut = 1:Nstrutperbld
-                strutchord_spl = FLOWMath.akima(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span), numadIn_strut[istrut].chord,LinRange(0,1,NumADStrutNds))
+                strutchord_spl = safeakima(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span), numadIn_strut[istrut].chord,LinRange(0,1,NumADStrutNds))
                 for ibld = 1:Nbld
                     blade_filenames = [blade_filenames;"$path/strut$(istrut)_bld$ibld.dat"]
                     blade_chords = [blade_chords;[strutchord_spl]]
@@ -549,7 +549,7 @@ function setupOWENS(OWENSAero,path;
             ymesh = mymesh.y[strt_idx:end_idx]
             ADshapeX = sqrt.(xmesh.^2 .+ ymesh.^2)
             ADshapeX .-= ADshapeX[1] #get it starting at zero #TODO: make robust for blades that don't start at 0
-            ADshapeXspl = FLOWMath.akima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
+            ADshapeXspl = safeakima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
             
             if iADBody<=Nbld #&& !bladefileissaved#Note that the blades can be curved and are assumed to be oriented vertically
                 # bladefileissaved = true
@@ -564,16 +564,16 @@ function setupOWENS(OWENSAero,path;
                 #TODO: reevalueate these equations and make sure they are robust against varying designs
                 BlCrvACinput = -ymesh.*sin(bladeangle).+xmesh.*cos(bladeangle)
                 BlCrvACinput = BlCrvACinput .- BlCrvACinput[1]
-                BlSwpAC = -FLOWMath.akima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)
+                BlSwpAC = -safeakima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)
 
                 BlSwpACinput = xmesh.*sin(bladeangle).+ymesh.*cos(bladeangle)
                 BlSwpACinput = BlSwpACinput .- BlSwpACinput[1]
-                BlCrvAC = FLOWMath.akima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
+                BlCrvAC = safeakima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
 
                 BlCrvAng = zeros(blade_Nnodes[iADBody])
 
                 BlTwistinput =(blade_twist.-blade_twist[1])*180/pi
-                BlTwist = FLOWMath.akima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
+                BlTwist = safeakima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
 
                 BlChord=blade_chords[iADBody]
 
@@ -736,9 +736,9 @@ function setupOWENShawt(OWENSAero,path;
     omega = RPM / 60 * 2 * pi
     tsr = omega*R/Vinf
 
-    shapeX_spline = FLOWMath.Akima(shapeZ, shapeX)
-    bladelen = sum(sqrt.((shapeX[2:end].-shapeX[1:end-1]).^2 .+ (shapeZ[2:end].-shapeZ[1:end-1]).^2 ))
-    # println("bladelen 161.06: $bladelen")
+    # shapeX_spline = FLOWMath.Akima(shapeZ, shapeX)
+    # bladelen = sum(sqrt.((shapeX[2:end].-shapeX[1:end-1]).^2 .+ (shapeZ[2:end].-shapeZ[1:end-1]).^2 ))
+    # # println("bladelen 161.06: $bladelen")
     h_frac = (shapeZ[2:end] - shapeZ[1:end-1])./shapeZ[end];
     h_elem = (shapeZ[2:end] - shapeZ[1:end-1])
     h = (shapeZ[2:end] + shapeZ[1:end-1])/2.0;
@@ -933,7 +933,7 @@ function setupOWENShawt(OWENSAero,path;
     ### Set up aero forces
     #########################################
     # println("Initialize Aerodynamics")
-    # chord_spl = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
+    # chord_spl = safeakima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
     # OWENSAero.setupTurb(shapeX,shapeZ,B,chord_spl,tsr,Vinf;AModel,DSModel,
     # afname = "$path/Airfoils/NACA_0021.dat", #TODO: map to the numad input
     # ifw,

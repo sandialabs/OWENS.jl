@@ -81,9 +81,9 @@ SNL34m_5_3_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_T
 
 
 new_t = LinRange(SNL34m_5_3_RPM[1,1],SNL34m_5_3_RPM[end,1],100)
-new_RPM = FLOWMath.akima(SNL34m_5_3_RPM[:,1],SNL34m_5_3_RPM[:,2],new_t)
+new_RPM = OWENS.safeakima(SNL34m_5_3_RPM[:,1],SNL34m_5_3_RPM[:,2],new_t)
 
-Vinf_spec = FLOWMath.akima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
+Vinf_spec = OWENS.safeakima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
 
 offsetTime = 20.0 # seconds
 tocp = [0.0;new_t.+offsetTime; 1e6]
@@ -99,7 +99,7 @@ controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.44933
 z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
 x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
-x_shape = FLOWMath.akima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
+x_shape = OWENS.safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
 toweroffset = 4.3953443986241725
 SNL34_unit_xz = [x_shape;;z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
@@ -130,6 +130,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     R = Blade_Radius,
     shapeZ,
     shapeX,
+    shapeY = zero(shapeX),
     ifw,
     delta_t,
     numTS,
@@ -353,8 +354,8 @@ bld1start = Int(mymesh.structuralNodeNumbers[1,1])
 bld1end = Int(mymesh.structuralNodeNumbers[1,end])
 spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 spanposmid = cumsum(diff(spanpos))
-thickness = FLOWMath.akima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
-thickness_lag = FLOWMath.akima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
+thickness = OWENS.safeakima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
+thickness_lag = OWENS.safeakima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
 
 flatwise_stress1grav = (kappa_y_grav[1,end-1,2:end].* thickness .+ 0*eps_x_grav[1,end-1,2:end]) .* Ealuminum
 flatwise_stress2grav = (kappa_y_grav[2,end-1,1:end-1].* thickness .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
