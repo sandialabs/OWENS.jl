@@ -50,6 +50,7 @@ function setupOWENS(OWENSAero,path;
     RPI=true,
     AM_flag = false,
     rotAccel_flag = false,
+    buoy_flag = false,
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus",
     custommesh = nothing) #Darrieus, H-VAWT, ARCUS
@@ -461,6 +462,7 @@ function setupOWENS(OWENSAero,path;
         tau = [1e-5,1e-5],
         AM_flag,
         rotAccel_flag,
+        buoy_flag,
         ntheta,
         Nslices,
         RPI)

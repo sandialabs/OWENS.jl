@@ -384,7 +384,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             if inputs.AD15On
                                 aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                             else
-                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,top_grav_setting)
                             end
                         end
                     end
@@ -577,7 +577,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 if inputs.AD15On
                                     aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                                 else
-                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,top_grav_setting)
                                 end
                             end
                         end
@@ -933,7 +933,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
 end
 
-function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIterations,t_i,azi_j,Omega_j)
+function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIterations,t_i,azi_j,Omega_j,gravityOn)
 
     if inputs.tocp_Vinf == -1
         newVinf = -1
@@ -1025,6 +1025,17 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
         accel_edge_in = -1
     end
 
+    # TODO: gravity vector changing with platform motion
+    if eltype(gravityOn) == Bool && gravityOn == true
+        gravity = [0.0,0.0,-9.81]
+    elseif eltype(gravityOn) == Bool && gravityOn == false
+        gravity = [0.0,0.0,0.0]
+    end
+
+    if eltype(gravityOn) == Float64
+        gravity = gravityOn
+    end
+
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
     deformAero(azi_j;newOmega=Omega_j*2*pi,
     newVinf,
@@ -1032,7 +1043,8 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
     bld_z,
     bld_twist,
     accel_flap_in,
-    accel_edge_in) #TODO: implement deformation induced velocities
+    accel_edge_in,
+    gravity) #TODO: implement deformation induced velocities
 
     aeroVals,aeroDOFs = aero(t_i,azi_j)
     # println(maximum(abs.(aeroVals)))

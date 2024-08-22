@@ -159,6 +159,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     RPI=true,
     AM_flag = true,
     rotAccel_flag = true,
+    buoy_flag = true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType)
