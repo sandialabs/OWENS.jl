@@ -400,7 +400,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             aeroVals = aeroVals[1]
                             aeroDOFs = aeroDOFs[1]
                         else
-                            aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,topdata.u_j,inputs,numIterations,t[i],topdata.azi_j,topdata.Omega_j)
+                            aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,topdata.u_j,topdata.uddot_j,inputs,numIterations,t[i],topdata.azi_j,topdata.Omega_j)
                         end
                     end
                 end

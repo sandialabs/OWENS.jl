@@ -104,7 +104,7 @@ controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.44933
 z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
 x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
-x_shape = safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
+x_shape = OWENS.safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
 toweroffset = 4.3953443986241725
 SNL34_unit_xz = [x_shape;;z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
@@ -131,6 +131,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     R = Blade_Radius, #windio
     shapeZ, #windio
     shapeX, #windio
+    shapeY=zero(shapeX), #windio
     ifw, #modeling options
     delta_t, #modeling options
     numTS, #modeling options
@@ -156,6 +157,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,
+    AM_flag = true,
+    rotAccel_flag = true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType)

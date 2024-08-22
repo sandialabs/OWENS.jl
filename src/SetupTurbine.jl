@@ -48,6 +48,8 @@ function setupOWENS(OWENSAero,path;
     AModel="DMS",
     DSModel="BV",
     RPI=true,
+    AM_flag = false,
+    rotAccel_flag = false,
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus",
     custommesh = nothing) #Darrieus, H-VAWT, ARCUS
@@ -435,6 +437,8 @@ function setupOWENS(OWENSAero,path;
         chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],1,Nslices))
         airfoils = fill("nothing",Nslices)
 
+        twist = safeakima(bld_height_numad_unit, numadIn_bld.twist_d.*pi/180,LinRange(bld_height_numad_unit[1],1,Nslices))
+
         # Discretely assign the airfoils
         for (iheight_numad,height_numad) in enumerate(bld_height_numad_unit)
             for (iheight,height_slices) in enumerate(collect(LinRange(0,1,Nslices)))
@@ -445,15 +449,18 @@ function setupOWENS(OWENSAero,path;
         end
 
         OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
-        afname = airfoils, #TODO: map to the numad input
+        afname = airfoils,
         bld_y = shapeY,
         rho,
+        twist, #TODO: verify twist is in same direction
         mu,
         eta,
         ifw, #TODO: propogate WindType
         turbsim_filename = windINPfilename,
         ifw_libfile,
         tau = [1e-5,1e-5],
+        AM_flag,
+        rotAccel_flag,
         ntheta,
         Nslices,
         RPI)
