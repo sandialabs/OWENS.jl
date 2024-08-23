@@ -90,7 +90,7 @@ function messyoptfun!(constraints,Vars)
     x_control_pts_grid = [0.0,0.25,0.5,0.75,1.0]
 
     x_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:grid]
-    x_values = FLOWMath.akima(x_control_pts_grid,x_control_pts,x_grid)
+    x_values = safeakima(x_control_pts_grid,x_control_pts,x_grid)
 
     windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:values] = x_values 
 

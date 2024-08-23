@@ -303,7 +303,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             if inputs.generatorOn
                     if inputs.useGeneratorFunction
                         specifiedOmega,_,_ = omegaSpecCheck(t[i]+topdata.delta_t,inputs.tocp,inputs.Omegaocp,topdata.delta_t)
-                        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
+                        newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                         if isnothing(userDefinedGenerator)
                             genTorqueHSS0,topdata.integrator_j,controlnamecurrent = internaluserDefinedGenerator(newVinf,t[i],topdata.azi_j,topdata.Omega_j,topdata.OmegaHist[i],topdata.OmegaDot_j,topdata.OmegaDotHist[i],topdata.delta_t,topdata.integrator,specifiedOmega) #;operPhase
                         else
@@ -742,12 +742,12 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
         # samplepts = numadIn_bld.span./maximum(numadIn_bld.span) #normalize #TODO: this is spanwise, while everything else is vertical-wise
         for its = 1:N_ts
             #TODO: there are strain values at each quad point, should be better than just choosing one
-            eps_x[ibld,its,:] = epsilon_x_hist[1,start:stop,its]#FLOWMath.akima(x,epsilon_x_hist[1,start:stop,its],samplepts)
-            eps_z[ibld,its,:] = meanepsilon_z_hist[1,start:stop,its]#FLOWMath.akima(x,meanepsilon_z_hist[1,start:stop,its],samplepts)
-            eps_y[ibld,its,:] = meanepsilon_y_hist[1,start:stop,its]#FLOWMath.akima(x,meanepsilon_y_hist[1,start:stop,its],samplepts)
-            kappa_x[ibld,its,:] = kappa_x_hist[1,start:stop,its]#FLOWMath.akima(x,kappa_x_hist[1,start:stop,its],samplepts)
-            kappa_y[ibld,its,:] = kappa_y_hist[1,start:stop,its]#FLOWMath.akima(x,kappa_y_hist[1,start:stop,its],samplepts)
-            kappa_z[ibld,its,:] = kappa_z_hist[1,start:stop,its]#FLOWMath.akima(x,kappa_z_hist[1,start:stop,its],samplepts)
+            eps_x[ibld,its,:] = epsilon_x_hist[1,start:stop,its]#safeakima(x,epsilon_x_hist[1,start:stop,its],samplepts)
+            eps_z[ibld,its,:] = meanepsilon_z_hist[1,start:stop,its]#safeakima(x,meanepsilon_z_hist[1,start:stop,its],samplepts)
+            eps_y[ibld,its,:] = meanepsilon_y_hist[1,start:stop,its]#safeakima(x,meanepsilon_y_hist[1,start:stop,its],samplepts)
+            kappa_x[ibld,its,:] = kappa_x_hist[1,start:stop,its]#safeakima(x,kappa_x_hist[1,start:stop,its],samplepts)
+            kappa_y[ibld,its,:] = kappa_y_hist[1,start:stop,its]#safeakima(x,kappa_y_hist[1,start:stop,its],samplepts)
+            kappa_z[ibld,its,:] = kappa_z_hist[1,start:stop,its]#safeakima(x,kappa_z_hist[1,start:stop,its],samplepts)
         end
     end
 

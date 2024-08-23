@@ -23,7 +23,7 @@ turbulentInflow:
 controlParameters:
   controlStrategy: constantRPM # TODO: incorporate the others
   RPM: 34.0 #RPM
-  numTS: 10 #
+  numTS: 5000 #
   delta_t: 0.05 # s
 
 
@@ -35,9 +35,9 @@ AeroParameters:
   adi_rootname: "/SNL34m"
   
 structuralParameters:
-  structuralModel: ROM #GX, TNB, ROM
+  structuralModel: GX #GX, TNB, ROM
   nonlinear: false #TODO: propogate
-  ntelem: 10 #tower elements in each 
+  ntelem: 20 #tower elements in each 
   nbelem: 60 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
   nselem: 5 #strut elements in each if turbineType has struts
