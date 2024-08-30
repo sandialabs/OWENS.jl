@@ -27,28 +27,11 @@ using OrderedCollections
 
 runpath = splitdir(@__FILE__)[1]
 
-OWENS_Options = OWENS.MasterInput("$runpath/modeling_options_OWENS_windioExample.yml")
+OWENS_Options = "$runpath/modeling_options_OWENS_windioExample.yml"
 
 WINDIO_filename = "$runpath/WINDIO_example.yaml"
 
-windio = YAML.load_file(WINDIO_filename; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
-
-# numadIn_bld_old = OWENS.readNuMadGeomCSV("$(runpath)$(OWENS_Options.NuMad_geom_xlscsv_file_bld)";section=:blade)
-# numadIn_bld_new = OWENS.readNuMadGeomCSV(windio;section=:blade)
-
-# for key in fieldnames(typeof(numadIn_bld_old))
-#     old_data = getfield(numadIn_bld_old,key)
-#     new_data = getfield(numadIn_bld_new,key)
-
-#     if old_data!=new_data
-#         println(key)
-#         println(old_data)
-#         println(new_data)
-#     end
-#     # println(isapprox(old_data,new_data))
-# end
-
-OWENS.runOWENSWINDIO(windio,OWENS_Options,runpath)
+OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
 
 # Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
 
@@ -138,6 +121,12 @@ topDamage_blade_U = HDF5.h5read(file,"topDamage_blade_U")
 topDamage_blade_L = HDF5.h5read(file,"topDamage_blade_L")
 topDamage_tower_U = HDF5.h5read(file,"topDamage_tower_U")
 topDamage_tower_L = HDF5.h5read(file,"topDamage_tower_L")
+
+import PyPlot
+PyPlot.pygui(true)
+PyPlot.figure()
+PyPlot.plot(t_UNIT,FReactionHist_UNIT[:,6])
+PyPlot.plot(t,FReactionHist[:,6])
 
 frac = 1e-5
 @test isapprox(t_UNIT,t;atol=maximum(abs.(t_UNIT))*frac)

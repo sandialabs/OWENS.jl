@@ -1,24 +1,24 @@
 
 """
-readNuMadGeomCSV(NuMad_geom_file)
+readNuMadGeomCSV(WindIO_Dict)
 
 Parameters defining the rotor (apply to all sections).
 
 **Arguments**
-- `NuMad_geom_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
-- `NuMad_geom_file::OrderedCollections.OrderedDict{Symbol, Any}`: Alternatively, the already loaded in dictionary of windio inputs
+- `WindIO_Dict::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+- `WindIO_Dict::OrderedCollections.OrderedDict{Symbol, Any}`: Alternatively, the already loaded in dictionary of windio inputs
 
 
 **Returns**
 - `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
 """
-function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol, Any};section=:blade,subsection=nothing,span=nothing)
+function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, Any};section=:blade,subsection=nothing,span=nothing)
 
     # Reuse the input file as the dictionary input
     if isnothing(subsection)
-        sec_Dict = NuMad_geom_file[:components][section]
+        sec_Dict = WindIO_Dict[:components][section]
     else
-        sec_Dict = NuMad_geom_file[:components][section][subsection]
+        sec_Dict = WindIO_Dict[:components][section][subsection]
     end
 
     # Note that the input for the composite inputs is like a square blanket with shortened sections to make it any "shape" of composite inputs.  While it is possible to not define things along the blade/strut/tower etc depending on height, that makes non-square matrices which is more complex to code for and has not been propogated throughout.  It is also not condusive to continuous changes to the composite input.  Rather, just define the inputs as square (same number of chordwise stations along each spanwise position) and just set the thicknesses or distances between control points to be numerically 0.
@@ -193,8 +193,8 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
     # Also get the material types and layers used for each stack
     layer_mat_names = Array{String,1}(undef,n_stack)
     stack_mat_types = zeros(Int,n_stack) 
-    N_materials = length(NuMad_geom_file[:materials])
-    input_material_names = [NuMad_geom_file[:materials][imat][:name] for imat = 1:N_materials]
+    N_materials = length(WindIO_Dict[:materials])
+    input_material_names = [WindIO_Dict[:materials][imat][:name] for imat = 1:N_materials]
     stack_layers = zeros(length(span),n_stack) 
 
     for istack = 1:n_stack 

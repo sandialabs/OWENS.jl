@@ -1,8 +1,12 @@
 
-function runOWENSWINDIO(windio,Inp,path;verbosity=2)
+function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     if typeof(windio) == String
         windio = YAML.load_file(windio; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
         println("Running: $(windio[:name])")
+    end
+
+    if typeof(modelopt) == String
+        modelopt = ModelingOptions(modelopt)
     end
 
     # Assembly
@@ -18,17 +22,19 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
     # lifetime = windio[:assembly][:lifetime]
     # marine_hydro = windio[:assembly][:marine_hydro]
     
-    # Components
+    # Components: blade, strut, tower, cable all reuse the blade format
+    blade_mountpoint = windio[:components][:blade][:outer_shape_bem][:blade_mountpoint]
     # blade_x_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:grid]
-    blade_x = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:values] #Used
+    blade_x = windio[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] #Used
 
-    # blade_y_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:y][:grid]
-    blade_y = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:y][:values] #Used
+    # blade_y_grid = windio[:components][:blade][:outer_shape_bem][:reference_axis][:y][:grid]
+    blade_y = windio[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values] #Used
 
-    # blade_z_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:z][:grid]
-    blade_z = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:z][:values] #Used
+    # blade_z_grid = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:grid]
+    blade_z = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
 
     # Airfoils
+    #TODO
 
     # materials
 
@@ -128,44 +134,129 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
 
 
 
-    analysisType = Inp.analysisType
-    turbineType = Inp.turbineType
-    eta = Inp.eta
-    towerHeight = Inp.towerHeight
-    Vinf = Inp.Vinf
-    controlStrategy = Inp.controlStrategy
-    RPM = Inp.RPM
-    Nslices = Inp.Nslices
-    ntheta = Inp.ntheta
-    structuralModel = Inp.structuralModel
-    ntelem = Inp.ntelem
-    nbelem = Inp.nbelem
-    ncelem = Inp.ncelem
-    nselem = Inp.nselem
-    ifw = Inp.ifw
-    WindType = Inp.WindType
-    AModel = Inp.AModel
-    windINPfilename = "$(path)$(Inp.windINPfilename)"
-    ifw_libfile = Inp.ifw_libfile
+    analysisType = modelopt.analysisType
+    turbineType = modelopt.turbineType
+    Vinf = modelopt.Vinf
+    controlStrategy = modelopt.controlStrategy
+    RPM = modelopt.RPM
+    Nslices = modelopt.Nslices
+    ntheta = modelopt.ntheta
+    structuralModel = modelopt.structuralModel
+    ntelem = modelopt.ntelem
+    nbelem = modelopt.nbelem
+    ncelem = modelopt.ncelem
+    nselem = modelopt.nselem
+    ifw = modelopt.ifw
+    WindType = modelopt.WindType
+    AModel = modelopt.AModel
+    windINPfilename = "$(path)$(modelopt.windINPfilename)"
+    ifw_libfile = modelopt.ifw_libfile
     if ifw_libfile == "nothing"
         ifw_libfile = nothing
     end
-    Blade_Height = Inp.Blade_Height # WindIO TODO: resolve DLC dependence
-    Blade_Radius = Inp.Blade_Radius # WindIO TODO: resolve DLC dependence
-    numTS = Inp.numTS
-    delta_t = Inp.delta_t
+    Blade_Height = modelopt.Blade_Height # WindIO TODO: resolve DLC dependence
+    Blade_Radius = modelopt.Blade_Radius # WindIO TODO: resolve DLC dependence
+    numTS = modelopt.numTS
+    delta_t = modelopt.delta_t
+
+    turbineStartup = 0
+    usingRotorSpeedFunction = false
+    driveTrainOn = false
+    generatorOn = false
+    hydroOn = false
+    topsideOn = true
+    interpOrder = 2
+    hd_input_file = "none"
+    ss_input_file = "none"
+    md_input_file = "none"
+    JgearBox = 0.0
+    gearRatio = 1.0
+    gearBoxEfficiency = 1.0
+    useGeneratorFunction = false
+    generatorProps = 0.0
+    ratedTorque = 0.0
+    zeroTorqueGenSpeed = 0.0
+    pulloutRatio = 0.0
+    ratedGenSlipPerc = 0.0
+    OmegaGenStart = 0.0
+    omegaControl = false
+    OmegaInit = 7.2/60 #TODO: simplify this in the code since it is redundant
+    aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv"
+    owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens"
+    potflowfile = "$module_path/../test/data/potential_flow_data"
+    outFilename = "none"
+    numDofPerNode = 6
+    bladeData = []
+    rigid = false
+    driveShaftProps = DriveShaftProps(0.0,0.0)
+    TOl = 1e-4
+    MAXITER = 300
+    iterwarnings = true
+
+    joint_type = 0
+    c_mount_ratio = 0.05
+    strut_twr_mountpoint = [0.11,0.89]
+    strut_bld_mountpoint = [0.11,0.89]
+    DSModel="BV"
+    RPI=true
+    cables_connected_to_blade_base = true
+    meshtype = turbineType
+    saveName = "$path/vtk/windio"
+    aeroLoadsOn = 2
+    nlOn = true
+    RayleighAlpha = 0.05
+    RayleighBeta = 0.05
+    iterationType = "DI"
+    gravityOn = [0,0,gravity]
+    initCond = []
+    aeroElasticOn = false #for the automated flutter model
+    guessFreq = 0.0
+    outFilename = "none"
+    jointTransform = 0.0
+    reducedDOFList = zeros(Int,2)
+    numDOFPerNode = 6
+    platformTurbineConnectionNodeNumber = 1
+    spinUpOn = false
+    numModes = 20
+    nlParams = 0 # can pass in strut, or leave at 0 to use other inputs
+    adaptiveLoadSteppingFlag = true
+    tolerance = 1.0000e-06
+    maxIterations = 50
+    maxNumLoadSteps = 20
+    minLoadStepDelta = 0.0500
+    minLoadStep = 0.0500
+    prescribedLoadStep = 0.0
+    predef = false
+    elementOrder = 1
+    alpha = 0.5
+    gamma = 0.5
+    nodalTerms = 0.0
+
+    AD15hubR = 0.1
+    Htwr_base = 3.0#maximum(windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values])
+    stack_layers_bld = nothing
+    stack_layers_scale = [1.0,1.0]
+    chord_scale = [1.0,1.0]
+    thickness_scale = [1.0,1.0]
+    angularOffset = -pi/2
+    AM_flag = false
+    rotAccel_flag = false
+    buoy_flag = false
+    custommesh = nothing
+
     tsave_idx=1:3:numTS
-    NuMad_geom_xlscsv_file_twr = windio #"$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
-    NuMad_mat_xlscsv_file_twr = windio #"$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
-    NuMad_geom_xlscsv_file_bld = windio #"$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
-    NuMad_mat_xlscsv_file_bld = windio #"$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
-    NuMad_geom_xlscsv_file_strut = windio #"$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
-    NuMad_mat_xlscsv_file_strut = windio #"$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
-    adi_lib = Inp.adi_lib
+
+    NuMad_geom_xlscsv_file_twr = windio #"$(path)$(modelopt.NuMad_geom_xlscsv_file_twr)"
+    NuMad_mat_xlscsv_file_twr = windio #"$(path)$(modelopt.NuMad_mat_xlscsv_file_twr)"
+    NuMad_geom_xlscsv_file_bld = windio #"$(path)$(modelopt.NuMad_geom_xlscsv_file_bld)"
+    NuMad_mat_xlscsv_file_bld = windio #"$(path)$(modelopt.NuMad_mat_xlscsv_file_bld)"
+    NuMad_geom_xlscsv_file_strut = windio #"$(path)$(modelopt.NuMad_geom_xlscsv_file_strut)"
+    NuMad_mat_xlscsv_file_strut = windio #"$(path)$(modelopt.NuMad_mat_xlscsv_file_strut)"
+    adi_lib = modelopt.adi_lib
     if adi_lib == "nothing"
         adi_lib = nothing
     end
-    adi_rootname = "$(path)$(Inp.adi_rootname)"
+    adi_rootname = "$(path)$(modelopt.adi_rootname)"
 
     shapeZ = blade_z#collect(LinRange(0,H,Nslices+1))
     shapeX = blade_x#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
@@ -173,12 +264,12 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
 
     R = maximum(blade_x) #m 
     H = maximum(blade_z) #m
-
+    Htwr_blds = H
+    
     nothing
 
     # Call the helper function that builds the mesh, calculates the sectional properties,
     # and aligns the sectional properties to the mesh elements, 
-
 
     mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
     stiff_twr, stiff_bld,bld_precompinput,
@@ -191,10 +282,11 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
         ntheta,
         RPM,
         Vinf,
-        eta,
+        eta=blade_mountpoint,
         B=number_of_blades,
         H,
         R,
+        AD15hubR,
         shapeZ, 
         shapeX,
         shapeY, 
@@ -212,20 +304,30 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
         NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
         NuMad_geom_xlscsv_file_strut,
         NuMad_mat_xlscsv_file_strut,
-        Htwr_base=towerHeight,
+        Htwr_base,
         ntelem, 
         nbelem, 
         ncelem,
         nselem,
-        joint_type = 0,
-        c_mount_ratio = 0.05,
-        strut_twr_mountpoint = [0.11,0.89], #TODO
-        strut_bld_mountpoint = [0.11,0.89],
+        joint_type,
+        c_mount_ratio,
+        strut_twr_mountpoint,
+        strut_bld_mountpoint,
         AModel, #AD, DMS, AC
-        DSModel="BV",
-        RPI=true,
-        cables_connected_to_blade_base = true,
-        meshtype = turbineType)
+        DSModel,
+        RPI,
+        cables_connected_to_blade_base,
+        meshtype,
+        Htwr_blds,
+        stack_layers_bld,
+        stack_layers_scale,
+        chord_scale,
+        thickness_scale,
+        angularOffset,
+        AM_flag,
+        rotAccel_flag,
+        buoy_flag,
+        custommesh)
 
     nothing
 
@@ -288,23 +390,78 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
     numTS,
     delta_t,
     AD15On,
-    aeroLoadsOn = 2)
+    aeroLoadsOn,
+    turbineStartup,
+    usingRotorSpeedFunction,
+    driveTrainOn,
+    generatorOn,
+    hydroOn,
+    topsideOn,
+    interpOrder,
+    hd_input_file,
+    ss_input_file,
+    md_input_file,
+    JgearBox,
+    gearRatio,
+    gearBoxEfficiency,
+    useGeneratorFunction,
+    generatorProps,
+    ratedTorque,
+    zeroTorqueGenSpeed,
+    pulloutRatio,
+    ratedGenSlipPerc,
+    OmegaGenStart,
+    omegaControl,
+    OmegaInit,
+    aeroloadfile,
+    owensfile,
+    potflowfile,
+    outFilename,
+    numDofPerNode,
+    bladeData,
+    rigid,
+    driveShaftProps,
+    TOl,
+    MAXITER,
+    iterwarnings)
 
     nothing
 
     # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
     feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-    outFilename = "none",
-    joint = myjoint,
-    platformTurbineConnectionNodeNumber = 1,
+    airDensity=air_density,
     pBC,
-    nlOn = true,
-    # gravityOn = [0,0,gravity],
+    nlOn,
+    gravityOn,
     numNodes = mymesh.numNodes,
-    RayleighAlpha = 0.05,
-    RayleighBeta = 0.05,
-    iterationType = "DI")
+    RayleighAlpha,
+    RayleighBeta,
+    joint = myjoint,
+    iterationType,
+    initCond,
+    aeroElasticOn, #for the automated flutter model
+    guessFreq,
+    outFilename,
+    jointTransform,
+    reducedDOFList,
+    numDOFPerNode,
+    platformTurbineConnectionNodeNumber,
+    spinUpOn,
+    numModes,
+    nlParams, # can pass in strut, or leave at 0 to use other inputs
+    adaptiveLoadSteppingFlag,
+    tolerance,
+    maxIterations,
+    maxNumLoadSteps,
+    minLoadStepDelta,
+    minLoadStep,
+    prescribedLoadStep,
+    predef,
+    elementOrder,
+    alpha,
+    gamma,
+    nodalTerms)
 
     nothing
 
@@ -325,7 +482,6 @@ function runOWENSWINDIO(windio,Inp,path;verbosity=2)
     # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
     azi=aziHist#./aziHist*1e-6
-    saveName = "$path/vtk/windio"
     OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
         epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
         FReactionHist,topFexternal_hist;tsave_idx)

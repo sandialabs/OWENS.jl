@@ -77,6 +77,54 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
+
+
+function ModelingOptions(yamlInputfile)
+    yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    # Unpack YAML
+    general = yamlInput[:general]
+        analysisType = general[:analysisType]
+        turbineType = general[:turbineType]
+        numTS = general[:numTS]
+        delta_t = general[:delta_t]
+
+    Inflow = yamlInput[:Inflow]
+        Vinf = Inflow[:Vinf]
+        ifw = Inflow[:ifw]
+        WindType = Inflow[:WindType]
+        windINPfilename = Inflow[:windINPfilename]
+        ifw_libfile = Inflow[:ifw_libfile]
+
+    controlParameters = yamlInput[:controlParameters]
+        controlStrategy = controlParameters[:controlStrategy]
+        RPM = controlParameters[:RPM]
+
+    AeroParameters = yamlInput[:AeroParameters]
+        Nslices = AeroParameters[:Nslices]
+        ntheta = AeroParameters[:ntheta]
+        AModel = AeroParameters[:AModel]
+        adi_lib = AeroParameters[:adi_lib]
+        adi_rootname = AeroParameters[:adi_rootname]
+
+    structuralParameters = yamlInput[:structuralParameters]
+        structuralModel = structuralParameters[:structuralModel]
+        ntelem = structuralParameters[:ntelem]
+        nbelem = structuralParameters[:nbelem]
+        if haskey(structuralParameters,:ncelem)
+            ncelem = structuralParameters[:ncelem]
+        else
+            ncelem = 10
+        end
+        nselem = structuralParameters[:nselem]
+
+    return MasterInput(analysisType,turbineType,nothing,nothing,nothing,nothing,Vinf,
+    controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
+    nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,nothing,nothing,numTS,
+    delta_t,nothing,nothing,
+    nothing,nothing,nothing,nothing)
+end
+
+
 function MasterInput(yamlInputfile)
     yamlInput = YAML.load_file(yamlInputfile)
     # Unpack YAML
