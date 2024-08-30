@@ -126,6 +126,9 @@ end
 
 
 function MasterInput(yamlInputfile)
+
+    @warn "The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format"
+
     yamlInput = YAML.load_file(yamlInputfile)
     # Unpack YAML
     general = yamlInput["general"]
