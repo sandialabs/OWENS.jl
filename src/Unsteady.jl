@@ -384,7 +384,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             if inputs.AD15On
                                 aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                             else
-                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,top_grav_setting)
+                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,topModel.gravityOn)
                             end
                         end
                     end
@@ -577,7 +577,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 if inputs.AD15On
                                     aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                                 else
-                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,top_grav_setting)
+                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,topModel.gravityOn)
                                 end
                             end
                         end

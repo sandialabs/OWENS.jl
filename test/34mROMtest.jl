@@ -33,7 +33,7 @@ for i=1:length(myel2["props"])
 end
 myel = OWENSFEA.El(sectionPropsArray,myel2["elLen"],myel2["psi"],myel2["theta"],myel2["roll"],myel2["rotationalEffects"])
 
-deformTurb2(a;newOmega=-1,newVinf=-1, bld_x=-1, bld_z=-1, bld_twist=-1) = 0
+deformTurb2(a;newOmega=-1,newVinf=-1, bld_x=-1, bld_z=-1, bld_twist=-1,accel_flap_in=-1,accel_edge_in=-1,gravity=-1) = 0
 
 delta_t = 0.1
 function aeroForcesDMS(t,azi)
