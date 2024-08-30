@@ -290,7 +290,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 if inputs.generatorOn
                         if inputs.useGeneratorFunction
                             specifiedOmega,_,_ = omegaSpecCheck(t[i]+delta_t,inputs.tocp,inputs.Omegaocp,delta_t)
-                            newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
+                            newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i])
                             if isnothing(userDefinedGenerator)
                                 genTorqueHSS0,integrator_j,controlnamecurrent = internaluserDefinedGenerator(newVinf,t[i],azi_j,Omega_j,OmegaHist[i],OmegaDot_j,OmegaDotHist[i],delta_t,integrator,specifiedOmega) #;operPhase
                             else
@@ -384,7 +384,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             if inputs.AD15On
                                 aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                             else
-                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,topModel.gravityOn)
                             end
                         end
                     end
@@ -577,7 +577,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 if inputs.AD15On
                                     aeroVals,aeroDOFs = run_aero_with_deformAD15(aero,deformAero,topMesh,topEl,u_j,udot_j,uddot_j,inputs,t[i],azi_j,Omega_j,OmegaDot_j)
                                 else
-                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,inputs,numIterations,t[i],azi_j,Omega_j)
+                                    aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,u_j,uddot_j,inputs,numIterations,t[i],azi_j,Omega_j,topModel.gravityOn)
                                 end
                             end
                         end
@@ -933,12 +933,12 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
 end
 
-function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t_i,azi_j,Omega_j)
+function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIterations,t_i,azi_j,Omega_j,gravityOn)
 
     if inputs.tocp_Vinf == -1
         newVinf = -1
     else
-        newVinf = FLOWMath.akima(inputs.tocp_Vinf,inputs.Vinfocp,t_i)
+        newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t_i)
     end
 
     if inputs.aeroLoadsOn > 1
@@ -946,6 +946,7 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
         numDofPerNode = 6
 
         u_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
+        uddot_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
         for jbld = 1:length(mesh.structuralElNumbers[:,1])
             for kel = 1:length(mesh.structuralElNumbers[1,:])-1
                 # orientation angle,xloc,sectionProps,element order]
@@ -956,6 +957,7 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
                 dofList = [(node1-1)*numDofPerNode.+(1:6);(node2-1)*numDofPerNode.+(1:6)]
 
                 globaldisp = u_j[dofList]
+                globaldispddot = uddot_j[dofList]
 
                 twist = el.props[elNum].twist
                 sweepAngle = el.psi[elNum]
@@ -965,10 +967,12 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
                 twistAvg = rollAngle + 0.5*(twist[1] + twist[2])
                 lambda = OWENSFEA.calculateLambda(sweepAngle*pi/180.0,coneAngle*pi/180.0,twistAvg.*pi/180.0)
                 localdisp = lambda*globaldisp
+                localdispddot = lambda*globaldispddot
 
                 #asssembly
                 for m = 1:length(dofList)
                     u_j_local[dofList[m]] =  u_j_local[dofList[m]]+localdisp[m]
+                    uddot_j_local[dofList[m]] =  uddot_j_local[dofList[m]]+localdispddot[m]
                 end
 
             end
@@ -978,6 +982,8 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
         disp_y = [u_j[i] for i = 2:6:length(u_j)]
         disp_z = [u_j[i] for i = 3:6:length(u_j)]
         disp_twist = [u_j_local[i] for i = 4:6:length(u_j_local)]
+        dispddot_flap = [uddot_j_local[i] for i = 3:6:length(u_j_local)]
+        dispddot_edge = [uddot_j_local[i] for i = 2:6:length(u_j_local)] #TODO: verify these are correct
         # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
         # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
 
@@ -985,6 +991,8 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
         bld_y = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
         bld_z = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
         bld_twist = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        accel_flap_in = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        accel_edge_in = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
 
         for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
             bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
@@ -994,6 +1002,8 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
             # flatten blade x,y
             bld_x[jbld,:] = sqrt.(bld_x[jbld,:].^2 .+bld_y[jbld,:].^2) #TODO: a better way via the blade offset azimuth?
             bld_twist[jbld,:] = -disp_twist[bld_indices] #the bending displacements are in radians
+            accel_flap_in[jbld,:] = dispddot_flap[bld_indices] # TODO: verify sign
+            accel_edge_in[jbld,:] = dispddot_edge[bld_indices] # TODO: verify sign
             # The local structural FOR follows right hand rule, so at the bottom of the blade, the x-vector is pointing outward, and a positive
             # rotation about x would make the blade twist into the turbine.  In AC and DMS, if we are looking at say Andrew's 2016 paper, fig 10,
             # the blade has looped up and is pointing at us, so positive twist would increase the aoa.  In the AC and DMS equations, aoa is decreased by twist
@@ -1011,10 +1021,31 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
         bld_x = -1
         bld_z = -1
         bld_twist = -1
+        accel_flap_in = -1
+        accel_edge_in = -1
+    end
+
+    # TODO: gravity vector changing with platform motion
+    if eltype(gravityOn) == Bool && gravityOn == true
+        gravity = [0.0,0.0,-9.81]
+    elseif eltype(gravityOn) == Bool && gravityOn == false
+        gravity = [0.0,0.0,0.0]
+    end
+
+    if eltype(gravityOn) == Float64
+        gravity = gravityOn
     end
 
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
-    deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
+    deformAero(azi_j;newOmega=Omega_j*2*pi,
+    newVinf,
+    bld_x,
+    bld_z,
+    bld_twist,
+    accel_flap_in,
+    accel_edge_in,
+    gravity) #TODO: implement deformation induced velocities
+
     aeroVals,aeroDOFs = aero(t_i,azi_j)
     # println(maximum(abs.(aeroVals)))
     return aeroVals,aeroDOFs

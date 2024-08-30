@@ -42,7 +42,7 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
     airfoil = Array{String,1}(undef,length(span))
     airfoil_names = sec_Dict[:outer_shape_bem][:airfoil_position][:labels]
     # spline the airfoils used to the current overall grid, then round to enable mapping to the discrete airfoil inputs
-    airfoil_station_numbers = round.(Int,FLOWMath.akima(airfoil_grid,collect(1:length(airfoil_names)),span))
+    airfoil_station_numbers = round.(Int,safeakima(airfoil_grid,collect(1:length(airfoil_names)),span))
     # Now map the resulting airfoils to the new grid
     for istation = 1:length(airfoil_station_numbers)
         for iaf = 1:length(airfoil_names)
@@ -65,15 +65,15 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
 
     twist_grid = sec_Dict[:outer_shape_bem][:twist][:grid]
     twist_vals = sec_Dict[:outer_shape_bem][:twist][:values]
-    twist_d = FLOWMath.akima(twist_grid,twist_vals,span) .* 180/pi
+    twist_d = safeakima(twist_grid,twist_vals,span) .* 180/pi
 
     chord_grid = sec_Dict[:outer_shape_bem][:chord][:grid]
     chord_vals = sec_Dict[:outer_shape_bem][:chord][:values]
-    chord = FLOWMath.akima(chord_grid,chord_vals,span)
+    chord = safeakima(chord_grid,chord_vals,span)
 
     pitch_axis_grid = sec_Dict[:outer_shape_bem][:pitch_axis][:grid]
     pitch_axis_vals = sec_Dict[:outer_shape_bem][:pitch_axis][:values]
-    pitch_axis = FLOWMath.akima(pitch_axis_grid,pitch_axis_vals,span)
+    pitch_axis = safeakima(pitch_axis_grid,pitch_axis_vals,span)
 
     xoffset = pitch_axis
     aerocenter = pitch_axis #TODO: this was originally used for the automated flutter analysis within the original OWENS code, which is not currently implemented
@@ -145,11 +145,11 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
 
             start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
             start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-            start_nd_arc = FLOWMath.akima(start_nd_arc_grid,start_nd_arc_vals,span)
+            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
 
             end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
             end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-            end_nd_arc = FLOWMath.akima(end_nd_arc_grid,end_nd_arc_vals,span)
+            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
         else 
             # println("web rotation and offset")
 
@@ -209,16 +209,16 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
         # get the number of plies
         n_plies_grid = layer_Dict[:n_plies][:grid]
         n_plies_vals = layer_Dict[:n_plies][:values]
-        stack_layers[:,istack] = FLOWMath.akima(n_plies_grid,n_plies_vals,span) #note that since we cut off layers in the stack sequences below, extrapolated values are not used here
+        stack_layers[:,istack] = safeakima(n_plies_grid,n_plies_vals,span) #note that since we cut off layers in the stack sequences below, extrapolated values are not used here
 
         if !(contains(layer_Dict[:name],"web")) 
             start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
             start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-            start_nd_arc = FLOWMath.akima(start_nd_arc_grid,start_nd_arc_vals,span)
+            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
 
             end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
             end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-            end_nd_arc = FLOWMath.akima(end_nd_arc_grid,end_nd_arc_vals,span)
+            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
 
             for ispan = 1:length(span)
                 for iseg=1:length(common_segments)
@@ -322,7 +322,7 @@ end
     #                 println("# midpoint has grid and vals")
     #                 midpoint_nd_arc_grid = layer_Dict[:midpoint_nd_arc][:grid]
     #                 midpoint_nd_arc_vals = layer_Dict[:midpoint_nd_arc][:values]
-    #                 # midpoint_nd_arc = FLOWMath.akima(midpoint_nd_arc_grid,midpoint_nd_arc_vals,span)
+    #                 # midpoint_nd_arc = safeakima(midpoint_nd_arc_grid,midpoint_nd_arc_vals,span)
     #             catch # midpoint is LE or TE
     #                 println("# midpoint is LE or TE")
     #                 if layer_Dict[:midpoint_nd_arc][:fixed] == "LE"
@@ -337,7 +337,7 @@ end
 
     #             width_grid = layer_Dict[:width][:grid]
     #             width_vals = layer_Dict[:width][:values]
-    #             width = FLOWMath.akima(width_grid,width_vals,midpoint_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+    #             width = safeakima(width_grid,width_vals,midpoint_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
     #             start_nd_arc = midpoint_nd_arc_vals - width./2
     #             end_nd_arc = midpoint_nd_arc_vals + width./2
     #             tryfailed = false
@@ -354,7 +354,7 @@ end
     #                     println("#start had grid and vals")
     #                     start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
     #                     start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-    #                     # start_nd_arc = FLOWMath.akima(start_nd_arc_grid,start_nd_arc_vals,span)
+    #                     # start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
     #                 catch # start is LE or TE
     #                     println("# start is LE or TE")
     #                     if layer_Dict[:start_nd_arc][:fixed] == "LE"
@@ -374,7 +374,7 @@ end
     #                         @error "width grid must be the same span as th start grid, and if the start_nd_arc is fixed, that is 0 to 1"
     #                     end
     #                     width_vals = layer_Dict[:width][:values]
-    #                     width = FLOWMath.akima(width_grid,width_vals,start_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio) to be converted to the arc definition where 0.5 is leading edge, so span is approx 2x chord.
+    #                     width = safeakima(width_grid,width_vals,start_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio) to be converted to the arc definition where 0.5 is leading edge, so span is approx 2x chord.
     #                     end_nd_arc_vals = start_nd_arc_vals+width
 
     #                 catch #otherwise, end must be specified
@@ -382,7 +382,7 @@ end
     #                     try #end has grid and vals
     #                         # end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
     #                         end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-    #                         # end_nd_arc = FLOWMath.akima(end_nd_arc_grid,end_nd_arc_vals,span)
+    #                         # end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
     #                     catch # end is LE or TE
     #                         println("# end is LE or TE")
     #                         if layer_Dict[:end_nd_arc][:fixed] == "LE"
@@ -408,7 +408,7 @@ end
     #                 try #end has grid and vals
     #                     end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
     #                     end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-    #                     # end_nd_arc = FLOWMath.akima(end_nd_arc_grid,end_nd_arc_vals,span)
+    #                     # end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
     #                 catch # end is LE or TE
     #                     println("# end is LE or TE")
     #                     if layer_Dict[:end_nd_arc][:fixed] == "LE"
@@ -426,7 +426,7 @@ end
     #                     @error "width grid must be the same span as th end grid, and if the end_nd_arc is fixed, that is 0 to 1"
     #                 end
     #                 width_vals = layer_Dict[:width][:values]
-    #                 width = FLOWMath.akima(width_grid,width_vals,end_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+    #                 width = safeakima(width_grid,width_vals,end_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
     #                 start_nd_arc_vals = end_nd_arc_vals-width
 
     #                 tryfailed = false
@@ -443,7 +443,7 @@ end
     #                 @error "offset_y_pa_grid grid must span 0 to 1, set thickness to 0 for the layer for the span positions it is not present"
     #             end
     #             offset_y_pa_vals = layer_Dict[:offset_y_pa][:values]
-    #             offset_y_pa = FLOWMath.akima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
+    #             offset_y_pa = safeakima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
 
     #             side = layer_Dict[:side]
 
@@ -455,7 +455,7 @@ end
 
     #             width_grid = layer_Dict[:width][:grid]
     #             width_vals = layer_Dict[:width][:values]
-    #             width = FLOWMath.akima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+    #             width = safeakima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
     #             start_nd_arc_vals = midpoint_nd_arc .- width./2
     #             end_nd_arc_vals = midpoint_nd_arc .+ width./2
 
@@ -478,15 +478,15 @@ end
 
     # rotation_grid = layer_Dict[:rotation][:grid]
     # rotation_vals = layer_Dict[:rotation][:values]
-    # rotation = FLOWMath.akima(rotation_grid,rotation_vals,span) # in meters, need to convert to side
+    # rotation = safeakima(rotation_grid,rotation_vals,span) # in meters, need to convert to side
 
     # offset_y_pa_grid = layer_Dict[:offset_y_pa][:grid]
     # offset_y_pa_vals = layer_Dict[:offset_y_pa][:values]
-    # offset_y_pa = FLOWMath.akima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
+    # offset_y_pa = safeakima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
 
     # width_grid = layer_Dict[:width][:grid]
     # width_vals = layer_Dict[:width][:values]
-    # width = FLOWMath.akima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+    # width = safeakima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
     # start_nd_arc = midpoint_nd_arc - width./2
     # end_nd_arc = midpoint_nd_arc + width./2
 
@@ -700,7 +700,7 @@ function saveOWENSfiles(filename,mymesh,myort,myjoint,myEl,pBC,numadIn_bld)
 
     # Save Blade
     # Used
-    chord = FLOWMath.akima(numadIn_bld.span./maximum(numadIn_bld.span),numadIn_bld.chord,mymesh.structuralSpanLocNorm[1,:])
+    chord = safeakima(numadIn_bld.span./maximum(numadIn_bld.span),numadIn_bld.chord,mymesh.structuralSpanLocNorm[1,:])
 
     bldArray = zeros(length(mymesh.structuralSpanLocNorm),16)
     row = 1
