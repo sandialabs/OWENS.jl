@@ -1133,13 +1133,19 @@ function calculateElementOrientation(mesh)
         elpos = (p1.+p2)./2
 
         Psi_d[i] = -atand(elpos[1],elpos[2]).-90.0 #global yaw position, this calculation is agnostic to vertical elements, keep in mind that top dead center is 0 degrees yaw
-        
+
+        if mesh.type[i] == 4 # treat tangentially aligned mesh components different than radially aligned
+            Psi_d[i] -= 90.0
+            twist_d[i] += 90.0
+        end
+
         # Now with the global yaw position know, get the node points in a consistent frame of reference to calculate the delta, or the slope of the element
         p1[1],p1[2],p1[3] = rigidBodyRotation(p1[1],p1[2],p1[3],[-Psi_d[i]],[3])
         p2[1],p2[2],p2[3] = rigidBodyRotation(p2[1],p2[2],p2[3],[-Psi_d[i]],[3])
         
         v=p2-p1
-    
+        v[abs.(v).<1e-7] .= 0.0 #zero out close to zero differences
+
         Theta_d[i]  = atand(v[1],v[3]).-90.0
 
         lenv[i] = LinearAlgebra.norm(v) #calculate element length
