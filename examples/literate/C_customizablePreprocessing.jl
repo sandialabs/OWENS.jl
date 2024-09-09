@@ -22,7 +22,7 @@ import PyPlot
 import OWENSOpenFASTWrappers
  
 
-path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
+path = runpath = joinpath(@__DIR__, "examples", "literate")
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 

@@ -10,5 +10,5 @@ CurrentModule = OWENS
 ## Types and functions
 
 ```@autodocs
-Modules = [OWENS]
+Modules = [OWENS,OWENS.OWENSAero,OWENS.OWENSFEA,OWENS.OWENSOpenFASTWrappers,OWENS.OWENSPreComp]
 ```

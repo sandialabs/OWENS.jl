@@ -30,15 +30,15 @@ controlParameters:
 AeroParameters:
   Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
+  AModel: AD # AD, DMS, AC
   adi_lib: nothing
   adi_rootname: "/ExampleB"
   
 structuralParameters:
   structuralModel: GX #GX, TNB, ROM
   nonlinear: false #TODO: propogate
-  ntelem: 10 #tower elements in each 
-  nbelem: 60 #blade elements in each 
+  ntelem: 20 #tower elements in each 
+  nbelem: 50 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
   nselem: 5 #strut elements in each if turbineType has struts
   NuMad_geom_xlscsv_file_twr: /data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv

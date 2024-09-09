@@ -17,8 +17,7 @@
 import OWENS
 import OWENSAero
 # import PyPlot
-
-path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
+path = runpath = joinpath(@__DIR__, "examples", "literate")
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
@@ -111,6 +110,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     NuMad_geom_xlscsv_file_strut,
     NuMad_mat_xlscsv_file_strut,
     Htwr_base=towerHeight,
+    strut_twr_mountpoint = [0.25,0.75],
+    strut_bld_mountpoint = [0.25,0.75],
     ntelem, 
     nbelem, 
     ncelem,
