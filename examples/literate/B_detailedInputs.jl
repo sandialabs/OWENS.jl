@@ -17,7 +17,7 @@
 import OWENS
 import OWENSAero
 # import PyPlot
-path = runpath = joinpath(@__DIR__, "examples", "literate")
+path = runpath = splitdir(@__FILE__)[1]#splitdir(@__FILE__)[1]#joinpath(@__DIR__, "examples", "literate")
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
