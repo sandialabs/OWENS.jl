@@ -18,12 +18,12 @@ import OWENSAero
 import QuadGK
 import FLOWMath
 import PyPlot
-#md PyPlot.pygui(true)
+#### PyPlot.pygui(true)
 import OWENSOpenFASTWrappers
  
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-#md runpath = path = splitdir(@__FILE__)[1]
+## runpath = path = splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
@@ -214,7 +214,7 @@ for icon = 1:length(mymesh.conn[:,1])
     idx2 = mymesh.conn[icon,2]
     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    #md sleep(0.1)
+    #### sleep(0.1)
 end
 
 for ijoint = 1:length(myjoint[:,1])
@@ -223,7 +223,7 @@ for ijoint = 1:length(myjoint[:,1])
     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
-    #md sleep(0.1)
+    #### sleep(0.1)
 end
 PyPlot.xlabel("x")
 PyPlot.ylabel("y")
@@ -260,7 +260,7 @@ else
     numadIn_twr = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
 end
 
-#md Add the full path
+#### Add the full path
 for (i,airfoil) in enumerate(numadIn_twr.airfoil)
     numadIn_twr.airfoil[i] = "$path/airfoils/$airfoil"
 end
@@ -398,7 +398,7 @@ for istrut = 1:Nstrutperbld
     for icol = 1:length(numadIn_strut[istrut].stack_layers[1,:])
         numadIn_strut[istrut].stack_layers[:,icol] .*= LinRange(stack_layers_scale[1],stack_layers_scale[2],length(numadIn_strut[istrut].chord))
     end
-    #md numadIn_strut[istrut].chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut[istrut].chord))
+    #### numadIn_strut[istrut].chord .*= LinRange(chord_scale[1],chord_scale[2],length(numadIn_strut[istrut].chord))
 
     for (i,airfoil) in enumerate(numadIn_strut[istrut].airfoil)
         numadIn_strut[istrut].airfoil[i] = "$path/airfoils/$airfoil"
@@ -412,7 +412,7 @@ for istrut = 1:Nstrutperbld
         plyprops_strut[istrut] = OWENS.plyproperties(names,plies)
     end
 
-    #md TODO: not straight struts
+    #### TODO: not straight struts
     spanpos = LinRange(0,1,nselem+1)#[0.0;cumsum(sqrt.(diff(mymesh.x[strut1start:strut1end]).^2 .+ diff(mymesh.z[strut1start:strut1end]).^2))]
 
     if length(thickness_scale)==2
@@ -430,7 +430,7 @@ nothing
 
 # Here we combine the section properties into an array matching the mesh elements
 bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
-#md strutssecprops = collect(Iterators.flatten(fill(sectionPropsArray_strut, Nstrutperbld*Nbld)))
+#### strutssecprops = collect(Iterators.flatten(fill(sectionPropsArray_strut, Nstrutperbld*Nbld)))
 
 if meshtype == "ARCUS"
     sectionPropsArray = [sectionPropsArray_twr; bldssecprops]#; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
@@ -473,7 +473,7 @@ if length(sectionPropsArray)<mymesh.numEl
     mass_array = [mass_array;fill(mass_strut[end][2],n_diff)]
 end
 
-#md store data in element object
+#### store data in element object
 myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
@@ -484,22 +484,22 @@ if !AD15On
     #########################################
     ### Set up aero forces
     #########################################
-    #md translate from blade span to blade height between the numad definition and the vertical slice positions
-    #md First get the angles from the overall geometry npoints and go to the numad npoints
+    #### translate from blade span to blade height between the numad definition and the vertical slice positions
+    #### First get the angles from the overall geometry npoints and go to the numad npoints
     delta_xs = shapeX[2:end] - shapeX[1:end-1]
     delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
     delta3D = atan.(delta_xs./delta_zs)
     delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
-    #md now convert the numad span to a height
+    #### now convert the numad span to a height
     bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
     bld_height_numad_unit = bld_height_numad./maximum(bld_height_numad)
-    #md now we can use it to access the numad data 
+    #### now we can use it to access the numad data 
     chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],1,Nslices))
     airfoils = fill("nothing",Nslices)
 
     twist = safeakima(bld_height_numad_unit, numadIn_bld.twist_d.*pi/180,LinRange(bld_height_numad_unit[1],1,Nslices))
 
-    #md Discretely assign the airfoils
+    #### Discretely assign the airfoils
     for (iheight_numad,height_numad) in enumerate(bld_height_numad_unit)
         for (iheight,height_slices) in enumerate(collect(LinRange(0,1,Nslices)))
             if airfoils[iheight]=="nothing" && height_slices<=height_numad
@@ -543,7 +543,7 @@ if AD15On
 
     bldchord_spl = OWENS.safeakima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,NumADBldNds))
 
-    #md Discretely assign the blade airfoils based on the next closest neighbor
+    #### Discretely assign the blade airfoils based on the next closest neighbor
     bld_airfoil_filenames = fill("nothing",NumADBldNds) #TODO: cable drag?
     for (ispan_numad,span_numad) in enumerate(numadIn_bld.span./maximum(numadIn_bld.span))
         for (ispan,span_slices) in enumerate(collect(LinRange(0,1,NumADBldNds)))
@@ -572,7 +572,7 @@ if AD15On
                 global blade_chords = [blade_chords;[strutchord_spl]]
                 global blade_Nnodes = [blade_Nnodes;NumADStrutNds]
 
-                #md Discretely assign the strut airfoils based on the next closest neighbor
+                #### Discretely assign the strut airfoils based on the next closest neighbor
                 strut_airfoil_filenames = fill("nothing",NumADStrutNds)
                 for (ispan_numad,span_numad) in enumerate(numadIn_strut[istrut].span./maximum(numadIn_strut[istrut].span))
                     for (ispan,span_slices) in enumerate(collect(LinRange(0,1,NumADBldNds)))
@@ -592,7 +592,7 @@ if AD15On
 
     NumADBody = length(AD15bldNdIdxRng[:,1])
     bld_len = zeros(NumADBody)
-    #md bladefileissaved = false
+    #### bladefileissaved = false
     for (iADBody,filename) in enumerate(blade_filenames)
         strt_idx = AD15bldNdIdxRng[iADBody,1]
         end_idx = AD15bldNdIdxRng[iADBody,2]
@@ -602,7 +602,7 @@ if AD15On
             strt_idx = tmp_end
         end
 
-        #md Get the blade length
+        #### Get the blade length
         x1 = mymesh.x[strt_idx]
         x2 = mymesh.x[end_idx]
         y1 = mymesh.y[strt_idx]
@@ -611,7 +611,7 @@ if AD15On
         z2 = mymesh.z[end_idx]
         bld_len[iADBody] = sqrt((x2-x1)^2+(y2-y1)^2+(z2-z1)^2)
 
-        #md Get the blade shape
+        #### Get the blade shape
         ADshapeZ = collect(LinRange(0,H,NumADBldNds))
         xmesh = mymesh.x[strt_idx:end_idx]
         ymesh = mymesh.y[strt_idx:end_idx]
@@ -620,7 +620,7 @@ if AD15On
         ADshapeXspl = OWENS.safeakima(LinRange(0,H,length(ADshapeX)),ADshapeX,ADshapeZ)
         
         if iADBody<=Nbld #&& !bladefileissaved#Note that the blades can be curved and are assumed to be oriented vertically
-            #md  bladefileissaved = true
+            ####  bladefileissaved = true
             BlSpn0=ADshapeZ
             BlCrvAC0=ADshapeXspl
 
@@ -629,7 +629,7 @@ if AD15On
             BlSpn = ADshapeZ
             blade_twist = atan.(xmesh,ymesh).-bladeangle
 
-            #md TODO: reevalueate these equations and make sure they are robust against varying designs
+            #### TODO: reevalueate these equations and make sure they are robust against varying designs
             BlCrvACinput = -ymesh.*sin(bladeangle).+xmesh.*cos(bladeangle)
             BlCrvACinput = BlCrvACinput .- BlCrvACinput[1]
             BlSwpAC = -OWENS.safeakima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)

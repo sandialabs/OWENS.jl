@@ -22,7 +22,7 @@
 import OWENS
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-#md runpath = path = splitdir(@__FILE__)[1]
+##runpath = path = "/Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENS.jl/examples/literate"#splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
@@ -33,23 +33,23 @@ OWENS.runOWENS(Inp,runpath)
 # One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.
 
 simulated_time = 2.0 #seconds
- DLCs = ["1_1"] #"normal" 
-#md DLCs = ["1_3"] #"normal" 
-#md DLCs = ["1_4"] #"normal" 
-#md DLCs = ["1_5"] #"normal" 
-#md DLCs = ["2_1"] #"freewheelatNormalOperatingRPM" 
-#md DLCs = ["2_3"] #"freewheelatNormalOperatingRPM" 
-#md DLCs = ["3_1"] #"startup" 
-#md DLCs = ["3_2"] #"startup" 
-#md DLCs = ["3_3"] #"startup" 
-#md DLCs = ["4_1"] #"shutdown" 
-#md DLCs = ["4_2"] #"shutdown" 
-#md DLCs = ["5_1"] #"emergencyshutdown" 
-#md DLCs = ["6_1"] #"parked" 
-#md DLCs = ["6_2"] #"parked_idle" 
-#md DLCs = ["6_4"] #"parked" 
-#md DLCs = ["7_1"] #"parked" 
-#md DLCs = ["2_3","3_1","3_2","3_3","4_1","4_2","5_1"]
+DLCs = ["1_1"] #"normal" 
+#### DLCs = ["1_3"] #"normal" 
+#### DLCs = ["1_4"] #"normal" 
+#### DLCs = ["1_5"] #"normal" 
+#### DLCs = ["2_1"] #"freewheelatNormalOperatingRPM" 
+#### DLCs = ["2_3"] #"freewheelatNormalOperatingRPM" 
+#### DLCs = ["3_1"] #"startup" 
+#### DLCs = ["3_2"] #"startup" 
+#### DLCs = ["3_3"] #"startup" 
+#### DLCs = ["4_1"] #"shutdown" 
+#### DLCs = ["4_2"] #"shutdown" 
+#### DLCs = ["5_1"] #"emergencyshutdown" 
+#### DLCs = ["6_1"] #"parked" 
+#### DLCs = ["6_2"] #"parked_idle" 
+#### DLCs = ["6_4"] #"parked" 
+#### DLCs = ["7_1"] #"parked" 
+#### DLCs = ["2_3","3_1","3_2","3_3","4_1","4_2","5_1"]
 
 OWENS.runDLC(DLCs,Inp,runpath;
     IEC_std="\"1-ED3\"",

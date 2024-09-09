@@ -16,9 +16,9 @@
 
 import OWENS
 import OWENSAero
-#md import PyPlot
+#### import PyPlot
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-
+## runpath = path = splitdir(@__FILE__)[1]
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
 nothing
