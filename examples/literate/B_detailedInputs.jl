@@ -213,6 +213,10 @@ FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,ep
 epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
 
+if AD15On #TODO: move this into the run functions
+    OWENS.OWENSOpenFASTWrappers.endTurb()
+end
+
 nothing
 
 # Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 

@@ -202,7 +202,7 @@ function setupOWENS(OWENSAero,path;
         numadIn_twr = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
     end
 
-    #Add the full path
+    #md Add the full path
     for (i,airfoil) in enumerate(numadIn_twr.airfoil)
         numadIn_twr.airfoil[i] = "$path/airfoils/$airfoil"
     end
@@ -414,7 +414,7 @@ function setupOWENS(OWENSAero,path;
         mass_array = [mass_array;fill(mass_strut[end][2],n_diff)]
     end
 
-    #store data in element object
+    #md store data in element object
     myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
     system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
@@ -425,16 +425,16 @@ function setupOWENS(OWENSAero,path;
         #########################################
         ### Set up aero forces
         #########################################
-        # translate from blade span to blade height between the numad definition and the vertical slice positions
-        # First get the angles from the overall geometry npoints and go to the numad npoints
+        #md translate from blade span to blade height between the numad definition and the vertical slice positions
+        #md First get the angles from the overall geometry npoints and go to the numad npoints
         delta_xs = shapeX[2:end] - shapeX[1:end-1]
         delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
         delta3D = atan.(delta_xs./delta_zs)
         delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
-        # now convert the numad span to a height
+        #md now convert the numad span to a height
         bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
         bld_height_numad_unit = bld_height_numad./maximum(bld_height_numad)
-        # now we can use it to access the numad data 
+        #md now we can use it to access the numad data 
         chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],1,Nslices))
         airfoils = fill("nothing",Nslices)
 
