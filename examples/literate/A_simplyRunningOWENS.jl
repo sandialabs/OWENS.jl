@@ -51,8 +51,6 @@ simulated_time = 2.0 #seconds
 #md DLCs = ["7_1"] #"parked" 
 #md DLCs = ["2_3","3_1","3_2","3_3","4_1","4_2","5_1"]
 
-Inp.ifw = false # set to false for automatic documentation until artifacts are set up
-
 OWENS.runDLC(DLCs,Inp,runpath;
     IEC_std="\"1-ED3\"",
     WindChar="\"A\"",
@@ -62,10 +60,10 @@ OWENS.runDLC(DLCs,Inp,runpath;
     Vdesign=11.0,
     grid_oversize=1.25,
     Vinf_range=[10.0],#LinRange(4,24,21),
-    regenWindFiles=false, # set to false for automatic documentation until artifacts are set up
+    regenWindFiles=true,
     delta_t_turbsim=0.05,
     simtime_turbsim=30.0,
-    pathtoturbsim="$runpath/../../../OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/turbsim/turbsim",
+    pathtoturbsim="$(OWENS.OWENSOpenFASTWrappers.OFWpath)/../deps/openfast/build/modules/turbsim/turbsim",
     runScript=OWENS.runOWENS)
 
 nothing
