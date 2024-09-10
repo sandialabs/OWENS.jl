@@ -20,9 +20,6 @@ Install julia, paraview, and visual studio manually by downloading the windows e
 - https://www.paraview.org/download/
 - https://visualstudio.microsoft.com/downloads/
 
-Also download OpenFAST:
-- https://github.com/OpenFAST/openfast
-
 Be sure julia is on your path, and follow the windows compilation instructions for the openfast Inflowwind, AeroDyn, MoorDyn and HydroDyn libraries. Installation is otherwise the same as the Linux instructions below
 
 ## Mac
@@ -41,7 +38,7 @@ Essentially the same installation as Linux except we recommend using the homebre
 
 ## Linux
 
-# Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
+Install/Update Required Compilers and Programs; If you already have an environment that can build OpenFAST, then these should already be installed.
 
     apt-get update -y
     apt-get install git -y
@@ -64,8 +61,8 @@ Additionally, if you are not finding that your path is being appended to, you ca
 
 alias julia="path/to/your/julia-1.x.x/bin/julia"
 
-# Proxy Setup
-If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or .bashrc or the equivalent
+# Environment Variables
+If you are using a proxy, be sure that the proxy variables are also declared/exported in your .bash_profile or .bashrc or the equivalent
 
     http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
     git config --global http.proxy http://user:nopass@proxy.yourorg:number
@@ -105,6 +102,8 @@ Additionally, if you find that your ssh is erroring when you try to install pack
     PubkeyAcceptedAlgorithms +ssh-ed25519
 
 # Install Optional OpenFAST Dependices
+Note that this is optional as it is automatically done by julia in the OWENSOpenFASTWrappers.jl deps/build.jl.  For Windows, please follow the OpenFAST Windows instructions on the openfast site for the branch referenced here.
+
     mkdir coderepos
     cd coderepos
     # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
