@@ -23,19 +23,19 @@ turbulentInflow:
 controlParameters:
   controlStrategy: constantRPM # TODO: incorporate the others
   RPM: 34.0 #RPM
-  numTS: 5000 #
+  numTS: 1000 #
   delta_t: 0.05 # s
 
 
 AeroParameters:
   Nslices: 35 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
+  AModel: AD # AD, DMS, AC
   adi_lib: nothing
   adi_rootname: "/SNL34m"
   
 structuralParameters:
-  structuralModel: GX #GX, TNB, ROM
+  structuralModel: ROM #GX, TNB, ROM
   nonlinear: false #TODO: propogate
   ntelem: 20 #tower elements in each 
   nbelem: 60 #blade elements in each 
