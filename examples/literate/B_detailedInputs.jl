@@ -16,10 +16,9 @@
 
 import OWENS
 import OWENSAero
-# import PyPlot
-
-path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
-
+#### import PyPlot
+runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
+## runpath = path = splitdir(@__FILE__)[1]
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
 nothing
@@ -111,6 +110,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     NuMad_geom_xlscsv_file_strut,
     NuMad_mat_xlscsv_file_strut,
     Htwr_base=towerHeight,
+    strut_twr_mountpoint = [0.25,0.75],
+    strut_bld_mountpoint = [0.25,0.75],
     ntelem, 
     nbelem, 
     ncelem,
@@ -211,6 +212,10 @@ t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
 epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+
+if AD15On #TODO: move this into the run functions
+    OWENS.OWENSOpenFASTWrappers.endTurb()
+end
 
 nothing
 

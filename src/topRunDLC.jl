@@ -284,15 +284,68 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
         AD15On = false
     end
 
+    # Handle the control strategy
+
+    normalRPM = RPM
+    slowRPM = 1.0 #RPM
+    tocp = [0.0,10.0,30.0,1000.0]
+    turbineStartup = 0
+    generatorOn = false
+    useGeneratorFunction = false
+    throwawayTimeSteps=1#round(Int,10.0/delta_t) # 10 seconds
+    if controlStrategy == "normal"
+        Omegaocp = [normalRPM,normalRPM,normalRPM,normalRPM]./60 #hz
+        turbineStartup = 0
+        generatorOn = false
+        useGeneratorFunction = false
+    elseif controlStrategy == "freewheelatNormalOperatingRPM"
+        Omegaocp = [normalRPM,normalRPM,normalRPM,normalRPM]./60 #hz
+        turbineStartup = 2
+        generatorOn = false
+        useGeneratorFunction = false
+    elseif controlStrategy == "startup"
+        throwawayTimeSteps = 1
+        tocp = [0.0,30.0,1000.0]
+        Omegaocp = [slowRPM,normalRPM,normalRPM]./60 #hz
+        turbineStartup = 0
+        generatorOn = false
+        useGeneratorFunction = false
+    elseif controlStrategy == "shutdown"
+        tocp = [0.0,10.0,15.0,30.0,1000.0]
+        Omegaocp = [normalRPM,normalRPM,normalRPM/2,slowRPM,0.0]./60 #hz
+    elseif controlStrategy == "emergencyshutdown"
+        tocp = [0.0,10.0,15.0,30.0,1000.0]
+        Omegaocp = [normalRPM,normalRPM,slowRPM,0.0,0.0]./60 #hz
+    elseif controlStrategy == "parked"
+        Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+    elseif controlStrategy == "parked_idle"
+        Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+        turbineStartup = 2
+        generatorOn = false
+        useGeneratorFunction = false
+    elseif controlStrategy == "parked_yaw"
+        Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+    elseif controlStrategy == "parked"
+        Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+    elseif controlStrategy == "transport"
+        Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+    end
+
+    println("controlStrategy: $controlStrategy")
+
     inputs = OWENS.Inputs(;analysisType = structuralModel,
-    tocp = [0.0,100000.1],
-    Omegaocp = [RPM,RPM] ./ 60,
+    tocp,
+    Omegaocp,
     tocp_Vinf = [0.0,100000.1],
     Vinfocp = [Vinf,Vinf],
     numTS,
     delta_t,
     AD15On,
-    aeroLoadsOn = 2)
+    aeroLoadsOn = 2,
+    turbineStartup,
+    generatorOn,
+    useGeneratorFunction,
+    OmegaInit = Omegaocp[1])
 
     nothing
 
@@ -303,7 +356,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     joint = myjoint,
     platformTurbineConnectionNodeNumber = 1,
     pBC,
-    nlOn = true,
+    nlOn = false,
+    gravityOn = true,
     numNodes = mymesh.numNodes,
     RayleighAlpha = 0.05,
     RayleighBeta = 0.05,
@@ -317,8 +371,13 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     println("Running Unsteady")
     t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
     FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+    topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
     topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+
+    if AModel=="AD"
+        OWENSOpenFASTWrappers.endTurb()
+    end
 
     nothing
 
@@ -326,8 +385,11 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
     # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
-    println("Saving VTK time domain files")
-    OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+    azi=aziHist#./aziHist*1e-6
+    saveName = "$path/vtk/SNL5MW"
+    OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+        epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+        FReactionHist,topFexternal_hist)
 
     nothing
 
@@ -340,18 +402,62 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
 
     massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
     SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-    topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
+    topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
     topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-    mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+    mymesh,myel,myort,B,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
     kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
     AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 
-    return [1.0,2.0,3.0]
+    dataDumpFilename = "$path/InitialDataOutputs.h5"
+
+    HDF5.h5open(dataDumpFilename, "w") do file
+        HDF5.write(file,"t",collect(t))
+        HDF5.write(file,"aziHist",aziHist)
+        HDF5.write(file,"OmegaHist",OmegaHist)
+        HDF5.write(file,"OmegaDotHist",OmegaDotHist)
+        HDF5.write(file,"gbHist",gbHist)
+        HDF5.write(file,"gbDotHist",gbDotHist)
+        HDF5.write(file,"gbDotDotHist",gbDotDotHist)
+        HDF5.write(file,"FReactionHist",FReactionHist)
+        HDF5.write(file,"FTwrBsHist",FTwrBsHist)
+        HDF5.write(file,"genTorque",genTorque)
+        HDF5.write(file,"genPower",genPower)
+        HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
+        HDF5.write(file,"uHist",uHist)
+        HDF5.write(file,"uHist_prp",uHist_prp)
+        HDF5.write(file,"epsilon_x_hist",epsilon_x_hist)
+        HDF5.write(file,"epsilon_y_hist",epsilon_y_hist)  
+        HDF5.write(file,"epsilon_z_hist",epsilon_z_hist)
+        HDF5.write(file,"kappa_x_hist",kappa_x_hist)
+        HDF5.write(file,"kappa_y_hist",kappa_y_hist)
+        HDF5.write(file,"kappa_z_hist",kappa_z_hist) 
+        HDF5.write(file,"massOwens",massOwens)
+        HDF5.write(file,"stress_U",stress_U)
+        HDF5.write(file,"SF_ult_U",SF_ult_U)
+        HDF5.write(file,"SF_buck_U",SF_buck_U)
+        HDF5.write(file,"stress_L",stress_L)
+        HDF5.write(file,"SF_ult_L",SF_ult_L)
+        HDF5.write(file,"SF_buck_L",SF_buck_L)
+        HDF5.write(file,"stress_TU",stress_TU)
+        HDF5.write(file,"SF_ult_TU",SF_ult_TU)
+        HDF5.write(file,"SF_buck_TU",SF_buck_TU)
+        HDF5.write(file,"stress_TL",stress_TL)
+        HDF5.write(file,"SF_ult_TL",SF_ult_TL)
+        HDF5.write(file,"SF_buck_TL",SF_buck_TL)
+        HDF5.write(file,"topstrainout_blade_U",topstrainout_blade_U)
+        HDF5.write(file,"topstrainout_blade_L",topstrainout_blade_L)
+        HDF5.write(file,"topstrainout_tower_U",topstrainout_tower_U)
+        HDF5.write(file,"topstrainout_tower_L",topstrainout_tower_L)
+        HDF5.write(file,"topDamage_blade_U",topDamage_blade_U)
+        HDF5.write(file,"topDamage_blade_L",topDamage_blade_L)
+        HDF5.write(file,"topDamage_tower_U",topDamage_tower_U)
+        HDF5.write(file,"topDamage_tower_L",topDamage_tower_L)
+    end
 
 end
 
