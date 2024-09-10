@@ -21,9 +21,7 @@ Install julia, paraview, and visual studio manually by downloading/installing th
 - https://www.paraview.org/download/
 - https://visualstudio.microsoft.com/downloads/
 
-<<<<<<< HEAD:docs/src/setup.md
 Be sure julia is on your path, and follow the windows compilation instructions for the openfast Inflowwind, AeroDyn, MoorDyn and HydroDyn libraries. Installation is otherwise the same as the Linux instructions below
-=======
 
 When setting up ssh keys, be sure to follow the windows specific instructions https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent and note that you may have to use id_ecdsa keys.
 
@@ -36,7 +34,6 @@ If you wish to use the openfast libraries, follow the windows compilation instru
 Set up VS code as also described below.
 
 Windows notes: details are key, hash mismatch may mean that you are behind a proxy and the proxy isn't setup correctly.  For visual studio, the default installation and recommendations should work.  If importing the provided vs-code profile, the quick keys may need to be remapped to control from cmd.  
->>>>>>> 8e25223abc25ab4cbff6714daea56eaa9fd1a700:docs/src/installation.md
 
 ## Mac
 
@@ -78,11 +75,7 @@ Additionally, if you are not finding that your path is being appended to, you ca
 alias julia="path/to/your/julia-1.x.x/bin/julia"
 
 # Environment Variables
-<<<<<<< HEAD:docs/src/setup.md
 If you are using a proxy, be sure that the proxy variables are also declared/exported in your .bash_profile or .bashrc or the equivalent
-=======
-If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or .bashrc or the equivalent
->>>>>>> 8e25223abc25ab4cbff6714daea56eaa9fd1a700:docs/src/installation.md
 
     http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
     git config --global http.proxy http://user:nopass@proxy.yourorg:number
@@ -122,12 +115,8 @@ Additionally, if you find that your ssh is erroring when you try to install pack
     PubkeyAcceptedAlgorithms +ssh-ed25519
 
 # Install Optional OpenFAST Dependices
-<<<<<<< HEAD:docs/src/setup.md
 Note that this is optional as it is automatically done by julia in the OWENSOpenFASTWrappers.jl deps/build.jl.  For Windows, please follow the OpenFAST Windows instructions on the openfast site for the branch referenced here.
 
-=======
-If your system is already set up such that it is capable of compiling OpenFAST, and you are on mac or linux, then you may skip this and rely on the automatically compiled version that are created when the OWENSOpenFAST libraries are installed by Julia.
->>>>>>> 8e25223abc25ab4cbff6714daea56eaa9fd1a700:docs/src/installation.md
     mkdir coderepos
     cd coderepos
     # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.

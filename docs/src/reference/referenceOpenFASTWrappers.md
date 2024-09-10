@@ -1,10 +1,6 @@
+# OWENSOpenFASTWrappers
 ```@meta
 CurrentModule = OWENS
-```
-
-## Index
-
-```@index
 ```
 
 ## Types and functions
