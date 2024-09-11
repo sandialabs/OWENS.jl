@@ -22,7 +22,7 @@
 import OWENS
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-##runpath = path = "/Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENS.jl/examples/literate"#splitdir(@__FILE__)[1]
+## runpath = path = splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 

@@ -267,7 +267,7 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
 end
 
 """
-return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_struts(;Htwr_base = 15.0,
+mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_struts(;Htwr_base = 15.0,
 Htwr_blds = 147.148-15.0,
     Hbld = 147.148-15.0, #blade height
     R = 54.014, # m bade radius

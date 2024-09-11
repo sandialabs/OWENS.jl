@@ -115,8 +115,7 @@ Additionally, if you find that your ssh is erroring when you try to install pack
     PubkeyAcceptedAlgorithms +ssh-ed25519
 
 # Install Optional OpenFAST Dependices
-Note that this is optional as it is automatically done by julia in the OWENSOpenFASTWrappers.jl deps/build.jl.  For Windows, please follow the OpenFAST Windows instructions on the openfast site for the branch referenced here.
-
+If your system is already set up such that it is capable of compiling OpenFAST, and you are on mac or linux, then you may skip this and rely on the automatically compiled version that are created when the OWENSOpenFAST libraries are installed by Julia.
     mkdir coderepos
     cd coderepos
     # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
