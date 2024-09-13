@@ -23,7 +23,7 @@ turbulentInflow:
 controlParameters:
   controlStrategy: normal # TODO: incorporate the others
   RPM: 17.2 #RPM
-  numTS: 100 #
+  numTS: 50 #
   delta_t: 0.01 # s
 
 

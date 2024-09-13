@@ -14,3 +14,7 @@ new*
 *.h5
 *.mat
 *.csv
+*.png
+*.gif
+*.mp4
+*turbsimfiles/

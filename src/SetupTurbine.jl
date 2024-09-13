@@ -55,6 +55,8 @@ function setupOWENS(OWENSAero,path;
     meshtype = "Darrieus",
     custommesh = nothing) #Darrieus, H-VAWT, ARCUS
     
+    custom_mesh_outputs = []
+
     if AModel=="AD"
         AD15On = true
     else
@@ -127,7 +129,7 @@ function setupOWENS(OWENSAero,path;
             verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
             connectBldTips2Twr)
     elseif custommesh != nothing
-        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = custommesh(;Htwr_base,
+        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs = custommesh(;Htwr_base,
         Htwr_blds,
         Hbld = H, #blade height
         R, # m bade radius
@@ -637,13 +639,13 @@ function setupOWENS(OWENSAero,path;
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesAD,deformAeroAD,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng 
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
     else
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesACDMS,deformAeroACDMS,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng 
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
     end
 end
 

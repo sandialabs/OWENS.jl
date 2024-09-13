@@ -9,19 +9,23 @@ OWENS is an ontology, or way of coupling modular aerodynamic, structural, hydrod
 
 Here are several examples of OWENS use cases, current and past, including the Sandia 34m research turbine.
 
-![SNL34m.](./assets/SNL34m.png){}
+![SNL34m.](./assets/SNL34m.png){#fig:34m
+width="50%"}
 
 Then here is an example of a helical design.  Note that arbitrary numbers of struts can be specified in the automatic meshing functions.  You can also write your own generalized mesh using the internal building blocks, but it is not thouroughly documented.
 
-![helical.](./assets/helical.png){}
+![helical.](./assets/helical.png){#fig:34m
+width="50%"}
 
 The generalized meshing was modified to include HAWT concepts, like this bi-wing concept.  OWENS is capable of axial flow turbines/HAWTs, but it is not a mature feature, and no where near as developed as OpenFAST (i.e. for regular HAWTs it is recommended to use that software).
 
-![biwing.](./assets/biwing.png){}
+![biwing.](./assets/biwing.png){#fig:34m
+width="50%"}
 
 Then, floating turbines are a possibility, though this feature adds another dimension to the nonlinear time stepping convergance and in turn a fair amount of time.  Future work is to make this general interface and functionality an easy to use feature (right now it needs a high level of experience to use).
 
-![arcus.](./assets/arcus.png){}
+![arcus.](./assets/arcus.png){#fig:34m
+width="50%"}
 
 
 # OWENS under the hood
@@ -44,7 +48,7 @@ Turbulent inflow is provided by OWENSOpenFASTWrappers.jl and the inflowwind and 
 
 Rainflow counting was provided by Rainflow.jl, however, this package became orphained and was pulled into the OWENS code base.
 
-![arcus.](./assets/OWENS_Processes.png){}
+<img src="./assets/OWENS_Processes.png" alt="drawing" width="400"/>
 
 ## Installation
 Please follow the instructions on the setup page

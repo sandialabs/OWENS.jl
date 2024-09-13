@@ -764,72 +764,6 @@ end
 
 function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
 
-    function setPrescribedConditions(mesh;pBC=zeros(2,2),Fexternal=[],ForceDof=[])
-        Fx = Fexternal[1:6:end]
-        Fy = Fexternal[2:6:end]
-        Fz = Fexternal[3:6:end]
-        Mx = Fexternal[4:6:end]
-        My = Fexternal[5:6:end]
-        Mz = Fexternal[6:6:end]
-        prescribed_conditions = Dict()
-        for inode = 1:mesh.numNodes
-            ux = nothing
-            uy = nothing
-            uz = nothing
-            theta_x = nothing
-            theta_y = nothing
-            theta_z = nothing
-            Fx_follower = nothing
-            Fy_follower = nothing
-            Fz_follower = nothing
-            Mx_follower = nothing
-            My_follower = nothing
-            Mz_follower = nothing
-            if inode in pBC[:,1]
-                for iBC = 1:length(pBC[:,1])
-                    if pBC[iBC,1] == inode
-                        if pBC[iBC,2] == 1
-                            ux = pBC[iBC,3]
-                        elseif pBC[iBC,2] == 2
-                            uy = pBC[iBC,3]
-                        elseif pBC[iBC,2] == 3
-                            uz = pBC[iBC,3]
-                        elseif pBC[iBC,2] == 4
-                            theta_x = pBC[iBC,3]
-                        elseif pBC[iBC,2] == 5
-                            theta_y = pBC[iBC,3]
-                        elseif pBC[iBC,2] == 6
-                            theta_z = pBC[iBC,3]
-                        end
-                    end
-                end
-            end
-            if isnothing(ux) && !isempty(Fexternal) && Fx[inode]!=0.0
-                Fx_follower = Fx[inode]
-            end
-            if isnothing(uy) && !isempty(Fexternal) && Fy[inode]!=0.0
-                Fy_follower = Fy[inode]
-            end
-            if isnothing(uz) && !isempty(Fexternal) && Fz[inode]!=0.0
-                Fz_follower = Fz[inode]
-            end
-            if isnothing(theta_x) && !isempty(Fexternal) && Mx[inode]!=0.0
-                Mx_follower = Mx[inode]
-            end
-            if isnothing(theta_y) && !isempty(Fexternal) && My[inode]!=0.0
-                My_follower = My[inode]
-            end
-            if isnothing(theta_z) && !isempty(Fexternal) && Mz[inode]!=0.0
-                Mz_follower = Mz[inode]
-            end
-
-            prescribed_conditions[inode] = GXBeam.PrescribedConditions(;ux,uy,uz,theta_x,theta_y,theta_z,Fx_follower,Fy_follower,Fz_follower,Mx_follower,My_follower,Mz_follower)
-
-        end
-        return prescribed_conditions
-    end
-
-
     linear_velocity = [0.0,0.0,0.0]
     angular_velocity = [0.0,0.0,Omega_j*2*pi]
     linear_acceleration = [0.0,0.0,0.0]
@@ -852,12 +786,12 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     initialize = false
 
     if i == 1 && numIterations == 1 # Do initial solve without external loads
-        prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC)
+        prescribed_conditions  = OWENSFEA.setPrescribedConditions(mesh;pBC=topModel.BC.pBC)
         system, state, converged = GXBeam.steady_state_analysis!(system,assembly; prescribed_conditions,
         gravity,angular_velocity,linear=false,reset_state=true)
     end
 
-    prescribed_conditions  = setPrescribedConditions(mesh;pBC=topModel.BC.pBC,Fexternal,ForceDof)
+    prescribed_conditions  = OWENSFEA.setPrescribedConditions(mesh;pBC=topModel.BC.pBC,Fexternal,ForceDof)
     initial_state = GXBeam.AssemblyState(system, assembly; prescribed_conditions)
 
     systemout, history, converged = GXBeam.time_domain_analysis!(deepcopy(system),assembly, tvec;

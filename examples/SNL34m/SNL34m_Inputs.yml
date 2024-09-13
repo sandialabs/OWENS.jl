@@ -30,12 +30,12 @@ controlParameters:
 AeroParameters:
   Nslices: 35 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: AD # AD, DMS, AC
+  AModel: DMS # AD, DMS, AC
   adi_lib: nothing
   adi_rootname: "/SNL34m"
   
 structuralParameters:
-  structuralModel: ROM #GX, TNB, ROM
+  structuralModel: GX #GX, TNB, ROM
   nonlinear: false #TODO: propogate
   ntelem: 20 #tower elements in each 
   nbelem: 60 #blade elements in each 
