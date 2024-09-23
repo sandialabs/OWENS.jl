@@ -89,10 +89,10 @@ function messyoptfun!(constraints,Vars)
     x_control_pts = [0.0,quarter_span_radius,max_radius,quarter_span_radius,0.0]
     x_control_pts_grid = [0.0,0.25,0.5,0.75,1.0]
 
-    x_grid = windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:grid]
+    x_grid = windio[:components][:blade][:outer_shape_bem][:reference_axis][:x][:grid]
     x_values = safeakima(x_control_pts_grid,x_control_pts,x_grid)
 
-    windio[:components][:blade][:internal_structure_2d_fem][:reference_axis][:x][:values] = x_values 
+    windio[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] = x_values 
 
     # Run with the WindIO standard, which as mentioned before, is in progress to include all of the design components.
     OWENS.runOWENSWINDIO(windio,OWENS_Options,runpath)

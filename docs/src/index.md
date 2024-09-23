@@ -9,8 +9,6 @@ This package is for experienced researchers and analyists with both software and
 
 OWENS is an ontology, or way of coupling modular aerodynamic, structural, hydrodynamic, and controls packages.  It was originally based on the structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813). However, it has been rewritten into the Julia programming language, modularized, and many of the issues related to aerodynamic coupling and floating dynamics solved, with extensive expansion into other areas and features to provide a seamless and automated process that takes in high level design details and does all of the preprocessing, running, and post processing that is normally done under different roofs or by different manual processes.  This was done with the intent of enabling fast, parametric design.  We have many of the modules propogating automatic gradients, however this is still a future challenge to solve well. 
 
-<p><br></p>
-
 ```@raw html
 <div style="position:relative;padding-top:50%;">
     <iframe style="position:absolute;left:0;top:0;height:80%;width:71.0%;"

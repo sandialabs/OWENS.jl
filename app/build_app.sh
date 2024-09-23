@@ -1,2 +1,2 @@
 julia -e 'using PackageCompiler; create_app("OWENS_APP","OWENS_APP_COMPILED";force=true, incremental=false)'
-OWENS_APP_COMPILED/bin/OWENS_APP "/Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENS.jl/app/OWENS_APP/src" --julia-args -t4
+OWENS_APP_COMPILED/bin/OWENS_APP "/Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENS.jl/app/OWENS_APP/src/" --julia-args -t4
