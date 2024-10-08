@@ -33,6 +33,11 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     # blade_z_grid = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:grid]
     blade_z = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
 
+    # Struts
+    #TODO: multiple struts
+    tower_strut_connection = windio[:components][:struts][1][:mountfraction_tower]
+    blade_strut_connection = windio[:components][:struts][1][:mountfraction_blade]
+
     # Airfoils
     #TODO
 
@@ -195,8 +200,8 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
 
     joint_type = 0
     c_mount_ratio = 0.05
-    strut_twr_mountpoint = [0.11,0.89]
-    strut_bld_mountpoint = [0.11,0.89]
+    strut_twr_mountpoint = [tower_strut_connection] #TODO: multiple struts
+    strut_bld_mountpoint = [blade_strut_connection]
     DSModel="BV"
     RPI=true
     cables_connected_to_blade_base = true
