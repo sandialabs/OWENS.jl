@@ -13,8 +13,8 @@ function runSim(;
     hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
     ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",
     md_input_file = "$path/data/MoorDyn_CCT2_test.dat",
-    hd_lib = "$path/bin/HydroDyn_c_binding_x64",
-    md_lib = "$path/bin/MoorDyn_c_binding_x64",
+    hd_lib = nothing,
+    md_lib = nothing,
     moordyn_on = true,
     bcDOFs = [],
     outfile_root = "owens")
@@ -23,7 +23,7 @@ function runSim(;
     # Setup
     #############################################
     dt = .00625 # seconds
-    t_max = 600 # seconds
+    t_max = 10.0#600 # seconds
     num_ts = Int(round(t_max/dt) + 1) # +1 since time 0 is considered a time step
     numDOFPerNode = 6
 
@@ -380,6 +380,38 @@ runSim(outfile_root="owens_wn_prescribed_20240821",
     hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
     ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",
     md_input_file = "$path/data/MoorDyn_CCT2_test.dat",
-    hd_lib = "$path/../../../OpenFAST/andrew-platt/openfast/build/bin/HydroDyn_c_binding_x64", #"$path/bin/HydroDyn_c_binding_x64.old"
-    md_lib = "$path/../../../OpenFAST/main/openfast/build/bin/MoorDyn_c_binding_x64")  #"$path/bin/MoorDyn_c_binding_x64.old"
+    hd_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/hydrodyn/libhydrodyn_c_binding.dylib", #"$path/bin/HydroDyn_c_binding_x64.old"
+    md_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/moordyn/libmoordyn_c_binding.dylib")  #"$path/bin/MoorDyn_c_binding_x64.old"
+
+FReactionHist = DelimitedFiles.readdlm("$path/owens_wn_prescribed_20240821_FReaction.csv", ',')
+
+Fx = FReactionHist[:,1]
+Fy = FReactionHist[:,2]
+Fz = FReactionHist[:,3]
+Mx = FReactionHist[:,4]
+My = FReactionHist[:,5]
+Mz = FReactionHist[:,6]
+
+using PyPlot
+PyPlot.pygui(true)
+
+PyPlot.figure("")
+
+PyPlot.figure("Fx")
+PyPlot.plot(LinRange(0,1,length(Fx)),Fx)
+
+PyPlot.figure("Fy")
+PyPlot.plot(LinRange(0,1,length(Fy)),Fy)
+
+PyPlot.figure("Fz")
+PyPlot.plot(LinRange(0,1,length(Fz)),Fz)
+
+PyPlot.figure("Mx")
+PyPlot.plot(LinRange(0,1,length(Mx)),Mx)
+
+PyPlot.figure("My")
+PyPlot.plot(LinRange(0,1,length(My)),My)
+
+PyPlot.figure("Mz")
+PyPlot.plot(LinRange(0,1,length(Mz)),Mz)
 
