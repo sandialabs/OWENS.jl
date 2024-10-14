@@ -17,11 +17,11 @@ operationParameters:
 turbulentInflow:
   ifw: false
   WindType: 3
-  wind_filename: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/turbsim/115mx115m_30x30_20.0msETM.bts
-  ifw_libfile: ./../openfast/build/modules/inflowwind/libifw_c_binding
+  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: /Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/inflowwind/libifw_c_binding
 
 controlParameters:
-  controlStrategy: constantRPM # TODO: incorporate the others
+  controlStrategy: normal # TODO: incorporate the others
   RPM: 17.2 #RPM
   numTS: 100 #
   delta_t: 0.01 # s
@@ -30,19 +30,20 @@ controlParameters:
 AeroParameters:
   Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: AD # AD, DMS, AC
-  adi_lib: "/Users/kevmoor/Documents/coderepos/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding"
-  adi_rootname: "./ExampleB"
+  AModel: DMS # AD, DMS, AC
+  adi_lib: /Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding
+  adi_rootname: "/ExampleB"
   
 structuralParameters:
   structuralModel: GX #GX, TNB, ROM
-  ntelem: 10 #tower elements in each 
-  nbelem: 60 #blade elements in each 
+  nonlinear: false #TODO: propogate
+  ntelem: 20 #tower elements in each 
+  nbelem: 50 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
   nselem: 5 #strut elements in each if turbineType has struts
-  NuMad_geom_xlscsv_file_twr: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv
-  NuMad_mat_xlscsv_file_twr: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/NuMAD_Materials_SNL_5MW.csv
-  NuMad_geom_xlscsv_file_bld: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv
-  NuMad_mat_xlscsv_file_bld: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/NuMAD_Materials_SNL_5MW.csv
-  NuMad_geom_xlscsv_file_strut: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/NuMAD_Geom_SNL_5MW_Struts.csv
-  NuMad_mat_xlscsv_file_strut: /Users/kevmoor/Documents/coderepos/OWENS.jl/app/OWENS_APP/src/data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_twr: /data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv
+  NuMad_mat_xlscsv_file_twr: /data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_bld: /data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv
+  NuMad_mat_xlscsv_file_bld: /data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_strut: /data/NuMAD_Geom_SNL_5MW_Struts.csv
+  NuMad_mat_xlscsv_file_strut: /data/NuMAD_Materials_SNL_5MW.csv

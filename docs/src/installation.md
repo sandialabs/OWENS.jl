@@ -1,29 +1,39 @@
 
 # Installation Instructions
 
-The OWENS software has been developed and designed to operate in the paradigm similar to modern open source software, leveraging tools such as the terminal, git, public software repositories, and automated package management both for the operating system and the programming language. Before attempting these instructions, if you are not familiar with these types of tools, please consider becoming familiar with them prior to proceeding.  Here are some of the first google hits for guides:
+The OWENS software has been developed and designed to highly flexible and to operate in the paradigm similar to modern open source software, leveraging tools such as the terminal, git, public software repositories, and automated package management both for the operating system and the programming language. Before attempting these instructions, if you are not familiar with these types of tools, please consider becoming familiar with them prior to proceeding.  Here are some of the first google hits for guides:
 
 - https://www.redhat.com/sysadmin/beginners-guide-vim
 - https://www.freecodecamp.org/news/the-beginners-guide-to-git-github/
 - https://www.howtogeek.com/63997/how-to-install-programs-in-ubuntu-in-the-command-line/
 
+In short, you should be able to compile OpenFAST on your system before attempting this.
 
 Future distributions are planned to also include a precompiled binary for each of the three major operating systems, with the aspiration of being able to reduce the required knowledge to the OWENS inputs, outputs, and operation. Until then, here are installation instructions for the three major operating systems.  **ORDER OF OPERATIONS AND DETAILS ARE IMPORTANT FOR A SUCCESSFUL BUILD, DO NOT SKIP STEPS**
 
 ## Windows
 
-At this stage in the software's maturity, it is recommended to use mac or linux environments unless the user is experienced with compiled software development in a windows environment. The WSL (windows subsystem for linux) can also be installed (https://allthings.how/how-to-use-linux-terminal-in-windows-11/) and can be set up to run via just the terminal or also set up to use the graphical capabilities of your machine, and the memory can be mapped back and forth as described in the link above.
+At this stage in the software's maturity, please use mac or linux environments unless the user is **highly** experienced with compiled software development in a windows environment. Installation and troubleshooting on a dedicated unix based system is at least 1/10th that of Windows (also why every supercomputer uses linux...)  The WSL (windows subsystem for linux) can also be installed (https://allthings.how/how-to-use-linux-terminal-in-windows-11/) and can be set up to run via just the terminal or also set up to use the graphical capabilities of your machine, and the memory can be mapped back and forth as described in the link above.  However, this adds several levels of complexity, and you **WILL** run into machine based issues until we finish the pipeline for windows download and run precompiled binaries.
 
-Install julia, paraview, and visual studio manually by downloading the windows executables for
+Install julia, paraview, and visual studio manually by downloading/installing the windows versions for each:
 
 - https://julialang.org/downloads/
 - https://www.paraview.org/download/
 - https://visualstudio.microsoft.com/downloads/
 
-Also download OpenFAST:
-- https://github.com/OpenFAST/openfast
-
 Be sure julia is on your path, and follow the windows compilation instructions for the openfast Inflowwind, AeroDyn, MoorDyn and HydroDyn libraries. Installation is otherwise the same as the Linux instructions below
+
+When setting up ssh keys, be sure to follow the windows specific instructions https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent and note that you may have to use id_ecdsa keys.
+
+Set up the environment variables below and be sure Julia is also on the path (https://www.wikihow.com/Create-an-Environment-Variable-in-Windows-10)
+
+Install the OWENS custom dependices as listed below.
+
+If you wish to use the openfast libraries, follow the windows compilation instructions for the openfast Inflowwind, AeroDyn, MoorDyn and HydroDyn libraries.  Also note that you will need to change the library paths in the top level OWENS scripts to match the resulting libraries' locations.
+
+Set up VS code as also described below.
+
+Windows notes: details are key, hash mismatch may mean that you are behind a proxy and the proxy isn't setup correctly.  For visual studio, the default installation and recommendations should work.  If importing the provided vs-code profile, the quick keys may need to be remapped to control from cmd.  
 
 ## Mac
 
@@ -41,7 +51,7 @@ Essentially the same installation as Linux except we recommend using the homebre
 
 ## Linux
 
-# Install/Update Required Compilers and Programs, if you already have an environment that can build OpenFAST, then these should already be installed.
+Install/Update Required Compilers and Programs; If you already have an environment that can build OpenFAST, then these should already be installed.
 
     apt-get update -y
     apt-get install git -y
@@ -64,8 +74,8 @@ Additionally, if you are not finding that your path is being appended to, you ca
 
 alias julia="path/to/your/julia-1.x.x/bin/julia"
 
-# Proxy Setup
-If you are using a proxy, be sure that the proxy variables are declared/exported in your .bash_profile or .bashrc or the equivalent
+# Environment Variables
+If you are using a proxy, be sure that the proxy variables are also declared/exported in your .bash_profile or .bashrc or the equivalent
 
     http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
     git config --global http.proxy http://user:nopass@proxy.yourorg:number
@@ -105,6 +115,7 @@ Additionally, if you find that your ssh is erroring when you try to install pack
     PubkeyAcceptedAlgorithms +ssh-ed25519
 
 # Install Optional OpenFAST Dependices
+If your system is already set up such that it is capable of compiling OpenFAST, and you are on mac or linux, then you may skip this and rely on the automatically compiled version that are created when the OWENSOpenFAST libraries are installed by Julia.
     mkdir coderepos
     cd coderepos
     # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
@@ -298,7 +309,7 @@ rm("delim_file.txt") # julia's function that does the same thing
 ```
 
 ## OWENS Installation
-These steps require privileges to each package through github. This should be setup by an existing Owens code contributor.
+These steps require a secure download, such as through the SSH keys detailed above, to avoid man-in-the-middle attacks. 
 ```julia
 
 using Pkg
@@ -326,7 +337,7 @@ Pkg.add("PyPlot") #Note, this will take a while (maybe 10 min depending on your 
 
 # Testing Your Build of OWENS
 
-clone the owens repository which contains example run scripts, the turbine mesh generator
+clone the owens repository which contains example scripts that will setup and run example turbines from end to end
 
     git clone git@github.com:sandialabs/OWENS.jl
 
@@ -335,13 +346,13 @@ If you get an error about attempting to access library xyz, but it doesn't exist
 adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
 ```
 
-    cd OWENS.jl/examples/SNL34m
-    julia SNL34mVAWTNormalOperation.jl
+    cd OWENS.jl/examples/literate/
+    julia B_detailedInputs.jl
 
 You can visualize the output vtk/vtu/pvd paraview files with paraview, install paraview via
-    apt-get -y install paraview
+    apt-get -y install paraview # or on mac, brew install paraview
 
-You can also run julia more interactively and maintain variables in scope for inspections etc if you don't have an ide set up (but be careful of assuming a variable was cleared when it wasn't!) by starting the repl and essentially copying and pasing the run script via
+You can also run julia more interactively and maintain variables in scope for inspections etc if you don't have an IDE set up (but be careful of assuming a variable was cleared when it wasn't!) by starting the repl and essentially copying and pasing the run script via
 
     julia
 
@@ -351,7 +362,7 @@ You can also run julia more interactively and maintain variables in scope for in
 
 # Visual Studio Code IDE
 
-You can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/setup/OWENS_Julia_VS.code-profile). 
+You can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/OWENS.code-profile). 
 
 With the sample profile loaded into VSCode, If you want to clear out all the variables and restart do 
 

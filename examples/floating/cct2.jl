@@ -23,7 +23,7 @@ function runSim(;
     # Setup
     #############################################
     dt = .00625 # seconds
-    t_max = 10.0#600 # seconds
+    t_max = 600 # seconds
     num_ts = Int(round(t_max/dt) + 1) # +1 since time 0 is considered a time step
     numDOFPerNode = 6
 
@@ -286,7 +286,7 @@ function runSim(;
     potflowfile = potflowfile)
 
     if topBCs == []
-        topModel = OWENSFEA.FEAModel(
+        topModel = OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -294,12 +294,13 @@ function runSim(;
         iterationType = "DI",
         gamma = 1.0,
         alpha = 0.5,
-        gravityOn = [0.0,0.0,9.80665],
+        gravityOn = [0.0,0.0,-9.80665],
         numNodes = topMesh.numNodes,
         nodalTerms = topConcTerms,
         RayleighAlpha = 0.01/pi)
     else
-        topModel = OWENSFEA.FEAModel(joint = joint,
+        topModel = OWENSFEA.FEAModel(analysisType = "TNB",
+        joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
         initCond = initTopConditions,
@@ -309,12 +310,12 @@ function runSim(;
         RayleighAlpha = 0.01/pi,
         gamma = 1.0,
         alpha = 0.5,
-        gravityOn = [0.0,0.0,9.80665],
+        gravityOn = [0.0,0.0,-9.80665],
         pBC = topBCs)
     end
 
     if bottomBCs == []
-        bottomModel = OWENSFEA.FEAModel(
+        bottomModel = OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -322,12 +323,12 @@ function runSim(;
         iterationType = "DI",
         gamma = 1.0,
         alpha = 0.5,
-        gravityOn = [0.0,0.0,9.80665],
+        gravityOn = [0.0,0.0,-9.80665],
         numNodes = bottomMesh.numNodes,
         nodalTerms = bottomConcTerms
         )
     else
-        bottomModel = OWENSFEA.FEAModel(
+        bottomModel = OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -335,7 +336,7 @@ function runSim(;
         iterationType = "DI",
         gamma = 1.0,
         alpha = 0.5,
-        gravityOn = [0.0,0.0,9.80665],
+        gravityOn = [0.0,0.0,-9.80665],
         numNodes = bottomMesh.numNodes,
         nodalTerms = bottomConcTerms,
         pBC = bottomBCs
@@ -384,6 +385,12 @@ runSim(outfile_root="owens_wn_prescribed_20240821",
     md_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/moordyn/libmoordyn_c_binding.dylib")  #"$path/bin/MoorDyn_c_binding_x64.old"
 
 FReactionHist = DelimitedFiles.readdlm("$path/owens_wn_prescribed_20240821_FReaction.csv", ',')
+dt = .00625 # seconds
+t_max = 600 # seconds
+FReaction_tvec = collect(dt:dt:t_max)
+
+Fz_orig = DelimitedFiles.readdlm("$path/data/Fz_orig.csv", ',')
+Fz_oldowens = DelimitedFiles.readdlm("$path/data/Fz_MD_newsim.csv", ',')
 
 Fx = FReactionHist[:,1]
 Fy = FReactionHist[:,2]
@@ -398,20 +405,25 @@ PyPlot.pygui(true)
 PyPlot.figure("")
 
 PyPlot.figure("Fx")
-PyPlot.plot(LinRange(0,1,length(Fx)),Fx)
+PyPlot.plot(FReaction_tvec,Fx)
 
 PyPlot.figure("Fy")
-PyPlot.plot(LinRange(0,1,length(Fy)),Fy)
+PyPlot.plot(FReaction_tvec,Fy)
 
 PyPlot.figure("Fz")
-PyPlot.plot(LinRange(0,1,length(Fz)),Fz)
+PyPlot.plot(Fz_orig[:,1],Fz_orig[:,2].*1e6,"k",label="OpenFAST")
+PyPlot.plot(Fz_oldowens[:,1],Fz_oldowens[:,2].*1e6,label="Old OWENS")
+PyPlot.plot(FReaction_tvec,Fz,label="Latest OWENS")
+PyPlot.xlim([300,600])
+PyPlot.ylim([-5.5e6,-6.0e6])
+PyPlot.legend()
 
 PyPlot.figure("Mx")
-PyPlot.plot(LinRange(0,1,length(Mx)),Mx)
+PyPlot.plot(FReaction_tvec,Mx)
 
 PyPlot.figure("My")
-PyPlot.plot(LinRange(0,1,length(My)),My)
+PyPlot.plot(FReaction_tvec,My)
 
 PyPlot.figure("Mz")
-PyPlot.plot(LinRange(0,1,length(Mz)),Mz)
+PyPlot.plot(FReaction_tvec,Mz)
 

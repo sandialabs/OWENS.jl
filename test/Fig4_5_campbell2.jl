@@ -26,8 +26,6 @@ path = runpath = splitdir(@__FILE__)[1]
 
 nothing
 
-# Unpack inputs, or you could directly input them here and bypass the file 
-
 verbosity = 1
 
 turbineType = "Darrieus"
@@ -151,8 +149,6 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
 # PyPlot.xlabel("x")
 # PyPlot.ylabel("y")
 
-starttime = time()
-
 # node, dof, bc
 top_idx = Int(myjoint[7,2])
 pBC = [1 1 0
@@ -172,10 +168,8 @@ top_idx 2 0]
 ##############################################
 # Modal Test
 #############################################
-displ = zeros(mymesh.numNodes*6)
-numModes = 16
 
-mymodel = OWENSFEA.FEAModel(;analysisType = "M",
+FEAinputs = OWENSFEA.FEAModel(;analysisType = "M",
         # outFilename = "$path/data/outplat.out",
         joint = myjoint,
         platformTurbineConnectionNodeNumber = 1,
@@ -186,138 +180,37 @@ mymodel = OWENSFEA.FEAModel(;analysisType = "M",
         spinUpOn = true,
         iterationType = "NR",
         numNodes = mymesh.numNodes,
-        numModes)  # number of modes to calculate)
+        numModes = 16)  # number of modes to calculate)
 
 
-
-# Campbell Diagram generation
-rotSpdArrayRPM = 0.0:5.0:40 # rpm
-rotorSpeedArrayHZ = rotSpdArrayRPM ./ 60.0
-centStiff = true      # centripetal stiffening
-NperRevLines = 8
-freq = zeros(length(rotorSpeedArrayHZ),numModes)
-for i=1:length(rotorSpeedArrayHZ)
-    println("$i of $(length(rotorSpeedArrayHZ))")
-    rotorSpeed = rotorSpeedArrayHZ[i]
-    local Omega = rotorSpeed
-    global displ
-    OmegaStart = Omega
-    
-    freqtemp,damp,imagCompSign,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90,displ=OWENS.Modal(mymodel,mymesh,myel;displ,Omega,OmegaStart,returnDynMatrices=false)
-    
-    freq[i,:] = freqtemp[1:numModes]
-end
-
+starttime = time()
+freq = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    minRPM = 0.0,
+    maxRPM = 40.0,
+    NRPM = 9, # int
+    )
+freqOWENS = [freq[:,i] for i=1:4:FEAinputs.numModes-2]
 elapsedtime = time() - starttime
-println(freq[1,:])
-
-
-########################################
-############ GXBeam ####################
-########################################
 
 starttime2 = time()
-
-# create dictionary of prescribed conditions
-prescribed_conditions = Dict(
-    # fixed base
-    1 => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0, theta_z=0),
-    # fixed top, but free to rotate around z-axis
-    top_idx => PrescribedConditions(ux=0, uy=0, uz=0, theta_x=0, theta_y=0),
-)
-
-# --- Perform Analysis --- #
-# revolutions per minute
-rpm = 0:5:40
-
-# gravity vector
-gravity = [0, 0, -9.81]
-
-# number of modes
-nmode = 10
-
-# number of eigenvalues
-nev = 2*nmode
-
-# storage for results
-freq2 = zeros(length(rpm), nmode)
-λ = []
-eigenstates =[]
-# perform an analysis for each rotation rate
-for (i,rpm) in enumerate(rpm)
-
-    global system, Up, λ, eigenstates
-
-    # set turbine rotation
-    angular_velocity = [0, 0, rpm*(2*pi)/60]
-
-    # eigenvalues and (right) eigenvectors
-    system, λ, V, converged = eigenvalue_analysis!(system, assembly;
-        prescribed_conditions = prescribed_conditions,
-        angular_velocity = angular_velocity,
-        gravity = gravity,
-        nev = nev
-        )
-
-    # check convergence
-    @assert converged
-
-    if i > 1
-        # construct correlation matrix
-        C = Up*system.M*V
-
-        # correlate eigenmodes
-        perm, corruption = correlate_eigenmodes(C)
-
-        # re-arrange eigenvalues
-        λ = λ[perm]
-
-        # update left eigenvector matrix
-        Up = left_eigenvectors(system, λ, V)
-        Up = Up[perm,:]
-    else
-        # update left eigenvector matrix
-        Up = left_eigenvectors(system, λ, V)
-    end
-
-    # save frequencies
-    freq2[i,:] = [imag(λ[k])/(2*pi) for k = 1:2:nev]
-
-    state = AssemblyState(system, assembly;
-    prescribed_conditions = prescribed_conditions)
-    eigenstates = [AssemblyState(V[:,k],system, assembly;
-    prescribed_conditions = prescribed_conditions) for k = 1:nev]
-
-end
-
+FEAinputs.analysisType = "GX"
+freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    minRPM = 0.0,
+    maxRPM = 40.0,
+    NRPM = 9, # int
+    vtksavename="$path/campbellVTK/SNL34m",
+    saveModes = [1,3,5], #must be int
+    mode_scaling = 500.0,
+    )
+freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
 elapsedtime2 = time() - starttime2
 
 println("OWENS: $elapsedtime")
 println("GX: $elapsedtime2")
 
-state = AssemblyState(system, assembly; prescribed_conditions=prescribed_conditions)
-
-filename = "$path/vtk/Campbell5_34m"
-try #this should error if someone on windows uses backslash '\'
-    lastforwardslash = findlast(x->x=='/',filename)
-    filepath = filename[1:lastforwardslash-1]
-    if !isdir(filepath)
-        mkdir(filepath)
-    end
-catch
-    @info "Please manually create the directory to house $filename"
-end
-
-write_vtk(filename, assembly, state, 
-    λ[5], eigenstates[5]; sections,mode_scaling = 500.0)
-
-    
-freqOWENS = [freq[:,i] for i=1:4:numModes-2]
-freqGX = [freq2[:,i] for i=1:2:numModes-6-2]
-
 for imode = 1:length(freqOWENS)
     for ifreq = 1:length(freqOWENS[imode])
-        println("imode $imode, ifreq $ifreq")
+        # println("imode $imode, ifreq $ifreq")
         atol = freqGX[imode][ifreq]*0.065
         @test isapprox(freqOWENS[imode][ifreq],freqGX[imode][ifreq];atol)
     end
@@ -337,9 +230,11 @@ end
 # # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
 # plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
+# NperRevLines = 8
+# rotSpdArrayRPM = LinRange(0.0, 40.0, 9) # int
 # PyPlot.figure()
-# for i=1:1:numModes-2
-#        PyPlot.plot(rotSpdArrayRPM,freq[:,i],color=plot_cycle[1],"b-") #plot mode i at various rotor speeds
+# for i=1:1:FEAinputs.numModes-2
+#        PyPlot.plot(rotSpdArrayRPM,freq[:,i],color=plot_cycle[1],"-") #plot mode i at various rotor speeds
 # end
 
 # # Plot 34m experimental data
@@ -381,8 +276,8 @@ end
 # # PyPlot.savefig("$(path)/../figs/34mCampbell.pdf",transparent = true)
 
 # # Add to figure
-# for i=1:2:numModes-6-2
-#        PyPlot.plot(rpm,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
+# for i=1:2:FEAinputs.numModes-6-2
+#        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
 # end
 # PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
 # PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)

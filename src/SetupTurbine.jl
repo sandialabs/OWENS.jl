@@ -48,10 +48,15 @@ function setupOWENS(OWENSAero,path;
     AModel="DMS",
     DSModel="BV",
     RPI=true,
+    AM_flag = false,
+    rotAccel_flag = false,
+    buoy_flag = false,
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus",
     custommesh = nothing) #Darrieus, H-VAWT, ARCUS
     
+    custom_mesh_outputs = []
+
     if AModel=="AD"
         AD15On = true
     else
@@ -124,7 +129,7 @@ function setupOWENS(OWENSAero,path;
             verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
             connectBldTips2Twr)
     elseif custommesh != nothing
-        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = custommesh(;Htwr_base,
+        mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs = custommesh(;Htwr_base,
         Htwr_blds,
         Hbld = H, #blade height
         R, # m bade radius
@@ -199,7 +204,7 @@ function setupOWENS(OWENSAero,path;
         numadIn_twr = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
     end
 
-    #Add the full path
+    #### Add the full path
     for (i,airfoil) in enumerate(numadIn_twr.airfoil)
         numadIn_twr.airfoil[i] = "$path/airfoils/$airfoil"
     end
@@ -411,7 +416,7 @@ function setupOWENS(OWENSAero,path;
         mass_array = [mass_array;fill(mass_strut[end][2],n_diff)]
     end
 
-    #store data in element object
+    #### store data in element object
     myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
     system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
@@ -422,18 +427,20 @@ function setupOWENS(OWENSAero,path;
         #########################################
         ### Set up aero forces
         #########################################
-        # translate from blade span to blade height between the numad definition and the vertical slice positions
-        # First get the angles from the overall geometry npoints and go to the numad npoints
+        #### translate from blade span to blade height between the numad definition and the vertical slice positions
+        #### First get the angles from the overall geometry npoints and go to the numad npoints
         delta_xs = shapeX[2:end] - shapeX[1:end-1]
         delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
         delta3D = atan.(delta_xs./delta_zs)
         delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
-        # now convert the numad span to a height
+        #### now convert the numad span to a height
         bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
         bld_height_numad_unit = bld_height_numad./maximum(bld_height_numad)
-        # now we can use it to access the numad data 
+        #### now we can use it to access the numad data 
         chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],1,Nslices))
         airfoils = fill("nothing",Nslices)
+
+        twist = safeakima(bld_height_numad_unit, numadIn_bld.twist_d.*pi/180,LinRange(bld_height_numad_unit[1],1,Nslices))
 
         # Discretely assign the airfoils
         for (iheight_numad,height_numad) in enumerate(bld_height_numad_unit)
@@ -445,15 +452,19 @@ function setupOWENS(OWENSAero,path;
         end
 
         OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
-        afname = airfoils, #TODO: map to the numad input
+        afname = airfoils,
         bld_y = shapeY,
         rho,
+        twist, #TODO: verify twist is in same direction
         mu,
         eta,
         ifw, #TODO: propogate WindType
         turbsim_filename = windINPfilename,
         ifw_libfile,
         tau = [1e-5,1e-5],
+        AM_flag,
+        rotAccel_flag,
+        buoy_flag,
         ntheta,
         Nslices,
         RPI)
@@ -628,13 +639,13 @@ function setupOWENS(OWENSAero,path;
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesAD,deformAeroAD,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng 
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
     else
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesACDMS,deformAeroACDMS,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng 
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
     end
 end
 

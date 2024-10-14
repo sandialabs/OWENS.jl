@@ -8,15 +8,20 @@ makedocs(;
     modules = [OWENS],
     pages = [
         "Home" => "index.md",
-        "Installation" => "setup.md",
+        "Installation" => "installation.md",
         "Examples" => [
             joinpath("examples", "A_simplyRunningOWENS.md"),
             joinpath("examples", "B_detailedInputs.md"),
             joinpath("examples", "C_customizablePreprocessing.md"),
         ],
         "Developer Guide" => "OWENS_Dev_Guide.md",
-        "Frames of Reference" => "FramesOfReference.md",
-        "API Reference" => joinpath("reference", "reference.md"),
+        "API Reference" => [
+            joinpath("reference", "reference.md"),
+            joinpath("reference", "referenceAero.md"),
+            joinpath("reference", "referenceFEA.md"),
+            joinpath("reference", "referenceOpenFASTWrappers.md"),
+            joinpath("reference", "referencePreComp.md"),
+        ],
         "Legacy User Guide" => "legacyUserGuide.md",
         "Legacy VAWTGen Guide" => "VAWTGenUserGuide.md",
     ],

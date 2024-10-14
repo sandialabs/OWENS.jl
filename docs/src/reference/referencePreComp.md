@@ -1,15 +1,10 @@
-# OWENS
+# OWENSPreComp
 ```@meta
 CurrentModule = OWENS
-```
-
-## Index
-
-```@index
 ```
 
 ## Types and functions
 
 ```@autodocs
-Modules = [OWENS]
+Modules = [OWENS.OWENSPreComp]
 ```

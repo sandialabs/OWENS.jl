@@ -1,7 +1,7 @@
 name = "OWENS"
 uuid = "51d15398-4eaf-40f9-a029-79ae1c4a3867"
 authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
-version = "1.0.3"
+version = "1.0.2"
 
 [deps]
 Composites = "d0d699f6-c662-11e8-0fb1-1b30104ab829"
