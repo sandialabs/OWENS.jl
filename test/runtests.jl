@@ -20,3 +20,8 @@ end
 @testset "Mesh Check" begin
     include("$path/check_mesh.jl")
 end
+
+@testset "Floating Test" begin
+    include("$path/testfloating.jl")
+end
+

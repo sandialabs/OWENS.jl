@@ -384,7 +384,9 @@ runSim(outfile_root="owens_wn_prescribed_20240821",
     hd_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/hydrodyn/libhydrodyn_c_binding.dylib", #"$path/bin/HydroDyn_c_binding_x64.old"
     md_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/moordyn/libmoordyn_c_binding.dylib")  #"$path/bin/MoorDyn_c_binding_x64.old"
 
-FReactionHist = DelimitedFiles.readdlm("$path/owens_wn_prescribed_20240821_FReaction.csv", ',')
+FReactionHist_MD = DelimitedFiles.readdlm("$path/owens_wn_prescribed_20240821_FReaction.csv", ',')
+FReactionHist_branchfloat = DelimitedFiles.readdlm("$path/owens_wn_prescribed_branch_ffloating_FReaction.csv", ',')
+FReactionHist_merged = DelimitedFiles.readdlm("$path/owens_wn_prescribed_merged_FReaction.csv", ',')
 dt = .00625 # seconds
 t_max = 600 # seconds
 FReaction_tvec = collect(dt:dt:t_max)
@@ -392,38 +394,67 @@ FReaction_tvec = collect(dt:dt:t_max)
 Fz_orig = DelimitedFiles.readdlm("$path/data/Fz_orig.csv", ',')
 Fz_oldowens = DelimitedFiles.readdlm("$path/data/Fz_MD_newsim.csv", ',')
 
-Fx = FReactionHist[:,1]
-Fy = FReactionHist[:,2]
-Fz = FReactionHist[:,3]
-Mx = FReactionHist[:,4]
-My = FReactionHist[:,5]
-Mz = FReactionHist[:,6]
+Fy_oldowens = DelimitedFiles.readdlm("$path/data/Fy_MD_newsim.csv", ',')
+
+Mz_oldowens = DelimitedFiles.readdlm("$path/data/Mz_MD_newsim.csv", ',')
+
+Fx_MD = FReactionHist_MD[:,1]
+Fy_MD = FReactionHist_MD[:,2]
+Fz_MD = FReactionHist_MD[:,3]
+Mx_MD = FReactionHist_MD[:,4]
+My_MD = FReactionHist_MD[:,5]
+Mz_MD = FReactionHist_MD[:,6]
+
+Fx_branchfloat = FReactionHist_branchfloat[:,1]
+Fy_branchfloat = FReactionHist_branchfloat[:,2]
+Fz_branchfloat = FReactionHist_branchfloat[:,3]
+Mx_branchfloat = FReactionHist_branchfloat[:,4]
+My_branchfloat = FReactionHist_branchfloat[:,5]
+Mz_branchfloat = FReactionHist_branchfloat[:,6]
+
+Fx_merged = FReactionHist_merged[:,1]
+Fy_merged = FReactionHist_merged[:,2]
+Fz_merged = FReactionHist_merged[:,3]
+Mx_merged = FReactionHist_merged[:,4]
+My_merged = FReactionHist_merged[:,5]
+Mz_merged = FReactionHist_merged[:,6]
 
 using PyPlot
 PyPlot.pygui(true)
 
-PyPlot.figure("")
-
-PyPlot.figure("Fx")
-PyPlot.plot(FReaction_tvec,Fx)
+# PyPlot.figure("Fx")
+# PyPlot.plot(FReaction_tvec,Fx)
 
 PyPlot.figure("Fy")
-PyPlot.plot(FReaction_tvec,Fy)
+PyPlot.plot(Fy_oldowens[:,1],Fy_oldowens[:,2],label="Old OWENS")
+PyPlot.plot(FReaction_tvec,Fy_merged,label="Latest OWENS merged with MD")
+PyPlot.plot(FReaction_tvec,Fy_branchfloat,label="f/floating branch OWENS")
+# PyPlot.plot(FReaction_tvec,Fy_MD,label="MD OWENS")
+PyPlot.xlim([300,600])
+PyPlot.ylim([-150000,100000])
+PyPlot.legend()
 
 PyPlot.figure("Fz")
 PyPlot.plot(Fz_orig[:,1],Fz_orig[:,2].*1e6,"k",label="OpenFAST")
 PyPlot.plot(Fz_oldowens[:,1],Fz_oldowens[:,2].*1e6,label="Old OWENS")
-PyPlot.plot(FReaction_tvec,Fz,label="Latest OWENS")
+PyPlot.plot(FReaction_tvec,Fz_merged,label="Latest OWENS merged with MD")
+PyPlot.plot(FReaction_tvec,Fz_branchfloat,label="f/floating branch OWENS")
+# PyPlot.plot(FReaction_tvec,Fz_MD,label="MD OWENS")
 PyPlot.xlim([300,600])
 PyPlot.ylim([-5.5e6,-6.0e6])
 PyPlot.legend()
 
-PyPlot.figure("Mx")
-PyPlot.plot(FReaction_tvec,Mx)
+# PyPlot.figure("Mx")
+# PyPlot.plot(FReaction_tvec,Mx)
 
-PyPlot.figure("My")
-PyPlot.plot(FReaction_tvec,My)
+# PyPlot.figure("My")
+# PyPlot.plot(FReaction_tvec,My)
 
 PyPlot.figure("Mz")
-PyPlot.plot(FReaction_tvec,Mz)
-
+PyPlot.plot(Mz_oldowens[:,1],Mz_oldowens[:,2],label="Old OWENS")
+PyPlot.plot(FReaction_tvec,-Mz_merged,label="Latest OWENS merged with MD")
+PyPlot.plot(FReaction_tvec,-Mz_branchfloat,label="f/floating branch OWENS")
+# PyPlot.plot(FReaction_tvec,-Mz_MD,label="MD OWENS")
+PyPlot.xlim([300,600])
+# PyPlot.ylim([-5.5e6,-6.0e6])
+PyPlot.legend()
