@@ -904,6 +904,21 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM1\""
+
+        elseif DLC == "CPCurve"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NWP\""
+
+            time = LinRange(0,30,10)
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = ones(length(time)).*0.2  
+            LinVertShear = zeros(length(time))   
+            gustvel = zeros(length(time))   
+            UpflowAngle = zeros(length(time))  
             
         else
             error("IEC61400_1 DLCs such as 1_1, 1_2 defined, you requested $DLC")
