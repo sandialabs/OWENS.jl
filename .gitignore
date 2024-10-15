@@ -13,7 +13,6 @@ new*
 *.out
 *.h5
 *.mat
-*.csv
 *.png
 *.gif
 *.mp4
