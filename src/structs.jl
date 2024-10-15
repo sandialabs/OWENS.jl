@@ -24,7 +24,6 @@ mutable struct Inputs
     topsideOn
     interpOrder
     hd_input_file
-    ss_input_file
     md_input_file
     JgearBox
     gearRatio
@@ -46,6 +45,7 @@ mutable struct Inputs
     bladeData
     driveShaftProps
     iteration_parameters
+    ss_input_file
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -186,10 +186,10 @@ function Inputs(;analysisType = "TNB",
     )
 
     return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,ss_input_file,md_input_file,
+    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings))
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file)
 end
 
 """
