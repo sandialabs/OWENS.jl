@@ -187,8 +187,51 @@ this right: Mesh Type: 0-blade 1-tower 2-strut.
 ## Composites
 
 ## Hydrodynamics
+Hydrodynamics are applied into OWENS using the HydroDyn module native to [OpenFAST](https://github.com/OpenFAST/openfast), but applied here through a standalone library linked to OWENS. The physics contained in the HydroDyn standalone library is virtually unchanged from its native application in OpenFAST. HydroDyn user documentation can be found [here](https://openfast.readthedocs.io/en/main/source/user/hydrodyn/index.html).
+
+### Platform Structure
+To enable capturing the hydrodynamics in OWENS for floating turbines, a second mesh is created to represent the platform.
+OWENS assumes the platform is a rigid body, so the mesh is composed of a single element with effectively infinite stiffness.
+The two nodes forming this element are:
+
+* The platform reference point (i.e., the platform at the still water level along the vertical centerline of its center of gravity) is the bottom node
+* The tower base point is the top node
+
+The structures composing the platform mesh itself are the same as the OWENSFEA structures documented above, though most of the definitions to define the mesh can be set to zero or are very simple.
+There are two main exceptions:
+
+* The platform center of gravity must be defined, since neither node is at this location.
+  This is defined in the `zcm` parameter in the `SectionPropsArray` for the platform mesh.
+* The 6x6 rigid body mass matrix is defined as a concentrated input at the platform reference point node
+
+A full example of these definitions can be found in the floating platform example notebook (TODO).
+
+### Solve Procedure
+When applying hydrodynamics, OWENS adds additional Gauss-Seidel loops to solve for the structural motions of both the platform mesh and the "topside" mesh (i.e. everything above the platform) in a way that generates global convergence. This process is:
+
+1. Solve via a Gauss-Seidel loop for the topside mesh using platform motions from the *previous* time step
+  * Setting platform motions to zero is how OWENS runs for land-based turbines
+2. Solve via an outer Gauss-Seidel loop and an inner Newton-Raphson loop for the platform mesh, using updated external hydrodynamic loads from HydroDyn and tower base loads from step 1
+  * The Newton-Raphson loop is contained in `Unsteady.OWENS_HD_Coupled_Solve`, and is necessary to properly account for added mass impacting both HydroDyn and OWENS in a tightly coupled manner.
+  This solve process is complex, but is documented in detail in Section 2.4.1 of Devin et al. (2022) [here](https://www.mdpi.com/1996-1073/16/5/2462).
+  This is a very similar procedure used to coupled HydroDyn to the ElastoDyn module in OpenFAST.
+3. Solve via a Gauss-Seidel loop for the topside mesh using platform motions from the *current* time step, i.e. the motions calculated in step 2.
+
+This flow chart visualizes this solve procedure, and which step corresponds to which modules connecting to the core OWENS glue code:
+![Hydrodynamics Solve Procedure Flowchart](figs/hydro_solve_flowchart.pdf)
+
+### Reference Frame Conversions
+Since HydroDyn operates in the global reference frame, the hydrodynamics capabilities in OWENS deviate from the general convention in OWENS of operating in the hub reference frame.
+As a result, operations manipulating the platform mesh (e.g. running `OWENSFEA.structuralDynamicsTransient`) are also applied in the global reference frame.
+Functionally, this means that the `rbData` vector input is set to zero when using the platform mesh in `OWENSFEA.structuralDynamicsTransient`.
+**Care must be taken for I/O procedures between the platform and topside meshes!**
+The `Unsteady_utilities.frame_convert` function is intended to make this process simpler.
 
 ## Mooring
+Mooring dynamics for floating platforms in OWENS are calculated using a standalone library linking to [MoorDyn](https://moordyn.readthedocs.io/en/latest/), another module native to OpenFAST.
+The mooring loads calculated in MoorDyn are applied as an external load to the same platform mesh as the hydrodynamics, as described above.
+Since the mooring dynamics do not need to account for added mass, the coupling between MoorDyn and OWENS is much simpler, and the mooring dynamics are applied in the Gauss-Seidel solve procedure without being modified by the additional Newton-Raphson solve in `Unsteady.OWENS_HD_Coupled_Solve`.
+Note that MoorDyn operates in the global reference frame, so be careful with reference frame conversions for MoorDyn I/O.
 
 # Coupling Methods
 
