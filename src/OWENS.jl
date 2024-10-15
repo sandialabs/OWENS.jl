@@ -32,6 +32,7 @@ using WriteVTK
 const module_path = splitdir(@__FILE__)[1]          # Path to this module
 
 Modal = OWENSFEA.modal
+AutoCampbellDiagram = OWENSFEA.autoCampbellDiagram
 FEAModel = OWENSFEA.FEAModel
 Mesh = OWENSFEA.Mesh
 El = OWENSFEA.El

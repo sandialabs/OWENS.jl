@@ -115,12 +115,12 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     for i=1:NBlade
         for j=1:numAeroTS
             # AC and DMS calculate inbetween aero slices, so we add the 0 and 1 normed values here to ensure we don't extrapolate
-            struct_N[i,j,:] = FLOWMath.akima([0.0;spanLocNorm[i,:];1.0],[0.0;N[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_T[i,j,:] = FLOWMath.akima([0.0;spanLocNorm[i,:];1.0],[0.0;T[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_M25[i,j,:] = FLOWMath.akima([0.0;spanLocNorm[i,:];1.0],[0.0;M25[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_X[i,j,:] = FLOWMath.akima([0.0;spanLocNorm[i,:];1.0],[0.0;X[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_Y[i,j,:] = FLOWMath.akima([0.0;spanLocNorm[i,:];1.0],[0.0;Y[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_Z[i,j,:] = FLOWMath.akima([0.0;spanLocNorm[i,:];1.0],[0.0;Z[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_N[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;N[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_T[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;T[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_M25[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;M25[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_X[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;X[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_Y[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;Y[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_Z[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;Z[i,j,:];0.0],structuralSpanLocNorm[i,:])
         end
     end
 

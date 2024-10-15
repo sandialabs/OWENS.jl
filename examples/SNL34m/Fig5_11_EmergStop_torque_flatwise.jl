@@ -98,12 +98,12 @@ SNL34m_5_11_Vinf = SNL34m_5_11_Vinf[1:2:end,:]
 SNL34m_5_11_RPM[SNL34m_5_11_RPM[:,2].<0.0,2] .*= 0
 
 new_t = LinRange(SNL34m_5_11_RPM[1,1],SNL34m_5_11_RPM[end,1],100).-SNL34m_5_11_RPM[1,1].+1e-6
-new_RPM = FLOWMath.akima(SNL34m_5_11_RPM[:,1].-SNL34m_5_11_RPM[1,1],SNL34m_5_11_RPM[:,2],new_t)
+new_RPM = safeakima(SNL34m_5_11_RPM[:,1].-SNL34m_5_11_RPM[1,1],SNL34m_5_11_RPM[:,2],new_t)
 
-new_Torque = FLOWMath.akima(SNL34m_5_11_Torque[:,1],SNL34m_5_11_Torque[:,2],new_t)
+new_Torque = safeakima(SNL34m_5_11_Torque[:,1],SNL34m_5_11_Torque[:,2],new_t)
 
 t_Vinf = LinRange(SNL34m_5_11_Vinf[1,1],SNL34m_5_11_Vinf[end,1],60).-SNL34m_5_11_RPM[1,1].+1e-6
-Vinf_spec = FLOWMath.akima(SNL34m_5_11_Vinf[:,1].-SNL34m_5_11_RPM[1,1],SNL34m_5_11_Vinf[:,2],t_Vinf)
+Vinf_spec = safeakima(SNL34m_5_11_Vinf[:,1].-SNL34m_5_11_RPM[1,1],SNL34m_5_11_Vinf[:,2],t_Vinf)
 
 offsetTime = 20.0
 t_Vinf = [0;t_Vinf.+offsetTime;t_Vinf[end]*10]
@@ -127,7 +127,7 @@ controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.44933
 z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
 x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
-x_shape = FLOWMath.akima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
+x_shape = safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
 toweroffset = 4.3953443986241725
 SNL34_unit_xz = [x_shape;;z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
@@ -200,8 +200,8 @@ bld1start = Int(mymesh.structuralNodeNumbers[1,1])
 bld1end = Int(mymesh.structuralNodeNumbers[1,end])
 spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 spanposmid = cumsum(diff(spanpos))
-thickness = FLOWMath.akima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
-thickness_lag = FLOWMath.akima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
+thickness = safeakima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
+thickness_lag = safeakima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
 # thickness = thicknessGX[1:end-1]
 
 PyPlot.figure()

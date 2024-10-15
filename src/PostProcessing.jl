@@ -314,7 +314,7 @@ end
 
 function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
-    kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1)
+    kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1,calculate_fatigue=true)
     topstrainout = zeros(length(eps_x[1,:,1]),lencomposites_span,length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
 
     damage = zeros(lencomposites_span,length(lam_in[1,:])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
@@ -441,28 +441,30 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
             end
             
             # Miner's Damage
-            damage_layers = zeros(length(lam.nply))
-            for ilayer = 1:length(lam.nply)
-                #TODO: multiple mean ranges and goodman correction, also non-principal stress
-                stressForFatigue = stress_eachlayer[:,ilayer,1]
-                Ncycles,meanIntervals,rangeIntervals,_ = rainflow(stressForFatigue;nbins_range=20,nbins_mean=1,m=3,Teq=1)
-                imean = 1
-                cyclesatStressRanges = Ncycles[imean,:]
-                stress_levels = (rangeIntervals[1:end-1] .+ rangeIntervals[2:end])./2 #from intervals to mean between the interval
+            if calculate_fatigue
+                damage_layers = zeros(length(lam.nply))
+                for ilayer = 1:length(lam.nply)
+                    #TODO: multiple mean ranges and goodman correction, also non-principal stress
+                    stressForFatigue = stress_eachlayer[:,ilayer,1]
+                    Ncycles,meanIntervals,rangeIntervals,_ = rainflow(stressForFatigue;nbins_range=20,nbins_mean=1,m=3,Teq=1)
+                    imean = 1
+                    cyclesatStressRanges = Ncycles[imean,:]
+                    stress_levels = (rangeIntervals[1:end-1] .+ rangeIntervals[2:end])./2 #from intervals to mean between the interval
 
-                SN_stressMpa1 = SN_stressMpa[ilayer]
-                Log_SN_cycles2Fail1 = Log_SN_cycles2Fail[ilayer]
+                    SN_stressMpa1 = SN_stressMpa[ilayer]
+                    Log_SN_cycles2Fail1 = Log_SN_cycles2Fail[ilayer]
 
-                if Log_SN_cycles2Fail1[2]>Log_SN_cycles2Fail1[1]
-                    reverse!(SN_stressMpa1)
-                    reverse!(Log_SN_cycles2Fail1)
+                    if Log_SN_cycles2Fail1[2]>Log_SN_cycles2Fail1[1]
+                        reverse!(SN_stressMpa1)
+                        reverse!(Log_SN_cycles2Fail1)
+                    end
+
+                    logcycles2fail = safeakima(SN_stressMpa1.*1e6,Log_SN_cycles2Fail1,stress_levels)
+                    cycles2fail = 10.0 .^ logcycles2fail
+                    damage_layers[ilayer] = sum(cyclesatStressRanges./cycles2fail)
                 end
-
-                logcycles2fail = FLOWMath.akima(SN_stressMpa1.*1e6,Log_SN_cycles2Fail1,stress_levels)
-                cycles2fail = 10.0 .^ logcycles2fail
-                damage_layers[ilayer] = sum(cyclesatStressRanges./cycles2fail)
+                damage[i_station,j_lam] = maximum(damage_layers)
             end
-            damage[i_station,j_lam] = maximum(damage_layers)
         end
     end
     return topstrainout,damage
@@ -625,7 +627,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
     LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=1,delta_t=0.001,AD15bldNdIdxRng=nothing,AD15bldElIdxRng=nothing,
-    strut_precompoutput=nothing,strut_precompinput=nothing,plyprops_strut=nothing,numadIn_strut=nothing,lam_U_strut=nothing,lam_L_strut=nothing)
+    strut_precompoutput=nothing,strut_precompinput=nothing,plyprops_strut=nothing,numadIn_strut=nothing,lam_U_strut=nothing,lam_L_strut=nothing,calculate_fatigue=true)
 
     # Linearly Superimpose the Strains
     epsilon_x_hist = epsilon_x_hist_ps#copy(epsilon_x_hist_ps).*0.0
@@ -695,17 +697,17 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         end
 
         mesh_span_bld = mymesh.z[startN:stopN].-mymesh.z[startN]
-        mesh_span_bld_el = FLOWMath.akima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,stopE-startE+1))
+        mesh_span_bld_el = safeakima(LinRange(0,1,length(mesh_span_bld)),mesh_span_bld,LinRange(0,1,stopE-startE+1))
         composites_span_bld = numadIn_bld.span/maximum(numadIn_bld.span)*maximum(mesh_span_bld_el) #TODO: this assumes struts and blades are straight, should be mapped for all potential cases, also need to input hub offset
 
         for its = 1:N_ts
             # Interpolate to the composite inputs #TODO: verify node vs el in strain
-            eps_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,epsilon_x_hist[1,startE:stopE,its],composites_span_bld)
-            eps_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,meanepsilon_z_hist[1,startE:stopE,its],composites_span_bld)
-            eps_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,meanepsilon_y_hist[1,startE:stopE,its],composites_span_bld)
-            kappa_x_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,kappa_x_hist[1,startE:stopE,its],composites_span_bld)
-            kappa_y_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,kappa_y_hist[1,startE:stopE,its],composites_span_bld)
-            kappa_z_bld[ibld,its,:] = FLOWMath.akima(mesh_span_bld_el,kappa_z_hist[1,startE:stopE,its],composites_span_bld)
+            eps_x_bld[ibld,its,:] = safeakima(mesh_span_bld_el,epsilon_x_hist[1,startE:stopE,its],composites_span_bld)
+            eps_z_bld[ibld,its,:] = safeakima(mesh_span_bld_el,meanepsilon_z_hist[1,startE:stopE,its],composites_span_bld)
+            eps_y_bld[ibld,its,:] = safeakima(mesh_span_bld_el,meanepsilon_y_hist[1,startE:stopE,its],composites_span_bld)
+            kappa_x_bld[ibld,its,:] = safeakima(mesh_span_bld_el,kappa_x_hist[1,startE:stopE,its],composites_span_bld)
+            kappa_y_bld[ibld,its,:] = safeakima(mesh_span_bld_el,kappa_y_hist[1,startE:stopE,its],composites_span_bld)
+            kappa_z_bld[ibld,its,:] = safeakima(mesh_span_bld_el,kappa_z_hist[1,startE:stopE,its],composites_span_bld)
         end
     end
 
@@ -742,17 +744,17 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             end
 
             mesh_span_strut = abs.(mymesh.z[startN:stopN].-mymesh.z[startN])
-            mesh_span_strut_el = FLOWMath.akima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,stopE-startE+1))
+            mesh_span_strut_el = safeakima(LinRange(0,1,length(mesh_span_strut)),mesh_span_strut,LinRange(0,1,stopE-startE+1))
             composites_span_strut = numadIn_strut.span/maximum(numadIn_strut.span)*maximum(mesh_span_strut_el) #TODO: this assumes struts and blades are straight, should be mapped for all potential cases, also need to input hub offset
 
             for its = 1:N_ts
                 # Interpolate to the composite inputs #TODO: verify node vs el in strain
-                eps_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,epsilon_x_hist[1,startE:stopE,its],composites_span_strut)
-                eps_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,meanepsilon_z_hist[1,startE:stopE,its],composites_span_strut)
-                eps_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,meanepsilon_y_hist[1,startE:stopE,its],composites_span_strut)
-                kappa_x_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,kappa_x_hist[1,startE:stopE,its],composites_span_strut)
-                kappa_y_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,kappa_y_hist[1,startE:stopE,its],composites_span_strut)
-                kappa_z_strut[istrut,its,:] = FLOWMath.akima(mesh_span_strut_el,kappa_z_hist[1,startE:stopE,its],composites_span_strut)
+                eps_x_strut[istrut,its,:] = safeakima(mesh_span_strut_el,epsilon_x_hist[1,startE:stopE,its],composites_span_strut)
+                eps_z_strut[istrut,its,:] = safeakima(mesh_span_strut_el,meanepsilon_z_hist[1,startE:stopE,its],composites_span_strut)
+                eps_y_strut[istrut,its,:] = safeakima(mesh_span_strut_el,meanepsilon_y_hist[1,startE:stopE,its],composites_span_strut)
+                kappa_x_strut[istrut,its,:] = safeakima(mesh_span_strut_el,kappa_x_hist[1,startE:stopE,its],composites_span_strut)
+                kappa_y_strut[istrut,its,:] = safeakima(mesh_span_strut_el,kappa_y_hist[1,startE:stopE,its],composites_span_strut)
+                kappa_z_strut[istrut,its,:] = safeakima(mesh_span_strut_el,kappa_z_hist[1,startE:stopE,its],composites_span_strut)
             end
         end
     end
@@ -775,15 +777,15 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     x = x.-x[1] #zero
     x = x./x[end] #normalize
     mesh_span_twr = mymesh.z[start:stop].-mymesh.z[start]
-    composites_span_twr = FLOWMath.akima(LinRange(0,1,length(mesh_span_twr)),mesh_span_twr,LinRange(0,1,length(twr_precompinput)))
+    composites_span_twr = safeakima(LinRange(0,1,length(mesh_span_twr)),mesh_span_twr,LinRange(0,1,length(twr_precompinput)))
     for its = 1:N_ts
         # Interpolate to the composite inputs
-        eps_x_twr[1,its,:] = FLOWMath.akima(mesh_span_twr,epsilon_x_hist[1,start:stop,its],composites_span_twr)
-        eps_z_twr[1,its,:] = FLOWMath.akima(mesh_span_twr,meanepsilon_z_hist[1,start:stop,its],composites_span_twr)
-        eps_y_twr[1,its,:] = FLOWMath.akima(mesh_span_twr,meanepsilon_y_hist[1,start:stop,its],composites_span_twr)
-        kappa_x_twr[1,its,:] = FLOWMath.akima(mesh_span_twr,kappa_x_hist[1,start:stop,its],composites_span_twr)
-        kappa_y_twr[1,its,:] = FLOWMath.akima(mesh_span_twr,kappa_y_hist[1,start:stop,its],composites_span_twr)
-        kappa_z_twr[1,its,:] = FLOWMath.akima(mesh_span_twr,kappa_z_hist[1,start:stop,its],composites_span_twr)
+        eps_x_twr[1,its,:] = safeakima(mesh_span_twr,epsilon_x_hist[1,start:stop,its],composites_span_twr)
+        eps_z_twr[1,its,:] = safeakima(mesh_span_twr,meanepsilon_z_hist[1,start:stop,its],composites_span_twr)
+        eps_y_twr[1,its,:] = safeakima(mesh_span_twr,meanepsilon_y_hist[1,start:stop,its],composites_span_twr)
+        kappa_x_twr[1,its,:] = safeakima(mesh_span_twr,kappa_x_hist[1,start:stop,its],composites_span_twr)
+        kappa_y_twr[1,its,:] = safeakima(mesh_span_twr,kappa_y_hist[1,start:stop,its],composites_span_twr)
+        kappa_z_twr[1,its,:] = safeakima(mesh_span_twr,kappa_z_hist[1,start:stop,its],composites_span_twr)
 
     end
 
@@ -797,7 +799,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     topstrainout_blade_U,topDamage_blade_U = calcSF(stress_U,SF_ult_U,SF_buck_U,length(bld_precompinput),plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_U_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
-    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=true)
+    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=true,calculate_fatigue)
 
     if verbosity>0
         println("Composite Ultimate and Buckling Safety Factors")
@@ -816,7 +818,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     topstrainout_blade_L,topDamage_blade_L = calcSF(stress_L,SF_ult_L,SF_buck_L,length(bld_precompinput),plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_L_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
-    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=false)
+    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=false,calculate_fatigue)
 
     if verbosity>0
         println("\n\nLOWER BLADE SURFACE")
@@ -838,7 +840,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
         topstrainout_strut_U,topDamage_strut_U = calcSF(stress_U_strut,SF_ult_U_strut,SF_buck_U_strut,length(strut_precompinput),plyprops_strut,
         strut_precompinput,strut_precompoutput,lam_U_strut,eps_x_strut,eps_z_strut,eps_y_strut,kappa_x_strut,
-        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=true)
+        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=true,calculate_fatigue)
 
         if verbosity>0
             println("Composite Ultimate and Buckling Safety Factors")
@@ -857,7 +859,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
         topstrainout_strut_L,topDamage_strut_L = calcSF(stress_L_strut,SF_ult_L_strut,SF_buck_L_strut,length(strut_precompinput),plyprops_strut,
         strut_precompinput,strut_precompoutput,lam_L_strut,eps_x_strut,eps_z_strut,eps_y_strut,kappa_x_strut,
-        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=false)
+        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=false,calculate_fatigue)
 
         if verbosity>0
             println("\n\nLOWER STRUT SURFACE")
@@ -888,7 +890,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     topstrainout_tower_U,topDamage_tower_U = calcSF(stress_TU,SF_ult_TU,SF_buck_TU,length(twr_precompinput),plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
-    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true)
+    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true,calculate_fatigue)
 
     println("\n\nUPPER TOWER")
     printsf_twr(verbosity,lam_U_twr,SF_ult_TU,SF_buck_TU,length(twr_precompinput),Twr_LE_U_idx,topDamage_tower_U,delta_t,total_t)
@@ -899,7 +901,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     topstrainout_tower_L,topDamage_tower_L = calcSF(stress_TL,SF_ult_TL,SF_buck_TL,length(twr_precompinput),plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
-    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false)
+    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false,calculate_fatigue)
 
     println("\n\nLower TOWER")
     printsf_twr(verbosity,lam_L_twr,SF_ult_TL,SF_buck_TL,length(twr_precompinput),Twr_LE_L_idx,topDamage_tower_L,delta_t,total_t)

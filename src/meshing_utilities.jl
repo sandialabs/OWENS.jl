@@ -37,13 +37,13 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
 
         # First Section
         mesh_x1 = collect(LinRange(zeroOffset,zeroOffset+L1,Nelem1+1))
-        mesh_y1 = FLOWMath.akima(x_shape,y_shape,mesh_x1)
-        mesh_z1 = FLOWMath.akima(x_shape,z_shape,mesh_x1)
+        mesh_y1 = safeakima(x_shape,y_shape,mesh_x1)
+        mesh_z1 = safeakima(x_shape,z_shape,mesh_x1)
 
         # Angled Section
         mesh_x2 = zeroOffset+L1.+collect(LinRange(0.0,L2,Nelem2+1))
-        mesh_y2 = FLOWMath.akima(x_shape,y_shape,mesh_x2)
-        mesh_z2 = FLOWMath.akima(x_shape,z_shape,mesh_x2)
+        mesh_y2 = safeakima(x_shape,y_shape,mesh_x2)
+        mesh_z2 = safeakima(x_shape,z_shape,mesh_x2)
     end
 
     # intra-beam connectivity
@@ -163,13 +163,13 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
 
         # First Section
         mesh_x1 = collect(LinRange(zeroOffset,zeroOffset+L1,Nelem1+1))
-        mesh_y1 = FLOWMath.akima(x_shape,y_shape,mesh_x1)
-        mesh_z1 = FLOWMath.akima(x_shape,z_shape,mesh_x1)
+        mesh_y1 = safeakima(x_shape,y_shape,mesh_x1)
+        mesh_z1 = safeakima(x_shape,z_shape,mesh_x1)
 
         # Angled Section
         mesh_x2 = zeroOffset+L1.+collect(LinRange(0.0,L2,Nelem2+1))
-        mesh_y2 = FLOWMath.akima(x_shape,y_shape,mesh_x2)
-        mesh_z2 = FLOWMath.akima(x_shape,z_shape,mesh_x2)
+        mesh_y2 = safeakima(x_shape,y_shape,mesh_x2)
+        mesh_z2 = safeakima(x_shape,z_shape,mesh_x2)
     end
 
     # Push a shaft onto the mesh
@@ -267,7 +267,7 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
 end
 
 """
-return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_struts(;Htwr_base = 15.0,
+mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng = create_mesh_struts(;Htwr_base = 15.0,
 Htwr_blds = 147.148-15.0,
     Hbld = 147.148-15.0, #blade height
     R = 54.014, # m bade radius
@@ -401,13 +401,13 @@ function create_mesh_struts(;Htwr_base = 15.0,
         # Ensure the blade shape conforms to the turbine height and radius specs
         bshapex = R .* bshapex./maximum(bshapex)
         bshapez = Hbld .* bshapez./maximum(bshapez)
-        bld_Y = FLOWMath.akima(bshapez,bshapex,bld_Z)
+        bld_Y = safeakima(bshapez,bshapex,bld_Z)
     end
 
     if bshapey == zeros(nbelem+1)
         bld_X = zero(bld_Y)
     else
-        bld_X = FLOWMath.akima(bshapez,bshapey,bld_Z)
+        bld_X = safeakima(bshapez,bshapey,bld_Z)
     end
 
     # AeroDyn Compatability
@@ -760,7 +760,7 @@ function create_arcus_mesh(;
         bld_Y = R.*(1.0.-4.0.*(bld_Z/Hbld.-.5).^2)
     else
         # Ensure the blade shape conforms to the turbine height and radius specs
-        bld_Y = FLOWMath.akima(bshapez,bshapex,bld_Z)
+        bld_Y = safeakima(bshapez,bshapex,bld_Z)
     end
     bld_X = zero(bld_Y)
 
@@ -1133,13 +1133,19 @@ function calculateElementOrientation(mesh)
         elpos = (p1.+p2)./2
 
         Psi_d[i] = -atand(elpos[1],elpos[2]).-90.0 #global yaw position, this calculation is agnostic to vertical elements, keep in mind that top dead center is 0 degrees yaw
-        
+
+        if mesh.type[i] == 4 # treat tangentially aligned mesh components different than radially aligned
+            Psi_d[i] -= 90.0
+            twist_d[i] += 90.0
+        end
+
         # Now with the global yaw position know, get the node points in a consistent frame of reference to calculate the delta, or the slope of the element
         p1[1],p1[2],p1[3] = rigidBodyRotation(p1[1],p1[2],p1[3],[-Psi_d[i]],[3])
         p2[1],p2[2],p2[3] = rigidBodyRotation(p2[1],p2[2],p2[3],[-Psi_d[i]],[3])
         
         v=p2-p1
-    
+        v[abs.(v).<1e-7] .= 0.0 #zero out close to zero differences
+
         Theta_d[i]  = atand(v[1],v[3]).-90.0
 
         lenv[i] = LinearAlgebra.norm(v) #calculate element length
@@ -1612,30 +1618,30 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     # Now create the splines and sample them at the used span
     origUnitSpan = numadIn.span./numadIn.span[end]
     usedUnitSpan = usedUnitSpan./maximum(usedUnitSpan)
-    ei_flap_used = FLOWMath.akima(origUnitSpan,ei_flap,usedUnitSpan)
-    ei_lag_used = FLOWMath.akima(origUnitSpan,ei_lag,usedUnitSpan)
-    gj_used = FLOWMath.akima(origUnitSpan,gj,usedUnitSpan)
-    ea_used = FLOWMath.akima(origUnitSpan,ea,usedUnitSpan)
-    s_fl_used = FLOWMath.akima(origUnitSpan,s_fl,usedUnitSpan)
-    s_af_used = FLOWMath.akima(origUnitSpan,s_af,usedUnitSpan)
-    s_al_used = FLOWMath.akima(origUnitSpan,s_al,usedUnitSpan)
-    s_ft_used = FLOWMath.akima(origUnitSpan,s_ft,usedUnitSpan)
-    s_lt_used = FLOWMath.akima(origUnitSpan,s_lt,usedUnitSpan)
-    s_at_used = FLOWMath.akima(origUnitSpan,s_at,usedUnitSpan)
-    x_sc_used = FLOWMath.akima(origUnitSpan,x_sc,usedUnitSpan)
-    y_sc_used = FLOWMath.akima(origUnitSpan,y_sc,usedUnitSpan)
-    x_tc_used = FLOWMath.akima(origUnitSpan,x_tc,usedUnitSpan)
-    y_tc_used = FLOWMath.akima(origUnitSpan,y_tc,usedUnitSpan)
-    mass_used = FLOWMath.akima(origUnitSpan,mass,usedUnitSpan)
-    flap_iner_used = FLOWMath.akima(origUnitSpan,flap_iner,usedUnitSpan)
-    lag_iner_used = FLOWMath.akima(origUnitSpan,lag_iner,usedUnitSpan)
-    tw_iner_d_used = FLOWMath.akima(origUnitSpan,tw_iner_d,usedUnitSpan)
-    x_cm_used = FLOWMath.akima(origUnitSpan,x_cm,usedUnitSpan).*0.0
-    y_cm_used = FLOWMath.akima(origUnitSpan,y_cm,usedUnitSpan).*0.0
+    ei_flap_used = safeakima(origUnitSpan,ei_flap,usedUnitSpan)
+    ei_lag_used = safeakima(origUnitSpan,ei_lag,usedUnitSpan)
+    gj_used = safeakima(origUnitSpan,gj,usedUnitSpan)
+    ea_used = safeakima(origUnitSpan,ea,usedUnitSpan)
+    s_fl_used = safeakima(origUnitSpan,s_fl,usedUnitSpan)
+    s_af_used = safeakima(origUnitSpan,s_af,usedUnitSpan)
+    s_al_used = safeakima(origUnitSpan,s_al,usedUnitSpan)
+    s_ft_used = safeakima(origUnitSpan,s_ft,usedUnitSpan)
+    s_lt_used = safeakima(origUnitSpan,s_lt,usedUnitSpan)
+    s_at_used = safeakima(origUnitSpan,s_at,usedUnitSpan)
+    x_sc_used = safeakima(origUnitSpan,x_sc,usedUnitSpan)
+    y_sc_used = safeakima(origUnitSpan,y_sc,usedUnitSpan)
+    x_tc_used = safeakima(origUnitSpan,x_tc,usedUnitSpan)
+    y_tc_used = safeakima(origUnitSpan,y_tc,usedUnitSpan)
+    mass_used = safeakima(origUnitSpan,mass,usedUnitSpan)
+    flap_iner_used = safeakima(origUnitSpan,flap_iner,usedUnitSpan)
+    lag_iner_used = safeakima(origUnitSpan,lag_iner,usedUnitSpan)
+    tw_iner_d_used = safeakima(origUnitSpan,tw_iner_d,usedUnitSpan)
+    x_cm_used = safeakima(origUnitSpan,x_cm,usedUnitSpan).*0.0
+    y_cm_used = safeakima(origUnitSpan,y_cm,usedUnitSpan).*0.0
 
-    ac_used = FLOWMath.akima(origUnitSpan,numadIn.aerocenter,usedUnitSpan)
-    twist_d_used = FLOWMath.akima(origUnitSpan,numadIn.twist_d,usedUnitSpan)
-    chord_used = FLOWMath.akima(origUnitSpan,numadIn.chord,usedUnitSpan)
+    ac_used = safeakima(origUnitSpan,numadIn.aerocenter,usedUnitSpan)
+    twist_d_used = safeakima(origUnitSpan,numadIn.twist_d,usedUnitSpan)
+    chord_used = safeakima(origUnitSpan,numadIn.chord,usedUnitSpan)
 
     if GX
 
@@ -1730,8 +1736,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
             myxpts_top = LinRange(xaf_top[1],xaf_top[end],nspl)
             myxpts_bot = LinRange(xaf_bot[1],xaf_bot[end],nspl)
 
-            myypts_top = FLOWMath.akima(xaf_top,yaf_top,myxpts_top)
-            myypts_bot = FLOWMath.akima(reverse(xaf_bot),reverse(yaf_bot),reverse(myxpts_bot))
+            myypts_top = safeakima(xaf_top,yaf_top,myxpts_top)
+            myypts_bot = safeakima(reverse(xaf_bot),reverse(yaf_bot),reverse(myxpts_bot))
 
             myxafpc[ipci,:] = [myxpts_top;myxpts_bot;myxpts_top[1]]
             myyafpc[ipci,:] = [myypts_top;reverse(myypts_bot);myypts_top[1]]
@@ -1748,11 +1754,11 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
         myxaf = zeros(length(usedUnitSpan)-1,nspl*2+1)
         myyaf = zeros(length(usedUnitSpan)-1,nspl*2+1)
         myzaf = LinRange(0,1,length(usedUnitSpan)-1)
-        chord = FLOWMath.akima(myzafpc,mychord,myzaf)
+        chord = safeakima(myzafpc,mychord,myzaf)
 
         for iline = 1:nspl*2+1
-            myxaf[:,iline] = FLOWMath.akima(myzafpc,myxafpc[:,iline],myzaf)
-            myyaf[:,iline] = FLOWMath.akima(myzafpc,myyafpc[:,iline],myzaf)
+            myxaf[:,iline] = safeakima(myzafpc,myxafpc[:,iline],myzaf)
+            myyaf[:,iline] = safeakima(myzafpc,myyafpc[:,iline],myzaf)
         end
     else
         myxaf = nothing
@@ -1874,7 +1880,7 @@ function create_hawt_mesh(;
     if maximum(bshapez) != 0.0 #TODO more robust
         bshapez = tip_precone .* bshapez./maximum(bshapez)
     end
-    bld_Z = FLOWMath.akima(bshapex,bshapez,bld_Y)
+    bld_Z = safeakima(bshapex,bshapez,bld_Y)
 
     bld_X = zero(bld_Z)
 
@@ -2129,22 +2135,22 @@ function create_hawt_biwing_mesh(;
 
     # Root
     bld_root_Y = collect(LinRange(0.0,R_root,nbelem_root+1))
-    bld_root_Z = FLOWMath.akima(bshapex_root,bshapez_root,bld_root_Y)    
+    bld_root_Z = safeakima(bshapex_root,bshapez_root,bld_root_Y)    
     bld_root_X = zero(bld_root_Y)
 
     # Biwing upper
     bld_biwing_U_Y = collect(LinRange(R_root,R_biwing,nbelem_biwing+1))
-    bld_biwing_U_Z = FLOWMath.akima(bshapex_biwing_U,bshapez_biwing_U,bld_biwing_U_Y)
+    bld_biwing_U_Z = safeakima(bshapex_biwing_U,bshapez_biwing_U,bld_biwing_U_Y)
     bld_biwing_U_X = zero(bld_biwing_U_Y)
 
     # Biwing lower
     bld_biwing_L_Y = collect(LinRange(R_root,R_biwing,nbelem_biwing+1))
-    bld_biwing_L_Z = FLOWMath.akima(bshapex_biwing_L,bshapez_biwing_L,bld_biwing_L_Y)
+    bld_biwing_L_Z = safeakima(bshapex_biwing_L,bshapez_biwing_L,bld_biwing_L_Y)
     bld_biwing_L_X = zero(bld_biwing_L_Y)
 
     # Tip
     bld_tip_Y = collect(LinRange(R_biwing,R_tip,nbelem_tip+1))
-    bld_tip_Z = FLOWMath.akima(bshapex_tip,bshapez_tip,bld_tip_Y)
+    bld_tip_Z = safeakima(bshapex_tip,bshapez_tip,bld_tip_Y)
     bld_tip_X = zero(bld_tip_Y)
 
     # Iterate around the hub

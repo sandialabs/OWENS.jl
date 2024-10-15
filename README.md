@@ -1,12 +1,20 @@
 # OWENS (Onshore/Offshore Wind/Water ENergy Simulator)
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sandialabs.github.io/OWENS.jl)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sandialabs.github.io/OWENS.jl/dev)
 ![](https://github.com/sandialabs/OWENS.jl/workflows/CI/badge.svg)
 
+* *Documentation:* [sandialabs.github.io/OWENS.jl/](https://sandialabs.github.io/OWENS.jl/dev)
+* *Code:* [github.com/sandialabs/OWENS.jl](https://github.com/sandialabs/OWENS.jl)
 
-This package was based on the original structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813). However, it has been rewritten into the Julia programming language and many of the issues related to aerodynamic coupling and floating dynamics solved, with extensive expansion into other areas and features to provide a seamless and automated process that takes in high level design details and does all of the preprocessing, running, and post processing that is normally done under different roofs or by different manual processes.  This was done with the intent of enabling fast, parametric design.  We have many of the modules propogating automatic gradients, however this is still a future challenge to solve well. 
+This package is for experienced researchers and analyists with both software and engineering experience who need generalized flexibility and performance that is 100% open source and is compatible with gradient based optimization with automatic gradients in process.  If you want a windows compatible GUI, please use QBlade.  
 
-This package is for experienced researchers with both software and engineering experience who need generalized flexibility and performance that is 100% open source.  If you want a windows compatible GUI, please use QBlade from our friends across the pond.  
+OWENS is an ontology, or way of coupling modular aerodynamic, structural, hydrodynamic, and controls packages.  It was originally based on the structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813). However, it has been rewritten into the Julia programming language, modularized, and many of the issues related to aerodynamic coupling and floating dynamics solved, with extensive expansion into other areas and features to provide a seamless and automated process that takes in high level design details and does all of the preprocessing, running, and post processing that is normally done under different roofs or by different manual processes.  This was done with the intent of enabling fast, parametric design.  We have many of the modules propogating automatic gradients, however this is still a future challenge to solve well. 
+
+<p><br></p>
+
+
+<p align="center"> <a href="https://www.youtube.com/watch?v=FTx9Jui_0CA?hd=1"> <img src="docs/src/assets/youtube_demo_image.png" alt="youtube.com/watch?v=FTx9Jui_0CA" style="width:70%"> </a> </p>
+
 
 Here are several examples of OWENS use cases, current and past, including the Sandia 34m research turbine.
 
@@ -28,6 +36,8 @@ Then, floating turbines are a possibility, though this feature adds another dime
 # OWENS under the hood
 
 The OWENS.jl package contains functions and interfaces related to the ontology (how everything comes together, forms a wind turbine, and operates like a wind turbine), with preprocessing and postprocessing helper functions. These include automated meshing functions, sectional property mapping, two-way loads mapping, generalized torque and direct mesh controls, algorithms for two-way coupling and time stepping, fatigue and design equivalent load calculation, and all of the ontology and coupling to the other packages used.
+
+<img src="docs/src/assets/OWENS_Processes.png" alt="drawing" width="400"/>
 
 OWENSPrecomp.jl is a translation of Precomp and calculates the sectional properties
 
@@ -53,7 +63,7 @@ Please follow the instructions on the setup page in the documentation.
 -	All of the functions have docstrings describing the i/o and function purpose, which can be accessed the docs site or by:
     * import module
     * ? module.function() 				
--	A note about julia debuggers – if you don’t want it to step through everything, you need to tell it what packages to compile vs while packages to step through. This will make the debugger comparable (if not faster) than Matlab in speed. In VSCode, this can be done in the debug pane.
+-	A note about julia debuggers – if you don’t want it to step through everything, you need to tell it what packages to compile vs while packages to step through. This will make the debugger comparable (if not faster) than Matlab in speed. In VSCode, this can be done in the debug pane, or by optionally loading the provided VS code profile in the OWENS.jl/docs folder.  This VS code profile will also set up the julia environment and other useful packages and key bindings, and can be modified as desired.
 
 ## Software License
 

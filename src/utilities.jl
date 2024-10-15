@@ -330,7 +330,7 @@ function owens(owensfile,analysisType;
 
         aeroForces(t,azi) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
-        deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1) = 0.0 #placeholder function
+        deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1,accel_flap_in=-1,accel_edge_in=-1,gravity=-1) = 0.0 #placeholder function
         Unsteady(model;topModel=feamodel,topMesh=mesh,topEl=el,bin,aero=aeroForces,deformAero)
 
         return model
@@ -761,3 +761,11 @@ end
 #     end
 #     return plystress
 # end #stress_calc
+
+function safeakima(x,y,xpt)
+    if minimum(xpt)<(minimum(x)-abs(minimum(x))*0.1) || maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
+        msg="Extrapolating on akima spline results in undefined solutions minimum(xpt)<minimum(x) $(minimum(xpt))<$(minimum(x)) or maximum(xpt)<maximum(x) $(maximum(xpt))>$(maximum(x))"
+        throw(OverflowError(msg))
+    end
+    return FLOWMath.akima(x,y,xpt)
+end
