@@ -1,11 +1,6 @@
 using Test
-import HDF5
-import PyPlot
-import LinearAlgebra
 import DelimitedFiles
-PyPlot.close("all")
 path = splitdir(@__FILE__)[1]
-import OWENSFEA
 import OWENS
 
 function runSim(;
@@ -13,6 +8,7 @@ function runSim(;
     hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
     ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",
     md_input_file = "$path/data/MoorDyn_CCT2_test.dat",
+    topForcingFile = "$(path)/data/PrescribedForcesMoments.csv",
     hd_lib = nothing,
     md_lib = nothing,
     moordyn_on = true,
@@ -23,7 +19,7 @@ function runSim(;
     # Setup
     #############################################
     dt = .00625 # seconds
-    t_max = 600 # seconds
+    t_max = 1 # seconds
     num_ts = Int(round(t_max/dt) + 1) # +1 since time 0 is considered a time step
     numDOFPerNode = 6
 
@@ -33,7 +29,7 @@ function runSim(;
 
     # Platform Properties
 
-    bottomMesh = OWENSFEA.Mesh(
+    bottomMesh = OWENS.OWENSFEA.Mesh(
     [1.0, 2.0], #nodeNum
     1, #numElx
     2, #numNodes
@@ -49,7 +45,7 @@ function runSim(;
     Any[] #structuralElNumbers
     )
 
-    topMesh = OWENSFEA.Mesh(
+    topMesh = OWENS.OWENSFEA.Mesh(
     [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0], #nodeNum
     10, #numEl
     11, #numNodes
@@ -65,7 +61,7 @@ function runSim(;
     Any[] #structuralElNumbers
     )
 
-    bottom_ort = OWENSFEA.Ort(
+    bottom_ort = OWENS.OWENSFEA.Ort(
     [180.0], #Psi_d
     [-90.0],  #Theta_d
     [90.0], #Twist_d
@@ -76,7 +72,7 @@ function runSim(;
      0.0]
     )
 
-    top_ort = OWENSFEA.Ort(
+    top_ort = OWENS.OWENSFEA.Ort(
     [180.0, 0.0, 180.0, 0.0, 180.0, 0.0, 180.0, 0.0, 180.0, 0.0], #Psi_d
     [-90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0],  #Theta_d
     [90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0], #Twist_d
@@ -100,10 +96,10 @@ function runSim(;
     ## Create Sectional Properties
 
     # Bottom Side
-    bottomSectionProps = Array{OWENSFEA.SectionPropsArray, 1}(undef, n_ptfm_elem)
+    bottomSectionProps = Array{OWENS.OWENSFEA.SectionPropsArray, 1}(undef, n_ptfm_elem)
 
     for ii = 1:n_ptfm_elem
-        bottomSectionProps[ii] = OWENSFEA.SectionPropsArray(
+        bottomSectionProps[ii] = OWENS.OWENSFEA.SectionPropsArray(
             [0.0, 0.0], #ac
             [0.0, 0.0], #twist_d
             [0.0, 0.0], #rhoA
@@ -151,7 +147,7 @@ function runSim(;
         ]
 
     # Top Side
-    topSectionProps = Array{OWENSFEA.SectionPropsArray, 1}(undef, n_twr_elem)
+    topSectionProps = Array{OWENS.OWENSFEA.SectionPropsArray, 1}(undef, n_twr_elem)
 
     twr_rhoA = [4.667e3, 4.34528e3, 4.03476e3, 3.73544e3, 3.44732e3, 3.1704e3, 2.90469e3, 2.65018e3, 2.40688e3, 2.17477e3, 1.95387e3]
     twr_EA = [115.302e9, 107.354e9, 99.682e9, 92.287e9,  85.169e9, 78.328e9, 71.763e9, 65.475e9, 59.464e9, 53.730e9, 48.272e9]
@@ -174,7 +170,7 @@ function runSim(;
         rhoIzz = [twr_rhoIzz[ii], twr_rhoIzz[ii+1]]
         rhoJ = [twr_rhoJ[ii], twr_rhoJ[ii+1]]
 
-        topSectionProps[ii] = OWENSFEA.SectionPropsArray(
+        topSectionProps[ii] = OWENS.OWENSFEA.SectionPropsArray(
             [0.0, 0.0], #ac
             [0.0, 0.0], #twist_d
             rhoA,
@@ -206,8 +202,8 @@ function runSim(;
     topRotationalEffects = ones(topMesh.numEl)
 
     #store data in element object
-    bottomEl = OWENSFEA.El(bottomSectionProps,bottom_ort.Length,bottom_ort.Psi_d,bottom_ort.Theta_d,bottom_ort.Twist_d,bottomRotationalEffects)
-    topEl = OWENSFEA.El(topSectionProps,top_ort.Length,top_ort.Psi_d,top_ort.Theta_d,top_ort.Twist_d,topRotationalEffects)
+    bottomEl = OWENS.OWENSFEA.El(bottomSectionProps,bottom_ort.Length,bottom_ort.Psi_d,bottom_ort.Theta_d,bottom_ort.Twist_d,bottomRotationalEffects)
+    topEl = OWENS.OWENSFEA.El(topSectionProps,top_ort.Length,top_ort.Psi_d,top_ort.Theta_d,top_ort.Twist_d,topRotationalEffects)
 
     # Add the platform properties
     bottomConcInputs = [
@@ -255,8 +251,8 @@ function runSim(;
     length(topMesh.z) "M6" 3 3 350000
     ]
 
-    bottomConcTerms = OWENSFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=bottomConcInputs, jointData=joint)
-    topConcTerms = OWENSFEA.applyConcentratedTerms(topMesh.numNodes, numDOFPerNode, data=topConcInputs, jointData=joint)
+    bottomConcTerms = OWENS.OWENSFEA.applyConcentratedTerms(bottomMesh.numNodes, numDOFPerNode, data=bottomConcInputs, jointData=joint)
+    topConcTerms = OWENS.OWENSFEA.applyConcentratedTerms(topMesh.numNodes, numDOFPerNode, data=topConcInputs, jointData=joint)
 
     # node, dof, bc
     fixedTopNodes = [1]
@@ -286,7 +282,7 @@ function runSim(;
     potflowfile = potflowfile)
 
     if topBCs == []
-        topModel = OWENSFEA.FEAModel(analysisType = "TNB",
+        topModel = OWENS.OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -299,7 +295,7 @@ function runSim(;
         nodalTerms = topConcTerms,
         RayleighAlpha = 0.01/pi)
     else
-        topModel = OWENSFEA.FEAModel(analysisType = "TNB",
+        topModel = OWENS.OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -315,7 +311,7 @@ function runSim(;
     end
 
     if bottomBCs == []
-        bottomModel = OWENSFEA.FEAModel(analysisType = "TNB",
+        bottomModel = OWENS.OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -328,7 +324,7 @@ function runSim(;
         nodalTerms = bottomConcTerms
         )
     else
-        bottomModel = OWENSFEA.FEAModel(analysisType = "TNB",
+        bottomModel = OWENS.OWENSFEA.FEAModel(analysisType = "TNB",
         joint = joint,
         nlOn = true,
         platformTurbineConnectionNodeNumber = 1,
@@ -347,7 +343,6 @@ function runSim(;
     # Unsteady Test
     #############################################
 
-    topForcingFile = "$(path)/data/PrescribedForcesMoments.csv"
     topForcing = DelimitedFiles.readdlm(topForcingFile, ',', Float32, '\n', header=false)
     topFrcValArray = topForcing[:, 2:end]
     topFrcDOFs = (numTopNodes-1)*numDOFPerNode+1:numTopNodes*numDOFPerNode
@@ -376,84 +371,106 @@ function runSim(;
     DelimitedFiles.writedlm(outfile_root * "_FReaction.csv", FReactionHist, ',')
 end
 
-runSim(outfile_root="owens_wn_prescribed_20240821",
-    potflowfile = "$path/data/potential_flow_data/marin_semi",
-    hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
-    ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",
-    md_input_file = "$path/data/MoorDyn_CCT2_test.dat",
-    hd_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/hydrodyn/libhydrodyn_c_binding.dylib", #"$path/bin/HydroDyn_c_binding_x64.old"
-    md_lib = "$path/../../../OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/moordyn/libmoordyn_c_binding.dylib")  #"$path/bin/MoorDyn_c_binding_x64.old"
+runSim(outfile_root="owens_wn_prescribed_new",
+    potflowfile = "$path/../examples/floating/data/potential_flow_data/marin_semi",
+    hd_input_file = "$path/../examples/floating/data/HydroDyn_CCT2_test.dat",
+    ss_input_file = "$path/../examples/floating/data/HydroDyn_CCT2_SeaState_test.dat",
+    md_input_file = "$path/../examples/floating/data/MoorDyn_CCT2_test.dat",
+    topForcingFile = "$(path)/../examples/floating/data/PrescribedForcesMoments.csv",
+    hd_lib = nothing, #"$path/bin/HydroDyn_c_binding_x64.old"
+    md_lib = nothing)  #"$path/bin/MoorDyn_c_binding_x64.old"
 
-FReactionHist_MD_neggrav = DelimitedFiles.readdlm("$path/owens_wn_prescribed_20240821_neggrav_FReaction.csv", ',')
-FReactionHist_MD = DelimitedFiles.readdlm("$path/owens_wn_prescribed_20240821_posgrav_FReaction.csv", ',')
-FReactionHist_branchfloat = DelimitedFiles.readdlm("$path/owens_wn_prescribed_branch_ffloating_FReaction.csv", ',')
-FReactionHist_merged = DelimitedFiles.readdlm("$path/owens_wn_prescribed_merged_FReaction.csv", ',')
-dt = .00625 # seconds
-t_max = 600 # seconds
-FReaction_tvec = collect(dt:dt:t_max)
-FReaction_tvec_MD = collect(dt:dt:350)
 
-Fz_orig = DelimitedFiles.readdlm("$path/data/Fz_orig.csv", ',')
-Fz_oldowens = DelimitedFiles.readdlm("$path/data/Fz_MD_newsim.csv", ',')
+ptfm_disps_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_ptfm_disps.csv", ',')
+ptfm_forces_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_ptfm_forces.csv", ',')
+hydro_forces_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_hydro_forces.csv", ',')
+mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_mooring_forces.csv", ',')
+tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_tt_disps.csv", ',')
+FReaction_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_FReaction.csv", ',')
 
-Fy_oldowens = DelimitedFiles.readdlm("$path/data/Fy_MD_newsim.csv", ',')
+ptfm_disps = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_ptfm_disps.csv", ',')
+ptfm_forces = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_ptfm_forces.csv", ',')
+hydro_forces = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_hydro_forces.csv", ',')
+mooring_forces = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_mooring_forces.csv", ',')
+tt_disps = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_tt_disps.csv", ',')
+FReaction = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_FReaction.csv", ',')
 
-Mz_oldowens = DelimitedFiles.readdlm("$path/data/Mz_MD_newsim.csv", ',')
+mytol = 0.00001
 
-Fx_MD = FReactionHist_MD[:,1]
-Fy_MD = FReactionHist_MD[:,2]
-Fz_MD = FReactionHist_MD[:,3]
-Mx_MD = FReactionHist_MD[:,4]
-My_MD = FReactionHist_MD[:,5]
-Mz_MD = FReactionHist_MD[:,6]
+for iel = 1:length(ptfm_disps_UNIT) #note, purposely iterating over multidimensional array with a single for loop
+    @test isapprox(ptfm_disps_UNIT[iel],ptfm_disps[iel];atol=abs(ptfm_disps_UNIT[iel])*mytol)
+end
 
-Fx_MD_neggrav = FReactionHist_MD_neggrav[:,1]
-Fy_MD_neggrav = FReactionHist_MD_neggrav[:,2]
-Fz_MD_neggrav = FReactionHist_MD_neggrav[:,3]
-Mx_MD_neggrav = FReactionHist_MD_neggrav[:,4]
-My_MD_neggrav = FReactionHist_MD_neggrav[:,5]
-Mz_MD_neggrav = FReactionHist_MD_neggrav[:,6]
+for iel = 1:length(ptfm_forces_UNIT) #note, purposely iterating over multidimensional array with a single for loop
+    @test isapprox(ptfm_forces_UNIT[iel],ptfm_forces[iel];atol=abs(ptfm_forces_UNIT[iel])*mytol)
+end
 
-Fx_branchfloat = FReactionHist_branchfloat[:,1]
-Fy_branchfloat = FReactionHist_branchfloat[:,2]
-Fz_branchfloat = FReactionHist_branchfloat[:,3]
-Mx_branchfloat = FReactionHist_branchfloat[:,4]
-My_branchfloat = FReactionHist_branchfloat[:,5]
-Mz_branchfloat = FReactionHist_branchfloat[:,6]
+for iel = 1:length(hydro_forces_UNIT) #note, purposely iterating over multidimensional array with a single for loop
+    @test isapprox(hydro_forces_UNIT[iel],hydro_forces[iel];atol=abs(hydro_forces_UNIT[iel])*mytol)
+end
 
-Fx_merged = FReactionHist_merged[:,1]
-Fy_merged = FReactionHist_merged[:,2]
-Fz_merged = FReactionHist_merged[:,3]
-Mx_merged = FReactionHist_merged[:,4]
-My_merged = FReactionHist_merged[:,5]
-Mz_merged = FReactionHist_merged[:,6]
+for iel = 1:length(mooring_forces_UNIT) #note, purposely iterating over multidimensional array with a single for loop
+    @test isapprox(mooring_forces_UNIT[iel],mooring_forces[iel];atol=abs(mooring_forces_UNIT[iel])*mytol)
+end
 
-using PyPlot
-PyPlot.pygui(true)
+for iel = 1:length(tt_disps_UNIT) #note, purposely iterating over multidimensional array with a single for loop
+    @test isapprox(tt_disps_UNIT[iel],tt_disps[iel];atol=abs(tt_disps_UNIT[iel])*mytol)
+end
+
+for iel = 1:length(FReaction_UNIT) #note, purposely iterating over multidimensional array with a single for loop
+    @test isapprox(FReaction_UNIT[iel],FReaction[iel];atol=abs(FReaction_UNIT[iel])*mytol)
+end
+
+
+# FReactionHist = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_FReaction.csv", ',')
+# dt = .00625 # seconds
+# t_max = 1 # seconds
+# FReaction_tvec = collect(dt:dt:t_max)
+
+# Fz_orig = DelimitedFiles.readdlm("$path/data/Fz_orig.csv", ',')
+# Fz_oldowens = DelimitedFiles.readdlm("$path/data/Fz_MD_newsim.csv", ',')
+
+# Fy_oldowens = DelimitedFiles.readdlm("$path/data/Fy_MD_newsim.csv", ',')
+
+# Mz_oldowens = DelimitedFiles.readdlm("$path/data/Mz_MD_newsim.csv", ',')
+
+# Fx = FReactionHist[:,1]
+# Fy = FReactionHist[:,2]
+# Fz = FReactionHist[:,3]
+# Mx = FReactionHist[:,4]
+# My = FReactionHist[:,5]
+# Mz = FReactionHist[:,6]
+
+
+# Fx_UNIT = FReaction_UNIT[:,1]
+# Fy_UNIT = FReaction_UNIT[:,2]
+# Fz_UNIT = FReaction_UNIT[:,3]
+# Mx_UNIT = FReaction_UNIT[:,4]
+# My_UNIT = FReaction_UNIT[:,5]
+# Mz_UNIT = FReaction_UNIT[:,6]
+
+# using PyPlot
+# PyPlot.pygui(true)
 
 # PyPlot.figure("Fx")
 # PyPlot.plot(FReaction_tvec,Fx)
 
-PyPlot.figure("Fy")
-PyPlot.plot(Fy_oldowens[:,1],Fy_oldowens[:,2],label="Old OWENS")
-PyPlot.plot(FReaction_tvec,Fy_merged,label="Latest OWENS merged with MD")
-PyPlot.plot(FReaction_tvec,Fy_branchfloat,label="f/floating branch OWENS")
-PyPlot.plot(FReaction_tvec_MD,Fy_MD_neggrav,label="MD neggrav OWENS")
-PyPlot.plot(FReaction_tvec_MD,Fy_MD,label="MD OWENS")
-PyPlot.xlim([300,600])
-PyPlot.ylim([-150000,100000])
-PyPlot.legend()
+# PyPlot.figure("Fy")
+# # PyPlot.plot(Fy_oldowens[:,1],Fy_oldowens[:,2],label="Old OWENS")
+# PyPlot.plot(FReaction_tvec,Fy,label="Latest OWENS")
+# PyPlot.plot(FReaction_tvec,Fy_UNIT,label="MD OWENS")
+# # PyPlot.xlim([300,600])
+# # PyPlot.ylim([-150000,100000])
+# PyPlot.legend()
 
-PyPlot.figure("Fz")
-PyPlot.plot(Fz_orig[:,1],Fz_orig[:,2].*1e6,"k",label="OpenFAST")
-PyPlot.plot(Fz_oldowens[:,1],Fz_oldowens[:,2].*1e6,label="Old OWENS")
-PyPlot.plot(FReaction_tvec,Fz_merged,label="Latest OWENS merged with MD")
-PyPlot.plot(FReaction_tvec,Fz_branchfloat,label="f/floating branch OWENS")
-PyPlot.plot(FReaction_tvec_MD,Fz_MD_neggrav,label="MD neggrav OWENS")
-PyPlot.plot(FReaction_tvec_MD,-Fz_MD,label="MD OWENS")
-PyPlot.xlim([300,600])
-PyPlot.ylim([-5.5e6,-6.0e6])
-PyPlot.legend()
+# PyPlot.figure("Fz")
+# # PyPlot.plot(Fz_orig[:,1],Fz_orig[:,2].*1e6,"k",label="OpenFAST")
+# # PyPlot.plot(Fz_oldowens[:,1],Fz_oldowens[:,2].*1e6,label="Old OWENS")
+# PyPlot.plot(FReaction_tvec,Fz,label="Latest OWENS")
+# PyPlot.plot(FReaction_tvec,Fz_UNIT,label="MD OWENS")
+# # PyPlot.xlim([300,600])
+# # PyPlot.ylim([-5.5e6,-6.0e6])
+# PyPlot.legend()
 
 # PyPlot.figure("Mx")
 # PyPlot.plot(FReaction_tvec,Mx)
@@ -461,12 +478,10 @@ PyPlot.legend()
 # PyPlot.figure("My")
 # PyPlot.plot(FReaction_tvec,My)
 
-PyPlot.figure("Mz")
-PyPlot.plot(Mz_oldowens[:,1],Mz_oldowens[:,2],label="Old OWENS")
-PyPlot.plot(FReaction_tvec,-Mz_merged,label="Latest OWENS merged with MD")
-PyPlot.plot(FReaction_tvec,-Mz_branchfloat,label="f/floating branch OWENS")
-PyPlot.plot(FReaction_tvec_MD,-Mz_MD_neggrav.+1000,label="MD neggrav OWENS")
-PyPlot.plot(FReaction_tvec_MD,-Mz_MD,label="MD OWENS")
-PyPlot.xlim([300,600])
-# PyPlot.ylim([-5.5e6,-6.0e6])
-PyPlot.legend()
+# PyPlot.figure("Mz")
+# # PyPlot.plot(Mz_oldowens[:,1],Mz_oldowens[:,2],label="Old OWENS")
+# PyPlot.plot(FReaction_tvec,Mz_UNIT,label="MD OWENS")
+# PyPlot.plot(FReaction_tvec,Mz,label="Latest OWENS")
+# # PyPlot.xlim([300,600])
+# # PyPlot.ylim([-5.5e6,-6.0e6])
+# PyPlot.legend()
