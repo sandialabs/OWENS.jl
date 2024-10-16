@@ -272,6 +272,8 @@ nothing
 # at the bottom node to represent the rigid body mass matrix of the platform.
 # The values here are pulled from the report "Definition of the Semisubmersible Floating System for Phase II of OC4"
 # by Robertson et al. (2014) (https://doi.org/10.2172/1155123).
+numDOFPerNode = 6
+
 ptfm_mass = 3.85218e6
 ptfm_roll_iner = 2.56193e9
 ptfm_pitch_iner = 2.56193e9
