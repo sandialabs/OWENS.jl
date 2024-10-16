@@ -16,7 +16,7 @@ import PyPlot
 import OWENS
 import OWENSFEA
 
-path = runpath = splitdir(@__FILE__)[1]
+path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
 verbosity = 1
 
 # First, create the inputs for the topside mesh as done previous in tutorials A and B.
@@ -79,13 +79,13 @@ shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 # The boundary condition previously was essentially fixing the bottom of the turbine tower in place,
 # since it is installed in the ground.
 # However, for our floating platform, we want the loads from the topside to propagate to the platform,
-# so our restoring hydrodynamics and mooring loads will "constaint" the combined meshes as we want.
+# so our restoring hydrodynamics and mooring loads will "constain" the combined meshes as we want.
 
 topMesh, topEl, topOrt, topJoint, topSectionProps,
 _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
 aeroForces, deformAero, _, _,topSystem,topAssembly, _, _, _ = OWENS.setupOWENS(OWENSAero,path;
     rho, Nslices, ntheta, RPM, Vinf, eta, B, H, R, shapeZ, shapeX,
-    ifw, WindType, delta_t, numTS, adi_lib, adi_rootname, indINPfilename, ifw_libfile,
+    ifw, WindType, delta_t, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
     NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
     NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
@@ -149,6 +149,7 @@ bottomOrt = OWENSFEA.Ort(
      0.0;
      0.0]
 )
+n_ptfm_elem = 1
 bottomSectionProps = Array{OWENSFEA.SectionPropsArray,1}(undef, n_ptfm_elem)
 for ii = 1:n_ptfm_elem
     bottomSectionProps[ii] = OWENSFEA.SectionPropsArray(
@@ -207,10 +208,10 @@ else
 end
 hydroOn = true
 interpOrder = 2
-hd_input_file = "data/HydroDyn.dat"
-md_input_file = "data/MoorDyn.dat"
-ss_input_file = "data/SeaState.dat"
-potflowfile = "data/potflowdata/marin_semi"
+hd_input_file = "$(path)/data/HydroDyn.dat"
+md_input_file = "$(path)/data/MoorDyn.dat"
+ss_input_file = "$(path)/data/SeaState.dat"
+potflowfile = "$(path)/data/potflowdata/marin_semi"
 
 inputs = OWENS.Inputs(;analysisType = structuralModel,
 tocp = [0.0,100000.1],
@@ -231,9 +232,10 @@ potflowfile)
 nothing
 
 # We also will need to specify where the HydroDyn and MoorDyn libraries exist on the computer.
-# These will differ based on operating system and system setup, so change these as needed.
-hd_lib = "$path/../../bin/HydroDyn_c_binding_x64"
-md_lib = "$path/../../bin/MoorDyn_c_binding_x64"
+# We will set these to `nothing` so the auto-installed libraries will be used by default.
+# Change these variables as needed if the location of these libraries are different.
+hd_lib = nothing
+md_lib = nothing
 bin = OWENS.Bin(hd_lib, md_lib)
 
 nothing
@@ -242,7 +244,7 @@ nothing
 # a definition for both the topside and the bottom side.
 
 # The changes to the topside from example A are the lack of boundary conditions,
-# non-default gamma and alpha terms (for better convergence with the platform mesh)
+# non-default gamma and alpha terms (for better convergence with the platform mesh).
 
 topFEAModel = OWENS.FEAModel(;
     analysisType = structuralModel,
