@@ -5,22 +5,23 @@
 # representing the wind turbine (this will be similar to meshes used in previous tutorials),
 # and one representing the floating platform.
 #
-# The wind turbine mesh (or "topside") will be created similar to the previous tutorial.
-# However, the floating platform mesh (or "bottom side") will be explicitly defined,
-# revealing some more internals of OWENS and the potential inputs available to users.
+# The wind turbine mesh (or "topside") will be created similarly to the previous tutorial,
+# though we will overwrite some of the inputs so the simulation works better for a floating system.
+# This will help with revealing some more internals of OWENS and the potential inputs
+# available to users, which is helpful for explaining how the floating platform mesh
+# (or "bottom side") is defined and differs from the topside.
 
 
 import OWENS
 import OWENSFEA
 
 path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
+verbosity = 1
 
 # First, create the inputs for the topside mesh as done previous in tutorials A and B.
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
-verbosity = 1
-
-analysisType = Inp.analysisType
+analysisType = "TNB" # this differs from previous tutorials, as it has been verified to work well with floating capabilities
 turbineType = Inp.turbineType
 eta = Inp.eta
 Nbld = Inp.Nbld
@@ -69,9 +70,9 @@ shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
 # We will continue to use helper functions here to fully define the topside mesh, sectional
 # properties, and their connection. However, note that our naming convention will be
-# different in order to differentiate this information from the information for the
+# different in order to differentiate this mesh from the
 # bottom side mesh. The outputs to the helper functions not being used elsewhere in the
-# tutorial are returned as "_" to improve clarity.
+# tutorial are returned as "_" to improve clarity. TODO finish adding _s
 
 topMesh, topEl, topOrt, topJoint, topSectionProps, _, _,
 _, _,bld_precompinput,
@@ -101,56 +102,50 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
 
 nothing
 
-# Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl
-# this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also
-# includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface
-# to work with OWENS inputs as well.
+# Now, unlike the previous examples, we will **not** apply a boundary condition to this mesh.
+# The boundary condition previously was essentially fixing the bottom of the turbine tower in place,
+# since it is installed in the ground.
+# However, for our floating platform, we want the loads from the topside to propagate to the platform,
+# so our restoring hydrodynamics and mooring loads will "constaint" the combined meshes as we want.
+
+topBC = []
 
 nothing
 
-# If the sectional properties material files includes cost information, that is combined with the density 
-# to estimate the overall material cost of of materials in the blades
+# Bottom side mesh definition TODO -- be sure to mention that it's a single-element mesh that represents
+# a rigid body.
 
-if verbosity>0
-    
-    println("\nBlades' Mass Breakout")
-    for (i,name) in enumerate(plyprops_bld.names)
-        println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
-    end
-    
-    println("\nTower Mass Breakout")
-    for (i,name) in enumerate(plyprops_twr.names)
-        println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
-    end
-    
-    println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
-    println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
-    println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
-    
-end
+# We also want to provide some additional general inputs to enable floating simulation.
+# `hydroOn` being the principal and obvious one, but also the input files needed by
+# HydroDyn and MoorDyn, which are the external libraries that calculate the hydrodynamic
+# and mooring loads to send to the bottom side mesh. These input files include:
+#  - interpOrder: the degree of interpolation used to predict the future states within
+#    HydroDyn and MoorDyn, used in the `HD_UpdateStates` and `MD_UpdateStates` functions
+#  - hd_input_file: the base HydroDyn input file with a `.dat` extension
+#  - md_input_file: the base MoorDyn input file with a `.dat` extension
+#  - ss_input_file: the sea state input file with a `.dat` extension used to define the environmental conditions of the sea.
+#    This is used within HydroDyn.
+#  - potfilefile: the directory containing the potential flow files.
+#    At minimum, the directory must contain the .1, .3, and .hst WAMIT output files.
+#    This is also used within HydroDyn.
+# See the OpenFAST documentation for HydroDyn (https://openfast.readthedocs.io/en/main/source/user/hydrodyn/input_files.html)
+# and MoorDyn (https://moordyn.readthedocs.io/en/latest/inputs.html) for more
+# information about how to format these input files. For simplicity here, we will
+# use predefined input files for the OC4 semisubmersible platform, which comes with
+# OpenFAST and is copied to the `data` folder here.
 
-nothing
-
-# Here we apply the boundary conditions.  For this case, with a regular cantelever tower, the tower base node which is 
-# 1 is constrained in all 6 degrees of freedom to have a displacement of 0.  You can change this displacement to allow for things
-# like pretension, and you can apply boundary conditions to any node.
-
-pBC = [1 1 0
-1 2 0
-1 3 0
-1 4 0
-1 5 0
-1 6 0]
-
-nothing
-
-# There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
 if AModel=="AD"
     AD15On = true
 else
     AD15On = false
 end
+hydroOn = true
+interpOrder = 2
+hd_input_file = "data/HydroDyn.dat"
+md_input_file = "data/MoorDyn.dat"
+ss_input_file = "data/SeaState.dat"
+potflowfile = "data/potflowdata"
 
 inputs = OWENS.Inputs(;analysisType = structuralModel,
 tocp = [0.0,100000.1],
@@ -160,25 +155,41 @@ Vinfocp = [Vinf,Vinf],
 numTS,
 delta_t,
 AD15On,
-aeroLoadsOn = 2)
+aeroLoadsOn = 2,
+hydroOn,
+interpOrder,
+hd_input_file,
+md_input_file,
+ss_input_file,
+potflowfile)
 
 nothing
 
-# Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
+# As in previous examples, we need to define the inputs for the finite element models, though now we need
+# a definition for both the topside and the bottom side.
 
-feamodel = OWENS.FEAModel(;analysisType = structuralModel,
+# The changes to the topside from example A are the lack of boundary conditions,
+# non-default gamma and alpha terms (for better convergence with the platform mesh),
+# and gravityOn specified TODO do I need gravityOn or is the default fine?
+
+topFEAModel = OWENS.FEAModel(;analysisType = structuralModel,
 outFilename = "none",
-joint = myjoint,
+joint = topJoint,
 platformTurbineConnectionNodeNumber = 1,
-pBC,
 nlOn = true,
-numNodes = mymesh.numNodes,
+numNodes = topMesh.numNodes,
 RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
-iterationType = "DI")
+iterationType = "DI",
+gamma = 1.0,
+alpha = 0.5,
+gravityOn = [0.0, 0.0, 9.80665])
 
 nothing
 
+# The bottom finite element mesh will use the same inputs, but also
+# includes a concentrated term at its bottom node to represent the rigid body mass
+# of the platform.
 # Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together
 # and propogates things in time.
 
