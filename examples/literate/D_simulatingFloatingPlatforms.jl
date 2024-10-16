@@ -16,7 +16,7 @@ import PyPlot
 import OWENS
 import OWENSFEA
 
-path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
+runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" #splitdir(@__FILE__)[1]
 verbosity = 1
 
 # First, create the inputs for the topside mesh as done previous in tutorials A and B.
@@ -83,7 +83,7 @@ shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
 topMesh, topEl, topOrt, topJoint, topSectionProps,
 _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
-aeroForces, deformAero, _, _,topSystem,topAssembly, _, _, _ = OWENS.setupOWENS(OWENSAero,path;
+aeroForces, deformAero, _, _,topSystem,topAssembly, sections, _, _ = OWENS.setupOWENS(OWENSAero,path;
     rho, Nslices, ntheta, RPM, Vinf, eta, B, H, R, shapeZ, shapeX,
     ifw, WindType, delta_t, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
@@ -394,3 +394,10 @@ PyPlot.ylabel("Force [N]")
 PyPlot.title("Hydrodynamic Surge Loading")
 
 nothing
+
+# We will save the resulting VTK files to visualize the result.
+# TODO get visualization working with platform mesh
+#### println("Saving VTK time domain files")
+#### OWENS.OWENSFEA_VTK("$(path)/vtk/floatingVAWTExample", t, uHist, topSystem, topAssembly, sections; scaling=1, azi=aziHist)
+
+#### nothing
