@@ -11,11 +11,12 @@
 # available to users, which is helpful for explaining how the floating platform mesh
 # (or "bottom side") is defined and differs from the topside.
 
+import PyPlot
 
 import OWENS
 import OWENSFEA
 
-path = runpath = "/home/runner/work/OWENS.jl/OWENS.jl/docs/src/literate" #splitdir(@__FILE__)[1]
+path = runpath = splitdir(@__FILE__)[1]
 verbosity = 1
 
 # First, create the inputs for the topside mesh as done previous in tutorials A and B.
@@ -47,7 +48,7 @@ if ifw_libfile == "nothing"
 end
 Blade_Height = Inp.Blade_Height
 Blade_Radius = Inp.Blade_Radius
-numTS = Inp.numTS
+numTS = 5 # shortened since the floating simulation can take awhile
 delta_t = Inp.delta_t
 NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
 NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
@@ -72,13 +73,17 @@ shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 # properties, and their connection. However, note that our naming convention will be
 # different in order to differentiate this mesh from the
 # bottom side mesh. The outputs to the helper functions not being used elsewhere in the
-# tutorial are returned as "_" to improve clarity. TODO finish adding _s
+# tutorial are returned as "_" to improve clarity.
+#
+# Note that, unlike the previous examples, we will **not** apply a boundary condition to this mesh.
+# The boundary condition previously was essentially fixing the bottom of the turbine tower in place,
+# since it is installed in the ground.
+# However, for our floating platform, we want the loads from the topside to propagate to the platform,
+# so our restoring hydrodynamics and mooring loads will "constaint" the combined meshes as we want.
 
-topMesh, topEl, topOrt, topJoint, topSectionProps, _, _,
-_, _,bld_precompinput,
-bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+topMesh, topEl, topOrt, topJoint, topSectionProps,
+_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+aeroForces, deformAero, _, _,topSystem,topAssembly, _, _, _ = OWENS.setupOWENS(OWENSAero,path;
     rho, Nslices, ntheta, RPM, Vinf, eta, B, H, R, shapeZ, shapeX,
     ifw, WindType, delta_t, numTS, adi_lib, adi_rootname, indINPfilename, ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
@@ -102,18 +107,79 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
 
 nothing
 
-# Now, unlike the previous examples, we will **not** apply a boundary condition to this mesh.
-# The boundary condition previously was essentially fixing the bottom of the turbine tower in place,
-# since it is installed in the ground.
-# However, for our floating platform, we want the loads from the topside to propagate to the platform,
-# so our restoring hydrodynamics and mooring loads will "constaint" the combined meshes as we want.
+# Now we need to define the properties of the bottom side mesh, which we will do manually here
+# instead of reading in values from a YAML file.
+# This mesh is very simple: it consists of a single element with a nodal connection on either end.
+# OWENS assumes the platform is a rigid body, so the element has very high stiffness to effectively function as a point mass.
+#
+# Since the mesh is so simple, most of these inputs are trivial and affect little.
+# However, a few items are of note:
+#   - The z positions in `bottomMesh` start at zero for the first node, and the second node is at the
+#     height of the tower base above the platform reference point (aka the platform location at the still water
+#     level above the platform centroid).
+#     In the case of the OC4 platform, this is 10 meters. This is also reflected in the Length argument in bottomOrt
+#   - The `bottomSectionProps` structure has very large values for EIyy, EIzz, GJ, and EA, which are all the
+#     relevant stiffness properties, in order to effectively model the platform as a rigid body.
+#   - The `zcm` parameter in `bottomSectionProps` is set to the vertical distance of the platform with respect to the platform reference point.
+#     For the OC4 platform, this is 8.6588 meters below sea level.
 
-topBC = []
+bottomMesh = OWENSFEA.Mesh(
+    [1.0, 2.0], #nodeNum
+    1, #numElx
+    2, #numNodes
+    [0.0, 0.0], #x
+    [0.0, 0.0], #y
+    [0.0, 10.0], #z
+    [1], #elNum
+    [1 2], #conn
+    [0], #type
+    [0, 1], #meshSeg
+    Any[], #structuralSpanLocNorm
+    Any[], #structuralNodeNumbers
+    Any[] #structuralElNumbers
+)
+numBottomNodes = length(bottomMesh.z)
+bottomOrt = OWENSFEA.Ort(
+    [180.0], #Psi_d
+    [-90.0],  #Theta_d
+    [90.0], #Twist_d
+    [10.0], #Length
+    [1.0], #elNum
+    [0.0; #Offset
+     0.0;
+     0.0]
+)
+bottomSectionProps = Array{OWENSFEA.SectionPropsArray,1}(undef, n_ptfm_elem)
+for ii = 1:n_ptfm_elem
+    bottomSectionProps[ii] = OWENSFEA.SectionPropsArray(
+        [0.0, 0.0], #ac
+        [0.0, 0.0], #twist_d
+        [0.0, 0.0], #rhoA
+        [1e18, 1e18], #EIyy
+        [1e18, 1e18], #EIzz
+        [1e18, 1e18], #GJ
+        [1e18, 1e18], #EA
+        [0.0, 0.0], #rhoIyy
+        [0.0, 0.0], #rhoIzz
+        [0.0, 0.0], #rhoJ
+        [-8.6588, 0.0], #zcm
+        [0.0, 0.0], #ycm,
+        [0.0, 0.0], #a
+        [0.0, 0.0], #EIyz
+        [0.0, 0.0], #alpha1
+        [0.0, 0.0], #alpha2
+        [0.0, 0.0], #alpha3
+        [0.0, 0.0], #alpha4
+        [0.0, 0.0], #alpha5
+        [0.0, 0.0], #alpha6
+        [0.0, 0.0], #rhoIyz
+        [0.0, 0.0], #b
+        [0.0, 0.0], #a0
+        [0.0, 0.0], #aeroCenterOffset
+    )
+end
 
 nothing
-
-# Bottom side mesh definition TODO -- be sure to mention that it's a single-element mesh that represents
-# a rigid body.
 
 # We also want to provide some additional general inputs to enable floating simulation.
 # `hydroOn` being the principal and obvious one, but also the input files needed by
@@ -125,7 +191,7 @@ nothing
 #  - md_input_file: the base MoorDyn input file with a `.dat` extension
 #  - ss_input_file: the sea state input file with a `.dat` extension used to define the environmental conditions of the sea.
 #    This is used within HydroDyn.
-#  - potfilefile: the directory containing the potential flow files.
+#  - potfilefile: the prefix of the potential flow files.
 #    At minimum, the directory must contain the .1, .3, and .hst WAMIT output files.
 #    This is also used within HydroDyn.
 # See the OpenFAST documentation for HydroDyn (https://openfast.readthedocs.io/en/main/source/user/hydrodyn/input_files.html)
@@ -133,7 +199,6 @@ nothing
 # information about how to format these input files. For simplicity here, we will
 # use predefined input files for the OC4 semisubmersible platform, which comes with
 # OpenFAST and is copied to the `data` folder here.
-
 
 if AModel=="AD"
     AD15On = true
@@ -145,7 +210,7 @@ interpOrder = 2
 hd_input_file = "data/HydroDyn.dat"
 md_input_file = "data/MoorDyn.dat"
 ss_input_file = "data/SeaState.dat"
-potflowfile = "data/potflowdata"
+potflowfile = "data/potflowdata/marin_semi"
 
 inputs = OWENS.Inputs(;analysisType = structuralModel,
 tocp = [0.0,100000.1],
@@ -165,69 +230,165 @@ potflowfile)
 
 nothing
 
+# We also will need to specify where the HydroDyn and MoorDyn libraries exist on the computer.
+# These will differ based on operating system and system setup, so change these as needed.
+hd_lib = "$path/../../bin/HydroDyn_c_binding_x64"
+md_lib = "$path/../../bin/MoorDyn_c_binding_x64"
+bin = OWENS.Bin(hd_lib, md_lib)
+
+nothing
+
 # As in previous examples, we need to define the inputs for the finite element models, though now we need
 # a definition for both the topside and the bottom side.
 
 # The changes to the topside from example A are the lack of boundary conditions,
-# non-default gamma and alpha terms (for better convergence with the platform mesh),
-# and gravityOn specified TODO do I need gravityOn or is the default fine?
+# non-default gamma and alpha terms (for better convergence with the platform mesh)
 
-topFEAModel = OWENS.FEAModel(;analysisType = structuralModel,
-outFilename = "none",
-joint = topJoint,
-platformTurbineConnectionNodeNumber = 1,
-nlOn = true,
-numNodes = topMesh.numNodes,
-RayleighAlpha = 0.05,
-RayleighBeta = 0.05,
-iterationType = "DI",
-gamma = 1.0,
-alpha = 0.5,
-gravityOn = [0.0, 0.0, 9.80665])
+topFEAModel = OWENS.FEAModel(;
+    analysisType = structuralModel,
+    outFilename = "none",
+    joint = topJoint,
+    platformTurbineConnectionNodeNumber = 1,
+    nlOn = true,
+    numNodes = topMesh.numNodes,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    iterationType = "DI",
+    gamma = 1.0,
+    alpha = 0.5)
 
 nothing
 
-# The bottom finite element mesh will use the same inputs, but also
-# includes a concentrated term at its bottom node to represent the rigid body mass
-# of the platform.
-# Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together
-# and propogates things in time.
+# The bottom finite element mesh will use the same inputs with two exceptions: `joints` is now empty
+# (since we're considering the platform as a single rigid body), and we add an additional concentrated term
+# at the bottom node to represent the rigid body mass matrix of the platform.
+# The values here are pulled from the report "Definition of the Semisubmersible Floating System for Phase II of OC4"
+# by Robertson et al. (2014) (https://doi.org/10.2172/1155123).
+ptfm_mass = 3.85218e6
+ptfm_roll_iner = 2.56193e9
+ptfm_pitch_iner = 2.56193e9
+ptfm_yaw_iner = 4.24265e9
+ptfm_Ixx = ptfm_roll_iner
+ptfm_Iyy = ptfm_pitch_iner
+ptfm_Izz = ptfm_yaw_iner
+ptfm_Ixy = 0.0
+ptfm_Iyz = 0.0
+ptfm_Ixz = 0.0
+ptfm_mass = [
+    ptfm_mass 0.0 0.0 0.0 0.0 0.0
+    0.0 ptfm_mass 0.0 0.0 0.0 0.0
+    0.0 0.0 ptfm_mass 0.0 0.0 0.0
+    0.0 0.0 0.0 ptfm_Ixx ptfm_Ixy ptfm_Ixz
+    0.0 0.0 0.0 ptfm_Ixy ptfm_Iyy -ptfm_Iyz
+    0.0 0.0 0.0 ptfm_Ixz -ptfm_Iyz ptfm_Izz
+]
+bottomConcInputs = [
+    1 "M6" 1 1 ptfm_mass[1, 1]
+    1 "M6" 1 2 ptfm_mass[1, 2]
+    1 "M6" 1 3 ptfm_mass[1, 3]
+    1 "M6" 1 4 ptfm_mass[1, 4]
+    1 "M6" 1 5 ptfm_mass[1, 5]
+    1 "M6" 1 6 ptfm_mass[1, 6]
+    1 "M6" 2 1 ptfm_mass[2, 1]
+    1 "M6" 2 2 ptfm_mass[2, 2]
+    1 "M6" 2 3 ptfm_mass[2, 3]
+    1 "M6" 2 4 ptfm_mass[2, 4]
+    1 "M6" 2 5 ptfm_mass[2, 5]
+    1 "M6" 2 6 ptfm_mass[2, 6]
+    1 "M6" 3 1 ptfm_mass[3, 1]
+    1 "M6" 3 2 ptfm_mass[3, 2]
+    1 "M6" 3 3 ptfm_mass[3, 3]
+    1 "M6" 3 4 ptfm_mass[3, 4]
+    1 "M6" 3 5 ptfm_mass[3, 5]
+    1 "M6" 3 6 ptfm_mass[3, 6]
+    1 "M6" 4 1 ptfm_mass[4, 1]
+    1 "M6" 4 2 ptfm_mass[4, 2]
+    1 "M6" 4 3 ptfm_mass[4, 3]
+    1 "M6" 4 4 ptfm_mass[4, 4]
+    1 "M6" 4 5 ptfm_mass[4, 5]
+    1 "M6" 4 6 ptfm_mass[4, 6]
+    1 "M6" 5 1 ptfm_mass[5, 1]
+    1 "M6" 5 2 ptfm_mass[5, 2]
+    1 "M6" 5 3 ptfm_mass[5, 3]
+    1 "M6" 5 4 ptfm_mass[5, 4]
+    1 "M6" 5 5 ptfm_mass[5, 5]
+    1 "M6" 5 6 ptfm_mass[5, 6]
+    1 "M6" 6 1 ptfm_mass[6, 1]
+    1 "M6" 6 2 ptfm_mass[6, 2]
+    1 "M6" 6 3 ptfm_mass[6, 3]
+    1 "M6" 6 4 ptfm_mass[6, 4]
+    1 "M6" 6 5 ptfm_mass[6, 5]
+    1 "M6" 6 6 ptfm_mass[6, 6]
+]
+bottomConcTerms = OWENSFEA.applyConcentratedTerms(
+    bottomMesh.numNodes,
+    numDOFPerNode,
+    data=bottomConcInputs,
+    jointData=[])
+bottomFEAModel = OWENS.FEAModel(;
+    analysisType = structuralModel,
+    outFilename = "none",
+    joint = [],
+    platformTurbineConnectionNodeNumber = 1,
+    nlOn = true,
+    numNodes = bottomMesh.numNodes,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    iterationType = "DI",
+    gamma = 1.0,
+    alpha = 0.5,
+    nodalTerms=bottomConcTerms)
+
+nothing
+
+# Finally, some additional structure definitions for the bottom mesh.
+# These don't contain anything new, but are required for OWENS to run properly.
+bottomEl = OWENSFEA.El(bottomSectionProps,
+                       bottomOrt.Length,
+                       bottomOrt.Psi_d,
+                       bottomOrt.Theta_d,
+                       bottomOrt.Twist_d,
+                       ones(bottomMesh.numEl))
+
+nothing
+
+# We can now run our floating simulation in OWENS.
+# Note that we are using `OWENS.Unsteady` now instead of `OWENS.Unsteady_Land`.
 
 println("Running Unsteady")
-t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+t, aziHist, OmegaHist, OmegaDotHist, gbHist, gbDotHist, gbDotDotHist, FReactionHist, FTwrBsHist,
+genTorque, genPower, torqueDriveShaft, uHist, uHist_prp,
+epsilon_x_hist, epsilon_y_hist, epsilon_z_hist, kappa_x_hist, kappa_y_hist, kappa_z_hist,
+FPtfmHist, FHydroHist, FMooringHist = OWENS.Unsteady(inputs,
+    system=topSystem,
+    assembly=topAssembly,
+    topModel=topModel,
+    topMesh=topMesh,
+    topEl=topEl,
+    aero=aeroForces,
+    deformAero=deformAero,
+    bottomModel=bottomModel,
+    bottomMesh=bottomFEAMesh,
+    bottomEl=bottomEl,
+    bin=bin)
 
 nothing
 
-# Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 
-# deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
-# for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
+# Since we ran the simulation for such a short time period for sake of demonstrating
+# completion of the simulation, the plots below are not too interesting.
+# Try experimenting with changing the `numTS` variable above to a longer simulation to
+# see how the floating VAWT responds over time.
+# Note that the platform modeled here is not necessarily design for the Darrieus VAWT it
+# is supporting, so your mileage may vary on the simulation results.
 
-println("Saving VTK time domain files")
-OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+PyPlot.plot(t, uHist_prp[:, 1])
+PyPlot.title("Platform Surge Response")
+PyPlot.xlabel("Time [s]")
+PyPlot.ylabel("Force [N]")
 
-nothing
-
-# This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina
-# it also calculates analytical simply supported buckling safety factors
-
-##########################################
-#### Ultimate Failure #####
-##########################################
-
-massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
-topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
-bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-Twr_LE_U_idx=1,Twr_LE_L_idx=1,
-AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
+PyPlot.plot(t, FHydroHist[:, 1])
+PyPlot.xlabel("Time [s]")
+PyPlot.ylabel("Force [N]")
+PyPlot.title("Hydrodynamic Surge Loading")
 
 nothing
