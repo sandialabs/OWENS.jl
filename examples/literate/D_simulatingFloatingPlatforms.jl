@@ -15,9 +15,11 @@ import PyPlot
 
 import OWENS
 import OWENSFEA
+import OWENSAero
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" #splitdir(@__FILE__)[1]
-verbosity = 1
+
+nothing
 
 # First, create the inputs for the topside mesh as done previous in tutorials A and B.
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
@@ -69,6 +71,8 @@ H = Blade_Height#1.02*R*2 #m
 shapeZ = collect(LinRange(0,H,Nslices+1))
 shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
 
+nothing
+
 # We will continue to use helper functions here to fully define the topside mesh, sectional
 # properties, and their connection. However, note that our naming convention will be
 # different in order to differentiate this mesh from the
@@ -111,7 +115,9 @@ nothing
 # instead of reading in values from a YAML file.
 # This mesh is very simple: it consists of a single element with a nodal connection on either end.
 # OWENS assumes the platform is a rigid body, so the element has very high stiffness to effectively function as a point mass.
-#
+
+nothing
+
 # Since the mesh is so simple, most of these inputs are trivial and affect little.
 # However, a few items are of note:
 #   - The z positions in `bottomMesh` start at zero for the first node, and the second node is at the
@@ -373,6 +379,10 @@ FPtfmHist, FHydroHist, FMooringHist = OWENS.Unsteady(inputs,
     bottomMesh=bottomFEAMesh,
     bottomEl=bottomEl,
     bin=bin)
+
+if AD15On #TODO: move this into the run functions
+    OWENS.OWENSOpenFASTWrappers.endTurb()
+end
 
 nothing
 
