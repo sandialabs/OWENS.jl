@@ -161,13 +161,14 @@ function OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     FReactionHist,topFexternal_hist;tsave_idx=1:length(t))
 
     println("Saving VTK time domain files")
-    userPointNames=["EA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction",
+    userPointNames=["EA","rhoA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction",
     "Fx_Applied","Fy_Applied","Fz_Applied","Mx_Applied","My_Applied","Mz_Applied"]#,"Fx","Fy","Fz","Mx","My","Mz"]
     # userPointData[iname,it,ipt] = Float64
 
     # map el props to points using con
     userPointData = zeros(length(userPointNames),length(tsave_idx),mymesh.numNodes)
     EA_points = zeros(mymesh.numNodes)
+    rhoA_points = zeros(mymesh.numNodes)
     EIyy_points = zeros(mymesh.numNodes)
     EIzz_points = zeros(mymesh.numNodes)
 
@@ -176,6 +177,7 @@ function OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
         # iel = 1
         nodes = mymesh.conn[iel,:]
         EA_points[Int.(nodes)] = myel.props[iel].EA
+        rhoA_points[Int.(nodes)] = myel.props[iel].rhoA
         EIyy_points[Int.(nodes)] = myel.props[iel].EIyy
         EIzz_points[Int.(nodes)] = myel.props[iel].EIzz
     end
@@ -192,30 +194,31 @@ function OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     for it_save = 1:length(tsave_idx)
         it = tsave_idx[it_save]
         userPointData[1,it_save,:] = EA_points
-        userPointData[2,it_save,:] = EIyy_points
-        userPointData[3,it_save,:] = EIzz_points
+        userPointData[2,it_save,:] = rhoA_points
+        userPointData[3,it_save,:] = EIyy_points
+        userPointData[4,it_save,:] = EIzz_points
         for iel = 1:length(myel.props)
             nodes = mymesh.conn[iel,:]
-            userPointData[4,it_save,Int.(nodes)] .= epsilon_x_histused[1,iel,it] 
-            userPointData[5,it_save,Int.(nodes)] .= epsilon_y_histused[1,iel,it] 
-            userPointData[6,it_save,Int.(nodes)] .= epsilon_z_histused[1,iel,it] 
-            userPointData[7,it_save,Int.(nodes)] .= kappa_x_histused[1,iel,it] 
-            userPointData[8,it_save,Int.(nodes)] .= kappa_y_histused[1,iel,it] 
-            userPointData[9,it_save,Int.(nodes)] .= kappa_z_histused[1,iel,it] 
+            userPointData[5,it_save,Int.(nodes)] .= epsilon_x_histused[1,iel,it] 
+            userPointData[6,it_save,Int.(nodes)] .= epsilon_y_histused[1,iel,it] 
+            userPointData[7,it_save,Int.(nodes)] .= epsilon_z_histused[1,iel,it] 
+            userPointData[8,it_save,Int.(nodes)] .= kappa_x_histused[1,iel,it] 
+            userPointData[9,it_save,Int.(nodes)] .= kappa_y_histused[1,iel,it] 
+            userPointData[10,it_save,Int.(nodes)] .= kappa_z_histused[1,iel,it] 
         end
-        userPointData[10,it_save,:] .= FReactionHist[it,1:6:end]
-        userPointData[11,it_save,:] .= FReactionHist[it,2:6:end]
-        userPointData[12,it_save,:] .= FReactionHist[it,3:6:end]
-        userPointData[13,it_save,:] .= FReactionHist[it,4:6:end]
-        userPointData[14,it_save,:] .= FReactionHist[it,5:6:end]
-        userPointData[15,it_save,:] .= FReactionHist[it,6:6:end]
+        userPointData[11,it_save,:] .= FReactionHist[it,1:6:end]
+        userPointData[12,it_save,:] .= FReactionHist[it,2:6:end]
+        userPointData[13,it_save,:] .= FReactionHist[it,3:6:end]
+        userPointData[14,it_save,:] .= FReactionHist[it,4:6:end]
+        userPointData[15,it_save,:] .= FReactionHist[it,5:6:end]
+        userPointData[16,it_save,:] .= FReactionHist[it,6:6:end]
         
-        userPointData[16,it_save,:] .= topFexternal_hist[it,1:6:end]
-        userPointData[17,it_save,:] .= topFexternal_hist[it,2:6:end]
-        userPointData[18,it_save,:] .= topFexternal_hist[it,3:6:end]
-        userPointData[19,it_save,:] .= topFexternal_hist[it,4:6:end]
-        userPointData[20,it_save,:] .= topFexternal_hist[it,5:6:end]
-        userPointData[21,it_save,:] .= topFexternal_hist[it,6:6:end]
+        userPointData[17,it_save,:] .= topFexternal_hist[it,1:6:end]
+        userPointData[18,it_save,:] .= topFexternal_hist[it,2:6:end]
+        userPointData[19,it_save,:] .= topFexternal_hist[it,3:6:end]
+        userPointData[20,it_save,:] .= topFexternal_hist[it,4:6:end]
+        userPointData[21,it_save,:] .= topFexternal_hist[it,5:6:end]
+        userPointData[22,it_save,:] .= topFexternal_hist[it,6:6:end]
     end
 
     azi=aziHist#./aziHist*1e-6

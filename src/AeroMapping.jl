@@ -61,7 +61,8 @@ map OWENSAero forces to OWENS mesh dofs
 """
 function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,outputfile=nothing,offsetmomentarm=0.0)
     CP,Rp,Tp,Zp,alpha,cl,cd_af,Vloc,Re,thetavec,n_steps,Fx_base,Fy_base,Fz_base,
-    Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp = advanceTurb(t;azi=azi_j+3*pi/2,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
+    Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp,
+    M_addedmass_Np,M_addedmass_Tp,F_addedmass_Np,F_addedmass_Tp = advanceTurb(t;azi=azi_j+3*pi/2,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
 
     NBlade = length(Rp[:,1,1])
     Nslices = length(Rp[1,:,1])

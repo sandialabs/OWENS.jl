@@ -276,7 +276,7 @@ function setupOWENS(OWENSAero,path;
 
     bld1start = Int(mymesh.structuralNodeNumbers[1,1]) #Get blade spanwise position
     bld1end = Int(mymesh.structuralNodeNumbers[1,end])
-    spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
+    spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.y[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 
     if length(thickness_scale)==2
         yscale = collect(LinRange(thickness_scale[1],thickness_scale[2],length(numadIn_bld.span)))

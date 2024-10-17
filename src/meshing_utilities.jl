@@ -1718,7 +1718,7 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
         # Spline the airfoil data to a common size
         myxafpc = zeros(length(precompinputs),nspl*2+1)
         myyafpc = zeros(length(precompinputs),nspl*2+1)
-        myzafpc = LinRange(0,1,length(precompinputs))
+        myzafpc = numadIn.span./maximum(numadIn.span)
         mychord = zeros(length(precompinputs))
         for ipci = 1:length(precompinputs)
             mychord[ipci] = precompinputs[ipci].chord
@@ -1753,8 +1753,9 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
         # Spline the airfoil data to align with the mesh
         myxaf = zeros(length(usedUnitSpan)-1,nspl*2+1)
         myyaf = zeros(length(usedUnitSpan)-1,nspl*2+1)
-        myzaf = LinRange(0,1,length(usedUnitSpan)-1)
-        chord = safeakima(myzafpc,mychord,myzaf)
+        myzaf = cumsum(diff(usedUnitSpan))
+        myzaf = myzaf .-= myzaf[1]
+        # chord = safeakima(myzafpc,mychord,myzaf)
 
         for iline = 1:nspl*2+1
             myxaf[:,iline] = safeakima(myzafpc,myxafpc[:,iline],myzaf)

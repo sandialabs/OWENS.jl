@@ -1,0 +1,673 @@
+name: WINDIO Example
+assembly: {turbine_class: I, turbulence_class: B, drivetrain: geared, rotor_orientation: upwind, number_of_blades: 3, hub_height: -25.2, rotor_diameter: 20.0, rated_power: 500000, lifetime: 25.0, marine_hydro: true}
+components:
+    tower:
+        outer_shape_bem:
+            airfoil_position:
+                grid: &twr_grid [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+                labels: [circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular]
+            chord:
+                grid: *twr_grid
+                values: [5.888066637, 5.788249614, 5.684865834, 5.577578504, 5.465996871, 5.349663569, 5.22803793, 5.100473576, 4.966187737, 4.824218239, 4.673361587, 4.512081003, 4.338364592, 4.149496455, 3.941665819, 3.70924955, 3.443362258, 3.128502234, 2.732998436, 2.169182296, 2.0]
+            twist:
+                grid: *twr_grid
+                values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            pitch_axis:
+                grid: *twr_grid
+                values: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            reference_axis:
+                x:
+                    grid: *twr_grid
+                    values: &twr_x [0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                y:
+                    grid: *twr_grid
+                    values: &twr_y [0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *twr_grid
+                    values: &twr_z [0.0, 6.607421057, 13.21484211, 19.82226317, 26.42968423, 33.03710529, 39.64452634, 46.2519474, 52.85936846, 59.46678951, 66.07421057, 72.68163163, 79.28905268, 85.89647374, 92.5038948, 99.11131586, 105.7187369, 112.326158, 118.933579, 125.5410001, 132.1484211]
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: *twr_grid
+                    values: *twr_x
+                y:
+                    grid: *twr_grid
+                    values: *twr_y
+                z:
+                    grid: *twr_grid
+                    values: *twr_z
+            webs:
+            layers:
+               -  name: Panel_Face_outer
+                  material: Generic_Skin
+                  n_plies:
+                      grid: *twr_grid
+                      values: [8.921, 8.770, 8.613, 8.451, 8.282, 8.106, 7.921, 7.728, 7.525, 7.309, 7.081, 6.836, 6.573, 6.287, 5.972, 5.620, 5.217, 4.740, 4.141, 3.287, 3.030]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *twr_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+               -  name: Center
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *twr_grid
+                      values: [89.213, 87.701, 86.134, 84.509, 82.818, 81.056, 79.213, 77.280, 75.245, 73.094, 70.809, 68.365, 65.733, 62.871, 59.722, 56.201, 52.172, 47.402, 41.409, 32.866, 30.303]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *twr_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+               -  name: Panel_Face_inner
+                  material: Generic_Skin
+                  n_plies:
+                      grid: *twr_grid
+                      values: [8.921, 8.770, 8.613, 8.451, 8.282, 8.106, 7.921, 7.728, 7.525, 7.309, 7.081, 6.836, 6.573, 6.287, 5.972, 5.620, 5.217, 4.740, 4.141, 3.287, 3.030]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *twr_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+            root: {d_f: 0.03, sigma_max: 675000000.0}
+            joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
+    blade:
+        outer_shape_bem:
+            airfoil_position:
+                grid: &bld_grid [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+                labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021]
+            chord:
+                grid: *bld_grid
+                values: [6, 6, 6, 5.498, 4.431, 3.806, 3.435, 3.205, 3.068, 3.003, 3, 3.056, 3.176, 3.377, 3.688, 4.18, 4.924, 6, 6, 6, 6]
+            twist:
+                grid: *bld_grid
+                values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            blade_mountpoint: 0.5
+            pitch_axis:
+                grid: *bld_grid
+                values: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+            reference_axis:
+                x:
+                    grid: *bld_grid
+                    values: &bld_x [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                y:
+                    grid: *bld_grid
+                    values: &bld_y [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *bld_grid
+                    values: &bld_z [0.0, 5.509149600000001, 11.018299200000001, 16.5274488, 22.036598400000003, 27.545748, 33.0548976, 38.5640472, 44.073196800000005, 49.5823464, 55.091496, 60.60064560000001, 66.1097952, 71.61894480000001, 77.1280944, 82.637244, 88.14639360000001, 93.6555432, 99.1646928, 104.6738424, 110.182992]
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: *bld_grid
+                    values: *bld_x
+                y:
+                    grid: *bld_grid
+                    values: *bld_y
+                z:
+                    grid: *bld_grid
+                    values: *bld_z
+            webs:
+               -  name: web0
+                  start_nd_arc:
+                      grid: *bld_grid
+                      values: [0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35,0.35]
+                  end_nd_arc:
+                      grid: *bld_grid
+                      values: [0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65]
+            layers:
+               -  name: Panel_Face_outer
+                  material: Generic_Skin
+                  n_plies:
+                      grid: *bld_grid
+                      values: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: Leading_Edge
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *bld_grid
+                      values: [12,12,12,11,9,8,7,6,6,6,6,6,6,7,7,8,10,12,12,12,12]
+                  start_nd_arc:
+                      values: [0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: HP_Aft_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *bld_grid
+                      values: [8,9,9,8,7,6,5,5,5,4,4,4,5,5,5,6,7,9,9,9,9]
+                  start_nd_arc:
+                      values: [0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: HP_Fore_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *bld_grid
+                      values: [8,9,9,8,7,6,5,5,5,4,4,4,5,5,5,6,7,9,9,9,9]
+                  start_nd_arc:
+                      values: [0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475,0.5475]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: LP_Fore_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *bld_grid
+                      values: [8,9,9,8,7,6,5,5,5,4,4,4,5,5,5,6,7,9,9,9,9]
+                  start_nd_arc:
+                      values: [0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525,0.4525]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: LP_Aft_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *bld_grid
+                      values: [8,9,9,8,7,6,5,5,5,4,4,4,5,5,5,6,7,9,9,9,9]
+                  start_nd_arc:
+                      values: [0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: HP_Spar
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *bld_grid
+                      values: [12,13,13,12,10,8,8,7,7,7,7,7,7,8,8,9,11,13,13,13,13]
+                  start_nd_arc:
+                      values: [0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55,0.55]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: LP_Spar
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *bld_grid
+                      values: [12,13,13,12,10,8,8,7,7,7,7,7,7,8,8,9,11,13,13,13,13]
+                  start_nd_arc:
+                      values: [0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45,0.45]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: HP_TE
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *bld_grid
+                      values: [12,12,12,11,9,8,7,6,6,6,6,6,6,7,7,8,10,12,12,12,12]
+                  start_nd_arc:
+                      values: [0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975,0.975]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: LP_TE
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *bld_grid
+                      values: [12,12,12,11,9,8,7,6,6,6,6,6,6,7,7,8,10,12,12,12,12]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: Panel_Face_inner
+                  material: Generic_Skin
+                  n_plies:
+                      grid: *bld_grid
+                      values: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *bld_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: web0_face
+                  material: Generic_Skin
+                  web: web0
+                  n_plies:
+                      grid: *bld_grid
+                      values: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: web0_core
+                  material: Foam
+                  web: web0
+                  n_plies:
+                      grid: *bld_grid
+                      values: [8,9,9,8,7,6,5,5,5,4,4,4,5,5,5,6,7,9,9,9,9]
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+               -  name: web0_face
+                  material: Generic_Skin
+                  web: web0
+                  n_plies:
+                      grid: *bld_grid
+                      values: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *bld_grid
+            root: {d_f: 0.03, sigma_max: 675000000.0}
+            joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
+    struts:
+      - name: strut1
+        mountfraction_tower: 0.5
+        mountfraction_blade: 0.5
+        outer_shape_bem:
+            airfoil_position:
+                grid: &strut_grid [0, 0.33, 0.67, 1]
+                labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021]
+            chord:
+                grid: *strut_grid
+                values: [6.0, 6.0, 6.0, 6.0]
+            twist:
+                grid: *strut_grid
+                values: [0.0, 0.0, 0.0, 0.0]
+            pitch_axis:
+                grid: *strut_grid
+                values: [0.3, 0.3, 0.3, 0.3]
+            reference_axis:
+                x:
+                    grid: *strut_grid
+                    values: &strutx [-0.0, -0.0, -0.0, -0.0]
+                y:
+                    grid: *strut_grid
+                    values: &struty [0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *strut_grid
+                    values: &strutz [0.0, 0.15, 0.45, 0.75]
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: *strut_grid
+                    values: *strutx
+                y:
+                    grid: *strut_grid
+                    values: *struty
+                z:
+                    grid: *strut_grid
+                    values: *strutz
+            webs:
+               -  name: web0
+                  start_nd_arc:
+                      grid: *strut_grid
+                      values: [0.35,0.35,0.35,0.35]
+                  end_nd_arc:
+                      grid: *strut_grid
+                      values: [0.65,0.65,0.65,0.65]
+            layers:
+               -  name: Panel_Face_outer
+                  material: Generic_Skin
+                  n_plies:
+                      grid: *strut_grid
+                      values: [1,1,1,1]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: Leading_Edge
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *strut_grid
+                      values: [12,12,12,12]
+                  start_nd_arc:
+                      values: [0.4525,0.4525,0.4525,0.4525]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.5475,0.5475,0.5475,0.5475]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: HP_Aft_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *strut_grid
+                      values: [8,8,8,8]
+                  start_nd_arc:
+                      values: [0.75,0.75,0.75,0.75]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.975,0.975,0.975,0.975]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: HP_Fore_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *strut_grid
+                      values: [8,8,8,8]
+                  start_nd_arc:
+                      values: [0.5475,0.5475,0.5475,0.5475]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.55,0.55,0.55,0.55]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: LP_Fore_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *strut_grid
+                      values: [8,8,8,8]
+                  start_nd_arc:
+                      values: [0.45,0.45,0.45,0.45]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.4525,0.4525,0.4525,0.4525]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: LP_Aft_Panel_foam
+                  material: Foam
+                  n_plies:
+                      grid: *strut_grid
+                      values: [8,8,8,8]
+                  start_nd_arc:
+                      values: [0.025,0.025,0.025,0.025]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.25,0.25,0.25,0.25]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: HP_Spar
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *strut_grid
+                      values: [12,12,12,12]
+                  start_nd_arc:
+                      values: [0.55,0.55,0.55,0.55]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.75,0.75,0.75,0.75]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: LP_Spar
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *strut_grid
+                      values: [12,12,12,12]
+                  start_nd_arc:
+                      values: [0.25,0.25,0.25,0.25]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.45,0.45,0.45,0.45]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: HP_TE
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *strut_grid
+                      values: [12,12,12,12]
+                  start_nd_arc:
+                      values: [0.975,0.975,0.975,0.975]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: LP_TE
+                  material: Generic_Pultrusion
+                  n_plies:
+                      grid: *strut_grid
+                      values: [12,12,12,12]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [0.025,0.025,0.025,0.025]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: Panel_Face_inner
+                  material: Generic_Skin
+                  n_plies:
+                      grid: *strut_grid
+                      values: [1,1,1,1]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0]
+                      grid: *strut_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0]
+                      grid: *strut_grid
+               -  name: web0_face
+                  material: Generic_Pultrusion
+                  web: web0
+                  n_plies:
+                      grid: *strut_grid
+                      values: [1,1,1,1]
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0]
+                      grid: *strut_grid
+               -  name: web0_core
+                  material: Foam
+                  web: web0
+                  n_plies:
+                      grid: *strut_grid
+                      values: [8,8,8,8]
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0]
+                      grid: *strut_grid
+               -  name: web0_face
+                  material: Generic_Pultrusion
+                  web: web0
+                  n_plies:
+                      grid: *strut_grid
+                      values: [1,1,1,1]
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0]
+                      grid: *strut_grid
+            root: {d_f: 0.03, sigma_max: 675000000.0}
+            joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
+    hub: {diameter: 2.0, cone_angle: 0.0, drag_coefficient: 0.0, flange_t2shell_t: 6.0, flange_OD2hub_D: 0.6, flange_ID2OD: 0.8, hub_blade_spacing_margin: 1.2, hub_stress_concentration: 3.0, n_front_brackets: 5, n_rear_brackets: 5, clearance_hub_spinner: 0.5, spin_hole_incr: 1.2, pitch_system_scaling_factor: 0.75, spinner_gust_ws: 70.0, hub_material: cast_iron, spinner_material: glass_uni}
+    nacelle:
+        drivetrain:
+            uptilt: -0.0
+            distance_tt_hub: 1.2
+            distance_hub_mb: 2.0
+            distance_mb_mb: 1.0
+            overhang: 4.91
+            generator_length: 2.0
+            generator_radius_user: 0.25
+            generator_mass_user: 8928.0
+            generator_rpm_efficiency_user:
+                grid: [0.0,1.0]
+                values: [1.0,1.0]
+            gear_ratio: 53.0
+            gearbox_length_user: 0.0
+            gearbox_radius_user: 0.0
+            gearbox_mass_user: 0.0
+            gearbox_efficiency: 0.92
+            damping_ratio: 0.01
+            lss_diameter: [0.577, 0.577]
+            lss_wall_thickness: [0.288, 0.288]
+            lss_material: steel
+            hss_length: 1.5
+            hss_diameter: [0.288, 0.288]
+            hss_wall_thickness: [0.144, 0.144]
+            hss_material: steel
+            nose_diameter: [0.3, 0.3]
+            nose_wall_thickness: [0.1, 0.1]
+            bedplate_wall_thickness:
+                grid: [0.0, 1.0]
+                values: [0.05, 0.05]
+            bedplate_flange_width: 1.0
+            bedplate_flange_thickness: 0.05
+            bedplate_web_thickness: 0.05
+            bedplate_material: steel
+            mb1Type: CARB
+            mb2Type: SRB
+            uptower: true
+            gear_configuration: eep
+            planet_numbers: [3, 3, 0]
+            brake_mass_user: 0.0
+            hvac_mass_coefficient: 0.025
+            converter_mass_user: 0.0
+            transformer_mass_user: 0.0
+        # generator: {generator_type: DFIG, rho_Fe: 7700.0, rho_Fes: 7850.0, rho_Copper: 8900.0, rho_PM: 7450.0, B_r: 1.2, P_Fe0e: 1.0, P_Fe0h: 4.0, S_N: -0.002, alpha_p: 1.0995574287564276, b_r_tau_r: 0.45, b_ro: 0.004, b_s_tau_s: 0.45, b_so: 0.004, freq: 60, h_i: 0.001, h_sy0: 0.0, h_w: 0.005, k_fes: 0.9, k_s: 0.2, m: 3, mu_0: 1.2566370614359173e-06, mu_r: 1.06, p: 3.0, phi: 1.5707963267948966, ratio_mw2pp: 0.7, resist_Cu: 2.52e-08, y_tau_pr: 0.8333333, rated_rpm: 1200.0, cofi: 0.9, y_tau_p: 0.8, sigma: 21500.0, rad_ag: 0.61, len_s: 0.49, h_s: 0.08, I_0: 40.0, B_symax: 1.3, S_Nmax: -0.2, h_0: 0.01, k_fillr: 0.55, k_fills: 0.65, q1: 5, q2: 4, C_Cu: 4.786, C_Fe: 0.556, C_Fes: 0.50139, C_PM: 50.0, mass_coefficient: 0.0, q3: 4, d_r: 0.0, h_m: 0.0, n_r: 0.0, t_wr: 0.0, n_s: 0.0, b_st: 0.0, d_s: 0.0, t_ws: 0.0}
+airfoils:
+   -  name: NACA6_1000
+      coordinates:
+          x: [1.0, 0.993181, 0.972909, 0.939737, 0.89457, 0.838641, 0.773474, 0.700848, 0.622743, 0.54129, 0.45870999999999995, 0.37725699999999995, 0.299152, 0.226526, 0.16135900000000003, 0.10543000000000002, 0.060262999999999955, 0.027090999999999976, 0.0068190000000000195, 0.0, 0.0068190000000000195, 0.027090999999999976, 0.060262999999999955, 0.10543000000000002, 0.16135900000000003, 0.226526, 0.299152, 0.37725699999999995, 0.45870999999999995, 0.54129, 0.622743, 0.700848, 0.773474, 0.838641, 0.89457, 0.939737, 0.972909, 0.993181, 1.0]
+          y: [0.0, 0.082442, 0.162359, 0.237976, 0.307106, 0.367865, 0.418583, 0.457883, 0.484712, 0.498283, 0.498283, 0.484712, 0.457883, 0.418583, 0.367865, 0.307106, 0.237976, 0.162359, 0.082442, 0.0, -0.082442, -0.162359, -0.237976, -0.307106, -0.367865, -0.418583, -0.457883, -0.484712, -0.498283, -0.498283, -0.484712, -0.457883, -0.418583, -0.367865, -0.307106, -0.237976, -0.162359, -0.082442, 0.0]
+      relative_thickness: 1.0
+      aerodynamic_center: 0.25
+      polars:
+         -  configuration: ''
+            re: 2000000.0
+            c_l:
+                grid: [-3.141592653589793, 0.0, 3.141592653589793]
+                values: [0.0, 0.0, 0.0]
+            c_d:
+                grid: [-3.141592653589793, 0.0, 3.141592653589793]
+                values: [0.3, 0.3, 0.3]
+            c_m:
+                grid: [-3.141592653589793, 0.0, 3.141592653589793]
+                values: [0.0, 0.0, 0.0]
+materials:
+   -  name: Generic_Pultrusion
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [27000000000.0, 6000000000.0, 6000000000.0]
+      G: [3000000000.0, 3000000000.0, 3000000000.0]
+      nu: [0.26, 0.36, 0.26]
+      rho: 1850.0
+      Xt: [400000000.0, 100000000.0, 100000000.0]
+      Xc: [200000000.0, 200000000.0, 200000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 3.00
+      A: [400.0,350.0,325.0,275.0,200.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: Generic_Skin
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [27000000000.0, 6000000000.0, 6000000000.0]
+      G: [3000000000.0, 3000000000.0, 3000000000.0]
+      nu: [0.26, 0.36, 0.26]
+      rho: 1850.0
+      Xt: [400000000.0, 100000000.0, 100000000.0]
+      Xc: [200000000.0, 200000000.0, 200000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 3.00
+      A: [400.0,350.0,325.0,275.0,200.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: steel
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [199948000000.0, 199948000000.0, 199948000000.0]
+      G: [76877000000.0, 76877000000.0, 76877000000.0]
+      nu: [0.3, 0.3, 0.3]
+      rho: 7861.092935
+      Xt: [420000000.0, 420000000.0, 420000000.0]
+      Xc: [250000000.0, 250000000.0, 250000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 1.00
+      A: [420.0,415.0,375.0,275.0,190.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: Foam
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [1000000000.0, 1000000000.0, 1000000000.0]
+      G: [100000000.0, 100000000.0, 100000000.0]
+      nu: [0.3, 0.3, 0.3]
+      rho: 100.0
+      Xt: [50000000.0, 50000000.0, 50000000.0]
+      Xc: [50000000.0, 50000000.0, 50000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 0.10
+      A: [50.0,45.0,40.0,35.0,20.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+control:
+    supervisory: {Vin: 0.5, Vout: 4.0, maxTS: 60}
+    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: !!null '', max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
+    torque: {control_type: !!null '', tsr: 7.64, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 1500000.0, VS_minspd: 0.0, VS_maxspd: 1.26711}
+    setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
+    shutdown: {limit_type: !!null '', limit_value: !!null ''}
+environment: {air_density: 1.225, air_dyn_viscosity: 1.7894e-5, air_speed_sound: 1500.0, shear_exp: 0.0, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 101325.0, air_vapor_pressure: 2500.0, significant_wave_height: 1.0, significant_wave_period: 5.0}
+bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_pct: 0.01, decommissioning_pct: 0.15, distance_to_substation: 1.0, distance_to_interconnection: 8.5, interconnect_voltage: 130.0, distance_to_site: 115.0, distance_to_landfall: 50.0, port_cost_per_month: 2000000.0, site_auction_price: 100000000.0, site_assessment_plan_cost: 1000000.0, site_assessment_cost: 25000000.0, construction_operations_plan_cost: 2500000.0, boem_review_cost: 0.0, design_install_plan_cost: 2500000.0}
+costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.056, bos_per_kW: 4053.0, opex_per_kW: 137.0, turbine_number: 40.0, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_mass_cost_coeff: 12.9, hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0, electricity_price: 0.04, reserve_margin_price: 120.0, capacity_credit: 0.0, benchmark_price: 0.071}
