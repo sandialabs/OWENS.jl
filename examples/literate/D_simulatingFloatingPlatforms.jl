@@ -17,8 +17,8 @@ import OWENS
 import OWENSFEA
 import OWENSAero
 
-# runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" #splitdir(@__FILE__)[1]
-runpath = path = splitdir(@__FILE__)[1]
+runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate"
+# runpath = path = splitdir(@__FILE__)[1] # use to run locally
 
 nothing
 
@@ -220,7 +220,7 @@ md_input_file = "$(path)/data/MoorDyn.dat"
 ss_input_file = "$(path)/data/SeaState.dat"
 potflowfile = "$(path)/data/potflowdata/marin_semi"
 
-inputs = OWENS.Inputs(;analysisType = structuralModel,
+inputs = OWENS.Inputs(;analysisType = analysisType,
 tocp = [0.0,100000.1],
 Omegaocp = [RPM,RPM] ./ 60,
 tocp_Vinf = [0.0,100000.1],
@@ -254,7 +254,7 @@ nothing
 # non-default gamma and alpha terms (for better convergence with the platform mesh).
 
 topFEAModel = OWENS.FEAModel(;
-    analysisType = structuralModel,
+    analysisType = analysisType,
     outFilename = "none",
     joint = topJoint,
     platformTurbineConnectionNodeNumber = 1,
@@ -337,7 +337,7 @@ bottomConcTerms = OWENSFEA.applyConcentratedTerms(
     data=bottomConcInputs,
     jointData=[])
 bottomFEAModel = OWENS.FEAModel(;
-    analysisType = structuralModel,
+    analysisType = analysisType,
     outFilename = "none",
     joint = [],
     platformTurbineConnectionNodeNumber = 1,
