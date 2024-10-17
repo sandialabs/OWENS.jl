@@ -362,6 +362,14 @@ function runSim(;
                                                 bottomEl=bottomEl,
                                                 bin=bin)
 
+    # outfile_root = "$path/data/UNIT_TEST_cct2"
+    # DelimitedFiles.writedlm(outfile_root * "_uHist_prp.csv", uHist_prp, ',')
+    # DelimitedFiles.writedlm(outfile_root * "_FPtfmHist.csv", FPtfmHist, ',')
+    # DelimitedFiles.writedlm(outfile_root * "_FHydroHist.csv", FHydroHist, ',')
+    # DelimitedFiles.writedlm(outfile_root * "_FMooringHist.csv", FMooringHist, ',')
+    # DelimitedFiles.writedlm(outfile_root * "_tt_disps.csv", uHist[:,topFrcDOFs], ',')
+    # DelimitedFiles.writedlm(outfile_root * "_FReactionHist.csv", FReactionHist, ',')
+
     return uHist_prp, FPtfmHist, FHydroHist, FMooringHist, uHist[:,topFrcDOFs], FReactionHist
 end
 
@@ -375,12 +383,12 @@ ptfm_disps, ptfm_forces, hydro_forces, mooring_forces, tt_disps, FReaction = run
     md_lib = nothing)
 
 
-ptfm_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_xPtfm.csv", ',')
-ptfm_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FPtfm.csv", ',')
-hydro_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FHydro.csv", ',')
-mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FMooring.csv", ',')
-tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_xTowerTop.csv", ',')
-FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FReaction.csv", ',')
+ptfm_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_uHist_prp.csv", ',')
+ptfm_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FPtfmHist.csv", ',')
+hydro_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FHydroHist.csv", ',')
+mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FMooringHist.csv", ',')
+tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_tt_disps.csv", ',')
+FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FReactionHist.csv", ',')
 
 mytol = 0.00001
 
