@@ -12,8 +12,7 @@ function runSim(;
     hd_lib = nothing,
     md_lib = nothing,
     moordyn_on = true,
-    bcDOFs = [],
-    outfile_root = "owens")
+    bcDOFs = [])
 
     ##############################################
     # Setup
@@ -363,37 +362,25 @@ function runSim(;
                                                 bottomEl=bottomEl,
                                                 bin=bin)
 
-    DelimitedFiles.writedlm(outfile_root * "_ptfm_disps.csv", uHist_prp, ',')
-    DelimitedFiles.writedlm(outfile_root * "_ptfm_forces.csv", FPtfmHist, ',')
-    DelimitedFiles.writedlm(outfile_root * "_hydro_forces.csv", FHydroHist, ',')
-    DelimitedFiles.writedlm(outfile_root * "_mooring_forces.csv", FMooringHist, ',')
-    DelimitedFiles.writedlm(outfile_root * "_tt_disps.csv", uHist[:,topFrcDOFs], ',')
-    DelimitedFiles.writedlm(outfile_root * "_FReaction.csv", FReactionHist, ',')
+    return uHist_prp, FPtfmHist, FHydroHist, FMooringHist, uHist[:,topFcDOFs], FReactionHist
 end
 
-runSim(outfile_root="owens_wn_prescribed_new",
+ptfm_disps, ptfm_forces, hydro_forces, mooring_forces, tt_disps, FReaction = runSim(
     potflowfile = "$path/../examples/floating/data/potential_flow_data/marin_semi",
     hd_input_file = "$path/../examples/floating/data/HydroDyn_CCT2_test.dat",
     ss_input_file = "$path/../examples/floating/data/HydroDyn_CCT2_SeaState_test.dat",
     md_input_file = "$path/../examples/floating/data/MoorDyn_CCT2_test.dat",
     topForcingFile = "$(path)/../examples/floating/data/PrescribedForcesMoments.csv",
-    hd_lib = nothing, #"$path/bin/HydroDyn_c_binding_x64.old"
-    md_lib = nothing)  #"$path/bin/MoorDyn_c_binding_x64.old"
+    hd_lib = nothing,
+    md_lib = nothing)
 
 
-ptfm_disps_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_ptfm_disps.csv", ',')
-ptfm_forces_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_ptfm_forces.csv", ',')
-hydro_forces_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_hydro_forces.csv", ',')
-mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_mooring_forces.csv", ',')
-tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_tt_disps.csv", ',')
-FReaction_UNIT = DelimitedFiles.readdlm("$path/data/owens_wn_prescribed_UNIT_FReaction.csv", ',')
-
-ptfm_disps = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_ptfm_disps.csv", ',')
-ptfm_forces = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_ptfm_forces.csv", ',')
-hydro_forces = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_hydro_forces.csv", ',')
-mooring_forces = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_mooring_forces.csv", ',')
-tt_disps = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_tt_disps.csv", ',')
-FReaction = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_FReaction.csv", ',')
+ptfm_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_xPtfm.csv", ',')
+ptfm_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FPtfm.csv", ',')
+hydro_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FHydro.csv", ',')
+mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FMooring.csv", ',')
+tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_xTowerTop.csv", ',')
+FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_FReaction.csv", ',')
 
 mytol = 0.00001
 
