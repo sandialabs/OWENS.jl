@@ -405,6 +405,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                         if inputs.AD15On
                             # AD15 is in global frame, so no frame conversion???
                             topFexternal = aeroVals
+                            full_aeroDOFs = aeroDOFs
                         else
                             if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
                                 # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
@@ -418,6 +419,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 end
                             else # the other aero input as a 2D array
                                 topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+                                full_aeroDOFs = aeroDOFs
                             end
                         end
                     else
@@ -443,20 +445,23 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # println(Float64.(rbData))
                 if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                     topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,top_rom,topFexternal,Int.(full_aeroDOFs),CN2H,rbData)
-                elseif inputs.analysisType=="GX"                                                        
+                elseif inputs.analysisType=="GX"                                                                                
                     topElStrain, topDispOut, topFReaction_j,systemout  = structuralDynamicsTransientGX(topModel,topMesh,topFexternal,Int.(full_aeroDOFs),system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
                 else # evalulate structural dynamics using conventional representation
                     topElStrain, topDispOut, topFReaction_j = OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topDispData1,Omega_s,OmegaDot_s,t[i+1],delta_t,topElStorage,topFexternal,Int.(full_aeroDOFs),CN2H,rbData;predef = topModel.nlParams.predef)
                 end
+
                 u_jLast = copy(u_j)
                 u_j = topDispOut.displ_sp1
                 udot_j = topDispOut.displdot_sp1
                 uddot_j = topDispOut.displddot_sp1
 
                 ## calculate norms
-                uNorm = LinearAlgebra.norm(u_j-u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
-                aziNorm = LinearAlgebra.norm(azi_j - azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
-                gbNorm = LinearAlgebra.norm(gb_j - gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+                uNorm = LinearAlgebra.norm(u_j .- u_jLast)/LinearAlgebra.norm(u_j)            #structural dynamics displacement iteration norm
+                aziNorm = LinearAlgebra.norm(azi_j .- azi_jLast)/LinearAlgebra.norm(azi_j)  #rotor azimuth iteration norm
+                if inputs.generatorOn
+                    gbNorm = LinearAlgebra.norm(gb_j .- gb_jLast)/LinearAlgebra.norm(gb_j) #gearbox states iteration norm if it is off, the norm will be zero
+                end
 
                 numIterations = numIterations + 1
 
@@ -597,6 +602,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                                 end
                             else
                                 topFexternal = frame_convert(aeroVals[i+1,:], CN2H)
+                                full_aeroDOFs = aeroDOFs
                             end
                         end
                     end

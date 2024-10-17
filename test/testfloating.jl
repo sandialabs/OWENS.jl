@@ -271,7 +271,7 @@ function runSim(;
     Omegaocp = [0.0, 0.0],
     OmegaInit = 0.0,
     hydroOn = true,
-    aeroLoadsOn = true,
+    aeroLoadsOn = 2,
     interpOrder = 2,
     numTS = num_ts,
     delta_t = dt,
@@ -362,7 +362,7 @@ function runSim(;
                                                 bottomEl=bottomEl,
                                                 bin=bin)
 
-    return uHist_prp, FPtfmHist, FHydroHist, FMooringHist, uHist[:,topFcDOFs], FReactionHist
+    return uHist_prp, FPtfmHist, FHydroHist, FMooringHist, uHist[:,topFrcDOFs], FReactionHist
 end
 
 ptfm_disps, ptfm_forces, hydro_forces, mooring_forces, tt_disps, FReaction = runSim(
@@ -380,7 +380,7 @@ ptfm_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FPtfm.csv",
 hydro_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FHydro.csv", ',')
 mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FMooring.csv", ',')
 tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_xTowerTop.csv", ',')
-FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_FReaction.csv", ',')
+FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FReaction.csv", ',')
 
 mytol = 0.00001
 
@@ -409,7 +409,7 @@ for iel = 1:length(FReaction_UNIT) #note, purposely iterating over multidimensio
 end
 
 
-# FReactionHist = DelimitedFiles.readdlm("$path/owens_wn_prescribed_new_FReaction.csv", ',')
+# FReactionHist = FReaction
 # dt = .00625 # seconds
 # t_max = 1 # seconds
 # FReaction_tvec = collect(dt:dt:t_max)
@@ -441,6 +441,7 @@ end
 
 # PyPlot.figure("Fx")
 # PyPlot.plot(FReaction_tvec,Fx)
+# PyPlot.plot(FReaction_tvec,Fx_UNIT)
 
 # PyPlot.figure("Fy")
 # # PyPlot.plot(Fy_oldowens[:,1],Fy_oldowens[:,2],label="Old OWENS")
