@@ -366,11 +366,11 @@ function runSim(;
 end
 
 ptfm_disps, ptfm_forces, hydro_forces, mooring_forces, tt_disps, FReaction = runSim(
-    potflowfile = "$path/../examples/floating/data/potential_flow_data/marin_semi",
-    hd_input_file = "$path/../examples/floating/data/HydroDyn_CCT2_test.dat",
-    ss_input_file = "$path/../examples/floating/data/HydroDyn_CCT2_SeaState_test.dat",
-    md_input_file = "$path/../examples/floating/data/MoorDyn_CCT2_test.dat",
-    topForcingFile = "$(path)/../examples/floating/data/PrescribedForcesMoments.csv",
+    potflowfile = "$path/data/potential_flow_data/marin_semi",
+    hd_input_file = "$path/data/HydroDyn_CCT2_test.dat",
+    ss_input_file = "$path/data/HydroDyn_CCT2_SeaState_test.dat",
+    md_input_file = "$path/data/MoorDyn_CCT2_test.dat",
+    topForcingFile = "$(path)/data/PrescribedForcesMoments.csv",
     hd_lib = nothing,
     md_lib = nothing)
 
