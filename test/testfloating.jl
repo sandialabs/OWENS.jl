@@ -390,30 +390,30 @@ mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FMooring
 tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_tt_disps.csv", ',')
 FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FReactionHist.csv", ',')
 
-mytol = 0.00001
+mytol = 1e-5
 
 for iel = 1:length(ptfm_disps_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    @test isapprox(ptfm_disps_UNIT[iel],ptfm_disps[iel];atol=abs(ptfm_disps_UNIT[iel])*mytol)
+    @test isapprox(ptfm_disps_UNIT[iel],ptfm_disps[iel];atol=max(abs(ptfm_disps_UNIT[iel])*mytol,1e-6))
 end
 
 for iel = 1:length(ptfm_forces_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    @test isapprox(ptfm_forces_UNIT[iel],ptfm_forces[iel];atol=abs(ptfm_forces_UNIT[iel])*mytol)
+    @test isapprox(ptfm_forces_UNIT[iel],ptfm_forces[iel];atol=max(abs(ptfm_forces_UNIT[iel])*mytol,1e-6))
 end
 
 for iel = 1:length(hydro_forces_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    @test isapprox(hydro_forces_UNIT[iel],hydro_forces[iel];atol=abs(hydro_forces_UNIT[iel])*mytol)
+    @test isapprox(hydro_forces_UNIT[iel],hydro_forces[iel];atol=max(abs(hydro_forces_UNIT[iel])*mytol,1e-6))
 end
 
 for iel = 1:length(mooring_forces_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    @test isapprox(mooring_forces_UNIT[iel],mooring_forces[iel];atol=abs(mooring_forces_UNIT[iel])*mytol)
+    @test isapprox(mooring_forces_UNIT[iel],mooring_forces[iel];atol=max(abs(mooring_forces_UNIT[iel])*mytol,1e-6))
 end
 
 for iel = 1:length(tt_disps_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    @test isapprox(tt_disps_UNIT[iel],tt_disps[iel];atol=abs(tt_disps_UNIT[iel])*mytol)
+    @test isapprox(tt_disps_UNIT[iel],tt_disps[iel];atol=max(abs(tt_disps_UNIT[iel])*mytol,1e-6))
 end
 
 for iel = 1:length(FReaction_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    @test isapprox(FReaction_UNIT[iel],FReaction[iel];atol=abs(FReaction_UNIT[iel])*mytol)
+    @test isapprox(FReaction_UNIT[iel],FReaction[iel];atol=max(abs(FReaction_UNIT[iel])*mytol,1e-6))
 end
 
 

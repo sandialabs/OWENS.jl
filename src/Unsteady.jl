@@ -193,7 +193,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         recent_udot_prp = repeat(udot_s_prp_n, 1, inputs.interpOrder+1)
         recent_uddot_prp = repeat(uddot_s_prp_n, 1, inputs.interpOrder+1)
         recent_FPtfm = repeat(FPtfm_n, 1, inputs.interpOrder+1)
-        recent_times = collect(range(-delta_t*inputs.interpOrder, 0.0, inputs.interpOrder+1))
+        recent_times = collect(LinRange(-delta_t*inputs.interpOrder, 0.0, inputs.interpOrder+1))
     end
 
     #..........................................................................
