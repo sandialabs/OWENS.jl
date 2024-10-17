@@ -43,7 +43,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 WindType = Inp.WindType
-AModel = Inp.AModel
+AModel = "DMS"#Inp.AModel
 windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
 if ifw_libfile == "nothing"
@@ -55,7 +55,7 @@ numTS = 5 # shortened since the floating simulation can take awhile
 delta_t = Inp.delta_t
 NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
 NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
-NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
+NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld[1:end-4])DMS.csv"
 NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
 NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
 NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
@@ -407,10 +407,3 @@ PyPlot.ylabel("Force [N]")
 PyPlot.title("Hydrodynamic Surge Loading")
 
 nothing
-
-# We will save the resulting VTK files to visualize the result.
-# TODO get visualization working with platform mesh
-#### println("Saving VTK time domain files")
-#### OWENS.OWENSFEA_VTK("$(path)/vtk/floatingVAWTExample", t, uHist, topSystem, topAssembly, sections; scaling=1, azi=aziHist)
-
-#### nothing
