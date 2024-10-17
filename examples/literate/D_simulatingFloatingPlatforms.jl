@@ -17,7 +17,8 @@ import OWENS
 import OWENSFEA
 import OWENSAero
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" #splitdir(@__FILE__)[1]
+# runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" #splitdir(@__FILE__)[1]
+runpath = path = splitdir(@__FILE__)[1]
 
 nothing
 
