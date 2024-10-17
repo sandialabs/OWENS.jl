@@ -372,13 +372,13 @@ epsilon_x_hist, epsilon_y_hist, epsilon_z_hist, kappa_x_hist, kappa_y_hist, kapp
 FPtfmHist, FHydroHist, FMooringHist = OWENS.Unsteady(inputs,
     system=topSystem,
     assembly=topAssembly,
-    topModel=topModel,
+    topModel=topFEAModel,
     topMesh=topMesh,
     topEl=topEl,
     aero=aeroForces,
     deformAero=deformAero,
-    bottomModel=bottomModel,
-    bottomMesh=bottomFEAMesh,
+    bottomModel=bottomFEAModel,
+    bottomMesh=bottomMesh,
     bottomEl=bottomEl,
     bin=bin)
 
