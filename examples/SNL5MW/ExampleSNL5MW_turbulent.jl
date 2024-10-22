@@ -47,7 +47,7 @@ delta_t = 0.05
 simtime = 6.0
 numTS = simtime/delta_t
 
-AModel = "DMS"
+AModel = "AD"
 turbineType = "Darrieus"
 
 if AModel=="AD" #TODO: unify flag
@@ -67,9 +67,9 @@ ifw_libfile = nothing
 
 NuMad_geom_xlscsv_file_twr = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
 NuMad_mat_xlscsv_file_twr = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-NuMad_geom_xlscsv_file_bld = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkinDMS.csv"
+NuMad_geom_xlscsv_file_bld = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
 NuMad_mat_xlscsv_file_bld = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-NuMad_geom_xlscsv_file_strut = ["$path/data/NuMAD_Geom_SNL_5MW_strutsDMS.csv","$path/data/NuMAD_Geom_SNL_5MW_strutsDMS.csv"]
+NuMad_geom_xlscsv_file_strut = ["$path/data/NuMAD_Geom_SNL_5MW_struts.csv","$path/data/NuMAD_Geom_SNL_5MW_struts.csv"]
 NuMad_mat_xlscsv_file_strut = NuMad_mat_xlscsv_file_bld
 
 shapeZ = collect(LinRange(0,H,Nslices+1))
@@ -283,6 +283,7 @@ Omegaocp = [RPM,RPM] ./ 60,
 tocp_Vinf = [0.0,100000.1],
 Vinfocp = [Vinf,Vinf],
 numTS,
+AD15On,
 delta_t,
 aeroLoadsOn = 2)
 
@@ -303,7 +304,7 @@ println("Running Unsteady")
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
 epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
-topFexternal_hist,rbDataHist = OWENS.Unsteady(model;
+topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(model;
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
 saveName = "$path/vtk/SNL5MW_timedomain"
