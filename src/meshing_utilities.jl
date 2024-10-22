@@ -439,9 +439,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
         conn = [conn;conn_b]
 
         if AD15_ccw #Clockwise, the blades roots are at the top, trailing edge is always positive y
-            AD15bldNdIdxRng = [AD15bldNdIdxRng; b_topidx[ibld] b_botidx[ibld]]    # top of blade is root 
+            AD15bldNdIdxRng = [AD15bldNdIdxRng; b_topidx[ibld]-1 b_botidx[ibld]+1]    # TODO: adhub move node and position there #top of blade is root 
         elseif !(AD15_ccw) #Clockwise, the blades roots are at the bottom
-            AD15bldNdIdxRng = [AD15bldNdIdxRng; b_botidx[ibld] b_topidx[ibld]]    # bottom of blade is root
+            AD15bldNdIdxRng = [AD15bldNdIdxRng; b_botidx[ibld]+1 b_topidx[ibld]-1]    # bottom of blade is root
         end
     end
 

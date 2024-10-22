@@ -53,7 +53,8 @@ function setupOWENS(OWENSAero,path;
     buoy_flag = false,
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus",
-    custommesh = nothing) #Darrieus, H-VAWT, ARCUS
+    custommesh = nothing,
+    verbosity=0) #Darrieus, H-VAWT, ARCUS
     
     custom_mesh_outputs = []
 
@@ -126,7 +127,7 @@ function setupOWENS(OWENSAero,path;
             bshapey = shapeY, # but magnitude for this is relevant
             angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
             AD15_ccw = true,
-            verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information
+            verbosity, # 0 nothing, 1 basic, 2 lots: amount of printed information
             connectBldTips2Twr)
     elseif custommesh != nothing
         mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs = custommesh(;Htwr_base,

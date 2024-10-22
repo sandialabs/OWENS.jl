@@ -57,7 +57,7 @@ else
 end
 
 ntelem = 30 #tower elements
-nbelem = 60 #blade elements
+nbelem = 40 #blade elements
 nselem = 10
 
 adi_lib=nothing
@@ -241,7 +241,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     numTS,
     adi_lib,
     adi_rootname,
-    AD15hubR = 0.0,
+    AD15hubR = 5.0,
     windINPfilename,
     ifw_libfile,
     NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
@@ -263,7 +263,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
-    meshtype = turbineType)
+    meshtype = turbineType,
+    verbosity=2)
 
 
 ######################################
