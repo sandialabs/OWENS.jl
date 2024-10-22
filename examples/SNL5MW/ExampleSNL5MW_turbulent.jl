@@ -36,11 +36,41 @@ slc1 = 3
 slc2 = 5
 eta = 0.5
 B = Nbld = 2
-R = 177.2022*0.3048 #m
-H = 1.02*R*2 #m
+R = Blade_Radius = 177.2022*0.3048 #m
+H = Blade_Height = 1.02*R*2 #m
+towerHeight = 15.0
 chord = 5.0*ones(Nslices)
 omega = RPM / 60 * 2 * pi
 tsr = omega*R/Vinf
+ifw=false
+delta_t = 0.05
+simtime = 6.0
+numTS = simtime/delta_t
+
+AModel = "DMS"
+turbineType = "Darrieus"
+
+if AModel=="AD" #TODO: unify flag
+    AD15On=true #AD for AeroDyn, DMS for double multiple streamtube, AC for actuator cylinder
+else
+    AD15On=false
+end
+
+ntelem = 30 #tower elements
+nbelem = 60 #blade elements
+nselem = 10
+
+adi_lib=nothing
+adi_rootname="$path/SNL5MW"
+windINPfilename = "$(path)/data/300mx300m12msETM_Coarse.bts"
+ifw_libfile = nothing
+
+NuMad_geom_xlscsv_file_twr = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
+NuMad_mat_xlscsv_file_twr = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
+NuMad_geom_xlscsv_file_bld = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkinDMS.csv"
+NuMad_mat_xlscsv_file_bld = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+NuMad_geom_xlscsv_file_strut = ["$path/data/NuMAD_Geom_SNL_5MW_strutsDMS.csv","$path/data/NuMAD_Geom_SNL_5MW_strutsDMS.csv"]
+NuMad_mat_xlscsv_file_strut = NuMad_mat_xlscsv_file_bld
 
 shapeZ = collect(LinRange(0,H,Nslices+1))
 shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
@@ -56,120 +86,185 @@ delta_zs = shapeZ[2:end] - shapeZ[1:end-1]
 
 delta3D = atan.(delta_xs./delta_zs)
 
-#########################################
-### Set up aero forces
-#########################################
-println("Initialize Aerodynamics")
-OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
-afname = "$(path)/airfoils/NACA_0021.dat",
-ifw=true,
-ifw_libfile = nothing,
-turbsim_filename="$(path)/data/300mx300m12msETM_Coarse.bts",
-ntheta,Nslices,rho,eta,RPI=true)
+# #########################################
+# ### Set up aero forces
+# #########################################
+# println("Initialize Aerodynamics")
+# OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
+# afname = "$(path)/airfoils/NACA_0021.dat",
+# ifw=false,
+# ifw_libfile = nothing,
+# turbsim_filename="$(path)/data/300mx300m12msETM_Coarse.bts",
+# ntheta,Nslices,rho,eta,RPI=true)
 
-#########################################
-### Set up mesh
-#########################################
-println("Create Mesh")
-mymesh,myort,myjoint = OWENS.create_mesh_struts(;Ht=15.0,
-Hbld = H, #blade height
-R, # m bade radius
-nblade = 2,
-ntelem = 30, #tower elements
-nbelem = 60, #blade elements
-nselem = 10,
-strut_twr_mountpoint = [0.1,0.9], # This puts struts at top and bottom
-strut_bld_mountpoint = [0.1,0.9], # This puts struts at top and bottom
-bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-bshapez = shapeZ,
-angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+# #########################################
+# ### Set up mesh
+# #########################################
+# println("Create Mesh")
+# mymesh,myort,myjoint = OWENS.create_mesh_struts(;Htwr_base=15.0,
+# Hbld = H, #blade height
+# R, # m bade radius
+# Htwr_blds=H,
+# nblade = 2,
+# ntelem = 30, #tower elements
+# nbelem = 60, #blade elements
+# nselem = 10,
+# strut_twr_mountpoint = [0.1,0.9], # This puts struts at top and bottom
+# strut_bld_mountpoint = [0.1,0.9], # This puts struts at top and bottom
+# bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
+# bshapez = shapeZ,
+# angularOffset = -pi/2) #Blade shape, magnitude is irrelevant, scaled based on height and radius above
 
-#########################################
-### Set up Sectional Properties
-#########################################
-println("Calculate/Set up sectional properties")
-#Tower
-NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
-numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+# PyPlot.figure()
+# for icon = 1:length(mymesh.conn[:,1])
+#     idx1 = mymesh.conn[icon,1]
+#     idx2 = mymesh.conn[icon,2]
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+#     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+#     # sleep(0.1)
+# end
 
-#Add the full path
-for (i,airfoil) in enumerate(numadIn_twr.airfoil)
-    numadIn_twr.airfoil[i] = "$path/airfoils/$airfoil"
-end
+# for ijoint = 1:length(myjoint[:,1])
+#     idx2 = Int(myjoint[ijoint,2])
+#     idx1 = Int(myjoint[ijoint,3])
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+#     sleep(0.1)
+#     PyPlot.scatter3D(1,1,1,".")
+# end
 
-NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+# #########################################
+# ### Set up Sectional Properties
+# #########################################
+# println("Calculate/Set up sectional properties")
+# #Tower
+# NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
+# numadIn_twr = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
-twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getOWENSPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
-nTwrElem = Int(mymesh.meshSeg[1])+1
-sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
-stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
+# #Add the full path
+# for (i,airfoil) in enumerate(numadIn_twr.airfoil)
+#     numadIn_twr.airfoil[i] = "$path/airfoils/$airfoil"
+# end
 
-#Blades
-NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
+# NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
+# plyprops_twr = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-for (i,airfoil) in enumerate(numadIn_bld.airfoil)
-    numadIn_bld.airfoil[i] = "$path/airfoils/$airfoil"
-end
+# twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getOWENSPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
+# nTwrElem = Int(mymesh.meshSeg[1])+1
+# sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
+# stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
 
-NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
-plyprops_bld = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
+# #Blades
+# NuMad_geom_xlscsv_file = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+# numadIn_bld = OWENS.readNuMadGeomCSV(NuMad_geom_xlscsv_file)
 
-# Get blade spanwise position
-bld1start = Int(mymesh.structuralNodeNumbers[1,1])
-bld1end = Int(mymesh.structuralNodeNumbers[1,end])
-spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
+# for (i,airfoil) in enumerate(numadIn_bld.airfoil)
+#     numadIn_bld.airfoil[i] = "$path/airfoils/$airfoil"
+# end
 
-bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = OWENS.getOWENSPreCompOutput(numadIn_bld;plyprops = plyprops_bld)
-sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
-stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
+# NuMad_mat_xlscsv_file = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+# plyprops_bld = OWENS.readNuMadMaterialsCSV(NuMad_mat_xlscsv_file)
 
-#Struts
-# They are the same as the end properties of the blades
+# # Get blade spanwise position
+# bld1start = Int(mymesh.structuralNodeNumbers[1,1])
+# bld1end = Int(mymesh.structuralNodeNumbers[1,end])
+# spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 
-# Combined Section Props
-bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
-Nremain = mymesh.numEl-length(sectionPropsArray_twr)-length(bldssecprops) #strut elements remain
-strutssecprops = fill(sectionPropsArray_bld[end],Nremain)
+# bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = OWENS.getOWENSPreCompOutput(numadIn_bld;plyprops = plyprops_bld)
+# sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
+# stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
 
-sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
+# #Struts
+# # They are the same as the end properties of the blades
+
+# # Combined Section Props
+# bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
+# Nremain = mymesh.numEl-length(sectionPropsArray_twr)-length(bldssecprops) #strut elements remain
+# strutssecprops = fill(sectionPropsArray_bld[end],Nremain)
+
+# sectionPropsArray = [sectionPropsArray_twr; bldssecprops; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
         
-# GXBeam sectional properties
-stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
-stiff_struts = fill(stiff_bld[end],Nremain)#collect(Iterators.flatten(fill(stiff_strut, Nstrutperbld*Nbld)))
-stiff_array = [stiff_twr; stiff_blds; stiff_struts]
+# # GXBeam sectional properties
+# stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
+# stiff_struts = fill(stiff_bld[end],Nremain)#collect(Iterators.flatten(fill(stiff_strut, Nstrutperbld*Nbld)))
+# stiff_array = [stiff_twr; stiff_blds; stiff_struts]
 
-mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
-mass_struts = fill(mass_bld[end],Nremain)#collect(Iterators.flatten(fill(mass_strut, Nstrutperbld*Nbld)))
-mass_array = [mass_twr; mass_blds; mass_struts]
+# mass_blds = collect(Iterators.flatten(fill(mass_bld, Nbld)))
+# mass_struts = fill(mass_bld[end],Nremain)#collect(Iterators.flatten(fill(mass_strut, Nstrutperbld*Nbld)))
+# mass_array = [mass_twr; mass_blds; mass_struts]
 
-rotationalEffects = ones(mymesh.numEl)
+# rotationalEffects = ones(mymesh.numEl)
 
-#store data in element object
-myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
+# #store data in element object
+# myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
 
-println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
-system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
+# println("Creating GXBeam Inputs and Saving the 3D mesh to VTK")
+# system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
-#########################################
-### Create Aero Functions
-#########################################
+# #########################################
+# ### Create Aero Functions
+# #########################################
 
-# # Example aero forces file input
-# d1 = "$path/data/Simplified5MW2.geom"
-# d2 = "$path/data/Simplified5MW2_ElementData.csv"
-# d3 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.bld"
-# d4 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.el"
-# d5 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.ort"
-# d6 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.mesh"
-#
-# aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = OWENS.mapCactusLoadsFile(d1,d2,d3,d4,d5,d6)
-# aeroForcesCACTUS(t,azi) = OWENS.externalForcing(t,aerotimeArray,aeroForceValHist,aeroForceDof)
+# # # Example aero forces file input
+# # d1 = "$path/data/Simplified5MW2.geom"
+# # d2 = "$path/data/Simplified5MW2_ElementData.csv"
+# # d3 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.bld"
+# # d4 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.el"
+# # d5 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.ort"
+# # d6 = "$path/data/oldfiles/_15mTower_transient_dvawt_c_2_lcdt.mesh"
+# #
+# # aerotimeArray,aeroForceValHist,aeroForceDof,cactusGeom = OWENS.mapCactusLoadsFile(d1,d2,d3,d4,d5,d6)
+# # aeroForcesCACTUS(t,azi) = OWENS.externalForcing(t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
-# aeroForcesDMSFile(t) = OWENSAero.mapCACTUSFILE_minimalio(t,mymesh,myel,"$path/data/DMS_Simplified5MW_ElementData.csv")
-# Example realtime aero calculation setup
-aeroForcesDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+# # aeroForcesDMSFile(t) = OWENSAero.mapCACTUSFILE_minimalio(t,mymesh,myel,"$path/data/DMS_Simplified5MW_ElementData.csv")
+# # Example realtime aero calculation setup
+# aeroForcesDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
+
+
+mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+stiff_twr, stiff_bld,bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
+mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+    rho,
+    Nslices,
+    ntheta,
+    RPM,
+    Vinf,
+    eta,
+    B = Nbld,
+    H = Blade_Height,
+    R = Blade_Radius,
+    shapeZ,
+    shapeX,
+    ifw,
+    delta_t,
+    numTS,
+    adi_lib,
+    adi_rootname,
+    AD15hubR = 0.0,
+    windINPfilename,
+    ifw_libfile,
+    NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
+    NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
+    NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
+    NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
+    NuMad_geom_xlscsv_file_strut,
+    NuMad_mat_xlscsv_file_strut,
+    Htwr_base=towerHeight,
+    ntelem, 
+    nbelem, 
+    # ncelem,
+    nselem,
+    joint_type = 0,
+    strut_twr_mountpoint = [0.1,0.9],
+    strut_bld_mountpoint = [0.1,0.9],
+    AModel, #AD, DMS, AC
+    DSModel="BV",
+    RPI=true,
+    cables_connected_to_blade_base = true,
+    angularOffset = pi/2,
+    meshtype = turbineType)
+
 
 ######################################
 #### Perform Aerostructural One Way Test
@@ -182,16 +277,16 @@ pBC = [1 1 0
 1 5 0
 1 6 0]
 
-model = OWENS.Inputs(;analysisType = "ROM",
+model = OWENS.Inputs(;analysisType = "GX",
 tocp = [0.0,100000.1],
 Omegaocp = [RPM,RPM] ./ 60,
 tocp_Vinf = [0.0,100000.1],
 Vinfocp = [Vinf,Vinf],
-numTS = 40.0,
-delta_t = 0.05,
+numTS,
+delta_t,
 aeroLoadsOn = 2)
 
-feamodel = OWENSFEA.FEAModel(;analysisType = "ROM",
+feamodel = OWENSFEA.FEAModel(;analysisType = "GX",
 outFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
@@ -202,20 +297,17 @@ RayleighAlpha = 0.0,
 RayleighBeta = 0.0,
 iterationType = "DI")
 
-# Choose which aeroforces
-# aeroForces = aeroForcesCACTUS
-aeroForces = aeroForcesDMS
-
 # deformaero3(x;newOmega=-1,newVinf=-1) = 0
 
 println("Running Unsteady")
 t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady(model;
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero=OWENSAero.deformTurb,system,assembly)
+epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+topFexternal_hist,rbDataHist = OWENS.Unsteady(model;
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
-println("Saving VTK time domain files")
-OWENS.OWENSFEA_VTK("$path/vtk/SNL5MW_timedomain",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+saveName = "$path/vtk/SNL5MW_timedomain"
+OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FReactionHist,topFexternal_hist)
 
 ##########################################
 #### Get strain values at the blades #####

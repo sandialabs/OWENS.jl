@@ -151,14 +151,7 @@ function setupOWENS(OWENSAero,path;
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
     end
 
-    nTwrElem = Int(mymesh.meshSeg[1])
-    try
-        if contains(NuMad_mat_xlscsv_file_bld,"34m") || meshtype == "ARCUS" #TODO: this is really odd, 
-            nTwrElem = Int(mymesh.meshSeg[1])+1
-        end
-    catch
-        nTwrElem = Int(mymesh.meshSeg[1])
-    end
+    nTwrElem = Int(mymesh.meshSeg[1])+1
     
     nothing
 

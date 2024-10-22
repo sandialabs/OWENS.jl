@@ -556,11 +556,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
 
     meshSeg = zeros(Int,1+nblade+Nstrut*nblade) #tower, blades, and struts
 
-    if connectBldTips2Twr == false
-        meshSeg[1] = ntelem+Nstrut+1
-    else
-        meshSeg[1] = ntelem+Nstrut*nblade-nblade+1 #connects at top node
-    end
+    meshSeg[1] = topel_idx[1]
     meshSeg[2:nblade+1] .= nbelem+Nstrut #+Nstrut for strut mount points
     meshSeg[nblade+2:end] .= nselem
 
