@@ -565,6 +565,10 @@ function setupOWENS(OWENSAero,path;
 
                 BlSpn = ADshapeZ
                 blade_twist = atan.(xmesh,ymesh).-bladeangle
+                if meshtype == "Darrieus"
+                    blade_twist[1] = 0.0 #TODO: near zero atan is ill defined above, should make smarter. Plus, it is essentially zeroed out below, so that may not be needed, and rather the structural definition of twist plus pitch
+                    blade_twist[end] = 0.0
+                end
 
                 #TODO: reevalueate these equations and make sure they are robust against varying designs
                 BlCrvACinput = -ymesh.*sin(bladeangle).+xmesh.*cos(bladeangle)
@@ -577,7 +581,7 @@ function setupOWENS(OWENSAero,path;
 
                 BlCrvAng = zeros(blade_Nnodes[iADBody])
 
-                BlTwistinput =(blade_twist.-blade_twist[1])*180/pi
+                BlTwistinput =(blade_twist.-blade_twist[2])*180/pi
                 BlTwist = safeakima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
 
                 BlChord=blade_chords[iADBody]
