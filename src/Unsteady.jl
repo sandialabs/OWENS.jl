@@ -844,20 +844,23 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     # disp
     disp_sp1 = zeros(length(history[end].points)*6)
     dispdot_sp1 = zeros(length(history[end].points)*6)
+    dispddot_sp1 = zeros(length(history[end].points)*6)
     idx = 1
     for ipt = 1:length(history[end].points)
         for iu = 1:3
             disp_sp1[idx] = history[end].points[ipt].u[iu]
             dispdot_sp1[idx] = history[end].points[ipt].udot[iu]
+            dispddot_sp1[idx] = history[end].points[ipt].Vdot[iu]
             idx += 1
         end
         for itheta = 1:3
             disp_sp1[idx] = history[end].points[ipt].theta[itheta]
             dispdot_sp1[idx] = history[end].points[ipt].thetadot[itheta]
+            dispddot_sp1[idx] = history[end].points[ipt].Omegadot[itheta]
             idx += 1
         end
     end
-    dispOut = OWENSFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,dispdot_sp1)
+    dispOut = OWENSFEA.DispOut(nothing, disp_sp1,dispddot_sp1,dispdot_sp1)
     
     FReaction_j = zeros(length(history[end].points)*6)
     for iel = 1:length(history[end].points)
@@ -1455,9 +1458,11 @@ function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
     FMooringHist = zeros(numTS,numDOFPerNode)
     rbDataHist = zeros(numTS,9)
     rbData = zeros(9)
+    udotHist = zero(uHist)
+    uddotHist = zero(uHist)
 
     return uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,
     gbDotHist,gbDotDotHist,genTorque,genPower,torqueDriveShaft,uHist_prp,
-    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist
+    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist,udotHist,uddotHist
 end

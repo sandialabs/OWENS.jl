@@ -64,6 +64,8 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp,
     M_addedmass_Np,M_addedmass_Tp,F_addedmass_Np,F_addedmass_Tp = advanceTurb(t;azi=azi_j,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
 
+    println("F_addedmass_Np tip: $(F_addedmass_Np[1,end,:]) Rp tip: $(Rp[1,end,:])")
+
     NBlade = length(Rp[:,1,1])
     Nslices = length(Rp[1,:,1])
 

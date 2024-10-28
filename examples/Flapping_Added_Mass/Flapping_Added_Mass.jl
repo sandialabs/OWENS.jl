@@ -6,6 +6,7 @@ using Statistics:mean
 using Test
 
 import PyPlot
+PyPlot.close("all")
 PyPlot.pygui(true)
 PyPlot.rc("figure", figsize=(4.5, 3))
 PyPlot.rc("font", size=10.0)
@@ -47,7 +48,7 @@ ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_bi
 Blade_Height = 20.0
 Blade_Radius = 4.5
 area = Blade_Height*2*Blade_Radius
-numTS = 75
+numTS = 120
 delta_t = 0.005
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -63,7 +64,7 @@ adi_rootname = "$path/helical"
 # omega = Vinf/Blade_Radius*TSR
 RPM = 1e-6#omega / (2*pi) * 60
 
-fluid_density = 998.0
+fluid_density = 1000.0#998.0
 fluid_dyn_viscosity = 1.792E-3
 number_of_blades = Nbld
 WindType = 3
@@ -237,32 +238,24 @@ Vinfocp,
 numTS,
 delta_t,
 AD15On,
-aeroLoadsOn = 2)
+aeroLoadsOn = 1.5)
+
+
+inputs.iteration_parameters.MAXITER = 5
 
 nothing
 
 # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
-feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-outFilename = "none",
-joint = myjoint,
-platformTurbineConnectionNodeNumber = 1,
-pBC,
-nlOn = false,
-gravityOn = [0,0,0.0],
-numNodes = mymesh.numNodes,
-RayleighAlpha = 0.00,
-RayleighBeta = 0.00,
-iterationType = "DI")
-
-nothing
-
 # Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together
 # and propogates things in time.
 forced_node = 85
 function flappingForces(t,azi)
-    if t<0.1
-        Fexternal = [-1000000.0]
+    if t<0.4
+        Fexternal = [-1000000.0*t^2]
+        Fdof = [(forced_node-1)*6+1]
+    elseif t<0.5
+        Fexternal = [0.0]
         Fdof = [(forced_node-1)*6+1]
     else
         Fexternal,Fdof = aeroForces(t,azi)
@@ -270,11 +263,12 @@ function flappingForces(t,azi)
     return Fexternal, Fdof
 end
 
+
 Keff = 6e5 #N/m
 L = 9.5 #m 
-# K = 3EI/L^3
-EI = 2e8 #this is what was in the paper, which is not the same as the equation #Keff*L^3/3
 
+EI = 2e8*1.3 #this is what was in the paper, which is not the same as the equation #Keff*L^3/3
+# K = 3EI/L^3
 # Set the element properties
 for iprop = 1:length(myel.props)
     # do just the non-super stiff elements
@@ -287,14 +281,76 @@ for iprop = 1:length(myel.props)
 end
 
 
+"initCond`: array containing initial conditions.
+    initCond(i,1) node number for init cond i.
+    initCond(i,2) local DOF number for init cond i.
+    initCond(i,3) value for init cond i.`"
+
+
+ihalf = round(Int,size(mymesh.structuralNodeNumbers)[2]/2)
+halfbladenodes = mymesh.structuralNodeNumbers[1,ihalf:end]
+displace_x = LinRange(0,Blade_Height/2,length(halfbladenodes))
+analyticalforce = 600000*0
+displace_y = analyticalforce*displace_x.^2.0./(6*2e8).*(3*Blade_Height/2.0.-displace_x)
+initTopConditions = zeros(length(displace_y)*2,3)
+initTopConditions[1:length(displace_y),1] = halfbladenodes
+initTopConditions[1:length(displace_y),2] .= 1
+initTopConditions[1:length(displace_y),3] = displace_y
+
+curve_y = atan.(displace_y,displace_x)
+initTopConditions[length(displace_y)+1:end,1] = halfbladenodes
+initTopConditions[length(displace_y)+1:end,2] .= 5
+initTopConditions[length(displace_y)+1:end,3] = curve_y
+
+feamodel = OWENS.FEAModel(;analysisType = structuralModel,
+outFilename = "none",
+joint = myjoint,
+platformTurbineConnectionNodeNumber = 1,
+pBC,
+nlOn = false,
+initCond = initTopConditions,
+gravityOn = [0,0,0.0],
+numNodes = mymesh.numNodes,
+numModes=200,
+RayleighAlpha = 0.00,
+RayleighBeta = 0.00,
+
+iterationType = "DI")
+
+nothing
+
+
 
 println("Running Unsteady")
-t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
-topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=flappingForces,deformAero,verbosity=5)
-
+topdata = OWENS.Unsteady_Land(inputs;system,assembly,returnold=false,
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=flappingForces,deformAero,verbosity=7)
+t = topdata.t
+aziHist = topdata.aziHist
+OmegaHist = topdata.OmegaHist
+OmegaDotHist = topdata.OmegaDotHist
+gbHist = topdata.gbHist
+gbDotHist = topdata.gbDotHist
+gbDotDotHist = topdata.gbDotDotHist
+FReactionHist = topdata.FReactionHist
+FTwrBsHist = topdata.FTwrBsHist
+genTorque = topdata.genTorque
+genPower = topdata.genPower
+torqueDriveShaft = topdata.torqueDriveShaft
+uHist = topdata.uHist
+uHist_prp = topdata.uHist_prp
+epsilon_x_hist = topdata.epsilon_x_hist
+epsilon_y_hist = topdata.epsilon_y_hist
+epsilon_z_hist = topdata.epsilon_z_hist
+kappa_x_hist = topdata.kappa_x_hist
+kappa_y_hist = topdata.kappa_y_hist
+kappa_z_hist = topdata.kappa_z_hist
+FPtfmHist = topdata.FPtfmHist
+FHydroHist = topdata.FHydroHist
+FMooringHist = topdata.FMooringHist
+topFexternal_hist = topdata.topFexternal_hist
+rbDataHist = topdata.rbDataHist
+uddotHist = topdata.uddotHist
+udotHist = topdata.udotHist
 
 nothing
 
@@ -313,7 +369,19 @@ PyPlot.plot(t,ofast_tdispl,label="OpenFAST Added Mass $AM_flag")
 PyPlot.plot(t,OWENS_tip_displ,label="OWENS Added Mass $AM_flag")
 PyPlot.legend()
 
+import FLOWMath
+displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)
+velocity = [FLOWMath.derivative(displace_spl,t[i]) for i = 1:length(t)]
+velocity_spl = FLOWMath.Akima(t,velocity)
+accel = [FLOWMath.derivative(velocity_spl,t[i]) for i = 1:length(t)]
 
+PyPlot.figure("Vel")
+PyPlot.plot(t,velocity)
+PyPlot.plot(t,udotHist[:,(forced_node-1)*6+1])
+
+PyPlot.figure("Accel")
+PyPlot.plot(t,accel)
+PyPlot.plot(t,uddotHist[:,(forced_node-1)*6+1])
 # Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 
 # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
@@ -349,4 +417,3 @@ nothing
 
 # ffmpeg -i smallerhelical.%04d.png -vf palettegen=reserve_transparent=1 palette.png
 # ffmpeg -framerate 30 -i smallerhelical.%04d.png -i palette.png -lavfi paletteuse=alpha_threshold=30 -gifflags -offsetting smallerhelical.gif
-
