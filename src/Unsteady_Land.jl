@@ -385,7 +385,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             CH2N = LinearAlgebra.transpose(CN2H)
 
-
+            runaero = false
             #################################################################
             if !isnothing(aero)
                 if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
@@ -407,7 +407,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             #################################################################
-            if isnan(maximum(aeroVals))
+            if inputs.aeroLoadsOn > 0 && isnan(maximum(aeroVals))
                 @warn "Nan detected in aero forces"
             end
             if runaero || !isnothing(aeroVals)
@@ -441,6 +441,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     topdata.topFexternal = zeros(numDOFPerNode)
                     full_aeroDOFs = copy(topdata.topFexternal).*0.0
                 end
+            else
+                full_aeroDOFs = collect(1:topMesh.numNodes*6)
+                topdata.topFexternal = zero(full_aeroDOFs)
             end
 
             if meshcontrolfunction !== nothing

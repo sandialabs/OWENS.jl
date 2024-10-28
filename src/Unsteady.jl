@@ -976,6 +976,9 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
         gravity = gravityOn
     end
 
+    println("Accel flap tip: $(accel_flap_in[1,end])")
+    println("Accel edge tip: $(accel_edge_in[1,end])")
+
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
     deformAero(azi_j;newOmega=Omega_j*2*pi,
     newVinf,
