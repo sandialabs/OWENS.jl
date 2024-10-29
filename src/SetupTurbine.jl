@@ -54,6 +54,7 @@ function setupOWENS(OWENSAero,path;
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus",
     custommesh = nothing,
+    AM_Coeff_Ca = 0.0,
     verbosity=0) #Darrieus, H-VAWT, ARCUS
     
     custom_mesh_outputs = []
@@ -66,6 +67,12 @@ function setupOWENS(OWENSAero,path;
 
     if minimum(shapeZ)!=0
         @error "blade shapeZ must start at 0.0"
+    end
+
+    if AM_Coeff_Ca>0.0
+        centrifugal_force_flag = true
+    else
+        centrifugal_force_flag = false
     end
 
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
@@ -218,8 +225,8 @@ function setupOWENS(OWENSAero,path;
     # Then this is where precomp.jl is called to get first the precomp outputs, then formatting those into the OWENS format, and then in the GXBeam.jl format for if GXBeam is used as the structural solver.
 
     twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getOWENSPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
-    sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput)
-    stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;GX=true)
+    sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,fluid_density=rho,AM_Coeff_Ca)
+    stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,GX=true,fluid_density=rho,AM_Coeff_Ca)
 
     nothing
 
@@ -279,8 +286,8 @@ function setupOWENS(OWENSAero,path;
     end
 
     bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = OWENS.getOWENSPreCompOutput(numadIn_bld;yscale,plyprops = plyprops_bld)
-    sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput)
-    stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
+    sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput,fluid_density=rho,AM_Coeff_Ca)
+    stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput,GX=true,fluid_density=rho,AM_Coeff_Ca)
 
     nothing
 
@@ -359,8 +366,8 @@ function setupOWENS(OWENSAero,path;
         end
 
         strut_precompoutput[istrut],strut_precompinput[istrut],lam_U_strut[istrut],lam_L_strut[istrut],lam_W_strut[istrut] = OWENS.getOWENSPreCompOutput(numadIn_strut[istrut];yscale,plyprops = plyprops_strut)
-        sectionPropsArray_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut])
-        stiff_strut[istrut], mass_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];GX=true)
+        sectionPropsArray_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut],fluid_density=rho,AM_Coeff_Ca)
+        stiff_strut[istrut], mass_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut],GX=true,fluid_density=rho,AM_Coeff_Ca)
     end
 
     nothing
@@ -428,22 +435,25 @@ function setupOWENS(OWENSAero,path;
         delta3D = atan.(delta_xs./delta_zs)
         delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
         #### now convert the numad span to a height
-        bld_height_numad = cumsum(diff(numadIn_bld.span).*(1.0.-abs.(sin.(delta3D_spl))))
-        bld_height_numad_unit = bld_height_numad./maximum(bld_height_numad)
+        bld_height_numad = numadIn_bld.span/maximum(numadIn_bld.span)
+        bld_height_numad_unit = cumsum(diff((bld_height_numad[2:end]+bld_height_numad[1:end-1])/2).*(1.0.-abs.(sin.(delta3D_spl[1:end-1]))))
+
         #### now we can use it to access the numad data 
-        chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],1,Nslices))
+        chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],bld_height_numad_unit[end],Nslices))
         airfoils = fill("nothing",Nslices)
 
         twist = safeakima(bld_height_numad_unit, numadIn_bld.twist_d.*pi/180,LinRange(bld_height_numad_unit[1],1,Nslices))
 
         # Discretely assign the airfoils
         for (iheight_numad,height_numad) in enumerate(bld_height_numad_unit)
-            for (iheight,height_slices) in enumerate(collect(LinRange(0,1,Nslices)))
+            for (iheight,height_slices) in enumerate(collect(LinRange(bld_height_numad_unit[1],bld_height_numad_unit[end],Nslices)))
                 if airfoils[iheight]=="nothing" && height_slices<=height_numad
                     airfoils[iheight] = "$(numadIn_bld.airfoil[iheight_numad]).dat"
                 end
             end
         end
+        
+        rhoA_in = [mass_bld[i][1,1] for i = 1:length(mass_bld)]
 
         OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
         afname = airfoils,
@@ -459,9 +469,11 @@ function setupOWENS(OWENSAero,path;
         AM_flag,
         rotAccel_flag,
         buoy_flag,
+        centrifugal_force_flag,
         ntheta,
         Nslices,
-        RPI)
+        RPI,
+        rhoA_in)
 
         aeroForcesACDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
         deformAeroACDMS = OWENSAero.deformTurb
@@ -637,13 +649,13 @@ function setupOWENS(OWENSAero,path;
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesAD,deformAeroAD,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs,stiff_array,mass_array
     else
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
         stiff_twr, stiff_bld,bld_precompinput,
         bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
         twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForcesACDMS,deformAeroACDMS,
-        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
+        mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs,stiff_array,mass_array
     end
 end
 

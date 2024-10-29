@@ -463,7 +463,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             #------------------------------------
             # TOPSIDE STRUCTURAL MODULE
             #------------------------------------
-            # println(Float64.(rbData))
+
             if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                 topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.top_rom,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData)
             elseif inputs.analysisType=="GX"                                                                                

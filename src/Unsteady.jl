@@ -769,22 +769,29 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+    if topModel.AM_Coeff_Ca >0.0 #turn gravity off if we are doing marine calculations since added mass changes the inertia terms and so centrifugal force and gravity are handled in aero loads
+        Omega_j = 0.0
+        gravityOn = false
+    else
+        Omega_j = Omega_j
+        gravityOn = topModel.gravityOn
+    end
 
     linear_velocity = [0.0,0.0,0.0]
     angular_velocity = [0.0,0.0,Omega_j*2*pi]
     linear_acceleration = [0.0,0.0,0.0]
-    angular_acceleration = [0.0,0.0,OmegaDot_j*2*pi]
+    angular_acceleration = [0.0,0.0,0.0]
 
     tvec = [t[i],t[i]+delta_t]
 
-    if eltype(topModel.gravityOn) == Bool && topModel.gravityOn == true
+    if eltype(gravityOn) == Bool && gravityOn == true
         gravity = [0.0,0.0,-9.81]
-    elseif eltype(topModel.gravityOn) == Bool && topModel.gravityOn == false
+    elseif eltype(gravityOn) == Bool && gravityOn == false
         gravity = [0.0,0.0,0.0]
     end
 
-    if eltype(topModel.gravityOn) == Float64
-        gravity = topModel.gravityOn
+    if eltype(gravityOn) == Float64
+        gravity = gravityOn
     end
 
 
@@ -978,9 +985,6 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
     if eltype(gravityOn) == Float64
         gravity = gravityOn
     end
-
-    println("Accel flap tip: $(accel_flap_in[1,end])")
-    println("Accel edge tip: $(accel_edge_in[1,end])")
 
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
     deformAero(azi_j;newOmega=Omega_j*2*pi,

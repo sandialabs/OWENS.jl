@@ -1562,7 +1562,7 @@ Arranges the precomp output into the sectional properties required by OWENSFEA
 stiff, mass
 
 """
-function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing)
+function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AM_Coeff_Ca=1.0)
     # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
     # create spline of the precomp output to be used with the specified span array
     len_pc = length(precompoutput)
@@ -1586,6 +1586,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     tw_iner_d = zeros(len_pc)
     x_cm = zeros(len_pc)
     y_cm = zeros(len_pc)
+    added_M22 = zeros(length(usedUnitSpan))
+    added_M33 = zeros(length(usedUnitSpan))
 
     # extract the values from the precomp outputs
     for i_pc = 1:len_pc
@@ -1638,34 +1640,6 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     ac_used = safeakima(origUnitSpan,numadIn.aerocenter,usedUnitSpan)
     twist_d_used = safeakima(origUnitSpan,numadIn.twist_d,usedUnitSpan)
     chord_used = safeakima(origUnitSpan,numadIn.chord,usedUnitSpan)
-
-    if GX
-
-        stiff = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
-        mass = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
-
-        for i=1:length(usedUnitSpan)-1
-            GA = ea_used[i]/2.6*5/6
-            stiff[i]= [ea_used[i] 0.0 0.0 s_at_used[i] s_af_used[i] s_al_used[i]
-                            0.0 GA 0.0 0.0 0.0 0.0
-                            0.0 0.0 GA 0.0 0.0 0.0
-                            s_at_used[i] 0.0 0.0 gj_used[i] s_ft_used[i] s_lt_used[i]
-                            s_af_used[i] 0.0 0.0 s_ft_used[i] ei_flap_used[i] s_fl_used[i]
-                            s_al_used[i] 0.0 0.0 s_lt_used[i] s_fl_used[i] ei_lag_used[i]]
-
-            ux3 = (mass_used[i]*y_cm_used[i])
-            ux2 = (mass_used[i]*x_cm_used[i])
-            mass[i] = [mass_used[i] 0.0 0.0 0.0 ux3 -ux2
-                          0.0 mass_used[i] 0.0 -ux3 0.0 0.0
-                          0.0 0.0 mass_used[i] ux2 0.0 0.0
-                          0.0 -ux3 ux2 flap_iner_used[i]+lag_iner_used[i] 0.0 0.0
-                          ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
-                          -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]]
-        end
-
-        return stiff, mass
-    end
-
 
     sectionPropsArray = Array{OWENSFEA.SectionPropsArray, 1}(undef, length(usedUnitSpan)-1)
 
@@ -1757,6 +1731,14 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
             myxaf[:,iline] = safeakima(myzafpc,myxafpc[:,iline],myzaf)
             myyaf[:,iline] = safeakima(myzafpc,myyafpc[:,iline],myzaf)
         end
+
+        # Added mass mass calculation
+        for i_z = 1:length(myzaf)
+            Vol_flap = pi*((maximum(myxaf[i_z,:])-minimum(myxaf[i_z,:]))/2)^2 #pi*(chord/2)^2
+            Vol_edge = pi*((maximum(myyaf[i_z,:])-minimum(myyaf[i_z,:]))/2)^2 #pi*(thickness/2)^2
+            added_M33[i_z] = fluid_density * AM_Coeff_Ca * Vol_flap 
+            added_M22[i_z] = fluid_density * AM_Coeff_Ca * Vol_edge 
+        end
     else
         myxaf = nothing
         myyaf = nothing
@@ -1781,6 +1763,38 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
                 sectionPropsArray[i].xaf = myxaf[i,:]
                 sectionPropsArray[i].yaf = myyaf[i,:]
             end
+
+            # This defaults to zero if the fluid density isn't specified
+            sectionPropsArray[i].added_M22 = [added_M22[i], added_M22[i+1]]
+            sectionPropsArray[i].added_M33 = [added_M33[i], added_M33[i+1]]
+    end
+
+
+    if GX #TODO: unify with one call since we always calculate this in preprocessing
+
+        stiff = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
+        mass = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
+
+        for i=1:length(usedUnitSpan)-1
+            GA = ea_used[i]/2.6*5/6
+            stiff[i]= [ea_used[i] 0.0 0.0 s_at_used[i] s_af_used[i] s_al_used[i]
+                            0.0 GA 0.0 0.0 0.0 0.0
+                            0.0 0.0 GA 0.0 0.0 0.0
+                            s_at_used[i] 0.0 0.0 gj_used[i] s_ft_used[i] s_lt_used[i]
+                            s_af_used[i] 0.0 0.0 s_ft_used[i] ei_flap_used[i] s_fl_used[i]
+                            s_al_used[i] 0.0 0.0 s_lt_used[i] s_fl_used[i] ei_lag_used[i]]
+
+            ux3 = (mass_used[i]*y_cm_used[i])
+            ux2 = (mass_used[i]*x_cm_used[i])
+            mass[i] = [mass_used[i] 0.0 0.0 0.0 ux3 -ux2
+                          0.0 mass_used[i]+added_M22[i] 0.0 -ux3 0.0 0.0
+                          0.0 0.0 mass_used[i]+added_M33[i] ux2 0.0 0.0
+                          0.0 -ux3 ux2 flap_iner_used[i]+lag_iner_used[i] 0.0 0.0
+                          ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
+                          -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]]
+        end
+
+        return stiff, mass
     end
 
     # println("EIyz, rhoIyz deactivated") #TODO: why is this, especially when I believe precomp calculates them

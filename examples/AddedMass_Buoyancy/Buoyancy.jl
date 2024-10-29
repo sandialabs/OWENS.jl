@@ -4,6 +4,7 @@ import OWENSAero
 import DelimitedFiles
 using Statistics:mean
 using Test
+import FFTW
 
 import PyPlot
 PyPlot.close("all")
@@ -32,11 +33,11 @@ turbineType = "H-VAWT"
 eta = 0.5
 Nbld = 2
 towerHeight = 0.5
-Vinf = 1.2
+Vinf = 1e-6
 controlStrategy = "constantRPM"
 Nslices = 20
 ntheta = 30
-structuralModel = "TNB"
+structuralModel = "GX"
 ntelem = 20
 nbelem = 60
 ncelem = 10
@@ -48,8 +49,8 @@ ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_bi
 Blade_Height = 20.0
 Blade_Radius = 4.5
 area = Blade_Height*2*Blade_Radius
-numTS = 120
-delta_t = 0.005
+numTS = 100
+delta_t = 0.05
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
 NuMad_geom_xlscsv_file_bld = "$path/GeomBlades.csv"
@@ -62,16 +63,16 @@ adi_rootname = "$path/helical"
 # TSR = 3.0
 
 # omega = Vinf/Blade_Radius*TSR
-RPM = 1e-6#omega / (2*pi) * 60
+RPM = 10.0#omega / (2*pi) * 60
 
-fluid_density = 1000.0#998.0
+fluid_density = 99800.0
 fluid_dyn_viscosity = 1.792E-3
 number_of_blades = Nbld
 WindType = 3
 
-AM_flag = true
+AM_flag = false
 rotAccel_flag = false
-buoy_flag = false
+buoy_flag = true
 
 ##############################################
 # Setup
@@ -91,8 +92,8 @@ shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius # zeros(length(s
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAeroreal,
+mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD15bldElIdxRng,custom_mesh_outputs,stiff_array,mass_array = OWENS.setupOWENS(OWENSAero,path;
     rho=fluid_density,
     mu=fluid_dyn_viscosity,
     Nslices,
@@ -132,9 +133,11 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     AModel, #AD, DMS, AC
     DSModel="BV",
     AM_flag,
+    AM_Coeff_Ca=0.0,
     rotAccel_flag,
     buoy_flag,
     RPI=true,
+    angularOffset=2*pi/ntheta,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
 
@@ -200,24 +203,6 @@ pBC = [1 1 0
 1 4 0
 1 5 0
 1 6 0
-24 1 0
-24 2 0
-24 3 0
-24 4 0
-24 5 0
-24 6 0
-87 1 0
-87 2 0
-87 3 0
-87 4 0
-87 5 0
-87 6 0
-146 1 0
-146 2 0
-146 3 0
-146 4 0
-146 5 0
-146 6 0
 ]
 
 nothing
@@ -238,7 +223,7 @@ Vinfocp,
 numTS,
 delta_t,
 AD15On,
-aeroLoadsOn = 1.5)
+aeroLoadsOn = 2)
 
 
 inputs.iteration_parameters.MAXITER = 5
@@ -251,23 +236,38 @@ nothing
 # and propogates things in time.
 forced_node = 85
 function flappingForces(t,azi)
-    if t<0.4
-        Fexternal = [-1000000.0*t^2]
-        Fdof = [(forced_node-1)*6+1]
-    elseif t<0.5
-        Fexternal = [0.0]
-        Fdof = [(forced_node-1)*6+1]
-    else
-        Fexternal,Fdof = aeroForces(t,azi)
-    end
+    # if t<0.4
+    #     Fexternal = [-5000000.0*t^2]
+    #     Fdof = [(forced_node-1)*6+1]
+    # else#if t<0.5
+    #     Fexternal = [0.0]
+    #     Fdof = [(forced_node-1)*6+1]
+    # # else
+    # #     Fexternal,Fdof = aeroForces(t,azi)
+    # end
+    Fexternal,Fdof = aeroForces(t,azi)
     return Fexternal, Fdof
 end
 
 
+
+function deformTurb(azi;newOmega=-1,newVinf=-1,bld_x=-1,
+bld_z=-1,
+bld_twist=-1,
+accel_flap_in=-1,
+accel_edge_in=-1,
+gravity = [0.0,0.0,-9.81],
+steady=false) 
+
+end
+
+# deformAero = deformTurb
+deformAero = deformAeroreal
+
 Keff = 6e5 #N/m
 L = 9.5 #m 
 
-EI = 2e8*1.3 #this is what was in the paper, which is not the same as the equation #Keff*L^3/3
+EI = 2e8/10 #this is what was in the paper, which is not the same as the equation #Keff*L^3/3
 # K = 3EI/L^3
 # Set the element properties
 for iprop = 1:length(myel.props)
@@ -277,9 +277,18 @@ for iprop = 1:length(myel.props)
         myel.props[iprop].EIzz .= EI
         myel.props[iprop].GJ .= EI*5
         myel.props[iprop].EA .= EI*100
+        stiff_array[iprop][1,1] = myel.props[iprop].EA[1]
+        stiff_array[iprop][2,2] = myel.props[iprop].EA[1]/2.6*5/6
+        stiff_array[iprop][3,3] = myel.props[iprop].EA[1]/2.6*5/6
+        stiff_array[iprop][4,4] = myel.props[iprop].GJ[1]
+        stiff_array[iprop][5,5] = myel.props[iprop].EIzz[1]
+        stiff_array[iprop][6,6] = myel.props[iprop].EIyy[1]
     end
 end
 
+rhoA_tip = myel.props[84].rhoA[1] 
+
+system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,myel.props,stiff_array,mass_array;damp_coef=0.05)
 
 "initCond`: array containing initial conditions.
     initCond(i,1) node number for init cond i.
@@ -309,7 +318,7 @@ platformTurbineConnectionNodeNumber = 1,
 pBC,
 nlOn = false,
 initCond = initTopConditions,
-gravityOn = [0,0,0.0],
+gravityOn = [0,-9.81,0.0],
 numNodes = mymesh.numNodes,
 numModes=200,
 RayleighAlpha = 0.00,
@@ -323,7 +332,7 @@ nothing
 
 println("Running Unsteady")
 topdata = OWENS.Unsteady_Land(inputs;system,assembly,returnold=false,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=flappingForces,deformAero,verbosity=7)
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=flappingForces,deformAero,verbosity)
 t = topdata.t
 aziHist = topdata.aziHist
 OmegaHist = topdata.OmegaHist
@@ -354,9 +363,9 @@ udotHist = topdata.udotHist
 
 nothing
 
-OWENS_tip_displ = uHist[:,(forced_node-1)*6+1]
+OWENS_tip_displ_x = uHist[:,(forced_node-1)*6+1]
 
-if AM_flag
+if false#AM_flag
     omega_OF = 4.5105 * 2*pi
 else
     omega_OF = 13.53* 2*pi
@@ -364,10 +373,18 @@ end
 
 ofast_tdispl = cos.(t.*omega_OF)
 
-PyPlot.figure("important")
-PyPlot.plot(t,ofast_tdispl,label="OpenFAST Added Mass $AM_flag")
-PyPlot.plot(t,OWENS_tip_displ,label="OWENS Added Mass $AM_flag")
+buoyant_load = pi*0.5^2*1.0*fluid_density-rhoA_tip
+analytical_displacement = buoyant_load*(Blade_Height/2.0)^3/(3*EI)
+analytical_displacement = analytical_displacement .* sin.(aziHist)
+PyPlot.figure()
+PyPlot.plot(t,analytical_displacement,"k",label="Analytical")
+PyPlot.plot(t,OWENS_tip_displ_x,color=plot_cycle[1],label="OWENS")
+PyPlot.xlabel("Time (s)")
+PyPlot.ylabel("Displacement (m)")
 PyPlot.legend()
+PyPlot.savefig("$(path)/buoyancy.pdf",transparent = true)
+
+println("Percent Diff = $((maximum(analytical_displacement)-maximum(OWENS_tip_displ_x))/maximum(OWENS_tip_displ_x)*100)%")
 
 import FLOWMath
 displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)
@@ -386,8 +403,8 @@ PyPlot.plot(t,uddotHist[:,(forced_node-1)*6+1])
 # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
-azi=aziHist#./aziHist*1e-6
-saveName = "$path/vtk/flapping_added_mass2"
+
+saveName = "$path/vtk/flapping_buoyancy"
 tsave_idx=1:1:numTS-1
 OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
