@@ -442,7 +442,7 @@ function setupOWENS(OWENSAero,path;
         chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],bld_height_numad_unit[end],Nslices))
         airfoils = fill("nothing",Nslices)
 
-        twist = safeakima(bld_height_numad_unit, numadIn_bld.twist_d.*pi/180,LinRange(bld_height_numad_unit[1],1,Nslices))
+        twist = safeakima(bld_height_numad_unit, numadIn_bld.twist_d.*pi/180,LinRange(bld_height_numad_unit[1],bld_height_numad_unit[end],Nslices))
 
         # Discretely assign the airfoils
         for (iheight_numad,height_numad) in enumerate(bld_height_numad_unit)

@@ -68,6 +68,8 @@ fluid_dyn_viscosity = 1.792E-3
 number_of_blades = Nbld
 WindType = 3
 
+AM_Coeff_Ca=0.0 #For structural side
+
 ##############################################
 # Setup
 #############################################
@@ -126,9 +128,11 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     strut_bld_mountpoint = [0.5],
     AModel, #AD, DMS, AC
     DSModel="BV",
-    AM_flag = true,
-    rotAccel_flag = true,
-    buoy_flag = true,
+    AM_flag = false,
+    rotAccel_flag = false,
+    AM_Coeff_Ca,
+    buoy_flag = false,
+    
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
@@ -194,6 +198,7 @@ Vinfocp,
 numTS,
 delta_t,
 AD15On,
+AM_Coeff_Ca,
 aeroLoadsOn = 2)
 
 nothing
@@ -205,11 +210,12 @@ outFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 pBC,
-nlOn = true,
-# gravityOn = [0,0,gravity],
+nlOn = false,
+gravityOn = [0,0,-9.81],
 numNodes = mymesh.numNodes,
 RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
+AM_Coeff_Ca,
 iterationType = "DI")
 
 nothing
