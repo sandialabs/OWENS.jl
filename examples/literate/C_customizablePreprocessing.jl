@@ -519,9 +519,9 @@ if !AD15On
     turbsim_filename = windINPfilename,
     ifw_libfile,
     tau = [1e-5,1e-5],
-    AM_flag,
-    rotAccel_flag,
-    buoy_flag,
+    Aero_AddedMass_Active,
+    Aero_RotAccel_Active,
+    Aero_Buoyancy_Active,
     ntheta,
     Nslices,
     RPI)

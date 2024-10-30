@@ -37,7 +37,7 @@ Vinf = 1.2
 controlStrategy = "constantRPM"
 Nslices = 20
 ntheta = 30
-structuralModel = "GX"
+structuralModel = "TNB"
 ntelem = 20
 nbelem = 60
 ncelem = 10
@@ -70,10 +70,10 @@ fluid_dyn_viscosity = 1.792E-3
 number_of_blades = Nbld
 WindType = 3
 
-AM_flag = false # if on aero side
-AM_Coeff_Ca=1.0 #For structural side
-rotAccel_flag = false
-buoy_flag = false
+Aero_AddedMass_Active = false # if on aero side
+AddedMass_Coeff_Ca=1.0 #For either side, set to 0 or don't include for it to be off on structures
+Aero_RotAccel_Active = false
+Aero_Buoyancy_Active = false
 
 ##############################################
 # Setup
@@ -133,10 +133,10 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD
     strut_bld_mountpoint = [0.5],
     AModel, #AD, DMS, AC
     DSModel="BV",
-    AM_flag,
-    AM_Coeff_Ca,
-    rotAccel_flag,
-    buoy_flag,
+    Aero_AddedMass_Active,
+    AddedMass_Coeff_Ca,
+    Aero_RotAccel_Active,
+    Aero_Buoyancy_Active,
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
@@ -241,7 +241,6 @@ Vinfocp,
 numTS,
 delta_t,
 AD15On,
-AM_Coeff_Ca,
 aeroLoadsOn = 1)
 
 
@@ -337,7 +336,7 @@ initCond = initTopConditions,
 gravityOn = [0,0,0.0],
 numNodes = mymesh.numNodes,
 numModes=200,
-AM_Coeff_Ca,
+AddedMass_Coeff_Ca,
 RayleighAlpha = 0.00,
 RayleighBeta = 0.00,
 
@@ -382,7 +381,7 @@ nothing
 
 OWENS_tip_displ = uHist[:,(forced_node-1)*6+1]
 
-if AM_Coeff_Ca == 1.0
+if AddedMass_Coeff_Ca == 1.0
     omega_OF = 4.5105 * 2*pi
 else
     omega_OF = 13.53* 2*pi

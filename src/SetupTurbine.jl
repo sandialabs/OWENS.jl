@@ -48,13 +48,13 @@ function setupOWENS(OWENSAero,path;
     AModel="DMS",
     DSModel="BV",
     RPI=true,
-    AM_flag = false,
-    rotAccel_flag = false,
-    buoy_flag = false,
+    Aero_AddedMass_Active = false,
+    Aero_RotAccel_Active = false,
+    Aero_Buoyancy_Active = false,
     cables_connected_to_blade_base = true,
     meshtype = "Darrieus",
     custommesh = nothing,
-    AM_Coeff_Ca = 0.0,
+    AddedMass_Coeff_Ca = 0.0,
     verbosity=0) #Darrieus, H-VAWT, ARCUS
     
     custom_mesh_outputs = []
@@ -69,7 +69,7 @@ function setupOWENS(OWENSAero,path;
         @error "blade shapeZ must start at 0.0"
     end
 
-    if AM_Coeff_Ca>0.0
+    if AddedMass_Coeff_Ca>0.0
         centrifugal_force_flag = true
     else
         centrifugal_force_flag = false
@@ -225,8 +225,8 @@ function setupOWENS(OWENSAero,path;
     # Then this is where precomp.jl is called to get first the precomp outputs, then formatting those into the OWENS format, and then in the GXBeam.jl format for if GXBeam is used as the structural solver.
 
     twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getOWENSPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
-    sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,fluid_density=rho,AM_Coeff_Ca)
-    stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,GX=true,fluid_density=rho,AM_Coeff_Ca)
+    sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,fluid_density=rho,AddedMass_Coeff_Ca)
+    stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,GX=true,fluid_density=rho,AddedMass_Coeff_Ca)
 
     nothing
 
@@ -286,8 +286,8 @@ function setupOWENS(OWENSAero,path;
     end
 
     bld_precompoutput,bld_precompinput,lam_U_bld,lam_L_bld,lam_W_bld = OWENS.getOWENSPreCompOutput(numadIn_bld;yscale,plyprops = plyprops_bld)
-    sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput,fluid_density=rho,AM_Coeff_Ca)
-    stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput,GX=true,fluid_density=rho,AM_Coeff_Ca)
+    sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput,fluid_density=rho,AddedMass_Coeff_Ca)
+    stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;precompinputs=bld_precompinput,GX=true,fluid_density=rho,AddedMass_Coeff_Ca)
 
     nothing
 
@@ -366,8 +366,8 @@ function setupOWENS(OWENSAero,path;
         end
 
         strut_precompoutput[istrut],strut_precompinput[istrut],lam_U_strut[istrut],lam_L_strut[istrut],lam_W_strut[istrut] = OWENS.getOWENSPreCompOutput(numadIn_strut[istrut];yscale,plyprops = plyprops_strut)
-        sectionPropsArray_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut],fluid_density=rho,AM_Coeff_Ca)
-        stiff_strut[istrut], mass_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut],GX=true,fluid_density=rho,AM_Coeff_Ca)
+        sectionPropsArray_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut],fluid_density=rho,AddedMass_Coeff_Ca)
+        stiff_strut[istrut], mass_strut[istrut] = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_strut[istrut],strut_precompoutput[istrut];precompinputs=strut_precompinput[istrut],GX=true,fluid_density=rho,AddedMass_Coeff_Ca)
     end
 
     nothing
@@ -466,9 +466,9 @@ function setupOWENS(OWENSAero,path;
         turbsim_filename = windINPfilename,
         ifw_libfile,
         tau = [1e-5,1e-5],
-        AM_flag,
-        rotAccel_flag,
-        buoy_flag,
+        Aero_AddedMass_Active,
+        Aero_RotAccel_Active,
+        Aero_Buoyancy_Active,
         centrifugal_force_flag,
         ntheta,
         Nslices,

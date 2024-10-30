@@ -46,7 +46,6 @@ mutable struct Inputs
     driveShaftProps
     iteration_parameters
     ss_input_file
-    AM_Coeff_Ca
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -92,7 +91,6 @@ Inputs(;analysisType = "TNB",
     TOl = 1e-4,
     MAXITER = 300,
     iterwarnings = true,
-    AM_Coeff_Ca=0.0,
     )
 
 Model inputs for OWENS coupled analysis, struct
@@ -138,7 +136,6 @@ Model inputs for OWENS coupled analysis, struct
 * `TOl::float`: gauss-seidel iteration tolerance
 * `MAXITER::int`: gauss-seidel maximum iterations
 * `iterwarnings::bool`: iteration warnings flag
-* `AM_Coeff_Ca::Float64`: added mass coefficient, also used as a flag depending on if it is 0.0 or not
 
 
 # Outputs:
@@ -186,14 +183,13 @@ function Inputs(;analysisType = "TNB",
     TOl = 1e-4,
     MAXITER = 300,
     iterwarnings = true,
-    AM_Coeff_Ca=0.0,
     )
 
     return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
     driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file,AM_Coeff_Ca)
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file)
 end
 
 """

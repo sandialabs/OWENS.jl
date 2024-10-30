@@ -157,9 +157,9 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,
-    AM_flag = true,
-    rotAccel_flag = true,
-    buoy_flag = true,
+    Aero_AddedMass_Active = true,
+    Aero_RotAccel_Active = true,
+    Aero_Buoyancy_Active = true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType)

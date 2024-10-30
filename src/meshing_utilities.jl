@@ -1562,7 +1562,7 @@ Arranges the precomp output into the sectional properties required by OWENSFEA
 stiff, mass
 
 """
-function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AM_Coeff_Ca=1.0)
+function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AddedMass_Coeff_Ca=1.0)
     # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
     # create spline of the precomp output to be used with the specified span array
     len_pc = length(precompoutput)
@@ -1736,8 +1736,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
         for i_z = 1:length(myzaf)
             Vol_flap = pi*((maximum(myxaf[i_z,:])-minimum(myxaf[i_z,:]))/2)^2 #pi*(chord/2)^2
             Vol_edge = pi*((maximum(myyaf[i_z,:])-minimum(myyaf[i_z,:]))/2)^2 #pi*(thickness/2)^2
-            added_M33[i_z] = fluid_density * AM_Coeff_Ca * Vol_flap 
-            added_M22[i_z] = fluid_density * AM_Coeff_Ca * Vol_edge 
+            added_M33[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_flap 
+            added_M22[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_edge 
         end
     else
         myxaf = nothing

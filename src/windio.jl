@@ -244,9 +244,9 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     chord_scale = [1.0,1.0]
     thickness_scale = [1.0,1.0]
     angularOffset = -pi/2
-    AM_flag = false
-    rotAccel_flag = false
-    buoy_flag = false
+    Aero_AddedMass_Active = false
+    Aero_RotAccel_Active = false
+    Aero_Buoyancy_Active = false
     custommesh = nothing
 
     tsave_idx=1:3:numTS
@@ -329,9 +329,9 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
         chord_scale,
         thickness_scale,
         angularOffset,
-        AM_flag,
-        rotAccel_flag,
-        buoy_flag,
+        Aero_AddedMass_Active,
+        Aero_RotAccel_Active,
+        Aero_Buoyancy_Active,
         custommesh)
 
     nothing

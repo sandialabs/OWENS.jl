@@ -1,4 +1,4 @@
-# # [Simulating Floating Platforms](@id simple2)
+# # [Simulating Floating Platforms](@id simple4)
 # 
 # In this example, we make the OWENS model more complex by simulation a floating wind
 # turbine instead of a land-based one. This involves coupling two meshes together: one

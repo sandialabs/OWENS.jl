@@ -185,7 +185,7 @@ the meshing process, the component type need to be known in order to get
 this right: Mesh Type: 0-blade 1-tower 2-strut.
 
 ## Marine Considerations
-When we turn on AM_Coeff_Ca>0.0, this causes a few changes.  The added mass is included in the GXBeam 6x6 inertia terms (2,2 and 3,3) since a force coupling is unstable.  This changes the more smooth gravitational and centrifugal loads, so they are offloaded to the aero model, and are handled in the buoyancy and centrifugal force respectively.  The example cases contain verification cases of the added mass and buoyancy implementations.
+When we turn on AddedMass_Coeff_Ca>0.0, this causes a few changes.  The added mass is included in the GXBeam 6x6 inertia terms (2,2 and 3,3) since a force coupling is unstable.  This changes the more smooth gravitational and centrifugal loads, so they are offloaded to the aero model, and are handled in the buoyancy and centrifugal force respectively.  The example cases contain verification cases of the added mass and buoyancy implementations.
 
 ## Composites
 

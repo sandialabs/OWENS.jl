@@ -13,6 +13,7 @@ makedocs(;
             joinpath("examples", "A_simplyRunningOWENS.md"),
             joinpath("examples", "B_detailedInputs.md"),
             joinpath("examples", "C_customizablePreprocessing.md"),
+            joinpath("examples", "D_simulatingFloatingPlatforms.md"),
         ],
         "Developer Guide" => "OWENS_Dev_Guide.md",
         "API Reference" => [

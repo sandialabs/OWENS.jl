@@ -70,9 +70,9 @@ fluid_dyn_viscosity = 1.792E-3
 number_of_blades = Nbld
 WindType = 3
 
-AM_flag = false
-rotAccel_flag = false
-buoy_flag = true
+Aero_AddedMass_Active = false
+Aero_RotAccel_Active = false
+Aero_Buoyancy_Active = true
 
 ##############################################
 # Setup
@@ -132,10 +132,10 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD
     strut_bld_mountpoint = [0.5],
     AModel, #AD, DMS, AC
     DSModel="BV",
-    AM_flag,
-    AM_Coeff_Ca=0.0,
-    rotAccel_flag,
-    buoy_flag,
+    Aero_AddedMass_Active,
+    AddedMass_Coeff_Ca=0.0,
+    Aero_RotAccel_Active,
+    Aero_Buoyancy_Active,
     RPI=true,
     angularOffset=2*pi/ntheta,
     cables_connected_to_blade_base = true,
@@ -365,7 +365,7 @@ nothing
 
 OWENS_tip_displ_x = uHist[:,(forced_node-1)*6+1]
 
-if false#AM_flag
+if false#Aero_AddedMass_Active
     omega_OF = 4.5105 * 2*pi
 else
     omega_OF = 13.53* 2*pi

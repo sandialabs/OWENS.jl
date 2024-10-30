@@ -769,7 +769,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
-    if topModel.AM_Coeff_Ca >0.0 #turn gravity off if we are doing marine calculations since added mass changes the inertia terms and so centrifugal force and gravity are handled in aero loads
+    if topModel.AddedMass_Coeff_Ca >0.0 #turn gravity off if we are doing marine calculations since added mass changes the inertia terms and so centrifugal force and gravity are handled in aero loads
         Omega_j = 0.0
         gravityOn = false
     else
