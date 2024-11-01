@@ -6,19 +6,19 @@ using Statistics:mean
 using Test
 import FFTW
 
-import PyPlot
-PyPlot.close("all")
-PyPlot.pygui(true)
-PyPlot.rc("figure", figsize=(4.5, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-PyPlot.rc("figure",max_open_warning=500)
-# PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# import PyPlot
+# PyPlot.close("all")
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
@@ -143,23 +143,23 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD
 
 
 
-PyPlot.figure()
-for icon = 1:length(mymesh.conn[:,1])
-    idx1 = mymesh.conn[icon,1]
-    idx2 = mymesh.conn[icon,2]
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    # sleep(0.1)
-end
+# PyPlot.figure()
+# for icon = 1:length(mymesh.conn[:,1])
+#     idx1 = mymesh.conn[icon,1]
+#     idx2 = mymesh.conn[icon,2]
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+#     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+#     # sleep(0.1)
+# end
 
-for ijoint = 1:length(myjoint[:,1])
-    idx2 = Int(myjoint[ijoint,2])
-    idx1 = Int(myjoint[ijoint,3])
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    sleep(0.1)
-end
+# for ijoint = 1:length(myjoint[:,1])
+#     idx2 = Int(myjoint[ijoint,2])
+#     idx1 = Int(myjoint[ijoint,3])
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+#     sleep(0.1)
+# end
 
-PyPlot.scatter3D(1,1,1,"b.")
+# PyPlot.scatter3D(1,1,1,"b.")
 
 nothing
 
@@ -376,42 +376,44 @@ ofast_tdispl = cos.(t.*omega_OF)
 buoyant_load = pi*0.5^2*1.0*fluid_density-rhoA_tip
 analytical_displacement = buoyant_load*(Blade_Height/2.0)^3/(3*EI)
 analytical_displacement = analytical_displacement .* sin.(aziHist)
-PyPlot.figure()
-PyPlot.plot(t,analytical_displacement,"k",label="Analytical")
-PyPlot.plot(t,OWENS_tip_displ_x,color=plot_cycle[1],label="OWENS")
-PyPlot.xlabel("Time (s)")
-PyPlot.ylabel("Displacement (m)")
-PyPlot.legend()
-PyPlot.savefig("$(path)/buoyancy.pdf",transparent = true)
+
+# PyPlot.figure()
+# PyPlot.plot(t,analytical_displacement,"k",label="Analytical")
+# PyPlot.plot(t,OWENS_tip_displ_x,color=plot_cycle[1],label="OWENS")
+# PyPlot.xlabel("Time (s)")
+# PyPlot.ylabel("Displacement (m)")
+# PyPlot.legend()
+# PyPlot.savefig("$(path)/buoyancy.pdf",transparent = true)
 
 percentdiff = ((maximum(analytical_displacement)-maximum(OWENS_tip_displ_x))/maximum(OWENS_tip_displ_x)*100)
 println("Percent Diff = $percentdiff%")
 @test percentdiff<22.0
 
 
-import FLOWMath
-displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)
-velocity = [FLOWMath.derivative(displace_spl,t[i]) for i = 1:length(t)]
-velocity_spl = FLOWMath.Akima(t,velocity)
-accel = [FLOWMath.derivative(velocity_spl,t[i]) for i = 1:length(t)]
+# import FLOWMath
+# displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)
+# velocity = [FLOWMath.derivative(displace_spl,t[i]) for i = 1:length(t)]
+# velocity_spl = FLOWMath.Akima(t,velocity)
+# accel = [FLOWMath.derivative(velocity_spl,t[i]) for i = 1:length(t)]
 
-PyPlot.figure("Vel")
-PyPlot.plot(t,velocity)
-PyPlot.plot(t,udotHist[:,(forced_node-1)*6+1])
+# PyPlot.figure("Vel")
+# PyPlot.plot(t,velocity)
+# PyPlot.plot(t,udotHist[:,(forced_node-1)*6+1])
 
-PyPlot.figure("Accel")
-PyPlot.plot(t,accel)
-PyPlot.plot(t,uddotHist[:,(forced_node-1)*6+1])
+# PyPlot.figure("Accel")
+# PyPlot.plot(t,accel)
+# PyPlot.plot(t,uddotHist[:,(forced_node-1)*6+1])
+
 # Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 
 # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
 
-saveName = "$path/vtk/flapping_buoyancy"
-tsave_idx=1:1:numTS-1
-OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
-    epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
-    FReactionHist,topFexternal_hist;tsave_idx)
+# saveName = "$path/vtk/flapping_buoyancy"
+# tsave_idx=1:1:numTS-1
+# OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+#     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+#     FReactionHist,topFexternal_hist;tsave_idx)
 
 nothing
 

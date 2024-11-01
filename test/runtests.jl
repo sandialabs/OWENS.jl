@@ -24,3 +24,8 @@ end
 @testset "Floating Platform Check" begin
     include("$path/testfloating.jl")
 end
+
+@testset "Added Mass & Buoyancy" begin
+    include("$path/../examples/AddedMass_Buoyancy/Flapping_Added_Mass.jl")
+    include("$path/../examples/AddedMass_Buoyancy/Buoyancy.jl")
+end

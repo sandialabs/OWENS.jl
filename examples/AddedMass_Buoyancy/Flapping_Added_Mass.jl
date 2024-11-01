@@ -6,19 +6,19 @@ using Statistics:mean
 using Test
 import FFTW
 
-import PyPlot
-PyPlot.close("all")
-PyPlot.pygui(true)
-PyPlot.rc("figure", figsize=(4.5, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-PyPlot.rc("figure",max_open_warning=500)
-# PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# import PyPlot
+# PyPlot.close("all")
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
@@ -143,23 +143,23 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD
 
 
 
-PyPlot.figure()
-for icon = 1:length(mymesh.conn[:,1])
-    idx1 = mymesh.conn[icon,1]
-    idx2 = mymesh.conn[icon,2]
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    # sleep(0.1)
-end
+# PyPlot.figure()
+# for icon = 1:length(mymesh.conn[:,1])
+#     idx1 = mymesh.conn[icon,1]
+#     idx2 = mymesh.conn[icon,2]
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+#     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+#     # sleep(0.1)
+# end
 
-for ijoint = 1:length(myjoint[:,1])
-    idx2 = Int(myjoint[ijoint,2])
-    idx1 = Int(myjoint[ijoint,3])
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    sleep(0.1)
-end
+# for ijoint = 1:length(myjoint[:,1])
+#     idx2 = Int(myjoint[ijoint,2])
+#     idx1 = Int(myjoint[ijoint,3])
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+#     sleep(0.1)
+# end
 
-PyPlot.scatter3D(1,1,1,"b.")
+# PyPlot.scatter3D(1,1,1,"b.")
 
 nothing
 
@@ -390,11 +390,11 @@ end
 ofast_tdispl = cos.(t.*omega_OF)
 
 ts_start = 111
-PyPlot.figure()
-PyPlot.plot(t,ofast_tdispl,".",label="OpenFAST")
-PyPlot.plot(t[ts_start:end].-0.32,OWENS_tip_displ[ts_start:end],".",label="OWENS")
-PyPlot.legend()
-PyPlot.savefig("$(path)AddedMassOff.pdf",transparent = true)
+# PyPlot.figure()
+# PyPlot.plot(t,ofast_tdispl,".",label="OpenFAST")
+# PyPlot.plot(t[ts_start:end].-0.32,OWENS_tip_displ[ts_start:end],".",label="OWENS")
+# PyPlot.legend()
+# PyPlot.savefig("$(path)AddedMassOff.pdf",transparent = true)
 
 signal = OWENS_tip_displ[ts_start:end]
 L = length(signal)
@@ -412,47 +412,48 @@ P1 = P2[1:round(Int,L/2)+1]
 P1[2:end-1] = 2*P1[2:end-1]
 
 f = Fs.*(0:round(Int,L/2))./L
-PyPlot.figure()
-PyPlot.plot(f,P1,color=plot_cycle[1],label="OWENS")
-PyPlot.plot([omega_OF,omega_OF]./(2*pi),[0.0,1.0],color=plot_cycle[2],label="OpenFAST")
-# PyPlot.title("Single-Sided Amplitude Spectrum of X(t)")
-PyPlot.xlabel("Frequency (Hz)")
-PyPlot.ylabel("Frequency Amplitude Norm")
-PyPlot.legend()
-PyPlot.xlim([0.0,30.0])
-PyPlot.ylim([0.0,1.0])
+
+# PyPlot.figure()
+# PyPlot.plot(f,P1,color=plot_cycle[1],label="OWENS")
+# PyPlot.plot([omega_OF,omega_OF]./(2*pi),[0.0,1.0],color=plot_cycle[2],label="OpenFAST")
+# # PyPlot.title("Single-Sided Amplitude Spectrum of X(t)")
+# PyPlot.xlabel("Frequency (Hz)")
+# PyPlot.ylabel("Frequency Amplitude Norm")
+# PyPlot.legend()
+# PyPlot.xlim([0.0,30.0])
+# PyPlot.ylim([0.0,1.0])
+# PyPlot.savefig("$(path)/added_Mass_off_bode.pdf",transparent = true)
+
 val,idxmax = findmax(P1)
 f_natural = f[idxmax]
-
-PyPlot.savefig("$(path)/added_Mass_off_bode.pdf",transparent = true)
-
 percentdiff = (omega_OF/(2*pi)-f_natural)/(omega_OF/(2*pi))*100
 println("percent_diff: $percentdiff%")
 @test abs(percentdiff)<5.0
 
-import FLOWMath
-displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)
-velocity = [FLOWMath.derivative(displace_spl,t[i]) for i = 1:length(t)]
-velocity_spl = FLOWMath.Akima(t,velocity)
-accel = [FLOWMath.derivative(velocity_spl,t[i]) for i = 1:length(t)]
+# import FLOWMath
+# displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)
+# velocity = [FLOWMath.derivative(displace_spl,t[i]) for i = 1:length(t)]
+# velocity_spl = FLOWMath.Akima(t,velocity)
+# accel = [FLOWMath.derivative(velocity_spl,t[i]) for i = 1:length(t)]
 
-PyPlot.figure("Vel")
-PyPlot.plot(t,velocity)
-PyPlot.plot(t,udotHist[:,(forced_node-1)*6+1])
+# PyPlot.figure("Vel")
+# PyPlot.plot(t,velocity)
+# PyPlot.plot(t,udotHist[:,(forced_node-1)*6+1])
 
-PyPlot.figure("Accel")
-PyPlot.plot(t,accel)
-PyPlot.plot(t,uddotHist[:,(forced_node-1)*6+1])
+# PyPlot.figure("Accel")
+# PyPlot.plot(t,accel)
+# PyPlot.plot(t,uddotHist[:,(forced_node-1)*6+1])
+
 # Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the 
 # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
-azi=aziHist#./aziHist*1e-6
-saveName = "$path/vtk/flapping_added_mass"
-tsave_idx=1:1:numTS-1
-OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
-    epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
-    FReactionHist,topFexternal_hist;tsave_idx)
+# azi=aziHist#./aziHist*1e-6
+# saveName = "$path/vtk/flapping_added_mass"
+# tsave_idx=1:1:numTS-1
+# OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+#     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+#     FReactionHist,topFexternal_hist;tsave_idx)
 
 nothing
 
