@@ -5,6 +5,20 @@ import OWENS
 using Test
 import HDF5
 
+# import PyPlot
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+
+
 test_transient = true
 test_modal = true
 test_flutter = false

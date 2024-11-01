@@ -230,18 +230,13 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     ### Iterate for a solution at t+dt
     i=0
     timeconverged = false
+    pbar = ProgressBars.ProgressBar(total=numTS-1)
+
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
-        # println(i)
-        ## Print current simulation time to terminal at each .1 second
-        if isapprox((t[i]*10)%1,0;atol=5e-2)
-            now = round(t[i];digits=1)
-            if now == 1
-                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
-            else
-                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
-            end
-        end
+
+
+        ProgressBars.update(pbar)
 
         ## Check for specified rotor speed at t+dt #TODO: fix this so that it can be probably accounted for in RK4
         if (inputs.turbineStartup == 0)
@@ -498,7 +493,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             if verbosity>4
-                println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm)")
+                println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm) \n")
             end
 
             if numIterations==MAXITER
@@ -511,9 +506,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         end #end iteration while loop
 
         if verbosity >=7
-            println("Gen Torque: $(topdata.genTorque_j)")
-            println("RPM: $(topdata.Omega_j*60)")
-            println("Vinf: $(newVinf)")
+            println("Gen Torque: $(topdata.genTorque_j)\n")
+            println("RPM: $(topdata.Omega_j*60)\n")
+            println("Vinf: $(newVinf)\n")
             # velocitymid = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/2],t[i])
             # velocityquarter = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/4],t[i])
             # println("Velocity mid: $(velocitymid[1])")

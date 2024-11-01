@@ -41,13 +41,13 @@ nbelem = 30
 ncelem = 10
 nselem = 10
 ifw = false
-AModel = "AD"
+AModel = "DMS"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 0.807
 Blade_Radius = 0.538
 area = Blade_Height*2*Blade_Radius
-numTS = 1000
+numTS = 10
 delta_t = 0.01
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -198,7 +198,6 @@ Vinfocp,
 numTS,
 delta_t,
 AD15On,
-AddedMass_Coeff_Ca,
 aeroLoadsOn = 2)
 
 nothing
@@ -272,3 +271,4 @@ AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in abili
 # ffmpeg -i smallerhelical.%04d.png -vf palettegen=reserve_transparent=1 palette.png
 # ffmpeg -framerate 30 -i smallerhelical.%04d.png -i palette.png -lavfi paletteuse=alpha_threshold=30 -gifflags -offsetting smallerhelical.gif
 
+nothing

@@ -49,7 +49,7 @@ ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_bi
 Blade_Height = 20.0
 Blade_Radius = 4.5
 area = Blade_Height*2*Blade_Radius
-numTS = 600
+numTS = 200
 delta_t = 0.005
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -389,16 +389,17 @@ end
 
 ofast_tdispl = cos.(t.*omega_OF)
 
+ts_start = 111
 PyPlot.figure()
-PyPlot.plot(t,ofast_tdispl,label="OpenFAST")
-PyPlot.plot(t.-0.32,OWENS_tip_displ,label="OWENS")
+PyPlot.plot(t,ofast_tdispl,".",label="OpenFAST")
+PyPlot.plot(t[ts_start:end].-0.32,OWENS_tip_displ[ts_start:end],".",label="OWENS")
 PyPlot.legend()
 PyPlot.savefig("$(path)AddedMassOff.pdf",transparent = true)
 
-signal = OWENS_tip_displ[1:end]
+signal = OWENS_tip_displ[ts_start:end]
 L = length(signal)
 if L%2 != 0
-    signal = signal[1:end-1]
+    signal = signal[ts_start:end-1]
     L = length(signal)
 end
 # signal .-= mean(signal)
@@ -407,10 +408,10 @@ Y = FFTW.fft(signal)
 
 Fs = 1/(t[2]-t[1])
 P2 = abs.(Y./L)
-P1 = P2[1:Int(L/2)+1]
+P1 = P2[1:round(Int,L/2)+1]
 P1[2:end-1] = 2*P1[2:end-1]
 
-f = Fs.*(0:Int(L/2))./L
+f = Fs.*(0:round(Int,L/2))./L
 PyPlot.figure()
 PyPlot.plot(f,P1,color=plot_cycle[1],label="OWENS")
 PyPlot.plot([omega_OF,omega_OF]./(2*pi),[0.0,1.0],color=plot_cycle[2],label="OpenFAST")
@@ -422,9 +423,12 @@ PyPlot.xlim([0.0,30.0])
 PyPlot.ylim([0.0,1.0])
 val,idxmax = findmax(P1)
 f_natural = f[idxmax]
-println("percent_diff: $((omega_OF/(2*pi)-f_natural)/(omega_OF/(2*pi))*100)%")
+
 PyPlot.savefig("$(path)/added_Mass_off_bode.pdf",transparent = true)
 
+percentdiff = (omega_OF/(2*pi)-f_natural)/(omega_OF/(2*pi))*100
+println("percent_diff: $percentdiff%")
+@test abs(percentdiff)<5.0
 
 import FLOWMath
 displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)

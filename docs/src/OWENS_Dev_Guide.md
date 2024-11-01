@@ -93,6 +93,14 @@ notation Wind propagation angle is zero when aligned with the positive
 X-axis and clockwise positive, in the direction of the negative negative
 Y-axis.](./figs/inflow_wind.pdf){#fig:ac_velocities width="50%"}
 
+# Airfoils
+
+Airfoil geometry is typically defined starting at the trailing edge (1,0), looping around the bottom/pressure side to the leading edge (0,0), and then back along the top/suction side to the trailing edge (1,0) again.  There are several automatic corrections to handle files that slightly ill formatted, with output warnings, but this is limited and should not be relied on.
+
+Airfoil polars are currently in different formats for OWENSAero and AeroDyn, see examples.  The airfoil name in the structural definition is assumed to be the same airfoil name as the geometry and the polar data.  The path to these files is automatically resolved as relative to the run location, so it expects an airfoils folder there.
+
+Future work is planned to include enabling OWENSAero to read in the same airfoil files as AeroDyn, and to automatically generate polars from xfoil.jl.
+
 # OWENSAero Aerodynamics (AC and DMS)
 
 ![VAWT 2D section looking downwards with induced velocity $w$ vector

@@ -203,18 +203,13 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     ### Iterate for a solution at t+dt
     i=0
     timeconverged = false
+
+    pbar = ProgressBars.ProgressBar(total=numTS-1)
+
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
-        # println(i)
-        ## Print current simulation time to terminal
-        if isapprox((t[i]*10)%1,0;atol=5e-2)
-            now = round(t[i];digits=1)
-            if now == 1
-                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
-            else
-                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
-            end
-        end
+
+        ProgressBars.update(pbar)
 
         ## Check for specified rotor speed at t+dt #TODO: fix this so that it can be probably accounted for in RK4
         if inputs.topsideOn
@@ -771,16 +766,18 @@ end
 function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
     if topModel.AddedMass_Coeff_Ca >0.0 #turn gravity off if we are doing marine calculations since added mass changes the inertia terms and so centrifugal force and gravity are handled in aero loads
         Omega_j = 0.0
+        OmegaDot_j = 0.0
         gravityOn = false
     else
         Omega_j = Omega_j
+        OmegaDot_j = OmegaDot_j
         gravityOn = topModel.gravityOn
     end
 
     linear_velocity = [0.0,0.0,0.0]
     angular_velocity = [0.0,0.0,Omega_j*2*pi]
     linear_acceleration = [0.0,0.0,0.0]
-    angular_acceleration = [0.0,0.0,0.0]
+    angular_acceleration = [0.0,0.0,OmegaDot_j*2*pi]
 
     tvec = [t[i],t[i]+delta_t]
 
@@ -812,7 +809,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     angular_acceleration,prescribed_conditions,gravity,linear=false)#!topModel.nlOn)
 
     if !converged
-        println("GX failed to converge")
+        println("GX failed to converge\n")
     end
     # elStrain
     state = history[end]#GXBeam.AssemblyState(systemout, assembly;prescribed_conditions)
@@ -1340,17 +1337,17 @@ end
 
 function initialize_generator!(inputs)
     if (inputs.turbineStartup == 1) #forced start-up using generator as motor
-        println("Running in forced starting mode.")
+        println("Running in forced starting mode.\n")
         inputs.generatorOn = true  #TODO: clean this redundant/conflicting logic up
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = 0.0
     elseif (inputs.turbineStartup == 2) #self-starting mode
-        println("Running in self-starting mode.")
+        println("Running in self-starting mode.\n")
         inputs.generatorOn = false
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = inputs.OmegaGenStart #Spec rotor speed for generator startup Hz
     else
-        println("Running in specified rotor speed mode")
+        println("Running in specified rotor speed mode\n")
         inputs.generatorOn = false
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = 1e6 #ensures generator always off for practical purposes

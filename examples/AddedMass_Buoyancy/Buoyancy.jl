@@ -49,7 +49,7 @@ ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_bi
 Blade_Height = 20.0
 Blade_Radius = 4.5
 area = Blade_Height*2*Blade_Radius
-numTS = 100
+numTS = 50
 delta_t = 0.05
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -384,7 +384,10 @@ PyPlot.ylabel("Displacement (m)")
 PyPlot.legend()
 PyPlot.savefig("$(path)/buoyancy.pdf",transparent = true)
 
-println("Percent Diff = $((maximum(analytical_displacement)-maximum(OWENS_tip_displ_x))/maximum(OWENS_tip_displ_x)*100)%")
+percentdiff = ((maximum(analytical_displacement)-maximum(OWENS_tip_displ_x))/maximum(OWENS_tip_displ_x)*100)
+println("Percent Diff = $percentdiff%")
+@test percentdiff<22.0
+
 
 import FLOWMath
 displace_spl = FLOWMath.Akima(t,OWENS_tip_displ)

@@ -436,7 +436,8 @@ function setupOWENS(OWENSAero,path;
         delta3D_spl = safeakima(shapeZ[1:end-1]./maximum(shapeZ[1:end-1]), delta3D,LinRange(0,1,length(numadIn_bld.span)-1))
         #### now convert the numad span to a height
         bld_height_numad = numadIn_bld.span/maximum(numadIn_bld.span)
-        bld_height_numad_unit = cumsum(diff((bld_height_numad[2:end]+bld_height_numad[1:end-1])/2).*(1.0.-abs.(sin.(delta3D_spl[1:end-1]))))
+        bld_height_numad_unit = [bld_height_numad[i]+(bld_height_numad[i+1]-bld_height_numad[i])/2 for i = 1:length(bld_height_numad)-1].*(1.0.-abs.(sin.(delta3D_spl)))
+        # bld_height_numad_unit = cumsum(diff((bld_height_numad[2:end]+bld_height_numad[1:end-1])/2).*(1.0.-abs.(sin.(delta3D_spl[1:end-1]))))
 
         #### now we can use it to access the numad data 
         chord = safeakima(bld_height_numad_unit, numadIn_bld.chord,LinRange(bld_height_numad_unit[1],bld_height_numad_unit[end],Nslices))
