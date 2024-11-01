@@ -25,7 +25,11 @@ end
     include("$path/testfloating.jl")
 end
 
-@testset "Added Mass & Buoyancy" begin
+@testset "Added Mass" begin
     include("$path/../examples/AddedMass_Buoyancy/Flapping_Added_Mass.jl")
+end
+
+@testset "Buoyancy" begin
+    path = splitdir(@__FILE__)[1]
     include("$path/../examples/AddedMass_Buoyancy/Buoyancy.jl")
 end
