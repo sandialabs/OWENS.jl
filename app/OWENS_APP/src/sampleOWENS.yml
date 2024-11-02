@@ -17,8 +17,9 @@ operationParameters:
 turbulentInflow:
   ifw: false
   WindType: 3
-  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
-  ifw_libfile: /Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/inflowwind/libifw_c_binding
+  windINPfilename: /Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENS.jl/app/OWENS_APP/src/data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: /Users/kevmoor/Documents/coderepos/openfast/build/modules/inflowwind/libifw_c_binding
+  
 
 controlParameters:
   controlStrategy: normal # TODO: incorporate the others
@@ -30,15 +31,14 @@ controlParameters:
 AeroParameters:
   Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
-  adi_lib: /Users/kevmoor/Documents/coderepos/OWENS_Toolkit/OWENSOpenFASTWrappers.jl/deps/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding
+  AModel: AD # AD, DMS, AC
+  adi_lib: /Users/kevmoor/Documents/coderepos/openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding
   adi_rootname: "/ExampleB"
   
 structuralParameters:
   structuralModel: GX #GX, TNB, ROM
-  nonlinear: false #TODO: propogate
   ntelem: 20 #tower elements in each 
-  nbelem: 50 #blade elements in each 
+  nbelem: 40 #blade elements in each 
   ncelem: 10 #central cable elements in each if turbineType is ARCUS
   nselem: 5 #strut elements in each if turbineType has struts
   NuMad_geom_xlscsv_file_twr: /data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv

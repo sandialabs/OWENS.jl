@@ -1,24 +1,24 @@
 
 """
-readNuMadGeomCSV(NuMad_geom_file)
+readNuMadGeomCSV(WindIO_Dict)
 
 Parameters defining the rotor (apply to all sections).
 
 **Arguments**
-- `NuMad_geom_file::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
-- `NuMad_geom_file::OrderedCollections.OrderedDict{Symbol, Any}`: Alternatively, the already loaded in dictionary of windio inputs
+- `WindIO_Dict::String`: name of the numad excel CSV file being read (!!! THE NUMAD TAB MUST BE SAVED AS A CSV FOR THIS TO WORK !!!)
+- `WindIO_Dict::OrderedCollections.OrderedDict{Symbol, Any}`: Alternatively, the already loaded in dictionary of windio inputs
 
 
 **Returns**
 - `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
 """
-function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol, Any};section=:blade,subsection=nothing,span=nothing)
+function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, Any};section=:blade,subsection=nothing,span=nothing)
 
     # Reuse the input file as the dictionary input
     if isnothing(subsection)
-        sec_Dict = NuMad_geom_file[:components][section]
+        sec_Dict = WindIO_Dict[:components][section]
     else
-        sec_Dict = NuMad_geom_file[:components][section][subsection]
+        sec_Dict = WindIO_Dict[:components][section][subsection]
     end
 
     # Note that the input for the composite inputs is like a square blanket with shortened sections to make it any "shape" of composite inputs.  While it is possible to not define things along the blade/strut/tower etc depending on height, that makes non-square matrices which is more complex to code for and has not been propogated throughout.  It is also not condusive to continuous changes to the composite input.  Rather, just define the inputs as square (same number of chordwise stations along each spanwise position) and just set the thicknesses or distances between control points to be numerically 0.
@@ -30,19 +30,30 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
     #TODO: unit span as much as is possible?
 
     airfoil_grid = sec_Dict[:outer_shape_bem][:airfoil_position][:grid]
+
+    ref_x = sec_Dict[:outer_shape_bem][:reference_axis][:x][:values]
+    ref_y = sec_Dict[:outer_shape_bem][:reference_axis][:y][:values]
+    ref_z = sec_Dict[:outer_shape_bem][:reference_axis][:z][:values]
+
+    if sec_Dict[:outer_shape_bem][:reference_axis][:x][:grid] != airfoil_grid
+        @error "The windio grids must all be the same at this time"
+    end
+
     if isnothing(span)
-        span = airfoil_grid
+        span = sqrt.(ref_x.^2 .+ ref_y.^2 .+ ref_z.^2)
         println("Custom span is not specified in OWENS input, using WindIO airfoil grid as common span that all the other values are splined to")
     end
 
-    if span[1]!=0.0 && span[end]!=1.0
+    norm_span = span./maximum(span)
+
+    if norm_span[1]!=0.0 && norm_span[end]!=1.0
         @error "Span definition must encompass the entire blade from root 0, to tip 1"
     end
 
     airfoil = Array{String,1}(undef,length(span))
     airfoil_names = sec_Dict[:outer_shape_bem][:airfoil_position][:labels]
     # spline the airfoils used to the current overall grid, then round to enable mapping to the discrete airfoil inputs
-    airfoil_station_numbers = round.(Int,safeakima(airfoil_grid,collect(1:length(airfoil_names)),span))
+    airfoil_station_numbers = round.(Int,safeakima(airfoil_grid,collect(1:length(airfoil_names)),norm_span))
     # Now map the resulting airfoils to the new grid
     for istation = 1:length(airfoil_station_numbers)
         for iaf = 1:length(airfoil_names)
@@ -65,15 +76,15 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
 
     twist_grid = sec_Dict[:outer_shape_bem][:twist][:grid]
     twist_vals = sec_Dict[:outer_shape_bem][:twist][:values]
-    twist_d = safeakima(twist_grid,twist_vals,span) .* 180/pi
+    twist_d = safeakima(twist_grid,twist_vals,norm_span) .* 180/pi
 
     chord_grid = sec_Dict[:outer_shape_bem][:chord][:grid]
     chord_vals = sec_Dict[:outer_shape_bem][:chord][:values]
-    chord = safeakima(chord_grid,chord_vals,span)
+    chord = safeakima(chord_grid,chord_vals,norm_span)
 
     pitch_axis_grid = sec_Dict[:outer_shape_bem][:pitch_axis][:grid]
     pitch_axis_vals = sec_Dict[:outer_shape_bem][:pitch_axis][:values]
-    pitch_axis = safeakima(pitch_axis_grid,pitch_axis_vals,span)
+    pitch_axis = safeakima(pitch_axis_grid,pitch_axis_vals,norm_span)
 
     xoffset = pitch_axis
     aerocenter = pitch_axis #TODO: this was originally used for the automated flutter analysis within the original OWENS code, which is not currently implemented
@@ -145,11 +156,11 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
 
             start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
             start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
+            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,norm_span)
 
             end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
             end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
+            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,norm_span)
         else 
             # println("web rotation and offset")
 
@@ -193,8 +204,8 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
     # Also get the material types and layers used for each stack
     layer_mat_names = Array{String,1}(undef,n_stack)
     stack_mat_types = zeros(Int,n_stack) 
-    N_materials = length(NuMad_geom_file[:materials])
-    input_material_names = [NuMad_geom_file[:materials][imat][:name] for imat = 1:N_materials]
+    N_materials = length(WindIO_Dict[:materials])
+    input_material_names = [WindIO_Dict[:materials][imat][:name] for imat = 1:N_materials]
     stack_layers = zeros(length(span),n_stack) 
 
     for istack = 1:n_stack 
@@ -209,22 +220,22 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
         # get the number of plies
         n_plies_grid = layer_Dict[:n_plies][:grid]
         n_plies_vals = layer_Dict[:n_plies][:values]
-        stack_layers[:,istack] = safeakima(n_plies_grid,n_plies_vals,span) #note that since we cut off layers in the stack sequences below, extrapolated values are not used here
+        stack_layers[:,istack] = safeakima(n_plies_grid,n_plies_vals,norm_span) #note that since we cut off layers in the stack sequences below, extrapolated values are not used here
 
         if !(contains(layer_Dict[:name],"web")) 
             start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
             start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
+            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,norm_span)
 
             end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
             end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
+            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,norm_span)
 
             for ispan = 1:length(span)
                 for iseg=1:length(common_segments)
                     # check that the layer is active for the span position, and that it is active for the chordwise position for the given span
                     # Note that the code assumes -1 numad position (1 position windio) is the starting point, so the numad assumes the prior position is the starting point, and the defined position is the ending point.  The logic below translates windio which defines both the starting and ending positions to that numad assumption
-                    if (span[ispan]>=start_nd_arc_grid[1] && span[ispan]<=end_nd_arc_grid[end]) && (common_segments[iseg]>=start_nd_arc[ispan] && common_segments[iseg]<end_nd_arc[ispan])
+                    if (norm_span[ispan]>=start_nd_arc_grid[1] && norm_span[ispan]<=end_nd_arc_grid[end]) && (common_segments[iseg]>=start_nd_arc[ispan] && common_segments[iseg]<end_nd_arc[ispan])
                         stacks_active_windio_bld[ispan,iseg,istack] = 1
                     end
                 end
@@ -234,7 +245,7 @@ function readNuMadGeomCSV(NuMad_geom_file::OrderedCollections.OrderedDict{Symbol
                 for iweb=0:n_web-1 #this is per the windio standard...
 
                     # check that the layer is active for the span position, and that it is active for the chordwise position for the given span
-                    if contains(layer_Dict[:web],"$iweb") && (span[ispan]>=n_plies_grid[1] && span[ispan]<=n_plies_grid[end])
+                    if contains(layer_Dict[:web],"$iweb") && (norm_span[ispan]>=n_plies_grid[1] && norm_span[ispan]<=n_plies_grid[end])
                         stacks_active_windio_web[ispan,iweb+1,istack] = 1
                     end
                 end

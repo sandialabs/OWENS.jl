@@ -93,6 +93,14 @@ notation Wind propagation angle is zero when aligned with the positive
 X-axis and clockwise positive, in the direction of the negative negative
 Y-axis.](./figs/inflow_wind.pdf){#fig:ac_velocities width="50%"}
 
+# Airfoils
+
+Airfoil geometry is typically defined starting at the trailing edge (1,0), looping around the bottom/pressure side to the leading edge (0,0), and then back along the top/suction side to the trailing edge (1,0) again.  There are several automatic corrections to handle files that slightly ill formatted, with output warnings, but this is limited and should not be relied on.
+
+Airfoil polars are currently in different formats for OWENSAero and AeroDyn, see examples.  The airfoil name in the structural definition is assumed to be the same airfoil name as the geometry and the polar data.  The path to these files is automatically resolved as relative to the run location, so it expects an airfoils folder there.
+
+Future work is planned to include enabling OWENSAero to read in the same airfoil files as AeroDyn, and to automatically generate polars from xfoil.jl.
+
 # OWENSAero Aerodynamics (AC and DMS)
 
 ![VAWT 2D section looking downwards with induced velocity $w$ vector
@@ -183,6 +191,13 @@ column is just filled with zeros. The \"flapwise\" normal vector of an
 element is forced to be away from the machine for consistency. During
 the meshing process, the component type need to be known in order to get
 this right: Mesh Type: 0-blade 1-tower 2-strut.
+
+## Marine Considerations
+When we turn on AddedMass_Coeff_Ca>0.0, this causes a few changes.  The added mass is included in the GXBeam 6x6 inertia terms (2,2 and 3,3) since a force coupling is unstable.  This changes the more smooth gravitational and centrifugal loads, so they are offloaded to the aero model, and are handled in the buoyancy and centrifugal force respectively.  Note, that for the GX implementation, this is required, but
+for the Timoshenko implementation, added mass is not coupled to the internal centrifugal force, so one
+could use TNB or ROM with added mass, turn gravity on, turn it off for the aero, and turn the centrifugal
+forcing off for aero as well.  That's a lot to change, so it is recommended to keep with the current
+implementation until development occurs otherwise. The example cases and/or tests contain verification cases of the added mass and buoyancy implementations.
 
 ## Composites
 

@@ -203,18 +203,13 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     ### Iterate for a solution at t+dt
     i=0
     timeconverged = false
+
+    pbar = ProgressBars.ProgressBar(total=numTS-1)
+
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
-        # println(i)
-        ## Print current simulation time to terminal
-        if isapprox((t[i]*10)%1,0;atol=5e-2)
-            now = round(t[i];digits=1)
-            if now == 1
-                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
-            else
-                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
-            end
-        end
+
+        ProgressBars.update(pbar)
 
         ## Check for specified rotor speed at t+dt #TODO: fix this so that it can be probably accounted for in RK4
         if inputs.topsideOn
@@ -769,6 +764,15 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 end
 
 function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,assembly,t,Omega_j,OmegaDot_j,delta_t,numIterations,i,strainGX,curvGX)
+    if topModel.AddedMass_Coeff_Ca >0.0 #turn gravity off if we are doing marine calculations since added mass changes the inertia terms and so centrifugal force and gravity are handled in aero loads
+        Omega_j = 0.0
+        OmegaDot_j = 0.0
+        gravityOn = false
+    else
+        Omega_j = Omega_j
+        OmegaDot_j = OmegaDot_j
+        gravityOn = topModel.gravityOn
+    end
 
     linear_velocity = [0.0,0.0,0.0]
     angular_velocity = [0.0,0.0,Omega_j*2*pi]
@@ -777,14 +781,14 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
 
     tvec = [t[i],t[i]+delta_t]
 
-    if eltype(topModel.gravityOn) == Bool && topModel.gravityOn == true
+    if eltype(gravityOn) == Bool && gravityOn == true
         gravity = [0.0,0.0,-9.81]
-    elseif eltype(topModel.gravityOn) == Bool && topModel.gravityOn == false
+    elseif eltype(gravityOn) == Bool && gravityOn == false
         gravity = [0.0,0.0,0.0]
     end
 
-    if eltype(topModel.gravityOn) == Float64
-        gravity = topModel.gravityOn
+    if eltype(gravityOn) == Float64
+        gravity = gravityOn
     end
 
 
@@ -805,7 +809,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     angular_acceleration,prescribed_conditions,gravity,linear=false)#!topModel.nlOn)
 
     if !converged
-        println("GX failed to converge")
+        println("GX failed to converge\n")
     end
     # elStrain
     state = history[end]#GXBeam.AssemblyState(systemout, assembly;prescribed_conditions)
@@ -844,20 +848,23 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     # disp
     disp_sp1 = zeros(length(history[end].points)*6)
     dispdot_sp1 = zeros(length(history[end].points)*6)
+    dispddot_sp1 = zeros(length(history[end].points)*6)
     idx = 1
     for ipt = 1:length(history[end].points)
         for iu = 1:3
             disp_sp1[idx] = history[end].points[ipt].u[iu]
             dispdot_sp1[idx] = history[end].points[ipt].udot[iu]
+            dispddot_sp1[idx] = history[end].points[ipt].Vdot[iu]
             idx += 1
         end
         for itheta = 1:3
             disp_sp1[idx] = history[end].points[ipt].theta[itheta]
             dispdot_sp1[idx] = history[end].points[ipt].thetadot[itheta]
+            dispddot_sp1[idx] = history[end].points[ipt].Omegadot[itheta]
             idx += 1
         end
     end
-    dispOut = OWENSFEA.DispOut(nothing, disp_sp1,copy(disp_sp1).*0.0,dispdot_sp1)
+    dispOut = OWENSFEA.DispOut(nothing, disp_sp1,dispddot_sp1,dispdot_sp1)
     
     FReaction_j = zeros(length(history[end].points)*6)
     for iel = 1:length(history[end].points)
@@ -1330,17 +1337,17 @@ end
 
 function initialize_generator!(inputs)
     if (inputs.turbineStartup == 1) #forced start-up using generator as motor
-        println("Running in forced starting mode.")
+        println("Running in forced starting mode.\n")
         inputs.generatorOn = true  #TODO: clean this redundant/conflicting logic up
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = 0.0
     elseif (inputs.turbineStartup == 2) #self-starting mode
-        println("Running in self-starting mode.")
+        println("Running in self-starting mode.\n")
         inputs.generatorOn = false
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = inputs.OmegaGenStart #Spec rotor speed for generator startup Hz
     else
-        println("Running in specified rotor speed mode")
+        println("Running in specified rotor speed mode\n")
         inputs.generatorOn = false
         #     Omega = OmegaInitial
         rotorSpeedForGenStart = 1e6 #ensures generator always off for practical purposes
@@ -1452,9 +1459,11 @@ function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
     FMooringHist = zeros(numTS,numDOFPerNode)
     rbDataHist = zeros(numTS,9)
     rbData = zeros(9)
+    udotHist = zero(uHist)
+    uddotHist = zero(uHist)
 
     return uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,
     gbDotHist,gbDotDotHist,genTorque,genPower,torqueDriveShaft,uHist_prp,
-    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist
+    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist,udotHist,uddotHist
 end

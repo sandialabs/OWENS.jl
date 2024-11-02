@@ -8,6 +8,8 @@ mutable struct TopData
     integrator_j
     topDispOut
     uHist
+    udotHist
+    uddotHist
     epsilon_x_hist
     epsilon_y_hist
     epsilon_z_hist
@@ -123,7 +125,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     aeroVals=nothing,aeroDOFs=nothing,aero=nothing,deformAero=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false, verbosity=0,
-    system=nothing,assembly=nothing, #TODO: should we initialize them in here? Unify the interface for ease?
+    system=nothing,assembly=nothing,returnold=true, #TODO: should we initialize them in here? Unify the interface for ease?
     topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing)
 
     #..........................................................................
@@ -148,7 +150,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,
     gbDotHist,gbDotDotHist,genTorque,genPower,torqueDriveShaft,uHist_prp,
-    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist = allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
+    FPtfmHist,FHydroHist,FMooringHist,rbData,rbDataHist,udotHist,uddotHist = allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
 
     # Allocate memory for topside
     u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,
@@ -193,7 +195,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topFReaction_j = 0.0
     # Package up into data struct
     topdata = TopData(delta_t,numTS,numDOFPerNode,CN2H,t,integrator,integrator_j,topDispOut,
-    uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+    uHist,udotHist,uddotHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,
     genTorque,genPower,torqueDriveShaft,uHist_prp,FPtfmHist,FHydroHist,FMooringHist,rbData,
     rbDataHist,u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,gbDot_s,
@@ -228,18 +230,13 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     ### Iterate for a solution at t+dt
     i=0
     timeconverged = false
+    pbar = ProgressBars.ProgressBar(total=numTS-1)
+
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
-        # println(i)
-        ## Print current simulation time to terminal at each .1 second
-        if isapprox((t[i]*10)%1,0;atol=5e-2)
-            now = round(t[i];digits=1)
-            if now == 1
-                println("\nSimulation Time: $(now) second of $((numTS-1)*delta_t) seconds")
-            else
-                println("\nSimulation Time: $(now) seconds of $((numTS-1)*delta_t) seconds")
-            end
-        end
+
+
+        ProgressBars.update(pbar)
 
         ## Check for specified rotor speed at t+dt #TODO: fix this so that it can be probably accounted for in RK4
         if (inputs.turbineStartup == 0)
@@ -385,7 +382,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             CH2N = LinearAlgebra.transpose(CN2H)
 
-
+            runaero = false
             #################################################################
             if !isnothing(aero)
                 if inputs.aeroLoadsOn > 0 #0 off, 1 one way, 1.5 one way with deformation from last timestep, 2 two way
@@ -407,7 +404,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             #################################################################
-            if isnan(maximum(aeroVals))
+            if inputs.aeroLoadsOn > 0 && isnan(maximum(aeroVals))
                 @warn "Nan detected in aero forces"
             end
             if runaero || !isnothing(aeroVals)
@@ -441,6 +438,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     topdata.topFexternal = zeros(numDOFPerNode)
                     full_aeroDOFs = copy(topdata.topFexternal).*0.0
                 end
+            else
+                full_aeroDOFs = collect(1:topMesh.numNodes*6)
+                topdata.topFexternal = zero(full_aeroDOFs)
             end
 
             if meshcontrolfunction !== nothing
@@ -458,7 +458,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             #------------------------------------
             # TOPSIDE STRUCTURAL MODULE
             #------------------------------------
-            # println(Float64.(rbData))
+
             if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                 topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.top_rom,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData)
             elseif inputs.analysisType=="GX"                                                                                
@@ -468,12 +468,14 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             u_jLast = copy(topdata.u_j)
+            uddot_jLast = copy(topdata.u_j)
             topdata.u_j = topdata.topDispOut.displ_sp1
             topdata.udot_j = topdata.topDispOut.displdot_sp1
             topdata.uddot_j = topdata.topDispOut.displddot_sp1
 
             ## calculate norms
             uNorm = LinearAlgebra.norm(topdata.u_j .- u_jLast)/LinearAlgebra.norm(topdata.u_j)            #structural dynamics displacement iteration norm
+            uddotNorm = LinearAlgebra.norm(topdata.uddot_j .- uddot_jLast)/LinearAlgebra.norm(topdata.uddot_j)            #structural dynamics displacement iteration norm
             aziNorm = LinearAlgebra.norm(topdata.azi_j .- azi_jLast)/LinearAlgebra.norm(topdata.azi_j)  #rotor azimuth iteration norm
             if inputs.generatorOn
                 gbNorm = LinearAlgebra.norm(topdata.gb_j .- gb_jLast)/LinearAlgebra.norm(topdata.gb_j) #gearbox states iteration norm if it is off, the norm will be zero
@@ -491,7 +493,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             if verbosity>4
-                println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm)")
+                println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm) \n")
             end
 
             if numIterations==MAXITER
@@ -503,10 +505,10 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         end #end iteration while loop
 
-        if verbosity >=1
-            println("Gen Torque: $(topdata.genTorque_j)")
-            println("RPM: $(topdata.Omega_j*60)")
-            println("Vinf: $(newVinf)")
+        if verbosity >=7
+            println("Gen Torque: $(topdata.genTorque_j)\n")
+            println("RPM: $(topdata.Omega_j*60)\n")
+            println("Vinf: $(newVinf)\n")
             # velocitymid = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/2],t[i])
             # velocityquarter = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/4],t[i])
             # println("Velocity mid: $(velocitymid[1])")
@@ -549,6 +551,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         topdata.gbDotDot_s = topdata.gbDotDot_j
 
         topdata.uHist[i+1,:] = topdata.u_s
+        topdata.udotHist[i+1,:] = topdata.udot_s
+        topdata.uddotHist[i+1,:] = topdata.uddot_s
         topdata.FReactionHist[i+1,:] = topdata.topFReaction_j
         topdata.topFexternal_hist[i+1,1:length(topdata.topFexternal)] = topdata.topFexternal
         # FTwrBsHist[i+1,:] = -topFReaction_j  + topFWeight_j
@@ -603,11 +607,15 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],topdata.kappa_y_hist[:,:,1:i],
     topdata.kappa_z_hist[:,:,1:i])
     
-    return t[1:i], topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
-    topdata.FReactionHist[1:i,:],topdata.FTwrBsHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],
-    topdata.uHist_prp[1:i,:],topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],
-    topdata.kappa_y_hist[:,:,1:i],topdata.kappa_z_hist[:,:,1:i],topdata.FPtfmHist[1:i,:],topdata.FHydroHist[1:i,:],topdata.FMooringHist[1:i,:],
-    topdata.topFexternal_hist[1:i,:],topdata.rbDataHist[1:i,:]
+    if returnold
+        return t[1:i], topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
+        topdata.FReactionHist[1:i,:],topdata.FTwrBsHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],
+        topdata.uHist_prp[1:i,:],topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],
+        topdata.kappa_y_hist[:,:,1:i],topdata.kappa_z_hist[:,:,1:i],topdata.FPtfmHist[1:i,:],topdata.FHydroHist[1:i,:],topdata.FMooringHist[1:i,:],
+        topdata.topFexternal_hist[1:i,:],topdata.rbDataHist[1:i,:]
+    else
+        return topdata
+    end
 end
 
 """

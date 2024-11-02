@@ -435,12 +435,12 @@ println(pass)
 # t_max = 1 # seconds
 # FReaction_tvec = collect(dt:dt:t_max)
 
-# Fz_orig = DelimitedFiles.readdlm("$path/data/Fz_orig.csv", ',')
-# Fz_oldowens = DelimitedFiles.readdlm("$path/data/Fz_MD_newsim.csv", ',')
+# # Fz_orig = DelimitedFiles.readdlm("$path/data/Fz_orig.csv", ',')
+# # Fz_oldowens = DelimitedFiles.readdlm("$path/data/Fz_MD_newsim.csv", ',')
 
-# Fy_oldowens = DelimitedFiles.readdlm("$path/data/Fy_MD_newsim.csv", ',')
+# # Fy_oldowens = DelimitedFiles.readdlm("$path/data/Fy_MD_newsim.csv", ',')
 
-# Mz_oldowens = DelimitedFiles.readdlm("$path/data/Mz_MD_newsim.csv", ',')
+# # Mz_oldowens = DelimitedFiles.readdlm("$path/data/Mz_MD_newsim.csv", ',')
 
 # Fx = FReactionHist[:,1]
 # Fy = FReactionHist[:,2]
@@ -461,13 +461,14 @@ println(pass)
 # PyPlot.pygui(true)
 
 # PyPlot.figure("Fx")
-# PyPlot.plot(FReaction_tvec,Fx)
-# PyPlot.plot(FReaction_tvec,Fx_UNIT)
+# PyPlot.plot(FReaction_tvec,Fx,label="UNIT OWENS")
+# PyPlot.plot(FReaction_tvec,Fx_UNIT,label="Latest OWENS")
+# PyPlot.legend()
 
 # PyPlot.figure("Fy")
 # # PyPlot.plot(Fy_oldowens[:,1],Fy_oldowens[:,2],label="Old OWENS")
+# PyPlot.plot(FReaction_tvec,Fy_UNIT,label="UNIT OWENS")
 # PyPlot.plot(FReaction_tvec,Fy,label="Latest OWENS")
-# PyPlot.plot(FReaction_tvec,Fy_UNIT,label="MD OWENS")
 # # PyPlot.xlim([300,600])
 # # PyPlot.ylim([-150000,100000])
 # PyPlot.legend()
@@ -475,8 +476,8 @@ println(pass)
 # PyPlot.figure("Fz")
 # # PyPlot.plot(Fz_orig[:,1],Fz_orig[:,2].*1e6,"k",label="OpenFAST")
 # # PyPlot.plot(Fz_oldowens[:,1],Fz_oldowens[:,2].*1e6,label="Old OWENS")
+# PyPlot.plot(FReaction_tvec,Fz_UNIT,label="UNIT OWENS")
 # PyPlot.plot(FReaction_tvec,Fz,label="Latest OWENS")
-# PyPlot.plot(FReaction_tvec,Fz_UNIT,label="MD OWENS")
 # # PyPlot.xlim([300,600])
 # # PyPlot.ylim([-5.5e6,-6.0e6])
 # PyPlot.legend()
@@ -489,7 +490,7 @@ println(pass)
 
 # PyPlot.figure("Mz")
 # # PyPlot.plot(Mz_oldowens[:,1],Mz_oldowens[:,2],label="Old OWENS")
-# PyPlot.plot(FReaction_tvec,Mz_UNIT,label="MD OWENS")
+# PyPlot.plot(FReaction_tvec,Mz_UNIT,label="UNIT OWENS")
 # PyPlot.plot(FReaction_tvec,Mz,label="Latest OWENS")
 # # PyPlot.xlim([300,600])
 # # PyPlot.ylim([-5.5e6,-6.0e6])

@@ -556,11 +556,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
 
     meshSeg = zeros(Int,1+nblade+Nstrut*nblade) #tower, blades, and struts
 
-    if connectBldTips2Twr == false
-        meshSeg[1] = ntelem+Nstrut+1
-    else
-        meshSeg[1] = ntelem+Nstrut*nblade-nblade+1 #connects at top node
-    end
+    meshSeg[1] = topel_idx[1]
     meshSeg[2:nblade+1] .= nbelem+Nstrut #+Nstrut for strut mount points
     meshSeg[nblade+2:end] .= nselem
 
@@ -1338,24 +1334,79 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         ######## Airfoil Shape Input #########
         ######################################
 
-        #TODO: ensure square matrix via interpolation so it can be stored as a 2D matrix
         af_xy = DelimitedFiles.readdlm("$(numadIn.airfoil[i_station]).csv",',',Float64,skipstart = 0)
 
-        # Normalize the surface points and make sure that they start at the trailing edge and loop around starting on the bottom side #TODO: add a check for both of these
-        #TODO: simplify this since there is circshift happening on these points later on
-        if af_xy[2,2]>af_xy[end-1,2]
-            xaf = reverse(af_xy[:,1])./maximum(af_xy[:,1])
-            yaf = reverse(af_xy[:,2])./maximum(af_xy[:,1]).*yscale[i_station]
-        else
-            xaf = af_xy[:,1]./maximum(af_xy[:,1])
-            yaf = af_xy[:,2]./maximum(af_xy[:,1]).*yscale[i_station]
+        # Unpack
+        xnode = af_xy[:,1]
+        ynode = af_xy[:,2]
+
+        # Filter out repeated max and min indices
+        max_x = maximum(xnode)
+        min_x = minimum(xnode)
+        count_max = 0
+        count_min = 0
+        unique_idx = []
+        for i_x = 1:size(xnode)[1]
+            # only push the max value once
+            if xnode[i_x]==max_x && count_max==0
+                count_max += 1
+                push!(unique_idx,i_x)
+            end
+            # only push the min value once
+            if xnode[i_x]==min_x && count_min==0
+                count_min += 1
+                push!(unique_idx,i_x)
+            end
+            # otherwise, if not max or min, push
+            if xnode[i_x]!=max_x && xnode[i_x]!=min_x
+                push!(unique_idx,i_x)
+            end
         end
 
+        xnode = xnode[unique_idx]
+        ynode = ynode[unique_idx]
+
         # find leading edge
-        lei = argmin(abs.(xaf))
-        # shift so leading edge is first
-        xpc = circshift(xaf,-(lei-1))
-        ypc = circshift(yaf,-(lei-1))
+        le_idx = argmin(xnode)
+        # shift so leading edge is first, in case the leading edge was defined slightly differently or mid-array
+        xnode = circshift(xnode,-(le_idx-1))
+        ynode = circshift(ynode,-(le_idx-1))
+
+        # Move the leading edge to 0 if not already there
+        xnode = xnode .- xnode[1]
+
+        # Check that the airfoil leading edge is at zero
+        le_idx = argmin(xnode)
+        if ynode[le_idx] != 0.0
+            @error "Airfoil leading edge not at y=0 for $(numadIn.airfoil[i_station]).csv, the chord line must be at 0,0 (leading edge) to 1,0 (trailing edge) per standard airfoil definition."
+        end
+
+        # Check that the airfoil trailing edge is closed
+        te_idx = argmax(xnode)
+        if ynode[te_idx] != 0.0
+            @warn "Airfoil trailing edge not closed for $(numadIn.airfoil[i_station]).csv, moving trailing edge airfoil point to the normalized 1,0 point"
+            ynode[te_idx] = 0.0
+        end
+
+        # Add a redundant leading edge at the end, we'll remove it if it doesn't end up as the leading edge below
+        push!(xnode,xnode[1])
+        push!(ynode,ynode[1])
+
+        # The data should go around the top/suction side first for precomp, so reverse the array if that isn't the case
+        if mean(ynode[1:te_idx])<mean(ynode[te_idx+1:end])
+            reverse!(xnode)
+            reverse!(ynode)
+        end
+
+        # now, as mentioned above, we need to remove the redundant leading edge
+        xnode = xnode[1:end-1]
+        ynode = ynode[1:end-1]
+
+        # normalize by the chord length
+        max_x = maximum(xnode)
+        xnode = xnode./max_x
+        ynode = ynode./max_x.*yscale[i_station] #optionally multiply by a thickness factor for design
+
 
         ##################################
         ######## Materials Input #########
@@ -1462,25 +1513,25 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         end
 
         # Now ensure that there aren't any airfoil points already where the webs are located
-        xpc_filtered = [] #TODO: make this more efficient
-        ypc_filtered = [] #TODO: make this more efficient
-        for i_af = 1:length(xpc)
+        xnode_filtered = [] #TODO: make this more efficient
+        ynode_filtered = [] #TODO: make this more efficient
+        for i_af = 1:length(xnode)
             alreadyPushed = false
             if length(loc_web)>=1
                 for j_web = 1:length(loc_web)
-                    if !isapprox(xpc[i_af],loc_web[j_web],atol = 1e-4) && alreadyPushed == false
-                        push!(xpc_filtered,xpc[i_af])
-                        push!(ypc_filtered,ypc[i_af])
+                    if !isapprox(xnode[i_af],loc_web[j_web],atol = 1e-4) && alreadyPushed == false
+                        push!(xnode_filtered,xnode[i_af])
+                        push!(ynode_filtered,ynode[i_af])
                         alreadyPushed = true
                     end
                 end
             else
-                push!(xpc_filtered,xpc[i_af])
-                push!(ypc_filtered,ypc[i_af])
+                push!(xnode_filtered,xnode[i_af])
+                push!(ynode_filtered,ynode[i_af])
             end
         end
-        xpc_filtered = Float64.(xpc_filtered)
-        ypc_filtered = Float64.(ypc_filtered)
+        xnode_filtered = Float64.(xnode_filtered)
+        ynode_filtered = Float64.(ynode_filtered)
 
         n_pliesW = zeros(sum(n_laminaW))
         mat_lamW = zeros(Int,sum(n_laminaW))
@@ -1503,7 +1554,7 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         precompinput[i_station] = OWENSPreComp.Input(
         normalchord[i_station],
         -twist_d[i_station],-twistrate_d[i_station],
-        leloc[i_station],xpc_filtered,ypc_filtered,
+        leloc[i_station],xnode_filtered,ynode_filtered,
         e1,e2,g12,anu12,density,
         xsec_nodeU,n_laminaU,n_pliesU,t_lamU,tht_lamU,mat_lamU,
         xsec_nodeL,n_laminaL,n_pliesL,t_lamL,tht_lamL,mat_lamL,
@@ -1548,7 +1599,7 @@ end
 
 """
 
-    getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing)
+    getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AddedMass_Coeff_Ca=1.0,N_airfoil_coord=100))
 
 Arranges the precomp output into the sectional properties required by OWENSFEA
 
@@ -1558,6 +1609,9 @@ Arranges the precomp output into the sectional properties required by OWENSFEA
 * `precompoutput::OWENSPreComp.properties`: see ?OWENSPreComp.properties
 * `GX::bool`: optional specifies if GX outputs should be output
 * `precompinputs`: optional
+* `fluid_density::Float64`: fluid density, used if added mass is on (AddedMass_Coeff_Ca>0.0)
+* `AddedMass_Coeff_Ca::Float64`: if >0.0, then added mass is calculated off of the airfoil geometry and included in the structures
+* `N_airfoil_coord::Int`: Number of upper/lower common airfoil x points to spline to to enable VTK output of airfoil surface
 
 #Outputs
 * `sectionPropsArray::SectionPropsArray`: see ?OWENSFEA.SectionPropsArray, if !GX bool
@@ -1566,7 +1620,7 @@ Arranges the precomp output into the sectional properties required by OWENSFEA
 stiff, mass
 
 """
-function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing)
+function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AddedMass_Coeff_Ca=1.0,N_airfoil_coord=100)
     # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
     # create spline of the precomp output to be used with the specified span array
     len_pc = length(precompoutput)
@@ -1590,6 +1644,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     tw_iner_d = zeros(len_pc)
     x_cm = zeros(len_pc)
     y_cm = zeros(len_pc)
+    added_M22 = zeros(length(usedUnitSpan))
+    added_M33 = zeros(length(usedUnitSpan))
 
     # extract the values from the precomp outputs
     for i_pc = 1:len_pc
@@ -1643,34 +1699,6 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     twist_d_used = safeakima(origUnitSpan,numadIn.twist_d,usedUnitSpan)
     chord_used = safeakima(origUnitSpan,numadIn.chord,usedUnitSpan)
 
-    if GX
-
-        stiff = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
-        mass = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
-
-        for i=1:length(usedUnitSpan)-1
-            GA = ea_used[i]/2.6*5/6
-            stiff[i]= [ea_used[i] 0.0 0.0 s_at_used[i] s_af_used[i] s_al_used[i]
-                            0.0 GA 0.0 0.0 0.0 0.0
-                            0.0 0.0 GA 0.0 0.0 0.0
-                            s_at_used[i] 0.0 0.0 gj_used[i] s_ft_used[i] s_lt_used[i]
-                            s_af_used[i] 0.0 0.0 s_ft_used[i] ei_flap_used[i] s_fl_used[i]
-                            s_al_used[i] 0.0 0.0 s_lt_used[i] s_fl_used[i] ei_lag_used[i]]
-
-            ux3 = (mass_used[i]*y_cm_used[i])
-            ux2 = (mass_used[i]*x_cm_used[i])
-            mass[i] = [mass_used[i] 0.0 0.0 0.0 ux3 -ux2
-                          0.0 mass_used[i] 0.0 -ux3 0.0 0.0
-                          0.0 0.0 mass_used[i] ux2 0.0 0.0
-                          0.0 -ux3 ux2 flap_iner_used[i]+lag_iner_used[i] 0.0 0.0
-                          ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
-                          -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]]
-        end
-
-        return stiff, mass
-    end
-
-
     sectionPropsArray = Array{OWENSFEA.SectionPropsArray, 1}(undef, length(usedUnitSpan)-1)
 
     for i=1:length(usedUnitSpan)-1
@@ -1713,52 +1741,72 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     end
 
     if !isnothing(precompinputs)
-        # Airfoil data
-        nspl = 100
+        # Airfoil data for visualization
         # Spline the airfoil data to a common size
-        myxafpc = zeros(length(precompinputs),nspl*2+1)
-        myyafpc = zeros(length(precompinputs),nspl*2+1)
-        myzafpc = LinRange(0,1,length(precompinputs))
+        myxafpc = zeros(length(precompinputs),N_airfoil_coord*2-1)
+        myyafpc = zeros(length(precompinputs),N_airfoil_coord*2-1)
+        myzafpc = numadIn.span./maximum(numadIn.span)
         mychord = zeros(length(precompinputs))
         for ipci = 1:length(precompinputs)
             mychord[ipci] = precompinputs[ipci].chord
             xaf = precompinputs[ipci].xnode .* mychord[ipci]
             yaf = precompinputs[ipci].ynode .* mychord[ipci]
 
-            LE_pt = findfirst(x->x==mychord[ipci],xaf)
+            # Note that precomp doesn't want the leading edge to overlap, but here we do for the visualization so VTK will close the surface #TODO: if we do surface values, we'll need to map them to this resulting airfoil mesh at the defined points (as opposed to lines), which should cover the whole surface
+            push!(xaf,xaf[1])
+            push!(yaf,yaf[1])
 
-            xaf_top = xaf[1:LE_pt]
-            yaf_top = yaf[1:LE_pt]
+            # Find the trailing edge to split the halves
+            te_idx = argmax(xaf)
 
-            xaf_bot = xaf[LE_pt:end]
-            yaf_bot = yaf[LE_pt:end]
+            # Top half is the leading edge to the trailing edge
+            xaf_top = xaf[1:te_idx]
+            yaf_top = yaf[1:te_idx]
 
-            myxpts_top = LinRange(xaf_top[1],xaf_top[end],nspl)
-            myxpts_bot = LinRange(xaf_bot[1],xaf_bot[end],nspl)
+            # Bottom half is the trailing edge to our newly inserted leading edge.  Note that we do want to reuse the trailing edge so the VTK mesh is closed
+            # Reverse so it is monotonically increasing
+            xaf_bot = reverse(xaf[te_idx:end])
+            yaf_bot = reverse(yaf[te_idx:end])
 
+            # Create new x-arrays for the top and bottom based on the common alignment.  They should be 0 to chord.
+            myxpts_top = LinRange(xaf_top[1],xaf_top[end],N_airfoil_coord)
+            myxpts_bot = LinRange(xaf_bot[1],xaf_bot[end],N_airfoil_coord)
+
+            # Spline the top and bottom curves to the new common discretization
             myypts_top = safeakima(xaf_top,yaf_top,myxpts_top)
-            myypts_bot = safeakima(reverse(xaf_bot),reverse(yaf_bot),reverse(myxpts_bot))
+            myypts_bot = safeakima(xaf_bot,yaf_bot,myxpts_bot)
 
-            myxafpc[ipci,:] = [myxpts_top;myxpts_bot;myxpts_top[1]]
-            myyafpc[ipci,:] = [myypts_top;reverse(myypts_bot);myypts_top[1]]
+            # Add the airfoils to the array, noting that we are splicing the two arrays together [0:chord][chord:0], so we don't include the repeated element
+            myxafpc[ipci,:] = [myxpts_top;reverse(myxpts_bot[1:end-1])]
+            myyafpc[ipci,:] = [myypts_top;reverse(myypts_bot[1:end-1])]
             # PyPlot.figure()
             # PyPlot.plot(xaf,yaf,"k",label="orig")
             # PyPlot.plot(xaf_top,yaf_top,"r",label="top")
             # PyPlot.plot(xaf_bot,yaf_bot,"b",label="bot")
             # PyPlot.plot(myxpts_top,myypts_top,"r.",label="mytop")
             # PyPlot.plot(myxpts_bot,myypts_bot,"b.",label="mybot")
-            # PyPlot.plot(myxaf,myyaf,"k+-",label="myaf")
+            
         end
 
-        # Spline the airfoil data to align with the mesh
-        myxaf = zeros(length(usedUnitSpan)-1,nspl*2+1)
-        myyaf = zeros(length(usedUnitSpan)-1,nspl*2+1)
-        myzaf = LinRange(0,1,length(usedUnitSpan)-1)
-        chord = safeakima(myzafpc,mychord,myzaf)
+        # Spline the airfoil data to align with the mesh elements
+        myxaf = zeros(length(usedUnitSpan)-1,N_airfoil_coord*2-1)
+        myyaf = zeros(length(usedUnitSpan)-1,N_airfoil_coord*2-1)
+        # myzaf = [usedUnitSpan[i]+(usedUnitSpan[i+1]-usedUnitSpan[i])/2 for i = 1:length(usedUnitSpan)-1]
+        myzaf = cumsum(diff(usedUnitSpan)) #TODO: revisit this since the vtk is off unless we use this offset.
+        myzaf = myzaf .-= myzaf[1]
+        # chord = safeakima(myzafpc,mychord,myzaf)
 
-        for iline = 1:nspl*2+1
+        for iline = 1:N_airfoil_coord*2-1
             myxaf[:,iline] = safeakima(myzafpc,myxafpc[:,iline],myzaf)
             myyaf[:,iline] = safeakima(myzafpc,myyafpc[:,iline],myzaf)
+        end
+
+        # Added mass mass calculation
+        for i_z = 1:length(myzaf)
+            Vol_flap = pi*((maximum(myxaf[i_z,:])-minimum(myxaf[i_z,:]))/2)^2 #pi*(chord/2)^2
+            Vol_edge = pi*((maximum(myyaf[i_z,:])-minimum(myyaf[i_z,:]))/2)^2 #pi*(thickness/2)^2
+            added_M33[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_flap 
+            added_M22[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_edge 
         end
     else
         myxaf = nothing
@@ -1784,6 +1832,36 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
                 sectionPropsArray[i].xaf = myxaf[i,:]
                 sectionPropsArray[i].yaf = myyaf[i,:]
             end
+
+            # This defaults to zero if the fluid density isn't specified
+            sectionPropsArray[i].added_M22 = [added_M22[i], added_M22[i+1]]
+            sectionPropsArray[i].added_M33 = [added_M33[i], added_M33[i+1]]
+    end
+    if GX #TODO: unify with one call since we always calculate this in preprocessing
+
+        stiff = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
+        mass = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
+
+        for i=1:length(usedUnitSpan)-1
+            GA = ea_used[i]/2.6*5/6
+            stiff[i]= [ea_used[i] 0.0 0.0 s_at_used[i] s_af_used[i] s_al_used[i]
+                            0.0 GA 0.0 0.0 0.0 0.0
+                            0.0 0.0 GA 0.0 0.0 0.0
+                            s_at_used[i] 0.0 0.0 gj_used[i] s_ft_used[i] s_lt_used[i]
+                            s_af_used[i] 0.0 0.0 s_ft_used[i] ei_flap_used[i] s_fl_used[i]
+                            s_al_used[i] 0.0 0.0 s_lt_used[i] s_fl_used[i] ei_lag_used[i]]
+
+            ux3 = (mass_used[i]*y_cm_used[i])
+            ux2 = (mass_used[i]*x_cm_used[i])
+            mass[i] = [mass_used[i] 0.0 0.0 0.0 ux3 -ux2
+                          0.0 mass_used[i]+added_M22[i] 0.0 -ux3 0.0 0.0
+                          0.0 0.0 mass_used[i]+added_M33[i] ux2 0.0 0.0
+                          0.0 -ux3 ux2 flap_iner_used[i]+lag_iner_used[i] 0.0 0.0
+                          ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
+                          -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]]
+        end
+
+        return stiff, mass
     end
 
     # println("EIyz, rhoIyz deactivated") #TODO: why is this, especially when I believe precomp calculates them

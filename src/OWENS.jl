@@ -20,6 +20,7 @@ import Composites
 import YAML
 import OrderedCollections
 import Base.show
+import ProgressBars
 
 import OWENSPreComp
 import Dierckx

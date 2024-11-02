@@ -77,7 +77,58 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
+
+
+function ModelingOptions(yamlInputfile)
+    yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    # Unpack YAML
+    general = yamlInput[:general]
+        analysisType = general[:analysisType]
+        turbineType = general[:turbineType]
+        numTS = general[:numTS]
+        delta_t = general[:delta_t]
+
+    Inflow = yamlInput[:Inflow]
+        Vinf = Inflow[:Vinf]
+        ifw = Inflow[:ifw]
+        WindType = Inflow[:WindType]
+        windINPfilename = Inflow[:windINPfilename]
+        ifw_libfile = Inflow[:ifw_libfile]
+
+    controlParameters = yamlInput[:controlParameters]
+        controlStrategy = controlParameters[:controlStrategy]
+        RPM = controlParameters[:RPM]
+
+    AeroParameters = yamlInput[:AeroParameters]
+        Nslices = AeroParameters[:Nslices]
+        ntheta = AeroParameters[:ntheta]
+        AModel = AeroParameters[:AModel]
+        adi_lib = AeroParameters[:adi_lib]
+        adi_rootname = AeroParameters[:adi_rootname]
+
+    structuralParameters = yamlInput[:structuralParameters]
+        structuralModel = structuralParameters[:structuralModel]
+        ntelem = structuralParameters[:ntelem]
+        nbelem = structuralParameters[:nbelem]
+        if haskey(structuralParameters,:ncelem)
+            ncelem = structuralParameters[:ncelem]
+        else
+            ncelem = 10
+        end
+        nselem = structuralParameters[:nselem]
+
+    return MasterInput(analysisType,turbineType,nothing,nothing,nothing,nothing,Vinf,
+    controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
+    nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,nothing,nothing,numTS,
+    delta_t,nothing,nothing,
+    nothing,nothing,nothing,nothing)
+end
+
+
 function MasterInput(yamlInputfile)
+
+    @warn "The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format"
+
     yamlInput = YAML.load_file(yamlInputfile)
     # Unpack YAML
     general = yamlInput["general"]
@@ -853,6 +904,21 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM1\""
+
+        elseif DLC == "CPCurve"
+            ControlStrategy = "normal"
+            Vinf_range_used = Vinf_range
+            analysis_type = "F"
+            IEC_WindType = "\"$(WindClass)NWP\""
+
+            time = LinRange(0,30,10)
+            winddir = zeros(length(time))     
+            windvertvel = zeros(length(time))      
+            horizshear = zeros(length(time))   
+            pwrLawVertShear = ones(length(time)).*0.2  
+            LinVertShear = zeros(length(time))   
+            gustvel = zeros(length(time))   
+            UpflowAngle = zeros(length(time))  
             
         else
             error("IEC61400_1 DLCs such as 1_1, 1_2 defined, you requested $DLC")
