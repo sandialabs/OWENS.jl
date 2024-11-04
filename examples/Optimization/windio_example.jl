@@ -122,11 +122,11 @@ topDamage_blade_L = HDF5.h5read(file,"topDamage_blade_L")
 topDamage_tower_U = HDF5.h5read(file,"topDamage_tower_U")
 topDamage_tower_L = HDF5.h5read(file,"topDamage_tower_L")
 
-import PyPlot
-PyPlot.pygui(true)
-PyPlot.figure()
-PyPlot.plot(t_UNIT,FReactionHist_UNIT[:,6])
-PyPlot.plot(t,FReactionHist[:,6])
+# import PyPlot
+# PyPlot.pygui(true)
+# PyPlot.figure()
+# PyPlot.plot(t_UNIT,FReactionHist_UNIT[:,6])
+# PyPlot.plot(t,FReactionHist[:,6])
 
 frac = 1e-5
 @test isapprox(t_UNIT,t;atol=maximum(abs.(t_UNIT))*frac)
