@@ -462,9 +462,9 @@ function setupOWENS(OWENSAero,path;
         turbsim_filename = windINPfilename,
         ifw_libfile,
         tau = [1e-5,1e-5],
-        AM_flag,
-        rotAccel_flag,
-        buoy_flag,
+        # AM_flag,
+        # rotAccel_flag,
+        # buoy_flag,
         ntheta,
         Nslices,
         RPI)
