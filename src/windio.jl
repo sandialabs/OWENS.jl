@@ -200,8 +200,8 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
 
     joint_type = 0
     c_mount_ratio = 0.05
-    strut_twr_mountpoint = [tower_strut_connection] #TODO: multiple struts
-    strut_bld_mountpoint = [blade_strut_connection]
+    strut_twr_mountpoint = tower_strut_connection #TODO: multiple struts
+    strut_bld_mountpoint = blade_strut_connection
     DSModel="BV"
     RPI=true
     cables_connected_to_blade_base = true
