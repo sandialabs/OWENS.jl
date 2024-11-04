@@ -36,18 +36,18 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
     ref_z = sec_Dict[:outer_shape_bem][:reference_axis][:z][:values]
 
     if sec_Dict[:outer_shape_bem][:reference_axis][:x][:grid] != airfoil_grid
-        @error "The windio grids must all be the same at this time"
+        @error "The windio grids must all be the same for a given component at this time"
     end
 
     if isnothing(span)
         span = sqrt.(ref_x.^2 .+ ref_y.^2 .+ ref_z.^2)
-        println("Custom span is not specified in OWENS input, using WindIO airfoil grid as common span that all the other values are splined to")
+        println("Custom span is not specified in OWENS input, using WindIO outer_shape_bem sqrt.(reference_axis_x.^2 .+ reference_axis_y.^2 .+ reference_axis_z.^2) as common span that all the other values are splined to")
     end
 
     norm_span = span./maximum(span)
 
-    if norm_span[1]!=0.0 && norm_span[end]!=1.0
-        @error "Span definition must encompass the entire blade from root 0, to tip 1"
+    if airfoil_grid[1]!=0.0 && airfoil_grid[end]!=1.0
+        @error "ALL grid definitions must extend from root 0, to tip 1"
     end
 
     airfoil = Array{String,1}(undef,length(span))
