@@ -24,7 +24,7 @@ AeroParameters:
   adi_rootname: "/ExampleB"
   
 structuralParameters:
-  structuralModel: GX #GX, TNB, ROM
+  structuralModel: TNB #GX, TNB, ROM
   nonlinear: false #TODO: propogate
   ntelem: 10 #tower elements in each 
   nbelem: 60 #blade elements in each 
