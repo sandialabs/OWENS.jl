@@ -27,6 +27,7 @@ import Composites
 path,_ = splitdir(@__FILE__)
 
 println("Set up Macro Geometry/Inputs")
+verbosity=2
 rho = 1.225
 Nslices = 30
 ntheta = 30
@@ -264,7 +265,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType,
-    verbosity=2)
+    verbosity)
 
 
 ######################################
@@ -278,7 +279,7 @@ pBC = [1 1 0
 1 5 0
 1 6 0]
 
-model = OWENS.Inputs(;analysisType = "GX",
+model = OWENS.Inputs(;verbosity,analysisType = "GX",
 tocp = [0.0,100000.1],
 Omegaocp = [RPM,RPM] ./ 60,
 tocp_Vinf = [0.0,100000.1],

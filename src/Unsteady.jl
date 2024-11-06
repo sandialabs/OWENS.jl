@@ -473,7 +473,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # println("$(numIterations)   uNorm: $(uNorm) ")
 
                 if numIterations==MAXITER
-                    if inputs.iteration_parameters.iterwarnings
+                    if inputs.verbosity > 0
                         @warn "Maximum Iterations Met Breaking Iteration Loop"
                     end
                     break
@@ -631,7 +631,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
                     numIterations = numIterations + 1
                     if numIterations==MAXITER
-                        if inputs.iteration_parameters.iterwarnings
+                        if inputs.verbosity > 0
                             @warn "Maximum Iterations Met Breaking Iteration Loop"
                         end
                         break

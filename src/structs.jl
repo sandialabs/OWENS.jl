@@ -7,6 +7,7 @@ struct Bin
 end
 
 mutable struct Inputs
+    verbosity
     analysisType
     turbineStartup
     usingRotorSpeedFunction
@@ -51,7 +52,8 @@ end
 # this way you can use defaults and pass in what is different, and it's mapped
 # by keyword so it doesn't have to be in order.
 """
-Inputs(;analysisType = "TNB",
+Inputs(;verbosity=2,
+    analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
@@ -90,12 +92,12 @@ Inputs(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0)
     TOl = 1e-4,
     MAXITER = 300,
-    iterwarnings = true,
     )
 
 Model inputs for OWENS coupled analysis, struct
 
 # Inputs
+* `verbosity::int`: output verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
 * `analysisType::string`: Newmark Beta time stepping "TNB", Dean time stepping "TD", modal "M"
 * `turbineStartup::int`: 1 forced start-up using generator as motor, 2 self-starting mode, 0 specified rotor speed mode")
 * `usingRotorSpeedFunction::bool`: use user specified rotor speed profile function
@@ -135,13 +137,13 @@ Model inputs for OWENS coupled analysis, struct
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
 * `TOl::float`: gauss-seidel iteration tolerance
 * `MAXITER::int`: gauss-seidel maximum iterations
-* `iterwarnings::bool`: iteration warnings flag
 
 
 # Outputs:
 * `OWENS.Inputs`:
 """
-function Inputs(;analysisType = "TNB",
+function Inputs(;verbosity=2,
+    analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
@@ -182,14 +184,13 @@ function Inputs(;analysisType = "TNB",
     driveShaftProps = DriveShaftProps(0.0,0.0),
     TOl = 1e-4,
     MAXITER = 300,
-    iterwarnings = true,
     )
 
-    return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
+    return Inputs(verbosity,analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
     driveTrainOn,generatorOn,aeroLoadsOn,AD15On,platformActive,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file)
+    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER),ss_input_file)
 end
 
 """
@@ -206,7 +207,6 @@ Internal, gauss-seidel iteration parameters
 mutable struct Iteration_Parameters            
     TOL # = 1e-4  #gauss-seidel iteration tolerance for various modules
     MAXITER # = 2 #max iteration for various modules
-    iterwarnings
 end
 
 # Cactus Related Structs

@@ -62,6 +62,13 @@ displacements$_\text{guess}$ with the calculated displacements
 []{#alg:Transient label="alg:Transient"}
 :::
 
+# WindIO Usage
+The majority of the WindIO standard can be used for the structural and aerodynamic design.  Airfoil polars are forthcoming.  However, there are the following additional and limitations:
+  - Gravity single value or array of 3, is in the global frame of reference, so positive gravity would be pulling the structure up.
+  - Start and end nd_arc values are the only input supported.  Otherwise, there are as many as 12 different ways to specify this input.
+  - Grids must be defined from end to end, set number of plies to 1e-6 at unused spanwise sections.
+  - The blade object is reused for the tower, struts, cables, etc. since these elements can be modeled at the same fidelity as the blade and can be simplified via simpler inputs, but the other WindIO definitions don't allow for the more complex inputs.
+
 # Global Frame of Reference
 
 Thanks to some legacy VAWT frames of reference where wind was originally

@@ -176,7 +176,7 @@ else
     AD15On = false
 end
 
-inputs = OWENS.Inputs(;analysisType = structuralModel,
+inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
     tocp,
     Omegaocp,
     tocp_Vinf,

@@ -124,7 +124,7 @@ Executable function for transient analysis. Provides the interface of various
 function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     aeroVals=nothing,aeroDOFs=nothing,aero=nothing,deformAero=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
-    getLinearizedMatrices=false, verbosity=0,
+    getLinearizedMatrices=false,
     system=nothing,assembly=nothing,returnold=true, #TODO: should we initialize them in here? Unify the interface for ease?
     topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing)
 
@@ -320,7 +320,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 #         genTorqueAppliedToTurbineRotor0 = -genTorque0
                 #         genTorqueAppliedToPlatform0 = genTorqueHSS0
             else
-                if !isnothing(turbsimfile) && verbosity >=1#&& inputs.AD15On
+                if !isnothing(turbsimfile) && inputs.verbosity > 0#&& inputs.AD15On
                     velocity = OWENSOpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
                     newVinf = velocity[1]
                 end
@@ -492,12 +492,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
-            if verbosity>4
+            if inputs.verbosity>3
                 println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm) \n")
             end
 
             if numIterations==MAXITER
-                if inputs.iteration_parameters.iterwarnings
+                if inputs.inputs.verbosity>0
                     @warn "Maximum Iterations Met Breaking Iteration Loop"
                 end
                 break
@@ -505,7 +505,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         end #end iteration while loop
 
-        if verbosity >=7
+        if inputs.verbosity >=3
             println("Gen Torque: $(topdata.genTorque_j)\n")
             println("RPM: $(topdata.Omega_j*60)\n")
             println("Vinf: $(newVinf)\n")

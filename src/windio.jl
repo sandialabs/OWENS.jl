@@ -1,5 +1,5 @@
 
-function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
+function runOWENSWINDIO(windio,modelopt,path)
     if typeof(windio) == String
         windio = YAML.load_file(windio; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
         println("Running: $(windio[:name])")
@@ -74,7 +74,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     air_dyn_viscosity = windio[:environment][:air_dyn_viscosity] #used
     # air_speed_sound = windio[:environment][:air_speed_sound]
     # shear_exp = windio[:environment][:shear_exp]
-    gravity = windio[:environment][:gravity] #used
+    gravity = Float64.(windio[:environment][:gravity]) #used
     # weib_shape_parameter = windio[:environment][:weib_shape_parameter]
     # water_density = windio[:environment][:water_density]
     # water_dyn_viscosity = windio[:environment][:water_dyn_viscosity]
@@ -137,6 +137,11 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     # capacity_credit = windio[:costs][:capacity_credit]
     # benchmark_price = windio[:costs][:benchmark_price]
 
+    if typeof(gravity) == Float64
+        gravityOn = [0,0,gravity]
+    else
+        gravityOn = gravity
+    end
 
 
     analysisType = modelopt.analysisType
@@ -196,8 +201,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     driveShaftProps = DriveShaftProps(0.0,0.0)
     TOl = 1e-4
     MAXITER = 300
-    iterwarnings = true
-
+    verbosity = 2
     joint_type = 0
     c_mount_ratio = 0.05
     strut_twr_mountpoint = tower_strut_connection #TODO: multiple struts
@@ -212,7 +216,6 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     RayleighAlpha = 0.05
     RayleighBeta = 0.05
     iterationType = "DI"
-    gravityOn = [0,0,gravity]
     initCond = []
     aeroElasticOn = false #for the automated flutter model
     guessFreq = 0.0
@@ -428,8 +431,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     rigid,
     driveShaftProps,
     TOl,
-    MAXITER,
-    iterwarnings)
+    MAXITER)
 
     nothing
 

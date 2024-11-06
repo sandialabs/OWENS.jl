@@ -723,7 +723,7 @@ pBC = [1 1 0
 1 5 0
 1 6 0]
 
-inputs = OWENS.Inputs(;analysisType = structuralModel,
+inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
 tocp = [0.0,100000.1],
 Omegaocp = [RPM,RPM] ./ 60,
 tocp_Vinf = [0.0,100000.1],

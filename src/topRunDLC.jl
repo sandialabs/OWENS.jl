@@ -121,7 +121,7 @@ function ModelingOptions(yamlInputfile;
     rigid = false, # this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
     TOL = 1e-4, # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
     MAXITER = 300, # gauss-seidel max iterations - i.e. the two-way iterations
-    iterwarnings = true, #TODO: unify this with verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+    verbosity = 2, # verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
     joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
     c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
     cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
@@ -131,8 +131,6 @@ function ModelingOptions(yamlInputfile;
     RPI=true, #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
     VTKsaveName = "./vtk/windio", #Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
     aeroLoadsOn = 2, #Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration. TODO: revisit this
-    gravityOn = [0,0,-9.81], #Gravity vector used everywhere, TODO: get from WindIO?
-    aeroElasticOn = false, #OWENSFEA for the built in flutter model
     guessFreq = 0.0, #OWENSFEA for the built in flutter model frequency guessed for the flutter frequency 
     numModes = 20, #OWENSFEA ROM model, number of modes used in the analysis type.  Less is faster but less accurate
     adaptiveLoadSteppingFlag = true, #TODO: make this smarter OWENSFEA for steady analysis if convergence fails, it will reduce the load and retry then increase the load
@@ -163,6 +161,7 @@ function ModelingOptions(yamlInputfile;
     jointTransform = 0.0 #OWENSFEA, derived matrix to transform from total matrix to the reduced matrix and vice-versa
     reducedDOFList = zeros(Int,2) #OWENSFEA, derived array that maps the joint-reduced dofs
     platformTurbineConnectionNodeNumber = 1 #TODO: remove this since it is no longer used, or clean it up to be optional for an increase in speed; reaction force is calculated at each node
+    aeroElasticOn = false #Currently only for OWENS scripting method OWENSFEA for the built in flutter model
     spinUpOn = true #TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
     predef = false #Currently only for OWENS scripting method, Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
     nodalTerms = 0.0 #OWENSFEA the ability to apply concentrated nodal masses and forces etc., currently only available at the scripting level of analysis
@@ -495,7 +494,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
 
     println("controlStrategy: $controlStrategy")
 
-    inputs = OWENS.Inputs(;analysisType = structuralModel,
+    inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
     tocp,
     Omegaocp,
     tocp_Vinf = [0.0,100000.1],

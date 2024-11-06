@@ -229,7 +229,7 @@ top_idx 5 0]
 
 Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60
 
-model = OWENS.Inputs(;analysisType = "ROM",
+model = OWENS.Inputs(;verbosity,analysisType = "ROM",
     outFilename = "none",
     tocp = [0.0; new_t.+offsetTime; 1e6],#SNL34m_5_11_RPM[:,1],#[0.0,10.0,100000.1],
     Omegaocp,#SNL34m_5_11_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,

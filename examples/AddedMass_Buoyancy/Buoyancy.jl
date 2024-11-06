@@ -215,7 +215,7 @@ else
     AD15On = false
 end
 
-inputs = OWENS.Inputs(;analysisType = structuralModel,
+inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
 tocp,
 Omegaocp,
 tocp_Vinf,
@@ -332,7 +332,7 @@ nothing
 
 println("Running Unsteady")
 topdata = OWENS.Unsteady_Land(inputs;system,assembly,returnold=false,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=flappingForces,deformAero,verbosity)
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=flappingForces,deformAero)
 t = topdata.t
 aziHist = topdata.aziHist
 OmegaHist = topdata.OmegaHist
