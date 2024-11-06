@@ -153,7 +153,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     nselem = modelopt.nselem
     ifw = modelopt.ifw
     WindType = modelopt.WindType
-    AModel = modelopt.AModel
+    AeroModel = modelopt.AeroModel
     windINPfilename = "$(path)$(modelopt.windINPfilename)"
     ifw_libfile = modelopt.ifw_libfile
     if ifw_libfile == "nothing"
@@ -168,7 +168,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     usingRotorSpeedFunction = false
     driveTrainOn = false
     generatorOn = false
-    hydroOn = false
+    platformActive = false
     topsideOn = true
     interpOrder = 2
     hd_input_file = "none"
@@ -202,11 +202,11 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     c_mount_ratio = 0.05
     strut_twr_mountpoint = tower_strut_connection #TODO: multiple struts
     strut_bld_mountpoint = blade_strut_connection
-    DSModel="BV"
+    DynamicStallModel="BV"
     RPI=true
     cables_connected_to_blade_base = true
     meshtype = turbineType
-    saveName = "$path/vtk/windio"
+    VTKsaveName = "$path/vtk/windio"
     aeroLoadsOn = 2
     nlOn = true
     RayleighAlpha = 0.05
@@ -247,6 +247,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     Aero_AddedMass_Active = false
     Aero_RotAccel_Active = false
     Aero_Buoyancy_Active = false
+
     custommesh = nothing
 
     tsave_idx=1:3:numTS
@@ -318,8 +319,8 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
         c_mount_ratio,
         strut_twr_mountpoint,
         strut_bld_mountpoint,
-        AModel, #AD, DMS, AC
-        DSModel,
+        AeroModel, #AD, DMS, AC
+        DynamicStallModel,
         RPI,
         cables_connected_to_blade_base,
         meshtype,
@@ -381,7 +382,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
 
     # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
-    if AModel=="AD"
+    if AeroModel=="AD"
         AD15On = true
     else
         AD15On = false
@@ -400,7 +401,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     usingRotorSpeedFunction,
     driveTrainOn,
     generatorOn,
-    hydroOn,
+    platformActive,
     topsideOn,
     interpOrder,
     hd_input_file,
@@ -487,7 +488,7 @@ function runOWENSWINDIO(windio,modelopt,path;verbosity=2)
     # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
     azi=aziHist#./aziHist*1e-6
-    OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+    OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
         epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
         FReactionHist,topFexternal_hist;tsave_idx)
 

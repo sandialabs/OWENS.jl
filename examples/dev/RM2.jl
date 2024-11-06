@@ -71,7 +71,7 @@ nbelem = Inp.nbelem
 ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
-AModel = Inp.AModel
+AeroModel = Inp.AeroModel
 windINPfilename = Inp.windINPfilename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
@@ -154,8 +154,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.1,0.9],
     strut_bld_mountpoint = [0.05,0.95],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     Aero_AddedMass_Active = true,
     Aero_RotAccel_Active = true,
@@ -177,7 +177,7 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false
@@ -287,8 +287,8 @@ for it = 1:length(t)
 end
 
 azi=aziHist#./aziHist*1e-6
-saveName = "$path/vtk/RM2"
-OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+VTKsaveName = "$path/vtk/RM2"
+OWENS.OWENSFEA_VTK(VTKsaveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4

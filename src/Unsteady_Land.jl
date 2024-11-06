@@ -132,7 +132,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #                             INITIALIZATION
     #..........................................................................
 
-    if (!inputs.topsideOn) && (!inputs.hydroOn)
+    if (!inputs.topsideOn) && (!inputs.platformActive)
         error("No structure is being simulated!")
     end
 

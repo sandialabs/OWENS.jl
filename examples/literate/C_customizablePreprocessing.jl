@@ -51,7 +51,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 WindType = Inp.WindType
-AModel = Inp.AModel
+AeroModel = Inp.AeroModel
 windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
 if ifw_libfile == "nothing"
@@ -96,12 +96,12 @@ joint_type = 0
 c_mount_ratio = 0.05
 angularOffset = -pi/2
 custommesh = nothing
-if AModel=="AD" #TODO: unify flag
+if AeroModel=="AD" #TODO: unify flag
     AD15On=true #AD for AeroDyn, DMS for double multiple streamtube, AC for actuator cylinder
 else
     AD15On=false
 end
-DSModel="BV"
+DynamicStallModel="BV"
 RPI=true
 cables_connected_to_blade_base = true
 meshtype = "Darrieus"
@@ -508,7 +508,7 @@ if !AD15On
         end
     end
 
-    OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
+    OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AeroModel,DynamicStallModel,
     afname = airfoils,
     bld_y = shapeY,
     rho,

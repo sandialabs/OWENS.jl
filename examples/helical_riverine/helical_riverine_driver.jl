@@ -48,7 +48,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = false
-AModel = "AD"
+AeroModel = "AD"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 41.9
@@ -116,8 +116,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.1,0.5,0.9],
     strut_bld_mountpoint = [0.05,0.5,0.95],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = 0.0,#pi/2,
@@ -154,7 +154,7 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false
@@ -264,8 +264,8 @@ for it = 1:length(t)
 end
 
 azi=aziHist#./aziHist*1e-6
-saveName = "$path/vtk/helical"
-OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+VTKsaveName = "$path/vtk/helical"
+OWENS.OWENSFEA_VTK(VTKsaveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 # Open Paraview, open animation pane, adjust as desired, export animation (which exports frames)
 # ffmpeg -i Ux.%04d.png -vcodec libx264 -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -r 24 -y -an -pix_fmt yuv420p video34m34RPM_Ux.mp4

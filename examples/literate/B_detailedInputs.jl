@@ -45,7 +45,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 WindType = Inp.WindType
-AModel = Inp.AModel
+AeroModel = Inp.AeroModel
 windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
 if ifw_libfile == "nothing"
@@ -118,8 +118,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     nselem,
     joint_type = 0,
     c_mount_ratio = 0.05,
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
@@ -171,7 +171,7 @@ nothing
 
 # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false

@@ -29,7 +29,7 @@
         prescribedLoadStep = 0.0,
         elementOrder = 1,
         numDofPerNode = 6,
-        hydroOn = false,
+        platformActive = false,
         platformTurbineConnectionNodeNumber = 1,
         JgearBox =0.0,
         gearRatio = 1.0,
@@ -77,7 +77,7 @@ function owens(owensfile,analysisType;
     prescribedLoadStep = 0.0,
     elementOrder = 1, #linear element order
     numDofPerNode = 6,
-    hydroOn = false,
+    platformActive = false,
     interpOrder = 2,
     platformTurbineConnectionNodeNumber = 1,
     JgearBox =0.0,
@@ -208,7 +208,7 @@ function owens(owensfile,analysisType;
 
     line = readline(fid)
     delimiter_idx = findall(" ",line)
-    hydroOn = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
+    platformActive = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
     potflowfile  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) # potential flow file prefix
     interpOrder = real(parse(Int,line[delimiter_idx[2][1]+1])) # interpolation order for HD/MD libraries
     line = readline(fid)
@@ -258,7 +258,7 @@ function owens(owensfile,analysisType;
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
     model = Inputs(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn=false,topsideOn=true,interpOrder,hd_input_file=[],md_input_file=[],JgearBox,gearRatio,gearBoxEfficiency,
+    aeroLoadsOn,driveTrainOn,generatorOn,platformActive=false,topsideOn=true,interpOrder,hd_input_file=[],md_input_file=[],JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
     aeroloadfile,owensfile,potflowfile=[],outFilename,bladeData,driveShaftProps)
 

@@ -43,7 +43,7 @@ nbelem = 60
 ncelem = 10
 nselem = 10
 ifw = false
-AModel = "DMS"
+AeroModel = "DMS"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 20.0
@@ -131,8 +131,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng,AD
     c_mount_ratio = 0.05,
     strut_twr_mountpoint = [0.5],
     strut_bld_mountpoint = [0.5],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     Aero_AddedMass_Active,
     AddedMass_Coeff_Ca,
     Aero_RotAccel_Active,
@@ -227,7 +227,7 @@ nothing
 
 # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false
@@ -449,9 +449,9 @@ println("percent_diff: $percentdiff%")
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
 # azi=aziHist#./aziHist*1e-6
-# saveName = "$path/vtk/flapping_added_mass"
+# VTKsaveName = "$path/vtk/flapping_added_mass"
 # tsave_idx=1:1:numTS-1
-# OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+# OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
 #     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
 #     FReactionHist,topFexternal_hist;tsave_idx)
 

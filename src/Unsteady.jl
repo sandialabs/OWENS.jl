@@ -49,7 +49,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #                             INITIALIZATION
     #..........................................................................
 
-    if (!inputs.topsideOn) && (!inputs.hydroOn)
+    if (!inputs.topsideOn) && (!inputs.platformActive)
         error("No structure is being simulated!")
     end
 
@@ -76,7 +76,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         torqueDriveShaft_s,topFexternal,topFexternal_hist = allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assembly)
     end
     ## Hydrodynamics/mooring module initialization and coupling variables
-    if inputs.hydroOn
+    if inputs.platformActive
         bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,
         udot_s_prp_n,uddot_s_prp_n,jac,numMooringLines,FHydro_n,FMooring_n,outVals,
         mooringTensions = allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,bin,numDOFPerNode)
@@ -89,7 +89,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     if isnothing(topElStorage) && inputs.topsideOn
         topElStorage = OWENSFEA.initialElementCalculations(topModel,topEl,topMesh) #perform initial element calculations for conventional structural dynamics analysis
     end
-    if isnothing(bottomElStorage) && inputs.hydroOn
+    if isnothing(bottomElStorage) && inputs.platformActive
         bottomElStorage = OWENSFEA.initialElementCalculations(bottomModel,bottomEl,bottomMesh) #perform initial element calculations for conventional structural dynamics analysis
     end
     if inputs.analysisType=="ROM"
@@ -106,7 +106,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             topDispData2.etaddot_s = etaddot_s
         end
 
-        if inputs.hydroOn
+        if inputs.platformActive
 
             bottom_rom,bottomJointTransformTrans,u_sRed_ptfm_n,
             udot_sRed_ptfm_n,uddot_sRed_ptfm_n,bottomBC,u_s2_ptfm_n,udot_s2_ptfm_n,
@@ -123,9 +123,9 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         topsideMass, topsideMOI, topsideCG = OWENSFEA.calculateStructureMassProps(topElStorage)
         topModel.jointTransform, topModel.reducedDOFList = OWENSFEA.createJointTransform(topModel.joint,topMesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
-        if inputs.hydroOn
+        if inputs.platformActive
             hydro_topside_nodal_coupling!(bottomModel,bottomMesh,topsideMass,topModel,topsideCG,topsideMOI,numDOFPerNode)
-        end # if inputs.hydroOn
+        end # if inputs.platformActive
     end # if inputs.topsideOn
 
     if inputs.topsideOn
@@ -145,7 +145,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         torqueDriveShaft[1] = torqueDriveShaft_s
     end
 
-    if inputs.hydroOn
+    if inputs.platformActive
         uHist_prp[1,:] = u_s_prp_n
     end
 
@@ -153,7 +153,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #                          INITIAL SOLVE
     #..................................................................
     ## Evaluate mooring and hydrodynamics at t=0 based on initial conditions
-    if inputs.hydroOn
+    if inputs.platformActive
     # function initial_solve_hydro(inputs,bottom_totalNumDOF,numDOFPerNode,FHydro_n,FMooring_n,t,delta_t)
         # Initial coupled bottomside solve using reaction force from topside
         bottomFexternal = zeros(6)
@@ -245,7 +245,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             torqueDriveShaft_j = torqueDriveShaft_s
         end
         ## Extrapolate platform motions at t+dt to send to HydroDyn/MoorDyn #TODO: use Adams-Bashforth method if i > 4?
-        if inputs.hydroOn
+        if inputs.platformActive
             top_grav_setting = copy(topModel.gravityOn)
             topModel.gravityOn = false
             u_s_prp_n = extrap_pred_vals(recent_u_prp, recent_times, t[i+1], inputs.interpOrder)
@@ -351,7 +351,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 # Calculate new aerodynamic loading
 
                 # Update reference frame transformation and convert aerodynamic loads to hub reference frame
-                if inputs.hydroOn
+                if inputs.platformActive
                     CN2H = calcHubRotMat(u_s_prp_predState[4:6], azi_j)
                     CN2H_no_azi = calcHubRotMat(u_s_prp_predState[4:6], 0.0)
                     # CN2H = LinearAlgebra.I(3)
@@ -500,7 +500,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         #------------------------------------
         # COUPLED BOTTOMSIDE STRUCTURAL/HYDRO/MOORING MODULES
         #------------------------------------
-        if inputs.hydroOn
+        if inputs.platformActive
             if inputs.topsideOn
                 bottomFexternal = frame_convert(-1*topFReaction_j[1:6], LinearAlgebra.transpose(CN2H)) # in hub frame already
                 # bottomFexternal = zeros(6)
@@ -650,7 +650,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
             end # if inputs.topsideOn
 
-        end # if inputs.hydroOn
+        end # if inputs.platformActive
 
         ## update timestepping variables and other states, store in history arrays
         if inputs.topsideOn
@@ -727,7 +727,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         end
 
-        if inputs.hydroOn
+        if inputs.platformActive
             uHist_prp[i+1,:] = u_s_prp_n
             FPtfmHist[i+1,:] = FPtfm_n
             FHydroHist[i+1,:] = FHydro_n
@@ -746,7 +746,7 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     println("Simulation Complete.")
 
     # End FAST module links
-    if inputs.hydroOn
+    if inputs.platformActive
         OWENSOpenFASTWrappers.HD_End()
         OWENSOpenFASTWrappers.MD_End()
     end
@@ -1143,13 +1143,13 @@ end
 
 function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,bin,numDOFPerNode)
     if isnothing(bottomModel)
-        error("bottomMesh must be specified if OWENS.Inputs.hydroOn")
+        error("bottomMesh must be specified if OWENS.Inputs.platformActive")
     elseif isnothing(bottomMesh)
-        error("bottomMesh must be specified if OWENS.Inputs.hydroOn")
+        error("bottomMesh must be specified if OWENS.Inputs.platformActive")
     elseif isnothing(bottomEl)
-        error("bottomEl must be specified if OWENS.Inputs.hydroOn")
+        error("bottomEl must be specified if OWENS.Inputs.platformActive")
     elseif isnothing(bin)
-        error("bin must be specified if OWENS.Inputs.hydroOn")
+        error("bin must be specified if OWENS.Inputs.platformActive")
     end
 
     bottom_totalNumDOF = bottomMesh.numNodes*numDOFPerNode

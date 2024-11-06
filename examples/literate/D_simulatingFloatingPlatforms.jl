@@ -43,7 +43,7 @@ ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
 WindType = Inp.WindType
-AModel = "DMS"#Inp.AModel
+AeroModel = "DMS"#Inp.AeroModel
 windINPfilename = "$(path)$(Inp.windINPfilename)"
 ifw_libfile = Inp.ifw_libfile
 if ifw_libfile == "nothing"
@@ -104,8 +104,8 @@ aeroForces, deformAero, _, _,topSystem,topAssembly, sections, _, _ = OWENS.setup
     nselem,
     joint_type = 0,
     c_mount_ratio = 0.05,
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
@@ -190,7 +190,7 @@ end
 nothing
 
 # We also want to provide some additional general inputs to enable floating simulation.
-# `hydroOn` being the principal and obvious one, but also the input files needed by
+# `platformActive` being the principal and obvious one, but also the input files needed by
 # HydroDyn and MoorDyn, which are the external libraries that calculate the hydrodynamic
 # and mooring loads to send to the bottom side mesh. These input files include:
 #  - interpOrder: the degree of interpolation used to predict the future states within
@@ -208,12 +208,12 @@ nothing
 # use predefined input files for the OC4 semisubmersible platform, which comes with
 # OpenFAST and is copied to the `data` folder here.
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false
 end
-hydroOn = true
+platformActive = true
 interpOrder = 2
 hd_input_file = "$(path)/data/HydroDyn.dat"
 md_input_file = "$(path)/data/MoorDyn.dat"
@@ -229,7 +229,7 @@ numTS,
 delta_t,
 AD15On,
 aeroLoadsOn = 2,
-hydroOn,
+platformActive,
 interpOrder,
 hd_input_file,
 md_input_file,

@@ -48,7 +48,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5 
 ifw = false
-AModel = "DMS"
+AeroModel = "DMS"
 windINPfilename = nothing
 ifw_libfile = nothing
 Blade_Height = 41.9
@@ -174,8 +174,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.03,0.97],
     strut_bld_mountpoint = [0.03,0.97],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,

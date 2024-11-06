@@ -47,10 +47,10 @@ delta_t = 0.05
 simtime = 6.0
 numTS = simtime/delta_t
 
-AModel = "AD"
+AeroModel = "AD"
 turbineType = "Darrieus"
 
-if AModel=="AD" #TODO: unify flag
+if AeroModel=="AD" #TODO: unify flag
     AD15On=true #AD for AeroDyn, DMS for double multiple streamtube, AC for actuator cylinder
 else
     AD15On=false
@@ -90,7 +90,7 @@ delta3D = atan.(delta_xs./delta_zs)
 # ### Set up aero forces
 # #########################################
 # println("Initialize Aerodynamics")
-# OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel="DMS",DSModel="BV",
+# OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AeroModel="DMS",DynamicStallModel="BV",
 # afname = "$(path)/airfoils/NACA_0021.dat",
 # ifw=false,
 # ifw_libfile = nothing,
@@ -258,8 +258,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.1,0.9],
     strut_bld_mountpoint = [0.1,0.9],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
@@ -308,8 +308,8 @@ epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMoor
 topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(model;
 topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
-saveName = "$path/vtk/SNL5MW_timedomain"
-OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FReactionHist,topFexternal_hist)
+VTKsaveName = "$path/vtk/SNL5MW_timedomain"
+OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FReactionHist,topFexternal_hist)
 
 ##########################################
 #### Get strain values at the blades #####

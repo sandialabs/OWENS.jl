@@ -16,7 +16,7 @@ mutable struct MasterInput
     nbelem
     ncelem
     nselem
-    AModel
+    AeroModel
     ifw
     WindType
     windINPfilename
@@ -54,7 +54,7 @@ function MasterInput(;
     nbelem =  60, #blade elements in each 
     ncelem =  10, #central cable elements in each if turbineType is ARCUS
     nselem =  5, #strut elements in each if turbineType has struts
-    AModel = "AD",
+    AeroModel = "AD",
     ifw = false,
     WindType = 1,
     ifw_libfile = "./../openfast/build/modules/inflowwind/libifw_c_binding",
@@ -72,15 +72,125 @@ function MasterInput(;
     )
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,controlStrategy,
-    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,
+    RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,nselem,AeroModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,
     Blade_Height,Blade_Radius,numTS,delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
 
 
-function ModelingOptions(yamlInputfile)
+function ModelingOptions(yamlInputfile;
+    analysisType = "Unsteady", #Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
+    turbineType = "Darrieus", #Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
+    #TODO: DLC inputs
+    Vinf = 10.0, # Nominal velocity, gets overwritten if the DLC method is being used
+    controlStrategy = "normal", #should be in WindIO?- yes, 
+    RPM = 10.0, #TODO: should be in WindIO - yes, in control section
+    Nslices = 20, #OWENSAero number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+    ntheta = 30, #OWENSAero number of azimuthal discretizations
+    nlOn = true, #OWENSFEA nonlinear effects
+    RayleighAlpha = 0.05, #OWENSFEA damping coefficient scalar on the stiffness matrix
+    RayleighBeta = 0.05, #OWENSFEA damping coefficient scalar on the mass matrix
+    iterationType = "DI", #OWENSFEA internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+    structuralModel = "TNB", #Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
+    ntelem = 20, #mesh number of tower elements in each blade, plus nodes wherever there is a component overlap
+    nbelem = 30, #mesh number of blade elements in each blade, plus nodes wherever there is a component overlap
+    ncelem = 30, #mesh number of cable elements in each cable if ARCUS
+    nselem = 10, #mesh number of elements in each strut
+    AeroModel = "DMS", #OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder
+    Blade_Height = 10.0, #TODO: should be derived from WindIO
+    Blade_Radius = 5.0, #TODO: should be derived from WindIO
+    numTS = 10, # number of time steps TODO: change to sim time and make this derived
+    delta_t = 0.05, # time step in seconds
+    platformActive = false, # flag to indicate if the floating platform model is active.  
+    hd_input_file = "none", # If platformActive, the hydrodyn file location, like in the unit test
+    ss_input_file = "none", # If platformActive, the sea state file location, like in the unit test
+    md_input_file = "none", # If platformActive, the moordyn file location, like in the unit test
+    potflowfile = nothing, #If platformActive, the potential flow files location, like in the unit test
+    ifw = false, #use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
+    WindType = 3, #used if we are creating the 
+    windINPfilename = nothing, # If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+    ifw_libfile = nothing, # location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    #TODO: where are the other libfiles?
+    topsideOn = true, #TODO should be inferred based on the unsteady inputs if they are not nothing
+    interpOrder = 2, # if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+    OmegaInit = 7.2/60, #Initial rotational speed in Hz, TODO: change to radians/sec
+    aeroloadfile = nothing, #filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
+    owensfile = nothing, #filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
+    outFilename = "none", #need to rewrite this and unify with h5 output
+    rigid = false, # this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
+    TOL = 1e-4, # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
+    MAXITER = 300, # gauss-seidel max iterations - i.e. the two-way iterations
+    iterwarnings = true, #TODO: unify this with verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+    joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
+    c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
+    cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
+    strut_twr_mountpoint = [0.25,0.75], # array of strut starting points relative to the normalized blade position, as they hig the tower
+    strut_bld_mountpoint = [0.25,0.75], # array of strut ending points relative to the normalized blade position, as they hig the blade
+    DynamicStallModel="BV", #OWENSAero dynamic stall model, should be under an OWENSAero options
+    RPI=true, #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+    VTKsaveName = "./vtk/windio", #Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+    aeroLoadsOn = 2, #Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration. TODO: revisit this
+    gravityOn = [0,0,-9.81], #Gravity vector used everywhere, TODO: get from WindIO?
+    aeroElasticOn = false, #OWENSFEA for the built in flutter model
+    guessFreq = 0.0, #OWENSFEA for the built in flutter model frequency guessed for the flutter frequency 
+    numModes = 20, #OWENSFEA ROM model, number of modes used in the analysis type.  Less is faster but less accurate
+    adaptiveLoadSteppingFlag = true, #TODO: make this smarter OWENSFEA for steady analysis if convergence fails, it will reduce the load and retry then increase the load
+    minLoadStepDelta = 0.0500, #OWENSFEA minimum change in load step
+    minLoadStep = 0.0500, #OWENSFEA minimum value of reduced load
+    prescribedLoadStep = 0.0, #OWENSFEA optional prescribed load fraction
+    maxNumLoadSteps = 20, #OWENSFEA used in static (steady state) analysis, max load steps for adaptive load stepping
+    tolerance = 1.0000e-06, #OWENSFEA total mesh unsteady analysis convergence tolerance for a timestep within the structural model
+    maxIterations = 50, #OWENSFEA total mesh unsteady analysis convergence max iterations for a timestep
+    elementOrder = 1, #OWENSFEA Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
+    alpha = 0.5, #OWENSFEA newmark time integration alpha parameter
+    gamma = 0.5, #OWENSFEA newmark time integration gamma parameter
+    AD15hubR = 0.1, #mesh parameter, used in OWENSOpenFASTWrappers aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+    Htwr_base = 3.0, #mesh tower offset to the rotor base TODO: resolve with WindIO
+    angularOffset = 0.0, #mesh moves the structure to align with the aero model
+    #TODO: rest of added mass control/flags and checking that only one is active
+    Aero_AddedMass_Active = false, #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+    Aero_RotAccel_Active = false, #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+    Aero_Buoyancy_Active = false, #OWENSAero flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+    )
+
+    nlParams = 0 # we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
+    bladeData = [] # same as above
+    numDofPerNode = 6 #while much of the model can operate with fewer dofs, too much is hard coded on the full 6 dof.
+    omegaControl = false # this is a derived parameter
+    meshtype = turbineType #derived, should probably be cleaned up TODO
+    initCond = [] #OWENSFEA initial conditions array, will be derived at this level, if using the OWENS scripting method, this can be used to initalize the structure
+    jointTransform = 0.0 #OWENSFEA, derived matrix to transform from total matrix to the reduced matrix and vice-versa
+    reducedDOFList = zeros(Int,2) #OWENSFEA, derived array that maps the joint-reduced dofs
+    platformTurbineConnectionNodeNumber = 1 #TODO: remove this since it is no longer used, or clean it up to be optional for an increase in speed; reaction force is calculated at each node
+    spinUpOn = true #TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
+    predef = false #Currently only for OWENS scripting method, Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
+    nodalTerms = 0.0 #OWENSFEA the ability to apply concentrated nodal masses and forces etc., currently only available at the scripting level of analysis
+    stack_layers_bld = nothing #Currently only for OWENS scripting method, enables direct specification of the numbers of stack layers in the numad format
+    stack_layers_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
+    chord_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
+    thickness_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
+
+    # Generator functions - currently the WindIO interface will just have the specified RPM control, then we'll add the discon control option, then open these back up.  Otherwise, use the scripting method.
+    turbineStartup = 0 #Currently only for OWENS scripting method TODO: clean up since it should be derived from control strategy
+    usingRotorSpeedFunction = false #Currently only for OWENS scripting methodTODO: clean up the speed function since the omegaocp RPM gets splined already
+    driveTrainOn = false #Currently only for OWENS scripting methodflag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
+    JgearBox = 0.0 #Currently only for OWENS scripting method torsional stiffness of the gearbox TODO: resolve units
+    gearRatio = 1.0 #Currently only for OWENS scripting method ratio between the turbine driveshaft and generator shaft
+    gearBoxEfficiency = 1.0 #Currently only for OWENS scripting method efficiency of the gearbox, just decreases the torque that the generator model sees
+    generatorOn = false #Currently only for OWENS scripting methodTODO: clean up the generator options
+    useGeneratorFunction = false #Currently only for OWENS scripting methodTODO: clean up the generator options
+    generatorProps = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
+    ratedTorque = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
+    zeroTorqueGenSpeed = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
+    pulloutRatio = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
+    ratedGenSlipPerc = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
+    OmegaGenStart = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
+    driveShaftProps = DriveShaftProps(0.0,0.0) #Currently only for OWENS scripting methodTODO: break this out, driveshaft stiffness and damping
+
     yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    
+
     # Unpack YAML
     general = yamlInput[:general]
         analysisType = general[:analysisType]
@@ -102,7 +212,7 @@ function ModelingOptions(yamlInputfile)
     AeroParameters = yamlInput[:AeroParameters]
         Nslices = AeroParameters[:Nslices]
         ntheta = AeroParameters[:ntheta]
-        AModel = AeroParameters[:AModel]
+        AeroModel = AeroParameters[:AeroModel]
         adi_lib = AeroParameters[:adi_lib]
         adi_rootname = AeroParameters[:adi_rootname]
 
@@ -117,9 +227,10 @@ function ModelingOptions(yamlInputfile)
         end
         nselem = structuralParameters[:nselem]
 
+
     return MasterInput(analysisType,turbineType,nothing,nothing,nothing,nothing,Vinf,
     controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
-    nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,nothing,nothing,numTS,
+    nselem,AeroModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,nothing,nothing,numTS,
     delta_t,nothing,nothing,
     nothing,nothing,nothing,nothing)
 end
@@ -155,7 +266,7 @@ function MasterInput(yamlInputfile)
     AeroParameters = yamlInput["AeroParameters"]
         Nslices = AeroParameters["Nslices"]
         ntheta = AeroParameters["ntheta"]
-        AModel = AeroParameters["AModel"]
+        AeroModel = AeroParameters["AeroModel"]
         adi_lib = AeroParameters["adi_lib"]
         adi_rootname = AeroParameters["adi_rootname"]
 
@@ -180,7 +291,7 @@ function MasterInput(yamlInputfile)
 
     return MasterInput(analysisType,turbineType,eta,Nbld,towerHeight,rho,Vinf,
     controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
-    nselem,AModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,Blade_Height,Blade_Radius,numTS,
+    nselem,AeroModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,Blade_Height,Blade_Radius,numTS,
     delta_t,NuMad_geom_xlscsv_file_twr,NuMad_mat_xlscsv_file_twr,
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
@@ -204,7 +315,7 @@ function runOWENS(Inp,path;verbosity=2)
     nselem = Inp.nselem
     ifw = Inp.ifw
     WindType = Inp.WindType
-    AModel = Inp.AModel
+    AeroModel = Inp.AeroModel
     windINPfilename = "$(path)$(Inp.windINPfilename)"
     ifw_libfile = Inp.ifw_libfile
     if ifw_libfile == "nothing"
@@ -276,8 +387,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     nselem,
     joint_type = 0,
     c_mount_ratio = 0.05,
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
@@ -329,7 +440,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
 
     # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
-    if AModel=="AD"
+    if AeroModel=="AD"
         AD15On = true
     else
         AD15On = false
@@ -426,7 +537,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
     topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
 
-    if AModel=="AD"
+    if AeroModel=="AD"
         OWENSOpenFASTWrappers.endTurb()
     end
 
@@ -437,8 +548,8 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
     azi=aziHist#./aziHist*1e-6
-    saveName = "$path/vtk/SNL5MW"
-    OWENS.OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+    VTKsaveName = "$path/vtk/SNL5MW"
+    OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
         epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
         FReactionHist,topFexternal_hist)
 

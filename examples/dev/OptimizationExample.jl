@@ -74,7 +74,7 @@ nbelem = Inp.nbelem
 ncelem = Inp.ncelem
 nselem = Inp.nselem
 ifw = Inp.ifw
-AModel = Inp.AModel
+AeroModel = Inp.AeroModel
 windINPfilename = Inp.windINPfilename
 ifw_libfile = Inp.ifw_libfile
 Blade_Height = Inp.Blade_Height
@@ -156,8 +156,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
     joint_type = 0,
     strut_twr_mountpoint = [0.1,0.9],
     strut_bld_mountpoint = [0.05,0.95],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
@@ -176,7 +176,7 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false

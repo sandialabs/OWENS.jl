@@ -20,7 +20,7 @@ mutable struct Inputs
     generatorOn
     aeroLoadsOn
     AD15On
-    hydroOn
+    platformActive
     topsideOn
     interpOrder
     hd_input_file
@@ -64,7 +64,7 @@ Inputs(;analysisType = "TNB",
     AD15On = false,
     driveTrainOn = false,
     generatorOn = false,
-    hydroOn = false,
+    platformActive = false,
     topsideOn = true,
     interpOrder = 2,
     hd_input_file = "none",
@@ -109,7 +109,7 @@ Model inputs for OWENS coupled analysis, struct
 * `AD15On::bool`: flag to use AD15 for aero
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
-* `hydroOn::bool`: flag to include platform coupling
+* `platformActive::bool`: flag to include platform coupling
 * `interpOrder::int`: order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
 * `hd_input_file::string`: file path to the HydroDyn .dat input file
 * `ss_input_file::string`: file path to the HydroDyn sea states input file
@@ -154,7 +154,7 @@ function Inputs(;analysisType = "TNB",
     generatorOn = false,
     aeroLoadsOn = false, #this need to get cleaned up in the code
     AD15On = false,
-    hydroOn = false,
+    platformActive = false,
     topsideOn = true,
     interpOrder = 2,
     hd_input_file = "none",
@@ -186,7 +186,7 @@ function Inputs(;analysisType = "TNB",
     )
 
     return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
+    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,platformActive,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
     aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file)

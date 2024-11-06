@@ -45,8 +45,8 @@ function setupOWENS(OWENSAero,path;
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
-    AModel="DMS",
-    DSModel="BV",
+    AeroModel="DMS",
+    DynamicStallModel="BV",
     RPI=true,
     Aero_AddedMass_Active = false,
     Aero_RotAccel_Active = false,
@@ -59,7 +59,7 @@ function setupOWENS(OWENSAero,path;
     
     custom_mesh_outputs = []
 
-    if AModel=="AD"
+    if AeroModel=="AD"
         AD15On = true
     else
         AD15On = false
@@ -456,7 +456,7 @@ function setupOWENS(OWENSAero,path;
         
         rhoA_in = [mass_bld[i][1,1] for i = 1:length(mass_bld)]
 
-        OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AModel,DSModel,
+        OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AeroModel,DynamicStallModel,
         afname = airfoils,
         bld_y = shapeY,
         rho,
@@ -729,8 +729,8 @@ function setupOWENShawt(OWENSAero,path;
     ncelem = 10,
     joint_type = 2,
     c_mount_ratio = 0.05,
-    AModel="DMS",
-    DSModel="BV",
+    AeroModel="DMS",
+    DynamicStallModel="BV",
     RPI=true,
     biwing=false,
     hub_depth = 15.0, #Hub Beam Depth
@@ -956,7 +956,7 @@ function setupOWENShawt(OWENSAero,path;
     #########################################
     # println("Initialize Aerodynamics")
     # chord_spl = safeakima(numadIn_bld.span./maximum(numadIn_bld.span), numadIn_bld.chord,LinRange(0,1,Nslices))
-    # OWENSAero.setupTurb(shapeX,shapeZ,B,chord_spl,tsr,Vinf;AModel,DSModel,
+    # OWENSAero.setupTurb(shapeX,shapeZ,B,chord_spl,tsr,Vinf;AeroModel,DynamicStallModel,
     # afname = "$path/Airfoils/NACA_0021.dat", #TODO: map to the numad input
     # ifw,
     # windINPfilename,
