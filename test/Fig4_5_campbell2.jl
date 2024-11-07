@@ -170,7 +170,7 @@ top_idx 2 0]
 #############################################
 
 FEAinputs = OWENSFEA.FEAModel(;analysisType = "M",
-        # outFilename = "$path/data/outplat.out",
+        # dataOutputFilename = "$path/data/outplat.out",
         joint = myjoint,
         platformTurbineConnectionNodeNumber = 1,
         pBC = pBC,

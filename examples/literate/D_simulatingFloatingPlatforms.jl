@@ -255,7 +255,7 @@ nothing
 
 topFEAModel = OWENS.FEAModel(;
     analysisType = analysisType,
-    outFilename = "none",
+    dataOutputFilename = "none",
     joint = topJoint,
     platformTurbineConnectionNodeNumber = 1,
     nlOn = true,
@@ -338,7 +338,7 @@ bottomConcTerms = OWENSFEA.applyConcentratedTerms(
     jointData=[])
 bottomFEAModel = OWENS.FEAModel(;
     analysisType = analysisType,
-    outFilename = "none",
+    dataOutputFilename = "none",
     joint = [],
     platformTurbineConnectionNodeNumber = 1,
     nlOn = true,

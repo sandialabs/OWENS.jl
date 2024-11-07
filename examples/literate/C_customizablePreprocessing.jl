@@ -734,7 +734,7 @@ AD15On,
 aeroLoadsOn = 2)
 
 feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-outFilename = "none",
+dataOutputFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 pBC,

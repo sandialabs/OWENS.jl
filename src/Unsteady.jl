@@ -751,11 +751,6 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         OWENSOpenFASTWrappers.MD_End()
     end
 
-    outputData(topMesh,inputs,t[1:i],aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
-    FReactionHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],uHist_prp[1:i,:],
-    epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],kappa_y_hist[:,:,1:i],
-    kappa_z_hist[:,:,1:i])
-
     return t[1:i], aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
     FReactionHist[1:i,:],FTwrBsHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],
     uHist_prp[1:i,:],epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],
@@ -1027,80 +1022,6 @@ function run_aero_with_deformAD15(aero,deformAero,mesh,el,topdata,inputs,t_i)
     return aeroVals,aeroDOFs   #last 4 are experimental for "GX" solve (not yet working)
 end
 
-function outputData(mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
-
-    #Writefile
-    if inputs.outFilename!="none"
-        println("WRITING Output File to $(inputs.outFilename)")
-
-        filename = string(inputs.outFilename[1:end-3], "h5")
-        HDF5.h5open(filename, "w") do file
-            # HDF5.write(file,"model",model)
-            HDF5.write(file,"t",collect(t))
-            HDF5.write(file,"aziHist",aziHist)
-            HDF5.write(file,"OmegaHist",OmegaHist)
-            HDF5.write(file,"OmegaDotHist",OmegaDotHist)
-            HDF5.write(file,"gbHist",gbHist)
-            HDF5.write(file,"gbDotHist",gbDotHist)
-            HDF5.write(file,"gbDotDotHist",gbDotDotHist)
-            HDF5.write(file,"FReactionHist",FReactionHist)
-            HDF5.write(file,"genTorque",genTorque)
-            HDF5.write(file,"genPower",genPower)
-            HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
-            HDF5.write(file,"uHist",uHist)
-            HDF5.write(file,"uHist_prp",uHist_prp)
-            HDF5.write(file,"epsilon_x_hist",epsilon_x_hist)
-            HDF5.write(file,"epsilon_y_hist",epsilon_y_hist)
-            HDF5.write(file,"epsilon_z_hist",epsilon_z_hist)
-            HDF5.write(file,"kappa_x_hist",kappa_x_hist)
-            HDF5.write(file,"kappa_y_hist",kappa_y_hist)
-            HDF5.write(file,"kappa_z_hist",kappa_z_hist)
-        end
-
-        filename = string(inputs.outFilename[1:end-3], "out")
-        DelimitedFiles.open(filename, "w") do io
-
-            header1 = ["t"]# "VinfX_hub" "VinfY_hub" "VinfZ_hub" "Fx1" "Fy1" "Fz1" "Mx1" "My1" "Mz1"]
-            header2 = ["(s)"]# "(m/s)" "(m/s)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
-            # for i = 2:mymesh.numEl
-            #     header1 = [header1 "Fx$i" "Fy$i" "Fz$i" "Mx$i" "My$i" "Mz$i"]
-            #     header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
-            # end
-
-            for ibld = 1:length(mymesh.meshSeg)
-                for ibldel = 1:mymesh.meshSeg[ibld]
-                    formattedelNum = lpad(ibldel,3,'0')#mymesh.structuralElNumbers[ibld,ibldel]
-                    header1 = [header1 "B$(ibld)N$(formattedelNum)Fx" "B$(ibld)N$(formattedelNum)Fy" "B$(ibld)N$(formattedelNum)Fz" "B$(ibld)N$(formattedelNum)Mx" "B$(ibld)N$(formattedelNum)My" "B$(ibld)N$(formattedelNum)Mz"]
-                    header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
-                end
-            end
-
-            DelimitedFiles.writedlm(io, header1, '\t')
-            DelimitedFiles.writedlm(io, header2, '\t')
-
-            for i_t = 1:length(FReactionHist[:,1])
-                velocity = [1,2,3]#OWENSOpenFASTWrappers.ifwcalcoutput(hub_loc,t[i_t])
-                data = [t[i_t]]# velocity[1] velocity[2] velocity[3] FReactionHist[i_t,1] FReactionHist[i_t,2] FReactionHist[i_t,3] FReactionHist[i_t,4] FReactionHist[i_t,5] FReactionHist[i_t,6]]
-                # for i = 2:mymesh.numEl
-                #     data = [data FReactionHist[i_t,((i-1)*6)+1] FReactionHist[i_t,((i-1)*6)+2] FReactionHist[i_t,((i-1)*6)+3] FReactionHist[i_t,((i-1)*6)+4] FReactionHist[i_t,((i-1)*6)+5] FReactionHist[i_t,((i-1)*6)+6]]
-                # end
-
-                for ibld = 1:length(mymesh.meshSeg)
-                    for ibldel = 1:mymesh.meshSeg[ibld]
-                        if mymesh.structuralElNumbers!=0 #TODO: this is due to cactus run option with legacy files, but should we get rid of it all?
-                            elidx = Int(mymesh.structuralElNumbers[ibld,ibldel])
-                            data = [data FReactionHist[i_t,((elidx-1)*6)+1] FReactionHist[i_t,((elidx-1)*6)+2] FReactionHist[i_t,((elidx-1)*6)+3] FReactionHist[i_t,((elidx-1)*6)+4] FReactionHist[i_t,((elidx-1)*6)+5] FReactionHist[i_t,((elidx-1)*6)+6]]
-                        end
-                    end
-                end
-
-                DelimitedFiles.writedlm(io, data, '\t')        
-            end     
-        end
-
-    end
-end
-
 function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assembly)
     if isnothing(topModel)
         error("topMesh must be specified if OWENS.Inputs.topsideOn")
@@ -1168,10 +1089,10 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     jac = Array{Float32}(undef, numDOFPerNode*2, numDOFPerNode*2)
     numMooringLines = 3
 
-    if inputs.outFilename == "none"
-        hd_outFilename = "hydrodyn_temp.out"
+    if inputs.dataOutputFilename == "none"
+        hd_dataOutputFilename = "hydrodyn_temp.out"
     else
-        hd_outFilename = inputs.outFilename
+        hd_dataOutputFilename = inputs.dataOutputFilename
     end
 
     FHydro_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
@@ -1179,7 +1100,7 @@ function allocate_bottom(t,numTS,delta_t,inputs,bottomMesh,bottomEl,bottomModel,
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
     mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
 
-    OWENSOpenFASTWrappers.HD_Init(;hdlib_filename=bin.hydrodynLibPath, output_root_name=hd_outFilename, hd_input_file=inputs.hd_input_file, ss_input_file=inputs.ss_input_file,PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
+    OWENSOpenFASTWrappers.HD_Init(;hdlib_filename=bin.hydrodynLibPath, output_root_name=hd_dataOutputFilename, hd_input_file=inputs.hd_input_file, ss_input_file=inputs.ss_input_file,PotFile=inputs.potflowfile, t_initial=t[1], dt=delta_t, t_max=t[1]+(numTS-1)*delta_t, interp_order=inputs.interpOrder)
     OWENSOpenFASTWrappers.MD_Init(;mdlib_filename=bin.moordynLibPath, md_input_file=inputs.md_input_file, init_ptfm_pos=u_s_prp_n, interp_order=inputs.interpOrder, WtrDpth=200)
 
     return bottom_totalNumDOF,u_s_ptfm_n,udot_s_ptfm_n,uddot_s_ptfm_n,u_sm1_ptfm_n,bottomDispData,prpDOFs,u_s_prp_n,udot_s_prp_n,uddot_s_prp_n,jac,numMooringLines,FHydro_n,FMooring_n,outVals,mooringTensions

@@ -601,11 +601,6 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     end #end timestep loop
 
     println("Simulation Complete.")
-
-    outputData(topMesh,inputs,t[1:i],topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
-    topdata.FReactionHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],topdata.uHist_prp[1:i,:],
-    topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],topdata.kappa_y_hist[:,:,1:i],
-    topdata.kappa_z_hist[:,:,1:i])
     
     if returnold
         return t[1:i], topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],

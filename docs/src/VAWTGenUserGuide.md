@@ -872,7 +872,7 @@ height="3.3866666666666667in"}
 > A similar capability exists for generating animated mode shapes. The
 > vizAnimateModal function is utilized in the following manner:
 >
-> vizAnimateModal(meshFile,resultsFile,selectedMode,sf,outFileName);
+> vizAnimateModal(meshFile,resultsFile,selectedMode,sf,dataOutputFilename);
 >
 > All the input parameters are the same as those for viz, however, the
 > last parameter specifies a file name for a AVI movie file.
@@ -884,12 +884,12 @@ height="3.3866666666666667in"}
 > vizAnimateTransient function. The command line argument is executed
 > as:
 >
-> vizAnimateTransient(meshFile,uData,sf,outFileName);
+> vizAnimateTransient(meshFile,uData,sf,dataOutputFilename);
 >
 > Such that mesh file is the mesh filename (.mesh), uData is an n x m
 > array holding displacement data for n degrees of freedom at m time
 > steps, and sf is the deformation scale factor for the structural mesh.
-> The AVI movie file is generated using outFileName.
+> The AVI movie file is generated using dataOutputFilename.
 
 # VAWTGen Output Files
 

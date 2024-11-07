@@ -158,7 +158,7 @@ top_idx 4 0
 top_idx 5 0]
 
 model = OWENS.Inputs(;verbosity,analysisType = "TNB",
-outFilename = "none",
+dataOutputFilename = "none",
 tocp = [0.0, 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
 Omegaocp = [0.0, 0.0]./60,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
 tocp_Vinf = [0.0, 1e6],
@@ -399,7 +399,7 @@ PyPlot.plot(t,FReactionHist[:,6])
 # deformTurb(azi_j;newOmega=0,newVinf=0,bld_x=0,bld_z=0,bld_twist=0) = 0
 
 model = OWENS.Inputs(;analysisType = "GX",
-outFilename = "none",
+dataOutputFilename = "none",
 tocp = [0.0, 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
 Omegaocp = [0.0, 0.0]./60,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
 tocp_Vinf = [0.0, 1e6],

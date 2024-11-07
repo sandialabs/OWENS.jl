@@ -8,8 +8,6 @@ using Statistics:mean
 using Test
 import HDF5
 import YAML
-using StructTypes
-import OrderedCollections
 
 import PyPlot
 PyPlot.pygui(true)

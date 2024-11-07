@@ -312,7 +312,7 @@ initTopConditions[length(displace_y)+1:end,2] .= 5
 initTopConditions[length(displace_y)+1:end,3] = curve_y
 
 feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-outFilename = "none",
+dataOutputFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 pBC,

@@ -194,7 +194,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv"
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens"
     potflowfile = "$module_path/../test/data/potential_flow_data"
-    outFilename = "none"
+    dataOutputFilename = "none"
     numDofPerNode = 6
     bladeData = []
     rigid = false
@@ -219,7 +219,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     initCond = []
     aeroElasticOn = false #for the automated flutter model
     guessFreq = 0.0
-    outFilename = "none"
+    dataOutputFilename = "none"
     jointTransform = 0.0
     reducedDOFList = zeros(Int,2)
     numDOFPerNode = 6
@@ -425,7 +425,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     aeroloadfile,
     owensfile,
     potflowfile,
-    outFilename,
+    dataOutputFilename,
     numDofPerNode,
     bladeData,
     rigid,
@@ -450,7 +450,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     initCond,
     aeroElasticOn, #for the automated flutter model
     guessFreq,
-    outFilename,
+    dataOutputFilename,
     jointTransform,
     reducedDOFList,
     numDOFPerNode,
@@ -516,49 +516,5 @@ function runOWENSWINDIO(windio,modelopt,path)
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
     AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 
-    dataDumpFilename = "$path/InitialDataOutputs.h5"
-
-    HDF5.h5open(dataDumpFilename, "w") do file
-        HDF5.write(file,"t",collect(t))
-        HDF5.write(file,"aziHist",aziHist)
-        HDF5.write(file,"OmegaHist",OmegaHist)
-        HDF5.write(file,"OmegaDotHist",OmegaDotHist)
-        HDF5.write(file,"gbHist",gbHist)
-        HDF5.write(file,"gbDotHist",gbDotHist)
-        HDF5.write(file,"gbDotDotHist",gbDotDotHist)
-        HDF5.write(file,"FReactionHist",FReactionHist)
-        HDF5.write(file,"FTwrBsHist",FTwrBsHist)
-        HDF5.write(file,"genTorque",genTorque)
-        HDF5.write(file,"genPower",genPower)
-        HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
-        HDF5.write(file,"uHist",uHist)
-        HDF5.write(file,"uHist_prp",uHist_prp)
-        HDF5.write(file,"epsilon_x_hist",epsilon_x_hist)
-        HDF5.write(file,"epsilon_y_hist",epsilon_y_hist)  
-        HDF5.write(file,"epsilon_z_hist",epsilon_z_hist)
-        HDF5.write(file,"kappa_x_hist",kappa_x_hist)
-        HDF5.write(file,"kappa_y_hist",kappa_y_hist)
-        HDF5.write(file,"kappa_z_hist",kappa_z_hist) 
-        HDF5.write(file,"massOwens",massOwens)
-        HDF5.write(file,"stress_U",stress_U)
-        HDF5.write(file,"SF_ult_U",SF_ult_U)
-        HDF5.write(file,"SF_buck_U",SF_buck_U)
-        HDF5.write(file,"stress_L",stress_L)
-        HDF5.write(file,"SF_ult_L",SF_ult_L)
-        HDF5.write(file,"SF_buck_L",SF_buck_L)
-        HDF5.write(file,"stress_TU",stress_TU)
-        HDF5.write(file,"SF_ult_TU",SF_ult_TU)
-        HDF5.write(file,"SF_buck_TU",SF_buck_TU)
-        HDF5.write(file,"stress_TL",stress_TL)
-        HDF5.write(file,"SF_ult_TL",SF_ult_TL)
-        HDF5.write(file,"SF_buck_TL",SF_buck_TL)
-        HDF5.write(file,"topstrainout_blade_U",topstrainout_blade_U)
-        HDF5.write(file,"topstrainout_blade_L",topstrainout_blade_L)
-        HDF5.write(file,"topstrainout_tower_U",topstrainout_tower_U)
-        HDF5.write(file,"topstrainout_tower_L",topstrainout_tower_L)
-        HDF5.write(file,"topDamage_blade_U",topDamage_blade_U)
-        HDF5.write(file,"topDamage_blade_L",topDamage_blade_L)
-        HDF5.write(file,"topDamage_tower_U",topDamage_tower_U)
-        HDF5.write(file,"topDamage_tower_L",topDamage_tower_L)
-    end
+    outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
 end

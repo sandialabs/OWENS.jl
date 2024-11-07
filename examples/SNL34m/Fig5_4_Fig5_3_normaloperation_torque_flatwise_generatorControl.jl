@@ -219,7 +219,7 @@ tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
 Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
 
 model = OWENS.Inputs(;verbosity,analysisType = "ROM",
-    outFilename = "none",
+    dataOutputFilename = "none",
     tocp = [0.0;new_t.+offsetTime; 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
     Omegaocp,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
     tocp_Vinf,

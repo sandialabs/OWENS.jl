@@ -42,7 +42,7 @@ mutable struct Inputs
     aeroloadfile
     owensfile
     potflowfile
-    outFilename
+    dataOutputFilename
     bladeData
     driveShaftProps
     iteration_parameters
@@ -86,7 +86,7 @@ Inputs(;verbosity=2,
     rigid = false, #turn off structural dynamics
     aeroloadfile = "module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
-    outFilename = "none",
+    dataOutputFilename = "none",
     numDofPerNode = 6,
     bladeData = [],
     driveShaftProps = DriveShaftProps(0.0,0.0)
@@ -131,7 +131,7 @@ Model inputs for OWENS coupled analysis, struct
 * `aeroloadfile::string`: string of the name and path for the cactus aeroloads if using the old serial owens call
 * `owensfile::string`: string of the name and path for the owens input file if using the old serial owens call
 * `potflowfile::string`: string of the prefix and path for the directory containing the potential flow files from WAMIT (required by HydroDyn)
-* `outFilename::string`: path and name of output file, will be overwritten if already exists
+* `dataOutputFilename::string`: path and name of output file, will be overwritten if already exists
 * `numDofPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
@@ -177,7 +177,7 @@ function Inputs(;verbosity=2,
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     potflowfile = "$module_path/../test/data/potential_flow_data",
-    outFilename = "none",
+    dataOutputFilename = "none",
     numDofPerNode = 6,
     bladeData = [],
     rigid = false,
@@ -190,7 +190,7 @@ function Inputs(;verbosity=2,
     driveTrainOn,generatorOn,aeroLoadsOn,AD15On,platformActive,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER),ss_input_file)
+    aeroloadfile,owensfile,potflowfile,dataOutputFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER),ss_input_file)
 end
 
 """

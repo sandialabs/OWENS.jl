@@ -192,7 +192,7 @@ nothing
 # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
 feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-outFilename = "none",
+dataOutputFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 pBC,

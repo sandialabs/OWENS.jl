@@ -290,7 +290,7 @@ delta_t,
 aeroLoadsOn = 2)
 
 feamodel = OWENSFEA.FEAModel(;analysisType = "GX",
-outFilename = "none",
+dataOutputFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
 pBC,
