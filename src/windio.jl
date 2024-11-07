@@ -33,6 +33,10 @@ function runOWENSWINDIO(windio,modelopt,path)
     # blade_z_grid = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:grid]
     blade_z = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
 
+    
+    Blade_Height = maximum(blade_z) #TODO: resolve DLC dependence
+    Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
+    
     # Struts
     #TODO: multiple struts
     tower_strut_connection = windio[:components][:struts][1][:mountfraction_tower]
@@ -164,8 +168,6 @@ function runOWENSWINDIO(windio,modelopt,path)
     if ifw_libfile == "nothing"
         ifw_libfile = nothing
     end
-    Blade_Height = modelopt.Blade_Height # WindIO TODO: resolve DLC dependence
-    Blade_Radius = modelopt.Blade_Radius # WindIO TODO: resolve DLC dependence
     numTS = modelopt.numTS
     delta_t = modelopt.delta_t
 

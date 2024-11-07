@@ -80,58 +80,38 @@ end
 
 
 function ModelingOptions(yamlInputfile;
-    analysisType = "Unsteady", #Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-    turbineType = "Darrieus", #Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
+    analysisType = "Unsteady", #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
     #TODO: DLC inputs
     Vinf = 10.0, # Nominal velocity, gets overwritten if the DLC method is being used
-    controlStrategy = "normal", #should be in WindIO?- yes, 
+    controlStrategy = "normal", #OWENS should be in WindIO?- yes, 
     RPM = 10.0, #TODO: should be in WindIO - yes, in control section
-    Nslices = 20, #OWENSAero number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
-    ntheta = 30, #OWENSAero number of azimuthal discretizations
-    nlOn = true, #OWENSFEA nonlinear effects
-    RayleighAlpha = 0.05, #OWENSFEA damping coefficient scalar on the stiffness matrix
-    RayleighBeta = 0.05, #OWENSFEA damping coefficient scalar on the mass matrix
-    iterationType = "DI", #OWENSFEA internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
-    structuralModel = "TNB", #Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
-    ntelem = 20, #mesh number of tower elements in each blade, plus nodes wherever there is a component overlap
-    nbelem = 30, #mesh number of blade elements in each blade, plus nodes wherever there is a component overlap
-    ncelem = 30, #mesh number of cable elements in each cable if ARCUS
-    nselem = 10, #mesh number of elements in each strut
-    AeroModel = "DMS", #OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder
-    Blade_Height = 10.0, #TODO: should be derived from WindIO
-    Blade_Radius = 5.0, #TODO: should be derived from WindIO
-    Htwr_base = 3.0, #mesh tower offset to the rotor base TODO: resolve with WindIO
-    numTS = 10, # number of time steps TODO: change to sim time and make this derived
-    delta_t = 0.05, # time step in seconds
-    platformActive = false, # flag to indicate if the floating platform model is active.  
-    hd_input_file = "none", # If platformActive, the hydrodyn file location, like in the unit test
-    ss_input_file = "none", # If platformActive, the sea state file location, like in the unit test
-    md_input_file = "none", # If platformActive, the moordyn file location, like in the unit test
-    potflowfile = nothing, #If platformActive, the potential flow files location, like in the unit test
-    ifw = false, #use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
-    WindType = 3, #used if we are creating the 
-    windINPfilename = nothing, # If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
-    ifw_libfile = nothing, # location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    #TODO: where are the other libfiles?
-    topsideOn = true, #TODO should be inferred based on the unsteady inputs if they are not nothing
-    interpOrder = 2, # if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
-    OmegaInit = 7.2/60, #Initial rotational speed in Hz, TODO: change to radians/sec
-    aeroloadfile = nothing, #filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
-    owensfile = nothing, #filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
-    dataOutputFilename = "./outfile.out", #need to rewrite this and unify with h5 output
+    numTS = 10, #OWENS number of time steps TODO: change to sim time and make this derived
+    delta_t = 0.05, #OWENS time step in seconds
+    platformActive = false, #OWENS flag to indicate if the floating platform model is active.  
+    topsideOn = true, #OWENS flat to be able to turn off the rotor and just run the floating portions
+    interpOrder = 2, #OWENS if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+    OmegaInit = 7.2/60, #OWENS Initial rotational speed in Hz, TODO: change to radians/sec
+    aeroloadfile = nothing, #OWENS filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
+    owensfile = nothing, #OWENS filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
+    dataOutputFilename = nothing, #OWENS data output filename with path, set to nothing or don't specify to not output anything
     rigid = false, #OWENS this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
     TOL = 1e-4, #OWENS gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
     MAXITER = 300, #OWENS gauss-seidel max iterations - i.e. the two-way iterations
     verbosity = 2, #OWENS verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
-    joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
-    c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
-    cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
-    strut_twr_mountpoint = [0.25,0.75], #mesh array of strut starting points relative to the normalized blade position, as they hig the tower
-    strut_bld_mountpoint = [0.25,0.75], #mesh array of strut ending points relative to the normalized blade position, as they hig the blade
-    DynamicStallModel="BV", #OWENSAero dynamic stall model, should be under an OWENSAero options
-    RPI=true, #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
     VTKsaveName = "./vtk/windio", #OWENS Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
     aeroLoadsOn = 2, #OWENS Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration. TODO: revisit this
+    Nslices = 20, #OWENSAero number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+    ntheta = 30, #OWENSAero number of azimuthal discretizations
+    AeroModel = "DMS", #OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder
+    ifw = false, #OWENSAero use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
+    DynamicStallModel="BV", #OWENSAero dynamic stall model, should be under an OWENSAero options
+    RPI=true, #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+    Aero_Buoyancy_Active = false, #OWENSAero flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+    nlOn = true, #OWENSFEA nonlinear effects
+    RayleighAlpha = 0.05, #OWENSFEA damping coefficient scalar on the stiffness matrix
+    RayleighBeta = 0.05, #OWENSFEA damping coefficient scalar on the mass matrix
+    iterationType = "DI", #OWENSFEA internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+    structuralModel = "TNB", #OWENSFEA Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
     guessFreq = 0.0, #OWENSFEA for the built in flutter model frequency guessed for the flutter frequency 
     numModes = 20, #OWENSFEA ROM model, number of modes used in the analysis type.  Less is faster but less accurate
     adaptiveLoadSteppingFlag = true, #OWENSFEA for steady analysis if convergence fails, it will reduce the load and retry then increase the load
@@ -144,12 +124,29 @@ function ModelingOptions(yamlInputfile;
     elementOrder = 1, #OWENSFEA Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
     alpha = 0.5, #OWENSFEA newmark time integration alpha parameter
     gamma = 0.5, #OWENSFEA newmark time integration gamma parameter
-    AD15hubR = 0.1, #OWENSOpenFASTWrappers parameter, used in OWENSOpenFASTWrappers aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+    AddedMass_Coeff_Ca = 0.0, #OWENSFEA added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+    turbineType = "Darrieus", #mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
+    ntelem = 20, #mesh number of tower elements in each blade, plus nodes wherever there is a component overlap
+    nbelem = 30, #mesh number of blade elements in each blade, plus nodes wherever there is a component overlap
+    ncelem = 30, #mesh number of cable elements in each cable if ARCUS
+    nselem = 10, #mesh number of elements in each strut
     angularOffset = 0.0, #mesh moves the structure to align with the aero model
-    #TODO: rest of added mass control/flags and checking that only one is active
-    Aero_AddedMass_Active = false, #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
-    Aero_RotAccel_Active = false, #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
-    Aero_Buoyancy_Active = false, #OWENSAero flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+    Htwr_base = 3.0, #mesh tower offset to the rotor base TODO: resolve with WindIO
+    joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
+    c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
+    cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
+    strut_twr_mountpoint = [0.25,0.75], #mesh array of strut starting points relative to the normalized blade position, as they hig the tower
+    strut_bld_mountpoint = [0.25,0.75], #mesh array of strut ending points relative to the normalized blade position, as they hig the blade
+    hd_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
+    ss_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
+    md_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
+    potflowfile = nothing, #OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
+    WindType = 3, #OWENSOpenFASTWrappers inflowwind wind file type, 3 for turbulent, 
+    windINPfilename = nothing, #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+    ifw_libfile = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    hd_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    md_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    AD15hubR = 0.1, #OWENSOpenFASTWrappers parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
     )
 
     # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
@@ -170,6 +167,9 @@ function ModelingOptions(yamlInputfile;
     stack_layers_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
     chord_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
     thickness_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
+    Aero_AddedMass_Active = false #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+    Aero_RotAccel_Active = false #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+
     # Generator functions - currently the WindIO interface will just have the specified RPM control, then we'll add the discon control option, then open these back up.  Otherwise, use the scripting method.
     turbineStartup = 0 #Currently only for OWENS scripting method TODO: clean up since it should be derived from control strategy
     usingRotorSpeedFunction = false #Currently only for OWENS scripting methodTODO: clean up the speed function since the omegaocp RPM gets splined already
