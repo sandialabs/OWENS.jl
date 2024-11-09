@@ -135,8 +135,8 @@ function ModelingOptions(yamlInputfile;
     joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
     c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
     cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
-    strut_twr_mountpoint = [0.25,0.75], #mesh array of strut starting points relative to the normalized blade position, as they hig the tower
-    strut_bld_mountpoint = [0.25,0.75], #mesh array of strut ending points relative to the normalized blade position, as they hig the blade
+    strut_twr_mountpoint = [0.25,0.75], #TODO: resolve with WindIO mesh array of strut starting points relative to the normalized blade position, as they hig the tower
+    strut_bld_mountpoint = [0.25,0.75], #TODO: resolve with WindIO mesh array of strut ending points relative to the normalized blade position, as they hig the blade
     hd_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
     ss_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
     md_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
@@ -590,7 +590,7 @@ runDLC(DLCs,Inp,path;
     WindClass=1,
     turbsimpath="./turbsimfiles",
     templatefile="./templateTurbSim.inp",
-    pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
+    pathtoturbsim=nothing,
     NumGrid_Z=100,
     NumGrid_Y=100,
     Vref=10.0,
@@ -608,7 +608,7 @@ runDLC(DLCs,Inp,path;
     * `WindClass`: =1,
     * `turbsimpath`: ="./turbsimfiles", path where it dumps the turbsim files
     * `templatefile`: ="./template_files/templateTurbSim.inp",
-    * `pathtoturbsim`: ="../../openfast/build/modules/turbsim/turbsim",
+    * `pathtoturbsim`: optional, path to custom turbsim binary, otherwise the auto installed version will be used,
     * `NumGrid_Z`: =100,
     * `NumGrid_Y`: =100,
     * `Vref`: =10.0,
@@ -626,7 +626,7 @@ function runDLC(DLCs,Inp,path;
     WindClass=1,
     turbsimpath="./turbsimfiles",
     templatefile="$module_path/template_files/templateTurbSim.inp",
-    pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
+    pathtoturbsim=nothing,
     NumGrid_Z=nothing,
     NumGrid_Y=nothing,
     Vref=10.0,
@@ -1206,7 +1206,11 @@ function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile
         end
     end
 
-    run(`$pathtoturbsim $windINPfilename`)
+    if isnothing(pathtoturbsim)
+        run(`$(OWENSOpenFASTWrappers.turbsim()) $windINPfilename`)
+    else
+        run(`$pathtoturbsim $windINPfilename`)
+    end
 end
 
 """
