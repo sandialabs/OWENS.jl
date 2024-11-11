@@ -312,8 +312,8 @@ components:
             joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
     struts:
       - name: strut1
-        mountfraction_tower: [0.11,0.89]
-        mountfraction_blade: [0.11,0.89]
+        mountfraction_tower: [0.25,0.75]
+        mountfraction_blade: [0.25,0.75]
         outer_shape_bem:
             airfoil_position:
                 grid: &id002 [0, 0.333, 0.6667, 1.0]

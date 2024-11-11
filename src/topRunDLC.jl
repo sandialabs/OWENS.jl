@@ -131,26 +131,22 @@ function ModelingOptions(yamlInputfile;
     ncelem = 30, #mesh number of cable elements in each cable if ARCUS
     nselem = 10, #mesh number of elements in each strut
     angularOffset = 0.0, #mesh moves the structure to align with the aero model
-    Htwr_base = 3.0, #mesh tower offset to the rotor base TODO: resolve with WindIO
     joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
     c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
-    cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
-    strut_twr_mountpoint = [0.25,0.75], #TODO: resolve with WindIO mesh array of strut starting points relative to the normalized blade position, as they hig the tower
-    strut_bld_mountpoint = [0.25,0.75], #TODO: resolve with WindIO mesh array of strut ending points relative to the normalized blade position, as they hig the blade
-    hd_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
-    ss_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
-    md_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
-    potflowfile = nothing, #OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
-    WindType = 3, #OWENSOpenFASTWrappers inflowwind wind file type, 3 for turbulent, 
     windINPfilename = nothing, #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
     ifw_libfile = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    hd_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    md_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
     AD15hubR = 0.1, #OWENSOpenFASTWrappers parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
     )
 
     # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
-    nlParams = 0 # we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
+    hd_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    md_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    hd_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
+    ss_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
+    md_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
+    potflowfile = nothing, #OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
+    WindType = 3, #Derived parameter, OWENSOpenFASTWrappers inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
+    nlParams = 0 # derived struct, we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
     bladeData = [] # same as above
     numDofPerNode = 6 #while much of the model can operate with fewer dofs, too much is hard coded on the full 6 dof.
     omegaControl = false # this is a derived parameter
@@ -169,7 +165,8 @@ function ModelingOptions(yamlInputfile;
     thickness_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
     Aero_AddedMass_Active = false #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
     Aero_RotAccel_Active = false #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
-
+    cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
+    
     # Generator functions - currently the WindIO interface will just have the specified RPM control, then we'll add the discon control option, then open these back up.  Otherwise, use the scripting method.
     turbineStartup = 0 #Currently only for OWENS scripting method TODO: clean up since it should be derived from control strategy
     usingRotorSpeedFunction = false #Currently only for OWENS scripting methodTODO: clean up the speed function since the omegaocp RPM gets splined already

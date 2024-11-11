@@ -16,7 +16,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     # rotor_orientation = windio[:assembly][:rotor_orientation]
     number_of_blades = windio[:assembly][:number_of_blades] #Used
     # number_of_struts_per_blade = windio[:assembly][:number_of_struts_per_blade] #NEW?
-    # hub_height = windio[:assembly][:hub_height]
+    hub_height = windio[:assembly][:hub_height]
     # rotor_diameter = windio[:assembly][:rotor_diameter]
     # rated_power = windio[:assembly][:rated_power]
     # lifetime = windio[:assembly][:lifetime]
@@ -37,6 +37,13 @@ function runOWENSWINDIO(windio,modelopt,path)
     Blade_Height = maximum(blade_z) #TODO: resolve DLC dependence
     Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
     
+    Htwr_base = hub_height-Blade_Height/2
+    if turbineType == "Darrieus"
+        Htwr_blds = Blade_Height
+    else
+        Htwr_blds = Blade_Height*0.6 #TODO: finer grained inputs
+    end
+
     # Struts
     #TODO: multiple struts
     tower_strut_connection = windio[:components][:struts][1][:mountfraction_tower]
@@ -243,7 +250,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     nodalTerms = 0.0
 
     AD15hubR = 0.1
-    Htwr_base = 3.0#maximum(windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values])
+    # Htwr_base = 3.0#maximum(windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values])
     stack_layers_bld = nothing
     stack_layers_scale = [1.0,1.0]
     chord_scale = [1.0,1.0]
@@ -275,7 +282,6 @@ function runOWENSWINDIO(windio,modelopt,path)
 
     R = maximum(blade_x) #m 
     H = maximum(blade_z) #m
-    Htwr_blds = H
     
     nothing
 
