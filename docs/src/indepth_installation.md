@@ -30,7 +30,7 @@ If you are using a proxy, such as those at the national labs be sure that the pr
 
 You cay need to then tell julia where the SSL_CA_ROOTS are.  Then in some instances, the built in julia git system has trouble with proxies, so you can tell it to use the command line interface git.
 
-Here is an example section of a mac .zshrc script with dummy variables filled in assuming the machine is behind a proxy. If you aren't behind a proxy you should be able to just ignore all of the first block, and possibly the SSL CA, and CLI_GIT variables depending on your operating system and setup.
+Here is an example section of a mac .zshrc script with dummy variables filled in assuming the machine is behind a proxy. If you aren't behind a proxy you should be able to just ignore all of the first block, and possibly the SSL CA, and CLI_GIT variables depending on your operating system and if you choose to use SSH keys.
 
     export HTTP_PROXY="http://user:nopass@proxy.yourproxy.com:80/"
     export HTTPS_PROXY="http://user:nopass@proxy.yourproxy.com:80/"
@@ -52,30 +52,6 @@ the following should get you in and out of the julia interactive repl, open up a
 
     julia 
     exit()
-
-# Set up SSH Keys
-Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1. For windows, note that you may have to use id_ecdsa keys.
-
-    # Go to your gihub account settings
-    # left side, SSH and GPG keys
-    # new ssh key
-    # name: owensrepos # or whatever you'd like
-    # back in the terminal, use the following, or the equivalent for Windows found in the github docs (https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
-    ssh-keygen -t rsa -m PEM -C username@youremail.gov
-    # enter, enter, enter (i.e. use defaults with !NO PASSWORD! since it is not necessary)
-    cd ~
-    ls -a
-    cd .ssh
-    vim id_rsa.pub
-    #copy the contents to github.com (User icon > Settings > SSH and GPG > New SSH Key) and paste them back in your browser to the ssh key box and create the key
-    # esc : q enter # to get out of vim
-    cd ~
-
-Additionally, if you find that your ssh is erroring when you try to install packages, try editing your ~/.ssh/config and add:
-
-    Host *
-    PubkeyAcceptedAlgorithms +ssh-rsa
-    PubkeyAcceptedAlgorithms +ssh-ed25519
 
 # Brief Julia Primer
 Now open the julia interactive repl and run the following blocks, obviously a multi-line block should be entered as one.
@@ -251,14 +227,13 @@ rm("delim_file.txt") # julia's function that does the same thing
 
 ```julia
 using Pkg
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENS.jl.git"))
+Pkg.add(PackageSpec(url="https://github/sandialabs/OWENS.jl.git"))
 ```
 
 Note that there are many packages used in the examples.  While they are installed within the OWENS.jl environment, if you want to additionally install them in your 1.11+ environment where you will likely be running from:
 ```julia
 using Pkg
-Pkg.add("Statistics");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("ImplicitAD");Pkg.add("GXBeam");
-Pkg.add("DelimitedFiles");Pkg.add("Statistics");Pkg.add("FFTW")
+Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW"])
 ```
 
 If you want to show any of the plots in the examples, they currently use the PyPlot interface, which means that julia has to install its own conda in the back end, which can take some time.  Alternatively, you can point to your own python if desired.
@@ -282,15 +257,15 @@ println("\n#####################")
 println("Install OWENS")
 println("#####################")
 
-Pkg.add("Statistics");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("ImplicitAD");Pkg.add("GXBeam");
-Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSPreComp.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSOpenFAST_jll.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSOpenFASTWrappers.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSAero.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSFEA.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENS.jl.git"))
-
+Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW",
+PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"),
+PackageSpec(url="https://github/sandialabs/OWENSPreComp.jl.git"),
+PackageSpec(url="https://github/sandialabs/OWENSOpenFAST_jll.jl.git"),
+PackageSpec(url="https://github/sandialabs/OWENSOpenFASTWrappers.jl.git"),
+PackageSpec(url="https://github/sandialabs/OWENSAero.jl.git"),
+PackageSpec(url="https://github/sandialabs/OWENSFEA.jl.git"),
+PackageSpec(url="https://github/sandialabs/OWENS.jl.git"),
+])
 ```
 
 # Testing Your Build of OWENS
@@ -397,3 +372,28 @@ If your system is already set up such that it is capable of compiling OpenFAST, 
 There is also a OWENSOpenFASTWrappers.jl/deps/legacy_build.jl script which can be useful.
 
 Then, within OWENS, you would provide the path to the resulting binaries you'd like to use (e.g. adi_lib="buildpath/openfast/build/modules/AeroDyn/libaerodyn_inflow_c_binding.so") instead of the default, which points to the precompiled OWENSOpenFAST_jll.jl binaries.
+
+
+# Set up SSH Keys
+If you choose to install packages using ssh instead of https, (or if you make a private repository), you'll need to set up SSH keys. Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1. For windows, note that you may have to use id_ecdsa keys.
+
+    # Go to your gihub account settings
+    # left side, SSH and GPG keys
+    # new ssh key
+    # name: owensrepos # or whatever you'd like
+    # back in the terminal, use the following, or the equivalent for Windows found in the github docs (https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+    ssh-keygen -t rsa -m PEM -C username@youremail.gov
+    # enter, enter, enter (i.e. use defaults with !NO PASSWORD! since it is not necessary)
+    cd ~
+    ls -a
+    cd .ssh
+    vim id_rsa.pub
+    #copy the contents to github.com (User icon > Settings > SSH and GPG > New SSH Key) and paste them back in your browser to the ssh key box and create the key
+    # esc : q enter # to get out of vim
+    cd ~
+
+Additionally, if you find that your ssh is erroring when you try to install packages, try editing your ~/.ssh/config and add:
+
+    Host *
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    PubkeyAcceptedAlgorithms +ssh-ed25519
