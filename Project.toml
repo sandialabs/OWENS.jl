@@ -15,6 +15,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 OWENSAero = "ac8500f8-acb1-479a-8630-5dcb97b7c093"
 OWENSFEA = "5906b1e7-6737-4278-91ec-d653c88addb4"
+OWENSOpenFAST_jll = "ac0e1b5c-a850-5466-8291-e142bbb8e693"
 OWENSOpenFASTWrappers = "1f4f357c-c864-4b71-8437-d48f9e1bb3e6"
 OWENSPreComp = "7fd84261-8b17-47b6-a87d-1cc34e69440e"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
@@ -26,6 +27,13 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
+[sources]
+Composites = {url = "https://github.com/byuflowlab/Composites.jl.git"}
+OWENSAero = {url = "https://github.com/sandialabs/OWENSAero.jl"}
+OWENSFEA = {url = "https://github.com/sandialabs/OWENSFEA.jl"}
+OWENSOpenFAST_jll = {url = "https://github.com/sandialabs/OWENSOpenFAST_jll.jl"}
+OWENSOpenFASTWrappers = {url = "https://github.com/sandialabs/OWENSOpenFASTWrappers.jl"}
+
 [compat]
 DelimitedFiles = "1"
 Dierckx = "0.5"
@@ -34,6 +42,10 @@ FLOWMath = "0.3, 0.4"
 GXBeam = "0.5.1"
 HDF5 = "0.17"
 MAT = "0.10"
+OWENSAero = "1"
+OWENSFEA = "1"
+OWENSOpenFASTWrappers = "1"
+OWENSOpenFAST_jll = "4"
 OWENSPreComp = "1"
 OrderedCollections = "1"
 ProgressBars = "1"

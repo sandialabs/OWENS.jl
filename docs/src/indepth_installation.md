@@ -1,145 +1,60 @@
 
-# Installation Instructions
+# In-Depth Installation Instructions for New Users, Developer Install, and Julia 1.10 and Older
 
 The OWENS software has been developed and designed to highly flexible and to operate in the paradigm similar to modern open source software, leveraging tools such as the terminal, git, public software repositories, and automated package management both for the operating system and the programming language. Before attempting these instructions, if you are not familiar with these types of tools, please consider becoming familiar with them prior to proceeding.  Here are some of the first google hits for guides:
 
 - https://www.redhat.com/sysadmin/beginners-guide-vim
-- https://www.freecodecamp.org/news/the-beginners-guide-to-git-github/
+- https://www.freecodecamp.org/news/the-beginners-guide-to-git-github.com/
 - https://www.howtogeek.com/63997/how-to-install-programs-in-ubuntu-in-the-command-line/
 
-In short, you should be able to compile OpenFAST on your system before attempting this.
+The use of precompiled binaries for the optional OpenFAST fortran libraries significantly simplifies use and installation.  However, if you need to make modifications to the OpenFAST coupling, it requires an entirely different level of software development skills, and would require the user to become proficient at developing and compiling the standalone OpenFAST code first.
 
-Future distributions are planned to also include a precompiled binary for each of the three major operating systems, with the aspiration of being able to reduce the required knowledge to the OWENS inputs, outputs, and operation. Until then, here are installation instructions for the three major operating systems.  **ORDER OF OPERATIONS AND DETAILS ARE IMPORTANT FOR A SUCCESSFUL BUILD, DO NOT SKIP STEPS**
-
-## Windows
-
-At this stage in the software's maturity, please use mac or linux environments unless the user is **highly** experienced with compiled software development in a windows environment. Installation and troubleshooting on a dedicated unix based system is at least 1/10th that of Windows (also why every supercomputer uses linux...)  The WSL (windows subsystem for linux) can also be installed (https://allthings.how/how-to-use-linux-terminal-in-windows-11/) and can be set up to run via just the terminal or also set up to use the graphical capabilities of your machine, and the memory can be mapped back and forth as described in the link above.  However, this adds several levels of complexity, and you **WILL** run into machine based issues until we finish the pipeline for windows download and run precompiled binaries.
-
-Install julia, paraview, and visual studio manually by downloading/installing the windows versions for each:
+## Main New Programs' Installation (Julia, Paraview, Optionally VSCode)
+Install julia, paraview, and visual studio by downloading/installing the OS specific versions for each, either manually (links below for your convenience) or through your favorite package manager:
 
 - https://julialang.org/downloads/
 - https://www.paraview.org/download/
 - https://visualstudio.microsoft.com/downloads/
 
-Be sure julia is on your path, and follow the windows compilation instructions for the openfast Inflowwind, AeroDyn, MoorDyn and HydroDyn libraries. Installation is otherwise the same as the Linux instructions below
+Be sure julia is on your path (should happen automatically as part of the installation process)
 
-When setting up ssh keys, be sure to follow the windows specific instructions https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent and note that you may have to use id_ecdsa keys.
+It is recommended, but not required to set up VS code as also described below.
 
-Set up the environment variables below and be sure Julia is also on the path (https://www.wikihow.com/Create-an-Environment-Variable-in-Windows-10)
+Windows notes: 
+- details are key, hash mismatch may mean that you are behind a proxy and the proxy isn't setup correctly.  For visual studio, the default installation and recommendations should work.  If importing the provided vs-code profile, the quick keys may need to be remapped to control from cmd.  
+- Set up the environment variables below and be sure Julia is also on the path (https://www.wikihow.com/Create-an-Environment-Variable-in-Windows-10)
 
-Install the OWENS custom dependices as listed below.
-
-If you wish to use the openfast libraries, follow the windows compilation instructions for the openfast Inflowwind, AeroDyn, MoorDyn and HydroDyn libraries.  Also note that you will need to change the library paths in the top level OWENS scripts to match the resulting libraries' locations.
-
-Set up VS code as also described below.
-
-Windows notes: details are key, hash mismatch may mean that you are behind a proxy and the proxy isn't setup correctly.  For visual studio, the default installation and recommendations should work.  If importing the provided vs-code profile, the quick keys may need to be remapped to control from cmd.  
-
-## Mac
-
-Essentially the same installation as Linux except we recommend using the homebrew package manager, so exchange all "apt-get" with "brew" 
-
-    brew install git
-    brew install wget
-    brew install vim
-    brew install cmake
-    brew install gfortran
-    brew install build-essential
-    brew install openblas
-    brew install lapack
-
-
-## Linux
-
-Install/Update Required Compilers and Programs; If you already have an environment that can build OpenFAST, then these should already be installed.
-
-    apt-get update -y
-    apt-get install git -y
-    apt-get install wget -y
-    apt-get install vim -y
-    apt-get install cmake -y
-    apt-get install gfortran -y
-    apt-get install build-essential -y
-    apt-get install libblas-dev liblapack-dev -y
-
-# Install julia
-    cd ~
-    curl -fsSL https://install.julialang.org | sh
-
-in your ~/.bashrc file (.zshrc on Mac), tell julia to use the command line git by inserting the following:
-
-export JULIA_PKG_USE_CLI_GIT=true
-
-Additionally, if you are not finding that your path is being appended to, you can instead create an alias by also appending to the ~/.bashrc
-
-alias julia="path/to/your/julia-1.x.x/bin/julia"
 
 # Environment Variables
-If you are using a proxy, be sure that the proxy variables are also declared/exported in your .bash_profile or .bashrc or the equivalent
+If you are using a proxy, such as those at the national labs be sure that the proxy variables are also declared/exported in your .bash_profile or .bashrc or the equivalent list of environment variables in Windows.  Additionally, you may need to tell your system where the SSL cert file is, and CA bundle. For those at Sandia, more information can be found at: https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1.  
 
-    http_proxy, https_proxy, HTTP_PROXY, HTTPS_PROXY, no_proxy, NO_PROXY
-    git config --global http.proxy http://user:nopass@proxy.yourorg:number
-    git config --global https.proxy http://user:nopass@proxy.yourorg:number
+You cay need to then tell julia where the SSL_CA_ROOTS are.  Then in some instances, the built in julia git system has trouble with proxies, so you can tell it to use the command line interface git.
+
+Here is an example section of a mac .zshrc script with dummy variables filled in assuming the machine is behind a proxy. If you aren't behind a proxy you should be able to just ignore all of the first block, and possibly the SSL CA, and CLI_GIT variables depending on your operating system and if you choose to use SSH keys.
+
+    export HTTP_PROXY="http://user:nopass@proxy.yourproxy.com:80/"
+    export HTTPS_PROXY="http://user:nopass@proxy.yourproxy.com:80/"
+    export no_proxy=*.local,169.254/16,*.yourproxy.com,*.srn.yourproxy.com,localhost,127.0.0.1,::1
+    export NO_PROXY=*.local,169.254/16,*.yourproxy.com,*.srn.yourproxy.com,localhost,127.0.0.1,::1
+    git config --global http.proxy http://user:nopass@proxy.yourproxy.com:80
+    git config --global https.proxy http://user:nopass@proxy.yourproxy.com:80
+
+    export SSL_CERT_FILE=/Users/kevmoor/.ssh/your_root_ca.pem
+    export REQUESTS_CA_BUNDLE=${SSL_CERT_FILE}
+
     export JULIA_SSL_CA_ROOTS_PATH=""
-    export JULIA_SSL_NO_VERIFY_HOSTS="*.yourorgurl"
-    export JULIA_PKG_USE_CLI_GIT=true 	
+    export JULIA_PKG_USE_CLI_GIT=true
+    export JULIA_NUM_THREADS=1
+    export OMP_NUM_THREADS=10
 
 # Test That Julia Runs
-the following should get you in and out of the julia interactive repl
+the following should get you in and out of the julia interactive repl, open up a terminal and type
 
     julia 
     exit()
 
-# Set up SSH Keys
-    # Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1
-    # Make ssh keys and put in the correct places
-    # Go to your gihub account settings
-    # left side, SSH and GPG keys
-    # new ssh key
-    # name: owensrepos # or whatever you'd like
-    # back in the linux terminal
-    ssh-keygen -t rsa -m PEM -C username@youremail.gov
-    # enter, enter, enter (i.e. use defaults)
-    cd ~
-    ls -a
-    cd .ssh
-    vim id_rsa.pub
-    #copy the contents to github.com (User icon > Settings > SSH and GPG > New SSH Key) and paste them back in your browser to the ssh key box and create the key
-    # esc : q enter # to get out of vim
-    cd ~
-
-Additionally, if you find that your ssh is erroring when you try to install packages, try editing your ~/.ssh/config and add:
-
-    Host *
-    PubkeyAcceptedAlgorithms +ssh-rsa
-    PubkeyAcceptedAlgorithms +ssh-ed25519
-
-# Install Optional OpenFAST Dependices
-If your system is already set up such that it is capable of compiling OpenFAST, and you are on mac or linux, then you may skip this and rely on the automatically compiled version that are created when the OWENSOpenFAST libraries are installed by Julia.
-    mkdir coderepos
-    cd coderepos
-    # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
-    git clone --depth 1 git@github.com:andrew-platt/openfast.git
-    # if this errors, you can clone git@github.com:OpenFAST/openfast.git it just doesn't have the latest updates from Andy, but the interface should be the same and should run.
-    cd openfast
-    git remote set-branches origin '*'
-    git fetch --depth 1 origin f/ADI_c_binding_multiRotor
-    git checkout f/ADI_c_binding_multiRotor
-    mkdir build
-    cd build
-    # can also add -DOPENMP=ON if desired for acceleration of OLAF
-    # you can rebuild later by removing the build folder and following these instructions again.
-    cmake -DBUILD_SHARED_LIBS=ON ..
-    make ifw_c_binding
-    # make moordyn_c_binding
-    # make hydrodyn_c_binding
-    make aerodyn_inflow_c_binding
-    make aerodyn_driver
-    make turbsim
-    cd ../../
-
 # Brief Julia Primer
-Now open the julia interactive repl and run the following blocks, obviously a multi-line block should be entered as one.
+Now open the julia interactive repl and run the following blocks, a multi-line block should be entered as one.
 
 julia
 
@@ -308,7 +223,31 @@ rm("delim_file.txt") # julia's function that does the same thing
 ###############################################################
 ```
 
-## OWENS Installation
+## OWENS Installation for Julia 1.11+
+
+```julia
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"))
+```
+
+Note that there are many packages used in the examples.  While they are installed within the OWENS.jl environment, if you want to additionally install them in your 1.11+ environment where you will likely be running from:
+```julia
+using Pkg
+Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW"])
+```
+
+If you want to show any of the plots in the examples, they currently use the PyPlot interface, which means that julia has to install its own conda in the back end, which can take some time.  Alternatively, you can point to your own python if desired.
+```julia
+using Pkg
+# Install PyPlot if not already installed
+Pkg.add("PyPlot") #Note, this will take a while (maybe 10 min depending on your connection) since it is pulling conda and installing it behind the ~/.julia folder 
+# if you want to use your already installed python, you can instead run
+# ENV["PYTHON"] = "path to your desired python install"
+# Pkg.add("PyCall")
+# Pkg.add("PyPlot")
+```
+
+## OWENS Installation for Julia 1.10 and older (down to 1.6)
 These steps require a secure download, such as through the SSH keys detailed above, to avoid man-in-the-middle attacks. 
 ```julia
 
@@ -318,21 +257,15 @@ println("\n#####################")
 println("Install OWENS")
 println("#####################")
 
-Pkg.add("Statistics");Pkg.add("Dierckx");Pkg.add("QuadGK");Pkg.add("FLOWMath");Pkg.add("HDF5");Pkg.add("ImplicitAD");Pkg.add("GXBeam");
-Pkg.add(PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSPreComp.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSOpenFASTWrappers.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSAero.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENSFEA.jl.git"))
-Pkg.add(PackageSpec(url="git@github.com:sandialabs/OWENS.jl.git"))
-
-# Install PyPlot if not already installed
-Pkg.add("PyPlot") #Note, this will take a while (maybe 10 min depending on your connection) since it is pulling conda and installing it behind the ~/.julia folder 
-# if you want to use your already installed python, you can instead run
-# ENV["PYTHON"] = "path to your desired python install"
-# Pkg.add("PyCall")
-# Pkg.add("PyPlot")
-
+Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW",
+PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSPreComp.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSOpenFAST_jll.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSOpenFASTWrappers.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSAero.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSFEA.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"),
+])
 ```
 
 # Testing Your Build of OWENS
@@ -340,12 +273,6 @@ Pkg.add("PyPlot") #Note, this will take a while (maybe 10 min depending on your 
 clone the owens repository which contains example scripts that will setup and run example turbines from end to end
 
     git clone git@github.com:sandialabs/OWENS.jl
-
-If you get an error about attempting to access library xyz, but it doesn't exist, check the path to openfast in the scripts at the top level of the error to make sure the path and library file matches, most of these are: 
-```julia
-adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
-```
-
     cd OWENS.jl/examples/literate/
     julia B_detailedInputs.jl
 
@@ -397,10 +324,9 @@ start Julia from the cloned directory and use the command:
 
     ] dev .
     
-This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update. You are developing the current directory
+This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update. NOTE: even though julia 1.11 can to a regular install with a single line and resolve the custom dependencies, for the dev install it doesn't appear to automatically do so; so you may need to be careful about the installation order of dev packages to ensure you have downstream dependencies satisfied.
 
-alternatively, instead of using or import to get access to the module, within julia
-
+Alternatively, you can effectively copy and paste the module in, like so:
 ```julia
 include("path/to/module.jl/source/module.jl")
 ```
@@ -412,3 +338,61 @@ You can also install a specific branch of a remote repository package without ha
 using Pkg
 Pkg.add(url = "git@github.com:sandialabs/OWENS.jl.git", rev = "dev")
 ```
+
+# Custom Install of Optional OpenFAST Dependices
+You'll need your system to be capable of compiling OpenFAST (https://openfast.readthedocs.io/en/main/), either with cmake, and the sample instructions below, or the OpenFAST visual studio code recipes, more of which can be found in the OpenFAST documentation.
+    mkdir coderepos
+    cd coderepos
+    # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
+    git clone --depth 1 git@github.com:andrew-platt/openfast.git
+    # if this errors, you can clone git@github.com:OpenFAST/openfast.git it just doesn't have the latest updates from Andy, but the interface should be the same and should run.
+    cd openfast
+    git remote set-branches origin '*'
+    git fetch --depth 1 origin f/ADI_c_binding_multiRotor
+    git checkout f/ADI_c_binding_multiRotor
+    mkdir build
+    cd build
+    # can also add -DOPENMP=ON if desired for acceleration of OLAF
+    # you can rebuild later by removing the build folder and following these instructions again.
+    cmake -DBUILD_SHARED_LIBS=ON ..
+    make ifw_c_binding
+    make moordyn_c_binding
+    make hydrodyn_c_binding
+    make aerodyn_inflow_c_binding
+    make aerodyn_driver
+    make turbsim
+    cd ../../
+
+There is also a OWENSOpenFASTWrappers.jl/deps/legacy_build.jl script which can be useful.
+
+Then, within OWENS, you would provide the path to the resulting binaries you'd like to use. e.g. 
+```julia
+adi_lib="buildpath/openfast/build/modules/AeroDyn/libaerodyn_inflow_c_binding.so"
+```
+
+instead of the default, which points to the precompiled OWENSOpenFAST_jll.jl binaries.
+
+
+# Set up SSH Keys
+If you choose to install packages using ssh instead of https, (or if you make a private repository), you'll need to set up SSH keys and replace all of the https://github.com with git@github.com in the installation steps. Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1. For windows, note that you may have to use id_ecdsa keys.
+
+    # Go to your gihub account settings
+    # left side, SSH and GPG keys
+    # new ssh key
+    # name: owensrepos # or whatever you'd like
+    # back in the terminal, use the following, or the equivalent for Windows found in the github docs (https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+    ssh-keygen -t rsa -m PEM -C username@youremail.gov
+    # enter, enter, enter (i.e. use defaults with !NO PASSWORD! since it is not necessary)
+    cd ~
+    ls -a
+    cd .ssh
+    vim id_rsa.pub
+    #copy the contents to github.com (User icon > Settings > SSH and GPG > New SSH Key) and paste them back in your browser to the ssh key box and create the key
+    # esc : q enter # to get out of vim
+    cd ~
+
+Additionally, if you find that your ssh is erroring when you try to install packages, try editing your ~/.ssh/config and add:
+
+    Host *
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    PubkeyAcceptedAlgorithms +ssh-ed25519

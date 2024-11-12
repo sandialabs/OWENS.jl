@@ -8,7 +8,7 @@ makedocs(;
     modules = [OWENS],
     pages = [
         "Home" => "index.md",
-        "Installation" => "installation.md",
+        "Installation" => "indepth_installation.md",
         "Examples" => [
             joinpath("examples", "A_simplyRunningOWENS.md"),
             joinpath("examples", "B_detailedInputs.md"),
