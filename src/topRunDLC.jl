@@ -524,7 +524,7 @@ runDLC(DLCs,Inp,path;
     WindClass=1,
     turbsimpath="./turbsimfiles",
     templatefile="./templateTurbSim.inp",
-    pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
+    pathtoturbsim=nothing,
     NumGrid_Z=100,
     NumGrid_Y=100,
     Vref=10.0,
@@ -542,7 +542,7 @@ runDLC(DLCs,Inp,path;
     * `WindClass`: =1,
     * `turbsimpath`: ="./turbsimfiles", path where it dumps the turbsim files
     * `templatefile`: ="./template_files/templateTurbSim.inp",
-    * `pathtoturbsim`: ="../../openfast/build/modules/turbsim/turbsim",
+    * `pathtoturbsim`: = nothing,
     * `NumGrid_Z`: =100,
     * `NumGrid_Y`: =100,
     * `Vref`: =10.0,
@@ -560,7 +560,7 @@ function runDLC(DLCs,Inp,path;
     WindClass=1,
     turbsimpath="./turbsimfiles",
     templatefile="$module_path/template_files/templateTurbSim.inp",
-    pathtoturbsim="../../openfast/build/modules/turbsim/turbsim",
+    pathtoturbsim=nothing,
     NumGrid_Z=nothing,
     NumGrid_Y=nothing,
     Vref=10.0,
@@ -1140,7 +1140,11 @@ function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile
         end
     end
 
-    run(`$pathtoturbsim $windINPfilename`)
+    if isnothing(pathtoturbsim)
+        run(`$(OWENSOpenFASTWrappers.turbsim()) $windINPfilename`)
+    else
+        run(`$pathtoturbsim $windINPfilename`)
+    end
 end
 
 """

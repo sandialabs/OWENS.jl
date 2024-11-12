@@ -4,7 +4,7 @@
 The OWENS software has been developed and designed to highly flexible and to operate in the paradigm similar to modern open source software, leveraging tools such as the terminal, git, public software repositories, and automated package management both for the operating system and the programming language. Before attempting these instructions, if you are not familiar with these types of tools, please consider becoming familiar with them prior to proceeding.  Here are some of the first google hits for guides:
 
 - https://www.redhat.com/sysadmin/beginners-guide-vim
-- https://www.freecodecamp.org/news/the-beginners-guide-to-git-github/
+- https://www.freecodecamp.org/news/the-beginners-guide-to-git-github.com/
 - https://www.howtogeek.com/63997/how-to-install-programs-in-ubuntu-in-the-command-line/
 
 The use of precompiled binaries for the optional OpenFAST fortran libraries significantly simplifies use and installation.  However, if you need to make modifications to the OpenFAST coupling, it requires an entirely different level of software development skills, and would require the user to become proficient at developing and compiling the standalone OpenFAST code first.
@@ -54,7 +54,7 @@ the following should get you in and out of the julia interactive repl, open up a
     exit()
 
 # Brief Julia Primer
-Now open the julia interactive repl and run the following blocks, obviously a multi-line block should be entered as one.
+Now open the julia interactive repl and run the following blocks, a multi-line block should be entered as one.
 
 julia
 
@@ -227,7 +227,7 @@ rm("delim_file.txt") # julia's function that does the same thing
 
 ```julia
 using Pkg
-Pkg.add(PackageSpec(url="https://github/sandialabs/OWENS.jl.git"))
+Pkg.add(PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"))
 ```
 
 Note that there are many packages used in the examples.  While they are installed within the OWENS.jl environment, if you want to additionally install them in your 1.11+ environment where you will likely be running from:
@@ -259,12 +259,12 @@ println("#####################")
 
 Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW",
 PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"),
-PackageSpec(url="https://github/sandialabs/OWENSPreComp.jl.git"),
-PackageSpec(url="https://github/sandialabs/OWENSOpenFAST_jll.jl.git"),
-PackageSpec(url="https://github/sandialabs/OWENSOpenFASTWrappers.jl.git"),
-PackageSpec(url="https://github/sandialabs/OWENSAero.jl.git"),
-PackageSpec(url="https://github/sandialabs/OWENSFEA.jl.git"),
-PackageSpec(url="https://github/sandialabs/OWENS.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSPreComp.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSOpenFAST_jll.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSOpenFASTWrappers.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSAero.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENSFEA.jl.git"),
+PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"),
 ])
 ```
 
@@ -273,12 +273,6 @@ PackageSpec(url="https://github/sandialabs/OWENS.jl.git"),
 clone the owens repository which contains example scripts that will setup and run example turbines from end to end
 
     git clone git@github.com:sandialabs/OWENS.jl
-
-If you get an error about attempting to access library xyz, but it doesn't exist, check the path to openfast in the scripts at the top level of the error to make sure the path and library file matches, most of these are: 
-```julia
-adi_lib = "path/to/openfast/build/modules/libraryfolder/libraryname"
-```
-
     cd OWENS.jl/examples/literate/
     julia B_detailedInputs.jl
 
@@ -346,7 +340,7 @@ Pkg.add(url = "git@github.com:sandialabs/OWENS.jl.git", rev = "dev")
 ```
 
 # Custom Install of Optional OpenFAST Dependices
-If your system is already set up such that it is capable of compiling OpenFAST, and you are on mac or linux, then you may skip this and rely on the automatically compiled version that are created when the OWENSOpenFAST libraries are installed by Julia.
+You'll need your system to be capable of compiling OpenFAST (https://openfast.readthedocs.io/en/main/), either with cmake, and the sample instructions below, or the OpenFAST visual studio code recipes, more of which can be found in the OpenFAST documentation.
     mkdir coderepos
     cd coderepos
     # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.
@@ -371,11 +365,16 @@ If your system is already set up such that it is capable of compiling OpenFAST, 
 
 There is also a OWENSOpenFASTWrappers.jl/deps/legacy_build.jl script which can be useful.
 
-Then, within OWENS, you would provide the path to the resulting binaries you'd like to use (e.g. adi_lib="buildpath/openfast/build/modules/AeroDyn/libaerodyn_inflow_c_binding.so") instead of the default, which points to the precompiled OWENSOpenFAST_jll.jl binaries.
+Then, within OWENS, you would provide the path to the resulting binaries you'd like to use. e.g. 
+```julia
+adi_lib="buildpath/openfast/build/modules/AeroDyn/libaerodyn_inflow_c_binding.so"
+```
+
+instead of the default, which points to the precompiled OWENSOpenFAST_jll.jl binaries.
 
 
 # Set up SSH Keys
-If you choose to install packages using ssh instead of https, (or if you make a private repository), you'll need to set up SSH keys. Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1. For windows, note that you may have to use id_ecdsa keys.
+If you choose to install packages using ssh instead of https, (or if you make a private repository), you'll need to set up SSH keys and replace all of the https://github.com with git@github.com in the installation steps. Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&HTTPS/SSLinterception-SSLCertificate.1. For windows, note that you may have to use id_ecdsa keys.
 
     # Go to your gihub account settings
     # left side, SSH and GPG keys

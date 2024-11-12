@@ -12,10 +12,13 @@ OWENS is an ontology, or way of coupling modular aerodynamic, structural, hydrod
 
 ## Installation
 For Julia 1.11+.  For new Julia users, developer install, and those wishing to use Julia 1.10 and below, see the In-Depth Installation page.
+
 ```julia
-pkg> add git@github.com:sandialabs/OWENS.jl.git
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"))
 ```
 
+Note that the following demo was recorded using the julia 1.10 installation method.
 ```@raw html
 <div style="position:relative;padding-top:50%;">
     <iframe style="position:absolute;left:0;top:0;height:80%;width:71.0%;"

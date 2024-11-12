@@ -63,7 +63,7 @@ OWENS.runDLC(DLCs,Inp,runpath;
     regenWindFiles=true,
     delta_t_turbsim=0.05,
     simtime_turbsim=30.0,
-    pathtoturbsim="$(OWENS.OWENSOpenFASTWrappers.OFWpath)/../deps/openfast/build/modules/turbsim/turbsim",
+    pathtoturbsim=nothing,
     runScript=OWENS.runOWENS)
 
 nothing
