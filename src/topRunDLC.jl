@@ -81,8 +81,22 @@ end
 
 function ModelingOptions(yamlInputfile;
     analysisType = "Unsteady", #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-    #TODO: DLC inputs
-    Vinf = 10.0, # Nominal velocity, gets overwritten if the DLC method is being used
+    DLCs=["1_1","2_1"], #DLC name of DLC
+    Vinf_range=LinRange(5,20,16), #DLC inflow Cutin to cutout and discretization
+    IEC_std="\"1-ED3\"", #DLC turbsim input file IEC standard
+    WindChar="\"A\"", #DLC turbsim wind charasteric 
+    WindClass=1, # DLC turbsim wind class
+    turbsimsavepath="./turbsimfiles", #DLC path where the turbsim files are saved
+    templatefile="$module_path/template_files/templateTurbSim.inp", #DLC path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
+    pathtoturbsim=nothing, #DLC path to the turbsim executable
+    NumGrid_Z=38, #DLC turbsim vertical discretizations 
+    NumGrid_Y=26, #DLC turbsim horizontal discretizations
+    Vref=10.0, #DLC reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
+    Vdesign=11.0, #DLC Design or rated speed of turbine, used for certain DLC cases
+    grid_oversize=1.1, #DLC amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
+    regenWindFiles=false, #DLC, force regeneration of turbsim files even if they already exist
+    delta_t_turbsim=0.05, #DLC turbsim timestep
+    simtime_turbsim=600.0, #DLC turbsim total time, which loops if simtime exceeds turbsim time
     controlStrategy = "normal", #OWENS should be in WindIO?- yes, 
     RPM = 10.0, #TODO: should be in WindIO - yes, in control section
     numTS = 10, #OWENS number of time steps TODO: change to sim time and make this derived
@@ -139,13 +153,14 @@ function ModelingOptions(yamlInputfile;
     )
 
     # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
-    hd_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    md_lib = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    hd_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
-    ss_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
-    md_input_file = "none", #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
-    potflowfile = nothing, #OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
-    WindType = 3, #Derived parameter, OWENSOpenFASTWrappers inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
+    Vinf = Vref
+    hd_lib = nothing #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    md_lib = nothing #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    hd_input_file = "none" #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
+    ss_input_file = "none" #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
+    md_input_file = "none" #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
+    potflowfile = nothing #OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
+    WindType = 3 #Derived parameter, OWENSOpenFASTWrappers inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
     nlParams = 0 # derived struct, we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
     bladeData = [] # same as above
     numDofPerNode = 6 #while much of the model can operate with fewer dofs, too much is hard coded on the full 6 dof.
@@ -165,7 +180,7 @@ function ModelingOptions(yamlInputfile;
     thickness_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
     Aero_AddedMass_Active = false #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
     Aero_RotAccel_Active = false #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
-    cables_connected_to_blade_base = true, #mesh for ARCUS, for the two part simulation of the blade bending
+    cables_connected_to_blade_base = true #mesh for ARCUS, for the two part simulation of the blade bending
     
     # Generator functions - currently the WindIO interface will just have the specified RPM control, then we'll add the discon control option, then open these back up.  Otherwise, use the scripting method.
     turbineStartup = 0 #Currently only for OWENS scripting method TODO: clean up since it should be derived from control strategy
@@ -585,7 +600,7 @@ runDLC(DLCs,Inp,path;
     IEC_std="\"2\"",
     WindChar="\"A\"",
     WindClass=1,
-    turbsimpath="./turbsimfiles",
+    turbsimsavepath="./turbsimfiles",
     templatefile="./templateTurbSim.inp",
     pathtoturbsim=nothing,
     NumGrid_Z=100,
@@ -603,7 +618,7 @@ runDLC(DLCs,Inp,path;
     * `IEC_std`: ="\"2\"",
     * `WindChar`: ="\"A\"",
     * `WindClass`: =1,
-    * `turbsimpath`: ="./turbsimfiles", path where it dumps the turbsim files
+    * `turbsimsavepath`: ="./turbsimfiles", path where it dumps the turbsim files
     * `templatefile`: ="./template_files/templateTurbSim.inp",
     * `pathtoturbsim`: optional, path to custom turbsim binary, otherwise the auto installed version will be used,
     * `NumGrid_Z`: =100,
@@ -621,21 +636,21 @@ function runDLC(DLCs,Inp,path;
     IEC_std="\"1-ED3\"",
     WindChar="\"A\"",
     WindClass=1,
-    turbsimpath="./turbsimfiles",
+    turbsimsavepath="./turbsimfiles",
     templatefile="$module_path/template_files/templateTurbSim.inp",
     pathtoturbsim=nothing,
-    NumGrid_Z=nothing,
-    NumGrid_Y=nothing,
+    NumGrid_Z=38,
+    NumGrid_Y=26,
     Vref=10.0,
     Vdesign=11.0, # Design or rated speed
     grid_oversize=1.1,
     regenWindFiles=false,
-    delta_t_turbsim=nothing,
-    simtime_turbsim=nothing,
+    delta_t_turbsim=0.05,
+    simtime_turbsim=600.0,
     runScript = OWENS.runOWENS)
 
-    if !isdir(turbsimpath)
-        mkdir(turbsimpath)
+    if !isdir(turbsimsavepath)
+        mkdir(turbsimsavepath)
     end
 
     # Fill in DLC parameters based on model inputs
@@ -656,7 +671,7 @@ function runDLC(DLCs,Inp,path;
             windspeedStr = round(windspeed;digits=2)
             windspeedStr = lpad(windspeedStr,4,"0")
             println("Running DLC $DLC at Vinf $windspeedStr m/s")
-            windINPfilename = "$turbsimpath/DLC$(DLC)Vinf$(windspeedStr).inp"
+            windINPfilename = "$turbsimsavepath/DLC$(DLC)Vinf$(windspeedStr).inp"
             
             if contains(DLCParams[iDLC].IEC_WindType, "NTM") || contains(DLCParams[iDLC].IEC_WindType, "ETM") || contains(DLCParams[iDLC].IEC_WindType, "EWM")
                 if !isfile(windINPfilename) || regenWindFiles

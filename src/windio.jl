@@ -38,7 +38,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
     
     Htwr_base = hub_height-Blade_Height/2
-    if turbineType == "Darrieus"
+    if modelopt.turbineType == "Darrieus"
         Htwr_blds = Blade_Height
     else
         Htwr_blds = Blade_Height*0.6 #TODO: finer grained inputs
