@@ -22,17 +22,16 @@
 import OWENS
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-## runpath = path = splitdir(@__FILE__)[1]
+##runpath = path = splitdir(@__FILE__)[1]
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
 OWENS.runOWENS(Inp,runpath)
 
-# Here is an example of using the same model against the automated DLC run script.
+# Here is an example of using the same model against the automated DLC run script. TODO: memory issue with running DLC with AeroDyn multiple times.
 # Note that for a setup cutom to a specific design, you'll want to go to the B level to get all of the detailed inputs correct
 # One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.
 
-simulated_time = 2.0 #seconds
 DLCs = ["1_1"] #"normal" 
 #### DLCs = ["1_3"] #"normal" 
 #### DLCs = ["1_4"] #"normal" 
@@ -59,7 +58,7 @@ OWENS.runDLC(DLCs,Inp,runpath;
     NumGrid_Y=26,
     Vdesign=11.0,
     grid_oversize=1.25,
-    Vinf_range=[10.0],#LinRange(4,24,21),
+    Vinf_range=[10.0,15.0],#LinRange(4,24,21),
     regenWindFiles=true,
     delta_t_turbsim=0.05,
     simtime_turbsim=30.0,

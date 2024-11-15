@@ -2,6 +2,7 @@
 
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sandialabs.github.io/OWENS.jl/dev)
 ![](https://github.com/sandialabs/OWENS.jl/workflows/CI/badge.svg)
+[![codecov.io](https://codecov.io/github/sandialabs/OWENS.jl/coverage.svg?branch=master)](https://codecov.io/github/sandialabs/OWENS.jl?branch=master)
 
 * *Documentation:* [sandialabs.github.io/OWENS.jl/](https://sandialabs.github.io/OWENS.jl/dev)
 * *Code:* [github.com/sandialabs/OWENS.jl](https://github.com/sandialabs/OWENS.jl)
@@ -10,8 +11,17 @@ This package is for experienced researchers and analyists with both software and
 
 OWENS is an ontology, or way of coupling modular aerodynamic, structural, hydrodynamic, and controls packages.  It was originally based on the structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813). However, it has been rewritten into the Julia programming language, modularized, and many of the issues related to aerodynamic coupling and floating dynamics solved, with extensive expansion into other areas and features to provide a seamless and automated process that takes in high level design details and does all of the preprocessing, running, and post processing that is normally done under different roofs or by different manual processes.  This was done with the intent of enabling fast, parametric design.  We have many of the modules propogating automatic gradients, however this is still a future challenge to solve well. 
 
+## Installation
+For Julia 1.11+.  For new Julia users, developer install, and those wishing to use Julia 1.10 and below, see the In-Depth Installation page in the docs.
+
+```julia
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"))
+```
+
 <p><br></p>
 
+Note that the following demo was recorded using the julia 1.10 installation method.
 
 <p align="center"> <a href="https://www.youtube.com/watch?v=FTx9Jui_0CA?hd=1"> <img src="docs/src/assets/youtube_demo_image.png" alt="youtube.com/watch?v=FTx9Jui_0CA" style="width:70%"> </a> </p>
 
