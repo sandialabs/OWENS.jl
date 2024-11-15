@@ -6,7 +6,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     end
 
     if typeof(modelopt) == String
-        modelopt = ModelingOptions(modelopt)
+        modelopt, unioptions = ModelingOptions(modelopt)
     end
 
     # Assembly
@@ -155,19 +155,47 @@ function runOWENSWINDIO(windio,modelopt,path)
     end
 
 
+    # OWENSAero Options
+    Nslices = unioptions.OWENSAero_Options.Nslices
+    ntheta = unioptions.OWENSAero_Options.ntheta
+    ifw = unioptions.OWENSAero_Options.ifw
+    DynamicStallModel = unioptions.OWENSAero_Options.DynamicStallModel
+    RPI = unioptions.OWENSAero_Options.RPI
+    Aero_Buoyancy_Active = unioptions.OWENSAero_Options.Aero_Buoyancy_Active
+    Aero_AddedMass_Active = unioptions.OWENSAero_Options.Aero_AddedMass_Active
+    Aero_RotAccel_Active = unioptions.OWENSAero_Options.Aero_RotAccel_Active
+
+    # DLC Options
+    DLCs = unioptions.DLC_Options.DLCs
+    Vinf_range = unioptions.DLC_Options.Vinf_range
+    IEC_std = unioptions.DLC_Options.IEC_std
+    WindChar = unioptions.DLC_Options.WindChar
+    WindClass = unioptions.DLC_Options.WindClass
+    turbsimsavepath = unioptions.DLC_Options.turbsimsavepath
+    templatefile = unioptions.DLC_Options.templatefile
+    pathtoturbsim = unioptions.DLC_Options.pathtoturbsim
+    NumGrid_Z = unioptions.DLC_Options.NumGrid_Z
+    NumGrid_Y = unioptions.DLC_Options.NumGrid_Y
+    Vref = unioptions.DLC_Options.Vref
+    Vdesign = unioptions.DLC_Options.Vdesign
+    grid_oversize = unioptions.DLC_Options.grid_oversize
+    regenWindFiles = unioptions.DLC_Options.regenWindFiles
+    delta_t_turbsim = unioptions.DLC_Options.delta_t_turbsim
+    simtime_turbsim = unioptions.DLC_Options.simtime_turbsim
+
     analysisType = modelopt.analysisType
     turbineType = modelopt.turbineType
     Vinf = modelopt.Vinf
     controlStrategy = modelopt.controlStrategy
     RPM = modelopt.RPM
-    Nslices = modelopt.Nslices
-    ntheta = modelopt.ntheta
+    
+    
     structuralModel = modelopt.structuralModel
     ntelem = modelopt.ntelem
     nbelem = modelopt.nbelem
     ncelem = modelopt.ncelem
     nselem = modelopt.nselem
-    ifw = modelopt.ifw
+    
     WindType = modelopt.WindType
     AeroModel = modelopt.AeroModel
     windINPfilename = "$(path)$(modelopt.windINPfilename)"
@@ -215,8 +243,8 @@ function runOWENSWINDIO(windio,modelopt,path)
     c_mount_ratio = 0.05
     strut_twr_mountpoint = tower_strut_connection #TODO: multiple struts
     strut_bld_mountpoint = blade_strut_connection
-    DynamicStallModel="BV"
-    RPI=true
+
+    
     cables_connected_to_blade_base = true
     meshtype = turbineType
     VTKsaveName = "$path/vtk/windio"
@@ -256,9 +284,6 @@ function runOWENSWINDIO(windio,modelopt,path)
     chord_scale = [1.0,1.0]
     thickness_scale = [1.0,1.0]
     angularOffset = -pi/2
-    Aero_AddedMass_Active = false
-    Aero_RotAccel_Active = false
-    Aero_Buoyancy_Active = false
 
     custommesh = nothing
 

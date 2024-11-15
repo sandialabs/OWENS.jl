@@ -1,0 +1,59 @@
+
+DLC_Options:
+    DLCs: ["1_1","2_1"] #DLC name of DLC
+    Vinf_range: LinRange(5,20,16) #DLC inflow Cutin to cutout and discretization
+    IEC_std: "\"1-ED3\"" #DLC turbsim input file IEC standard
+    WindChar: "\"A\"" #DLC turbsim wind charasteric 
+    WindClass: 1 # DLC turbsim wind class
+    turbsimsavepath: "./turbsimfiles" #DLC path where the turbsim files are saved
+    templatefile: "$module_path/template_files/templateTurbSim.inp" #DLC path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
+    pathtoturbsim: nothing #DLC path to the turbsim executable
+    NumGrid_Z: 38 #DLC turbsim vertical discretizations 
+    NumGrid_Y: 26 #DLC turbsim horizontal discretizations
+    Vref: 10.0 #DLC reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
+    Vdesign: 11.0 #DLC Design or rated speed of turbine, used for certain DLC cases
+    grid_oversize: 1.1 #DLC amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
+    regenWindFiles: false #DLC, force regeneration of turbsim files even if they already exist
+    delta_t_turbsim: 0.05 #DLC turbsim timestep
+    simtime_turbsim: 600.0 #DLC turbsim total time, which loops if simtime exceeds turbsim time
+
+OWENSAero_Options:
+    Nslices: 20 #OWENSAero number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+    ntheta: 30 #OWENSAero number of azimuthal discretizations
+    ifw: false #OWENSAero use the OpenFASTWrappers inflow wind coupling to get inflow velocities
+    DynamicStallModel: "BV" #OWENSAero dynamic stall model, should be under an OWENSAero options
+    RPI: true #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+    Aero_Buoyancy_Active: false #OWENSAero flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+
+
+general:
+  analysisType: unsteady # unsteady, modal
+  turbineType: Darrieus #Darrieus, H-VAWT, ARCUS
+  numTS: 20 #
+  delta_t: 0.01 # s
+
+Inflow:
+  Vinf: 17.2 # m/s #optional, supersceeded if ifw=true
+  ifw: false
+  WindType: 3
+  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: nothing
+
+controlParameters:
+  controlStrategy: constantRPM # TODO: incorporate the others
+  RPM: 17.2 #RPM
+
+AeroParameters:
+  Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
+  ntheta: 30 # number of OWENSAero azimuthal discretizations
+  AeroModel: DMS # AD, DMS, AC
+  adi_lib: nothing
+  adi_rootname: "/ExampleB"
+  
+structuralParameters:
+  structuralModel: TNB #GX, TNB, ROM
+  nonlinear: false #TODO: propogate
+  ntelem: 10 #tower elements in each 
+  nbelem: 60 #blade elements in each 
+  ncelem: 10 #central cable elements in each if turbineType is ARCUS
+  nselem: 5 #strut elements in each if turbineType has struts
