@@ -239,11 +239,40 @@ struct OWENSFEA_Options
     end
 end
 
+struct OWENSOpenFASTWrappers_Options
+    windINPfilename
+    ifw_libfile
+    hd_lib
+    md_lib
+    hd_input_file
+    ss_input_file
+    md_input_file
+    potflowfile
+    WindType
+
+    # Constructor that takes a dictionary
+    function OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        # Use get to provide default values for missing fields
+        new(       
+            get(dict_in,:windINPfilename, nothing), #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+            get(dict_in,:ifw_libfile, nothing), #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:hd_lib, nothing),#OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:md_lib, nothing),#OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:hd_input_file, "none"), #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
+            get(dict_in,:ss_input_file, "none"), #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
+            get(dict_in,:md_input_file, "none"), #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
+            get(dict_in,:potflowfile, nothing),#OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
+            get(dict_in,:WindType, 3),#Derived parameter, OWENSOpenFASTWrappers inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
+        )
+    end
+end
+
 struct Unified_Options
     OWENS_Options::OWENS_Options
     DLC_Options::DLC_Options
     OWENSAero_Options::OWENSAero_Options
     OWENSFEA_Options::OWENSFEA_Options
+    OWENSOpenFASTWrappers_Options::OWENSOpenFASTWrappers_Options
 end
 
 function ModelingOptions(yamlInputfile;
@@ -257,20 +286,11 @@ function ModelingOptions(yamlInputfile;
     angularOffset = 0.0, #mesh moves the structure to align with the aero model
     joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
     c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
-    windINPfilename = nothing, #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
-    ifw_libfile = nothing, #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    AD15hubR = 0.1, #OWENSOpenFASTWrappers parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+    AD15hubR = 0.1, #Mesh parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
     )
 
     # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
     Vinf = 10.0#Vref
-    hd_lib = nothing #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    md_lib = nothing #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-    hd_input_file = "none" #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
-    ss_input_file = "none" #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
-    md_input_file = "none" #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
-    potflowfile = nothing #OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
-    WindType = 3 #Derived parameter, OWENSOpenFASTWrappers inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
     nlParams = 0 # derived struct, we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
     bladeData = [] # same as above
     numDofPerNode = 6 #while much of the model can operate with fewer dofs, too much is hard coded on the full 6 dof.
@@ -279,10 +299,6 @@ function ModelingOptions(yamlInputfile;
     initCond = [] #OWENSFEA initial conditions array, will be derived at this level, if using the OWENS scripting method, this can be used to initalize the structure
     jointTransform = 0.0 #OWENSFEA, derived matrix to transform from total matrix to the reduced matrix and vice-versa
     reducedDOFList = zeros(Int,2) #OWENSFEA, derived array that maps the joint-reduced dofs
-    
-    
-    
-    
     nodalTerms = 0.0 #OWENSFEA the ability to apply concentrated nodal masses and forces etc., currently only available at the scripting level of analysis
     stack_layers_bld = nothing #, enables direct specification of the numbers of stack layers in the numad format
     stack_layers_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
@@ -337,7 +353,13 @@ function ModelingOptions(yamlInputfile;
         owensfea_options = OWENSFEA_Options(dummy_dict)
     end
 
-    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options)
+    if haskey(yamlInput,:OWENSOpenFASTWrappers_Options)
+        owensopenfastwrappers_options = OWENSOpenFASTWrappers_Options(yamlInput[:OWENSOpenFASTWrappers_Options])
+    else
+        owensopenfastwrappers_options = OWENSOpenFASTWrappers_Options(dummy_dict)
+    end
+
+    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options)
 
     
     general = yamlInput[:general]

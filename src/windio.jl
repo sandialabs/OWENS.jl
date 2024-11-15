@@ -222,6 +222,23 @@ function runOWENSWINDIO(windio,modelopt,path)
     spinUpOn = unioptions.OWENSFEA_Options.spinUpOn
     predef = unioptions.OWENSFEA_Options.predef
 
+    windINPfilename = unioptions.OWENSOpenFASTWrappers_Options.windINPfilename
+    ifw_libfile = unioptions.OWENSOpenFASTWrappers_Options.ifw_libfile
+    hd_lib = unioptions.OWENSOpenFASTWrappers_Options.hd_lib
+    md_lib = unioptions.OWENSOpenFASTWrappers_Options.md_lib
+    hd_input_file = unioptions.OWENSOpenFASTWrappers_Options.hd_input_file
+    ss_input_file = unioptions.OWENSOpenFASTWrappers_Options.ss_input_file
+    md_input_file = unioptions.OWENSOpenFASTWrappers_Options.md_input_file
+    potflowfile = unioptions.OWENSOpenFASTWrappers_Options.potflowfile
+    WindType = unioptions.OWENSOpenFASTWrappers_Options.WindType
+
+    
+    windINPfilename = "$(path)$windINPfilename"
+    potflowfile = "$(path)$potflowfile"
+    if ifw_libfile == "nothing"
+        ifw_libfile = nothing
+    end
+
     turbineType = modelopt.turbineType
     Vinf = modelopt.Vinf
     
@@ -231,27 +248,13 @@ function runOWENSWINDIO(windio,modelopt,path)
     nbelem = modelopt.nbelem
     ncelem = modelopt.ncelem
     nselem = modelopt.nselem
-    
-    WindType = modelopt.WindType
-    
-    windINPfilename = "$(path)$(modelopt.windINPfilename)"
-    ifw_libfile = modelopt.ifw_libfile
-    if ifw_libfile == "nothing"
-        ifw_libfile = nothing
-    end
-    
-    
 
+    
     turbineStartup = 0
     usingRotorSpeedFunction = false
     driveTrainOn = false
     generatorOn = false
     
-    
-    
-    hd_input_file = "none"
-    ss_input_file = "none"
-    md_input_file = "none"
     JgearBox = 0.0
     gearRatio = 1.0
     gearBoxEfficiency = 1.0
@@ -266,7 +269,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     OmegaInit = 7.2/60 #TODO: simplify this in the code since it is redundant
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv"
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens"
-    potflowfile = "$module_path/../test/data/potential_flow_data"
+    
     
     numDofPerNode = 6
     bladeData = []
