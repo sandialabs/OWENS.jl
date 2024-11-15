@@ -1,42 +1,52 @@
 OWENS_Options:
-    analysisType: "Unsteady" #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-    AeroModel: "DMS" #OWENS OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
-    controlStrategy: "constantRPM" #OWENS should be in WindIO?- yes, 
-    numTS: 20 #OWENS number of time steps TODO: change to sim time and make this derived
-    delta_t: 0.01 #OWENS time step in seconds
-    dataOutputFilename: nothing #OWENS data output filename with path, set to nothing or don't specify to not output anything
-    TOL: 1e-4 #OWENS gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
-    MAXITER: 300 #OWENS gauss-seidel max iterations - i.e. the two-way iterations
-    verbosity: 2 #OWENS verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
-    VTKsaveName: "./vtk/windio" #OWENS Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
-    aeroLoadsOn: 2 #OWENS Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
+    analysisType: "Unsteady" # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
+    AeroModel: "DMS" # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+    structuralModel: "TNB" #Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
+    controlStrategy: "constantRPM" # should be in WindIO?- yes, 
+    numTS: 20 # number of time steps TODO: change to sim time and make this derived
+    delta_t: 0.01 # time step in seconds
+    dataOutputFilename: nothing # data output filename with path, set to nothing or don't specify to not output anything
+    TOL: 1e-4 # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
+    MAXITER: 300 # gauss-seidel max iterations - i.e. the two-way iterations
+    verbosity: 2 # verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+    VTKsaveName: "./vtk/windio" # Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+    aeroLoadsOn: 2 # Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
 
 DLC_Options:
-    DLCs: ["1_1","2_1"] #DLC name of DLC
-    Vinf_range: LinRange(5,20,16) #DLC inflow Cutin to cutout and discretization
-    IEC_std: "\"1-ED3\"" #DLC turbsim input file IEC standard
-    WindChar: "\"A\"" #DLC turbsim wind charasteric 
-    WindClass: 1 # DLC turbsim wind class
-    turbsimsavepath: "./turbsimfiles" #DLC path where the turbsim files are saved
-    templatefile: "$module_path/template_files/templateTurbSim.inp" #DLC path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
-    pathtoturbsim: nothing #DLC path to the turbsim executable
-    NumGrid_Z: 38 #DLC turbsim vertical discretizations 
-    NumGrid_Y: 26 #DLC turbsim horizontal discretizations
-    Vref: 10.0 #DLC reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
-    Vdesign: 11.0 #DLC Design or rated speed of turbine, used for certain DLC cases
-    grid_oversize: 1.1 #DLC amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
-    regenWindFiles: false #DLC, force regeneration of turbsim files even if they already exist
-    delta_t_turbsim: 0.05 #DLC turbsim timestep
-    simtime_turbsim: 600.0 #DLC turbsim total time, which loops if simtime exceeds turbsim time
+    DLCs: ["1_1","2_1"] # name of DLC
+    Vinf_range: LinRange(5,20,16) # inflow Cutin to cutout and discretization
+    IEC_std: "\"1-ED3\"" # turbsim input file IEC standard
+    WindChar: "\"A\"" # turbsim wind charasteric 
+    WindClass: 1 # turbsim wind class
+    turbsimsavepath: "./turbsimfiles" # path where the turbsim files are saved
+    templatefile: "$module_path/template_files/templateTurbSim.inp" # path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
+    pathtoturbsim: nothing # path to the turbsim executable
+    NumGrid_Z: 38 # turbsim vertical discretizations 
+    NumGrid_Y: 26 # turbsim horizontal discretizations
+    Vref: 10.0 # reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
+    Vdesign: 11.0 # Design or rated speed of turbine, used for certain DLC cases
+    grid_oversize: 1.1 # amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
+    regenWindFiles: false #, force regeneration of turbsim files even if they already exist
+    delta_t_turbsim: 0.05 # turbsim timestep
+    simtime_turbsim: 600.0 # turbsim total time, which loops if simtime exceeds turbsim time
 
 OWENSAero_Options:
-    Nslices: 20 #OWENSAero number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
-    ntheta: 30 #OWENSAero number of azimuthal discretizations
-    ifw: false #OWENSAero use the OpenFASTWrappers inflow wind coupling to get inflow velocities
-    DynamicStallModel: "BV" #OWENSAero dynamic stall model, should be under an OWENSAero options
-    RPI: true #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
-    Aero_Buoyancy_Active: false #OWENSAero flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+    Nslices: 20 # number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+    ntheta: 30 # number of azimuthal discretizations
+    ifw: false # use the OpenFASTWrappers inflow wind coupling to get inflow velocities
+    DynamicStallModel: "BV" # dynamic stall model, should be under an OWENSAero options
+    RPI: true # rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+    Aero_Buoyancy_Active: false # flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
 
+OWENSFEA_Options:
+    nlOn: true #nonlinear effects
+    RayleighAlpha: 0.05 #damping coefficient scalar on the stiffness matrix
+    RayleighBeta: 0.05 #damping coefficient scalar on the mass matrix
+    iterationType: "DI" #internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+    numModes: 20 #if ROM model, number of modes used in the analysis type.  Less is faster but less accurate
+    tolerance: 1.0e-06 #total mesh unsteady analysis convergence tolerance for a timestep within the structural model
+    maxIterations: 50 #total mesh unsteady analysis convergence max iterations for a timestep
+    AddedMass_Coeff_Ca: 0.0 #added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
 
 general:
   analysisType: unsteady # unsteady, modal

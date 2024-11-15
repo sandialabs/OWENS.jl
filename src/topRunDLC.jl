@@ -80,6 +80,7 @@ end
 struct OWENS_Options
     analysisType
     AeroModel
+    structuralModel
     controlStrategy
     numTS
     delta_t
@@ -100,6 +101,7 @@ struct OWENS_Options
         new(
             get(dict_in,:analysisType, "Unsteady"), #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
             get(dict_in,:AeroModel, "DMS"), #OWENS OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+            get(dict_in,:structuralModel, "TNB"), # Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
             get(dict_in,:controlStrategy, "normal"), #OWENS should be in WindIO?- yes, 
             get(dict_in,:numTS, 10), #OWENS number of time steps TODO: change to sim time and make this derived
             get(dict_in,:delta_t, 0.05), #OWENS time step in seconds
@@ -185,34 +187,68 @@ struct OWENSAero_Options #TODO: move these downstream to their respective packag
     end
 end
 
+struct OWENSFEA_Options
+    nlOn
+    RayleighAlpha
+    RayleighBeta
+    iterationType
+    guessFreq
+    numModes
+    adaptiveLoadSteppingFlag
+    minLoadStepDelta
+    minLoadStep
+    prescribedLoadStep
+    maxNumLoadSteps
+    tolerance
+    maxIterations
+    elementOrder
+    alpha
+    gamma
+    AddedMass_Coeff_Ca
+    platformTurbineConnectionNodeNumber
+    aeroElasticOn
+    spinUpOn
+    predef
+
+    # Constructor that takes a dictionary
+    function OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        # Use get to provide default values for missing fields
+        new(       
+            get(dict_in,:nlOn, true), # nonlinear effects
+            get(dict_in,:RayleighAlpha, 0.05), # damping coefficient scalar on the stiffness matrix
+            get(dict_in,:RayleighBeta, 0.05), # damping coefficient scalar on the mass matrix
+            get(dict_in,:iterationType, "DI"), # internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+            get(dict_in,:guessFreq, 0.0), # for the built in flutter model frequency guessed for the flutter frequency 
+            get(dict_in,:numModes, 20), # ROM model, number of modes used in the analysis type.  Less is faster but less accurate
+            get(dict_in,:adaptiveLoadSteppingFlag, true), # for steady analysis if convergence fails, it will reduce the load and retry then increase the load
+            get(dict_in,:minLoadStepDelta, 0.0500), # minimum change in load step
+            get(dict_in,:minLoadStep, 0.0500), # minimum value of reduced load
+            get(dict_in,:prescribedLoadStep, 0.0), # optional prescribed load fraction
+            get(dict_in,:maxNumLoadSteps, 20), # used in static (steady state) analysis, max load steps for adaptive load stepping
+            get(dict_in,:tolerance, 1.0000e-06), # total mesh unsteady analysis convergence tolerance for a timestep within the structural model
+            get(dict_in,:maxIterations, 50), # total mesh unsteady analysis convergence max iterations for a timestep
+            get(dict_in,:elementOrder, 1), # Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
+            get(dict_in,:alpha, 0.5), # newmark time integration alpha parameter
+            get(dict_in,:gamma, 0.5), # newmark time integration gamma parameter
+            get(dict_in,:AddedMass_Coeff_Ca, 0.0), # added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+            get(dict_in,:platformTurbineConnectionNodeNumber, 1), # TODO: reconnect this
+            get(dict_in,:aeroElasticOn, false), # OWENSFEA for the built in flutter model
+            get(dict_in,:spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
+            get(dict_in,:predef, false), # Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
+        )
+    end
+end
 
 struct Unified_Options
     OWENS_Options::OWENS_Options
     DLC_Options::DLC_Options
     OWENSAero_Options::OWENSAero_Options
+    OWENSFEA_Options::OWENSFEA_Options
 end
 
 function ModelingOptions(yamlInputfile;
     RPM = 10.0, #TODO: RPM control points and time control points and Vinf control points?  Or just let DLC handle it?  Add fixed RPM path option for splining?
     OmegaInit = 7.2/60, #OWENS Initial rotational speed in Hz, TODO: change to radians/sec
-    nlOn = true, #OWENSFEA nonlinear effects
-    RayleighAlpha = 0.05, #OWENSFEA damping coefficient scalar on the stiffness matrix
-    RayleighBeta = 0.05, #OWENSFEA damping coefficient scalar on the mass matrix
-    iterationType = "DI", #OWENSFEA internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
-    structuralModel = "TNB", #OWENSFEA Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
-    guessFreq = 0.0, #OWENSFEA for the built in flutter model frequency guessed for the flutter frequency 
-    numModes = 20, #OWENSFEA ROM model, number of modes used in the analysis type.  Less is faster but less accurate
-    adaptiveLoadSteppingFlag = true, #OWENSFEA for steady analysis if convergence fails, it will reduce the load and retry then increase the load
-    minLoadStepDelta = 0.0500, #OWENSFEA minimum change in load step
-    minLoadStep = 0.0500, #OWENSFEA minimum value of reduced load
-    prescribedLoadStep = 0.0, #OWENSFEA optional prescribed load fraction
-    maxNumLoadSteps = 20, #OWENSFEA used in static (steady state) analysis, max load steps for adaptive load stepping
-    tolerance = 1.0000e-06, #OWENSFEA total mesh unsteady analysis convergence tolerance for a timestep within the structural model
-    maxIterations = 50, #OWENSFEA total mesh unsteady analysis convergence max iterations for a timestep
-    elementOrder = 1, #OWENSFEA Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
-    alpha = 0.5, #OWENSFEA newmark time integration alpha parameter
-    gamma = 0.5, #OWENSFEA newmark time integration gamma parameter
-    AddedMass_Coeff_Ca = 0.0, #OWENSFEA added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
     turbineType = "Darrieus", #mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
     ntelem = 20, #mesh number of tower elements in each blade, plus nodes wherever there is a component overlap
     nbelem = 30, #mesh number of blade elements in each blade, plus nodes wherever there is a component overlap
@@ -243,33 +279,33 @@ function ModelingOptions(yamlInputfile;
     initCond = [] #OWENSFEA initial conditions array, will be derived at this level, if using the OWENS scripting method, this can be used to initalize the structure
     jointTransform = 0.0 #OWENSFEA, derived matrix to transform from total matrix to the reduced matrix and vice-versa
     reducedDOFList = zeros(Int,2) #OWENSFEA, derived array that maps the joint-reduced dofs
-    platformTurbineConnectionNodeNumber = 1 #TODO: remove this since it is no longer used, or clean it up to be optional for an increase in speed; reaction force is calculated at each node
-    aeroElasticOn = false #Currently only for OWENS scripting method OWENSFEA for the built in flutter model
-    spinUpOn = true #TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
-    predef = false #Currently only for OWENS scripting method, Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
+    
+    
+    
+    
     nodalTerms = 0.0 #OWENSFEA the ability to apply concentrated nodal masses and forces etc., currently only available at the scripting level of analysis
-    stack_layers_bld = nothing #Currently only for OWENS scripting method, enables direct specification of the numbers of stack layers in the numad format
-    stack_layers_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
-    chord_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
-    thickness_scale = [1.0,1.0] #Currently only for OWENS scripting method, simple scaling across the blade span with a linear interpolation between
+    stack_layers_bld = nothing #, enables direct specification of the numbers of stack layers in the numad format
+    stack_layers_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
+    chord_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
+    thickness_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
     cables_connected_to_blade_base = true #mesh for ARCUS, for the two part simulation of the blade bending
     
     # Generator functions - currently the WindIO interface will just have the specified RPM control, then we'll add the discon control option, then open these back up.  Otherwise, use the scripting method.
-    turbineStartup = 0 #Currently only for OWENS scripting method TODO: clean up since it should be derived from control strategy
-    usingRotorSpeedFunction = false #Currently only for OWENS scripting methodTODO: clean up the speed function since the omegaocp RPM gets splined already
-    driveTrainOn = false #Currently only for OWENS scripting methodflag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
-    JgearBox = 0.0 #Currently only for OWENS scripting method torsional stiffness of the gearbox TODO: resolve units
-    gearRatio = 1.0 #Currently only for OWENS scripting method ratio between the turbine driveshaft and generator shaft
-    gearBoxEfficiency = 1.0 #Currently only for OWENS scripting method efficiency of the gearbox, just decreases the torque that the generator model sees
-    generatorOn = false #Currently only for OWENS scripting methodTODO: clean up the generator options
-    useGeneratorFunction = false #Currently only for OWENS scripting methodTODO: clean up the generator options
-    generatorProps = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
-    ratedTorque = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
-    zeroTorqueGenSpeed = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
-    pulloutRatio = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
-    ratedGenSlipPerc = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
-    OmegaGenStart = 0.0 #Currently only for OWENS scripting methodTODO: clean up the generator options
-    driveShaftProps = DriveShaftProps(0.0,0.0) #Currently only for OWENS scripting methodTODO: break this out, driveshaft stiffness and damping
+    turbineStartup = 0 # drivetrain control:  TODO: clean up since it should be derived from control strategy
+    usingRotorSpeedFunction = false # drivetrain control: TODO: clean up the speed function since the omegaocp RPM gets splined already
+    driveTrainOn = false # drivetrain control: flag to turn on the drivetrain model # drivetrain control: TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
+    JgearBox = 0.0 # drivetrain control:  torsional stiffness of the gearbox TODO: resolve units
+    gearRatio = 1.0 # drivetrain control:  ratio between the turbine driveshaft and generator shaft
+    gearBoxEfficiency = 1.0 # drivetrain control:  efficiency of the gearbox, just decreases the torque that the generator model sees
+    generatorOn = false # drivetrain control: TODO: clean up the generator options
+    useGeneratorFunction = false # drivetrain control: TODO: clean up the generator options
+    generatorProps = 0.0 # drivetrain control: TODO: clean up the generator options
+    ratedTorque = 0.0 # drivetrain control: TODO: clean up the generator options
+    zeroTorqueGenSpeed = 0.0 # drivetrain control: TODO: clean up the generator options
+    pulloutRatio = 0.0 # drivetrain control: TODO: clean up the generator options
+    ratedGenSlipPerc = 0.0 # drivetrain control: TODO: clean up the generator options
+    OmegaGenStart = 0.0 # drivetrain control: TODO: clean up the generator options
+    driveShaftProps = DriveShaftProps(0.0,0.0) # drivetrain control: TODO: break this out, driveshaft stiffness and damping
 
     yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
     
@@ -295,7 +331,13 @@ function ModelingOptions(yamlInputfile;
         owens_options = OWENS_Options(dummy_dict)
     end
     
-    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options)
+    if haskey(yamlInput,:OWENSFEA_Options)
+        owensfea_options = OWENSFEA_Options(yamlInput[:OWENSFEA_Options])
+    else
+        owensfea_options = OWENSFEA_Options(dummy_dict)
+    end
+
+    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options)
 
     
     general = yamlInput[:general]

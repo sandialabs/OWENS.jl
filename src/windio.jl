@@ -170,6 +170,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     verbosity = unioptions.OWENS_Options.verbosity
     VTKsaveName = unioptions.OWENS_Options.VTKsaveName
     aeroLoadsOn = unioptions.OWENS_Options.aeroLoadsOn
+    structuralModel = unioptions.OWENS_Options.structuralModel
 
     # OWENSAero Options
     Nslices = unioptions.OWENSAero_Options.Nslices
@@ -199,14 +200,33 @@ function runOWENSWINDIO(windio,modelopt,path)
     delta_t_turbsim = unioptions.DLC_Options.delta_t_turbsim
     simtime_turbsim = unioptions.DLC_Options.simtime_turbsim
 
-    
+    nlOn = unioptions.OWENSFEA_Options.nlOn
+    RayleighAlpha = unioptions.OWENSFEA_Options.RayleighAlpha
+    RayleighBeta = unioptions.OWENSFEA_Options.RayleighBeta
+    iterationType = unioptions.OWENSFEA_Options.iterationType
+    guessFreq = unioptions.OWENSFEA_Options.guessFreq
+    numModes = unioptions.OWENSFEA_Options.numModes
+    adaptiveLoadSteppingFlag = unioptions.OWENSFEA_Options.adaptiveLoadSteppingFlag
+    minLoadStepDelta = unioptions.OWENSFEA_Options.minLoadStepDelta
+    minLoadStep = unioptions.OWENSFEA_Options.minLoadStep
+    prescribedLoadStep = unioptions.OWENSFEA_Options.prescribedLoadStep
+    maxNumLoadSteps = unioptions.OWENSFEA_Options.maxNumLoadSteps
+    tolerance = unioptions.OWENSFEA_Options.tolerance
+    maxIterations = unioptions.OWENSFEA_Options.maxIterations
+    elementOrder = unioptions.OWENSFEA_Options.elementOrder
+    alpha = unioptions.OWENSFEA_Options.alpha
+    gamma = unioptions.OWENSFEA_Options.gamma
+    AddedMass_Coeff_Ca = unioptions.OWENSFEA_Options.AddedMass_Coeff_Ca
+    platformTurbineConnectionNodeNumber = unioptions.OWENSFEA_Options.platformTurbineConnectionNodeNumber
+    aeroElasticOn = unioptions.OWENSFEA_Options.aeroElasticOn
+    spinUpOn = unioptions.OWENSFEA_Options.spinUpOn
+    predef = unioptions.OWENSFEA_Options.predef
+
     turbineType = modelopt.turbineType
     Vinf = modelopt.Vinf
     
     RPM = modelopt.RPM
     
-    
-    structuralModel = modelopt.structuralModel
     ntelem = modelopt.ntelem
     nbelem = modelopt.nbelem
     ncelem = modelopt.ncelem
@@ -264,33 +284,12 @@ function runOWENSWINDIO(windio,modelopt,path)
     cables_connected_to_blade_base = true
     meshtype = turbineType
     
-    
-    nlOn = true
-    RayleighAlpha = 0.05
-    RayleighBeta = 0.05
-    iterationType = "DI"
     initCond = []
-    aeroElasticOn = false #for the automated flutter model
-    guessFreq = 0.0
     dataOutputFilename = "none"
     jointTransform = 0.0
     reducedDOFList = zeros(Int,2)
     numDOFPerNode = 6
-    platformTurbineConnectionNodeNumber = 1
-    spinUpOn = false
-    numModes = 20
     nlParams = 0 # can pass in strut, or leave at 0 to use other inputs
-    adaptiveLoadSteppingFlag = true
-    tolerance = 1.0000e-06
-    maxIterations = 50
-    maxNumLoadSteps = 20
-    minLoadStepDelta = 0.0500
-    minLoadStep = 0.0500
-    prescribedLoadStep = 0.0
-    predef = false
-    elementOrder = 1
-    alpha = 0.5
-    gamma = 0.5
     nodalTerms = 0.0
 
     AD15hubR = 0.1
@@ -518,6 +517,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     elementOrder,
     alpha,
     gamma,
+    AddedMass_Coeff_Ca,
     nodalTerms)
 
     nothing
