@@ -90,7 +90,7 @@ Inputs(;verbosity=2,
     numDofPerNode = 6,
     bladeData = [],
     driveShaftProps = DriveShaftProps(0.0,0.0)
-    TOl = 1e-4,
+    TOL = 1e-4,
     MAXITER = 300,
     )
 
@@ -135,7 +135,7 @@ Model inputs for OWENS coupled analysis, struct
 * `numDofPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
-* `TOl::float`: gauss-seidel iteration tolerance
+* `TOL::float`: gauss-seidel iteration tolerance
 * `MAXITER::int`: gauss-seidel maximum iterations
 
 
@@ -182,7 +182,7 @@ function Inputs(;verbosity=2,
     bladeData = [],
     rigid = false,
     driveShaftProps = DriveShaftProps(0.0,0.0),
-    TOl = 1e-4,
+    TOL = 1e-4,
     MAXITER = 300,
     )
 
@@ -190,7 +190,7 @@ function Inputs(;verbosity=2,
     driveTrainOn,generatorOn,aeroLoadsOn,AD15On,platformActive,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,dataOutputFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER),ss_input_file)
+    aeroloadfile,owensfile,potflowfile,dataOutputFilename,bladeData,driveShaftProps,Iteration_Parameters(TOL,MAXITER),ss_input_file)
 end
 
 """

@@ -154,6 +154,22 @@ function runOWENSWINDIO(windio,modelopt,path)
         gravityOn = gravity
     end
 
+    # Top Level OWENS Options
+    analysisType = unioptions.OWENS_Options.analysisType
+    AeroModel = unioptions.OWENS_Options.AeroModel
+    controlStrategy = unioptions.OWENS_Options.controlStrategy
+    numTS = unioptions.OWENS_Options.numTS
+    delta_t = unioptions.OWENS_Options.delta_t
+    platformActive = unioptions.OWENS_Options.platformActive
+    topsideOn = unioptions.OWENS_Options.topsideOn
+    interpOrder = unioptions.OWENS_Options.interpOrder
+    dataOutputFilename = unioptions.OWENS_Options.dataOutputFilename
+    rigid = unioptions.OWENS_Options.rigid
+    TOL = unioptions.OWENS_Options.TOL
+    MAXITER = unioptions.OWENS_Options.MAXITER
+    verbosity = unioptions.OWENS_Options.verbosity
+    VTKsaveName = unioptions.OWENS_Options.VTKsaveName
+    aeroLoadsOn = unioptions.OWENS_Options.aeroLoadsOn
 
     # OWENSAero Options
     Nslices = unioptions.OWENSAero_Options.Nslices
@@ -183,10 +199,10 @@ function runOWENSWINDIO(windio,modelopt,path)
     delta_t_turbsim = unioptions.DLC_Options.delta_t_turbsim
     simtime_turbsim = unioptions.DLC_Options.simtime_turbsim
 
-    analysisType = modelopt.analysisType
+    
     turbineType = modelopt.turbineType
     Vinf = modelopt.Vinf
-    controlStrategy = modelopt.controlStrategy
+    
     RPM = modelopt.RPM
     
     
@@ -197,22 +213,22 @@ function runOWENSWINDIO(windio,modelopt,path)
     nselem = modelopt.nselem
     
     WindType = modelopt.WindType
-    AeroModel = modelopt.AeroModel
+    
     windINPfilename = "$(path)$(modelopt.windINPfilename)"
     ifw_libfile = modelopt.ifw_libfile
     if ifw_libfile == "nothing"
         ifw_libfile = nothing
     end
-    numTS = modelopt.numTS
-    delta_t = modelopt.delta_t
+    
+    
 
     turbineStartup = 0
     usingRotorSpeedFunction = false
     driveTrainOn = false
     generatorOn = false
-    platformActive = false
-    topsideOn = true
-    interpOrder = 2
+    
+    
+    
     hd_input_file = "none"
     ss_input_file = "none"
     md_input_file = "none"
@@ -231,14 +247,14 @@ function runOWENSWINDIO(windio,modelopt,path)
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv"
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens"
     potflowfile = "$module_path/../test/data/potential_flow_data"
-    dataOutputFilename = "none"
+    
     numDofPerNode = 6
     bladeData = []
-    rigid = false
+    
     driveShaftProps = DriveShaftProps(0.0,0.0)
-    TOl = 1e-4
-    MAXITER = 300
-    verbosity = 2
+    
+
+    
     joint_type = 0
     c_mount_ratio = 0.05
     strut_twr_mountpoint = tower_strut_connection #TODO: multiple struts
@@ -247,8 +263,8 @@ function runOWENSWINDIO(windio,modelopt,path)
     
     cables_connected_to_blade_base = true
     meshtype = turbineType
-    VTKsaveName = "$path/vtk/windio"
-    aeroLoadsOn = 2
+    
+    
     nlOn = true
     RayleighAlpha = 0.05
     RayleighBeta = 0.05
@@ -463,7 +479,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     bladeData,
     rigid,
     driveShaftProps,
-    TOl,
+    TOL,
     MAXITER)
 
     nothing

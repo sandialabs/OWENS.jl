@@ -77,9 +77,44 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
-struct Unified_Options
-    DLC_Options
-    OWENSAero_Options
+struct OWENS_Options
+    analysisType
+    AeroModel
+    controlStrategy
+    numTS
+    delta_t
+    platformActive
+    topsideOn
+    interpOrder
+    dataOutputFilename
+    rigid
+    TOL
+    MAXITER
+    verbosity
+    VTKsaveName
+    aeroLoadsOn
+
+    # Constructor that takes a dictionary
+    function OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        # Use get to provide default values for missing fields
+        new(
+            get(dict_in,:analysisType, "Unsteady"), #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
+            get(dict_in,:AeroModel, "DMS"), #OWENS OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+            get(dict_in,:controlStrategy, "normal"), #OWENS should be in WindIO?- yes, 
+            get(dict_in,:numTS, 10), #OWENS number of time steps TODO: change to sim time and make this derived
+            get(dict_in,:delta_t, 0.05), #OWENS time step in seconds
+            get(dict_in,:platformActive, false), #OWENS flag to indicate if the floating platform model is active.  
+            get(dict_in,:topsideOn, true), #OWENS flat to be able to turn off the rotor and just run the floating portions
+            get(dict_in,:interpOrder, 2), #OWENS if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+            get(dict_in,:dataOutputFilename, nothing), #OWENS data output filename with path, set to nothing or don't specify to not output anything
+            get(dict_in,:rigid, false), #OWENS this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
+            get(dict_in,:TOL, 1e-4), #OWENS gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
+            get(dict_in,:MAXITER, 300), #OWENS gauss-seidel max iterations - i.e. the two-way iterations
+            get(dict_in,:verbosity, 2), #OWENS verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+            get(dict_in,:VTKsaveName, "./vtk/windio"), #OWENS Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+            get(dict_in,:aeroLoadsOn, 2), #OWENS Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
+        )
+    end
 end
 
 struct DLC_Options
@@ -150,26 +185,16 @@ struct OWENSAero_Options #TODO: move these downstream to their respective packag
     end
 end
 
+
+struct Unified_Options
+    OWENS_Options::OWENS_Options
+    DLC_Options::DLC_Options
+    OWENSAero_Options::OWENSAero_Options
+end
+
 function ModelingOptions(yamlInputfile;
-    analysisType = "Unsteady", #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-    AeroModel = "DMS", #OWENS OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
-    controlStrategy = "normal", #OWENS should be in WindIO?- yes, 
-    RPM = 10.0, #TODO: should be in WindIO - yes, in control section
-    numTS = 10, #OWENS number of time steps TODO: change to sim time and make this derived
-    delta_t = 0.05, #OWENS time step in seconds
-    platformActive = false, #OWENS flag to indicate if the floating platform model is active.  
-    topsideOn = true, #OWENS flat to be able to turn off the rotor and just run the floating portions
-    interpOrder = 2, #OWENS if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+    RPM = 10.0, #TODO: RPM control points and time control points and Vinf control points?  Or just let DLC handle it?  Add fixed RPM path option for splining?
     OmegaInit = 7.2/60, #OWENS Initial rotational speed in Hz, TODO: change to radians/sec
-    aeroloadfile = nothing, #OWENS filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
-    owensfile = nothing, #OWENS filename and path when using the legacy 1 way coupling with CACTUS like in the test suite
-    dataOutputFilename = nothing, #OWENS data output filename with path, set to nothing or don't specify to not output anything
-    rigid = false, #OWENS this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
-    TOL = 1e-4, #OWENS gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
-    MAXITER = 300, #OWENS gauss-seidel max iterations - i.e. the two-way iterations
-    verbosity = 2, #OWENS verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
-    VTKsaveName = "./vtk/windio", #OWENS Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
-    aeroLoadsOn = 2, #OWENS Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration. TODO: revisit this
     nlOn = true, #OWENSFEA nonlinear effects
     RayleighAlpha = 0.05, #OWENSFEA damping coefficient scalar on the stiffness matrix
     RayleighBeta = 0.05, #OWENSFEA damping coefficient scalar on the mass matrix
@@ -263,8 +288,14 @@ function ModelingOptions(yamlInputfile;
     else
         owensaero_options = OWENSAero_Options(dummy_dict)
     end
+
+    if haskey(yamlInput,:OWENS_Options)
+        owens_options = OWENS_Options(yamlInput[:OWENS_Options])
+    else
+        owens_options = OWENS_Options(dummy_dict)
+    end
     
-    unioptions = Unified_Options(dlc_options,owensaero_options)
+    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options)
 
     
     general = yamlInput[:general]
