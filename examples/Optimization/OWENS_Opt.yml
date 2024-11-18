@@ -48,6 +48,13 @@ OWENSFEA_Options:
     maxIterations: 50 #total mesh unsteady analysis convergence max iterations for a timestep
     AddedMass_Coeff_Ca: 0.0 #added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
 
+Mesh_Options:
+    ntelem: 20 # number of tower elements in each blade, plus nodes wherever there is a component overlap
+    nbelem: 30 # number of blade elements in each blade, plus nodes wherever there is a component overlap
+    nselem: 10 # number of elements in each strut
+    angularOffset: -1.5707963267948966
+    AD15hubR: 0.1 # parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+
 OWENSOpenFASTWrappers_Options:
     windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
 

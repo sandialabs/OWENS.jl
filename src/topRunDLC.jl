@@ -254,15 +254,85 @@ struct OWENSOpenFASTWrappers_Options
     function OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
         new(       
-            get(dict_in,:windINPfilename, nothing), #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
-            get(dict_in,:ifw_libfile, nothing), #OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:hd_lib, nothing),#OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:md_lib, nothing),#OWENSOpenFASTWrappers location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:hd_input_file, "none"), #OWENSOpenFASTWrappers If platformActive, the hydrodyn file location, like in the unit test
-            get(dict_in,:ss_input_file, "none"), #OWENSOpenFASTWrappers If platformActive, the sea state file location, like in the unit test
-            get(dict_in,:md_input_file, "none"), #OWENSOpenFASTWrappers If platformActive, the moordyn file location, like in the unit test
-            get(dict_in,:potflowfile, nothing),#OWENSOpenFASTWrappers If platformActive, the potential flow files location, like in the unit test
-            get(dict_in,:WindType, 3),#Derived parameter, OWENSOpenFASTWrappers inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
+            get(dict_in,:windINPfilename, nothing), # If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+            get(dict_in,:ifw_libfile, nothing), # location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:hd_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:md_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:hd_input_file, "none"), # If platformActive, the hydrodyn file location, like in the unit test
+            get(dict_in,:ss_input_file, "none"), # If platformActive, the sea state file location, like in the unit test
+            get(dict_in,:md_input_file, "none"), # If platformActive, the moordyn file location, like in the unit test
+            get(dict_in,:potflowfile, nothing),# If platformActive, the potential flow files location, like in the unit test
+            get(dict_in,:WindType, 3),#Derived parameter, inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
+        )
+    end
+end
+
+struct Mesh_Options
+    ntelem
+    nbelem
+    ncelem
+    nselem
+    angularOffset
+    joint_type
+    c_mount_ratio
+    AD15hubR
+    cables_connected_to_blade_base
+    
+    # Constructor that takes a dictionary
+    function Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        # Use get to provide default values for missing fields
+        new(       
+            get(dict_in,:ntelem, 20), # number of tower elements in each blade, plus nodes wherever there is a component overlap
+            get(dict_in,:nbelem, 30), # number of blade elements in each blade, plus nodes wherever there is a component overlap
+            get(dict_in,:ncelem, 30), # number of cable elements in each cable if ARCUS
+            get(dict_in,:nselem, 10), # number of elements in each strut
+            get(dict_in,:angularOffset, 0.0), # moves the structure to align with the aero model
+            get(dict_in,:joint_type, 0), # optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
+            get(dict_in,:c_mount_ratio, 0.05), # for ARCUS, where the cable mounts on the lower side of the blade
+            get(dict_in,:AD15hubR, 0.1), # parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+            get(dict_in,:cables_connected_to_blade_base, true), # for ARCUS, for the two part simulation of the blade bending
+        )
+    end
+end
+
+struct Drivetrain_Options
+    turbineStartup
+    usingRotorSpeedFunction
+    driveTrainOn
+    JgearBox
+    gearRatio
+    gearBoxEfficiency
+    generatorOn
+    useGeneratorFunction
+    generatorProps
+    ratedTorque
+    zeroTorqueGenSpeed
+    pulloutRatio
+    ratedGenSlipPerc
+    OmegaGenStart
+    driveShaft_K
+    driveShaft_C
+
+    # Constructor that takes a dictionary
+    function Drivetrain_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        # Use get to provide default values for missing fields
+        new(       
+            get(dict_in,:turbineStartup, 0), # TODO: clean up since it should be derived from control strategy
+            get(dict_in,:usingRotorSpeedFunction, false), #TODO: clean up the speed function since the omegaocp RPM gets splined already
+            get(dict_in,:driveTrainOn, false), #flag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
+            get(dict_in,:JgearBox, 0.0), # torsional stiffness of the gearbox TODO: resolve units
+            get(dict_in,:gearRatio, 1.0), # ratio between the turbine driveshaft and generator shaft
+            get(dict_in,:gearBoxEfficiency, 1.0), # efficiency of the gearbox, just decreases the torque that the generator model sees
+            get(dict_in,:generatorOn, false), #TODO: clean up the generator options
+            get(dict_in,:useGeneratorFunction, false), #TODO: clean up the generator options
+            get(dict_in,:generatorProps, 0.0), #TODO: clean up the generator options
+            get(dict_in,:ratedTorque, 0.0), #TODO: clean up the generator options
+            get(dict_in,:zeroTorqueGenSpeed, 0.0), #TODO: clean up the generator options
+            get(dict_in,:pulloutRatio, 0.0), #TODO: clean up the generator options
+            get(dict_in,:ratedGenSlipPerc, 0.0), #TODO: clean up the generator options
+            get(dict_in,:OmegaGenStart, 0.0), #TODO: clean up the generator options
+            get(dict_in,:driveShaftProps_K, 0.0), #TODO: break this out, driveshaft stiffness and damping
+            get(dict_in,:driveShaftProps_C, 0.0), #TODO: break this out, driveshaft stiffness and damping
         )
     end
 end
@@ -273,20 +343,15 @@ struct Unified_Options
     OWENSAero_Options::OWENSAero_Options
     OWENSFEA_Options::OWENSFEA_Options
     OWENSOpenFASTWrappers_Options::OWENSOpenFASTWrappers_Options
+    Mesh_Options::Mesh_Options
+    Drivetrain_Options::Drivetrain_Options
 end
 
 function ModelingOptions(yamlInputfile;
     RPM = 10.0, #TODO: RPM control points and time control points and Vinf control points?  Or just let DLC handle it?  Add fixed RPM path option for splining?
     OmegaInit = 7.2/60, #OWENS Initial rotational speed in Hz, TODO: change to radians/sec
     turbineType = "Darrieus", #mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
-    ntelem = 20, #mesh number of tower elements in each blade, plus nodes wherever there is a component overlap
-    nbelem = 30, #mesh number of blade elements in each blade, plus nodes wherever there is a component overlap
-    ncelem = 30, #mesh number of cable elements in each cable if ARCUS
-    nselem = 10, #mesh number of elements in each strut
-    angularOffset = 0.0, #mesh moves the structure to align with the aero model
-    joint_type = 0, #mesh optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
-    c_mount_ratio = 0.05, #mesh for ARCUS, where the cable mounts on the lower side of the blade
-    AD15hubR = 0.1, #Mesh parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+    
     )
 
     # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
@@ -304,28 +369,10 @@ function ModelingOptions(yamlInputfile;
     stack_layers_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
     chord_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
     thickness_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
-    cables_connected_to_blade_base = true #mesh for ARCUS, for the two part simulation of the blade bending
-    
-    # Generator functions - currently the WindIO interface will just have the specified RPM control, then we'll add the discon control option, then open these back up.  Otherwise, use the scripting method.
-    turbineStartup = 0 # drivetrain control:  TODO: clean up since it should be derived from control strategy
-    usingRotorSpeedFunction = false # drivetrain control: TODO: clean up the speed function since the omegaocp RPM gets splined already
-    driveTrainOn = false # drivetrain control: flag to turn on the drivetrain model # drivetrain control: TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
-    JgearBox = 0.0 # drivetrain control:  torsional stiffness of the gearbox TODO: resolve units
-    gearRatio = 1.0 # drivetrain control:  ratio between the turbine driveshaft and generator shaft
-    gearBoxEfficiency = 1.0 # drivetrain control:  efficiency of the gearbox, just decreases the torque that the generator model sees
-    generatorOn = false # drivetrain control: TODO: clean up the generator options
-    useGeneratorFunction = false # drivetrain control: TODO: clean up the generator options
-    generatorProps = 0.0 # drivetrain control: TODO: clean up the generator options
-    ratedTorque = 0.0 # drivetrain control: TODO: clean up the generator options
-    zeroTorqueGenSpeed = 0.0 # drivetrain control: TODO: clean up the generator options
-    pulloutRatio = 0.0 # drivetrain control: TODO: clean up the generator options
-    ratedGenSlipPerc = 0.0 # drivetrain control: TODO: clean up the generator options
-    OmegaGenStart = 0.0 # drivetrain control: TODO: clean up the generator options
-    driveShaftProps = DriveShaftProps(0.0,0.0) # drivetrain control: TODO: break this out, driveshaft stiffness and damping
+
 
     yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
     
-
     # Unpack YAML
     dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
 
@@ -359,7 +406,19 @@ function ModelingOptions(yamlInputfile;
         owensopenfastwrappers_options = OWENSOpenFASTWrappers_Options(dummy_dict)
     end
 
-    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options)
+    if haskey(yamlInput,:Mesh_Options)
+        mesh_options = Mesh_Options(yamlInput[:Mesh_Options])
+    else
+        mesh_options = Mesh_Options(dummy_dict)
+    end
+
+    if haskey(yamlInput,:Drivetrain_Options)
+        drivetrain_options = Drivetrain_Options(yamlInput[:Drivetrain_Options])
+    else
+        drivetrain_options = Drivetrain_Options(dummy_dict)
+    end
+
+    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
 
     
     general = yamlInput[:general]

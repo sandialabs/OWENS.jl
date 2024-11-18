@@ -232,39 +232,47 @@ function runOWENSWINDIO(windio,modelopt,path)
     potflowfile = unioptions.OWENSOpenFASTWrappers_Options.potflowfile
     WindType = unioptions.OWENSOpenFASTWrappers_Options.WindType
 
-    
     windINPfilename = "$(path)$windINPfilename"
     potflowfile = "$(path)$potflowfile"
     if ifw_libfile == "nothing"
         ifw_libfile = nothing
     end
 
+    ntelem = unioptions.Mesh_Options.ntelem
+    nbelem = unioptions.Mesh_Options.nbelem
+    ncelem = unioptions.Mesh_Options.ncelem
+    nselem = unioptions.Mesh_Options.nselem
+    angularOffset = unioptions.Mesh_Options.angularOffset
+    joint_type = unioptions.Mesh_Options.joint_type
+    c_mount_ratio = unioptions.Mesh_Options.c_mount_ratio
+    AD15hubR = unioptions.Mesh_Options.AD15hubR
+    cables_connected_to_blade_base = unioptions.Mesh_Options.cables_connected_to_blade_base
+
+    turbineStartup = unioptions.Drivetrain_Options.turbineStartup
+    usingRotorSpeedFunction = unioptions.Drivetrain_Options.usingRotorSpeedFunction
+    driveTrainOn = unioptions.Drivetrain_Options.driveTrainOn
+    JgearBox = unioptions.Drivetrain_Options.JgearBox
+    gearRatio = unioptions.Drivetrain_Options.gearRatio
+    gearBoxEfficiency = unioptions.Drivetrain_Options.gearBoxEfficiency
+    generatorOn = unioptions.Drivetrain_Options.generatorOn
+    useGeneratorFunction = unioptions.Drivetrain_Options.useGeneratorFunction
+    generatorProps = unioptions.Drivetrain_Options.generatorProps
+    ratedTorque = unioptions.Drivetrain_Options.ratedTorque
+    zeroTorqueGenSpeed = unioptions.Drivetrain_Options.zeroTorqueGenSpeed
+    pulloutRatio = unioptions.Drivetrain_Options.pulloutRatio
+    ratedGenSlipPerc = unioptions.Drivetrain_Options.ratedGenSlipPerc
+    OmegaGenStart = unioptions.Drivetrain_Options.OmegaGenStart
+    driveShaft_K = unioptions.Drivetrain_Options.driveShaft_K
+    driveShaft_C = unioptions.Drivetrain_Options.driveShaft_C
+
+    strut_twr_mountpoint = tower_strut_connection
+    strut_bld_mountpoint = blade_strut_connection
+
     turbineType = modelopt.turbineType
     Vinf = modelopt.Vinf
     
     RPM = modelopt.RPM
     
-    ntelem = modelopt.ntelem
-    nbelem = modelopt.nbelem
-    ncelem = modelopt.ncelem
-    nselem = modelopt.nselem
-
-    
-    turbineStartup = 0
-    usingRotorSpeedFunction = false
-    driveTrainOn = false
-    generatorOn = false
-    
-    JgearBox = 0.0
-    gearRatio = 1.0
-    gearBoxEfficiency = 1.0
-    useGeneratorFunction = false
-    generatorProps = 0.0
-    ratedTorque = 0.0
-    zeroTorqueGenSpeed = 0.0
-    pulloutRatio = 0.0
-    ratedGenSlipPerc = 0.0
-    OmegaGenStart = 0.0
     omegaControl = false
     OmegaInit = 7.2/60 #TODO: simplify this in the code since it is redundant
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv"
@@ -274,17 +282,8 @@ function runOWENSWINDIO(windio,modelopt,path)
     numDofPerNode = 6
     bladeData = []
     
-    driveShaftProps = DriveShaftProps(0.0,0.0)
-    
+    driveShaftProps = DriveShaftProps(driveShaft_K,driveShaft_C)
 
-    
-    joint_type = 0
-    c_mount_ratio = 0.05
-    strut_twr_mountpoint = tower_strut_connection #TODO: multiple struts
-    strut_bld_mountpoint = blade_strut_connection
-
-    
-    cables_connected_to_blade_base = true
     meshtype = turbineType
     
     initCond = []
@@ -295,13 +294,11 @@ function runOWENSWINDIO(windio,modelopt,path)
     nlParams = 0 # can pass in strut, or leave at 0 to use other inputs
     nodalTerms = 0.0
 
-    AD15hubR = 0.1
     # Htwr_base = 3.0#maximum(windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values])
     stack_layers_bld = nothing
     stack_layers_scale = [1.0,1.0]
     chord_scale = [1.0,1.0]
     thickness_scale = [1.0,1.0]
-    angularOffset = -pi/2
 
     custommesh = nothing
 
