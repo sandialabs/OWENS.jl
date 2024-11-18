@@ -814,7 +814,7 @@ end
 
 """
 
-    readBCdata(bcfilename,numNodes,numDofPerNode)
+    readBCdata(bcfilename,numNodes,numDOFPerNode)
 
 This function reads the boundray condition file and stores data in the
 boundary condition object.
@@ -822,12 +822,12 @@ boundary condition object.
 #Input
 * `bcfilename::string`:    string containing boundary condition filename
 * `numNodes::int`:      number of nodes in structural model
-* `numDofPerNode::int`: number of degrees of freedom per node
+* `numDOFPerNode::int`: number of degrees of freedom per node
 
 #Output
 * `BC::OWENSFEA.BC_struct`:   see OWENSFEA.BC_struct, object containing boundary condition data
 """
-function readBCdata(bcfilename,numNodes,numDofPerNode)
+function readBCdata(bcfilename,numNodes,numDOFPerNode)
 
     fid = open(bcfilename)       #open boundary condition file
     numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
@@ -847,7 +847,7 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
 
     end
 
-    totalNumDof = numNodes*numDofPerNode
+    totalNumDof = numNodes*numDOFPerNode
 
     numsBC = 0
     nummBC = 0
@@ -860,11 +860,11 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
 
     #calculate constrained dof vector
     isConstrained = zeros(totalNumDof,1)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
+    constDof = (pBC[:,1].-1)*numDOFPerNode + pBC[:,2]
     index = 1
     for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
+        for j=1:numDOFPerNode
+            if ((i-1)*numDOFPerNode + j in constDof)
                 isConstrained[index] = 1
             end
             index = index + 1

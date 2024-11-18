@@ -28,7 +28,7 @@
         minLoadStep = 0.0500,
         prescribedLoadStep = 0.0,
         elementOrder = 1,
-        numDofPerNode = 6,
+        numDOFPerNode = 6,
         platformActive = false,
         platformTurbineConnectionNodeNumber = 1,
         JgearBox =0.0,
@@ -76,7 +76,7 @@ function owens(owensfile,analysisType;
     minLoadStep = 0.0500,
     prescribedLoadStep = 0.0,
     elementOrder = 1, #linear element order
-    numDofPerNode = 6,
+    numDOFPerNode = 6,
     platformActive = false,
     interpOrder = 2,
     platformTurbineConnectionNodeNumber = 1,
@@ -228,7 +228,7 @@ function owens(owensfile,analysisType;
     #--------------------------------------------
     mesh = OWENS.readMesh(meshfilename) #read mesh file
     bladeData,_,_,_ = OWENS.readBladeData(blddatafilename) #reads overall blade data file
-    BC = OWENS.readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
+    BC = OWENS.readBCdata(bcdatafilename,mesh.numNodes,numDOFPerNode) #read boundary condition file
     el = OWENS.readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
     nodalTerms = OWENSFEA.applyConcentratedTerms(mesh.numNodes, 6;filename=ndldatafilename) #read concentrated nodal terms file
@@ -524,7 +524,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #read element aero_data in
     mesh = OWENS.readMesh(meshFn)
     el = OWENS.readElementData(mesh.numEl,elFn,ortFn,bladeData)
-    numDofPerNode = 6
+    numDOFPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     Fg = zeros(mesh.numNodes*6,numAeroTS)
     for i=1:numAeroTS
@@ -536,7 +536,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
                 #get dof map
                 node1 = Int(structuralNodeNumbers[j,k])
                 node2 = Int(structuralNodeNumbers[j,k+1])
-                dofList = [(node1-1)*numDofPerNode.+(1:6) (node2-1)*numDofPerNode.+(1:6)]
+                dofList = [(node1-1)*numDOFPerNode.+(1:6) (node2-1)*numDOFPerNode.+(1:6)]
 
                 elementOrder = 1
                 x = [mesh.x[node1], mesh.x[node2]]

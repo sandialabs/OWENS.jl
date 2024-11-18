@@ -94,27 +94,35 @@ struct OWENS_Options
     verbosity
     VTKsaveName
     aeroLoadsOn
+    Prescribed_RPM_time_controlpoints
+    Prescribed_RPM_RPM_controlpoints
+    Prescribed_Vinf_time_controlpoints
+    Prescribed_Vinf_Vinf_controlpoints
 
     # Constructor that takes a dictionary
     function OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
         new(
-            get(dict_in,:analysisType, "Unsteady"), #OWENS Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-            get(dict_in,:AeroModel, "DMS"), #OWENS OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+            get(dict_in,:analysisType, "Unsteady"), # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
+            get(dict_in,:AeroModel, "DMS"), # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
             get(dict_in,:structuralModel, "TNB"), # Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
-            get(dict_in,:controlStrategy, "normal"), #OWENS should be in WindIO?- yes, 
-            get(dict_in,:numTS, 10), #OWENS number of time steps TODO: change to sim time and make this derived
-            get(dict_in,:delta_t, 0.05), #OWENS time step in seconds
-            get(dict_in,:platformActive, false), #OWENS flag to indicate if the floating platform model is active.  
-            get(dict_in,:topsideOn, true), #OWENS flat to be able to turn off the rotor and just run the floating portions
-            get(dict_in,:interpOrder, 2), #OWENS if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
-            get(dict_in,:dataOutputFilename, nothing), #OWENS data output filename with path, set to nothing or don't specify to not output anything
-            get(dict_in,:rigid, false), #OWENS this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
-            get(dict_in,:TOL, 1e-4), #OWENS gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
-            get(dict_in,:MAXITER, 300), #OWENS gauss-seidel max iterations - i.e. the two-way iterations
-            get(dict_in,:verbosity, 2), #OWENS verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
-            get(dict_in,:VTKsaveName, "./vtk/windio"), #OWENS Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
-            get(dict_in,:aeroLoadsOn, 2), #OWENS Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
+            get(dict_in,:controlStrategy, "normal"), # should be in WindIO?- yes, 
+            get(dict_in,:numTS, 10), # number of time steps TODO: change to sim time and make this derived
+            get(dict_in,:delta_t, 0.05), # time step in seconds
+            get(dict_in,:platformActive, false), # flag to indicate if the floating platform model is active.  
+            get(dict_in,:topsideOn, true), # flat to be able to turn off the rotor and just run the floating portions
+            get(dict_in,:interpOrder, 2), # if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+            get(dict_in,:dataOutputFilename, nothing), # data output filename with path, set to nothing or don't specify to not output anything
+            get(dict_in,:rigid, false), # this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
+            get(dict_in,:TOL, 1e-4), # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
+            get(dict_in,:MAXITER, 300), # gauss-seidel max iterations - i.e. the two-way iterations
+            get(dict_in,:verbosity, 2), # verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+            get(dict_in,:VTKsaveName, "./vtk/windio"), # Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+            get(dict_in,:aeroLoadsOn, 2), # Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
+            get(dict_in,:Prescribed_RPM_time_controlpoints, [0.0,100000.1]), # If controlStrategy is "fixedRPM", array of time control points for the internal spline
+            get(dict_in,:Prescribed_RPM_RPM_controlpoints, [17.2,17.2]), # If controlStrategy is "fixedRPM", array of RPM control points for the internal spline
+            get(dict_in,:Prescribed_Vinf_time_controlpoints, [0.0,100000.1]), # If AeroModel is "DMS" or "AC, and ifw is false, array of time control points for the internal spline
+            get(dict_in,:Prescribed_Vinf_Vinf_controlpoints, [17.2,17.2]), # If AeroModel is "DMS" or "AC, and ifw is false, array of Vinf control points for the internal spline 
         )
     end
 end
@@ -244,6 +252,8 @@ struct OWENSOpenFASTWrappers_Options
     ifw_libfile
     hd_lib
     md_lib
+    adi_lib
+    adi_rootname
     hd_input_file
     ss_input_file
     md_input_file
@@ -258,6 +268,8 @@ struct OWENSOpenFASTWrappers_Options
             get(dict_in,:ifw_libfile, nothing), # location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:hd_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:md_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:adi_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:adi_rootname, "./aerodyn"),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:hd_input_file, "none"), # If platformActive, the hydrodyn file location, like in the unit test
             get(dict_in,:ss_input_file, "none"), # If platformActive, the sea state file location, like in the unit test
             get(dict_in,:md_input_file, "none"), # If platformActive, the moordyn file location, like in the unit test
@@ -277,6 +289,7 @@ struct Mesh_Options
     c_mount_ratio
     AD15hubR
     cables_connected_to_blade_base
+    turbineType
     
     # Constructor that takes a dictionary
     function Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -291,6 +304,7 @@ struct Mesh_Options
             get(dict_in,:c_mount_ratio, 0.05), # for ARCUS, where the cable mounts on the lower side of the blade
             get(dict_in,:AD15hubR, 0.1), # parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
             get(dict_in,:cables_connected_to_blade_base, true), # for ARCUS, for the two part simulation of the blade bending
+            get(dict_in,:turbineType, "Darrieus"), #mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
         )
     end
 end
@@ -347,29 +361,7 @@ struct Unified_Options
     Drivetrain_Options::Drivetrain_Options
 end
 
-function ModelingOptions(yamlInputfile;
-    RPM = 10.0, #TODO: RPM control points and time control points and Vinf control points?  Or just let DLC handle it?  Add fixed RPM path option for splining?
-    OmegaInit = 7.2/60, #OWENS Initial rotational speed in Hz, TODO: change to radians/sec
-    turbineType = "Darrieus", #mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
-    
-    )
-
-    # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
-    Vinf = 10.0#Vref
-    nlParams = 0 # derived struct, we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
-    bladeData = [] # same as above
-    numDofPerNode = 6 #while much of the model can operate with fewer dofs, too much is hard coded on the full 6 dof.
-    omegaControl = false # this is a derived parameter
-    meshtype = turbineType #derived, should probably be cleaned up TODO
-    initCond = [] #OWENSFEA initial conditions array, will be derived at this level, if using the OWENS scripting method, this can be used to initalize the structure
-    jointTransform = 0.0 #OWENSFEA, derived matrix to transform from total matrix to the reduced matrix and vice-versa
-    reducedDOFList = zeros(Int,2) #OWENSFEA, derived array that maps the joint-reduced dofs
-    nodalTerms = 0.0 #OWENSFEA the ability to apply concentrated nodal masses and forces etc., currently only available at the scripting level of analysis
-    stack_layers_bld = nothing #, enables direct specification of the numbers of stack layers in the numad format
-    stack_layers_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
-    chord_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
-    thickness_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
-
+function ModelingOptions(yamlInputfile)
 
     yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
     
@@ -418,50 +410,7 @@ function ModelingOptions(yamlInputfile;
         drivetrain_options = Drivetrain_Options(dummy_dict)
     end
 
-    unioptions = Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
-
-    
-    general = yamlInput[:general]
-        analysisType = general[:analysisType]
-        turbineType = general[:turbineType]
-        numTS = general[:numTS]
-        delta_t = general[:delta_t]
-
-    Inflow = yamlInput[:Inflow]
-        Vinf = Inflow[:Vinf]
-        ifw = Inflow[:ifw]
-        WindType = Inflow[:WindType]
-        windINPfilename = Inflow[:windINPfilename]
-        ifw_libfile = Inflow[:ifw_libfile]
-
-    controlParameters = yamlInput[:controlParameters]
-        controlStrategy = controlParameters[:controlStrategy]
-        RPM = controlParameters[:RPM]
-
-    AeroParameters = yamlInput[:AeroParameters]
-        Nslices = AeroParameters[:Nslices]
-        ntheta = AeroParameters[:ntheta]
-        AeroModel = AeroParameters[:AeroModel]
-        adi_lib = AeroParameters[:adi_lib]
-        adi_rootname = AeroParameters[:adi_rootname]
-
-    structuralParameters = yamlInput[:structuralParameters]
-        structuralModel = structuralParameters[:structuralModel]
-        ntelem = structuralParameters[:ntelem]
-        nbelem = structuralParameters[:nbelem]
-        if haskey(structuralParameters,:ncelem)
-            ncelem = structuralParameters[:ncelem]
-        else
-            ncelem = 10
-        end
-        nselem = structuralParameters[:nselem]
-
-
-    return MasterInput(analysisType,turbineType,nothing,nothing,nothing,nothing,Vinf,
-    controlStrategy,RPM,Nslices,ntheta,structuralModel,ntelem,nbelem,ncelem,
-    nselem,AeroModel,ifw,WindType,windINPfilename,ifw_libfile,adi_lib,adi_rootname,nothing,nothing,numTS,
-    delta_t,nothing,nothing,
-    nothing,nothing,nothing,nothing), unioptions
+    return Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
 end
 
 

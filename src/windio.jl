@@ -6,7 +6,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     end
 
     if typeof(modelopt) == String
-        modelopt, unioptions = ModelingOptions(modelopt)
+        modelopt = ModelingOptions(modelopt)
     end
 
     # Assembly
@@ -38,7 +38,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
     
     Htwr_base = hub_height-Blade_Height/2
-    if modelopt.turbineType == "Darrieus"
+    if modelopt.Mesh_Options.turbineType == "Darrieus"
         Htwr_blds = Blade_Height
     else
         Htwr_blds = Blade_Height*0.6 #TODO: finer grained inputs
@@ -155,82 +155,94 @@ function runOWENSWINDIO(windio,modelopt,path)
     end
 
     # Top Level OWENS Options
-    analysisType = unioptions.OWENS_Options.analysisType
-    AeroModel = unioptions.OWENS_Options.AeroModel
-    controlStrategy = unioptions.OWENS_Options.controlStrategy
-    numTS = unioptions.OWENS_Options.numTS
-    delta_t = unioptions.OWENS_Options.delta_t
-    platformActive = unioptions.OWENS_Options.platformActive
-    topsideOn = unioptions.OWENS_Options.topsideOn
-    interpOrder = unioptions.OWENS_Options.interpOrder
-    dataOutputFilename = unioptions.OWENS_Options.dataOutputFilename
-    rigid = unioptions.OWENS_Options.rigid
-    TOL = unioptions.OWENS_Options.TOL
-    MAXITER = unioptions.OWENS_Options.MAXITER
-    verbosity = unioptions.OWENS_Options.verbosity
-    VTKsaveName = unioptions.OWENS_Options.VTKsaveName
-    aeroLoadsOn = unioptions.OWENS_Options.aeroLoadsOn
-    structuralModel = unioptions.OWENS_Options.structuralModel
+    analysisType = modelopt.OWENS_Options.analysisType
+    AeroModel = modelopt.OWENS_Options.AeroModel
+    controlStrategy = modelopt.OWENS_Options.controlStrategy
+    numTS = modelopt.OWENS_Options.numTS
+    delta_t = modelopt.OWENS_Options.delta_t
+    platformActive = modelopt.OWENS_Options.platformActive
+    topsideOn = modelopt.OWENS_Options.topsideOn
+    interpOrder = modelopt.OWENS_Options.interpOrder
+    dataOutputFilename = modelopt.OWENS_Options.dataOutputFilename
+    rigid = modelopt.OWENS_Options.rigid
+    TOL = modelopt.OWENS_Options.TOL
+    MAXITER = modelopt.OWENS_Options.MAXITER
+    verbosity = modelopt.OWENS_Options.verbosity
+    VTKsaveName = modelopt.OWENS_Options.VTKsaveName
+    aeroLoadsOn = modelopt.OWENS_Options.aeroLoadsOn
+    structuralModel = modelopt.OWENS_Options.structuralModel
+    Prescribed_RPM_time_controlpoints = modelopt.OWENS_Options.Prescribed_RPM_time_controlpoints
+    Prescribed_RPM_RPM_controlpoints = modelopt.OWENS_Options.Prescribed_RPM_RPM_controlpoints
+    Prescribed_Vinf_time_controlpoints = modelopt.OWENS_Options.Prescribed_Vinf_time_controlpoints
+    Prescribed_Vinf_Vinf_controlpoints = modelopt.OWENS_Options.Prescribed_Vinf_Vinf_controlpoints
 
     # OWENSAero Options
-    Nslices = unioptions.OWENSAero_Options.Nslices
-    ntheta = unioptions.OWENSAero_Options.ntheta
-    ifw = unioptions.OWENSAero_Options.ifw
-    DynamicStallModel = unioptions.OWENSAero_Options.DynamicStallModel
-    RPI = unioptions.OWENSAero_Options.RPI
-    Aero_Buoyancy_Active = unioptions.OWENSAero_Options.Aero_Buoyancy_Active
-    Aero_AddedMass_Active = unioptions.OWENSAero_Options.Aero_AddedMass_Active
-    Aero_RotAccel_Active = unioptions.OWENSAero_Options.Aero_RotAccel_Active
+    Nslices = modelopt.OWENSAero_Options.Nslices
+    ntheta = modelopt.OWENSAero_Options.ntheta
+    ifw = modelopt.OWENSAero_Options.ifw
+    DynamicStallModel = modelopt.OWENSAero_Options.DynamicStallModel
+    RPI = modelopt.OWENSAero_Options.RPI
+    Aero_Buoyancy_Active = modelopt.OWENSAero_Options.Aero_Buoyancy_Active
+    Aero_AddedMass_Active = modelopt.OWENSAero_Options.Aero_AddedMass_Active
+    Aero_RotAccel_Active = modelopt.OWENSAero_Options.Aero_RotAccel_Active
 
     # DLC Options
-    DLCs = unioptions.DLC_Options.DLCs
-    Vinf_range = unioptions.DLC_Options.Vinf_range
-    IEC_std = unioptions.DLC_Options.IEC_std
-    WindChar = unioptions.DLC_Options.WindChar
-    WindClass = unioptions.DLC_Options.WindClass
-    turbsimsavepath = unioptions.DLC_Options.turbsimsavepath
-    templatefile = unioptions.DLC_Options.templatefile
-    pathtoturbsim = unioptions.DLC_Options.pathtoturbsim
-    NumGrid_Z = unioptions.DLC_Options.NumGrid_Z
-    NumGrid_Y = unioptions.DLC_Options.NumGrid_Y
-    Vref = unioptions.DLC_Options.Vref
-    Vdesign = unioptions.DLC_Options.Vdesign
-    grid_oversize = unioptions.DLC_Options.grid_oversize
-    regenWindFiles = unioptions.DLC_Options.regenWindFiles
-    delta_t_turbsim = unioptions.DLC_Options.delta_t_turbsim
-    simtime_turbsim = unioptions.DLC_Options.simtime_turbsim
+    DLCs = modelopt.DLC_Options.DLCs
+    Vinf_range = modelopt.DLC_Options.Vinf_range
+    IEC_std = modelopt.DLC_Options.IEC_std
+    WindChar = modelopt.DLC_Options.WindChar
+    WindClass = modelopt.DLC_Options.WindClass
+    turbsimsavepath = modelopt.DLC_Options.turbsimsavepath
+    templatefile = modelopt.DLC_Options.templatefile
+    pathtoturbsim = modelopt.DLC_Options.pathtoturbsim
+    NumGrid_Z = modelopt.DLC_Options.NumGrid_Z
+    NumGrid_Y = modelopt.DLC_Options.NumGrid_Y
+    Vref = modelopt.DLC_Options.Vref
+    Vdesign = modelopt.DLC_Options.Vdesign
+    grid_oversize = modelopt.DLC_Options.grid_oversize
+    regenWindFiles = modelopt.DLC_Options.regenWindFiles
+    delta_t_turbsim = modelopt.DLC_Options.delta_t_turbsim
+    simtime_turbsim = modelopt.DLC_Options.simtime_turbsim
 
-    nlOn = unioptions.OWENSFEA_Options.nlOn
-    RayleighAlpha = unioptions.OWENSFEA_Options.RayleighAlpha
-    RayleighBeta = unioptions.OWENSFEA_Options.RayleighBeta
-    iterationType = unioptions.OWENSFEA_Options.iterationType
-    guessFreq = unioptions.OWENSFEA_Options.guessFreq
-    numModes = unioptions.OWENSFEA_Options.numModes
-    adaptiveLoadSteppingFlag = unioptions.OWENSFEA_Options.adaptiveLoadSteppingFlag
-    minLoadStepDelta = unioptions.OWENSFEA_Options.minLoadStepDelta
-    minLoadStep = unioptions.OWENSFEA_Options.minLoadStep
-    prescribedLoadStep = unioptions.OWENSFEA_Options.prescribedLoadStep
-    maxNumLoadSteps = unioptions.OWENSFEA_Options.maxNumLoadSteps
-    tolerance = unioptions.OWENSFEA_Options.tolerance
-    maxIterations = unioptions.OWENSFEA_Options.maxIterations
-    elementOrder = unioptions.OWENSFEA_Options.elementOrder
-    alpha = unioptions.OWENSFEA_Options.alpha
-    gamma = unioptions.OWENSFEA_Options.gamma
-    AddedMass_Coeff_Ca = unioptions.OWENSFEA_Options.AddedMass_Coeff_Ca
-    platformTurbineConnectionNodeNumber = unioptions.OWENSFEA_Options.platformTurbineConnectionNodeNumber
-    aeroElasticOn = unioptions.OWENSFEA_Options.aeroElasticOn
-    spinUpOn = unioptions.OWENSFEA_Options.spinUpOn
-    predef = unioptions.OWENSFEA_Options.predef
+    # OWENSFEA Options
+    nlOn = modelopt.OWENSFEA_Options.nlOn
+    RayleighAlpha = modelopt.OWENSFEA_Options.RayleighAlpha
+    RayleighBeta = modelopt.OWENSFEA_Options.RayleighBeta
+    iterationType = modelopt.OWENSFEA_Options.iterationType
+    guessFreq = modelopt.OWENSFEA_Options.guessFreq
+    numModes = modelopt.OWENSFEA_Options.numModes
+    adaptiveLoadSteppingFlag = modelopt.OWENSFEA_Options.adaptiveLoadSteppingFlag
+    minLoadStepDelta = modelopt.OWENSFEA_Options.minLoadStepDelta
+    minLoadStep = modelopt.OWENSFEA_Options.minLoadStep
+    prescribedLoadStep = modelopt.OWENSFEA_Options.prescribedLoadStep
+    maxNumLoadSteps = modelopt.OWENSFEA_Options.maxNumLoadSteps
+    tolerance = modelopt.OWENSFEA_Options.tolerance
+    maxIterations = modelopt.OWENSFEA_Options.maxIterations
+    elementOrder = modelopt.OWENSFEA_Options.elementOrder
+    alpha = modelopt.OWENSFEA_Options.alpha
+    gamma = modelopt.OWENSFEA_Options.gamma
+    AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca
+    platformTurbineConnectionNodeNumber = modelopt.OWENSFEA_Options.platformTurbineConnectionNodeNumber
+    aeroElasticOn = modelopt.OWENSFEA_Options.aeroElasticOn
+    spinUpOn = modelopt.OWENSFEA_Options.spinUpOn
+    predef = modelopt.OWENSFEA_Options.predef
 
-    windINPfilename = unioptions.OWENSOpenFASTWrappers_Options.windINPfilename
-    ifw_libfile = unioptions.OWENSOpenFASTWrappers_Options.ifw_libfile
-    hd_lib = unioptions.OWENSOpenFASTWrappers_Options.hd_lib
-    md_lib = unioptions.OWENSOpenFASTWrappers_Options.md_lib
-    hd_input_file = unioptions.OWENSOpenFASTWrappers_Options.hd_input_file
-    ss_input_file = unioptions.OWENSOpenFASTWrappers_Options.ss_input_file
-    md_input_file = unioptions.OWENSOpenFASTWrappers_Options.md_input_file
-    potflowfile = unioptions.OWENSOpenFASTWrappers_Options.potflowfile
-    WindType = unioptions.OWENSOpenFASTWrappers_Options.WindType
+    # OWENSOpenFASTWrappers Options
+    windINPfilename = modelopt.OWENSOpenFASTWrappers_Options.windINPfilename
+    ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile
+    hd_lib = modelopt.OWENSOpenFASTWrappers_Options.hd_lib
+    md_lib = modelopt.OWENSOpenFASTWrappers_Options.md_lib
+    adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib
+    adi_rootname = modelopt.OWENSOpenFASTWrappers_Options.adi_rootname
+    hd_input_file = modelopt.OWENSOpenFASTWrappers_Options.hd_input_file
+    ss_input_file = modelopt.OWENSOpenFASTWrappers_Options.ss_input_file
+    md_input_file = modelopt.OWENSOpenFASTWrappers_Options.md_input_file
+    potflowfile = modelopt.OWENSOpenFASTWrappers_Options.potflowfile
+    WindType = modelopt.OWENSOpenFASTWrappers_Options.WindType
+    
+    if adi_lib == "nothing"
+        adi_lib = nothing
+    end
 
     windINPfilename = "$(path)$windINPfilename"
     potflowfile = "$(path)$potflowfile"
@@ -238,83 +250,73 @@ function runOWENSWINDIO(windio,modelopt,path)
         ifw_libfile = nothing
     end
 
-    ntelem = unioptions.Mesh_Options.ntelem
-    nbelem = unioptions.Mesh_Options.nbelem
-    ncelem = unioptions.Mesh_Options.ncelem
-    nselem = unioptions.Mesh_Options.nselem
-    angularOffset = unioptions.Mesh_Options.angularOffset
-    joint_type = unioptions.Mesh_Options.joint_type
-    c_mount_ratio = unioptions.Mesh_Options.c_mount_ratio
-    AD15hubR = unioptions.Mesh_Options.AD15hubR
-    cables_connected_to_blade_base = unioptions.Mesh_Options.cables_connected_to_blade_base
+    # Mesh Options
+    ntelem = modelopt.Mesh_Options.ntelem
+    nbelem = modelopt.Mesh_Options.nbelem
+    ncelem = modelopt.Mesh_Options.ncelem
+    nselem = modelopt.Mesh_Options.nselem
+    angularOffset = modelopt.Mesh_Options.angularOffset
+    joint_type = modelopt.Mesh_Options.joint_type
+    c_mount_ratio = modelopt.Mesh_Options.c_mount_ratio
+    AD15hubR = modelopt.Mesh_Options.AD15hubR
+    cables_connected_to_blade_base = modelopt.Mesh_Options.cables_connected_to_blade_base
+    turbineType = modelopt.Mesh_Options.turbineType
 
-    turbineStartup = unioptions.Drivetrain_Options.turbineStartup
-    usingRotorSpeedFunction = unioptions.Drivetrain_Options.usingRotorSpeedFunction
-    driveTrainOn = unioptions.Drivetrain_Options.driveTrainOn
-    JgearBox = unioptions.Drivetrain_Options.JgearBox
-    gearRatio = unioptions.Drivetrain_Options.gearRatio
-    gearBoxEfficiency = unioptions.Drivetrain_Options.gearBoxEfficiency
-    generatorOn = unioptions.Drivetrain_Options.generatorOn
-    useGeneratorFunction = unioptions.Drivetrain_Options.useGeneratorFunction
-    generatorProps = unioptions.Drivetrain_Options.generatorProps
-    ratedTorque = unioptions.Drivetrain_Options.ratedTorque
-    zeroTorqueGenSpeed = unioptions.Drivetrain_Options.zeroTorqueGenSpeed
-    pulloutRatio = unioptions.Drivetrain_Options.pulloutRatio
-    ratedGenSlipPerc = unioptions.Drivetrain_Options.ratedGenSlipPerc
-    OmegaGenStart = unioptions.Drivetrain_Options.OmegaGenStart
-    driveShaft_K = unioptions.Drivetrain_Options.driveShaft_K
-    driveShaft_C = unioptions.Drivetrain_Options.driveShaft_C
+    # Drivetrain Options
+    turbineStartup = modelopt.Drivetrain_Options.turbineStartup
+    usingRotorSpeedFunction = modelopt.Drivetrain_Options.usingRotorSpeedFunction
+    driveTrainOn = modelopt.Drivetrain_Options.driveTrainOn
+    JgearBox = modelopt.Drivetrain_Options.JgearBox
+    gearRatio = modelopt.Drivetrain_Options.gearRatio
+    gearBoxEfficiency = modelopt.Drivetrain_Options.gearBoxEfficiency
+    generatorOn = modelopt.Drivetrain_Options.generatorOn
+    useGeneratorFunction = modelopt.Drivetrain_Options.useGeneratorFunction
+    generatorProps = modelopt.Drivetrain_Options.generatorProps
+    ratedTorque = modelopt.Drivetrain_Options.ratedTorque
+    zeroTorqueGenSpeed = modelopt.Drivetrain_Options.zeroTorqueGenSpeed
+    pulloutRatio = modelopt.Drivetrain_Options.pulloutRatio
+    ratedGenSlipPerc = modelopt.Drivetrain_Options.ratedGenSlipPerc
+    OmegaGenStart = modelopt.Drivetrain_Options.OmegaGenStart
+    driveShaft_K = modelopt.Drivetrain_Options.driveShaft_K
+    driveShaft_C = modelopt.Drivetrain_Options.driveShaft_C
 
     strut_twr_mountpoint = tower_strut_connection
     strut_bld_mountpoint = blade_strut_connection
 
-    turbineType = modelopt.turbineType
-    Vinf = modelopt.Vinf
-    
-    RPM = modelopt.RPM
-    
-    omegaControl = false
+    # Inputs that are part of the overall options, but which are not yet available at the top level yaml input method
+    nlParams = 0 # derived struct, we aren't going to pass in the nlParams struct, but rather use the detailed inputs above, so hard code here.
+    bladeData = [] # same as above
+    numDOFPerNode = 6 #while much of the model can operate with fewer dofs, too much is hard coded on the full 6 dof.
+    omegaControl = false # this is a derived parameter
+    meshtype = turbineType #derived, should probably be cleaned up TODO
+    initCond = [] #OWENSFEA initial conditions array, will be derived at this level, if using the OWENS scripting method, this can be used to initalize the structure
+    jointTransform = 0.0 #OWENSFEA, derived matrix to transform from total matrix to the reduced matrix and vice-versa
+    reducedDOFList = zeros(Int,2) #OWENSFEA, derived array that maps the joint-reduced dofs
+    nodalTerms = 0.0 #OWENSFEA the ability to apply concentrated nodal masses and forces etc., currently only available at the scripting level of analysis
+    stack_layers_bld = nothing #, enables direct specification of the numbers of stack layers in the numad format
+    stack_layers_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
+    chord_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
+    thickness_scale = [1.0,1.0] #, simple scaling across the blade span with a linear interpolation between
+
     OmegaInit = 7.2/60 #TODO: simplify this in the code since it is redundant
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv"
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens"
     
     
-    numDofPerNode = 6
-    bladeData = []
-    
     driveShaftProps = DriveShaftProps(driveShaft_K,driveShaft_C)
-
-    meshtype = turbineType
-    
-    initCond = []
-    dataOutputFilename = "none"
-    jointTransform = 0.0
-    reducedDOFList = zeros(Int,2)
-    numDOFPerNode = 6
-    nlParams = 0 # can pass in strut, or leave at 0 to use other inputs
-    nodalTerms = 0.0
-
-    # Htwr_base = 3.0#maximum(windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values])
-    stack_layers_bld = nothing
-    stack_layers_scale = [1.0,1.0]
-    chord_scale = [1.0,1.0]
-    thickness_scale = [1.0,1.0]
 
     custommesh = nothing
 
     tsave_idx=1:3:numTS
 
-    NuMad_geom_xlscsv_file_twr = windio #"$(path)$(modelopt.NuMad_geom_xlscsv_file_twr)"
-    NuMad_mat_xlscsv_file_twr = windio #"$(path)$(modelopt.NuMad_mat_xlscsv_file_twr)"
-    NuMad_geom_xlscsv_file_bld = windio #"$(path)$(modelopt.NuMad_geom_xlscsv_file_bld)"
-    NuMad_mat_xlscsv_file_bld = windio #"$(path)$(modelopt.NuMad_mat_xlscsv_file_bld)"
-    NuMad_geom_xlscsv_file_strut = windio #"$(path)$(modelopt.NuMad_geom_xlscsv_file_strut)"
-    NuMad_mat_xlscsv_file_strut = windio #"$(path)$(modelopt.NuMad_mat_xlscsv_file_strut)"
-    adi_lib = modelopt.adi_lib
-    if adi_lib == "nothing"
-        adi_lib = nothing
-    end
-    adi_rootname = "$(path)$(modelopt.adi_rootname)"
+    NuMad_geom_xlscsv_file_twr = windio
+    NuMad_mat_xlscsv_file_twr = windio
+    NuMad_geom_xlscsv_file_bld = windio
+    NuMad_mat_xlscsv_file_bld = windio
+    NuMad_geom_xlscsv_file_strut = windio
+    NuMad_mat_xlscsv_file_strut = windio
+
+    adi_rootname = "$(path)$(adi_rootname)"
 
     shapeZ = blade_z#collect(LinRange(0,H,Nslices+1))
     shapeX = blade_x#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
@@ -337,8 +339,8 @@ function runOWENSWINDIO(windio,modelopt,path)
         mu=air_dyn_viscosity,
         Nslices,
         ntheta,
-        RPM,
-        Vinf,
+        RPM=Prescribed_RPM_RPM_controlpoints[1],
+        Vinf=Prescribed_Vinf_Vinf_controlpoints[1],
         eta=blade_mountpoint,
         B=number_of_blades,
         H,
@@ -440,10 +442,10 @@ function runOWENSWINDIO(windio,modelopt,path)
     end
 
     inputs = OWENS.Inputs(;analysisType = structuralModel,
-    tocp = [0.0,100000.1],
-    Omegaocp = [RPM,RPM] ./ 60,
-    tocp_Vinf = [0.0,100000.1],
-    Vinfocp = [Vinf,Vinf],
+    tocp = Prescribed_RPM_time_controlpoints,
+    Omegaocp = Prescribed_RPM_RPM_controlpoints ./ 60,
+    tocp_Vinf = Prescribed_Vinf_time_controlpoints,
+    Vinfocp = Prescribed_Vinf_Vinf_controlpoints,
     numTS,
     delta_t,
     AD15On,
@@ -474,7 +476,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     owensfile,
     potflowfile,
     dataOutputFilename,
-    numDofPerNode,
+    numDOFPerNode,
     bladeData,
     rigid,
     driveShaftProps,

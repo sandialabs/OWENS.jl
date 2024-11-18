@@ -87,7 +87,7 @@ Inputs(;verbosity=2,
     aeroloadfile = "module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     dataOutputFilename = "none",
-    numDofPerNode = 6,
+    numDOFPerNode = 6,
     bladeData = [],
     driveShaftProps = DriveShaftProps(0.0,0.0)
     TOL = 1e-4,
@@ -132,7 +132,7 @@ Model inputs for OWENS coupled analysis, struct
 * `owensfile::string`: string of the name and path for the owens input file if using the old serial owens call
 * `potflowfile::string`: string of the prefix and path for the directory containing the potential flow files from WAMIT (required by HydroDyn)
 * `dataOutputFilename::string`: path and name of output file, will be overwritten if already exists
-* `numDofPerNode::int`: number of degrees of freedom per node
+* `numDOFPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
 * `TOL::float`: gauss-seidel iteration tolerance
@@ -178,7 +178,7 @@ function Inputs(;verbosity=2,
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     potflowfile = "$module_path/../test/data/potential_flow_data",
     dataOutputFilename = "none",
-    numDofPerNode = 6,
+    numDOFPerNode = 6,
     bladeData = [],
     rigid = false,
     driveShaftProps = DriveShaftProps(0.0,0.0),

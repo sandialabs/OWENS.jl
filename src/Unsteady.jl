@@ -885,7 +885,7 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
 
     if inputs.aeroLoadsOn > 1
         # Transform Global Displacements to Local
-        numDofPerNode = 6
+        numDOFPerNode = 6
 
         u_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
         uddot_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
@@ -896,7 +896,7 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
                 #get dof map
                 node1 = Int(mesh.structuralNodeNumbers[jbld,kel])
                 node2 = Int(mesh.structuralNodeNumbers[jbld,kel+1])
-                dofList = [(node1-1)*numDofPerNode.+(1:6);(node2-1)*numDofPerNode.+(1:6)]
+                dofList = [(node1-1)*numDOFPerNode.+(1:6);(node2-1)*numDOFPerNode.+(1:6)]
 
                 globaldisp = u_j[dofList]
                 globaldispddot = uddot_j[dofList]

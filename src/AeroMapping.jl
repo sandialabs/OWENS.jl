@@ -130,7 +130,7 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     #integrate over elements
 
     #read element aero_data in
-    numDofPerNode = 6
+    numDOFPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     Fg = zeros(Int(mesh.numNodes*6),numAeroTS)
     Fg_global = zeros(Int(mesh.numNodes*6),numAeroTS)
@@ -143,7 +143,7 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
                 #get dof map
                 node1 = Int(structuralNodeNumbers[j,k])
                 node2 = Int(structuralNodeNumbers[j,k+1])
-                dofList = [(node1-1)*numDofPerNode.+(1:6) (node2-1)*numDofPerNode.+(1:6)]
+                dofList = [(node1-1)*numDOFPerNode.+(1:6) (node2-1)*numDOFPerNode.+(1:6)]
 
                 elementOrder = 1
                 x = [mesh.x[node1], mesh.x[node2]]
@@ -381,7 +381,7 @@ end
 #     #integrate over elements
 #
 #     #read element aero_data in
-#     numDofPerNode = 6
+#     numDOFPerNode = 6
 #     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
 #     Fg = zeros(Int(max(maximum(structuralNodeNumbers))*6),numAeroTS)
 #     for i=1:numAeroTS
@@ -393,7 +393,7 @@ end
 #                 #get dof map
 #                 node1 = Int(structuralNodeNumbers[j,k])
 #                 node2 = Int(structuralNodeNumbers[j,k+1])
-#                 dofList = [(node1-1)*numDofPerNode.+(1:6) (node2-1)*numDofPerNode.+(1:6)]
+#                 dofList = [(node1-1)*numDOFPerNode.+(1:6) (node2-1)*numDOFPerNode.+(1:6)]
 #
 #                 elementOrder = 1
 #                 x = [mesh.x[node1], mesh.x[node2]]
