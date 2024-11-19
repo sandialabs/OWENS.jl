@@ -1,8 +1,7 @@
 
 function runOWENSWINDIO(windio,modelopt,path)
     if typeof(windio) == String
-        windio = YAML.load_file(windio; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
-        println("Running: $(windio[:name])")
+        windio = Design_Data(windio)
     end
 
     if typeof(modelopt) == String

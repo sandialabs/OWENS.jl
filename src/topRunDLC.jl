@@ -144,27 +144,30 @@ struct DLC_Options
     regenWindFiles
     delta_t_turbsim
     simtime_turbsim
+    RandSeed1
 
     # Constructor that takes a dictionary
     function DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
         new(
-            get(dict_in,:DLCs,["1_1","2_1"]), #DLC name of DLC
-            get(dict_in,:Vinf_range,LinRange(5,20,16)), #DLC inflow Cutin to cutout and discretization
-            get(dict_in,:IEC_std,"\"1-ED3\""), #DLC turbsim input file IEC standard
-            get(dict_in,:WindChar,"\"A\""), #DLC turbsim wind charasteric 
+            get(dict_in,:DLCs,["1_1","2_1"]), # name of DLC
+            get(dict_in,:Vinf_range,LinRange(5,20,16)), # inflow Cutin to cutout and discretization
+            get(dict_in,:IEC_std,"\"1-ED3\""), # turbsim input file IEC standard
+            get(dict_in,:WindChar,"\"A\""), # turbsim wind charasteric 
             get(dict_in,:WindClass,1), # DLC turbsim wind class
-            get(dict_in,:turbsimsavepath,"./turbsimfiles"), #DLC path where the turbsim files are saved
-            get(dict_in,:templatefile,"$module_path/template_files/templateTurbSim.inp"), #DLC path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
-            get(dict_in,:pathtoturbsim,nothing), #DLC path to the turbsim executable
-            get(dict_in,:NumGrid_Z,38), #DLC turbsim vertical discretizations 
-            get(dict_in,:NumGrid_Y,26), #DLC turbsim horizontal discretizations
-            get(dict_in,:Vref,10.0), #DLC reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
-            get(dict_in,:Vdesign,11.0), #DLC Design or rated speed of turbine, used for certain DLC cases
-            get(dict_in,:grid_oversize,1.1), #DLC amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
-            get(dict_in,:regenWindFiles,false), #DLC, force regeneration of turbsim files even if they already exist
-            get(dict_in,:delta_t_turbsim,0.05), #DLC turbsim timestep
-            get(dict_in,:simtime_turbsim,600.0), #DLC turbsim total time, which loops if simtime exceeds turbsim time
+            get(dict_in,:turbsimsavepath,"./turbsimfiles"), # path where the turbsim files are saved
+            get(dict_in,:templatefile,"$module_path/template_files/templateTurbSim.inp"), # path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
+            get(dict_in,:pathtoturbsim,nothing), # path to the turbsim executable
+            get(dict_in,:NumGrid_Z,38), # turbsim vertical discretizations 
+            get(dict_in,:NumGrid_Y,26), # turbsim horizontal discretizations
+            get(dict_in,:Vref,10.0), # reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
+            get(dict_in,:Vdesign,11.0), # Design or rated speed of turbine, used for certain DLC cases
+            get(dict_in,:grid_oversize,1.1), # amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
+            get(dict_in,:regenWindFiles,false), #, force regeneration of turbsim files even if they already exist
+            get(dict_in,:delta_t_turbsim,0.05), # turbsim timestep
+            get(dict_in,:simtime_turbsim,600.0), # turbsim total time, which loops if simtime exceeds turbsim time
+            get(dict_in,:RandSeed1,40071), # turbsim random seed number
+            
         )
     end
 end
@@ -413,6 +416,24 @@ function ModelingOptions(yamlInputfile)
     return Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
 end
 
+
+function Design_Data(file_path::String; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")
+    # Load the YAML files
+    windio = YAML.load_file(file_path; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    println("Running: $(windio[:name])")
+
+    defaults = YAML.load_file(design_defaults_yaml; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+
+    # Create a new dictionary that merges loaded data with defaults
+    Design_Data = OrderedCollections.OrderedDict{Symbol, Any}()
+
+    # Fill in the Design_Data with defaults and loaded values
+    for (key, default_value) in defaults
+        Design_Data[key] = get(windio, key, default_value)
+    end
+
+    return Design_Data
+end
 
 function MasterInput(yamlInputfile)
 
@@ -798,40 +819,47 @@ runDLC(DLCs,Inp,path;
     # Output
     * `nothing`: 
     """
-function runDLC(DLCs,Inp,path;
-    Vinf_range=LinRange(5,20,16),
-    IEC_std="\"1-ED3\"",
-    WindChar="\"A\"",
-    WindClass=1,
-    turbsimsavepath="./turbsimfiles",
-    templatefile="$module_path/template_files/templateTurbSim.inp",
-    pathtoturbsim=nothing,
-    NumGrid_Z=38,
-    NumGrid_Y=26,
-    Vref=10.0,
-    Vdesign=11.0, # Design or rated speed
-    grid_oversize=1.1,
-    regenWindFiles=false,
-    delta_t_turbsim=0.05,
-    simtime_turbsim=600.0,
-    runScript = OWENS.runOWENS)
+function runDLC(All_Options,Design_Params,path;runScript = OWENS.runOWENS)
+
+    if typeof(Design_Params) == String
+        Design_Params = Design_Data(Design_Params)
+    end
+
+    if typeof(All_Options) == String
+        All_Options = ModelingOptions(All_Options)
+    end
+
+    DLCs = All_Options.DLC_Options.DLCs
+    Vinf_range = All_Options.DLC_Options.Vinf_range # = LinRange(5,20,16),
+    IEC_std = All_Options.DLC_Options.IEC_std # = "\"1-ED3\"",
+    WindChar = All_Options.DLC_Options.WindChar # = "\"A\"",
+    WindClass = All_Options.DLC_Options.WindClass # = 1,
+    turbsimsavepath = All_Options.DLC_Options.turbsimsavepath # = "./turbsimfiles",
+    templatefile = All_Options.DLC_Options.templatefile # = "$module_path/template_files/templateTurbSim.inp",
+    pathtoturbsim = All_Options.DLC_Options.pathtoturbsim # = nothing,
+    NumGrid_Z = All_Options.DLC_Options.NumGrid_Z # = 38,
+    NumGrid_Y = All_Options.DLC_Options.NumGrid_Y # = 26,
+    Vref = All_Options.DLC_Options.Vref # = 10.0,
+    Vdesign = All_Options.DLC_Options.Vdesign # = 11.0, # Design or rated speed
+    grid_oversize = All_Options.DLC_Options.grid_oversize # = 1.1,
+    regenWindFiles = All_Options.DLC_Options.regenWindFiles # = false,
+    delta_t_turbsim = All_Options.DLC_Options.delta_t_turbsim # = 0.05,
+    simtime_turbsim = All_Options.DLC_Options.simtime_turbsim # = 600.0,
+    RandSeed1 = All_Options.DLC_Options.RandSeed1
 
     if !isdir(turbsimsavepath)
         mkdir(turbsimsavepath)
     end
 
     # Fill in DLC parameters based on model inputs
-    DLCParams = Array{DLCParameters, 1}(undef, length(DLCs))
+    DLCParams = Array{DLC_internal, 1}(undef, length(DLCs))
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y)
-
+        DLCParams[iDLC] = getDLCparams(DLC, All_Options, Design_Params, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y,RandSeed1)
 
         # Run Simulation at each Wind Speed
         for windspeed in DLCParams[iDLC].Vinf_range_used #TODO: parallelize this
-
-            
 
             DLCParams[iDLC].URef = windspeed
             # Check if turbulent inflow file exists, if not create it
@@ -844,32 +872,31 @@ function runDLC(DLCs,Inp,path;
                 if !isfile(windINPfilename) || regenWindFiles
                     generateTurbsimBTS(DLCParams[iDLC],windINPfilename,pathtoturbsim;templatefile)
                 end
-                Inp.WindType = 3
-                Inp.windINPfilename = "$(windINPfilename[1:end-4]).bts"
+                All_Options.OWENSOpenFASTWrappers_Options.WindType = 3
+                All_Options.OWENSOpenFASTWrappers_Options.windINPfilename = "$(windINPfilename[1:end-4]).bts"
             else
                 if !isfile(windINPfilename) || regenWindFiles
                     generateUniformwind(DLCParams[iDLC],windINPfilename)
                 end
-                Inp.windINPfilename = windINPfilename
-                Inp.WindType = 2
+                All_Options.OWENSOpenFASTWrappers_Options.windINPfilename = windINPfilename
+                All_Options.OWENSOpenFASTWrappers_Options.WindType = 2
             end
 
-            Inp.ifw = true
-            Inp.controlStrategy = DLCParams[iDLC].controlStrategy
+            All_Options.OWENSAero_Options.ifw = true
+            All_Options.OWENS_Options.controlStrategy = DLCParams[iDLC].controlStrategy
             # run owens simulation
-            runScript(Inp,path)
+            runScript(All_Options,path)
         end
     end
 end
 
-mutable struct DLCParameters
+mutable struct DLC_internal
     Vinf_range_used
     analysis_type # "U", "F", "UF"
     controlStrategy # "constRPM", function handle
     RandSeed1 # Turbulent Random Seed Number
     NumGrid_Z # Vertical grid-point matrix dimension
     NumGrid_Y # Horizontal grid-point matrix dimension
-    TimeStepSim # Time step [s]
     TimeStep # Time step [s]
     HubHt # Hub height [m] (should be > 0.5*GridHeight)
     AnalysisTime # Length of analysis time series [s] (program will add time if necessary)
@@ -895,28 +922,41 @@ mutable struct DLCParameters
 end
 
 
-function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;grid_oversize=1.2,simtime_turbsim=nothing,delta_t_turbsim=nothing,NumGrid_Z=nothing,NumGrid_Y=nothing)
+function getDLCparams(DLC_case, All_Options, Design_Params, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;
+    RandSeed1 = 40071,
+    grid_oversize=1.2,
+    simtime_turbsim=nothing,
+    delta_t_turbsim=nothing,
+    NumGrid_Z=nothing,
+    NumGrid_Y=nothing)
+    
+    hub_height = windio[:assembly][:hub_height]
+    blade_x = Design_Params[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] #Used
+    blade_y = Design_Params[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values] #Used
+    blade_z = Design_Params[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
+    Blade_Height = maximum(blade_z) #TODO: resolve DLC dependence
+    Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
+    
+    Htwr_base = hub_height-Blade_Height/2
 
     Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
 
-    numTS = Inp.numTS
-    delta_t = Inp.delta_t
+    numTS = All_Options.OWENS_Options.numTS
+    delta_t = All_Options.OWENS_Options.delta_t
     simtime = numTS*delta_t
 
-    GridHeight = (Inp.towerHeight-Inp.Blade_Height/2+Inp.Blade_Height)*grid_oversize
-    GridWidth = Inp.Blade_Radius * 2.0 * grid_oversize
+    GridHeight = (Htwr_base-Blade_Height/2+Blade_Height)*grid_oversize
+    GridWidth = Blade_Radius * 2.0 * grid_oversize
     HubHt = GridHeight*2/3
 
     if !isnothing(NumGrid_Z)
-        NumGrid_Z = NumGrid_Z #Inp.ntelem+Inp.nbelem
-        NumGrid_Y = NumGrid_Y #Inp.ntelem+Inp.nbelem
+        NumGrid_Z = NumGrid_Z
+        NumGrid_Y = NumGrid_Y
     else
-        NumGrid_Z = Inp.ntelem+Inp.nbelem
-        NumGrid_Y = Inp.nbelem
+        NumGrid_Z = All_Options.Mesh_Options.ntelem+All_Options.Mesh_Options.nbelem
+        NumGrid_Y = All_Options.Mesh_Options.nbelem
     end
-
-    RandSeed1 = 40071 #TODO
     
     if !isnothing(simtime_turbsim)
         AnalysisTime = simtime_turbsim
@@ -931,10 +971,9 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     IECturbc = WindChar
     TurbModel = "\"IECKAI\""
     
-    RefHt = round(Inp.towerHeight) #TODO: what if tower doesn't extend into blade z level
+    RefHt = round(HubHt)
     URef = 0.0 #gets filled in later from the Vinf_range when the .bst is generated
 
-    TimeStepSim = delta_t
     if !isnothing(delta_t_turbsim)
         TimeStep = delta_t_turbsim
     else
@@ -952,19 +991,19 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
     UpflowAngle = nothing  
 
     if contains(IEC_std,"1-")
-        if DLC == "1_1" || DLC == "1_2"
+        if DLC_case == "1_1" || DLC_case == "1_2"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "UF"
             IEC_WindType = "\"$(WindClass)NTM\""                        
 
-        elseif DLC == "1_3"
+        elseif DLC_case == "1_3"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ETM\""
             
-        elseif DLC == "1_4"
+        elseif DLC_case == "1_4"
             ControlStrategy = "normal"
             Vinf_range_used = [Vdesign-2.0,Vdesign+2.0]
             analysis_type = "U"
@@ -979,7 +1018,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustvel = [0,0,7.0,15,7.5,0.0,0.0]  
             UpflowAngle = zeros(length(time))    
 
-        elseif DLC == "1_5"
+        elseif DLC_case == "1_5"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
@@ -995,14 +1034,14 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             UpflowAngle = zeros(length(time))  
             
 
-        elseif DLC == "2_1" || DLC == "2_2" || DLC == "2_4"
+        elseif DLC_case == "2_1" || DLC_case == "2_2" || DLC_case == "2_4"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
             
 
-        elseif DLC == "2_3"
+        elseif DLC_case == "2_3"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
@@ -1022,7 +1061,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustT = 10.0
             gustvel = simpleGustVel.(time, time_delay, G_amp,gustT) .+ simpleGustVel.(time, time_delay2, G_amp,gustT)
             
-        elseif DLC == "3_1"
+        elseif DLC_case == "3_1"
             ControlStrategy = "startup"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
@@ -1037,7 +1076,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustvel = zeros(length(time))   
             UpflowAngle = zeros(length(time))     
             
-        elseif DLC == "3_2"
+        elseif DLC_case == "3_2"
             ControlStrategy = "startup"
             Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
@@ -1057,7 +1096,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustT = 10.0
             gustvel = simpleGustVel.(time, time_delay, G_amp,gustT) .+ simpleGustVel.(time, time_delay2, G_amp,gustT)
             
-        elseif DLC == "3_3"
+        elseif DLC_case == "3_3"
             ControlStrategy = "startup"
             Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
@@ -1072,7 +1111,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustvel = [0,0,7.0,15,7.5,0.0,0.0]  
             UpflowAngle = zeros(length(time)) 
             
-        elseif DLC == "4_1"
+        elseif DLC_case == "4_1"
             ControlStrategy = "shutdown"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
@@ -1087,7 +1126,7 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustvel = zeros(length(time))   
             UpflowAngle = zeros(length(time))     
             
-        elseif DLC == "4_2"
+        elseif DLC_case == "4_2"
             ControlStrategy = "shutdown"
             Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
@@ -1108,49 +1147,49 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             gustvel = simpleGustVel.(time, time_delay, G_amp,gustT) .+ simpleGustVel.(time, time_delay2, G_amp,gustT)
             
             
-        elseif DLC == "5_1"
+        elseif DLC_case == "5_1"
             ControlStrategy = "emergencyshutdown"
             Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
             
-        elseif DLC == "6_1"
+        elseif DLC_case == "6_1"
             ControlStrategy = "parked"
             Vinf_range_used = [Ve50]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM50\""
             
-        elseif DLC == "6_2"
+        elseif DLC_case == "6_2"
             ControlStrategy = "parked_idle"
             Vinf_range_used = [Ve50]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM50\""
 
-        elseif DLC == "6_3"
+        elseif DLC_case == "6_3"
             ControlStrategy = "parked_yaw"
             Vinf_range_used = [Ve1]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM1\""
 
-        elseif DLC == "6_4"
+        elseif DLC_case == "6_4"
             ControlStrategy = "parked"
             Vinf_range_used = [0.7*Ve50]
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NTM\""
 
-        elseif DLC == "7_1"
+        elseif DLC_case == "7_1"
             ControlStrategy = "parked"
             Vinf_range_used = [Ve1]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM1\""
             
-        elseif DLC == "8_1" #Startup
+        elseif DLC_case == "8_1" #Startup
             ControlStrategy = "transport"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM1\""
 
-        elseif DLC == "CPCurve"
+        elseif DLC_case == "CPCurve"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
@@ -1166,129 +1205,128 @@ function getDLCparams(DLC, Inp, Vinf_range, Vdesign, Vref, WindChar, WindClass, 
             UpflowAngle = zeros(length(time))  
             
         else
-            error("IEC61400_1 DLCs such as 1_1, 1_2 defined, you requested $DLC")
+            error("IEC61400_1 DLC_cases such as 1_1, 1_2 defined, you requested $DLC_case")
         end
 
     elseif contains(IEC_std,"2")
-        error("IEC61400_2 DLCs are not fully defined")
-        if DLC == "1_1"
+        error("IEC61400_2 DLC_cases are not fully defined")
+        if DLC_case == "1_1"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "UF"
             IEC_WindType = "\"$(WindClass)NTM\""
             
 
-        elseif DLC == "1_2"
+        elseif DLC_case == "1_2"
             ControlStrategy = "normal"
             Vinf_range_used = [Vdesign]
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)ECD\""
             
 
-        elseif DLC == "1_3"
+        elseif DLC_case == "1_3"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG50\""
             
 
-        elseif DLC == "1_4"
+        elseif DLC_case == "1_4"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECD50\""
             
 
-        elseif DLC == "1_5"
+        elseif DLC_case == "1_5"
             ControlStrategy = "normal"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECG\""
             
 
-        elseif DLC == "2_1"
+        elseif DLC_case == "2_1"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NWP\""
             
 
-        elseif DLC == "2_2"
+        elseif DLC_case == "2_2"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = Vinf_range
             analysis_type = "UF"
             IEC_WindType = "\"$(WindClass)NTM\""
             
 
-        elseif DLC == "2_3"
+        elseif DLC_case == "2_3"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG1\""
             
 
-        elseif DLC == "3_1"
+        elseif DLC_case == "3_1"
             ControlStrategy = "shutdown"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NTM\""
             
 
-        elseif DLC == "3_2"
+        elseif DLC_case == "3_2"
             ControlStrategy = "shutdown"
             Vinf_range_used = [Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG1\""
             
 
-        elseif DLC == "4_1"
+        elseif DLC_case == "4_1"
             ControlStrategy = "shutdown"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
             
 
-        elseif DLC == "5_1"
+        elseif DLC_case == "5_1"
             ControlStrategy = "freewheelatIdle"
             Vinf_range_used = [Ve50]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM\""
             
 
-        elseif DLC == "5_2"
+        elseif DLC_case == "5_2"
             ControlStrategy = "idle"
             Vinf_range_used = [Vdesign]
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NTM\""
             
 
-        elseif DLC == "6_1"
+        elseif DLC_case == "6_1"
             ControlStrategy = "parked"
             Vinf_range_used = [Ve1]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM\""
             
-        elseif DLC == "8_1" #Startup
+        elseif DLC_case == "8_1" #Startup
             ControlStrategy = "startup"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM\""
             
         else
-            error("IEC61400_2 DLCs [1.1,1.2,1.3,1.4,1.5,2.1,2.2,2.3,3.1,3.2,4.1,5.1,5.2,6.1] defined, you requested $DLC")
+            error("IEC61400_2 DLC_cases [1.1,1.2,1.3,1.4,1.5,2.1,2.2,2.3,3.1,3.2,4.1,5.1,5.2,6.1] defined, you requested $DLC")
         end
     else
         error("IEC_std 61400 1-ED3 and 2 defined, you requested $IEC_std")
     end
 
-    return DLCParameters(
+    return DLC_internal(
         Vinf_range_used,
         analysis_type, # array of windspeeds m/s
         ControlStrategy, # "constRPM", function handle
         RandSeed1, # Turbulent Random Seed Number
         NumGrid_Z, # Vertical grid-point matrix dimension
         NumGrid_Y, # Horizontal grid-point matrix dimension
-        TimeStepSim, # Time step [s]
         TimeStep, # Turbsim time step [s]
         HubHt, # Hub height [m] (should be > 0.5*GridHeight)
         AnalysisTime, # Length of analysis time series [s] (program will add time if necessary)
