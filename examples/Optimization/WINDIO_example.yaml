@@ -1,5 +1,5 @@
 name: WINDIO Example
-assembly: {turbine_class: I, turbulence_class: B, drivetrain: geared, rotor_orientation: upwind, number_of_blades: 3, hub_height: -25.2, rotor_diameter: 20.0, rated_power: 500000, lifetime: 25.0, marine_hydro: true}
+assembly: {number_of_blades: 3, hub_height: 58.0914546}
 components:
     hub: {diameter: 2.0}
     tower:
@@ -313,8 +313,8 @@ components:
             joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
     struts:
       - name: strut1
-        mountfraction_tower: [0.25,0.75]
-        mountfraction_blade: [0.25,0.75]
+        mountfraction_tower: [0.11,0.89]
+        mountfraction_blade: [0.11,0.89]
         outer_shape_bem:
             airfoil_position:
                 grid: &id002 [0, 0.333, 0.6667, 1.0]

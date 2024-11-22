@@ -34,7 +34,7 @@ end
     include("$path/../examples/AddedMass_Buoyancy/Buoyancy.jl")
 end
 
-# @testset "WindIO" begin
-#     path = splitdir(@__FILE__)[1]
-#     include("$path/../examples/Optimization/windio_example.jl")
-# end
+@testset "WindIO" begin
+    path = splitdir(@__FILE__)[1]
+    include("$path/../examples/Optimization/windio_example.jl")
+end
