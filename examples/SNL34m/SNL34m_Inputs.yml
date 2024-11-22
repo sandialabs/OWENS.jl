@@ -30,7 +30,7 @@ controlParameters:
 AeroParameters:
   Nslices: 35 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
+  AeroModel: DMS # AD, DMS, AC
   adi_lib: nothing
   adi_rootname: "/SNL34m"
   

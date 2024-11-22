@@ -1,10 +1,11 @@
 name: WINDIO Example
 assembly: {turbine_class: I, turbulence_class: B, drivetrain: geared, rotor_orientation: upwind, number_of_blades: 3, hub_height: -25.2, rotor_diameter: 20.0, rated_power: 500000, lifetime: 25.0, marine_hydro: true}
 components:
+    hub: {diameter: 2.0}
     tower:
         outer_shape_bem:
             airfoil_position:
-                grid: &id000 [0, 6.607421057, 13.21484211, 19.82226317, 26.42968423, 33.03710529, 39.64452634, 46.2519474, 52.85936846, 59.46678951, 66.07421057, 72.68163163, 79.28905268, 85.89647374, 92.5038948, 99.11131586, 105.7187369, 112.326158, 118.933579, 125.5410001, 132.1484211]
+                grid: &id000 [0.0, 0.050000000015134494, 0.09999999999999999, 0.15000000003783623, 0.20000000007567248, 0.2500000001135087, 0.30000000007567246, 0.3500000001135087, 0.40000000015134496, 0.4500000001135087, 0.5000000001513449, 0.5500000001891812, 0.6000000001513449, 0.6500000001891812, 0.7000000002270174, 0.7500000002648537, 0.8000000001513449, 0.8500000004918712, 0.9000000000756724, 0.9500000004161987, 1.0]
                 labels: [circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular]
             chord:
                 grid: *id000
@@ -85,7 +86,7 @@ components:
     blade:
         outer_shape_bem:
             airfoil_position:
-                grid: &id001 [0, 6.607, 13.215, 19.822, 26.43, 33.037, 39.645, 46.252, 52.859, 59.467, 66.074, 72.682, 79.289, 85.896, 92.504, 99.111, 105.719, 112.326, 118.934, 125.541, 132.148]
+                grid: &id001 [0.0, 0.04999697309077701, 0.1000015134546115, 0.1499984865453885, 0.200003026909223, 0.25, 0.3000045403638345, 0.3500015134546115, 0.39999848654538855, 0.450003026909223, 0.5, 0.5500045403638345, 0.6000015134546115, 0.6499984865453885, 0.700003026909223, 0.75, 0.8000045403638345, 0.8500015134546115, 0.900006053818446, 0.950003026909223, 1.0]
                 labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021]
             chord:
                 grid: *id001
@@ -312,9 +313,11 @@ components:
             joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
     struts:
       - name: strut1
+        mountfraction_tower: [0.25,0.75]
+        mountfraction_blade: [0.25,0.75]
         outer_shape_bem:
             airfoil_position:
-                grid: &id002 [0, 6.607, 13.215, 19.822]
+                grid: &id002 [0, 0.333, 0.6667, 1.0]
                 labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021]
             chord:
                 grid: *id002
@@ -331,7 +334,7 @@ components:
                     values: [-0.0, -0.0, -0.0, -0.0]
                 y:
                     grid: *id002
-                    values: [0.0, 0.0, 0.0, 0.0, 0.0]
+                    values: [0.0, 0.0, 0.0, 0.0]
                 z:
                     grid: *id002
                     values: [0.0, 0.15, 0.45, 0.75]
@@ -538,52 +541,6 @@ components:
                       grid: *id002
             root: {d_f: 0.03, sigma_max: 675000000.0}
             joint: {position: 0.0, mass: 0.0, cost: 0.0, bolt: M30, nonmaterial_cost: 0.0, reinforcement_layer_ss: joint_reinf_ss, reinforcement_layer_ps: joint_reinf_ps}
-    hub: {diameter: 2.0, cone_angle: 0.0, drag_coefficient: 0.0, flange_t2shell_t: 6.0, flange_OD2hub_D: 0.6, flange_ID2OD: 0.8, hub_blade_spacing_margin: 1.2, hub_stress_concentration: 3.0, n_front_brackets: 5, n_rear_brackets: 5, clearance_hub_spinner: 0.5, spin_hole_incr: 1.2, pitch_system_scaling_factor: 0.75, spinner_gust_ws: 70.0, hub_material: cast_iron, spinner_material: glass_uni}
-    nacelle:
-        drivetrain:
-            uptilt: -0.0
-            distance_tt_hub: 1.2
-            distance_hub_mb: 2.0
-            distance_mb_mb: 1.0
-            overhang: 4.91
-            generator_length: 2.0
-            generator_radius_user: 0.25
-            generator_mass_user: 8928.0
-            generator_rpm_efficiency_user:
-                grid: [0.0,1.0]
-                values: [1.0,1.0]
-            gear_ratio: 53.0
-            gearbox_length_user: 0.0
-            gearbox_radius_user: 0.0
-            gearbox_mass_user: 0.0
-            gearbox_efficiency: 0.92
-            damping_ratio: 0.01
-            lss_diameter: [0.577, 0.577]
-            lss_wall_thickness: [0.288, 0.288]
-            lss_material: steel
-            hss_length: 1.5
-            hss_diameter: [0.288, 0.288]
-            hss_wall_thickness: [0.144, 0.144]
-            hss_material: steel
-            nose_diameter: [0.3, 0.3]
-            nose_wall_thickness: [0.1, 0.1]
-            bedplate_wall_thickness:
-                grid: [0.0, 1.0]
-                values: [0.05, 0.05]
-            bedplate_flange_width: 1.0
-            bedplate_flange_thickness: 0.05
-            bedplate_web_thickness: 0.05
-            bedplate_material: steel
-            mb1Type: CARB
-            mb2Type: SRB
-            uptower: true
-            gear_configuration: eep
-            planet_numbers: [3, 3, 0]
-            brake_mass_user: 0.0
-            hvac_mass_coefficient: 0.025
-            converter_mass_user: 0.0
-            transformer_mass_user: 0.0
-        # generator: {generator_type: DFIG, rho_Fe: 7700.0, rho_Fes: 7850.0, rho_Copper: 8900.0, rho_PM: 7450.0, B_r: 1.2, P_Fe0e: 1.0, P_Fe0h: 4.0, S_N: -0.002, alpha_p: 1.0995574287564276, b_r_tau_r: 0.45, b_ro: 0.004, b_s_tau_s: 0.45, b_so: 0.004, freq: 60, h_i: 0.001, h_sy0: 0.0, h_w: 0.005, k_fes: 0.9, k_s: 0.2, m: 3, mu_0: 1.2566370614359173e-06, mu_r: 1.06, p: 3.0, phi: 1.5707963267948966, ratio_mw2pp: 0.7, resist_Cu: 2.52e-08, y_tau_pr: 0.8333333, rated_rpm: 1200.0, cofi: 0.9, y_tau_p: 0.8, sigma: 21500.0, rad_ag: 0.61, len_s: 0.49, h_s: 0.08, I_0: 40.0, B_symax: 1.3, S_Nmax: -0.2, h_0: 0.01, k_fillr: 0.55, k_fills: 0.65, q1: 5, q2: 4, C_Cu: 4.786, C_Fe: 0.556, C_Fes: 0.50139, C_PM: 50.0, mass_coefficient: 0.0, q3: 4, d_r: 0.0, h_m: 0.0, n_r: 0.0, t_wr: 0.0, n_s: 0.0, b_st: 0.0, d_s: 0.0, t_ws: 0.0}
 airfoils:
    -  name: NACA6_1000
       coordinates:
@@ -660,12 +617,4 @@ materials:
       unit_cost: 0.10
       A: [50.0,45.0,40.0,35.0,20.0,0.0]
       m: [0.0,1.0,2.0,4.0,6.0,20.0]
-control:
-    supervisory: {Vin: 0.5, Vout: 4.0, maxTS: 60}
-    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: !!null '', max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
-    torque: {control_type: !!null '', tsr: 7.64, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 1500000.0, VS_minspd: 0.0, VS_maxspd: 1.26711}
-    setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
-    shutdown: {limit_type: !!null '', limit_value: !!null ''}
-environment: {air_density: 1.225, air_dyn_viscosity: 1.7894e-5, air_speed_sound: 1500.0, shear_exp: 0.0, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 101325.0, air_vapor_pressure: 2500.0, significant_wave_height: 1.0, significant_wave_period: 5.0}
-bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_pct: 0.01, decommissioning_pct: 0.15, distance_to_substation: 1.0, distance_to_interconnection: 8.5, interconnect_voltage: 130.0, distance_to_site: 115.0, distance_to_landfall: 50.0, port_cost_per_month: 2000000.0, site_auction_price: 100000000.0, site_assessment_plan_cost: 1000000.0, site_assessment_cost: 25000000.0, construction_operations_plan_cost: 2500000.0, boem_review_cost: 0.0, design_install_plan_cost: 2500000.0}
-costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.056, bos_per_kW: 4053.0, opex_per_kW: 137.0, turbine_number: 40.0, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_mass_cost_coeff: 12.9, hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0, electricity_price: 0.04, reserve_margin_price: 120.0, capacity_credit: 0.0, benchmark_price: 0.071}
+environment: {air_density: 1.225, air_dyn_viscosity: 1.7894e-5, air_speed_sound: 1500.0, shear_exp: 0.0, gravity: [0,0,-9.81], weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 101325.0, air_vapor_pressure: 2500.0, significant_wave_height: 1.0, significant_wave_period: 5.0}

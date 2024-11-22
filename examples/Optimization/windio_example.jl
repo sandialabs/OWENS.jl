@@ -16,7 +16,7 @@
 #
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook todo: get link working:
+#md #     This example is also available as a Jupyter notebook  
 #-
 
 import OWENS
@@ -27,11 +27,11 @@ using OrderedCollections
 
 runpath = splitdir(@__FILE__)[1]
 
-OWENS_Options = "$runpath/modeling_options_OWENS_windioExample.yml"
+OWENS_Options = "$runpath/OWENS_Opt.yml"
 
 WINDIO_filename = "$runpath/WINDIO_example.yaml"
 
-OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
+OWENS.runOWENSWINDIO(OWENS_Options,WINDIO_filename,runpath)
 
 # Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
 
@@ -79,7 +79,7 @@ topDamage_tower_U_UNIT = HDF5.h5read(file,"topDamage_tower_U")
 topDamage_tower_L_UNIT = HDF5.h5read(file,"topDamage_tower_L")
 
 
-file = "$runpath/InitialDataOutputs.h5"
+file = "./InitialDataOutputs.h5"
 t = HDF5.h5read(file,"t")
 aziHist = HDF5.h5read(file,"aziHist")
 OmegaHist = HDF5.h5read(file,"OmegaHist")
@@ -122,11 +122,11 @@ topDamage_blade_L = HDF5.h5read(file,"topDamage_blade_L")
 topDamage_tower_U = HDF5.h5read(file,"topDamage_tower_U")
 topDamage_tower_L = HDF5.h5read(file,"topDamage_tower_L")
 
-import PyPlot
-PyPlot.pygui(true)
-PyPlot.figure()
-PyPlot.plot(t_UNIT,FReactionHist_UNIT[:,6])
-PyPlot.plot(t,FReactionHist[:,6])
+# import PyPlot
+# PyPlot.pygui(true)
+# PyPlot.figure()
+# PyPlot.plot(t_UNIT,FReactionHist_UNIT[:,3])
+# PyPlot.plot(t,FReactionHist[:,3])
 
 frac = 1e-5
 @test isapprox(t_UNIT,t;atol=maximum(abs.(t_UNIT))*frac)
@@ -158,22 +158,22 @@ for i = 1:length(stress_U_UNIT)
     end
 end
 println("Percent Stress Pass: $(ipass/length(stress_U_UNIT)*100)%")
-# @test isapprox(SF_ult_U_UNIT,SF_ult_U;atol=maximum(abs.(SF_ult_U_UNIT))*frac)
-# @test isapprox(SF_buck_U_UNIT,SF_buck_U;atol=maximum(abs.(SF_buck_U_UNIT))*frac)
-# @test isapprox(stress_L_UNIT,stress_L;atol=maximum(abs.(stress_L_UNIT))*frac)
-# @test isapprox(SF_ult_L_UNIT,SF_ult_L;atol=maximum(abs.(SF_ult_L_UNIT))*frac)
-# @test isapprox(SF_buck_L_UNIT,SF_buck_L;atol=maximum(abs.(SF_buck_L_UNIT))*frac)
-# @test isapprox(stress_TU_UNIT,stress_TU;atol=maximum(abs.(stress_TU_UNIT))*frac)
-# @test isapprox(SF_ult_TU_UNIT,SF_ult_TU;atol=maximum(abs.(SF_ult_TU_UNIT))*frac)
-# @test isapprox(SF_buck_TU_UNIT,SF_buck_TU;atol=maximum(abs.(SF_buck_TU_UNIT))*frac)
-# @test isapprox(stress_TL_UNIT,stress_TL;atol=maximum(abs.(stress_TL_UNIT))*frac)
-# @test isapprox(SF_ult_TL_UNIT,SF_ult_TL;atol=maximum(abs.(SF_ult_TL_UNIT))*frac)
-# @test isapprox(SF_buck_TL_UNIT,SF_buck_TL;atol=maximum(abs.(SF_buck_TL_UNIT))*frac)
-# @test isapprox(topstrainout_blade_U_UNIT,topstrainout_blade_U;atol=maximum(abs.(topstrainout_blade_U_UNIT))*frac)
-# @test isapprox(topstrainout_blade_L_UNIT,topstrainout_blade_L;atol=maximum(abs.(topstrainout_blade_L_UNIT))*frac)
-# @test isapprox(topstrainout_tower_U_UNIT,topstrainout_tower_U;atol=maximum(abs.(topstrainout_tower_U_UNIT))*frac)
-# @test isapprox(topstrainout_tower_L_UNIT,topstrainout_tower_L;atol=maximum(abs.(topstrainout_tower_L_UNIT))*frac)
-# @test isapprox(topDamage_blade_U_UNIT,topDamage_blade_U;atol=maximum(abs.(topDamage_blade_U_UNIT))*frac)
-# @test isapprox(topDamage_blade_L_UNIT,topDamage_blade_L;atol=maximum(abs.(topDamage_blade_L_UNIT))*frac)
-# @test isapprox(topDamage_tower_U_UNIT,topDamage_tower_U;atol=maximum(abs.(topDamage_tower_U_UNIT))*frac)
-# @test isapprox(topDamage_tower_L_UNIT,topDamage_tower_L;atol=maximum(abs.(topDamage_tower_L_UNIT))*frac)
+@test isapprox(SF_ult_U_UNIT,SF_ult_U;atol=maximum(abs.(SF_ult_U_UNIT))*frac)
+@test isapprox(SF_buck_U_UNIT,SF_buck_U;atol=maximum(abs.(SF_buck_U_UNIT))*frac)
+@test isapprox(stress_L_UNIT,stress_L;atol=maximum(abs.(stress_L_UNIT))*frac)
+@test isapprox(SF_ult_L_UNIT,SF_ult_L;atol=maximum(abs.(SF_ult_L_UNIT))*frac)
+@test isapprox(SF_buck_L_UNIT,SF_buck_L;atol=maximum(abs.(SF_buck_L_UNIT))*frac)
+@test isapprox(stress_TU_UNIT,stress_TU;atol=maximum(abs.(stress_TU_UNIT))*frac)
+@test isapprox(SF_ult_TU_UNIT,SF_ult_TU;atol=maximum(abs.(SF_ult_TU_UNIT))*frac)
+@test isapprox(SF_buck_TU_UNIT,SF_buck_TU;atol=maximum(abs.(SF_buck_TU_UNIT))*frac)
+@test isapprox(stress_TL_UNIT,stress_TL;atol=maximum(abs.(stress_TL_UNIT))*frac)
+@test isapprox(SF_ult_TL_UNIT,SF_ult_TL;atol=maximum(abs.(SF_ult_TL_UNIT))*frac)
+@test isapprox(SF_buck_TL_UNIT,SF_buck_TL;atol=maximum(abs.(SF_buck_TL_UNIT))*frac)
+@test isapprox(topstrainout_blade_U_UNIT,topstrainout_blade_U;atol=maximum(abs.(topstrainout_blade_U_UNIT))*frac)
+@test isapprox(topstrainout_blade_L_UNIT,topstrainout_blade_L;atol=maximum(abs.(topstrainout_blade_L_UNIT))*frac)
+@test isapprox(topstrainout_tower_U_UNIT,topstrainout_tower_U;atol=maximum(abs.(topstrainout_tower_U_UNIT))*frac)
+@test isapprox(topstrainout_tower_L_UNIT,topstrainout_tower_L;atol=maximum(abs.(topstrainout_tower_L_UNIT))*frac)
+@test isapprox(topDamage_blade_U_UNIT,topDamage_blade_U;atol=maximum(abs.(topDamage_blade_U_UNIT))*frac)
+@test isapprox(topDamage_blade_L_UNIT,topDamage_blade_L;atol=maximum(abs.(topDamage_blade_L_UNIT))*frac)
+@test isapprox(topDamage_tower_U_UNIT,topDamage_tower_U;atol=maximum(abs.(topDamage_tower_U_UNIT))*frac)
+@test isapprox(topDamage_tower_L_UNIT,topDamage_tower_L;atol=maximum(abs.(topDamage_tower_L_UNIT))*frac)

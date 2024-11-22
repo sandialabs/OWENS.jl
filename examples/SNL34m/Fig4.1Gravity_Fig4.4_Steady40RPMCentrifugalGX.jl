@@ -32,7 +32,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = false
-AModel = "DMS"
+AeroModel = "DMS"
 windINPfilename = nothing
 ifw_libfile = nothing
 Blade_Height = 41.9
@@ -104,8 +104,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.03,0.97],
     strut_bld_mountpoint = [0.03,0.97],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
@@ -157,8 +157,8 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-model = OWENS.Inputs(;analysisType = "TNB",
-outFilename = "none",
+model = OWENS.Inputs(;verbosity,analysisType = "TNB",
+dataOutputFilename = "none",
 tocp = [0.0, 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
 Omegaocp = [0.0, 0.0]./60,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
 tocp_Vinf = [0.0, 1e6],
@@ -313,8 +313,8 @@ for it = 1:length(t)
 end
 
 azi=aziHist#./aziHist*1e-6
-saveName = "$path/vtk/two_blade"
-OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+VTKsaveName = "$path/vtk/two_blade"
+OWENS.OWENSFEA_VTK(VTKsaveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
 
 ##################################################################
 ########### FIG 4.4 40RPM with Gravity Loads Tared out  ##########
@@ -388,8 +388,8 @@ PyPlot.plot(t,FReactionHist[:,6])
 #     Nslices,
 #     ifw = false,
 #     RPI = true,
-#     DSModel = "BV",
-#     AModel = "DMS",
+#     DynamicStallModel = "BV",
+#     AeroModel = "DMS",
 #     tau = [1e-5,1e-5],
 #     afname = airfoils)
 
@@ -399,7 +399,7 @@ PyPlot.plot(t,FReactionHist[:,6])
 # deformTurb(azi_j;newOmega=0,newVinf=0,bld_x=0,bld_z=0,bld_twist=0) = 0
 
 model = OWENS.Inputs(;analysisType = "GX",
-outFilename = "none",
+dataOutputFilename = "none",
 tocp = [0.0, 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
 Omegaocp = [0.0, 0.0]./60,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
 tocp_Vinf = [0.0, 1e6],

@@ -266,11 +266,11 @@ function runSim(;
     bin = OWENS.Bin(hd_lib, md_lib)
 
     inputs = OWENS.Inputs(analysisType = "TNB",
-    outFilename = "none",
+    dataOutputFilename = "none",
     tocp = [0.0,num_ts],
     Omegaocp = [0.0, 0.0],
     OmegaInit = 0.0,
-    hydroOn = true,
+    platformActive = true,
     aeroLoadsOn = 2,
     interpOrder = 2,
     numTS = num_ts,

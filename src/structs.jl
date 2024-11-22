@@ -7,6 +7,7 @@ struct Bin
 end
 
 mutable struct Inputs
+    verbosity
     analysisType
     turbineStartup
     usingRotorSpeedFunction
@@ -20,7 +21,7 @@ mutable struct Inputs
     generatorOn
     aeroLoadsOn
     AD15On
-    hydroOn
+    platformActive
     topsideOn
     interpOrder
     hd_input_file
@@ -41,7 +42,7 @@ mutable struct Inputs
     aeroloadfile
     owensfile
     potflowfile
-    outFilename
+    dataOutputFilename
     bladeData
     driveShaftProps
     iteration_parameters
@@ -51,7 +52,8 @@ end
 # this way you can use defaults and pass in what is different, and it's mapped
 # by keyword so it doesn't have to be in order.
 """
-Inputs(;analysisType = "TNB",
+Inputs(;verbosity=2,
+    analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
@@ -64,7 +66,7 @@ Inputs(;analysisType = "TNB",
     AD15On = false,
     driveTrainOn = false,
     generatorOn = false,
-    hydroOn = false,
+    platformActive = false,
     topsideOn = true,
     interpOrder = 2,
     hd_input_file = "none",
@@ -84,18 +86,18 @@ Inputs(;analysisType = "TNB",
     rigid = false, #turn off structural dynamics
     aeroloadfile = "module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
-    outFilename = "none",
-    numDofPerNode = 6,
+    dataOutputFilename = "none",
+    numDOFPerNode = 6,
     bladeData = [],
     driveShaftProps = DriveShaftProps(0.0,0.0)
-    TOl = 1e-4,
+    TOL = 1e-4,
     MAXITER = 300,
-    iterwarnings = true,
     )
 
 Model inputs for OWENS coupled analysis, struct
 
 # Inputs
+* `verbosity::int`: output verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
 * `analysisType::string`: Newmark Beta time stepping "TNB", Dean time stepping "TD", modal "M"
 * `turbineStartup::int`: 1 forced start-up using generator as motor, 2 self-starting mode, 0 specified rotor speed mode")
 * `usingRotorSpeedFunction::bool`: use user specified rotor speed profile function
@@ -109,7 +111,7 @@ Model inputs for OWENS coupled analysis, struct
 * `AD15On::bool`: flag to use AD15 for aero
 * `driveTrainOn::bool`: flag to include drivetrain effects
 * `generatorOn::bool`: flag to include generator effects
-* `hydroOn::bool`: flag to include platform coupling
+* `platformActive::bool`: flag to include platform coupling
 * `interpOrder::int`: order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
 * `hd_input_file::string`: file path to the HydroDyn .dat input file
 * `ss_input_file::string`: file path to the HydroDyn sea states input file
@@ -129,19 +131,19 @@ Model inputs for OWENS coupled analysis, struct
 * `aeroloadfile::string`: string of the name and path for the cactus aeroloads if using the old serial owens call
 * `owensfile::string`: string of the name and path for the owens input file if using the old serial owens call
 * `potflowfile::string`: string of the prefix and path for the directory containing the potential flow files from WAMIT (required by HydroDyn)
-* `outFilename::string`: path and name of output file, will be overwritten if already exists
-* `numDofPerNode::int`: number of degrees of freedom per node
+* `dataOutputFilename::string`: path and name of output file, will be overwritten if already exists
+* `numDOFPerNode::int`: number of degrees of freedom per node
 * `bladeData::BladeData`: see ?BladeData, only used if calling the old serial owens function
 * `driveShaftProps::DriveShaftProps`: see ?DriveShaftProps
-* `TOl::float`: gauss-seidel iteration tolerance
+* `TOL::float`: gauss-seidel iteration tolerance
 * `MAXITER::int`: gauss-seidel maximum iterations
-* `iterwarnings::bool`: iteration warnings flag
 
 
 # Outputs:
 * `OWENS.Inputs`:
 """
-function Inputs(;analysisType = "TNB",
+function Inputs(;verbosity=2,
+    analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
     tocp = [0.0,1.1],
@@ -154,7 +156,7 @@ function Inputs(;analysisType = "TNB",
     generatorOn = false,
     aeroLoadsOn = false, #this need to get cleaned up in the code
     AD15On = false,
-    hydroOn = false,
+    platformActive = false,
     topsideOn = true,
     interpOrder = 2,
     hd_input_file = "none",
@@ -175,21 +177,20 @@ function Inputs(;analysisType = "TNB",
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     potflowfile = "$module_path/../test/data/potential_flow_data",
-    outFilename = "none",
-    numDofPerNode = 6,
+    dataOutputFilename = "none",
+    numDOFPerNode = 6,
     bladeData = [],
     rigid = false,
     driveShaftProps = DriveShaftProps(0.0,0.0),
-    TOl = 1e-4,
+    TOL = 1e-4,
     MAXITER = 300,
-    iterwarnings = true,
     )
 
-    return Inputs(analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,hydroOn,topsideOn,interpOrder,hd_input_file,md_input_file,
+    return Inputs(verbosity,analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
+    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,platformActive,topsideOn,interpOrder,hd_input_file,md_input_file,
     JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
     zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,outFilename,bladeData,driveShaftProps,Iteration_Parameters(TOl,MAXITER,iterwarnings),ss_input_file)
+    aeroloadfile,owensfile,potflowfile,dataOutputFilename,bladeData,driveShaftProps,Iteration_Parameters(TOL,MAXITER),ss_input_file)
 end
 
 """
@@ -206,7 +207,6 @@ Internal, gauss-seidel iteration parameters
 mutable struct Iteration_Parameters            
     TOL # = 1e-4  #gauss-seidel iteration tolerance for various modules
     MAXITER # = 2 #max iteration for various modules
-    iterwarnings
 end
 
 # Cactus Related Structs

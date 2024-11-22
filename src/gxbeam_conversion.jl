@@ -156,7 +156,7 @@ Formats and outputs OWENS data into VTK format
 * `none`:
 
 """
-function OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+function OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,topFexternal_hist;tsave_idx=1:length(t))
 
@@ -222,8 +222,8 @@ function OWENSVTK(saveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     end
 
     azi=aziHist#./aziHist*1e-6
-    # saveName = "$path/vtk/$(windINPfilename[1:end-4])"
-    OWENS.OWENSFEA_VTK(saveName,t[tsave_idx],uHist[tsave_idx,:],system,assembly,sections;scaling=1,azi=azi[tsave_idx],userPointNames,userPointData)
+    # VTKsaveName = "$path/vtk/$(windINPfilename[1:end-4])"
+    OWENS.OWENSFEA_VTK(VTKsaveName,t[tsave_idx],uHist[tsave_idx,:],system,assembly,sections;scaling=1,azi=azi[tsave_idx],userPointNames,userPointData)
 
 end
 

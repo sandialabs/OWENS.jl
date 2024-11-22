@@ -43,7 +43,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = false
-AModel = "DMS"
+AeroModel = "DMS"
 windINPfilename = nothing
 ifw_libfile = nothing
 Blade_Height = 41.9
@@ -169,8 +169,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.03,0.97],
     strut_bld_mountpoint = [0.03,0.97],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
@@ -218,8 +218,8 @@ Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
 tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
 Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
 
-model = OWENS.Inputs(;analysisType = "ROM",
-    outFilename = "none",
+model = OWENS.Inputs(;verbosity,analysisType = "ROM",
+    dataOutputFilename = "none",
     tocp = [0.0;new_t.+offsetTime; 1e6],#SNL34m_5_3_RPM[:,1],#[0.0,10.0,100000.1],
     Omegaocp,#SNL34m_5_3_RPM[:,2]./ 60,#[RPM,RPM,RPM] ./ 60,
     tocp_Vinf,

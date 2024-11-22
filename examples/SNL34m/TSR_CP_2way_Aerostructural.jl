@@ -48,7 +48,7 @@ nbelem = 60
 ncelem = 10
 nselem = 5
 ifw = false
-AModel = "DMS"
+AeroModel = "DMS"
 windINPfilename = "$(path)/data/turbsim/115mx115m_30x30_20.0msETM.bts"
 ifw_libfile = nothing
 Blade_Height = 41.9
@@ -146,8 +146,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     joint_type = 0,
     strut_twr_mountpoint = [0.03,0.97],
     strut_bld_mountpoint = [0.03,0.97],
-    AModel, #AD, DMS, AC
-    DSModel="BV",
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
@@ -170,13 +170,13 @@ top_idx 3 0
 top_idx 4 0
 top_idx 5 0]
 
-if AModel=="AD"
+if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false
 end
 
-inputs = OWENS.Inputs(;analysisType = structuralModel,
+inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
     tocp,
     Omegaocp,
     tocp_Vinf,
@@ -238,8 +238,8 @@ topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,as
 #     Nslices,
 #     RPI=true,
 #     ifw = false,
-#     DSModel = "BV",
-#     AModel = "DMS",
+#     DynamicStallModel = "BV",
+#     AeroModel = "DMS",
 #     tau = [1e-5,1e-5],
 #     afname = airfoils)
 

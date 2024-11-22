@@ -31,7 +31,7 @@
 # nselem: int, number of strut elements, in the automatically generated mesh
 # ifw: true or false, tells the AC or DMS models to use constant inflow or to read the specified windINPfilename
 # WindType: Inflow wind wind type (1 2 3), this is automatically handled by the DLC processor when it is used
-# AModel: Aero model, "AC" actuator cylinder (slower but slightly more accurate with array capability at the planar aero only level) "DMS" (faster and nearly as accurate) or "AD" (aerodyn interface, specifically OLAF, which is a relatively slow but higher fidelity vortex line wake model.  This includes strut drag and tip losses.)
+# AeroModel: Aero model, "AC" actuator cylinder (slower but slightly more accurate with array capability at the planar aero only level) "DMS" (faster and nearly as accurate) or "AD" (aerodyn interface, specifically OLAF, which is a relatively slow but higher fidelity vortex line wake model.  This includes strut drag and tip losses.)
 # windINPfilename: .bts or .inp files, see inflow wind documentation.  If running with the DLC script, it will automatically generate these and run with them, and not generate them if they already exist unless told to do so.
 # ifw_libfile: path to the inflow wind interface library, "nothing" if you are using the one that is automatically build (on mac/linux) with OWENSOpenFASTWrappers.jl
 # numTS: total number of time steps

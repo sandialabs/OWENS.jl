@@ -36,18 +36,18 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
     ref_z = sec_Dict[:outer_shape_bem][:reference_axis][:z][:values]
 
     if sec_Dict[:outer_shape_bem][:reference_axis][:x][:grid] != airfoil_grid
-        @error "The windio grids must all be the same at this time"
+        @error "The windio grids must all be the same for a given component at this time"
     end
 
     if isnothing(span)
         span = sqrt.(ref_x.^2 .+ ref_y.^2 .+ ref_z.^2)
-        println("Custom span is not specified in OWENS input, using WindIO airfoil grid as common span that all the other values are splined to")
+        println("Custom span is not specified in OWENS input, using WindIO outer_shape_bem sqrt.(reference_axis_x.^2 .+ reference_axis_y.^2 .+ reference_axis_z.^2) as common span that all the other values are splined to")
     end
 
     norm_span = span./maximum(span)
 
-    if norm_span[1]!=0.0 && norm_span[end]!=1.0
-        @error "Span definition must encompass the entire blade from root 0, to tip 1"
+    if airfoil_grid[1]!=0.0 && airfoil_grid[end]!=1.0
+        @error "ALL grid definitions must extend from root 0, to tip 1"
     end
 
     airfoil = Array{String,1}(undef,length(span))
@@ -814,7 +814,7 @@ end
 
 """
 
-    readBCdata(bcfilename,numNodes,numDofPerNode)
+    readBCdata(bcfilename,numNodes,numDOFPerNode)
 
 This function reads the boundray condition file and stores data in the
 boundary condition object.
@@ -822,12 +822,12 @@ boundary condition object.
 #Input
 * `bcfilename::string`:    string containing boundary condition filename
 * `numNodes::int`:      number of nodes in structural model
-* `numDofPerNode::int`: number of degrees of freedom per node
+* `numDOFPerNode::int`: number of degrees of freedom per node
 
 #Output
 * `BC::OWENSFEA.BC_struct`:   see OWENSFEA.BC_struct, object containing boundary condition data
 """
-function readBCdata(bcfilename,numNodes,numDofPerNode)
+function readBCdata(bcfilename,numNodes,numDOFPerNode)
 
     fid = open(bcfilename)       #open boundary condition file
     numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
@@ -847,7 +847,7 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
 
     end
 
-    totalNumDof = numNodes*numDofPerNode
+    totalNumDof = numNodes*numDOFPerNode
 
     numsBC = 0
     nummBC = 0
@@ -860,11 +860,11 @@ function readBCdata(bcfilename,numNodes,numDofPerNode)
 
     #calculate constrained dof vector
     isConstrained = zeros(totalNumDof,1)
-    constDof = (pBC[:,1].-1)*numDofPerNode + pBC[:,2]
+    constDof = (pBC[:,1].-1)*numDOFPerNode + pBC[:,2]
     index = 1
     for i=1:numNodes
-        for j=1:numDofPerNode
-            if ((i-1)*numDofPerNode + j in constDof)
+        for j=1:numDOFPerNode
+            if ((i-1)*numDOFPerNode + j in constDof)
                 isConstrained[index] = 1
             end
             index = index + 1
@@ -1228,4 +1228,146 @@ function readResultsModalOut(resultsFile,numNodes)
         theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
     end
     return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+end
+
+
+function outputData(;mymesh="not saved",
+    inputs="not saved",
+    t="not saved",
+    aziHist="not saved",
+    OmegaHist="not saved",
+    OmegaDotHist="not saved",
+    gbHist="not saved",
+    gbDotHist="not saved",
+    gbDotDotHist="not saved",
+    FReactionHist="not saved",
+    genTorque="not saved",
+    genPower="not saved",
+    torqueDriveShaft="not saved",
+    uHist="not saved",
+    uHist_prp="not saved",
+    epsilon_x_hist="not saved",
+    epsilon_y_hist="not saved",
+    epsilon_z_hist="not saved",
+    kappa_x_hist="not saved",
+    kappa_y_hist="not saved",
+    kappa_z_hist="not saved",
+    FTwrBsHist="not saved",
+    massOwens="not saved",
+    stress_U="not saved",
+    SF_ult_U="not saved",
+    SF_buck_U="not saved",
+    stress_L="not saved",
+    SF_ult_L="not saved",
+    SF_buck_L="not saved",
+    stress_TU="not saved",
+    SF_ult_TU="not saved",
+    SF_buck_TU="not saved",
+    stress_TL="not saved",
+    SF_ult_TL="not saved",
+    SF_buck_TL="not saved",
+    topstrainout_blade_U="not saved",
+    topstrainout_blade_L="not saved",
+    topstrainout_tower_U="not saved",
+    topstrainout_tower_L="not saved",
+    topDamage_blade_U="not saved",
+    topDamage_blade_L="not saved",
+    topDamage_tower_U="not saved",
+    topDamage_tower_L="not saved",
+    ofastformat=false)
+
+    #Writefile
+    if inputs.dataOutputFilename!="none"
+        println("WRITING Output File to $(inputs.dataOutputFilename)")
+
+        filename = string(inputs.dataOutputFilename[1:end-3], "h5")
+    
+        HDF5.h5open(filename, "w") do file
+            HDF5.write(file,"t",collect(t))
+            HDF5.write(file,"aziHist",aziHist)
+            HDF5.write(file,"OmegaHist",OmegaHist)
+            HDF5.write(file,"OmegaDotHist",OmegaDotHist)
+            HDF5.write(file,"gbHist",gbHist)
+            HDF5.write(file,"gbDotHist",gbDotHist)
+            HDF5.write(file,"gbDotDotHist",gbDotDotHist)
+            HDF5.write(file,"FReactionHist",FReactionHist)
+            HDF5.write(file,"FTwrBsHist",FTwrBsHist) #
+            HDF5.write(file,"genTorque",genTorque)
+            HDF5.write(file,"genPower",genPower)
+            HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
+            HDF5.write(file,"uHist",uHist)
+            HDF5.write(file,"uHist_prp",uHist_prp)
+            HDF5.write(file,"epsilon_x_hist",epsilon_x_hist)
+            HDF5.write(file,"epsilon_y_hist",epsilon_y_hist)  
+            HDF5.write(file,"epsilon_z_hist",epsilon_z_hist)
+            HDF5.write(file,"kappa_x_hist",kappa_x_hist)
+            HDF5.write(file,"kappa_y_hist",kappa_y_hist)
+            HDF5.write(file,"kappa_z_hist",kappa_z_hist) 
+            HDF5.write(file,"massOwens",massOwens)
+            HDF5.write(file,"stress_U",stress_U)
+            HDF5.write(file,"SF_ult_U",SF_ult_U)
+            HDF5.write(file,"SF_buck_U",SF_buck_U)
+            HDF5.write(file,"stress_L",stress_L)
+            HDF5.write(file,"SF_ult_L",SF_ult_L)
+            HDF5.write(file,"SF_buck_L",SF_buck_L)
+            HDF5.write(file,"stress_TU",stress_TU)
+            HDF5.write(file,"SF_ult_TU",SF_ult_TU)
+            HDF5.write(file,"SF_buck_TU",SF_buck_TU)
+            HDF5.write(file,"stress_TL",stress_TL)
+            HDF5.write(file,"SF_ult_TL",SF_ult_TL)
+            HDF5.write(file,"SF_buck_TL",SF_buck_TL)
+            HDF5.write(file,"topstrainout_blade_U",topstrainout_blade_U)
+            HDF5.write(file,"topstrainout_blade_L",topstrainout_blade_L)
+            HDF5.write(file,"topstrainout_tower_U",topstrainout_tower_U)
+            HDF5.write(file,"topstrainout_tower_L",topstrainout_tower_L)
+            HDF5.write(file,"topDamage_blade_U",topDamage_blade_U)
+            HDF5.write(file,"topDamage_blade_L",topDamage_blade_L)
+            HDF5.write(file,"topDamage_tower_U",topDamage_tower_U)
+            HDF5.write(file,"topDamage_tower_L",topDamage_tower_L)
+        end
+
+        if ofastformat 
+            filename = string(inputs.dataOutputFilename[1:end-3], "out")
+            DelimitedFiles.open(filename, "w") do io
+
+                header1 = ["t"]# "VinfX_hub" "VinfY_hub" "VinfZ_hub" "Fx1" "Fy1" "Fz1" "Mx1" "My1" "Mz1"]
+                header2 = ["(s)"]# "(m/s)" "(m/s)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+                # for i = 2:mymesh.numEl
+                #     header1 = [header1 "Fx$i" "Fy$i" "Fz$i" "Mx$i" "My$i" "Mz$i"]
+                #     header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+                # end
+
+                for ibld = 1:length(mymesh.meshSeg)
+                    for ibldel = 1:mymesh.meshSeg[ibld]
+                        formattedelNum = lpad(ibldel,3,'0')#mymesh.structuralElNumbers[ibld,ibldel]
+                        header1 = [header1 "B$(ibld)N$(formattedelNum)Fx" "B$(ibld)N$(formattedelNum)Fy" "B$(ibld)N$(formattedelNum)Fz" "B$(ibld)N$(formattedelNum)Mx" "B$(ibld)N$(formattedelNum)My" "B$(ibld)N$(formattedelNum)Mz"]
+                        header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+                    end
+                end
+
+                DelimitedFiles.writedlm(io, header1, '\t')
+                DelimitedFiles.writedlm(io, header2, '\t')
+
+                for i_t = 1:length(FReactionHist[:,1])
+                    velocity = [1,2,3]#OWENSOpenFASTWrappers.ifwcalcoutput(hub_loc,t[i_t])
+                    data = [t[i_t]]# velocity[1] velocity[2] velocity[3] FReactionHist[i_t,1] FReactionHist[i_t,2] FReactionHist[i_t,3] FReactionHist[i_t,4] FReactionHist[i_t,5] FReactionHist[i_t,6]]
+                    # for i = 2:mymesh.numEl
+                    #     data = [data FReactionHist[i_t,((i-1)*6)+1] FReactionHist[i_t,((i-1)*6)+2] FReactionHist[i_t,((i-1)*6)+3] FReactionHist[i_t,((i-1)*6)+4] FReactionHist[i_t,((i-1)*6)+5] FReactionHist[i_t,((i-1)*6)+6]]
+                    # end
+
+                    for ibld = 1:length(mymesh.meshSeg)
+                        for ibldel = 1:mymesh.meshSeg[ibld]
+                            if mymesh.structuralElNumbers!=0 #TODO: this is due to cactus run option with legacy files, but should we get rid of it all?
+                                elidx = Int(mymesh.structuralElNumbers[ibld,ibldel])
+                                data = [data FReactionHist[i_t,((elidx-1)*6)+1] FReactionHist[i_t,((elidx-1)*6)+2] FReactionHist[i_t,((elidx-1)*6)+3] FReactionHist[i_t,((elidx-1)*6)+4] FReactionHist[i_t,((elidx-1)*6)+5] FReactionHist[i_t,((elidx-1)*6)+6]]
+                            end
+                        end
+                    end
+
+                    DelimitedFiles.writedlm(io, data, '\t')        
+                end     
+            end
+        end
+
+    end
 end

@@ -124,7 +124,7 @@ Executable function for transient analysis. Provides the interface of various
 function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     aeroVals=nothing,aeroDOFs=nothing,aero=nothing,deformAero=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
-    getLinearizedMatrices=false, verbosity=0,
+    getLinearizedMatrices=false,
     system=nothing,assembly=nothing,returnold=true, #TODO: should we initialize them in here? Unify the interface for ease?
     topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing)
 
@@ -132,7 +132,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     #                             INITIALIZATION
     #..........................................................................
 
-    if (!inputs.topsideOn) && (!inputs.hydroOn)
+    if (!inputs.topsideOn) && (!inputs.platformActive)
         error("No structure is being simulated!")
     end
 
@@ -320,7 +320,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 #         genTorqueAppliedToTurbineRotor0 = -genTorque0
                 #         genTorqueAppliedToPlatform0 = genTorqueHSS0
             else
-                if !isnothing(turbsimfile) && verbosity >=1#&& inputs.AD15On
+                if !isnothing(turbsimfile) && inputs.verbosity > 0#&& inputs.AD15On
                     velocity = OWENSOpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
                     newVinf = velocity[1]
                 end
@@ -492,12 +492,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 OWENSFEA.structuralDynamicsTransient(topModel,topMesh,topEl,topdata.topDispData2,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData;predef = topModel.nlParams.predef)
             end
 
-            if verbosity>4
+            if inputs.verbosity>3
                 println("$(numIterations) uNorm: $(uNorm) aziNorm: $(aziNorm) gbNorm: $(gbNorm) \n")
             end
 
             if numIterations==MAXITER
-                if inputs.iteration_parameters.iterwarnings
+                if inputs.inputs.verbosity>0
                     @warn "Maximum Iterations Met Breaking Iteration Loop"
                 end
                 break
@@ -505,7 +505,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         end #end iteration while loop
 
-        if verbosity >=7
+        if inputs.verbosity >=3
             println("Gen Torque: $(topdata.genTorque_j)\n")
             println("RPM: $(topdata.Omega_j*60)\n")
             println("Vinf: $(newVinf)\n")
@@ -601,12 +601,11 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     end #end timestep loop
 
     println("Simulation Complete.")
-
-    outputData(topMesh,inputs,t[1:i],topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
-    topdata.FReactionHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],topdata.uHist_prp[1:i,:],
-    topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],topdata.kappa_y_hist[:,:,1:i],
-    topdata.kappa_z_hist[:,:,1:i])
     
+    if inputs.AD15On
+        OWENSOpenFASTWrappers.endTurb()
+    end
+
     if returnold
         return t[1:i], topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
         topdata.FReactionHist[1:i,:],topdata.FTwrBsHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],

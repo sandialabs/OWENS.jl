@@ -28,8 +28,8 @@
         minLoadStep = 0.0500,
         prescribedLoadStep = 0.0,
         elementOrder = 1,
-        numDofPerNode = 6,
-        hydroOn = false,
+        numDOFPerNode = 6,
+        platformActive = false,
         platformTurbineConnectionNodeNumber = 1,
         JgearBox =0.0,
         gearRatio = 1.0,
@@ -76,8 +76,8 @@ function owens(owensfile,analysisType;
     minLoadStep = 0.0500,
     prescribedLoadStep = 0.0,
     elementOrder = 1, #linear element order
-    numDofPerNode = 6,
-    hydroOn = false,
+    numDOFPerNode = 6,
+    platformActive = false,
     interpOrder = 2,
     platformTurbineConnectionNodeNumber = 1,
     JgearBox =0.0,
@@ -91,14 +91,14 @@ function owens(owensfile,analysisType;
 
     # if(analysisType=="S") #STATIC ANALYSIS
     #     Omega = varargin{3}            #initialization of rotor speed (Hz)
-    #     model.nlOn= varargin{4}        #flag for nonlinear elastic calculation
+    #     inputs.nlOn= varargin{4}        #flag for nonlinear elastic calculation
     #     if(length(varargin)>4)                #sets initial guess for nonlinear calculations
     #         displInitGuess = varargin{5}
     #     end
     #     #    if(length(varargin)>5)                #sets air density if simple thin
-    #     #        model.airDensity = varargin{6}   # airfoil theory loading desired
+    #     #        inputs.airDensity = varargin{6}   # airfoil theory loading desired
     #     #    else
-    #     model.airDensity = 1.2041
+    #     inputs.airDensity = 1.2041
     #     #    end
 
     if (analysisType=="TNB" || analysisType=="TD") #TRANSIENT ANALYSIS (TNB = newmark beta time integation, TD =  dean time integration)
@@ -110,70 +110,70 @@ function owens(owensfile,analysisType;
         end
     end
 
-    # elseif(analysisType=="ROM") #REDUCED ORDER MODEL FOR TRANSIENT ANALYSIS
-    #     model.delta_t = varargin{3} #time step size
-    #     model.numTS = varargin{4}   #number of time steps
-    #     model.numModesForROM = varargin{5} #number of lower system modes to include in ROM
-    #     model.nlOn = varargin{6}    #flag for nonlinear elastic calculation
+    # elseif(analysisType=="ROM") #REDUCED ORDER inputs FOR TRANSIENT ANALYSIS
+    #     inputs.delta_t = varargin{3} #time step size
+    #     inputs.numTS = varargin{4}   #number of time steps
+    #     inputs.numModesForROM = varargin{5} #number of lower system modes to include in ROM
+    #     inputs.nlOn = varargin{6}    #flag for nonlinear elastic calculation
     #     turbineOpFlag = varargin{7}
     #     if(turbineOpFlag == 1) #generator start up operation mode
-    #         model.OmegaInit = varargin{8} #initial rotor speed
+    #         inputs.OmegaInit = varargin{8} #initial rotor speed
     #     elseif(turbineOpFlag == 2) # self starting operation mode
-    #         model.OmegaInit = varargin{8} #initial rotor speed (Hz)
-    #         model.OmegaGenStart = varargin{9} #rotor speed at which generator activates (Hz)
+    #         inputs.OmegaInit = varargin{8} #initial rotor speed (Hz)
+    #         inputs.OmegaGenStart = varargin{9} #rotor speed at which generator activates (Hz)
     #     else                         #specified rotor speed profile
     #         if(length(varargin) == 7)
-    #             model.usingRotorSpeedFunction = true #set flag to use user specified rotor speed function
-    #             [~,model.OmegaInit,~] = getRotorPosSpeedAccelAtTime(-1.0,0.0,0)
+    #             inputs.usingRotorSpeedFunction = true #set flag to use user specified rotor speed function
+    #             [~,inputs.OmegaInit,~] = getRotorPosSpeedAccelAtTime(-1.0,0.0,0)
     #         else
     #             #this option uses a discretely specified rotor speed profile
-    #             model.usingRotorSpeedFunction = false #set flag to not use user specified rotor speed function
-    #             model.tocp = varargin{8} #time points for rotor speed provfile
+    #             inputs.usingRotorSpeedFunction = false #set flag to not use user specified rotor speed function
+    #             inputs.tocp = varargin{8} #time points for rotor speed provfile
     #             Omegaocp = varargin{9} #rotor speed value at time points (Hz)
-    #             model.Omegaocp = Omegaocp
-    #             model.OmegaInit = Omegaocp(1)
+    #             inputs.Omegaocp = Omegaocp
+    #             inputs.OmegaInit = Omegaocp(1)
     #         end
     #     end
     # elseif(analysisType=="F")  #MANUAL FLUTTER ANALYSIS
     #     Omega = varargin{3}   #rotor speed (Hz)
-    #     model.spinUpOn = varargin{4} #flag for pre-stressed modal analysis
-    #     model.guessFreq = varargin{5} #``guess"" modal frequency
-    #     model.aeroElasticOn = true
-    #     model.nlOn = true
+    #     inputs.spinUpOn = varargin{4} #flag for pre-stressed modal analysis
+    #     inputs.guessFreq = varargin{5} #``guess"" modal frequency
+    #     inputs.aeroElasticOn = true
+    #     inputs.nlOn = true
     #
     #     if(length(varargin)>5)   #air density initialization
-    #         model.airDensity = varargin{6}
+    #         inputs.airDensity = varargin{6}
     #     else
-    #         model.airDensity = 1.2041
+    #         inputs.airDensity = 1.2041
     #     end
     #     if(length(varargin)>6)   #number of lower system modes to extract
-    #         model.numModesToExtract = varargin{7}
+    #         inputs.numModesToExtract = varargin{7}
     #     else
-    #         model.numModesToExtract = 20
+    #         inputs.numModesToExtract = 20
     #     end
     #
     # elseif(analysisType=="FA") #AUTOMATED FLUTTER ANALYSIS
     #     omegaArray = varargin{3}    #array of rotor speed values(Hz)
-    #     model.spinUpOn = varargin{4} #flag for pre-stressed modal analysis
-    #     model.aeroElasticOn = true
-    #     model.nlOn = true
+    #     inputs.spinUpOn = varargin{4} #flag for pre-stressed modal analysis
+    #     inputs.aeroElasticOn = true
+    #     inputs.nlOn = true
     #
     #     if(length(varargin)>4)    #air density initializatio
-    #         model.airDensity = varargin{5}
+    #         inputs.airDensity = varargin{5}
     #     else
-    #         model.airDensity = 1.2041
+    #         inputs.airDensity = 1.2041
     #     end
     #     if(length(varargin)>5)    #number of lower system modes to extract
-    #         model.numModesToExtract = varargin{6}
+    #         inputs.numModesToExtract = varargin{6}
     #     else
-    #         model.numModesToExtract = 20
+    #         inputs.numModesToExtract = 20
     #     end
     #
     # else
     #     error("Analysis type not recognized.")
     # end
 
-    fid = open(owensfile,"r") #reads in model file names from .owens file
+    fid = open(owensfile,"r") #reads in inputs file names from .owens file
 
     last_delimiter   = findall(r"\W", owensfile) #Find the file directory
     fdirectory       = owensfile[1:last_delimiter[end-1][1]]
@@ -208,7 +208,7 @@ function owens(owensfile,analysisType;
 
     line = readline(fid)
     delimiter_idx = findall(" ",line)
-    hydroOn = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
+    platformActive = Bool(real(parse(Int,line[1]))) #flag for activating hydrodynamic analysis
     potflowfile  = string(fdirectory, line[delimiter_idx[1][1]+1:delimiter_idx[2][1]-1]) # potential flow file prefix
     interpOrder = real(parse(Int,line[delimiter_idx[2][1]+1])) # interpolation order for HD/MD libraries
     line = readline(fid)
@@ -224,17 +224,17 @@ function owens(owensfile,analysisType;
 
     close(fid) # close .owens file
 
-    #model definitions
+    #inputs definitions
     #--------------------------------------------
     mesh = OWENS.readMesh(meshfilename) #read mesh file
     bladeData,_,_,_ = OWENS.readBladeData(blddatafilename) #reads overall blade data file
-    BC = OWENS.readBCdata(bcdatafilename,mesh.numNodes,numDofPerNode) #read boundary condition file
+    BC = OWENS.readBCdata(bcdatafilename,mesh.numNodes,numDOFPerNode) #read boundary condition file
     el = OWENS.readElementData(mesh.numEl,eldatafilename,ortdatafilename,bladeData) #read element data file (also reads orientation and blade data file associated with elements)
     joint = DelimitedFiles.readdlm(jntdatafilename,'\t',skipstart = 0) #readJointData(jntdatafilename) #read joint data file
     nodalTerms = OWENSFEA.applyConcentratedTerms(mesh.numNodes, 6;filename=ndldatafilename) #read concentrated nodal terms file
     initCond = []
 
-    #     [model] = readDriveShaftProps(model,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
+    #     [inputs] = readDriveShaftProps(inputs,driveShaftFlag,driveshaftfilename) #reads drive shaft properties
 
     driveShaftProps = DriveShaftProps(0.0,0.0)       #set drive shat properties to 0
 
@@ -250,17 +250,17 @@ function owens(owensfile,analysisType;
 
     end
 
-    outFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
-    jointTransform, reducedDOFList = OWENSFEA.createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+    dataOutputFilename = generateOutputFilename(owensfile,analysisType) #generates an output filename for analysis results #TODO: map to the output location instead of input
+    jointTransform, reducedDOFList = OWENSFEA.createJointTransform(joint,mesh.numNodes,6) #creates a joint transform to constrain inputs degrees of freedom (DOF) consistent with joint constraints
     numReducedDof = length(jointTransform[1,:])
 
     nlParams = OWENSFEA.NlParams(iterationType,adaptiveLoadSteppingFlag,tolerance,
     maxIterations,maxNumLoadSteps,minLoadStepDelta,minLoadStep,prescribedLoadStep)
 
-    model = Inputs(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
-    aeroLoadsOn,driveTrainOn,generatorOn,hydroOn=false,topsideOn=true,interpOrder,hd_input_file=[],md_input_file=[],JgearBox,gearRatio,gearBoxEfficiency,
+    inputs = Inputs(;analysisType,turbineStartup,usingRotorSpeedFunction,tocp,numTS,delta_t,Omegaocp,
+    aeroLoadsOn,driveTrainOn,generatorOn,platformActive=false,topsideOn=true,interpOrder,hd_input_file=[],md_input_file=[],JgearBox,gearRatio,gearBoxEfficiency,
     useGeneratorFunction,generatorProps,OmegaGenStart,omegaControl,OmegaInit,
-    aeroloadfile,owensfile,potflowfile=[],outFilename,bladeData,driveShaftProps)
+    aeroloadfile,owensfile,potflowfile=[],dataOutputFilename,bladeData,driveShaftProps)
 
     feamodel = OWENSFEA.FEAModel(;analysisType,
     initCond,
@@ -270,7 +270,7 @@ function owens(owensfile,analysisType;
     gravityOn,
     nlOn,
     spinUpOn,
-    outFilename,
+    dataOutputFilename,
     RayleighAlpha,
     RayleighBeta,
     elementOrder,
@@ -285,12 +285,12 @@ function owens(owensfile,analysisType;
     nodalTerms)
 
     #     if(analysisType=="S") #EXECUTE STATIC ANALYSIS
-    #         if(length(varargin)<=4 || ~model.nlOn)                #sets initial guess for nonlinear calculations
+    #         if(length(varargin)<=4 || ~inputs.nlOn)                #sets initial guess for nonlinear calculations
     #             displInitGuess = zeros(mesh.numNodes*6,1)
     #         end
     #
     #         OmegaStart = 0.0
-    #         staticExec(model,mesh,el,displInitGuess,Omega,OmegaStart)
+    #         staticExec(inputs,mesh,el,displInitGuess,Omega,OmegaStart)
     #     end
     #
     if (analysisType == "M" || analysisType == "F") #EXECUTE MODAL OR MANUAL FLUTTER ANALYSIS
@@ -305,7 +305,7 @@ function owens(owensfile,analysisType;
     #     if(analysisType=="FA") #EXECUTE AUTOMATED FLUTTER ANALYSIS
     #         displ = zeros(mesh.numNodes*6,1)
     #         OmegaStart = 0.0
-    #         [freq,damp]=ModalAuto(model,mesh,el,displ,omegaArray,OmegaStart)
+    #         [freq,damp]=ModalAuto(inputs,mesh,el,displ,omegaArray,OmegaStart)
     #     end
     #
 
@@ -316,8 +316,8 @@ function owens(owensfile,analysisType;
     end
 
     if (analysisType=="TNB"||analysisType=="TD"||analysisType=="ROM") #EXECUTE TRANSIENT ANALYSIS
-        aeroLoadsFile_root = model.aeroloadfile[1:end-16] #cut off the _ElementData.csv
-        OWENSfile_root = model.owensfile[1:end-6] #cut off the .owens
+        aeroLoadsFile_root = inputs.aeroloadfile[1:end-16] #cut off the _ElementData.csv
+        OWENSfile_root = inputs.owensfile[1:end-6] #cut off the .owens
 
         geomFn = string(aeroLoadsFile_root, ".geom")
         loadsFn = string(aeroLoadsFile_root, "_ElementData.csv")
@@ -331,9 +331,16 @@ function owens(owensfile,analysisType;
         aeroForces(t,azi) = externalForcing(t+delta_t,aerotimeArray,aeroForceValHist,aeroForceDof)
 
         deformAero(azi;newOmega=-1,newVinf=-1,bld_x=-1,bld_z=-1,bld_twist=-1,accel_flap_in=-1,accel_edge_in=-1,gravity=-1) = 0.0 #placeholder function
-        Unsteady(model;topModel=feamodel,topMesh=mesh,topEl=el,bin,aero=aeroForces,deformAero)
+        
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,
+        FReactionHist,FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,
+        uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,
+        kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+        topFexternal_hist,rbDataHist = Unsteady(inputs;topModel=feamodel,topMesh=mesh,topEl=el,bin,aero=aeroForces,deformAero)
+            
+        outputData(;mymesh=mesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist)
 
-        return model
+        return inputs
     end
 
     #
@@ -517,7 +524,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
     #read element aero_data in
     mesh = OWENS.readMesh(meshFn)
     el = OWENS.readElementData(mesh.numEl,elFn,ortFn,bladeData)
-    numDofPerNode = 6
+    numDOFPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     Fg = zeros(mesh.numNodes*6,numAeroTS)
     for i=1:numAeroTS
@@ -529,7 +536,7 @@ function mapCactusLoadsFile(geomFn,loadsFn,bldFn,elFn,ortFn,meshFn)
                 #get dof map
                 node1 = Int(structuralNodeNumbers[j,k])
                 node2 = Int(structuralNodeNumbers[j,k+1])
-                dofList = [(node1-1)*numDofPerNode.+(1:6) (node2-1)*numDofPerNode.+(1:6)]
+                dofList = [(node1-1)*numDOFPerNode.+(1:6) (node2-1)*numDOFPerNode.+(1:6)]
 
                 elementOrder = 1
                 x = [mesh.x[node1], mesh.x[node2]]
@@ -601,19 +608,19 @@ end
 Caclulates generator torque for simple induction generator
 
 #Input
-* `generatorProps` object containing generator properties, see ?model
+* `generatorProps` object containing generator properties, see ?inputs
 * `genSpeed::float`       generator speed (Hz)
 
 #Output
 * `genTorque::float`      generator torque
 """
-function simpleGenerator(model,genSpeed)
+function simpleGenerator(inputs,genSpeed)
 
-    #assign generator properties form model object
-    ratedTorque        = model.ratedTorque;
-    ratedGenSlipPerc   = model.ratedGenSlipPerc;
-    zeroTorqueGenSpeed = model.zeroTorqueGenSpeed;
-    pulloutRatio       = model.pulloutRatio;
+    #assign generator properties form inputs object
+    ratedTorque        = inputs.ratedTorque;
+    ratedGenSlipPerc   = inputs.ratedGenSlipPerc;
+    zeroTorqueGenSpeed = inputs.zeroTorqueGenSpeed;
+    pulloutRatio       = inputs.pulloutRatio;
 
     #calculate rated generator speed
     ratedGenSpeed = zeroTorqueGenSpeed*(1.0 + 0.01*ratedGenSlipPerc);

@@ -19,12 +19,12 @@ controlParameters:
 AeroParameters:
   Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
   ntheta: 30 # number of OWENSAero azimuthal discretizations
-  AModel: DMS # AD, DMS, AC
+  AeroModel: DMS # AD, DMS, AC
   adi_lib: nothing
   adi_rootname: "/ExampleB"
   
 structuralParameters:
-  structuralModel: GX #GX, TNB, ROM
+  structuralModel: TNB #GX, TNB, ROM
   nonlinear: false #TODO: propogate
   ntelem: 10 #tower elements in each 
   nbelem: 60 #blade elements in each 
