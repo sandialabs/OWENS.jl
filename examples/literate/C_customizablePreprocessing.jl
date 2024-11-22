@@ -17,8 +17,8 @@ import OWENSFEA
 import OWENSAero
 import QuadGK
 import FLOWMath
-import PyPlot
-#### PyPlot.pygui(true)
+## import PyPlot
+## PyPlot.pygui(true)
 import OWENSOpenFASTWrappers
  
 
@@ -207,27 +207,25 @@ end
 nothing
 
 # Here is a way that you can visualize the nodal numbers of the mesh
-
-PyPlot.figure()
-for icon = 1:length(mymesh.conn[:,1])
-    idx1 = mymesh.conn[icon,1]
-    idx2 = mymesh.conn[icon,2]
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    #### sleep(0.1)
-end
-
-for ijoint = 1:length(myjoint[:,1])
-    idx2 = Int(myjoint[ijoint,2])
-    idx1 = Int(myjoint[ijoint,3])
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-    PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
-    #### sleep(0.1)
-end
-PyPlot.xlabel("x")
-PyPlot.ylabel("y")
-PyPlot.zlabel("z")
+# PyPlot.figure()
+# for icon = 1:length(mymesh.conn[:,1])
+#     idx1 = mymesh.conn[icon,1]
+#     idx2 = mymesh.conn[icon,2]
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+#     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+#     #### sleep(0.1)
+# end
+# for ijoint = 1:length(myjoint[:,1])
+#     idx2 = Int(myjoint[ijoint,2])
+#     idx1 = Int(myjoint[ijoint,3])
+#     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+#     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
+#     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+#     #### sleep(0.1)
+# end
+# PyPlot.xlabel("x")
+# PyPlot.ylabel("y")
+# PyPlot.zlabel("z")
 
 
 # This is where the sectional properties for the tower are either read in from the file, or are directly input and could be manuplated here in the script

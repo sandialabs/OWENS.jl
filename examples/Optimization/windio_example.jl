@@ -79,7 +79,7 @@ topDamage_tower_U_UNIT = HDF5.h5read(file,"topDamage_tower_U")
 topDamage_tower_L_UNIT = HDF5.h5read(file,"topDamage_tower_L")
 
 
-file = "$runpath/InitialDataOutputs.h5"
+file = "./InitialDataOutputs.h5"
 t = HDF5.h5read(file,"t")
 aziHist = HDF5.h5read(file,"aziHist")
 OmegaHist = HDF5.h5read(file,"OmegaHist")

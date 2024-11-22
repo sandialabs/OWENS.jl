@@ -11,7 +11,11 @@ OWENS_Options:
     verbosity: 2 # verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
     VTKsaveName: "./vtk/windio" # Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
     aeroLoadsOn: 2 # Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
-
+    Prescribed_RPM_time_controlpoints: [0.0,100000.1]
+    Prescribed_RPM_RPM_controlpoints: [17.2,17.2]
+    Prescribed_Vinf_time_controlpoints: [0.0,100000.1]
+    Prescribed_Vinf_Vinf_controlpoints: [17.2,17.2]
+    
 DLC_Options:
     DLCs: ["1_1","2_1"] # name of DLC
     Vinf_range: [5.0,10.0] # inflow Cutin to cutout and discretization

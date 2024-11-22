@@ -11,7 +11,7 @@
 # available to users, which is helpful for explaining how the floating platform mesh
 # (or "bottom side") is defined and differs from the topside.
 
-import PyPlot
+## import PyPlot
 
 import OWENS
 import OWENSFEA
@@ -395,15 +395,13 @@ nothing
 # see how the floating VAWT responds over time.
 # Note that the platform modeled here is not necessarily design for the Darrieus VAWT it
 # is supporting, so your mileage may vary on the simulation results.
-
-PyPlot.plot(t, uHist_prp[:, 1])
-PyPlot.title("Platform Surge Response")
-PyPlot.xlabel("Time [s]")
-PyPlot.ylabel("Force [N]")
-
-PyPlot.plot(t, FHydroHist[:, 1])
-PyPlot.xlabel("Time [s]")
-PyPlot.ylabel("Force [N]")
-PyPlot.title("Hydrodynamic Surge Loading")
+# PyPlot.plot(t, uHist_prp[:, 1])
+# PyPlot.title("Platform Surge Response")
+# PyPlot.xlabel("Time [s]")
+# PyPlot.ylabel("Force [N]")
+# PyPlot.plot(t, FHydroHist[:, 1])
+# PyPlot.xlabel("Time [s]")
+# PyPlot.ylabel("Force [N]")
+# PyPlot.title("Hydrodynamic Surge Loading")
 
 nothing

@@ -12,9 +12,12 @@ new*
 *COMPILED*
 *.out
 *.h5
+*h5*
 *.mat
 *.png
 *.gif
+*.pdf
+*.csv
 *.mp4
-*turbsimfiles/
+*turbsim*/
 *animation/
