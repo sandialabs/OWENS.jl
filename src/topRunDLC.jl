@@ -77,7 +77,38 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
-struct OWENS_Options
+
+"""
+
+OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `analysisType`: default "Unsteady",  Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
+    * `AeroModel`: default "DMS",  OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+    * `structuralModel`: default "TNB",  Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
+    * `controlStrategy`: default "normal",  should be in WindIO?- yes, 
+    * `numTS`: default 10,  number of time steps TODO: change to sim time and make this derived
+    * `delta_t`: default 0.05,  time step in seconds
+    * `platformActive`: default false,  flag to indicate if the floating platform model is active.  
+    * `topsideOn`: default true,  flat to be able to turn off the rotor and just run the floating portions
+    * `interpOrder`: default 2,  if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
+    * `dataOutputFilename`: default nothing,  data output filename with path, set to nothing or don't specify to not output anything
+    * `rigid`: default false,  this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
+    * `TOL`: default 1e-4,  gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
+    * `MAXITER`: default 300,  gauss-seidel max iterations - i.e. the two-way iterations
+    * `verbosity`: default 2,  verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+    * `VTKsaveName`: default "./vtk/windio",  Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+    * `aeroLoadsOn`: default 2,  Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
+    * `Prescribed_RPM_time_controlpoints`: default [0.0,100000.1],  If controlStrategy is "fixedRPM", array of time control points for the internal spline
+    * `Prescribed_RPM_RPM_controlpoints`: default [17.2,17.2],  If controlStrategy is "fixedRPM", array of RPM control points for the internal spline
+    * `Prescribed_Vinf_time_controlpoints`: default [0.0,100000.1],  If AeroModel is "DMS" or "AC, and ifw is false, array of time control points for the internal spline
+    * `Prescribed_Vinf_Vinf_controlpoints`: default [17.2,17.2],  If AeroModel is "DMS" or "AC, and ifw is false, array of Vinf control points for the internal spline 
+
+
+    # Output
+    * `OWENS_Options`: 
+"""
+mutable struct OWENS_Options
     analysisType
     AeroModel
     structuralModel
@@ -112,7 +143,7 @@ struct OWENS_Options
             get(dict_in,:platformActive, false), # flag to indicate if the floating platform model is active.  
             get(dict_in,:topsideOn, true), # flat to be able to turn off the rotor and just run the floating portions
             get(dict_in,:interpOrder, 2), # if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
-            get(dict_in,:dataOutputFilename, nothing), # data output filename with path, set to nothing or don't specify to not output anything
+            get(dict_in,:dataOutputFilename, "./default_savename"), # data output filename with path, set to nothing or don't specify to not output anything
             get(dict_in,:rigid, false), # this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
             get(dict_in,:TOL, 1e-4), # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
             get(dict_in,:MAXITER, 300), # gauss-seidel max iterations - i.e. the two-way iterations
@@ -127,14 +158,39 @@ struct OWENS_Options
     end
 end
 
-struct DLC_Options
+"""
+
+DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `DLCs`: default ["none"], name of DLC
+    * `Vinf_range`: default inRange(5,20,16), inflow Cutin to cutout and discretization
+    * `IEC_std`: default "\"1-ED3\"", turbsim input file IEC standard
+    * `WindChar`: default "\"A\"", turbsim wind charasteric 
+    * `WindClass`: default , DLC turbsim wind class
+    * `turbsimsavepath`: default "./turbsimfiles", path where the turbsim files are saved
+    * `pathtoturbsim`: default othing, path to the turbsim executable
+    * `NumGrid_Z`: default 8, turbsim vertical discretizations 
+    * `NumGrid_Y`: default 6, turbsim horizontal discretizations
+    * `Vref`: default 0.0, reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
+    * `Vdesign`: default 1.0, Design or rated speed of turbine, used for certain DLC cases
+    * `grid_oversize`: default .1, amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
+    * `regenWindFiles`: default false, force regeneration of turbsim files even if they already exist
+    * `delta_t_turbsim`: default .05, turbsim timestep
+    * `simtime_turbsim`: default 00.0, turbsim total time, which loops if simtime exceeds turbsim time
+    * `RandSeed1`: default 0071, turbsim random seed number
+
+
+    # Output
+    * `DLC_Options`: 
+"""
+mutable struct DLC_Options
     DLCs
     Vinf_range
     IEC_std
     WindChar
     WindClass
     turbsimsavepath
-    templatefile
     pathtoturbsim
     NumGrid_Z
     NumGrid_Y
@@ -150,13 +206,12 @@ struct DLC_Options
     function DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
         new(
-            get(dict_in,:DLCs,["1_1","2_1"]), # name of DLC
+            get(dict_in,:DLCs,["none"]), # name of DLC
             get(dict_in,:Vinf_range,LinRange(5,20,16)), # inflow Cutin to cutout and discretization
             get(dict_in,:IEC_std,"\"1-ED3\""), # turbsim input file IEC standard
             get(dict_in,:WindChar,"\"A\""), # turbsim wind charasteric 
             get(dict_in,:WindClass,1), # DLC turbsim wind class
             get(dict_in,:turbsimsavepath,"./turbsimfiles"), # path where the turbsim files are saved
-            get(dict_in,:templatefile,"$module_path/template_files/templateTurbSim.inp"), # path where the template turbsim file is that gets read, modified and saved, then used as the input for turbsim
             get(dict_in,:pathtoturbsim,nothing), # path to the turbsim executable
             get(dict_in,:NumGrid_Z,38), # turbsim vertical discretizations 
             get(dict_in,:NumGrid_Y,26), # turbsim horizontal discretizations
@@ -172,7 +227,25 @@ struct DLC_Options
     end
 end
     
-struct OWENSAero_Options #TODO: move these downstream to their respective packages and unify the options with those
+"""
+
+OWENSAero_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `Nslices`: default 20, number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+    * `ntheta`: default 30, number of azimuthal discretizations
+    * `ifw`: default false, use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
+    * `DynamicStallModel`: defaultBV", dynamic stall model, should be under an OWENSAero options
+    * `RPI`: default true, rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+    * `Aero_Buoyancy_Active`: default false, flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+    * `Aero_AddedMass_Active`: default false, flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+    * `Aero_RotAccel_Active`: default false, flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+
+
+    # Output
+    * `OWENSAero_Options`: 
+"""
+mutable struct OWENSAero_Options #TODO: move these downstream to their respective packages and unify the options with those
     Nslices
     ntheta
     ifw
@@ -186,19 +259,49 @@ struct OWENSAero_Options #TODO: move these downstream to their respective packag
     function OWENSAero_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
         new(
-            get(dict_in,:Nslices, 20), #OWENSAero number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
-            get(dict_in,:ntheta, 30), #OWENSAero number of azimuthal discretizations
-            get(dict_in,:ifw, false), #OWENSAero use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
-            get(dict_in,:DynamicStallModel,"BV"), #OWENSAero dynamic stall model, should be under an OWENSAero options
-            get(dict_in,:RPI, true), #OWENSAero rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
-            get(dict_in,:Aero_Buoyancy_Active, false), #OWENSAero flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
-            get(dict_in,:Aero_AddedMass_Active, false), #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
-            get(dict_in,:Aero_RotAccel_Active, false), #OWENSAero flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+            get(dict_in,:Nslices, 20), # number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+            get(dict_in,:ntheta, 30), # number of azimuthal discretizations
+            get(dict_in,:ifw, false), # use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
+            get(dict_in,:DynamicStallModel,"BV"), # dynamic stall model, should be under an OWENSAero options
+            get(dict_in,:RPI, true), # rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+            get(dict_in,:Aero_Buoyancy_Active, false), # flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+            get(dict_in,:Aero_AddedMass_Active, false), # flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+            get(dict_in,:Aero_RotAccel_Active, false), # flag to turn added mass forces on, don't turn on if the added mass in the structures are on
         )
     end
 end
 
-struct OWENSFEA_Options
+"""
+
+OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `nlOn`: default true, nonlinear effects
+    * `RayleighAlpha`: default 0.05, damping coefficient scalar on the stiffness matrix
+    * `RayleighBeta`: default 0.05, damping coefficient scalar on the mass matrix
+    * `iterationType`: default "DI", internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+    * `guessFreq`: default 0.0, for the built in flutter model frequency guessed for the flutter frequency 
+    * `numModes`: default 20, ROM model, number of modes used in the analysis type.  Less is faster but less accurate
+    * `adaptiveLoadSteppingFlag`: default true, for steady analysis if convergence fails, it will reduce the load and retry then increase the load
+    * `minLoadStepDelta`: default 0.0500, minimum change in load step
+    * `minLoadStep`: default 0.0500, minimum value of reduced load
+    * `prescribedLoadStep`: default 0.0, optional prescribed load fraction
+    * `maxNumLoadSteps`: default 20, used in static (steady state) analysis, max load steps for adaptive load stepping
+    * `tolerance`: default 1.0000e-06, total mesh unsteady analysis convergence tolerance for a timestep within the structural model
+    * `maxIterations`: default 50, total mesh unsteady analysis convergence max iterations for a timestep
+    * `elementOrder`: default 1, Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
+    * `alpha`: default 0.5, newmark time integration alpha parameter
+    * `gamma`: default 0.5, newmark time integration gamma parameter
+    * `AddedMass_Coeff_Ca`: default 0.0, added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+    * `platformTurbineConnectionNodeNumber`: default 1, TODO: reconnect this
+    * `aeroElasticOn`: default false, OWENSFEA for the built in flutter model
+    * `spinUpOn`: default true, TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
+    * `predef`: default false, Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
+
+    # Output
+    * `OWENSFEA_Options`: 
+"""
+mutable struct OWENSFEA_Options
     nlOn
     RayleighAlpha
     RayleighBeta
@@ -250,7 +353,27 @@ struct OWENSFEA_Options
     end
 end
 
-struct OWENSOpenFASTWrappers_Options
+"""
+
+OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `windINPfilename`: default nothing, If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+    * `ifw_libfile`: default nothing, location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    * `hd_lib`: default nothing, location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    * `md_lib`: default nothing, location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    * `adi_lib`: default nothing, location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    * `adi_rootname`: default "/aerodyn", location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+    * `hd_input_file`: default "none", If platformActive, the hydrodyn file location, like in the unit test
+    * `ss_input_file`: default "none", If platformActive, the sea state file location, like in the unit test
+    * `md_input_file`: default "none", If platformActive, the moordyn file location, like in the unit test
+    * `potflowfile`: default nothing, If platformActive, the potential flow files location, like in the unit test
+    * `WindType`: default 3, Derived parameter, inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
+            
+    # Output
+    * `OWENSOpenFASTWrappers_Options`: 
+"""
+mutable struct OWENSOpenFASTWrappers_Options
     windINPfilename
     ifw_libfile
     hd_lib
@@ -272,7 +395,7 @@ struct OWENSOpenFASTWrappers_Options
             get(dict_in,:hd_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:md_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:adi_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:adi_rootname, "./aerodyn"),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            get(dict_in,:adi_rootname, "/aerodyn"),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:hd_input_file, "none"), # If platformActive, the hydrodyn file location, like in the unit test
             get(dict_in,:ss_input_file, "none"), # If platformActive, the sea state file location, like in the unit test
             get(dict_in,:md_input_file, "none"), # If platformActive, the moordyn file location, like in the unit test
@@ -282,7 +405,27 @@ struct OWENSOpenFASTWrappers_Options
     end
 end
 
-struct Mesh_Options
+
+"""
+
+Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `ntelem`: default 20, number of tower elements in each blade, plus nodes wherever there is a component overlap
+    * `nbelem`: default 30, number of blade elements in each blade, plus nodes wherever there is a component overlap
+    * `ncelem`: default 30, number of cable elements in each cable if ARCUS
+    * `nselem`: default 10, number of elements in each strut
+    * `angularOffset`: default 0.0, moves the structure to align with the aero model
+    * `joint_type`: default 0, optionally can specify the strut to blade joints to be pinned about different axes, or 0 for welded
+    * `c_mount_ratio`: default 0.05, for ARCUS, where the cable mounts on the lower side of the blade
+    * `AD15hubR`: default 0.1, parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+    * `cables_connected_to_blade_base`: default true, for ARCUS, for the two part simulation of the blade bending
+    * `turbineType`: default "Darrieus", mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not. 
+            
+    # Output
+    * `Mesh_Options`: 
+"""
+mutable struct Mesh_Options
     ntelem
     nbelem
     ncelem
@@ -312,7 +455,33 @@ struct Mesh_Options
     end
 end
 
-struct Drivetrain_Options
+
+"""
+
+Drivetrain_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+   
+    # Input
+    * `turbineStartup`: default 0, TODO: clean up since it should be derived from control strategy
+    * `usingRotorSpeedFunction`: default false, TODO: clean up the speed function since the omegaocp RPM gets splined already
+    * `driveTrainOn`: default false, flag to turn on the drivetrain model TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
+    * `JgearBox`: default 0.0, torsional stiffness of the gearbox TODO: resolve units
+    * `gearRatio`: default 1.0, ratio between the turbine driveshaft and generator shaft
+    * `gearBoxEfficiency`: default 1.0, efficiency of the gearbox, just decreases the torque that the generator model sees
+    * `generatorOn`: default false, TODO: clean up the generator options
+    * `useGeneratorFunction`: default false, TODO: clean up the generator options
+    * `generatorProps`: default 0.0, TODO: clean up the generator options
+    * `ratedTorque`: default 0.0, TODO: clean up the generator options
+    * `zeroTorqueGenSpeed`: default 0.0, TODO: clean up the generator options
+    * `pulloutRatio`: default 0.0, TODO: clean up the generator options
+    * `ratedGenSlipPerc`: default 0.0, TODO: clean up the generator options
+    * `OmegaGenStart`: default 0.0, TODO: clean up the generator options
+    * `driveShaftProps_K`: default 0.0, TODO: break this out, driveshaft stiffness and damping
+    * `driveShaftProps_C`: default 0.0, TODO: break this out, driveshaft stiffness and damping
+
+    # Output
+    * `Drivetrain_Options`: 
+"""
+mutable struct Drivetrain_Options
     turbineStartup
     usingRotorSpeedFunction
     driveTrainOn
@@ -354,7 +523,23 @@ struct Drivetrain_Options
     end
 end
 
-struct Unified_Options
+"""
+
+Unified_Options
+   
+    # Input
+    * `OWENS_Options::OWENS_Options`:
+    * `DLC_Options::DLC_Options`:
+    * `OWENSAero_Options::OWENSAero_Options`:
+    * `OWENSFEA_Options::OWENSFEA_Options`:
+    * `OWENSOpenFASTWrappers_Options::OWENSOpenFASTWrappers_Options`:
+    * `Mesh_Options::Mesh_Options`:
+    * `Drivetrain_Options::Drivetrain_Options`:
+
+    # Output
+    * `Unified_Options`: 
+"""
+mutable struct Unified_Options
     OWENS_Options::OWENS_Options
     DLC_Options::DLC_Options
     OWENSAero_Options::OWENSAero_Options
@@ -364,6 +549,17 @@ struct Unified_Options
     Drivetrain_Options::Drivetrain_Options
 end
 
+"""
+
+ModelingOptions(yamlInputfile)
+   
+    # Input
+    * `yamlInputfile::string`: yaml file containing ordered inputs matching the default keys
+
+
+    # Output
+    * `Unified_Options::Unified_Options`: Struct of structs containing all of the OWENS Options
+"""
 function ModelingOptions(yamlInputfile)
 
     yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
@@ -495,7 +691,7 @@ function MasterInput(yamlInputfile)
     NuMad_geom_xlscsv_file_bld,NuMad_mat_xlscsv_file_bld,NuMad_geom_xlscsv_file_strut,NuMad_mat_xlscsv_file_strut)
 end
 
-function runOWENS(Inp,path;verbosity=2)
+function runOWENS(Inp,designparams,path;verbosity=2)
     analysisType = Inp.analysisType
     turbineType = Inp.turbineType
     eta = Inp.eta
@@ -778,74 +974,47 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
 
 end
 
-# # Test
-# Inp = OWENS.MasterInput(;numTS=3,ifw_libfile="$localpath/../../openfastandy/build/modules/inflowwind/libifw_c_binding")
-# OWENS.runDLC(["1_1","1_2"],Inp,localpath;Vinf_range=LinRange(5,20,2),regenWindFiles=true,pathtoturbsim="$localpath/../../openfastandy/build/modules/turbsim/turbsim")
+
 """
 
-runDLC(DLCs,Inp,path;
-    Vinf_range=LinRange(5,20,16),
-    IEC_std="\"2\"",
-    WindChar="\"A\"",
-    WindClass=1,
-    turbsimsavepath="./turbsimfiles",
-    templatefile="./templateTurbSim.inp",
-    pathtoturbsim=nothing,
-    NumGrid_Z=100,
-    NumGrid_Y=100,
-    Vref=10.0,
-    Vdesign=11.0,
-    grid_oversize=1.1,
-    regenWindFiles=false)
-
+runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
+   
     # Input
-    * `DLCs`: ["1_1","1_2"]
-    * `Inp::MasterInput`: see ?OWENS.MasterInput
+    * `modelopt::OWENS.ModelingOptions`: see ?OWENS.ModelingOption
+    * `designparams::OWENS.Design_Data`: see ?OWENS.Design_Data
     * `path`: desired path to run everything
-    * `Vinf_range`: =LinRange(5,20,16),
-    * `IEC_std`: ="\"2\"",
-    * `WindChar`: ="\"A\"",
-    * `WindClass`: =1,
-    * `turbsimsavepath`: ="./turbsimfiles", path where it dumps the turbsim files
-    * `templatefile`: ="./template_files/templateTurbSim.inp",
-    * `pathtoturbsim`: optional, path to custom turbsim binary, otherwise the auto installed version will be used,
-    * `NumGrid_Z`: =100,
-    * `NumGrid_Y`: =100,
-    * `Vref`: =10.0,
-    * `Vdesign`: =11.0, # Design or rated speed
-    * `grid_oversize`: =1.1,
-    * `regenWindFiles`: =false
+    * `runScript`: function handle to run script, defaults to OWENS.runOWENSWINDIO
+
 
     # Output
     * `nothing`: 
-    """
-function runDLC(All_Options,Design_Params,path;runScript = OWENS.runOWENS)
+"""
+function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
 
-    if typeof(Design_Params) == String
-        Design_Params = Design_Data(Design_Params)
+    if isa(designparams, String)
+        designparams = Design_Data(designparams)
     end
 
-    if typeof(All_Options) == String
-        All_Options = ModelingOptions(All_Options)
+    if isa(modelopt, String)
+        modelopt = ModelingOptions(modelopt)
     end
 
-    DLCs = All_Options.DLC_Options.DLCs
-    Vinf_range = All_Options.DLC_Options.Vinf_range # = LinRange(5,20,16),
-    IEC_std = All_Options.DLC_Options.IEC_std # = "\"1-ED3\"",
-    WindChar = All_Options.DLC_Options.WindChar # = "\"A\"",
-    WindClass = All_Options.DLC_Options.WindClass # = 1,
-    turbsimsavepath = All_Options.DLC_Options.turbsimsavepath # = "./turbsimfiles",
-    templatefile = All_Options.DLC_Options.templatefile # = "$module_path/template_files/templateTurbSim.inp",
-    pathtoturbsim = All_Options.DLC_Options.pathtoturbsim # = nothing,
-    NumGrid_Z = All_Options.DLC_Options.NumGrid_Z # = 38,
-    NumGrid_Y = All_Options.DLC_Options.NumGrid_Y # = 26,
-    Vref = All_Options.DLC_Options.Vref # = 10.0,
-    Vdesign = All_Options.DLC_Options.Vdesign # = 11.0, # Design or rated speed
-    grid_oversize = All_Options.DLC_Options.grid_oversize # = 1.1,
-    regenWindFiles = All_Options.DLC_Options.regenWindFiles # = false,
-    delta_t_turbsim = All_Options.DLC_Options.delta_t_turbsim # = 0.05,
-    simtime_turbsim = All_Options.DLC_Options.simtime_turbsim # = 600.0,
-    RandSeed1 = All_Options.DLC_Options.RandSeed1
+    DLCs = modelopt.DLC_Options.DLCs
+    Vinf_range = modelopt.DLC_Options.Vinf_range # = LinRange(5,20,16),
+    IEC_std = modelopt.DLC_Options.IEC_std # = "\"1-ED3\"",
+    WindChar = modelopt.DLC_Options.WindChar # = "\"A\"",
+    WindClass = modelopt.DLC_Options.WindClass # = 1,
+    turbsimsavepath = modelopt.DLC_Options.turbsimsavepath # = "./turbsimfiles",
+    pathtoturbsim = modelopt.DLC_Options.pathtoturbsim # = nothing,
+    NumGrid_Z = modelopt.DLC_Options.NumGrid_Z # = 38,
+    NumGrid_Y = modelopt.DLC_Options.NumGrid_Y # = 26,
+    Vref = modelopt.DLC_Options.Vref # = 10.0,
+    Vdesign = modelopt.DLC_Options.Vdesign # = 11.0, # Design or rated speed
+    grid_oversize = modelopt.DLC_Options.grid_oversize # = 1.1,
+    regenWindFiles = modelopt.DLC_Options.regenWindFiles # = false,
+    delta_t_turbsim = modelopt.DLC_Options.delta_t_turbsim # = 0.05,
+    simtime_turbsim = modelopt.DLC_Options.simtime_turbsim # = 600.0,
+    RandSeed1 = modelopt.DLC_Options.RandSeed1
 
     if !isdir(turbsimsavepath)
         mkdir(turbsimsavepath)
@@ -856,7 +1025,7 @@ function runDLC(All_Options,Design_Params,path;runScript = OWENS.runOWENS)
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, All_Options, Design_Params, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y,RandSeed1)
+        DLCParams[iDLC] = getDLCparams(DLC, modelopt, designparams, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y,RandSeed1)
 
         # Run Simulation at each Wind Speed
         for windspeed in DLCParams[iDLC].Vinf_range_used #TODO: parallelize this
@@ -870,22 +1039,22 @@ function runDLC(All_Options,Design_Params,path;runScript = OWENS.runOWENS)
             
             if contains(DLCParams[iDLC].IEC_WindType, "NTM") || contains(DLCParams[iDLC].IEC_WindType, "ETM") || contains(DLCParams[iDLC].IEC_WindType, "EWM")
                 if !isfile(windINPfilename) || regenWindFiles
-                    generateTurbsimBTS(DLCParams[iDLC],windINPfilename,pathtoturbsim;templatefile)
+                    generateTurbsimBTS(DLCParams[iDLC],windINPfilename,pathtoturbsim)
                 end
-                All_Options.OWENSOpenFASTWrappers_Options.WindType = 3
-                All_Options.OWENSOpenFASTWrappers_Options.windINPfilename = "$(windINPfilename[1:end-4]).bts"
+                modelopt.OWENSOpenFASTWrappers_Options.WindType = 3
+                modelopt.OWENSOpenFASTWrappers_Options.windINPfilename = "$(windINPfilename[1:end-4]).bts"
             else
                 if !isfile(windINPfilename) || regenWindFiles
                     generateUniformwind(DLCParams[iDLC],windINPfilename)
                 end
-                All_Options.OWENSOpenFASTWrappers_Options.windINPfilename = windINPfilename
-                All_Options.OWENSOpenFASTWrappers_Options.WindType = 2
+                modelopt.OWENSOpenFASTWrappers_Options.windINPfilename = windINPfilename
+                modelopt.OWENSOpenFASTWrappers_Options.WindType = 2
             end
 
-            All_Options.OWENSAero_Options.ifw = true
-            All_Options.OWENS_Options.controlStrategy = DLCParams[iDLC].controlStrategy
+            modelopt.OWENSAero_Options.ifw = true
+            modelopt.OWENS_Options.controlStrategy = DLCParams[iDLC].controlStrategy
             # run owens simulation
-            runScript(All_Options,path)
+            runScript(modelopt,designparams,path)
         end
     end
 end
@@ -922,7 +1091,7 @@ mutable struct DLC_internal
 end
 
 
-function getDLCparams(DLC_case, All_Options, Design_Params, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;
+function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;
     RandSeed1 = 40071,
     grid_oversize=1.2,
     simtime_turbsim=nothing,
@@ -930,10 +1099,10 @@ function getDLCparams(DLC_case, All_Options, Design_Params, Vinf_range, Vdesign,
     NumGrid_Z=nothing,
     NumGrid_Y=nothing)
     
-    hub_height = windio[:assembly][:hub_height]
-    blade_x = Design_Params[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] #Used
-    blade_y = Design_Params[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values] #Used
-    blade_z = Design_Params[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
+    hub_height = designparams[:assembly][:hub_height]
+    blade_x = designparams[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] #Used
+    blade_y = designparams[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values] #Used
+    blade_z = designparams[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
     Blade_Height = maximum(blade_z) #TODO: resolve DLC dependence
     Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
     
@@ -942,8 +1111,8 @@ function getDLCparams(DLC_case, All_Options, Design_Params, Vinf_range, Vdesign,
     Ve50 = 50.0 #TODO change by class etc
     Ve1 = 30.0 #TODO
 
-    numTS = All_Options.OWENS_Options.numTS
-    delta_t = All_Options.OWENS_Options.delta_t
+    numTS = modelopt.OWENS_Options.numTS
+    delta_t = modelopt.OWENS_Options.delta_t
     simtime = numTS*delta_t
 
     GridHeight = (Htwr_base-Blade_Height/2+Blade_Height)*grid_oversize
@@ -954,8 +1123,8 @@ function getDLCparams(DLC_case, All_Options, Design_Params, Vinf_range, Vdesign,
         NumGrid_Z = NumGrid_Z
         NumGrid_Y = NumGrid_Y
     else
-        NumGrid_Z = All_Options.Mesh_Options.ntelem+All_Options.Mesh_Options.nbelem
-        NumGrid_Y = All_Options.Mesh_Options.nbelem
+        NumGrid_Z = modelopt.Mesh_Options.ntelem+modelopt.Mesh_Options.nbelem
+        NumGrid_Y = modelopt.Mesh_Options.nbelem
     end
     
     if !isnothing(simtime_turbsim)
@@ -1393,7 +1562,7 @@ function generateUniformwind(DLCParams,windINPfilename)
     end
 end
 
-function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile="$localpath/templateTurbSim.inp") 
+function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile="$module_path/template_files/templateTurbSim.inp") 
 
     lines = readlines(templatefile)
 
@@ -1423,7 +1592,7 @@ function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile
         end
     end
 
-    if isnothing(pathtoturbsim)
+    if isnothing(pathtoturbsim) || pathtoturbsim=="nothing"
         run(`$(OWENSOpenFASTWrappers.turbsim()) $windINPfilename`)
     else
         run(`$pathtoturbsim $windINPfilename`)

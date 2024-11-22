@@ -1,10 +1,10 @@
 
-function runOWENSWINDIO(windio,modelopt,path)
-    if typeof(windio) == String
+function runOWENSWINDIO(modelopt,windio,path)
+    if isa(windio, String)
         windio = Design_Data(windio)
     end
 
-    if typeof(modelopt) == String
+    if isa(modelopt, String)
         modelopt = ModelingOptions(modelopt)
     end
 
@@ -147,7 +147,7 @@ function runOWENSWINDIO(windio,modelopt,path)
     # capacity_credit = windio[:costs][:capacity_credit]
     # benchmark_price = windio[:costs][:benchmark_price]
 
-    if typeof(gravity) == Float64
+    if isa(gravity, Float64)
         gravityOn = [0,0,gravity]
     else
         gravityOn = gravity
@@ -192,7 +192,6 @@ function runOWENSWINDIO(windio,modelopt,path)
     WindChar = modelopt.DLC_Options.WindChar
     WindClass = modelopt.DLC_Options.WindClass
     turbsimsavepath = modelopt.DLC_Options.turbsimsavepath
-    templatefile = modelopt.DLC_Options.templatefile
     pathtoturbsim = modelopt.DLC_Options.pathtoturbsim
     NumGrid_Z = modelopt.DLC_Options.NumGrid_Z
     NumGrid_Y = modelopt.DLC_Options.NumGrid_Y
@@ -396,29 +395,6 @@ function runOWENSWINDIO(windio,modelopt,path)
 
     nothing
 
-    # If the sectional properties material files includes cost information, that is combined with the density 
-    # to estimate the overall material cost of of materials in the blades
-
-    if verbosity>0
-        
-        println("\nBlades' Mass Breakout")
-        for (i,name) in enumerate(plyprops_bld.names)
-            println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
-        end
-        
-        println("\nTower Mass Breakout")
-        for (i,name) in enumerate(plyprops_twr.names)
-            println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
-        end
-        
-        println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
-        println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
-        println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
-        
-    end
-
-    nothing
-
     # Here we apply the boundary conditions.  For this case, with a regular cantelever tower, the tower base node which is 
     # 1 is constrained in all 6 degrees of freedom to have a displacement of 0.  You can change this displacement to allow for things
     # like pretension, and you can apply boundary conditions to any node.
@@ -440,9 +416,71 @@ function runOWENSWINDIO(windio,modelopt,path)
         AD15On = false
     end
 
+     # Handle the control strategy #TODO: function and hook up discon controller
+    if DLCs != "none"
+        normalRPM = Prescribed_RPM_RPM_controlpoints[1] ./ 60
+        slowRPM = 1.0 #RPM
+        tocp = [0.0,10.0,30.0,1000.0]
+        turbineStartup = 0
+        generatorOn = false
+        useGeneratorFunction = false
+        throwawayTimeSteps=1#round(Int,10.0/delta_t) # 10 seconds
+        if controlStrategy == "normal"
+            Omegaocp = [normalRPM,normalRPM,normalRPM,normalRPM]./60 #hz
+            turbineStartup = 0
+            generatorOn = false
+            useGeneratorFunction = false
+        elseif controlStrategy == "freewheelatNormalOperatingRPM"
+            Omegaocp = [normalRPM,normalRPM,normalRPM,normalRPM]./60 #hz
+            turbineStartup = 2
+            generatorOn = false
+            useGeneratorFunction = false
+        elseif controlStrategy == "startup"
+            throwawayTimeSteps = 1
+            tocp = [0.0,30.0,1000.0]
+            Omegaocp = [slowRPM,normalRPM,normalRPM]./60 #hz
+            turbineStartup = 0
+            generatorOn = false
+            useGeneratorFunction = false
+        elseif controlStrategy == "shutdown"
+            tocp = [0.0,10.0,15.0,30.0,1000.0]
+            Omegaocp = [normalRPM,normalRPM,normalRPM/2,slowRPM,0.0]./60 #hz
+        elseif controlStrategy == "emergencyshutdown"
+            tocp = [0.0,10.0,15.0,30.0,1000.0]
+            Omegaocp = [normalRPM,normalRPM,slowRPM,0.0,0.0]./60 #hz
+        elseif controlStrategy == "parked"
+            Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+        elseif controlStrategy == "parked_idle"
+            Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+            turbineStartup = 2
+            generatorOn = false
+            useGeneratorFunction = false
+        elseif controlStrategy == "parked_yaw"
+            Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+        elseif controlStrategy == "parked"
+            Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+        elseif controlStrategy == "transport"
+            Omegaocp = [slowRPM,slowRPM,slowRPM,slowRPM]./60 #hz
+        elseif controlStrategy == "prescribedRPM"
+            tocp = Prescribed_RPM_time_controlpoints
+            Omegaocp = Prescribed_RPM_RPM_controlpoints ./ 60
+        else
+            @warn "ControlStrategy $controlStrategy not recognized, using prescribed RPM spline control points"
+            tocp = Prescribed_RPM_time_controlpoints
+            Omegaocp = Prescribed_RPM_RPM_controlpoints ./ 60
+        end
+    else
+        tocp = Prescribed_RPM_time_controlpoints
+        Omegaocp = Prescribed_RPM_RPM_controlpoints ./ 60
+
+    end
+
+
+    println("controlStrategy: $controlStrategy")
+
     inputs = OWENS.Inputs(;analysisType = structuralModel,
-    tocp = Prescribed_RPM_time_controlpoints,
-    Omegaocp = Prescribed_RPM_RPM_controlpoints ./ 60,
+    tocp,
+    Omegaocp,
     tocp_Vinf = Prescribed_Vinf_time_controlpoints,
     Vinfocp = Prescribed_Vinf_Vinf_controlpoints,
     numTS,
@@ -539,7 +577,6 @@ function runOWENSWINDIO(windio,modelopt,path)
     # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
     # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
-    azi=aziHist#./aziHist*1e-6
     OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
         epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
         FReactionHist,topFexternal_hist;tsave_idx)

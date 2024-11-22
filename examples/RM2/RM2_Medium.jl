@@ -18,6 +18,9 @@ PyPlot.rc("figure",max_open_warning=500)
 # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
 plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
+PyPlot.figure()
+PyPlot.plot(LinRange(0,1,10),LinRange(0,1,10))
+
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
 
@@ -204,7 +207,7 @@ nothing
 
 # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
-feamodel = OWENS.FEAModel(;analysisType = structuralModel,
+FEAinputs = OWENS.FEAModel(;analysisType = structuralModel,
 dataOutputFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
@@ -227,7 +230,7 @@ t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
 FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
 epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
 topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
-topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+topModel=FEAinputs,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
 
 CP = mean(FReactionHist[:,6].*OmegaHist*2*pi)/(0.5*fluid_density*mean(Vinfocp)^3*area)
 TSR = mean(OmegaHist*2*pi*Blade_Radius/mean(Vinfocp))
@@ -272,3 +275,66 @@ AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in abili
 # ffmpeg -framerate 30 -i smallerhelical.%04d.png -i palette.png -lavfi paletteuse=alpha_threshold=30 -gifflags -offsetting smallerhelical.gif
 
 nothing
+
+
+
+starttime2 = time()
+FEAinputs.analysisType = "GX"
+freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    minRPM = 0.0,
+    maxRPM = 42.6,
+    NRPM = 2, # int
+    VTKsavename="$path/campbellVTK/SNL34m",
+    saveModes = [1,2,3,4,5], #must be int
+    saveRPM = [2], #must be int
+    mode_scaling = 500.0,
+    )
+freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+elapsedtime2 = time() - starttime2
+
+
+# import PyPlot
+# PyPlot.close("all")
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=4.0)
+# PyPlot.rc("legend", frameon=true)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+
+# NperRevLines = 8
+# rotSpdArrayRPM = LinRange(0.0, 40.0, 9) # int
+# PyPlot.figure()
+# for i=1:1:FEAinputs.numModes-2
+#        PyPlot.plot(rotSpdArrayRPM,freq[:,i],color=plot_cycle[1],"-") #plot mode i at various rotor speeds
+# end
+
+# #plot per rev lines
+# for i=1:NperRevLines
+#     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
+#     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
+#     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+#     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+# end
+# PyPlot.grid()
+# PyPlot.xlabel("Rotor Speed (RPM)")
+# PyPlot.ylabel("Frequency (Hz)")
+# PyPlot.plot(0,0,"k-",label="Experimental")
+# PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
+# PyPlot.legend()
+# # PyPlot.ylim([0.0,0.8])
+# # PyPlot.savefig("$(path)/../figs/34mCampbell.pdf",transparent = true)
+
+# # Add to figure
+# for i=1:2:FEAinputs.numModes-6-2
+#        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
+# end
+# PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
+# PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
+# PyPlot.ylim([0,6.01])
+# # PyPlot.savefig("$(path)/../figs/34mCampbellWGX.pdf",transparent = true)

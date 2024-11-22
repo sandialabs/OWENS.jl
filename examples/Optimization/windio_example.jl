@@ -16,7 +16,7 @@
 #
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook todo: get link working:
+#md #     This example is also available as a Jupyter notebook  
 #-
 
 import OWENS
@@ -31,7 +31,7 @@ OWENS_Options = "$runpath/OWENS_Opt.yml"
 
 WINDIO_filename = "$runpath/WINDIO_example.yaml"
 
-OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
+OWENS.runOWENSWINDIO(OWENS_Options,WINDIO_filename,runpath)
 
 # Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
 

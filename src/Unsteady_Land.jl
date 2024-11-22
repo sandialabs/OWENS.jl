@@ -602,6 +602,10 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     println("Simulation Complete.")
     
+    if inputs.AD15On
+        OWENSOpenFASTWrappers.endTurb()
+    end
+
     if returnold
         return t[1:i], topdata.aziHist[1:i],topdata.OmegaHist[1:i],topdata.OmegaDotHist[1:i],topdata.gbHist[1:i],topdata.gbDotHist[1:i],topdata.gbDotDotHist[1:i],
         topdata.FReactionHist[1:i,:],topdata.FTwrBsHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],

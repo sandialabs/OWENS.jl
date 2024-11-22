@@ -153,7 +153,7 @@ function setupOWENS(OWENSAero,path;
         bshapey = shapeY, # but magnitude for this is relevant
         angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
         AD15_ccw = true,
-        verbosity=0, # 0 nothing, 1 basic, 2 lots: amount of printed information)
+        verbosity, # 0 nothing, 1 basic, 2 lots: amount of printed information)
         )
     else #TODO unify with HAWT
         error("please choose a valid mesh type (Darrieus, H-VAWT, ARCUS)")
@@ -634,7 +634,7 @@ function setupOWENS(OWENSAero,path;
                 isHAWT = false     # true for HAWT, false for crossflow or VAWT
                 )
 
-        aeroForcesAD(t,azi) = OWENS.mapAD15(t,azi,[mymesh],OWENSOpenFASTWrappers.advanceAD15;alwaysrecalc=true,verbosity=1)
+        aeroForcesAD(t,azi) = OWENS.mapAD15(t,azi,[mymesh],OWENSOpenFASTWrappers.advanceAD15;alwaysrecalc=true,verbosity)
         deformAeroAD=OWENSOpenFASTWrappers.deformAD15
     end
 
@@ -644,6 +644,28 @@ function setupOWENS(OWENSAero,path;
     mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
     mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)
+
+
+    # If the sectional properties material files includes cost information, that is combined with the density 
+    # to estimate the overall material cost of of materials in the blades
+
+    if verbosity>0
+        
+        println("\nBlades' Mass Breakout")
+        for (i,name) in enumerate(plyprops_bld.names)
+            println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
+        end
+        
+        println("\nTower Mass Breakout")
+        for (i,name) in enumerate(plyprops_twr.names)
+            println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
+        end
+        
+        println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
+        println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
+        println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
+        
+    end
 
     if AD15On
         return mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,

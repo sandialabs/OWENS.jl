@@ -10,13 +10,12 @@
 # common use cases for which helper functions have been developed, such as for meshing certain standard architectures
 # and calculating and applying sectional properties to these architectures. The figure below summarizes this at a high 
 # level.  
-# TODO: yml file definition and inputs expanded 
 #
 # ![](../assets/OWENS_Example_Figure_Building_Blocks.png)
 #
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook todo: get link working:
+#md #     This example is also available as a Jupyter notebook  
 #-
 
 import OWENS
@@ -24,33 +23,18 @@ import OWENS
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
 ##runpath = path = splitdir(@__FILE__)[1]
 
-modelopt = OWENS.ModelingOptions("$(path)/OWENS_modeling_options.yaml")
-design = Design_Data("$path/OWENS_design_data.yaml")
+modelopt = OWENS.ModelingOptions("$(path)/OWENS_opt.yml")
+designparams = OWENS.Design_Data("$path/WindIO_example.yaml")
 
-OWENS.runOWENS(modelopt,design,runpath)
+OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
 
 # Here is an example of using the same model against the automated DLC run script. TODO: memory issue with running DLC with AeroDyn multiple times.
 # Note that for a setup cutom to a specific design, you'll want to go to the B level to get all of the detailed inputs correct
 # One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.
 
 modelopt.DLC_Options.DLCs = ["1_1"] #"normal" 
-#### modelopt.DLC_Options.DLCs = ["1_3"] #"normal" 
-#### modelopt.DLC_Options.DLCs = ["1_4"] #"normal" 
-#### modelopt.DLC_Options.DLCs = ["1_5"] #"normal" 
-#### modelopt.DLC_Options.DLCs = ["2_1"] #"freewheelatNormalOperatingRPM" 
-#### modelopt.DLC_Options.DLCs = ["2_3"] #"freewheelatNormalOperatingRPM" 
-#### modelopt.DLC_Options.DLCs = ["3_1"] #"startup" 
-#### modelopt.DLC_Options.DLCs = ["3_2"] #"startup" 
-#### modelopt.DLC_Options.DLCs = ["3_3"] #"startup" 
-#### modelopt.DLC_Options.DLCs = ["4_1"] #"shutdown" 
-#### modelopt.DLC_Options.DLCs = ["4_2"] #"shutdown" 
-#### modelopt.DLC_Options.DLCs = ["5_1"] #"emergencyshutdown" 
-#### modelopt.DLC_Options.DLCs = ["6_1"] #"parked" 
-#### modelopt.DLC_Options.DLCs = ["6_2"] #"parked_idle" 
-#### modelopt.DLC_Options.DLCs = ["6_4"] #"parked" 
-#### modelopt.DLC_Options.DLCs = ["7_1"] #"parked" 
-#### modelopt.DLC_Options.DLCs = ["2_3","3_1","3_2","3_3","4_1","4_2","5_1"]
+#### modelopt.DLC_Options.DLCs = ["1_3","6_1"] #"normal" 
 
-OWENS.runDLC(modelopt,design,runpath)
+OWENS.runDLC(modelopt,designparams,runpath)
 
 nothing

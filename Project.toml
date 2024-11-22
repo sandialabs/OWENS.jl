@@ -1,7 +1,7 @@
 name = "OWENS"
 uuid = "51d15398-4eaf-40f9-a029-79ae1c4a3867"
 authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
-version = "1.0.2"
+version = "1.0.3"
 
 [deps]
 Composites = "d0d699f6-c662-11e8-0fb1-1b30104ab829"
@@ -29,10 +29,10 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [sources]
 Composites = {url = "https://github.com/byuflowlab/Composites.jl.git"}
-OWENSAero = {url = "https://github.com/sandialabs/OWENSAero.jl"}
-OWENSFEA = {url = "https://github.com/sandialabs/OWENSFEA.jl"}
 OWENSOpenFAST_jll = {url = "https://github.com/sandialabs/OWENSOpenFAST_jll.jl"}
 OWENSOpenFASTWrappers = {url = "https://github.com/sandialabs/OWENSOpenFASTWrappers.jl"}
+OWENSAero = {url = "https://github.com/sandialabs/OWENSAero.jl"}
+OWENSFEA = {url = "https://github.com/sandialabs/OWENSFEA.jl"}
 
 [compat]
 DelimitedFiles = "1"

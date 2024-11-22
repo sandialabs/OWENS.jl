@@ -751,6 +751,10 @@ function Unsteady(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         OWENSOpenFASTWrappers.MD_End()
     end
 
+    if inputs.AD15On
+        OWENSOpenFASTWrappers.endTurb()
+    end
+
     return t[1:i], aziHist[1:i],OmegaHist[1:i],OmegaDotHist[1:i],gbHist[1:i],gbDotHist[1:i],gbDotDotHist[1:i],
     FReactionHist[1:i,:],FTwrBsHist[1:i,:],genTorque[1:i],genPower[1:i],torqueDriveShaft[1:i],uHist[1:i,:],
     uHist_prp[1:i,:],epsilon_x_hist[:,:,1:i],epsilon_y_hist[:,:,1:i],epsilon_z_hist[:,:,1:i],kappa_x_hist[:,:,1:i],

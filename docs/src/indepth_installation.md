@@ -233,7 +233,7 @@ Pkg.add(PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"))
 Note that there are many packages used in the examples.  While they are installed within the OWENS.jl environment, if you want to additionally install them in your 1.11+ environment where you will likely be running from:
 ```julia
 using Pkg
-Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW"])
+Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","FFTW","YAML","OrderedCollections"])
 ```
 
 If you want to show any of the plots in the examples, they currently use the PyPlot interface, which means that julia has to install its own conda in the back end, which can take some time.  Alternatively, you can point to your own python if desired.
@@ -257,9 +257,10 @@ println("\n#####################")
 println("Install OWENS")
 println("#####################")
 
-Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","Statistics","FFTW",
+Pkg.add(["Statistics","Dierckx","QuadGK","FLOWMath","HDF5","ImplicitAD","GXBeam","DelimitedFiles","FFTW","YAML","OrderedCollections"])
+
+Pkg.add([
 PackageSpec(url="https://github.com/byuflowlab/Composites.jl.git"),
-PackageSpec(url="https://github.com/sandialabs/OWENSPreComp.jl.git"),
 PackageSpec(url="https://github.com/sandialabs/OWENSOpenFAST_jll.jl.git"),
 PackageSpec(url="https://github.com/sandialabs/OWENSOpenFASTWrappers.jl.git"),
 PackageSpec(url="https://github.com/sandialabs/OWENSAero.jl.git"),

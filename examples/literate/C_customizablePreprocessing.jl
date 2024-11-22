@@ -7,7 +7,7 @@
 # an properly map the sectional properties to each element and apply unique boundary conditions, etc.
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook todo: get link working:
+#md #     This example is also available as a Jupyter notebook  
 #-
 
 # This example is the same as example B except that the setupOWENS function is broken out and each step defined

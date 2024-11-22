@@ -1,6 +1,6 @@
 OWENS_Options:
     analysisType: "Unsteady" # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-    AeroModel: "DMS" # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+    AeroModel: "AD" # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
     structuralModel: "TNB" #Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
     controlStrategy: "prescribedRPM" # should be in WindIO?- yes, 
     numTS: 20 # number of time steps TODO: change to sim time and make this derived
@@ -14,7 +14,7 @@ OWENS_Options:
 
 DLC_Options:
     DLCs: ["1_1","2_1"] # name of DLC
-    Vinf_range: LinRange(5,20,16) # inflow Cutin to cutout and discretization
+    Vinf_range: [5.0,10.0] # inflow Cutin to cutout and discretization
     IEC_std: "\"1-ED3\"" # turbsim input file IEC standard
     WindChar: "\"A\"" # turbsim wind charasteric 
     WindClass: 1 # turbsim wind class
