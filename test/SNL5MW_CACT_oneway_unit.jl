@@ -61,16 +61,16 @@ fname = string(platfileRoot,outFileExt)
 MassVal = platMassDiag
 StiffVal = platStiffDiag
 
-nodes = [1 1]
-cmkType = ["M6" "K6"]
-cmkValues = zeros(6,6,2)
-for dd = 1:6
-    # set up mass matrix
-    cmkValues[dd,dd,1] = MassVal[dd]
-    # set up stiffness matrix
-    cmkValues[dd,dd,2] = StiffVal[dd]
-end
-OWENS.writeOwensNDL(fname, nodes, cmkType, cmkValues)
+# nodes = [1 1]
+# cmkType = ["M6" "K6"]
+# cmkValues = zeros(6,6,2)
+# for dd = 1:6
+#     # set up mass matrix
+#     cmkValues[dd,dd,1] = MassVal[dd]
+#     # set up stiffness matrix
+#     cmkValues[dd,dd,2] = StiffVal[dd]
+# end
+# OWENS.writeOwensNDL(fname, nodes, cmkType, cmkValues)
 
 # *********************************************************************
 # perform operations for the aerodynamic forces file generation
