@@ -19,9 +19,9 @@ function create_mesh(;Htwr_base = 15.0,
     nbelem = 30, #blade elements
     nselem = 4,
     nguyelem = 20,
-    Nguy_sets = 3,
-    guyanchor_radius = 10.0, #meters
-    guy_twr_mountpoint = [0.5,0.95], # This puts struts at top and bottom, as a fraction of the blade position
+    Nguy_sets = 4,
+    guyanchor_radius = 36.4, #meters
+    guy_twr_mountpoint = [0.99], # This puts struts at top and bottom, as a fraction of the blade position
     strut_twr_mountpoint = [0.125,0.5,0.95], # This puts struts at top and bottom, as a fraction of the blade position
     strut_bld_mountpoint = [0.25,0.5,0.75], # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
     bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
@@ -250,11 +250,11 @@ function create_mesh(;Htwr_base = 15.0,
         end
     end
 
+    g2ground_idx = zeros(Int,Nguy_sets,Nguy_vert)
+    g2t_idx = zeros(Int,Nguy_sets,Nguy_vert)
     if Nguy_sets>0
         #Connect from the tower to the ground
         # For each guy set, find the mounting location and draw a line
-        g2ground_idx = zeros(Int,Nguy_sets,Nguy_vert)
-        g2t_idx = zeros(Int,Nguy_sets,Nguy_vert)
         # Guy Wires
         for iguy_vert = 1:Nguy_vert
             for iguy_set = 1:Nguy_sets
@@ -405,6 +405,6 @@ function create_mesh(;Htwr_base = 15.0,
         end
         AD15bldElIdxRng = [AD15bldElIdxRng; idx1 idx2]
     end
-    custom_mesh_outputs = (g2ground_idx)
+    custom_mesh_outputs = (g2ground_idx,g2t_idx)
     return mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs
 end

@@ -281,9 +281,7 @@ nothing
 starttime2 = time()
 FEAinputs.analysisType = "GX"
 freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 42.6,
-    NRPM = 2, # int
+    rotSpdArrayRPM = [0.0, 42.6],
     VTKsavename="$path/campbellVTK/SNL34m",
     saveModes = [1,2,3,4,5], #must be int
     saveRPM = [2], #must be int

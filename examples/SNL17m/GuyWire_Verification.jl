@@ -1,3 +1,6 @@
+# This validation uses the 17m guy wire design contained in 76-0616, blades are set to be stiff or to match the 17m
+# then the guy wire specific data in 80-2669 fig 1 modal frequencies
+
 import OWENS
 import OWENSFEA
 import OWENSAero
@@ -45,8 +48,8 @@ ifw = false
 AeroModel = "DMS"
 windINPfilename = nothing
 ifw_libfile = nothing
-Blade_Height = 41.9
-Blade_Radius = 17.1
+Blade_Height = 17.1
+Blade_Radius = 17.1/2
 numTS = 2000
 delta_t = 0.05
 NuMad_geom_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerGeom.csv"
@@ -62,23 +65,14 @@ adi_rootname = "$(path)/SNL34m"
 # Setup
 #############################################
 
-SNL34m_5_3_Vinf = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_Vinf.csv",',',skipstart = 0)
-SNL34m_5_3_RPM = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_RPM.csv",',',skipstart = 0)
-SNL34m_5_3_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_Torque.csv",',',skipstart = 0)
-
-
-new_t = LinRange(SNL34m_5_3_RPM[1,1],SNL34m_5_3_RPM[end,1],100)
-new_RPM = OWENS.safeakima(SNL34m_5_3_RPM[:,1],SNL34m_5_3_RPM[:,2],new_t)
-
-Vinf_spec = OWENS.safeakima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
+new_t = LinRange(0,10.0,9)
 
 offsetTime = 20.0 # seconds
-tocp = [0.0;new_t.+offsetTime; 1e6]
-Omegaocp = [new_RPM[1]; new_RPM; new_RPM[end]]./60 .*0 .+33.92871/60
-t_Vinf = [0;new_t;1e6]
-Vinf_spec = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]]
-tocp_Vinf = [0.0;t_Vinf.+offsetTime; 1e6]
-Vinfocp = [Vinf_spec[1];Vinf_spec;Vinf_spec[end]].*1e-6
+tocp = [new_t; 1e6]
+Omegaocp = zeros(10) .+ 33.92871/60
+t_Vinf = [new_t;1e6]
+tocp_Vinf = [new_t; 1e6]
+Vinfocp = zeros(10) .+ 10.0
 
 controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.449336766507562, 13.310226748873827, 14.781369210504563, 15.8101544043681, 16.566733104331984, 17.011239869982738, 17.167841319391137, 17.04306679619916, 16.631562597633675, 15.923729603782338, 14.932185789551408, 13.62712239754136, 12.075292152969496, 10.252043906945818, 8.124505683235517, 5.678738418596312, 2.8959968657512207]
 
@@ -165,22 +159,26 @@ PyPlot.ylabel("y")
 PyPlot.zlabel("z")
 PyPlot.axis("equal")
 
-g2ground_idx = custom_mesh_outputs
+g2ground_idx,g2t_idx = custom_mesh_outputs
+
+guy_stiff = myel.props[end].EA[2]
+pretension = 44000.0 #N
+lengthguy = sqrt((towerHeight+Blade_Height)^2 + 36.4^2)
+predeformation = pretension/guy_stiff*lengthguy
+
 
 # node, dof, bc
 top_idx = Int(myjoint[7,2])
 
 # constrain the unconnected cables in the z direction
-n_hardcode = 8
-pBC = zeros(n_hardcode+length(g2ground_idx)*3,3)
+n_hardcode = 6
+pBC = zeros(n_hardcode+length(g2ground_idx)*6,3)
 pBC[1:n_hardcode,:] = [1 1 0 
 1 2 0
 1 3 0
 1 4 0
 1 5 0
-1 6 0
-top_idx 1 0
-top_idx 2 0]
+1 6 0]
 
 iidx = 0
 for iguy_set = 1:length(g2ground_idx[:,1])
@@ -190,7 +188,13 @@ for iguy_set = 1:length(g2ground_idx[:,1])
         global iidx +=1
         pBC[n_hardcode+iidx,:] = [g2ground_idx[iguy_set,iguy_vert] 2 0.0]
         global iidx +=1
-        pBC[n_hardcode+iidx,:] = [g2ground_idx[iguy_set,iguy_vert] 3 0.0]
+        pBC[n_hardcode+iidx,:] = [g2ground_idx[iguy_set,iguy_vert] 3 -predeformation]
+        global iidx +=1
+        pBC[n_hardcode+iidx,:] = [g2ground_idx[iguy_set,iguy_vert] 4 0.0]
+        global iidx +=1
+        pBC[n_hardcode+iidx,:] = [g2ground_idx[iguy_set,iguy_vert] 5 0.0]
+        global iidx +=1
+        pBC[n_hardcode+iidx,:] = [g2ground_idx[iguy_set,iguy_vert] 6 0.0]
     end
 end
 
@@ -217,103 +221,41 @@ FEAinputs = OWENSFEA.FEAModel(;analysisType = "M",
         numModes = 16)  # number of modes to calculate)
 
 
-starttime = time()
-freq = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 40.0,
-    NRPM = 9, # int
-    )
-freqOWENS = [freq[:,i] for i=1:4:FEAinputs.numModes-2]
-elapsedtime = time() - starttime
 
-starttime2 = time()
+
 FEAinputs.analysisType = "GX"
 freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 40.0,
-    NRPM = 9, # int
+    rotSpdArrayRPM = [0.0],
     VTKsavename="$path/campbellVTK/SNL34m",
-    saveModes = [1,3,5], #must be int
+    saveModes = [1], #must be int
+    saveRPM = [1], #must be int
     mode_scaling = 500.0,
     )
 freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
-elapsedtime2 = time() - starttime2
 
-println("OWENS: $elapsedtime")
-println("GX: $elapsedtime2")
+NperRevLines = 8
+rotSpdArrayRPM = LinRange(0.0, 2.0, 2) # int
 
-for imode = 1:length(freqOWENS)
-    for ifreq = 1:length(freqOWENS[imode])
-        # println("imode $imode, ifreq $ifreq")
-        atol = freqGX[imode][ifreq]*0.065
-        @test isapprox(freqOWENS[imode][ifreq],freqGX[imode][ifreq];atol)
-    end
+PyPlot.figure()
+#plot per rev lines
+for i=1:NperRevLines
+    linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
+    liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
+    PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+    PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
 end
+PyPlot.grid()
+PyPlot.xlabel("Rotor Speed (RPM)")
+PyPlot.ylabel("Frequency (Hz)")
+PyPlot.legend()
+# PyPlot.ylim([0.0,0.8])
+# PyPlot.savefig("$(path)/../figs/34mCampbell.pdf",transparent = true)
 
-# import PyPlot
-# PyPlot.close("all")
-# PyPlot.pygui(true)
-# PyPlot.rc("figure", figsize=(4.5, 3))
-# PyPlot.rc("font", size=10.0)
-# PyPlot.rc("lines", linewidth=1.5)
-# PyPlot.rc("lines", markersize=4.0)
-# PyPlot.rc("legend", frameon=true)
-# PyPlot.rc("axes.spines", right=false, top=false)
-# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-# PyPlot.rc("figure",max_open_warning=500)
-# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
-
-# NperRevLines = 8
-# rotSpdArrayRPM = LinRange(0.0, 40.0, 9) # int
-# PyPlot.figure()
-# for i=1:1:FEAinputs.numModes-2
-#        PyPlot.plot(rotSpdArrayRPM,freq[:,i],color=plot_cycle[1],"-") #plot mode i at various rotor speeds
-# end
-
-# # Plot 34m experimental data
-# SNL34_flap = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_Flatwise.csv",',',skipstart = 0)
-# SNL34_lead = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_LeadLag.csv",',',skipstart = 0)
-
-# PyPlot.plot(SNL34_flap[:,1],SNL34_flap[:,2],"k.",label="Flapwise Gauges")
-# PyPlot.plot(SNL34_lead[:,1],SNL34_lead[:,2],"kx",label="Lead-Lag Gauges")
-# PyPlot.plot(0,0,"k--",label="Tower-Mode")
-
-# SNL34_1F = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_1F.csv",',',skipstart = 0)
-# SNL34_1BE = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_1BE.csv",',',skipstart = 0)
-# SNL34_2FA = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_2FA.csv",',',skipstart = 0)
-# SNL34_2FS = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_2FS.csv",',',skipstart = 0)
-# SNL34_1TO = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_1TO.csv",',',skipstart = 0)
-# SNL34_3F = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/4.5_3F.csv",',',skipstart = 0)
-
-# PyPlot.plot(SNL34_1F[:,1],SNL34_1F[:,2],"k-")
-# PyPlot.plot(SNL34_1BE[:,1],SNL34_1BE[:,2],"k-")
-# PyPlot.plot(SNL34_2FA[:,1],SNL34_2FA[:,2],"k-")
-# PyPlot.plot(SNL34_2FS[:,1],SNL34_2FS[:,2],"k-")
-# PyPlot.plot(SNL34_1TO[:,1],SNL34_1TO[:,2],"k--")
-# PyPlot.plot(SNL34_3F[:,1],SNL34_3F[:,2],"k-")
-
-# #plot per rev lines
-# for i=1:NperRevLines
-#     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
-#     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
-#     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
-#     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
-# end
-# PyPlot.grid()
-# PyPlot.xlabel("Rotor Speed (RPM)")
-# PyPlot.ylabel("Frequency (Hz)")
-# PyPlot.plot(0,0,"k-",label="Experimental")
-# PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
-# PyPlot.legend()
-# # PyPlot.ylim([0.0,0.8])
-# # PyPlot.savefig("$(path)/../figs/34mCampbell.pdf",transparent = true)
-
-# # Add to figure
-# for i=1:2:FEAinputs.numModes-6-2
-#        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
-# end
-# PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
-# PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
-# PyPlot.ylim([0,6.01])
-# # PyPlot.savefig("$(path)/../figs/34mCampbellWGX.pdf",transparent = true)
+# Add to figure
+for i=1:2:FEAinputs.numModes-6-2
+       PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
+end
+PyPlot.plot(0,0,color=plot_cycle[2],".-",label="GXBeam")
+PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
+PyPlot.ylim([0,6.01])
+# PyPlot.savefig("$(path)/../figs/34mCampbellWGX.pdf",transparent = true)

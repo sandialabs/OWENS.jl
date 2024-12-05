@@ -146,10 +146,6 @@ function setupOWENS(OWENSAero,path;
         ntelem, #tower elements
         nbelem, #blade elements
         nselem,
-        nguyelem = 20,
-        Nguy_sets = 0,
-        guyanchor_radius = 10.0, #meters
-        guy_twr_mountpoint = [0.5,0.95], # This puts struts at top and bottom, as a fraction of the blade position
         strut_twr_mountpoint,
         strut_bld_mountpoint,
         bshapex = shapeX, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
