@@ -7,7 +7,11 @@ new*
 *vtk*
 *.sum
 *.ech
-*.dat
+*OLAF*.dat
+*strut*.dat
+*IW*.dat
+*blade*.dat
+*ADInput*.dat
 *.docx
 *COMPILED*
 *.out

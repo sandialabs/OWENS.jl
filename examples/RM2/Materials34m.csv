@@ -2,3 +2,4 @@
 ,,Type,Layer Thickness,E11,E22,,G12,,,nu12,,,density,UTSx,UCSx,UTSy,UCSy,UTSz,UCSz,Cost,Reference,SN_stressMpa,SN_stressMpa,SN_stressMpa,SN_stressMpa,SN_stressMpa,SN_stressMpa,Log_SN_cycles2Fail,Log_SN_cycles2Fail,Log_SN_cycles2Fail,Log_SN_cycles2Fail,Log_SN_cycles2Fail,Log_SN_cycles2Fail,
 Material ID,,,[mm],[MPa],[MPa],[MPa],[MPa],[MPa],[MPa],[-],[-],[-],[kg/m3],[MPa],[MPa],[MPa],[MPa],[MPa],[MPa],[$/kg],,,,,,,,,,,,,,Material ID
 1,Aluminum_6061_T6,isotropic,1.0,6.89E+04,6.89E+04,6.89E+04,2.58E+04,2.58E+04,2.58E+04,.33,.33,.33,2700,270,240,270,240,270,240,11.0,,310,250,200,150,100,0,0,1,2,4,6,20,1
+2,Mithril,isotropic,1.0,6.89E+10,6.89E+10,6.89E+10,2.58E+10,2.58E+10,2.58E+10,.33,.33,.33,0.00001,27000,24000,27000,24000,27000,24000,1e10,,31000,25000,20000,15000,10000,0,0,1,2,4,6,20,1

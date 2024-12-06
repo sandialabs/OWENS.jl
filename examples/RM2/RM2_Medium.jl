@@ -18,9 +18,6 @@ PyPlot.rc("figure",max_open_warning=500)
 # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
 plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-PyPlot.figure()
-PyPlot.plot(LinRange(0,1,10),LinRange(0,1,10))
-
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
 
@@ -29,17 +26,23 @@ path = runpath = splitdir(@__FILE__)[1]
 verbosity = 1
 
 
+naca0021_coords = DelimitedFiles.readdlm("$path/airfoils/circular.csv",',',skipstart=0)
+
+PyPlot.figure()
+PyPlot.plot(naca0021_coords[:,1],naca0021_coords[:,2],".-")
+PyPlot.axis("equal")
+
 analysisType = "unsteady"
 turbineType = "H-VAWT"
 eta = 0.5
 Nbld = 3
-towerHeight = 0.5
+towerHeight = 0.2165
 Vinf = 1.2
 controlStrategy = "constantRPM"
 Nslices = 20
 ntheta = 30
 structuralModel = "GX"
-ntelem = 20
+ntelem = 100
 nbelem = 30
 ncelem = 10
 nselem = 10
@@ -48,7 +51,7 @@ AeroModel = "DMS"
 windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 0.807
-Blade_Radius = 0.538
+Blade_Radius = 0.5375
 area = Blade_Height*2*Blade_Radius
 numTS = 10
 delta_t = 0.01
@@ -121,6 +124,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     NuMad_geom_xlscsv_file_strut,
     NuMad_mat_xlscsv_file_strut,
     Htwr_base=towerHeight,
+    Htwr_blds = Blade_Height+towerHeight,
     ntelem, 
     nbelem, 
     ncelem,
@@ -135,7 +139,7 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     Aero_RotAccel_Active = false,
     AddedMass_Coeff_Ca,
     Aero_Buoyancy_Active = false,
-    
+    verbosity,
     RPI=true,
     cables_connected_to_blade_base = true,
     meshtype = turbineType)
@@ -147,28 +151,32 @@ nothing
 # includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface
 # to work with OWENS inputs as well.
 
-nothing
+tower_base_props = myel.props[1]
+blade_tip_props = myel.props[AD15bldElIdxRng[1,1]]
 
-# If the sectional properties material files includes cost information, that is combined with the density 
-# to estimate the overall material cost of of materials in the blades
 
-if verbosity>0
-    
-    println("\nBlades' Mass Breakout")
-    for (i,name) in enumerate(plyprops_bld.names)
-        println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
-    end
-    
-    println("\nTower Mass Breakout")
-    for (i,name) in enumerate(plyprops_twr.names)
-        println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
-    end
-    
-    println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
-    println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
-    println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
-    
+PyPlot.figure()
+for icon = 1:length(mymesh.conn[:,1])
+    idx1 = mymesh.conn[icon,1]
+    idx2 = mymesh.conn[icon,2]
+    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+    PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
+    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+    # sleep(0.1)
 end
+
+for ijoint = 1:length(myjoint[:,1])
+    idx2 = Int(myjoint[ijoint,2])
+    idx1 = Int(myjoint[ijoint,3])
+    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
+    PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+    # sleep(0.1)
+end
+PyPlot.xlabel("x")
+PyPlot.ylabel("y")
+PyPlot.zlabel("z")
+PyPlot.axis("equal")
 
 nothing
 
@@ -182,6 +190,11 @@ pBC = [1 1 0
 1 4 0
 1 5 0
 1 6 0]
+# AD15bldElIdxRng[1,2]-1 1 0
+# AD15bldElIdxRng[1,2]-1 2 0
+# AD15bldElIdxRng[1,2]-1 3 0
+# AD15bldElIdxRng[1,2]-1 4 0
+# AD15bldElIdxRng[1,2]-1 5 0]
 
 nothing
 
@@ -278,61 +291,62 @@ nothing
 
 
 
-starttime2 = time()
+rotSpdArrayRPM = [0.0, 42.64]
 FEAinputs.analysisType = "GX"
 freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    rotSpdArrayRPM = [0.0, 42.6],
-    VTKsavename="$path/campbellVTK/SNL34m",
-    saveModes = [1,2,3,4,5], #must be int
+    rotSpdArrayRPM,
+    VTKsavename="$path/campbellVTK/RM2",
+    saveModes = [1,3,5], #must be int
     saveRPM = [2], #must be int
     mode_scaling = 500.0,
     )
 freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
-elapsedtime2 = time() - starttime2
 
 
-# import PyPlot
-# PyPlot.close("all")
-# PyPlot.pygui(true)
-# PyPlot.rc("figure", figsize=(4.5, 3))
-# PyPlot.rc("font", size=10.0)
-# PyPlot.rc("lines", linewidth=1.5)
-# PyPlot.rc("lines", markersize=4.0)
-# PyPlot.rc("legend", frameon=true)
-# PyPlot.rc("axes.spines", right=false, top=false)
-# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-# PyPlot.rc("figure",max_open_warning=500)
-# # PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
-# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+import PyPlot
+PyPlot.close("all")
+PyPlot.pygui(true)
+PyPlot.rc("figure", figsize=(4.5, 3))
+PyPlot.rc("font", size=10.0)
+PyPlot.rc("lines", linewidth=1.5)
+PyPlot.rc("lines", markersize=4.0)
+PyPlot.rc("legend", frameon=true)
+PyPlot.rc("axes.spines", right=false, top=false)
+PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+PyPlot.rc("figure",max_open_warning=500)
+# PyPlot.rc("axes", prop_cycle=["348ABD", "A60628", "009E73", "7A68A6", "D55E00", "CC79A7"])
+plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-# NperRevLines = 8
-# rotSpdArrayRPM = LinRange(0.0, 40.0, 9) # int
-# PyPlot.figure()
-# for i=1:1:FEAinputs.numModes-2
-#        PyPlot.plot(rotSpdArrayRPM,freq[:,i],color=plot_cycle[1],"-") #plot mode i at various rotor speeds
-# end
+#plot per rev lines
+NperRevLines = 8
+PyPlot.figure()
+for i=1:NperRevLines
+    linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
+    liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
+    PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+    PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+end
+PyPlot.grid()
+PyPlot.xlabel("Rotor Speed (RPM)")
+PyPlot.ylabel("Frequency (Hz)")
+PyPlot.plot(0,0,"k-",label="Experimental")
+PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
+PyPlot.legend()
+# PyPlot.ylim([0.0,0.8])
+# PyPlot.savefig("$(path)/../figs/34mCampbell.pdf",transparent = true)
 
-# #plot per rev lines
-# for i=1:NperRevLines
-#     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
-#     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
-#     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
-#     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
-# end
-# PyPlot.grid()
-# PyPlot.xlabel("Rotor Speed (RPM)")
-# PyPlot.ylabel("Frequency (Hz)")
-# PyPlot.plot(0,0,"k-",label="Experimental")
-# PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
-# PyPlot.legend()
-# # PyPlot.ylim([0.0,0.8])
-# # PyPlot.savefig("$(path)/../figs/34mCampbell.pdf",transparent = true)
+# Add to figure
+for i=1:1:FEAinputs.numModes
+       PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
+end
+PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
+PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
+PyPlot.ylim([0,40.0])
+# PyPlot.savefig("$(path)/../figs/34mCampbellWGX.pdf",transparent = true)
 
-# # Add to figure
-# for i=1:2:FEAinputs.numModes-6-2
-#        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
-# end
-# PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
-# PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
-# PyPlot.ylim([0,6.01])
-# # PyPlot.savefig("$(path)/../figs/34mCampbellWGX.pdf",transparent = true)
+
+# Frequency differences
+FreqSolidWorks = [12.548,12.549,12.896,21.848,21.854]
+for ifreq = 1:length(FreqSolidWorks)
+    println("Frequency $ifreq Solidworks $(FreqSolidWorks[ifreq]) OWENS $(freq2[2,ifreq]) Percent Diff $((FreqSolidWorks[ifreq]-freq2[2,ifreq])/FreqSolidWorks[ifreq]*100)")
+end
