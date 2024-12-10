@@ -497,7 +497,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             if numIterations==MAXITER
-                if inputs.inputs.verbosity>0
+                if inputs.verbosity>0
                     @warn "Maximum Iterations Met Breaking Iteration Loop"
                 end
                 break
