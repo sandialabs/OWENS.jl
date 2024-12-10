@@ -24,7 +24,7 @@ path = runpath = splitdir(@__FILE__)[1]
 
 # Unpack inputs, or you could directly input them here and bypass the file 
 
-verbosity = 4
+verbosity = 1
 
 
 naca0021_coords = DelimitedFiles.readdlm("$path/airfoils/circular.csv",',',skipstart=0)
@@ -55,7 +55,7 @@ ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_bi
 Blade_Height = 0.807
 Blade_Radius = 0.5375
 area = Blade_Height*2*Blade_Radius
-numTS = 600
+numTS = 100
 delta_t = 0.01
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -66,20 +66,34 @@ NuMad_mat_xlscsv_file_strut = "$path/Materials34m.csv"
 adi_lib = nothing#"$path/../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
 adi_rootname = "$path/helical"
 
-TSRrange = LinRange(1.0,5.0,5)
+fluid_density = 1000.0
+fluid_dyn_viscosity = 1.792E-3
+number_of_blades = Nbld
+WindType = 3
+
+AddedMass_Coeff_Ca=0.0 #For structural side
+
+TSRrange = LinRange(1.0,5.0,2)
 CP = zeros(length(TSRrange))
+mymesh = []
+myel = []
+system = []
+assembly = []
+sections = []
+myjoint = []
+pBC = []
 for (iTSR,TSR) in enumerate(collect(TSRrange))
     global Vinf
+    global mymesh
+    global myel
+    global system
+    global assembly
+    global sections
+    global myjoint
+    global pBC
     # global TSR 
     omega = Vinf/Blade_Radius*TSR  
     RPM = omega * 60 / (2*pi)
-
-    fluid_density = 1000.0
-    fluid_dyn_viscosity = 1.792E-3
-    number_of_blades = Nbld
-    WindType = 3
-
-    AddedMass_Coeff_Ca=1.0 #For structural side
 
     ##############################################
     # Setup

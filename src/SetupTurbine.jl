@@ -27,7 +27,7 @@ function setupOWENS(OWENSAero,path;
     adi_lib = "$(path)../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
     adi_rootname = "./Example",
     windINPfilename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
-    ifw_libfile = "$(path)/bin/libifw_c_binding",
+    ifw_libfile = nothing,
     NuMad_geom_xlscsv_file_twr = nothing,
     NuMad_mat_xlscsv_file_twr = nothing,
     NuMad_geom_xlscsv_file_bld = nothing,
