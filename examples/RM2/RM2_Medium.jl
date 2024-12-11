@@ -55,7 +55,7 @@ ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_bi
 Blade_Height = 0.807
 Blade_Radius = 0.5375
 area = Blade_Height*2*Blade_Radius
-numTS = 100
+numTS = 10
 delta_t = 0.01
 NuMad_geom_xlscsv_file_twr = "$path/TowerGeom.csv"
 NuMad_mat_xlscsv_file_twr = "$path/TowerMaterials.csv"
@@ -95,6 +95,7 @@ for (iTSR,TSR) in enumerate(collect(TSRrange))
     omega = Vinf/Blade_Radius*TSR  
     RPM = omega * 60 / (2*pi)
 
+    println(RPM)
     ##############################################
     # Setup
     #############################################
@@ -233,6 +234,7 @@ for (iTSR,TSR) in enumerate(collect(TSRrange))
 
     inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
     tocp,
+    dataOutputFilename = "./InitialDataOutputs_scripting.out",
     Omegaocp,
     tocp_Vinf,
     Vinfocp,
@@ -247,7 +249,7 @@ for (iTSR,TSR) in enumerate(collect(TSRrange))
     # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
     FEAinputs = OWENS.FEAModel(;analysisType = structuralModel,
-    dataOutputFilename = "none",
+    dataOutputFilename = "./InitialDataOutputs_scripting.out",
     joint = myjoint,
     platformTurbineConnectionNodeNumber = 1,
     pBC,
@@ -298,11 +300,10 @@ for (iTSR,TSR) in enumerate(collect(TSRrange))
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
     mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
     kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-    LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-    LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
     AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 
+    OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
 
     if iTSR == 2
 

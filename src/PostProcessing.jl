@@ -470,7 +470,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     return topstrainout,damage
 end
 
-function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_idx,AftPanel_idx,lencomposites_span,lam_used,damage,delta_t,total_t;useStation=0)
+function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_station_name,lencomposites_span,lam_used,damage,delta_t,total_t;useStation=0)
     # verbosity: 0 Nothing, 1 summary, 2 summary and spar, 3 everything except bucking, 4 everything
     #Ultimate
     SF_ultmin,idx = findmin(SF_ult)
@@ -505,8 +505,8 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
     #Buckling
     if !isempty(SF_buck[SF_buck.>0.0])
         SF_buck[SF_buck.<0.0] .= 1e6
-        SF_buck[:,:,LE_idx] .= 1e6 #ignore leading edge
-        SF_buck[:,:,TE_idx] .= 1e6 #ignore trailing edge
+        # SF_buck[:,:,LE_idx] .= 1e6 #ignore leading edge
+        # SF_buck[:,:,TE_idx] .= 1e6 #ignore trailing edge
         minbuck_sf,minbuck_sfidx = findmin(SF_buck)
         if verbosity>2
             println("\nWorst buckling safety factor $(minbuck_sf)")
@@ -562,11 +562,9 @@ function printSF(verbosity,SF_ult,SF_buck,LE_idx,TE_idx,SparCap_idx,ForePanel_id
     end
 
     if verbosity>1
-        printlamInfo(SF_ult,damage,SparCap_idx,"Spar Cap",lencomposites_span,verbosity,delta_t,total_t)
-        printlamInfo(SF_ult,damage,LE_idx,"Leading Edge",lencomposites_span,verbosity,delta_t,total_t)
-        printlamInfo(SF_ult,damage,TE_idx,"Trailing Edge",lencomposites_span,verbosity,delta_t,total_t)
-        printlamInfo(SF_ult,damage,ForePanel_idx,"Fore Panel",lencomposites_span,verbosity,delta_t,total_t)
-        printlamInfo(SF_ult,damage,AftPanel_idx,"Aft Panel",lencomposites_span,verbosity,delta_t,total_t)
+        for (i_iter,station_idx) in enumerate(composite_station_idx)
+            printlamInfo(SF_ult,damage,station_idx,composite_station_name[i_iter],lencomposites_span,verbosity,delta_t,total_t)
+        end
     end
 end
 
@@ -624,10 +622,18 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     mymesh,myel,myort,Nbld,epsilon_x_hist_ps,kappa_y_hist_ps,kappa_z_hist_ps,epsilon_z_hist_ps,kappa_x_hist_ps,epsilon_y_hist_ps;
     epsilon_x_hist_1=nothing,kappa_y_hist_1=nothing,kappa_z_hist_1=nothing,
     epsilon_z_hist_1=nothing,kappa_x_hist_1=nothing,epsilon_y_hist_1=nothing,verbosity=2,usestationBld=0,usestationStrut=0,
-    LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-    LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
+    composite_station_idx_U_strut = [],#[1,6,3,2,5],
+    composite_station_name_U_strut = [],#["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    composite_station_idx_L_strut = [],#[1,6,3,2,5],
+    composite_station_name_L_strut = [],#["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    composite_station_idx_U_bld = [],#[1,6,3,2,5],
+    composite_station_name_U_bld = [],#["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    composite_station_idx_L_bld = [],#[1,6,3,2,5],
+    composite_station_name_L_bld = [],#["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=1,delta_t=0.001,AD15bldNdIdxRng=nothing,AD15bldElIdxRng=nothing,
     strut_precompoutput=nothing,strut_precompinput=nothing,plyprops_strut=nothing,numadIn_strut=nothing,lam_U_strut=nothing,lam_L_strut=nothing,calculate_fatigue=true)
+
+
 
     # Linearly Superimpose the Strains
     epsilon_x_hist = epsilon_x_hist_ps#copy(epsilon_x_hist_ps).*0.0
@@ -810,7 +816,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         println("minimum blade stress: $(minimum(stress_U[:,usestationBld,8,1]))")
     end
 
-    printSF(verbosity,SF_ult_U,SF_buck_U,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,length(bld_precompinput),lam_U_bld,topDamage_blade_U,delta_t,total_t;useStation=usestationBld)
+    printSF(verbosity,SF_ult_U,SF_buck_U,composite_station_idx_U_bld, composite_station_name_U_bld,length(bld_precompinput),lam_U_bld,topDamage_blade_U,delta_t,total_t;useStation=usestationBld)
 
     stress_L = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]),3)
     SF_ult_L = zeros(N_ts,length(bld_precompinput),length(lam_L_bld[1,:]))
@@ -827,7 +833,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         println("maximum blade stress: $(maximum(stress_L[:,usestationBld,8,1]))")
         println("minimum blade stress: $(minimum(stress_L[:,usestationBld,8,1]))")
     end
-    printSF(verbosity,SF_ult_L,SF_buck_L,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,length(bld_precompinput),lam_L_bld,topDamage_blade_L,delta_t,total_t;useStation=usestationBld)
+    printSF(verbosity,SF_ult_L,SF_buck_L,composite_station_idx_L_bld, composite_station_name_L_bld,length(bld_precompinput),lam_L_bld,topDamage_blade_L,delta_t,total_t;useStation=usestationBld)
 
     if !isnothing(strut_precompoutput)
         ##########################################
@@ -851,7 +857,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             println("maximum strut stress: $(maximum(stress_U_strut[:,usestationStrut,8,1]))")
             println("minimum strut stress: $(minimum(stress_U_strut[:,usestationStrut,8,1]))")
         end
-        printSF(verbosity,SF_ult_U_strut,SF_buck_U_strut,LE_U_idx,TE_U_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,length(strut_precompinput),lam_U_strut,topDamage_strut_U,delta_t,total_t;useStation=usestationStrut)
+        printSF(verbosity,SF_ult_U_strut,SF_buck_U_strut,composite_station_idx_U_strut, composite_station_name_U_strut,length(strut_precompinput),lam_U_strut,topDamage_strut_U,delta_t,total_t;useStation=usestationStrut)
 
         stress_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_U_strut[1,:]),3)
         SF_ult_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_L_strut[1,:]))
@@ -868,7 +874,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
             println("maximum strut stress: $(maximum(stress_L_strut[:,usestationStrut,8,1]))")
             println("minimum strut stress: $(minimum(stress_L_strut[:,usestationStrut,8,1]))")
         end
-        printSF(verbosity,SF_ult_L_strut,SF_buck_L_strut,LE_L_idx,TE_L_idx,SparCapU_idx,ForePanelU_idx,AftPanelU_idx,length(strut_precompinput),lam_L_strut,topDamage_strut_L,delta_t,total_t;useStation=usestationStrut)
+        printSF(verbosity,SF_ult_L_strut,SF_buck_L_strut,composite_station_idx_L_strut, composite_station_name_L_strut,length(strut_precompinput),lam_L_strut,topDamage_strut_L,delta_t,total_t;useStation=usestationStrut)
     else
         topDamage_strut_U = nothing
         topDamage_strut_L  = nothing
