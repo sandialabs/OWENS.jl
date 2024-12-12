@@ -27,7 +27,7 @@ function setupOWENS(OWENSAero,path;
     adi_lib = "$(path)../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
     adi_rootname = "./Example",
     windINPfilename="$(path)/data/turbsim/115mx115m_30x30_25.0msETM.bts",
-    ifw_libfile = "$(path)/bin/libifw_c_binding",
+    ifw_libfile = nothing,
     NuMad_geom_xlscsv_file_twr = nothing,
     NuMad_mat_xlscsv_file_twr = nothing,
     NuMad_geom_xlscsv_file_bld = nothing,
@@ -301,6 +301,9 @@ function setupOWENS(OWENSAero,path;
     sectionPropsArray_strut = Array{Array{OWENSFEA.SectionPropsArray, 1}}(undef, Nstrutperbld)
     stiff_strut = Array{Array{Array{Float64,2}, 1},1}(undef, Nstrutperbld)
     mass_strut = Array{Array{Array{Float64,2}, 1},1}(undef, Nstrutperbld)
+    mass_breakout_struts = []
+    plyprops_strut = []
+    coststruts = 0
     for istrut = 1:Nstrutperbld
         if !isnothing(NuMad_geom_xlscsv_file_strut)
             if typeof(NuMad_geom_xlscsv_file_strut)==String
@@ -354,6 +357,15 @@ function setupOWENS(OWENSAero,path;
             names = ["CLA_5500", "CBX_2400", "ETLX_2400", "Airex_C70_55", "EBX_2400_x10", "ETLX_2400_x10", "Airex_C70_55_x10", "CFP-baseline"]
             plies = [Composites.Material{Float64}(9.824e10, 5.102e9, 4.274e9, 0.3, 1540.0, 8.75634139e8, 5.92949102e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(1.4931e10, 1.4931e10, 2.389e10, 0.3, 1530.0, 4.55053962e8, 4.55053962e8, 1.0e8, 1.0e8, 1.0e8, 0.0008100000000000001), Composites.Material{Float64}(2.0333e10, 9.305e9, 4.756e9, 0.3, 1900.0, 5.30896289e8, 5.30896289e8, 1.0e8, 1.0e8, 1.0e8, 0.00066), Composites.Material{Float64}(4.5e7, 4.5e7, 2.2e7, 0.2, 59.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 0.001), Composites.Material{Float64}(9.824e11, 5.102e10, 4.274e10, 0.3, 15300.0, 4.55053962e9, 4.55053962e9, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.4931e11, 1.4931e11, 2.389e11, 0.3, 19000.0, 5.30896289e9, 5.30896289e9, 1.0e8, 1.0e8, 1.0e8, 8.0e-5), Composites.Material{Float64}(2.03335e11, 9.3051e10, 4.756e10, 0.2, 590.0, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 1.0e8, 7.000000000000001e-5), Composites.Material{Float64}(1.576e11, 9.1e9, 3.3e9, 0.263, 1600.0, 2.236e9, 1.528e9, 1.0e8, 1.0e8, 1.0e8, 0.00066)]
             plyprops_strut = OWENS.plyproperties(names,plies)
+        end
+
+        if istrut == 1
+            mass_breakout_struts = OWENS.get_material_mass(plyprops_strut,numadIn_strut[istrut]).*B
+            coststruts = sum(mass_breakout_struts.*plyprops_strut.costs)
+        else
+            temp_mass_breakout_struts = OWENS.get_material_mass(plyprops_strut,numadIn_strut[istrut]).*B
+            mass_breakout_struts .+= temp_mass_breakout_struts
+            coststruts += sum(temp_mass_breakout_struts.*plyprops_strut.costs)
         end
 
         #TODO: not straight struts
@@ -538,7 +550,7 @@ function setupOWENS(OWENSAero,path;
             end
         end
 
-        OWENSOpenFASTWrappers.writeADinputFile(ad_input_file,blade_filenames,airfoil_filenames,OLAF_filename)
+        OWENSOpenFASTWrappers.writeADinputFile(ad_input_file,blade_filenames,airfoil_filenames,OLAF_filename;rho)
 
         NumADBody = length(AD15bldNdIdxRng[:,1])
         bld_len = zeros(NumADBody)
@@ -642,8 +654,8 @@ function setupOWENS(OWENSAero,path;
 
     # Calculate mass breakout of each material
     mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
-    mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
-    mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)
+    mass_breakout_blds = mass_breakout_bld.*B
+    mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr)
 
 
     # If the sectional properties material files includes cost information, that is combined with the density 
@@ -651,19 +663,26 @@ function setupOWENS(OWENSAero,path;
 
     if verbosity>0
         
-        println("\nBlades' Mass Breakout")
+        println("\n Combined Blades Mass Breakout")
         for (i,name) in enumerate(plyprops_bld.names)
             println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
         end
         
+        println("\n Combined Struts Mass Breakout")
+        for (i,name) in enumerate(plyprops_strut.names)
+            println("$name $(mass_breakout_struts[i]) kg, $(plyprops_strut.costs[i]) \$/kg: \$$(mass_breakout_struts[i]*plyprops_strut.costs[i])")
+        end
+
         println("\nTower Mass Breakout")
         for (i,name) in enumerate(plyprops_twr.names)
             println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
         end
-        
+        println("\nTotal Mass: $(sum(mass_breakout_blds)+ sum(mass_breakout_twr) + sum(mass_breakout_struts)) kg")
+
         println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
+        println("Total Material Cost Struts: \$$(coststruts)")
         println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
-        println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
+        println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs) + coststruts)")
         
     end
 
@@ -989,45 +1008,6 @@ function setupOWENShawt(OWENSAero,path;
     
     
     # Calculate mass breakout of each material
-
-    function get_material_mass(plyprops_in,numadIn;int_start=numadIn.span[1],int_stop=numadIn.span[end])
-        # Get Relative contribution to mass by setting all but one of the materials to zero.
-        mass_component_material = zeros(length(plyprops_in.names))
-        for imat = 1:length(plyprops_in.names)
-            # Initialize array since it is immutable
-            plies = Array{Composites.Material}(undef,length(plyprops_in.names))
-
-            # Fill it in, setting all the rho's to zero except the one matching imat
-            for imat2 = 1:length(plyprops_in.names)
-                if imat != imat2
-                    plies[imat2] = Composites.Material(plyprops_in.plies[imat2].e1,
-                    plyprops_in.plies[imat2].e2,
-                    plyprops_in.plies[imat2].g12,
-                    plyprops_in.plies[imat2].nu12,
-                    0.0, #rho
-                    plyprops_in.plies[imat2].xt,
-                    plyprops_in.plies[imat2].xc,
-                    plyprops_in.plies[imat2].yt,
-                    plyprops_in.plies[imat2].yc,
-                    plyprops_in.plies[imat2].s,
-                    plyprops_in.plies[imat2].t)
-                else
-                    plies[imat2] = plyprops_in.plies[imat2]
-                end
-            end
-
-            plyprops = plyproperties(plyprops_in.names,plies)
-            # Get the precomp output
-            precompoutput,_,_,_,_ = getOWENSPreCompOutput(numadIn;plyprops)
-            mass_array = [precompoutput[iter].mass for iter=1:length(precompoutput)]
-            # Spline and integrate that output across the span
-            mass_spl = FLOWMath.Akima(numadIn.span,mass_array)
-            mass_component_material[imat], error = QuadGK.quadgk(mass_spl, int_start, int_stop, atol=1e-10)
-
-        end
-        return mass_component_material
-    end
-
     mass_breakout_bld = get_material_mass(plyprops_bld,numadIn_bld)
     mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
     mass_breakout_twr = get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)

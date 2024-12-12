@@ -321,8 +321,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                 #         genTorqueAppliedToPlatform0 = genTorqueHSS0
             else
                 if !isnothing(turbsimfile) && inputs.verbosity > 0#&& inputs.AD15On
-                    velocity = OWENSOpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
-                    newVinf = velocity[1]
+                    try
+                        velocity = OWENSOpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)],t[i])
+                        newVinf = velocity[1]
+                    catch
+                        newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
+                    end
                 end
             end
             
@@ -497,7 +501,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
             if numIterations==MAXITER
-                if inputs.inputs.verbosity>0
+                if inputs.verbosity>0
                     @warn "Maximum Iterations Met Breaking Iteration Loop"
                 end
                 break

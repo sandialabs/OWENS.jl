@@ -456,26 +456,3 @@ println("percent_diff: $percentdiff%")
 #     FReactionHist,topFexternal_hist;tsave_idx)
 
 nothing
-
-# This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina
-# it also calculates analytical simply supported buckling safety factors
-
-##########################################
-#### Ultimate Failure #####
-##########################################
-
-# massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-# SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-# topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
-# topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
-# bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-# twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-# mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-# kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-# LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-# LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
-# Twr_LE_U_idx=1,Twr_LE_L_idx=1,
-# AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
-
-# ffmpeg -i flapping_am.%04d.png -vf "palettegen=max_colors=128:reserve_transparent=1" palette.png
-# ffmpeg -framerate 30 -i flapping_am.%04d.png -i palette.png -lavfi "scale=iw/2:ih/2:flags=lanczos[p];[p][1:v]paletteuse=alpha_threshold=30" -gifflags +offsetting flapping_am.gif

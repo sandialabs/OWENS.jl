@@ -279,8 +279,14 @@ bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
 mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
 kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
+composite_station_idx_U_strut = [1,6,3,2,5],
+composite_station_name_U_strut = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+composite_station_idx_L_strut = [1,6,3,2,5],
+composite_station_name_L_strut = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+composite_station_idx_U_bld = [1,6,3,2,5],
+composite_station_name_U_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+composite_station_idx_L_bld = [1,6,3,2,5],
+composite_station_name_L_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
 Twr_LE_U_idx=1,Twr_LE_L_idx=1,AD15bldNdIdxRng,AD15bldElIdxRng) #TODO: add in ability to have material safety factors and load safety factors
 
 nothing

@@ -183,7 +183,7 @@ function Inputs(;verbosity=2,
     rigid = false,
     driveShaftProps = DriveShaftProps(0.0,0.0),
     TOL = 1e-4,
-    MAXITER = 300,
+    MAXITER = 20,
     )
 
     return Inputs(verbosity,analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,

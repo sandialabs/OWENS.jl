@@ -570,7 +570,7 @@ function ModelingOptions(yamlInputfile)
     if haskey(yamlInput,:DLC_Options)
         dlc_options = DLC_Options(yamlInput[:DLC_Options])
     else
-        dlc_options = DLC_Options(default_dict)
+        dlc_options = DLC_Options(dummy_dict)
     end
 
     if haskey(yamlInput,:OWENSAero_Options)
@@ -965,8 +965,6 @@ mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, A
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
     mymesh,myel,myort,B,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
     kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-    LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-    LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
     AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 

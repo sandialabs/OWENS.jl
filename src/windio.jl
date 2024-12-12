@@ -32,16 +32,14 @@ function runOWENSWINDIO(modelopt,windio,path)
     # blade_z_grid = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:grid]
     blade_z = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
 
+    tower_z = windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values] #Used
+
     
     Blade_Height = maximum(blade_z) #TODO: resolve DLC dependence
     Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
     
     Htwr_base = hub_height-Blade_Height/2
-    if modelopt.Mesh_Options.turbineType == "Darrieus"
-        Htwr_blds = Blade_Height
-    else
-        Htwr_blds = Blade_Height*0.6 #TODO: finer grained inputs
-    end
+    Htwr_blds = maximum(tower_z)-Htwr_base
 
     # Struts
     #TODO: multiple struts
@@ -305,7 +303,7 @@ function runOWENSWINDIO(modelopt,windio,path)
 
     custommesh = nothing
 
-    tsave_idx=1:3:numTS
+    tsave_idx=1:3:numTS-1
 
     NuMad_geom_xlscsv_file_twr = windio
     NuMad_mat_xlscsv_file_twr = windio
@@ -598,8 +596,6 @@ function runOWENSWINDIO(modelopt,windio,path)
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
     mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
     kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-    LE_U_idx=1,TE_U_idx=6,SparCapU_idx=3,ForePanelU_idx=2,AftPanelU_idx=5,
-    LE_L_idx=1,TE_L_idx=6,SparCapL_idx=3,ForePanelL_idx=2,AftPanelL_idx=5,
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
     AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 

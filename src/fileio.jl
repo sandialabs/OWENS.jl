@@ -40,8 +40,8 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
     end
 
     if isnothing(span)
-        span = sqrt.(ref_x.^2 .+ ref_y.^2 .+ ref_z.^2)
-        println("Custom span is not specified in OWENS input, using WindIO outer_shape_bem sqrt.(reference_axis_x.^2 .+ reference_axis_y.^2 .+ reference_axis_z.^2) as common span that all the other values are splined to")
+        span = sqrt.((ref_x.-ref_x[1]).^2 .+ (ref_y.-ref_y[1]).^2 .+ ref_z.^2)
+        # println("Custom span is not specified in OWENS input, using WindIO outer_shape_bem sqrt.(reference_axis_x.^2 .+ reference_axis_y.^2 .+ reference_axis_z.^2) as common span that all the other values are splined to")
     end
 
     norm_span = span./maximum(span)

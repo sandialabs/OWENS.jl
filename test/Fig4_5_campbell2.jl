@@ -185,9 +185,7 @@ FEAinputs = OWENSFEA.FEAModel(;analysisType = "M",
 
 starttime = time()
 freq = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 40.0,
-    NRPM = 9, # int
+    rotSpdArrayRPM = [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0]
     )
 freqOWENS = [freq[:,i] for i=1:4:FEAinputs.numModes-2]
 elapsedtime = time() - starttime
@@ -195,9 +193,7 @@ elapsedtime = time() - starttime
 starttime2 = time()
 FEAinputs.analysisType = "GX"
 freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    minRPM = 0.0,
-    maxRPM = 40.0,
-    NRPM = 9, # int
+    rotSpdArrayRPM = [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0],
     VTKsavename="$path/campbellVTK/SNL34m",
     saveModes = [1,3,5], #must be int
     mode_scaling = 500.0,
