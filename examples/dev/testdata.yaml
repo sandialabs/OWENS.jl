@@ -1,6 +1,0 @@
-tests:
-    - can_log:   data/27-08-2022/logfile.csv
-      sys_log:   data/27-08-2022/syslog
-      version:   1.7.1
-      info:      first test
-      myfloat:   10.0

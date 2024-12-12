@@ -586,7 +586,7 @@ if AD15On
         end
     end
 
-    OWENSOpenFASTWrappers.writeADinputFile(ad_input_file,blade_filenames,airfoil_filenames,OLAF_filename)
+    OWENSOpenFASTWrappers.writeADinputFile(ad_input_file,blade_filenames,airfoil_filenames,OLAF_filename;rho)
 
     NumADBody = length(AD15bldNdIdxRng[:,1])
     bld_len = zeros(NumADBody)
