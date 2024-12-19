@@ -14,6 +14,7 @@ makedocs(;
             joinpath("examples", "B_detailedInputs.md"),
             joinpath("examples", "C_customizablePreprocessing.md"),
             joinpath("examples", "D_simulatingFloatingPlatforms.md"),
+            joinpath("examples", "E_RM2_Medium.md"),
         ],
         "Developer Guide" => "OWENS_Dev_Guide.md",
         "API Reference" => [

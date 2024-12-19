@@ -55,7 +55,8 @@ function setupOWENS(OWENSAero,path;
     meshtype = "Darrieus",
     custommesh = nothing,
     AddedMass_Coeff_Ca = 0.0,
-    verbosity=0) #Darrieus, H-VAWT, ARCUS
+    verbosity=0,
+    VTKmeshfilename = nothing) #Darrieus, H-VAWT, ARCUS
     
     custom_mesh_outputs = []
 
@@ -431,7 +432,7 @@ function setupOWENS(OWENSAero,path;
 
     #### store data in element object
     myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myort.Twist_d,rotationalEffects)
-    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
+    system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array;VTKmeshfilename)
 
     nothing
 
@@ -466,7 +467,15 @@ function setupOWENS(OWENSAero,path;
             end
         end
         
-        rhoA_in = [mass_bld[i][1,1] for i = 1:length(mass_bld)]
+        # Map the element wise mass to the input aero shape
+        rhoA_el = [mass_bld[i][1,1] for i = 1:length(mass_bld)]
+        if AD15bldNdIdxRng[1,2]<AD15bldNdIdxRng[1,1]
+            bld_z_node = mymesh.z[AD15bldNdIdxRng[1,2]:AD15bldNdIdxRng[1,1]]
+        else
+            bld_z_node = mymesh.z[AD15bldNdIdxRng[1,1]:AD15bldNdIdxRng[1,2]]
+        end
+        bld_z_el = bld_z_node[1:end-1] .+ (bld_z_node[2:end].-bld_z_node[1:end-1])./2
+        rhoA_in = FLOWMath.akima(bld_z_el,rhoA_el,shapeZ)
 
         OWENSAero.setupTurb(shapeX,shapeZ,B,chord,tsr,Vinf;AeroModel,DynamicStallModel,
         afname = airfoils,
