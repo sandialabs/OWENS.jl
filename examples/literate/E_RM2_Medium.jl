@@ -34,7 +34,8 @@ import FLOWMath
 ## PyPlot.rc("figure",max_open_warning=500)
 ## plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-path = runpath = splitdir(@__FILE__)[1]
+## path = runpath = splitdir(@__FILE__)[1]
+runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
 
 nothing
 
@@ -96,7 +97,7 @@ nothing
 # comment out the run command to run your own with more time
 WindType = 3
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
-## run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
+run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
 nothing
 # Here we would set up to run multiple different inflow conditions, and we can
