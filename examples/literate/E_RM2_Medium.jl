@@ -47,45 +47,42 @@ nothing
 # for the composite layup that gets run through PreComp.jl to calculate the sectional properties. Finally, this
 # has been shortened to enable automated deployment, update as desired.
 
-verbosity = 1
-analysisType = "unsteady"
-turbineType = "H-VAWT"
-Vinf = 1.2
-TSRrange = [3.0]#LinRange(1.0,5.0,2)
-controlStrategy = "constantRPM"
-Nslices = 20
-ntheta = 30
+turbineType = "H-VAWT" # turbine type, for the automatic meshing
+Vinf = 1.2 # inflow velocity
+TSRrange = [3.0]#LinRange(1.0,5.0,2) range of tip speed ratios
+Nslices = 20 # vertical discretizations if DMS or AC aero model
+ntheta = 30 # azimuthal discretizations if DMS or AC aero model
 structuralModel = "GX"
-ntelem = 100
-nbelem = 30
-ncelem = 10
-nselem = 10
-ifw = false
-numTS = 20#321
-delta_t = 0.01
+ntelem = 100 # tower elements
+nbelem = 30 # blade elements
+nselem = 10 # strut elements
+ifw = false # use inflow wind, if DMS or AC aero model
+numTS = 20#321 # number of simulation time steps
+delta_t = 0.01 # simulation time step spacing
 adi_lib = nothing#"$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
-adi_rootname = "$path/RM2"
-VTKsaveName = "$path/vtk/RM2_medium"
+adi_rootname = "$path/RM2" # path and name that all the aerodyn files are saved with
+VTKsaveName = "$path/vtk/RM2_medium" # path and name that all OWENS VTK files are saved with
 tsave_idx = 1:1:numTS-1 #you don't have to save every timestep in VTK 
 ifw_libfile = nothing#"$path/../../../openfast/build/modules/inflowwind/libifw_c_binding"
 fluid_density = 1000.0
 fluid_dyn_viscosity = 1.792E-3
-AddedMass_Coeff_Ca=1.0 #For structural side
-Aero_Buoyancy_Active = true
+AddedMass_Coeff_Ca = 1.0 #For structural side added mass 
+Aero_Buoyancy_Active = true # For buoyancy forcing, handled by the OWENSAero module 
 AeroModel = "AD"
+verbosity = 1 # verbosity level where higher is more
 if AeroModel=="AD"
     AD15On = true
 else
     AD15On = false
 end
 
-eta = 0.5 #blade-strut mount point ratio, fraction from leading edge
-number_of_blades = 3
-towerHeight = 0.2165
-Blade_Height = 0.807
-Blade_Radius = 0.5375
+eta = 0.5 # blade-strut mount point ratio, fraction from leading edge
+number_of_blades = 3 # number of blades
+towerHeight = 0.2165 # height of the tower past the blades
+Blade_Height = 0.807 # height of the blades
+Blade_Radius = 0.5375 # radius of the turbine
 
-NuMad_geom_xlscsv_file_twr = "$path/data_RM2/TowerGeom.csv"
+NuMad_geom_xlscsv_file_twr = "$path/data_RM2/TowerGeom.csv" # 
 NuMad_mat_xlscsv_file_twr = "$path/data_RM2/TowerMaterials.csv"
 NuMad_geom_xlscsv_file_bld = "$path/data_RM2/GeomBlades$AeroModel.csv"
 NuMad_mat_xlscsv_file_bld = "$path/data_RM2/materials_NuMAD.csv"
@@ -95,10 +92,11 @@ NuMad_mat_xlscsv_file_strut = "$path/data_RM2/materials_NuMAD.csv"
 nothing
 
 # For this simulation, using aerodyn ("AD"), we will use a turbulent inflow file, indicated as WindType 3
-# We can let the built in OWENS library for turbsim generate the file as so.
+# We can let the built in OWENS library for turbsim generate the file as so. Modify the inp file to your liking and 
+# comment out the run command to run your own with more time
 WindType = 3
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
-run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
+## run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
 nothing
 # Here we would set up to run multiple different inflow conditions, and we can
@@ -177,7 +175,6 @@ iTSR = 1
         Htwr_blds = Blade_Height+towerHeight,
         ntelem, 
         nbelem, 
-        ncelem,
         nselem,
         joint_type = 0,
         strut_twr_mountpoint = [0.5],
