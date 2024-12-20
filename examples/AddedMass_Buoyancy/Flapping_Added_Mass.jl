@@ -381,6 +381,8 @@ nothing
 
 OWENS_tip_displ = uHist[:,(forced_node-1)*6+1]
 
+# Taken from Added-mass effects on a horizontal-axis tidal turbine using FAST v8
+
 if AddedMass_Coeff_Ca == 1.0
     omega_OF = 4.5105 * 2*pi
 else

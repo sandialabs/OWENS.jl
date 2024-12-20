@@ -17,8 +17,8 @@ OWENS_Options:
     Prescribed_Vinf_Vinf_controlpoints: [17.2,17.2]
     
 DLC_Options:
-    DLCs: ["1_1","2_1"] # name of DLC
-    Vinf_range: [5.0,10.0] # inflow Cutin to cutout and discretization
+    DLCs: ["1_1"] # name of DLC
+    Vinf_range: [5.0] # inflow Cutin to cutout and discretization
     IEC_std: "\"1-ED3\"" # turbsim input file IEC standard
     WindChar: "\"A\"" # turbsim wind charasteric 
     WindClass: 1 # turbsim wind class
@@ -31,7 +31,7 @@ DLC_Options:
     grid_oversize: 1.1 # amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
     regenWindFiles: false #, force regeneration of turbsim files even if they already exist
     delta_t_turbsim: 0.05 # turbsim timestep
-    simtime_turbsim: 600.0 # turbsim total time, which loops if simtime exceeds turbsim time
+    simtime_turbsim: 60.0 # turbsim total time, which loops if simtime exceeds turbsim time
 
 OWENSAero_Options:
     Nslices: 20 # number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades

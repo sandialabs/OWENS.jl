@@ -52,12 +52,12 @@ Blade_Height = 17.1
 Blade_Radius = 17.1/2
 numTS = 2000
 delta_t = 0.05
-NuMad_geom_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerGeom.csv"
-NuMad_mat_xlscsv_file_twr = "$(path)/data/NuMAD_34m_TowerMaterials.csv"
-NuMad_geom_xlscsv_file_bld = "$(path)/data/NuMAD_SNL34mGeomBlades.csv"
-NuMad_mat_xlscsv_file_bld = "$(path)/data/NuMAD_SNL34mMaterials.csv"
-NuMad_geom_xlscsv_file_strut = "$(path)/data/NuMAD_SNL34mGeomStruts.csv"
-NuMad_mat_xlscsv_file_strut = "$(path)/data/NuMAD_SNL34mMaterials.csv"
+NuMad_geom_xlscsv_file_twr = "$(path)/data/tower_NuMAD.csv"
+NuMad_mat_xlscsv_file_twr = "$(path)/data/materials_NuMAD.csv"
+NuMad_geom_xlscsv_file_bld = "$(path)/data/blades_NuMAD.csv"
+NuMad_mat_xlscsv_file_bld = "$(path)/data/materials_NuMAD.csv"
+NuMad_geom_xlscsv_file_strut = "$(path)/data/struts_NuMAD.csv"
+NuMad_mat_xlscsv_file_strut = "$(path)/data/materials_NuMAD.csv"
 adi_lib = nothing
 adi_rootname = "$(path)/SNL34m"
 
@@ -134,7 +134,8 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,_,_,custom_mesh_
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     custommesh = create_mesh,
-    meshtype = turbineType)
+    meshtype = turbineType,
+    VTKmeshfilename = "$path/VTK/17m_init")
 
 PyPlot.figure()
 for icon = 1:length(mymesh.conn[:,1])
@@ -162,9 +163,19 @@ PyPlot.axis("equal")
 g2ground_idx,g2t_idx = custom_mesh_outputs
 
 guy_stiff = myel.props[end].EA[2]
-pretension = 44000.0 #N
+guy_mass = myel.props[end].rhoA[2]
+# guy mass is 3.08 kg/m
+pretension = 440000.0 * 0  #N
 lengthguy = sqrt((towerHeight+Blade_Height)^2 + 36.4^2)
-predeformation = pretension/guy_stiff*lengthguy
+
+guyanchor_radius = 36.4
+Height = 0.99*(Blade_Height+towerHeight)
+thetaD_guy = atand(guyanchor_radius/Height)
+pretension_Z = pretension/cosd(thetaD_guy)
+
+predeformation = pretension_Z/guy_stiff*lengthguy
+
+
 
 
 # node, dof, bc
@@ -235,6 +246,10 @@ freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
 
 NperRevLines = 8
 rotSpdArrayRPM = LinRange(0.0, 2.0, 2) # int
+
+
+
+guy_analytical_1stHz = 1/(2*lengthguy)*sqrt(pretension/guy_mass)
 
 PyPlot.figure()
 #plot per rev lines
