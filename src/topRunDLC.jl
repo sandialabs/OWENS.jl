@@ -179,6 +179,7 @@ DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `delta_t_turbsim`: default .05, turbsim timestep
     * `simtime_turbsim`: default 00.0, turbsim total time, which loops if simtime exceeds turbsim time
     * `RandSeed1`: default 0071, turbsim random seed number
+    * `DLCParams`: see ?OWENS.DLCParams, the current DLC parameters for the run, used as internal state information
 
 
     # Output
@@ -201,6 +202,7 @@ mutable struct DLC_Options
     delta_t_turbsim
     simtime_turbsim
     RandSeed1
+    DLCParams
 
     # Constructor that takes a dictionary
     function DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -222,6 +224,7 @@ mutable struct DLC_Options
             get(dict_in,:delta_t_turbsim,0.05), # turbsim timestep
             get(dict_in,:simtime_turbsim,600.0), # turbsim total time, which loops if simtime exceeds turbsim time
             get(dict_in,:RandSeed1,40071), # turbsim random seed number
+            get(dict_in,:DLCParams,nothing), # must be filled in with the DLC generator
             
         )
     end
@@ -1059,6 +1062,7 @@ function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
 
             modelopt.OWENSAero_Options.ifw = true
             modelopt.OWENS_Options.controlStrategy = DLCParams[iDLC].controlStrategy
+            modelopt.DLC_Options.DLCParams = DLCParams[iDLC]
             # run owens simulation
             runScript(modelopt,designparams,path)
         end
