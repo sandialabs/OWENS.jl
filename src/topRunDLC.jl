@@ -560,9 +560,13 @@ ModelingOptions(yamlInputfile)
     # Output
     * `Unified_Options::Unified_Options`: Struct of structs containing all of the OWENS Options
 """
-function ModelingOptions(yamlInputfile)
+function ModelingOptions(yamlInputfile=nothing)
 
-    yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    if !isnothing(yamlInputfile)
+        yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    else #just use defaults by supplying a dummy dictionary up front
+        yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
+    end
     
     # Unpack YAML
     dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
@@ -613,10 +617,14 @@ function ModelingOptions(yamlInputfile)
 end
 
 
-function Design_Data(file_path::String; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")
+function Design_Data(file_path=nothing; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")
     # Load the YAML files
-    windio = YAML.load_file(file_path; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
-    println("Running: $(windio[:name])")
+    if !isnothing(file_path)
+        windio = YAML.load_file(file_path; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+        println("Running: $(windio[:name])")
+    else
+        windio = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
+    end
 
     defaults = YAML.load_file(design_defaults_yaml; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
 

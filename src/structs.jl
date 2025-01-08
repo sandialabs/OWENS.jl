@@ -333,7 +333,9 @@ mutable struct NuMad
     skin_seq
     web_seq
     web_dp
+    segment_names
 end
+NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp) = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,repeat(["unnamed"],n_segments))
 
 mutable struct Seq
     seq

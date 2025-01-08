@@ -529,6 +529,7 @@ function readNuMadGeomCSV(NuMad_geom_file::String;section=nothing) #define secti
     stack_layers = Float64.(csvdata[4:n_station+3,10:stack_idx_end])
 
     seg_idx_end = stack_idx_end+n_segments+1
+    segment_names = csvdata[3,stack_idx_end+1:seg_idx_end]
     segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])
 
     DP_idx_end = seg_idx_end+n_segments+1
@@ -570,7 +571,7 @@ function readNuMadGeomCSV(NuMad_geom_file::String;section=nothing) #define secti
         end
     end
 
-    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,segment_names)
 end
 
 function readNuMadMaterialsCSV(NuMad_materials_xlscsv_file::OrderedCollections.OrderedDict{Symbol, Any})
