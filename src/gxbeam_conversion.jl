@@ -143,6 +143,24 @@ end
 ################################################################
 ################ SAVE VTK TIME DOMAIN OUTPUT ###################
 ################################################################
+"""
+
+    OWENSVTK(VTKsaveName,rundata,system,assembly,sections,mymesh,myel;tsave_idx=1:length(rundata.t,))
+
+Formats and outputs OWENS data into VTK format
+
+#Intput
+
+#Output
+* `none`:
+
+"""
+function OWENSVTK(VTKsaveName,rundata,system,assembly,sections,mymesh,myel;tsave_idx=1:length(rundata.t,))
+
+    return OWENSVTK(VTKsaveName,rundata.t,rundata.uHist,system,assembly,sections,rundata.aziHist,mymesh,myel,
+    rundata.epsilon_x_hist,rundata.epsilon_y_hist,rundata.epsilon_z_hist,rundata.kappa_x_hist,rundata.kappa_y_hist,rundata.kappa_z_hist,
+    rundata.FReactionHist,rundata.topFexternal_hist;tsave_idx)
+end
 
 """
 

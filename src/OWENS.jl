@@ -44,7 +44,7 @@ export Modal#, Flutter
 # export Steady
 function __init__()
 
-println("\nThis program is running OWENS.jl, the Offshore/Onshore Wind/Water Energy Simulator
+println("\nThis program is running OWENS.jl, the Offshore/Onshore Wind/Water Energy Simulator for turbine type devices
 
 Copyright 2013-2024
 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
