@@ -448,7 +448,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                     stressForFatigue = stress_eachlayer[:,ilayer,1]
                     Ncycles,meanIntervals,rangeIntervals,_ = rainflow(stressForFatigue;nbins_range=20,nbins_mean=1,m=3,Teq=1)
                     imean = 1
-                    cyclesatStressRanges = Ncycles[imean,:]
+                    cyclesatStressRanges = Ncycles[:,imean]
                     stress_levels = (rangeIntervals[1:end-1] .+ rangeIntervals[2:end])./2 #from intervals to mean between the interval
 
                     SN_stressMpa1 = SN_stressMpa[ilayer]

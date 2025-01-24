@@ -155,7 +155,7 @@ Formats and outputs OWENS data into VTK format
 * `none`:
 
 """
-function OWENSVTK(VTKsaveName,rundata,system,assembly,sections,mymesh,myel;tsave_idx=1:length(rundata.t,))
+function OWENSVTK(VTKsaveName,rundata,system,assembly,sections,mymesh,myel;tsave_idx=1:length(rundata.t))
 
     return OWENSVTK(VTKsaveName,rundata.t,rundata.uHist,system,assembly,sections,rundata.aziHist,mymesh,myel,
     rundata.epsilon_x_hist,rundata.epsilon_y_hist,rundata.epsilon_z_hist,rundata.kappa_x_hist,rundata.kappa_y_hist,rundata.kappa_z_hist,
