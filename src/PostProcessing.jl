@@ -440,7 +440,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                 # cylinder_bending_local_buckling_stress = Composites.cylinder_bending_local_buckling(A, D, R, laminate_h)
             end
             
-            # Miner's Damage
+            # Miner's Damage # TODO: add mean offset correction
             if calculate_fatigue
                 damage_layers = zeros(length(lam.nply))
                 for ilayer = 1:length(lam.nply)
