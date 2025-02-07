@@ -74,9 +74,9 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     # end
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
@@ -208,9 +208,9 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
     # end
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
@@ -538,9 +538,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower, treat struts like blades
@@ -857,9 +857,9 @@ function create_arcus_mesh(;
     # end
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
@@ -2038,9 +2038,9 @@ function create_hawt_mesh(;
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
@@ -2321,9 +2321,9 @@ function create_hawt_biwing_mesh(;
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
