@@ -53,7 +53,7 @@ Vinf = 1.2 # inflow velocity
 TSRrange = [3.0]#LinRange(1.0,5.0,2) range of tip speed ratios
 Nslices = 20 # vertical discretizations if DMS or AC aero model
 ntheta = 30 # azimuthal discretizations if DMS or AC aero model
-structuralModel = "GX"
+structuralModel = "TNB"
 ntelem = 100 # tower elements
 nbelem = 30 # blade elements
 nselem = 10 # strut elements
@@ -97,7 +97,7 @@ nothing
 # comment out the run command to run your own with more time
 WindType = 3
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
-run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
+# run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
 nothing
 # Here we would set up to run multiple different inflow conditions, and we can

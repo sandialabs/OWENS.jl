@@ -327,6 +327,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     catch
                         newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                     end
+                else
+                    newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                 end
             end
             
@@ -510,9 +512,15 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         end #end iteration while loop
 
         if inputs.verbosity >=3
+            avePower = mean(topdata.FReactionHist[:,6].*topdata.OmegaHist*(2*pi))
+            instPower = mean(topdata.FReactionHist[i,6].*topdata.OmegaHist[i]*(2*pi))
             println("Gen Torque: $(topdata.genTorque_j)\n")
+            println("Base Torque: $(topdata.FReactionHist[i,6])\n")
             println("RPM: $(topdata.Omega_j*60)\n")
             println("Vinf: $(newVinf)\n")
+            println("Average Power: $(avePower)")
+            println("Instant Power: $(instPower)")
+            println("")
             # velocitymid = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/2],t[i])
             # velocityquarter = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/4],t[i])
             # println("Velocity mid: $(velocitymid[1])")

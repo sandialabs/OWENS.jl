@@ -1125,9 +1125,9 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
     delta_t = modelopt.OWENS_Options.delta_t
     simtime = numTS*delta_t
 
-    GridHeight = (Htwr_base-Blade_Height/2+Blade_Height)*grid_oversize
+    GridHeight = Blade_Height * grid_oversize
     GridWidth = Blade_Radius * 2.0 * grid_oversize
-    HubHt = GridHeight*2/3
+    HubHt = Htwr_base+Blade_Height/2
 
     if !isnothing(NumGrid_Z)
         NumGrid_Z = NumGrid_Z
