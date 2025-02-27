@@ -538,9 +538,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(Int, 1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(Int, 1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower, treat struts like blades
@@ -561,9 +561,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     meshSeg[nblade+2:end] .= nselem
 
     # For each blade
-    structuralSpanLocNorm = zeros(nblade,length(bld_Z))
-    structuralNodeNumbers = zeros(nblade,length(bld_Z))
-    structuralElNumbers = zeros(nblade,length(bld_Z))
+    structuralSpanLocNorm = zeros(Float64, nblade, length(bld_Z))
+    structuralNodeNumbers = zeros(Int, nblade, length(bld_Z))
+    structuralElNumbers = zeros(Int, nblade, length(bld_Z))
 
     for iblade = 1:nblade
 
@@ -1115,7 +1115,7 @@ function calculateElementOrientation(mesh)
     Theta_d=zeros(numEl)
     twist_d=zeros(numEl)
     Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
-    elNum=zeros(numEl,2) #initialize element number array
+    elNum = zeros(Int, numEl, 2) #initialize element number array
 
     lenv = zeros(numEl)
     for i = 1:numEl #loop over elements

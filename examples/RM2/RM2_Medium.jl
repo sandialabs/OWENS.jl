@@ -1,3 +1,6 @@
+if false
+    include("../../src/OWENS.jl")
+end
 
 import OWENS
 import OWENSAero
@@ -19,7 +22,8 @@ PyPlot.rc("figure",max_open_warning=500)
 plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 # function runprofilefunction()
-path = runpath = splitdir(@__FILE__)[1]
+# path = runpath = splitdir(@__FILE__)[1]
+path = runpath = "/home/fredrik/dev/sandia-OWENS/OWENS/examples/RM2"
 
 # Unpack inputs, or you could directly input them here and bypass the file 
 

@@ -9,17 +9,19 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FLOWMath = "6cb5d3fb-0fe8-4cc2-bd89-9fe0b19a99d3"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GXBeam = "974624c9-1acb-4ad6-a627-8ac40fc27a3e"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 OWENSAero = "ac8500f8-acb1-479a-8630-5dcb97b7c093"
 OWENSFEA = "5906b1e7-6737-4278-91ec-d653c88addb4"
-OWENSOpenFAST_jll = "ac0e1b5c-a850-5466-8291-e142bbb8e693"
 OWENSOpenFASTWrappers = "1f4f357c-c864-4b71-8437-d48f9e1bb3e6"
+OWENSOpenFAST_jll = "ac0e1b5c-a850-5466-8291-e142bbb8e693"
 OWENSPreComp = "7fd84261-8b17-47b6-a87d-1cc34e69440e"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -29,16 +31,15 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [sources]
 Composites = {url = "https://github.com/byuflowlab/Composites.jl.git"}
-OWENSAero = {url = "https://github.com/sandialabs/OWENSAero.jl"}
-OWENSFEA = {url = "https://github.com/sandialabs/OWENSFEA.jl"}
-OWENSOpenFAST_jll = {url = "https://github.com/sandialabs/OWENSOpenFAST_jll.jl"}
 OWENSOpenFASTWrappers = {url = "https://github.com/sandialabs/OWENSOpenFASTWrappers.jl"}
+OWENSOpenFAST_jll = {url = "https://github.com/sandialabs/OWENSOpenFAST_jll.jl"}
 
 [compat]
 DelimitedFiles = "1"
 Dierckx = "0.5"
 FFTW = "1"
 FLOWMath = "0.3, 0.4"
+ForwardDiff = "0.10.38"
 GXBeam = "0.5.1"
 HDF5 = "0.17"
 MAT = "0.10"
@@ -49,6 +50,7 @@ OWENSOpenFAST_jll = "4"
 OWENSPreComp = "1"
 OrderedCollections = "1"
 ProgressBars = "1"
+PyPlot = "2.11.6"
 QuadGK = "2"
 StaticArrays = "1"
 Statistics = "1"

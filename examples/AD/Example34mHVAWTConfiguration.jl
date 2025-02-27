@@ -1,4 +1,4 @@
-import QuadGK
+
 import OWENS
 import OWENSFEA
 import OWENSAero
@@ -22,10 +22,9 @@ plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 # function runprofilefunction()
 path = runpath = splitdir(@__FILE__)[1]
-path = runpath = "/home/fredrik/dev/sandia-OWENS/OWENS/examples/SNL34m"
 
-Inp = OWENS.MasterInput("$path/SNL34m_Inputs.yml")
-# Inp = OWENS.MasterInput("$path/SNL34m_InputsAeroDyn.yml")
+# Inp = OWENS.MasterInput("$path/SNL34m_Inputs.yml")
+Inp = OWENS.MasterInput("$path/SNL34m_InputsAeroDyn.yml")
 
 nothing
 
@@ -34,7 +33,7 @@ nothing
 verbosity = 1
 
 analysisType = Inp.analysisType
-turbineType = Inp.turbineType
+turbineType = "H-VAWT"#Inp.turbineType
 eta = Inp.eta
 Nbld = Inp.Nbld
 towerHeight = Inp.towerHeight
@@ -82,9 +81,9 @@ SNL34m_5_3_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.3_T
 
 
 new_t = LinRange(SNL34m_5_3_RPM[1,1],SNL34m_5_3_RPM[end,1],100)
-new_RPM = OWENS.safeakima(SNL34m_5_3_RPM[:,1],SNL34m_5_3_RPM[:,2],new_t)
+new_RPM = safeakima(SNL34m_5_3_RPM[:,1],SNL34m_5_3_RPM[:,2],new_t)
 
-Vinf_spec = OWENS.safeakima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
+Vinf_spec = safeakima(SNL34m_5_3_Vinf[:,1],SNL34m_5_3_Vinf[:,2],new_t)
 
 offsetTime = 20.0 # seconds
 tocp = [0.0;new_t.+offsetTime; 1e6]
@@ -100,20 +99,16 @@ controlpts = [3.6479257474344826, 6.226656883619295, 9.082267631309085, 11.44933
 z_shape1 = collect(LinRange(0,41.9,length(controlpts)+2))
 x_shape1 = [0.0;controlpts;0.0]
 z_shape = collect(LinRange(0,41.9,60))
-x_shape = OWENS.safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
+x_shape = safeakima(z_shape1,x_shape1,z_shape)#[0.0,1.7760245854312287, 5.597183088188207, 8.807794161662574, 11.329376903432605, 13.359580331518579, 14.833606099357858, 15.945156349709, 16.679839160110422, 17.06449826588358, 17.10416552269884, 16.760632435904647, 16.05982913536134, 15.02659565585254, 13.660910465851046, 11.913532434360155, 9.832615229216344, 7.421713825584581, 4.447602800040282, 0.0]
 toweroffset = 4.3953443986241725
 SNL34_unit_xz = [x_shape;;z_shape]
 SNL34x = SNL34_unit_xz[:,1]./maximum(SNL34_unit_xz[:,1])
 SNL34z = SNL34_unit_xz[:,2]./maximum(SNL34_unit_xz[:,2])
 SNL34Z = SNL34z.*Blade_Height
-SNL34X = SNL34x.*Blade_Radius
+SNL34X = ones(length(SNL34x)).*Blade_Radius
 
 shapeZ = SNL34Z#collect(LinRange(0,H,Nslices+1))
 shapeX = SNL34X#R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
-
-shapeX_spline = FLOWMath.Akima(SNL34Z, SNL34X)
-RefArea_half, error = QuadGK.quadgk(shapeX_spline, 0, Blade_Height, atol=1e-10)
-RefArea = RefArea_half*2
 
 mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
@@ -131,7 +126,6 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     R = Blade_Radius,
     shapeZ,
     shapeX,
-    shapeY = zero(shapeX),
     ifw,
     delta_t,
     numTS,
@@ -152,149 +146,14 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng,
     ncelem,
     nselem,
     joint_type = 0,
-    strut_twr_mountpoint = [0.03,0.97],
-    strut_bld_mountpoint = [0.03,0.97],
+    strut_twr_mountpoint = [0.25,0.75],
+    strut_bld_mountpoint = [0.26,0.74],
     AModel, #AD, DMS, AC
     DSModel="BV",
     RPI=true,
     cables_connected_to_blade_base = true,
     angularOffset = pi/2,
     meshtype = turbineType)
-
-PyPlot.figure()
-for icon = 1:length(mymesh.conn[:,1])
-    idx1 = mymesh.conn[icon,1]
-    idx2 = mymesh.conn[icon,2]
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
-    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    # sleep(0.1)
-end
-
-for ijoint = 1:length(myjoint[:,1])
-    idx2 = Int(myjoint[ijoint,2])
-    idx1 = Int(myjoint[ijoint,3])
-    PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-    PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
-    # sleep(0.1)
-end
-PyPlot.xlabel("x")
-PyPlot.ylabel("y")
-PyPlot.zlabel("z")
-
-RPM = 34.0
-omega = RPM*2*pi/60
-nVinf = 20
-Vinfvec = collect(LinRange(4.0,25.0,nVinf))
-torque = zeros(nVinf)
-thrust = zeros(nVinf)
-torque2 = zeros(nVinf)
-power = zeros(nVinf)
-power2= zeros(nVinf)
-TSRvec = omega*Blade_Radius./Vinfvec
-windpower = 0.5*rho*Vinfvec.^3*RefArea
-for (i,Vinf) in enumerate(Vinfvec)
-    # Vinf = 10.0
-    println("$i of $(length(Vinfvec))")
-    CP,Rp,Tp,Zp,alpha,cl_af,cd_af,Vloc,Re,thetavec,nstep,Fx_base,Fy_base,Fz_base,
-    Mx_base,My_base,Mz_base,power[i],power2[i],torque[i] = OWENSAero.steadyTurb(;omega,Vinf)
-    thrust[i] = mean(Fx_base)
-    torque2[i] = mean(Mz_base)
-end
-
-##########################################
-#### Torque Plot
-##########################################
-
-SNL34m_3_6_Torque = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/3.6.csv",',',skipstart = 0)
-
-exptorque = SNL34m_3_6_Torque[:,2]
-greyidx = exptorque.<0.25*maximum(exptorque)
-regidx = exptorque.>=0.25*maximum(exptorque)
-torquegrey = exptorque[greyidx]
-torquereg = exptorque[regidx]
-
-Vinfarray = SNL34m_3_6_Torque[:,1]
-Vinfgrey = Vinfarray[greyidx]
-Vinfreg = Vinfarray[regidx]
-
-PyPlot.figure()
-PyPlot.plot(Vinfvec,torque./1000,color=plot_cycle[1],label="OWENS Predictions")
-# PyPlot.plot(Vinfvec,torque2./1000,"+",label="DMS Aero Only2")
-# PyPlot.plot(Vinfgrey,torquegrey,".",color="0.5",label="Experimental < 25% Peak")
-# PyPlot.plot(Vinfreg,torquereg,"k.",label="Experimental > 25% Peak")
-PyPlot.plot(Vinfarray,exptorque,"k.",label="VAWT Test Data")
-PyPlot.xlabel("Wind Speed (m/s)")
-PyPlot.ylabel("Torque (kN-m)")
-# PyPlot.grid(linestyle="--")
-PyPlot.xlim([0.0,25.0])
-PyPlot.ylim([-25.0,150.0])
-PyPlot.legend()
-PyPlot.savefig("$(path)/figs/34m_fig3_6.pdf",transparent = true)
-
-##########################################
-#### Power Plot
-##########################################
-
-SNL34m_3_7_Power = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/3.7.csv",',',skipstart = 0)
-
-PyPlot.figure()
-PyPlot.plot(Vinfvec,power./1000,color=plot_cycle[1],label="DMS Aero Only 1")
-# PyPlot.plot(Vinfvec,power2./1000,label="DMS Aero Only 2")
-PyPlot.plot(SNL34m_3_7_Power[:,1],SNL34m_3_7_Power[:,2],"k.",label="Experimental")
-PyPlot.xlabel("Wind Speed (m/s)")
-PyPlot.ylabel("Power (kW)")
-PyPlot.xlim([0.0,25.0])
-PyPlot.ylim([-100.0,600.0])
-PyPlot.grid(linestyle="--")
-PyPlot.legend()
-PyPlot.savefig("$(path)/figs/34m_fig3_7.pdf",transparent = true)
-
-##########################################
-#### CP Plot
-##########################################
-
-TSRvecExpGrey = omega*Blade_Radius./SNL34m_3_6_Torque[greyidx,1]
-windpowerexp = 0.5*rho*SNL34m_3_6_Torque[greyidx,1].^3*RefArea
-Cp2expGrey = SNL34m_3_6_Torque[greyidx,2]*omega*1000.0./windpowerexp
-
-TSRvecExpReg = omega*Blade_Radius./SNL34m_3_6_Torque[regidx,1]
-windpowerexp = 0.5*rho*SNL34m_3_6_Torque[regidx,1].^3*RefArea
-Cp2expReg = SNL34m_3_6_Torque[regidx,2]*omega*1000.0./windpowerexp
-
-SNL34m_3_7_Cp = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/3.8.csv",',',skipstart = 0)
-
-PyPlot.rc("figure.subplot", left=.15, bottom=.17, top=0.9, right=.9)
-PyPlot.figure()
-PyPlot.plot(TSRvec,power./windpower,color=plot_cycle[2],label="Aero Only (DMS)")
-PyPlot.plot(SNL34m_3_7_Cp[:,1],SNL34m_3_7_Cp[:,2]/1000,"ko",label="Exp. From CP Plot")
-# PyPlot.plot(TSRvecExpGrey,Cp2expGrey,".",color="0.5",label="Exp. From Torque < 0.25% Peak Torque")
-# PyPlot.plot(TSRvecExpReg,Cp2expReg,"k.",label="Exp. From Torque > 0.25% Peak Torque")
-PyPlot.xlabel("Tip Speed Ratio")
-PyPlot.ylabel("Power Coefficient")
-PyPlot.xlim([0,13])
-PyPlot.ylim([0,0.8])
-PyPlot.legend()
-PyPlot.savefig("$(path)/figs/34m_fig3_8.pdf",transparent = true)
-
-##########################################
-#### CT Plot
-##########################################
-
-
-PyPlot.figure()
-PyPlot.plot(TSRvec,-thrust./(windpower./Vinfvec),color=plot_cycle[1],label="DMS Aero Only")
-PyPlot.xlabel("Tip Speed Ratio")
-PyPlot.ylabel("Thrust Coefficient")
-PyPlot.xlim([0,15])
-PyPlot.ylim([0,0.9])
-PyPlot.legend()
-PyPlot.savefig("$(path)/figs/34m_figCT_34RPM.pdf",transparent = true)
-
-##########################################
-############ AeroElastic #################
-##########################################
 
 top_idx = 23#Int(myjoint[7,2])
 pBC = [1 1 0
@@ -349,7 +208,6 @@ feamodel = OWENS.FEAModel(;analysisType = structuralModel,
     RayleighBeta = 0.05,
     iterationType = "DI")
 
-
 # Get Gravity Loads
 inputs.Omegaocp = inputs.Omegaocp.*0.0
 inputs.OmegaInit = inputs.OmegaInit.*0.0
@@ -376,8 +234,8 @@ bld1start = Int(mymesh.structuralNodeNumbers[1,1])
 bld1end = Int(mymesh.structuralNodeNumbers[1,end])
 spanpos = [0.0;cumsum(sqrt.(diff(mymesh.x[bld1start:bld1end]).^2 .+ diff(mymesh.z[bld1start:bld1end]).^2))]
 spanposmid = cumsum(diff(spanpos))
-thickness = OWENS.safeakima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
-thickness_lag = OWENS.safeakima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
+thickness = safeakima(numadIn_bld.span,thickness_precomp_flap,spanposmid)
+thickness_lag = safeakima(numadIn_bld.span,thickness_precomp_lag,spanposmid)
 
 flatwise_stress1grav = (kappa_y_grav[1,end-1,2:end].* thickness .+ 0*eps_x_grav[1,end-1,2:end]) .* Ealuminum
 flatwise_stress2grav = (kappa_y_grav[2,end-1,1:end-1].* thickness .+ 0*eps_x_grav[2,end-1,1:end-1]) .* Ealuminum
@@ -414,43 +272,43 @@ SNL34m_5_4_FlatwiseStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Da
 
 # Plots
 PyPlot.figure()
-PyPlot.plot(t.-offsetTime,flatwise_stress1[:,end-6]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
+PyPlot.plot(t.-offsetTime,flatwise_stress1[:,end-5]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
 PyPlot.plot(SNL34m_5_4_FlatwiseStress[:,1].-0.8,SNL34m_5_4_FlatwiseStress[:,2],"k-",label = "Experimental")
 PyPlot.xlabel("Time (s)")
 PyPlot.ylabel("Flapwise Stress (MPa)")
 PyPlot.xlim([0,SNL34m_5_4_FlatwiseStress[end,1]])
 # PyPlot.ylim([-60,0])
 PyPlot.legend(loc = (0.06,1.0),ncol=2)
-PyPlot.savefig("$(path)/figs/34m_fig5_4_NormalOperation_flapwise_Blade2Way.pdf",transparent = true)
+# PyPlot.savefig("$(path)/../figs/34m_fig5_4_NormalOperation_flapwise_Blade2Way.pdf",transparent = true)
 
 println("here")
 exp_std_flap = Statistics.std(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_std_flap $exp_std_flap")
 exp_mean_flap = Statistics.mean(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_mean_flap $exp_mean_flap")
-sim_std_flap = Statistics.std(flatwise_stress1[:,end-6]./1e6)
+sim_std_flap = Statistics.std(flatwise_stress1[:,end-5]./1e6)
 println("sim_std_flap $sim_std_flap")
-sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-6]./1e6)
+sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-5]./1e6)
 println("sim_mean_flap $sim_mean_flap")
 
 SNL34m_5_4_LeadLagStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.4AML.csv",',',skipstart = 1)
 
 PyPlot.figure()
-PyPlot.plot(t.-offsetTime,lag_stress1[:,end-6]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
+PyPlot.plot(t.-offsetTime,lag_stress1[:,end-5]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
 PyPlot.plot(SNL34m_5_4_LeadLagStress[:,1],SNL34m_5_4_LeadLagStress[:,2],"k-",label = "Experimental")
 PyPlot.xlabel("Time (s)")
 PyPlot.ylabel("Lead-Lag Stress (MPa)")
 PyPlot.xlim([0,SNL34m_5_4_LeadLagStress[end,1]])
 PyPlot.legend(loc = (0.06,1.0),ncol=2)
-PyPlot.savefig("$(path)/figs/34m_fig5_4_NormalOperation_LeadLag_Blade2Way.pdf",transparent = true)
+# PyPlot.savefig("$(path)/../figs/34m_fig5_4_NormalOperation_LeadLag_Blade2Way.pdf",transparent = true)
 
 exp_std_lag = Statistics.std(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_std_lag $exp_std_lag")
 exp_mean_lag = Statistics.mean(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_mean_lag $exp_mean_lag")
-sim_std_lag = Statistics.std(lag_stress1[:,end-6]./1e6)
+sim_std_lag = Statistics.std(lag_stress1[:,end-5]./1e6)
 println("sim_std_lag $sim_std_lag")
-sim_mean_lag = Statistics.mean(lag_stress1[:,end-6]./1e6)
+sim_mean_lag = Statistics.mean(lag_stress1[:,end-5]./1e6)
 println("sim_mean_lag $sim_mean_lag")
 
 ##########################################
@@ -469,7 +327,7 @@ PyPlot.xlabel("Time (s)")
 PyPlot.xlim([0,100])
 PyPlot.ylabel("Torque (kN-m)")
 PyPlot.legend()#loc = (0.06,1.0),ncol=2)
-PyPlot.savefig("$(path)/figs/34m_fig5_32Way.pdf",transparent = true)
+# PyPlot.savefig("$(path)/../figs/34m_fig5_32Way.pdf",transparent = true)
 
 # #Extract and Plot Frequency - Amplitude
 
@@ -605,4 +463,4 @@ end
 
 azi=aziHist#./aziHist*1e-6
 saveName = "$path/vtk/SNL34mVAWTNormalOperation"
-# OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)
+OWENS.OWENSFEA_VTK(saveName,t,uHist,system,assembly,sections;scaling=1,azi,userPointNames,userPointData)

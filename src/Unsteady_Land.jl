@@ -778,3 +778,127 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
 
     return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist
 end
+
+function run34m_ad(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,system=nothing,assembly=nothing,VTKFilename="./outvtk")
+
+    if !steady
+        println("running unsteady")
+
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
+
+        meanepsilon_z_hist = Statistics.mean(epsilon_z_hist,dims=1)
+        meanepsilon_y_hist = Statistics.mean(epsilon_y_hist,dims=1)
+
+    else
+        println("running steady")
+
+        feamodel.analysisType = "S"
+
+        displ=zeros(mymesh.numNodes*6)
+        elStorage = OWENS.OWENSFEA.initialElementCalculations(feamodel,myel,mymesh)
+        displ,elStrain,staticAnalysisSuccessful,FReaction = OWENS.OWENSFEA.staticAnalysis(feamodel,mymesh,myel,displ,inputs.OmegaInit,inputs.OmegaInit,elStorage)
+        @info "After staticAnalysis" LinearAlgebra.norm(displ)
+        error()
+
+        # format to match the unsteady method
+        eps_x = [elStrain[i].epsilon_x[1] for i = 1:length(elStrain)]
+        epsilon_x_hist = zeros(1,length(eps_x),2)
+        epsilon_x_hist[1,:,1] = eps_x
+        epsilon_x_hist[1,:,2] = eps_x
+
+        eps_y1_OW = [elStrain[i].epsilon_y[1] for i = 1:length(elStrain)]
+        eps_y2_OW = [elStrain[i].epsilon_y[2] for i = 1:length(elStrain)]
+        eps_y3_OW = [elStrain[i].epsilon_y[3] for i = 1:length(elStrain)]
+        eps_y4_OW = [elStrain[i].epsilon_y[4] for i = 1:length(elStrain)]
+        eps_y = (eps_y1_OW.+eps_y2_OW.+eps_y3_OW.+eps_y4_OW).*0.25#0.34785484513745385
+        meanepsilon_y_hist = zeros(1,length(eps_x),2)
+        meanepsilon_y_hist[1,:,1] = eps_y
+        meanepsilon_y_hist[1,:,2] = eps_y
+
+        eps_z1_OW = [elStrain[i].epsilon_z[1] for i = 1:length(elStrain)]
+        eps_z2_OW = [elStrain[i].epsilon_z[2] for i = 1:length(elStrain)]
+        eps_z3_OW = [elStrain[i].epsilon_z[3] for i = 1:length(elStrain)]
+        eps_z4_OW = [elStrain[i].epsilon_z[4] for i = 1:length(elStrain)]
+        eps_z = (eps_z1_OW.+eps_z2_OW.+eps_z3_OW.+eps_z4_OW).*0.25#0.34785484513745385
+        meanepsilon_z_hist = zeros(1,length(eps_x),2)
+        meanepsilon_z_hist[1,:,1] = eps_z
+        meanepsilon_z_hist[1,:,2] = eps_z
+
+        kappa_x = [elStrain[i].kappa_x[1] for i = 1:length(elStrain)]
+        kappa_x_hist = zeros(1,length(eps_x),2)
+        kappa_x_hist[1,:,1] = kappa_x
+        kappa_x_hist[1,:,2] = kappa_x
+
+        kappa_y = [elStrain[i].kappa_y[1] for i = 1:length(elStrain)]
+        kappa_y_hist = zeros(1,length(eps_x),2)
+        kappa_y_hist[1,:,1] = kappa_y
+        kappa_y_hist[1,:,2] = kappa_y
+
+        kappa_z = [elStrain[i].kappa_z[1] for i = 1:length(elStrain)]
+        kappa_z_hist = zeros(1,length(eps_x),2)
+        kappa_z_hist[1,:,1] = kappa_z
+        kappa_z_hist[1,:,2] = kappa_z
+
+        FReactionHist = zeros(2,6)
+        FReactionHist[1,:] = FReaction[1:6]
+        FReactionHist[2,:] = FReaction[1:6]
+
+        OmegaHist = [inputs.OmegaInit,inputs.OmegaInit]
+        genTorque = FReactionHist[:,6]
+        t = [0.0,1.0]
+        torqueDriveShaft = [0.0]
+        aziHist = [0.0]
+        uHist = [0.0]
+    end
+
+
+    # Interpolate the mesh strains onto the composite layup
+    # TODO: or should we interpolate the composite stations onto the mesh?  It would be much more challenging
+    Nbld = size(mymesh.structuralNodeNumbers)[1]
+    N_ts = length(epsilon_x_hist[1,1,:])
+    eps_x = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    eps_z = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    eps_y = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    kappa_x = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    kappa_y = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    kappa_z = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+
+    for ibld = 1:Nbld
+        start = Int(mymesh.structuralElNumbers[ibld,1])
+        stop = Int(mymesh.structuralElNumbers[ibld,end-1])+1
+        x = mymesh.z[start:stop]
+        x = x.-x[1] #zero
+        x = x./x[end] #normalize
+        # samplepts = numadIn_bld.span./maximum(numadIn_bld.span) #normalize #TODO: this is spanwise, while everything else is vertical-wise
+        for its = 1:N_ts
+            #TODO: there are strain values at each quad point, should be better than just choosing one
+            eps_x[ibld,its,:] = epsilon_x_hist[1,start:stop,its]#safeakima(x,epsilon_x_hist[1,start:stop,its],samplepts)
+            eps_z[ibld,its,:] = meanepsilon_z_hist[1,start:stop,its]#safeakima(x,meanepsilon_z_hist[1,start:stop,its],samplepts)
+            eps_y[ibld,its,:] = meanepsilon_y_hist[1,start:stop,its]#safeakima(x,meanepsilon_y_hist[1,start:stop,its],samplepts)
+            kappa_x[ibld,its,:] = kappa_x_hist[1,start:stop,its]#safeakima(x,kappa_x_hist[1,start:stop,its],samplepts)
+            kappa_y[ibld,its,:] = kappa_y_hist[1,start:stop,its]#safeakima(x,kappa_y_hist[1,start:stop,its],samplepts)
+            kappa_z[ibld,its,:] = kappa_z_hist[1,start:stop,its]#safeakima(x,kappa_z_hist[1,start:stop,its],samplepts)
+        end
+    end
+
+    # PyPlot.figure()
+    # PyPlot.plot(t[1:end-1],eps_x[1,:,15],label="eps_x")
+    # PyPlot.plot(t[1:end-1],eps_z[1,:,15],label="eps_z")
+    # PyPlot.plot(t[1:end-1],eps_y[1,:,15],label="eps_y")
+    # PyPlot.plot(t[1:end-1],kappa_x[1,:,15],label="kappa_x")
+    # PyPlot.plot(t[1:end-1],kappa_y[1,:,15],label="kappa_y")
+    # PyPlot.plot(t[1:end-1],kappa_z[1,:,15],label="kappa_z")
+    #
+    # PyPlot.plot(t[1:end-1],eps_x[2,:,15],":",label="eps_x2")
+    # PyPlot.plot(t[1:end-1],eps_z[2,:,15],":",label="eps_z2")
+    # PyPlot.plot(t[1:end-1],eps_y[2,:,15],":",label="eps_y2")
+    # PyPlot.plot(t[1:end-1],kappa_x[2,:,15],":",label="kappa_x2")
+    # PyPlot.plot(t[1:end-1],kappa_y[2,:,15],":",label="kappa_y2")
+    # PyPlot.plot(t[1:end-1],kappa_z[2,:,15],":",label="kappa_z2")
+    # PyPlot.legend()
+
+    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist
+end

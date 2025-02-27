@@ -77,4 +77,8 @@ include("./SetupTurbine.jl")
 include("./topRunDLC.jl")
 include("./windio.jl")
 
+if false
+    include("ad.jl")
+end
+
 end

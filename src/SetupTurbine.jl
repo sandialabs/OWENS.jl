@@ -391,6 +391,7 @@ function setupOWENS(OWENSAero,path;
             mass_array = [mass_array;mass_strut[1]]
         end
     else
+        @info "Tower parts" length(sectionPropsArray_twr)
         sectionPropsArray = [sectionPropsArray_twr; bldssecprops]#; strutssecprops]#;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str;sectionPropsArray_str]
 
         stiff_blds = collect(Iterators.flatten(fill(stiff_bld, Nbld)))
@@ -410,6 +411,7 @@ function setupOWENS(OWENSAero,path;
     rotationalEffects = ones(mymesh.numEl) #TODO: non rotating tower, or rotating blades
 
     if length(sectionPropsArray)<mymesh.numEl
+        error("should not happen")
         @warn "There are more mesh elements than sectional properties, applying the last strut's sectional properties to the remaining"
         n_diff = mymesh.numEl - length(sectionPropsArray)
         sectionPropsArray = [sectionPropsArray; fill(sectionPropsArray_strut[end][2],n_diff)]
