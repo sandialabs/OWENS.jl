@@ -168,6 +168,7 @@ mymesh, myel, myort, myjoint, sectionPropsArray, mass_twr, mass_bld,
 
 using ForwardDiff
 
+# Just scale the E-moduli
 seed = ForwardDiff.Dual(1.0, 1.0)
 
 sectionPropsArray = [
@@ -385,4 +386,12 @@ inputs.Vinfocp = inputs.Vinfocp .* 0.0
 feamodel.nlOn = true
 
 ## Returns data filled with e.g. eps[Nbld,N_ts,Nel_bld]
+
+# This runs staticanalysis
 eps_x_grav, eps_z_grav, eps_y_grav, kappa_x_grav, kappa_y_grav, kappa_z_grav, t, FReactionHist_grav = OWENS.run34m_ad(inputs, feamodel, mymesh, myel, aeroForces, deformAero; steady = true)
+
+
+inputs.analysisType = "TNB" # TODO: Proper type when not using GX?
+feamodel.analysisType = "TNB"
+# This runs unsteady analysis
+eps_x_grav, eps_z_grav, eps_y_grav, kappa_x_grav, kappa_y_grav, kappa_z_grav, t, FReactionHist_grav = OWENS.run34m_ad_unsteady(inputs, feamodel, mymesh, myel, aeroForces, deformAero; steady = false, assembly = assembly)

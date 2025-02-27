@@ -193,13 +193,16 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     torqueDriveShaft_j = 0.0
     FReactionsm1 = 0.0
     topFReaction_j = 0.0
+
+    # TODO: Derive from input...
+    TT = Main.ForwardDiff.Dual{Nothing, Float64, 1}
     # Package up into data struct
     topdata = TopData(delta_t,numTS,numDOFPerNode,CN2H,t,integrator,integrator_j,topDispOut,
     uHist,udotHist,uddotHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
     FReactionHist,FTwrBsHist,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,
     genTorque,genPower,torqueDriveShaft,uHist_prp,FPtfmHist,FHydroHist,FMooringHist,rbData,
     rbDataHist,u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,gbDot_s,
-    gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,torqueDriveShaft_s,topFexternal,topFexternal_hist,
+    gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,torqueDriveShaft_s,convert(Vector{TT}, topFexternal),topFexternal_hist,
     rotorSpeedForGenStart,top_rom,topJointTransformTrans,u_sRed,udot_sRed,uddot_sRed,topBC,u_s2,udot_s2,
     uddot_s2,top_invPhi,eta_s,etadot_s,etaddot_s,topsideMass,topsideMOI,topsideCG,u_j,udot_j,uddot_j,azi_j,
     Omega_j,OmegaDot_j,gb_j,gbDot_j,gbDotDot_j,genTorque_j,torqueDriveShaft_j,FReactionsm1,topFReaction_j)
@@ -234,6 +237,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
+        @info "Starting the time stepping loop"
 
 
         ProgressBars.update(pbar)
@@ -290,6 +294,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         ## Gauss-Seidel predictor-corrector loop
         while ((uNorm > TOL || aziNorm > TOL || gbNorm > TOL) && (numIterations < MAXITER))
+
+            @info "Starting the fixed point iteration loop"
             # println("Iteration $numIterations")
 
             #------------------
@@ -397,6 +403,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             aeroVals = aeroVals[1]
                             aeroDOFs = aeroDOFs[1]
                         else
+                            @info "calling run_aero_with_deform"
                             aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,topdata.u_j,topdata.uddot_j,inputs,numIterations,t[i],topdata.azi_j,topdata.Omega_j,topModel.gravityOn)
                         end
                     end
@@ -422,7 +429,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     else
                         if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
                             # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
-                            full_aeroVals = zeros(topMesh.numNodes*6)
+                            full_aeroVals = zeros(eltype(aeroVals), topMesh.numNodes*6)
                             for i_idx = 1:length(aeroDOFs)
                                 full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
                             end
@@ -459,6 +466,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             # TOPSIDE STRUCTURAL MODULE
             #------------------------------------
 
+            @show inputs.analysisType
             if inputs.analysisType=="ROM" # evalulate structural dynamics using reduced order model
                 topdata.topElStrain, topdata.topDispOut, topdata.topFReaction_j = OWENSFEA.structuralDynamicsTransientROM(topModel,topMesh,topEl,topdata.topDispData1,topdata.Omega_s,topdata.OmegaDot_s,t[i+1],topdata.delta_t,topElStorage,topdata.top_rom,topdata.topFexternal,Int.(full_aeroDOFs),topdata.CN2H,topdata.rbData)
             elseif inputs.analysisType=="GX"                                                                                
@@ -504,6 +512,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             end
 
         end #end iteration while loop
+        error("end of fixed point loop")
 
         if verbosity >=7
             println("Gen Torque: $(topdata.genTorque_j)\n")
@@ -598,6 +607,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             inputs.generatorOn = false
         end
 
+        error("End of timestep")
     end #end timestep loop
 
     println("Simulation Complete.")
@@ -793,6 +803,134 @@ function run34m_ad(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true
         meanepsilon_y_hist = Statistics.mean(epsilon_y_hist,dims=1)
 
     else
+        println("running steady")
+
+        feamodel.analysisType = "S"
+
+        displ=zeros(mymesh.numNodes*6)
+        elStorage = OWENS.OWENSFEA.initialElementCalculations(feamodel,myel,mymesh)
+        displ,elStrain,staticAnalysisSuccessful,FReaction = OWENS.OWENSFEA.staticAnalysis(feamodel,mymesh,myel,displ,inputs.OmegaInit,inputs.OmegaInit,elStorage)
+        @info "After staticAnalysis" LinearAlgebra.norm(displ)
+        error()
+
+        # format to match the unsteady method
+        eps_x = [elStrain[i].epsilon_x[1] for i = 1:length(elStrain)]
+        epsilon_x_hist = zeros(1,length(eps_x),2)
+        epsilon_x_hist[1,:,1] = eps_x
+        epsilon_x_hist[1,:,2] = eps_x
+
+        eps_y1_OW = [elStrain[i].epsilon_y[1] for i = 1:length(elStrain)]
+        eps_y2_OW = [elStrain[i].epsilon_y[2] for i = 1:length(elStrain)]
+        eps_y3_OW = [elStrain[i].epsilon_y[3] for i = 1:length(elStrain)]
+        eps_y4_OW = [elStrain[i].epsilon_y[4] for i = 1:length(elStrain)]
+        eps_y = (eps_y1_OW.+eps_y2_OW.+eps_y3_OW.+eps_y4_OW).*0.25#0.34785484513745385
+        meanepsilon_y_hist = zeros(1,length(eps_x),2)
+        meanepsilon_y_hist[1,:,1] = eps_y
+        meanepsilon_y_hist[1,:,2] = eps_y
+
+        eps_z1_OW = [elStrain[i].epsilon_z[1] for i = 1:length(elStrain)]
+        eps_z2_OW = [elStrain[i].epsilon_z[2] for i = 1:length(elStrain)]
+        eps_z3_OW = [elStrain[i].epsilon_z[3] for i = 1:length(elStrain)]
+        eps_z4_OW = [elStrain[i].epsilon_z[4] for i = 1:length(elStrain)]
+        eps_z = (eps_z1_OW.+eps_z2_OW.+eps_z3_OW.+eps_z4_OW).*0.25#0.34785484513745385
+        meanepsilon_z_hist = zeros(1,length(eps_x),2)
+        meanepsilon_z_hist[1,:,1] = eps_z
+        meanepsilon_z_hist[1,:,2] = eps_z
+
+        kappa_x = [elStrain[i].kappa_x[1] for i = 1:length(elStrain)]
+        kappa_x_hist = zeros(1,length(eps_x),2)
+        kappa_x_hist[1,:,1] = kappa_x
+        kappa_x_hist[1,:,2] = kappa_x
+
+        kappa_y = [elStrain[i].kappa_y[1] for i = 1:length(elStrain)]
+        kappa_y_hist = zeros(1,length(eps_x),2)
+        kappa_y_hist[1,:,1] = kappa_y
+        kappa_y_hist[1,:,2] = kappa_y
+
+        kappa_z = [elStrain[i].kappa_z[1] for i = 1:length(elStrain)]
+        kappa_z_hist = zeros(1,length(eps_x),2)
+        kappa_z_hist[1,:,1] = kappa_z
+        kappa_z_hist[1,:,2] = kappa_z
+
+        FReactionHist = zeros(2,6)
+        FReactionHist[1,:] = FReaction[1:6]
+        FReactionHist[2,:] = FReaction[1:6]
+
+        OmegaHist = [inputs.OmegaInit,inputs.OmegaInit]
+        genTorque = FReactionHist[:,6]
+        t = [0.0,1.0]
+        torqueDriveShaft = [0.0]
+        aziHist = [0.0]
+        uHist = [0.0]
+    end
+
+
+    # Interpolate the mesh strains onto the composite layup
+    # TODO: or should we interpolate the composite stations onto the mesh?  It would be much more challenging
+    Nbld = size(mymesh.structuralNodeNumbers)[1]
+    N_ts = length(epsilon_x_hist[1,1,:])
+    eps_x = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    eps_z = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    eps_y = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    kappa_x = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    kappa_y = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+    kappa_z = zeros(Nbld,N_ts,mymesh.meshSeg[2]+1)
+
+    for ibld = 1:Nbld
+        start = Int(mymesh.structuralElNumbers[ibld,1])
+        stop = Int(mymesh.structuralElNumbers[ibld,end-1])+1
+        x = mymesh.z[start:stop]
+        x = x.-x[1] #zero
+        x = x./x[end] #normalize
+        # samplepts = numadIn_bld.span./maximum(numadIn_bld.span) #normalize #TODO: this is spanwise, while everything else is vertical-wise
+        for its = 1:N_ts
+            #TODO: there are strain values at each quad point, should be better than just choosing one
+            eps_x[ibld,its,:] = epsilon_x_hist[1,start:stop,its]#safeakima(x,epsilon_x_hist[1,start:stop,its],samplepts)
+            eps_z[ibld,its,:] = meanepsilon_z_hist[1,start:stop,its]#safeakima(x,meanepsilon_z_hist[1,start:stop,its],samplepts)
+            eps_y[ibld,its,:] = meanepsilon_y_hist[1,start:stop,its]#safeakima(x,meanepsilon_y_hist[1,start:stop,its],samplepts)
+            kappa_x[ibld,its,:] = kappa_x_hist[1,start:stop,its]#safeakima(x,kappa_x_hist[1,start:stop,its],samplepts)
+            kappa_y[ibld,its,:] = kappa_y_hist[1,start:stop,its]#safeakima(x,kappa_y_hist[1,start:stop,its],samplepts)
+            kappa_z[ibld,its,:] = kappa_z_hist[1,start:stop,its]#safeakima(x,kappa_z_hist[1,start:stop,its],samplepts)
+        end
+    end
+
+    # PyPlot.figure()
+    # PyPlot.plot(t[1:end-1],eps_x[1,:,15],label="eps_x")
+    # PyPlot.plot(t[1:end-1],eps_z[1,:,15],label="eps_z")
+    # PyPlot.plot(t[1:end-1],eps_y[1,:,15],label="eps_y")
+    # PyPlot.plot(t[1:end-1],kappa_x[1,:,15],label="kappa_x")
+    # PyPlot.plot(t[1:end-1],kappa_y[1,:,15],label="kappa_y")
+    # PyPlot.plot(t[1:end-1],kappa_z[1,:,15],label="kappa_z")
+    #
+    # PyPlot.plot(t[1:end-1],eps_x[2,:,15],":",label="eps_x2")
+    # PyPlot.plot(t[1:end-1],eps_z[2,:,15],":",label="eps_z2")
+    # PyPlot.plot(t[1:end-1],eps_y[2,:,15],":",label="eps_y2")
+    # PyPlot.plot(t[1:end-1],kappa_x[2,:,15],":",label="kappa_x2")
+    # PyPlot.plot(t[1:end-1],kappa_y[2,:,15],":",label="kappa_y2")
+    # PyPlot.plot(t[1:end-1],kappa_z[2,:,15],":",label="kappa_z2")
+    # PyPlot.legend()
+
+    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist
+end
+
+function run34m_ad_unsteady(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,system=nothing,assembly=nothing,VTKFilename="./outvtk")
+
+    if !steady
+        println("running unsteady")
+
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
+
+        meanepsilon_z_hist = Statistics.mean(epsilon_z_hist,dims=1)
+        meanepsilon_y_hist = Statistics.mean(epsilon_y_hist,dims=1)
+
+
+        error("after Unsteady_Land")
+
+    else
+        error()
         println("running steady")
 
         feamodel.analysisType = "S"
