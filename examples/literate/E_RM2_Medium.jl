@@ -191,6 +191,12 @@ iTSR = 1
 
     nothing
 
+    # PyPlot.figure()
+    # for idot = 1:length(sectionPropsArray[170].xaf)
+    #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
+    #     sleep(0.001)
+    # end
+
     ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
 
     ## PyPlot.figure()
