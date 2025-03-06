@@ -126,7 +126,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false,
     system=nothing,assembly=nothing,returnold=true, #TODO: should we initialize them in here? Unify the interface for ease?
-    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing)
+    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, 
+    meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing,
+    dataDumpFilename=nothing,datadumpfrequency=1000)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -608,6 +610,11 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             inputs.generatorOn = true
         else
             inputs.generatorOn = false
+        end
+
+        if !isnothing(dataDumpFilename) && i%datadumpfrequency==0
+            println("\n Saving intermediate results to $dataDumpFilename \n")
+            JLD2.jldsave(dataDumpFilename;topdata)
         end
 
     end #end timestep loop
