@@ -128,7 +128,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     system=nothing,assembly=nothing,returnold=true, #TODO: should we initialize them in here? Unify the interface for ease?
     topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, 
     meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing,
-    dataDumpFilename=nothing,datadumpfrequency=1000)
+    dataDumpFilename=nothing,datadumpfrequency=1000,restart=false)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -233,6 +233,20 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     i=0
     timeconverged = false
     pbar = ProgressBars.ProgressBar(total=numTS-1)
+
+    if !isnothing(dataDumpFilename) && restart
+        println("\n Restarting from intermediate results from the following file, progress bar estimates may be skewed $dataDumpFilename \n")
+        # JLD2.jldsave(dataDumpFilename;topdata)
+        data = JLD2.load(dataDumpFilename)
+        topdata = data["topdata"]
+        i = count(x -> x != 0.0, topdata.OmegaHist)-1
+        if i<1
+            @error "Restart file doesn't seem to have more than 1 timestep, consider starting a new simulation"
+        end
+        for ii = 1:i
+            ProgressBars.update(pbar)
+        end
+    end
 
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
