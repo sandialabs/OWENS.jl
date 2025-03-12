@@ -239,7 +239,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         # JLD2.jldsave(dataDumpFilename;topdata)
         data = JLD2.load(dataDumpFilename)
         topdata = data["topdata"]
-        i = count(x -> x != 0.0, topdata.OmegaHist)-1
+        i = count(x -> x != 0.0, topdata.OmegaHist)-1 #TODO: restart back tracking by 1 revolution to allow states not in restart to converge?
         if i<1
             @error "Restart file doesn't seem to have more than 1 timestep, consider starting a new simulation"
         end
@@ -626,7 +626,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             inputs.generatorOn = false
         end
 
-        if !isnothing(dataDumpFilename) && i%datadumpfrequency==0
+        if !isnothing(dataDumpFilename) && (i-1)%datadumpfrequency==0
             println("\n Saving intermediate results to $dataDumpFilename \n")
             JLD2.jldsave("$(dataDumpFilename[1:end-4])_temp.jld";topdata)
             # only if this is successful by getting this far do we now get rid of the old one, otherwise there is the chance the file gets corrupted on write, like if the machine runs out of memory...
