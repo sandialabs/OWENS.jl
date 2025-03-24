@@ -628,10 +628,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
 
         if !isnothing(dataDumpFilename) && (i-1)%datadumpfrequency==0
             println("\n Saving intermediate results to $dataDumpFilename \n")
-            JLD2.jldsave("$(dataDumpFilename[1:end-4])_temp.jld";topdata)
+            JLD2.jldsave("$(dataDumpFilename[1:end-4])_temp.jld2";topdata)
             # only if this is successful by getting this far do we now get rid of the old one, otherwise there is the chance the file gets corrupted on write, like if the machine runs out of memory...
-            rm(dataDumpFilename)
-            mv("$(dataDumpFilename[1:end-4])_temp.jld",dataDumpFilename)
+            if isfile(dataDumpFilename)
+                rm(dataDumpFilename)
+            end
+            mv("$(dataDumpFilename[1:end-4])_temp.jld2",dataDumpFilename)
         end
 
     end #end timestep loop
