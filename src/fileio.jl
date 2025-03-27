@@ -758,18 +758,18 @@ function readMesh(filename)
     numNodes = parse(Int,temp[1])
     numEl = parse(Int,temp[2])
 
-    nodeNum = zeros(numNodes,1)
-    x = zeros(numNodes,1)
-    y = zeros(numNodes,1)
-    z = zeros(numNodes,1)
+    nodeNum = zeros(Int,numNodes)
+    x = zeros(numNodes)
+    y = zeros(numNodes)
+    z = zeros(numNodes)
 
-    conn = zeros(numEl,2)
-    elNum = zeros(numEl,1)
+    conn = zeros(Int,numEl,2)
+    elNum = zeros(Int,numEl)
 
     for i=1:numNodes            # read in node number and node coordinates
         line = readline(fid)
         temp = split(line)
-        nodeNum[i] = parse(Float64,temp[1])
+        nodeNum[i] = Int.(parse(Float64,temp[1]))
         x[i] = parse(Float64,temp[2])
         y[i] = parse(Float64,temp[3])
         z[i] = parse(Float64,temp[4])
@@ -778,10 +778,10 @@ function readMesh(filename)
     for i=1:numEl               # read in element number and connectivity list
         line = readline(fid)
         temp = split(line)
-        elNum[i] = parse(Float64,temp[1])
+        elNum[i] = parse(Int,temp[1])
 
-        conn[i,1] = parse(Float64,temp[3])
-        conn[i,2] = parse(Float64,temp[4])
+        conn[i,1] = parse(Int,temp[3])
+        conn[i,2] = parse(Int,temp[4])
     end
 
     line = readline(fid) #get blank line
@@ -805,9 +805,9 @@ function readMesh(filename)
     conn,
     zeros(Int,numEl),
     meshSeg,
-    0,
-    0,
-    0)
+    zeros(1,1),
+    zeros(Int,1,1),
+    zeros(Int,1,1))
 
     return mesh
 
