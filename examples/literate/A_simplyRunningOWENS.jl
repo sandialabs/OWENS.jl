@@ -28,13 +28,13 @@ designparams = OWENS.Design_Data("$path/WINDIO_example.yaml")
 
 OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
 
-# Here is an example of using the same model against the automated DLC run script. TODO: memory issue with running DLC with AeroDyn multiple times.
+# Here is an example of using the same model against the automated DLC run script. TODO: issue with CI version of turbsim
 # Note that for a setup cutom to a specific design, you'll want to go to the B level to get all of the detailed inputs correct
 # One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.
 
-modelopt.DLC_Options.DLCs = ["1_1"] #"normal" 
-#### modelopt.DLC_Options.DLCs = ["1_3","6_1"] #"normal" 
+# modelopt.DLC_Options.DLCs = ["1_1"] #"normal" 
+# #### modelopt.DLC_Options.DLCs = ["1_3","6_1"] #"normal" 
 
-OWENS.runDLC(modelopt,designparams,runpath)
+# OWENS.runDLC(modelopt,designparams,runpath)
 
 nothing
