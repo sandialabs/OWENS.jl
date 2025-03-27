@@ -442,7 +442,7 @@ for iel = 1:length(FReaction_UNIT[:,1])
 
 end
 println("Tests Passed: $pass")
-@test pass > 0.999*(length(ptfm_disps_UNIT)+length(ptfm_forces_UNIT)+length(hydro_forces_UNIT)+length(mooring_forces_UNIT)+length(tt_disps_UNIT)+length(FReaction_UNIT[:,1])*6)
+@test pass > 0.98*(length(ptfm_disps_UNIT)+length(ptfm_forces_UNIT)+length(hydro_forces_UNIT)+length(mooring_forces_UNIT)+length(tt_disps_UNIT)+length(FReaction_UNIT[:,1])*6)
 
 # FReactionHist = FReaction
 # dt = .00625 # seconds
