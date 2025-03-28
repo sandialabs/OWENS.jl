@@ -879,7 +879,7 @@ function structuralDynamicsTransientGX(topModel,mesh,Fexternal,ForceDof,system,a
     return (strainGX,curvGX), dispOut, FReaction_j,systemout
 end
 
-function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIterations,t_i,azi_j,Omega_j,gravityOn)
+function run_aero_with_deform(aero,deformAero,mesh,el,u_j::AbstractVector{T},uddot_j::AbstractVector{T},inputs,numIterations,t_i,azi_j,Omega_j,gravityOn) where {T}
 
     if inputs.tocp_Vinf == -1
         newVinf = -1
@@ -891,8 +891,8 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
         # Transform Global Displacements to Local
         numDOFPerNode = 6
 
-        u_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
-        uddot_j_local = zeros(Int(max(maximum(mesh.structuralNodeNumbers))*6))
+        u_j_local = zeros(T, Int(maximum(mesh.structuralNodeNumbers)) * 6)
+        uddot_j_local = zeros(T, Int(maximum(mesh.structuralNodeNumbers)) * 6)
         for jbld = 1:length(mesh.structuralElNumbers[:,1])
             for kel = 1:length(mesh.structuralElNumbers[1,:])-1
                 # orientation angle,xloc,sectionProps,element order]
@@ -933,12 +933,13 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,uddot_j,inputs,numIter
         # disp_twist2 = [u_j_local[i] for i = 5:6:length(u_j_local)]
         # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
 
-        bld_x = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
-        bld_y = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
-        bld_z = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
-        bld_twist = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
-        accel_flap_in = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
-        accel_edge_in = copy(mesh.structuralNodeNumbers[:,1:end-1]).*0.0
+        sz = (size(mesh.structuralNodeNumbers, 1), size(mesh.structuralNodeNumbers, 2) - 1)
+        bld_x = zeros(T, sz)
+        bld_y = zeros(T, sz)
+        bld_z = zeros(T, sz)
+        bld_twist = zeros(T, sz)
+        accel_flap_in = zeros(T, sz)
+        accel_edge_in = zeros(T, sz)
 
         for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
             bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
