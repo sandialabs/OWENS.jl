@@ -126,7 +126,9 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,
     getLinearizedMatrices=false,
     system=nothing,assembly=nothing,returnold=true, #TODO: should we initialize them in here? Unify the interface for ease?
-    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing)
+    topElStorage = nothing,bottomElStorage = nothing, u_s = nothing, 
+    meshcontrolfunction = nothing,userDefinedGenerator=nothing,turbsimfile=nothing,
+    dataDumpFilename=nothing,datadumpfrequency=1000,restart=false)
 
     #..........................................................................
     #                             INITIALIZATION
@@ -232,6 +234,20 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     timeconverged = false
     pbar = ProgressBars.ProgressBar(total=numTS-1)
 
+    if !isnothing(dataDumpFilename) && restart
+        println("\n Restarting from intermediate results from the following file, progress bar estimates may be skewed $dataDumpFilename \n")
+        # JLD2.jldsave(dataDumpFilename;topdata)
+        data = JLD2.load(dataDumpFilename)
+        topdata = data["topdata"]
+        i = count(x -> x != 0.0, topdata.OmegaHist)-1 #TODO: restart back tracking by 1 revolution to allow states not in restart to converge?
+        if i<1
+            @error "Restart file doesn't seem to have more than 1 timestep, consider starting a new simulation"
+        end
+        for ii = 1:i
+            ProgressBars.update(pbar)
+        end
+    end
+
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
 
@@ -327,6 +343,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     catch
                         newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                     end
+                else
+                    newVinf = safeakima(inputs.tocp_Vinf,inputs.Vinfocp,t[i]) #TODO: ifw sampling of same file as aerodyn
                 end
             end
             
@@ -510,9 +528,15 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
         end #end iteration while loop
 
         if inputs.verbosity >=3
+            avePower = mean(topdata.FReactionHist[:,6].*topdata.OmegaHist*(2*pi))
+            instPower = mean(topdata.FReactionHist[i,6].*topdata.OmegaHist[i]*(2*pi))
             println("Gen Torque: $(topdata.genTorque_j)\n")
+            println("Base Torque: $(topdata.FReactionHist[i,6])\n")
             println("RPM: $(topdata.Omega_j*60)\n")
             println("Vinf: $(newVinf)\n")
+            println("Average Power: $(avePower)")
+            println("Instant Power: $(instPower)")
+            println("")
             # velocitymid = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/2],t[i])
             # velocityquarter = OpenFASTWrappers.ifwcalcoutput([0.0,0.0,maximum(topMesh.z)/4],t[i])
             # println("Velocity mid: $(velocitymid[1])")
@@ -600,6 +624,16 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
             inputs.generatorOn = true
         else
             inputs.generatorOn = false
+        end
+
+        if !isnothing(dataDumpFilename) && (i-1)%datadumpfrequency==0
+            println("\n Saving intermediate results to $dataDumpFilename \n")
+            JLD2.jldsave("$(dataDumpFilename[1:end-4])_temp.jld2";topdata)
+            # only if this is successful by getting this far do we now get rid of the old one, otherwise there is the chance the file gets corrupted on write, like if the machine runs out of memory...
+            if isfile(dataDumpFilename)
+                rm(dataDumpFilename)
+            end
+            mv("$(dataDumpFilename[1:end-4])_temp.jld2",dataDumpFilename)
         end
 
     end #end timestep loop

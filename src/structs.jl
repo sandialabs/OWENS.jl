@@ -150,7 +150,7 @@ function Inputs(;verbosity=2,
     tocp_Vinf = [0.0,1e6],
     numTS = 50.0,
     delta_t = 2e-3,
-    Omegaocp = [7.2,7.2] ./ 60,
+    Omegaocp = [0.12,0.12],
     Vinfocp = [10.0,10.0],
     driveTrainOn = false,
     generatorOn = false,
@@ -173,7 +173,7 @@ function Inputs(;verbosity=2,
     ratedGenSlipPerc = 0.0,
     OmegaGenStart = 0.0,
     omegaControl = false,
-    OmegaInit = 7.2/60, #TODO: simplify this in the code since it is redundant
+    OmegaInit = Omegaocp[1],
     aeroloadfile = "$module_path/../test/data/input_files_test/DVAWT_2B_LCDT_ElementData.csv",
     owensfile = "$module_path/../test/data/input_files_test/_15mTower_transient_dvawt_c_2_lcdt.owens",
     potflowfile = "$module_path/../test/data/potential_flow_data",
@@ -333,7 +333,9 @@ mutable struct NuMad
     skin_seq
     web_seq
     web_dp
+    segment_names
 end
+NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp) = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,repeat(["unnamed"],n_segments))
 
 mutable struct Seq
     seq

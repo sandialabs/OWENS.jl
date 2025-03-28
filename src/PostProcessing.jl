@@ -448,7 +448,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                     stressForFatigue = stress_eachlayer[:,ilayer,1]
                     Ncycles,meanIntervals,rangeIntervals,_ = rainflow(stressForFatigue;nbins_range=20,nbins_mean=1,m=3,Teq=1)
                     imean = 1
-                    cyclesatStressRanges = Ncycles[imean,:]
+                    cyclesatStressRanges = Ncycles[:,imean]
                     stress_levels = (rangeIntervals[1:end-1] .+ rangeIntervals[2:end])./2 #from intervals to mean between the interval
 
                     SN_stressMpa1 = SN_stressMpa[ilayer]
@@ -495,7 +495,7 @@ function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_stati
     damageperhour = damage[idxdamage1,idxdamage2]/total_t*60*60
 
     if verbosity>0
-        println("\nMinimum Safety Factor on Surface: $SF_ultmin")
+        println("Minimum Safety Factor on Surface: $SF_ultmin")
         println("At time $(idx1*delta_t)s at composite station $(idx2) of $(lencomposites_span) at lam $(idx3) of $(length(lam_used[idx2,:]))")
 
         println("Maximum Damage per hr: $damageperhour")

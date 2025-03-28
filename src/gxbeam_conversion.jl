@@ -143,6 +143,24 @@ end
 ################################################################
 ################ SAVE VTK TIME DOMAIN OUTPUT ###################
 ################################################################
+"""
+
+    OWENSVTK(VTKsaveName,rundata,system,assembly,sections,mymesh,myel;tsave_idx=1:length(rundata.t,))
+
+Formats and outputs OWENS data into VTK format
+
+#Intput
+
+#Output
+* `none`:
+
+"""
+function OWENSVTK(VTKsaveName,rundata,system,assembly,sections,mymesh,myel;stress=nothing,tsave_idx=1:length(rundata.t))
+
+    return OWENSVTK(VTKsaveName,rundata.t,rundata.uHist,system,assembly,sections,rundata.aziHist,mymesh,myel,
+    rundata.epsilon_x_hist,rundata.epsilon_y_hist,rundata.epsilon_z_hist,rundata.kappa_x_hist,rundata.kappa_y_hist,rundata.kappa_z_hist,
+    rundata.FReactionHist,rundata.topFexternal_hist;stress,tsave_idx)
+end
 
 """
 
@@ -158,11 +176,11 @@ Formats and outputs OWENS data into VTK format
 """
 function OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
-    FReactionHist,topFexternal_hist;tsave_idx=1:length(t))
+    FReactionHist,topFexternal_hist;stress=nothing,tsave_idx=1:length(t))
 
     println("Saving VTK time domain files")
     userPointNames=["EA","rhoA","EIyy","EIzz","e_x","e_y","e_z","k_x","k_y","k_z","Fx_Reaction","Fy_Reaction","Fz_Reaction","Mx_Reaction","My_Reaction","Mz_Reaction",
-    "Fx_Applied","Fy_Applied","Fz_Applied","Mx_Applied","My_Applied","Mz_Applied"]#,"Fx","Fy","Fz","Mx","My","Mz"]
+    "Fx_Applied","Fy_Applied","Fz_Applied","Mx_Applied","My_Applied","Mz_Applied","Principal_Surface_Layer_Stress"]#,"Fx","Fy","Fz","Mx","My","Mz"]
     # userPointData[iname,it,ipt] = Float64
 
     # map el props to points using con
@@ -223,13 +241,13 @@ function OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,my
 
     azi=aziHist#./aziHist*1e-6
     # VTKsaveName = "$path/vtk/$(windINPfilename[1:end-4])"
-    OWENS.OWENSFEA_VTK(VTKsaveName,t[tsave_idx],uHist[tsave_idx,:],system,assembly,sections;scaling=1,azi=azi[tsave_idx],userPointNames,userPointData)
+    OWENS.OWENSFEA_VTK(VTKsaveName,t[tsave_idx],uHist[tsave_idx,:],system,assembly,sections;scaling=1,azi=azi[tsave_idx],userPointNames,userPointData,stress)
 
 end
 
 function OWENSFEA_VTK(filename,tvec,uHist,system,assembly,sections;
     scaling=1,azi=zero(tvec),delta_x=zero(tvec),delta_y=zero(tvec),delta_z=zero(tvec),
-    userPointNames=nothing,userPointData=nothing)
+    userPointNames=nothing,userPointData=nothing,stress=nothing)
 
     history = Vector{GXBeam.AssemblyState{eltype(system)}}(undef, length(tvec))
     uHist = uHist'
@@ -314,7 +332,7 @@ function OWENSFEA_VTK(filename,tvec,uHist,system,assembly,sections;
     end
 
     mywrite_vtk(filename, assembly, history, tvec; scaling,
-    sections,theta_z=azi,delta_x,delta_y,delta_z,userPointNames,userPointData)
+    sections,theta_z=azi,delta_x,delta_y,delta_z,userPointNames,userPointData,stress)
 end
 
 
@@ -529,7 +547,7 @@ end
 
 function mywrite_vtk(name, assembly, history, t; sections=nothing, scaling=1.0,
     metadata=Dict(),theta_x=zero(t),theta_y=zero(t),theta_z=zero(t),delta_x=zero(t),
-    delta_y=zero(t),delta_z=zero(t),userPointData=nothing, userPointNames=nothing) #userPointData[iname,it,ipt] = Float64, userPointNames=["data1","data2","data3"]
+    delta_y=zero(t),delta_z=zero(t),userPointData=nothing, userPointNames=nothing,stress=nothing) #userPointData[iname,it,ipt] = Float64, userPointNames=["data1","data2","data3"]
 
     # get problem dimensions
     npoint = length(assembly.points)
@@ -658,8 +676,16 @@ function mywrite_vtk(name, assembly, history, t; sections=nothing, scaling=1.0,
                 for (iname,dataname) in enumerate(userPointNames)
                     data = Matrix{eltype(assembly)}(undef, 1, npoint*ncross)
                     li = LinearIndices((ncross, npoint))
-                    for ip = 1:npoint
-                        data[:, li[:,ip]] .= userPointData[iname,current_step,ip]
+                    if contains(dataname,"Stress")
+                        if !isnothing(stress)
+                            for ip = 1:npoint
+                                data[:, li[:,ip]] = stress[current_step,ip,:]
+                            end
+                        end
+                    else
+                        for ip = 1:npoint
+                            data[:, li[:,ip]] .= userPointData[iname,current_step,ip]
+                        end
                     end
                     vtkfile[dataname, VTKPointData()] = data
                 end

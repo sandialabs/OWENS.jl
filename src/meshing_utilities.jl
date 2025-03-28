@@ -538,9 +538,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = 1:numNodes
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = 1:numEl
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower, treat struts like blades

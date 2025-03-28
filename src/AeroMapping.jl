@@ -30,6 +30,7 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
 
     for iturb = 1:Nturb
         # Map loads over from advanceTurb
+        Mz_base = zeros(numAeroTS)
         for i=1:mesh[iturb].numNodes
             ForceValHist[iturb][(i-1)*6+1,:] = Fx[iturb][i,1:numAeroTS]
             ForceValHist[iturb][(i-1)*6+2,:] = Fy[iturb][i,1:numAeroTS]
@@ -37,7 +38,12 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
             ForceValHist[iturb][(i-1)*6+4,:] = Mx[iturb][i,1:numAeroTS]
             ForceValHist[iturb][(i-1)*6+5,:] = My[iturb][i,1:numAeroTS]
             ForceValHist[iturb][(i-1)*6+6,:] = Mz[iturb][i,1:numAeroTS]
+
+            Mz_base .+= Fy[iturb][i,1:numAeroTS].*mesh[iturb].x[i]-Fx[iturb][i,1:numAeroTS].*mesh[iturb].y[i]
         end
+
+        # TODO: This assumes that the 1st node is the tower connection node, which is constrained so it enables passing of values without using them on the structural side
+        ForceValHist[iturb][6,1:numAeroTS] .= Mz_base
     end
     
     return ForceValHist,ForceDof

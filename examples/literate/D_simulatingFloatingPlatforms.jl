@@ -18,7 +18,7 @@ import OWENSFEA
 import OWENSAero
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate"
-# runpath = path = splitdir(@__FILE__)[1] # use to run locally
+##runpath = path = splitdir(@__FILE__)[1] # use to run locally
 
 nothing
 
@@ -131,7 +131,7 @@ nothing
 #     For the OC4 platform, this is 8.6588 meters below sea level.
 
 bottomMesh = OWENSFEA.Mesh(
-    [1.0, 2.0], #nodeNum
+    [1, 2], #nodeNum
     1, #numElx
     2, #numNodes
     [0.0, 0.0], #x
@@ -141,21 +141,19 @@ bottomMesh = OWENSFEA.Mesh(
     [1 2], #conn
     [0], #type
     [0, 1], #meshSeg
-    Any[], #structuralSpanLocNorm
-    Any[], #structuralNodeNumbers
-    Any[] #structuralElNumbers
-)
+    zeros(1,1), #structuralSpanLocNorm
+    zeros(Int,1,1), #structuralNodeNumbers
+    zeros(Int,1,1) #structuralElNumbers
+    )
 numBottomNodes = length(bottomMesh.z)
 bottomOrt = OWENSFEA.Ort(
     [180.0], #Psi_d
     [-90.0],  #Theta_d
     [90.0], #Twist_d
     [10.0], #Length
-    [1.0], #elNum
-    [0.0; #Offset
-     0.0;
-     0.0]
-)
+    ones(1,1), #elNum
+    zeros(3,1)#Offset
+    )
 n_ptfm_elem = 1
 bottomSectionProps = Array{OWENSFEA.SectionPropsArray,1}(undef, n_ptfm_elem)
 for ii = 1:n_ptfm_elem
