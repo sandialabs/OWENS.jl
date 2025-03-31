@@ -444,7 +444,7 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                     else
                         if length(size(aeroVals))==1 || size(aeroVals)[2]==1 #i.e. the standard aero force input as a long array
                             # Fill in forces and dofs if they were specified not in full arrays TODO: make this more efficient
-                            full_aeroVals = zeros(topMesh.numNodes*6)
+                            full_aeroVals = zeros(eltype(aeroVals), topMesh.numNodes * 6)
                             for i_idx = 1:length(aeroDOFs)
                                 full_aeroVals[Int(aeroDOFs[i_idx])] = aeroVals[i_idx]
                             end

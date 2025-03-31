@@ -1005,7 +1005,7 @@ function calculateElementOrientation2(mesh)
     twist_d2=zeros(numEl)
     Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
     vsave=zeros(numEl,3)    #offset is the hub frame coordinate of node 1 of the element
-    elNum=zeros(numEl,2) #initialize element number array
+    elNum = zeros(Int, numEl, 2) #initialize element number array
 
 
     #calculate "mesh centroid"
