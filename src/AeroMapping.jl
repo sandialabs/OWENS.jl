@@ -74,12 +74,14 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     Nslices = length(Rp[1,:,1])
 
     # Initialize bladeForces
-    N = zeros(NBlade,numAeroTS,Nslices)
-    T = zeros(NBlade,numAeroTS,Nslices)
-    X = zeros(NBlade,numAeroTS,Nslices)
-    Y = zeros(NBlade,numAeroTS,Nslices)
-    Z = zeros(NBlade,numAeroTS,Nslices)
-    M25 = zeros(NBlade,numAeroTS,Nslices)
+    # TODO: This should be `eltype(Rp)` or similar but currently that return `Real` instead of a concrete type
+    TT = typeof(first(Rp))
+    N = zeros(TT, NBlade, numAeroTS, Nslices)
+    T = zeros(TT, NBlade, numAeroTS, Nslices)
+    X = zeros(TT, NBlade, numAeroTS, Nslices)
+    Y = zeros(TT, NBlade, numAeroTS, Nslices)
+    Z = zeros(TT, NBlade, numAeroTS, Nslices)
+    M25 = zeros(TT, NBlade, numAeroTS, Nslices)
 
     for iTS=1:numAeroTS
         if numAeroTS == 1
@@ -110,12 +112,12 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     structuralElNumbers = mesh.structuralElNumbers
 
     #Initialize structuralLoad
-    struct_N = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
-    struct_T = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
-    struct_M25 = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
-    struct_X = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
-    struct_Y = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
-    struct_Z = zeros(NBlade,numAeroTS,length(structuralElNumbers[1,:]))
+    struct_N = zeros(TT, NBlade, numAeroTS, length(structuralElNumbers[1, :]))
+    struct_T = zeros(TT, NBlade, numAeroTS, length(structuralElNumbers[1, :]))
+    struct_M25 = zeros(TT, NBlade, numAeroTS, length(structuralElNumbers[1, :]))
+    struct_X = zeros(TT, NBlade, numAeroTS, length(structuralElNumbers[1, :]))
+    struct_Y = zeros(TT, NBlade, numAeroTS, length(structuralElNumbers[1, :]))
+    struct_Z = zeros(TT, NBlade, numAeroTS, length(structuralElNumbers[1, :]))
     if maximum(structuralSpanLocNorm)>1.0 || minimum(structuralSpanLocNorm)<0.0
         @warn "extrapolating on akima spline, unexpected behavior may occur (very large numbers)."
     end
@@ -138,8 +140,8 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     #read element aero_data in
     numDOFPerNode = 6
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
-    Fg = zeros(Int(mesh.numNodes*6),numAeroTS)
-    Fg_global = zeros(Int(mesh.numNodes*6),numAeroTS)
+    Fg = zeros(TT, mesh.numNodes * 6, numAeroTS)
+    Fg_global = zeros(TT, mesh.numNodes * 6, numAeroTS)
     for i=1:numAeroTS
         for j = 1:NBlade
             for k = 1:numNodesPerBlade-1
@@ -184,8 +186,8 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     #history
     # ForceValHist = zeros(sum(Fg[:,1].!=0),length(Fg[1,:]))
     # ForceDof = zeros(sum(Fg[:,1].!=0),1)
-    ForceValHist = zeros(length(Fg[:,1]),length(Fg[1,:]))
-    ForceDof = zeros(Int,length(Fg[:,1]),1)
+    ForceValHist = zeros(TT, size(Fg))
+    ForceDof = zeros(Int, size(Fg, 1))
     index = 1
     for i=1:Int(mesh.numNodes*6)
         # if !isempty(findall(x->x!=0,Fg[i,:]))
