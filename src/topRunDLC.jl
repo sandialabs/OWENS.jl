@@ -179,6 +179,7 @@ DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `delta_t_turbsim`: default .05, turbsim timestep
     * `simtime_turbsim`: default 00.0, turbsim total time, which loops if simtime exceeds turbsim time
     * `RandSeed1`: default 0071, turbsim random seed number
+    * `DLCParams`: see ?OWENS.DLCParams, the current DLC parameters for the run, used as internal state information
 
 
     # Output
@@ -201,6 +202,7 @@ mutable struct DLC_Options
     delta_t_turbsim
     simtime_turbsim
     RandSeed1
+    DLCParams
 
     # Constructor that takes a dictionary
     function DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -222,6 +224,7 @@ mutable struct DLC_Options
             get(dict_in,:delta_t_turbsim,0.05), # turbsim timestep
             get(dict_in,:simtime_turbsim,600.0), # turbsim total time, which loops if simtime exceeds turbsim time
             get(dict_in,:RandSeed1,40071), # turbsim random seed number
+            get(dict_in,:DLCParams,nothing), # must be filled in with the DLC generator
             
         )
     end
@@ -560,9 +563,13 @@ ModelingOptions(yamlInputfile)
     # Output
     * `Unified_Options::Unified_Options`: Struct of structs containing all of the OWENS Options
 """
-function ModelingOptions(yamlInputfile)
+function ModelingOptions(yamlInputfile=nothing)
 
-    yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    if !isnothing(yamlInputfile)
+        yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+    else #just use defaults by supplying a dummy dictionary up front
+        yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
+    end
     
     # Unpack YAML
     dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
@@ -613,10 +620,14 @@ function ModelingOptions(yamlInputfile)
 end
 
 
-function Design_Data(file_path::String; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")
+function Design_Data(file_path=nothing; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")
     # Load the YAML files
-    windio = YAML.load_file(file_path; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
-    println("Running: $(windio[:name])")
+    if !isnothing(file_path)
+        windio = YAML.load_file(file_path; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
+        println("Running: $(windio[:name])")
+    else
+        windio = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
+    end
 
     defaults = YAML.load_file(design_defaults_yaml; dicttype=OrderedCollections.OrderedDict{Symbol,Any})
 
@@ -1051,6 +1062,7 @@ function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
 
             modelopt.OWENSAero_Options.ifw = true
             modelopt.OWENS_Options.controlStrategy = DLCParams[iDLC].controlStrategy
+            modelopt.DLC_Options.DLCParams = DLCParams[iDLC]
             # run owens simulation
             runScript(modelopt,designparams,path)
         end
@@ -1113,9 +1125,9 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
     delta_t = modelopt.OWENS_Options.delta_t
     simtime = numTS*delta_t
 
-    GridHeight = (Htwr_base-Blade_Height/2+Blade_Height)*grid_oversize
+    GridHeight = Blade_Height * grid_oversize
     GridWidth = Blade_Radius * 2.0 * grid_oversize
-    HubHt = GridHeight*2/3
+    HubHt = Htwr_base+Blade_Height/2
 
     if !isnothing(NumGrid_Z)
         NumGrid_Z = NumGrid_Z

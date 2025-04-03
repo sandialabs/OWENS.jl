@@ -375,9 +375,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     t_topidx = length(mesh_z)
 
     # intra-tower connectivity
-    conn = zeros(length(mesh_z)-1,2)
-    conn[:,1] = collect(1:length(mesh_z)-1)
-    conn[:,2] = collect(2:length(mesh_z))
+    conn = zeros(Int, length(mesh_z) - 1, 2)
+    conn[:, 1] .= 1:(length(mesh_z) - 1)
+    conn[:, 2] .= 2:length(mesh_z)
 
     #####################################
     ###------------Blades--------------##
@@ -422,7 +422,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
     # and they are offset counter clockwise
     b_topidx = zeros(Int,nblade)
     b_botidx = zeros(Int,nblade) .+ length(mesh_z)
-    conn_b = zeros(length(bld_Z)-1,2)
+    conn_b = zeros(Int, length(bld_Z) - 1, 2)
     for ibld = 1:nblade
         myangle = (ibld-1)*2.0*pi/nblade + angularOffset
         b_Z = [b_Z;bld_Z]
@@ -538,9 +538,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = 1:numNodes
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = 1:numEl
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower, treat struts like blades
@@ -561,9 +561,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     meshSeg[nblade+2:end] .= nselem
 
     # For each blade
-    structuralSpanLocNorm = zeros(nblade,length(bld_Z))
-    structuralNodeNumbers = zeros(nblade,length(bld_Z))
-    structuralElNumbers = zeros(nblade,length(bld_Z))
+    structuralSpanLocNorm = zeros(nblade, length(bld_Z))
+    structuralNodeNumbers = zeros(Int, nblade, length(bld_Z))
+    structuralElNumbers = zeros(Int, nblade, length(bld_Z))
 
     for iblade = 1:nblade
 
@@ -579,7 +579,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
         structuralElNumbers[iblade,end] = -1 #TODO: figure out why this is in the original OWENS setup and if it is used
     end
 
-    mymesh = OWENSFEA.Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,Int.(conn),meshtype,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers)
+    mymesh = OWENSFEA.Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,conn,meshtype,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers)
 
     ######################################
     ####----------Joint Matrix----------##
@@ -1005,7 +1005,7 @@ function calculateElementOrientation2(mesh)
     twist_d2=zeros(numEl)
     Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
     vsave=zeros(numEl,3)    #offset is the hub frame coordinate of node 1 of the element
-    elNum=zeros(numEl,2) #initialize element number array
+    elNum = zeros(Int, numEl, 2) #initialize element number array
 
 
     #calculate "mesh centroid"
@@ -1115,7 +1115,7 @@ function calculateElementOrientation(mesh)
     Theta_d=zeros(numEl)
     twist_d=zeros(numEl)
     Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
-    elNum=zeros(numEl,2) #initialize element number array
+    elNum = zeros(Int, numEl, 2) #initialize element number array
 
     lenv = zeros(numEl)
     for i = 1:numEl #loop over elements

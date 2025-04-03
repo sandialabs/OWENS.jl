@@ -529,6 +529,7 @@ function readNuMadGeomCSV(NuMad_geom_file::String;section=nothing) #define secti
     stack_layers = Float64.(csvdata[4:n_station+3,10:stack_idx_end])
 
     seg_idx_end = stack_idx_end+n_segments+1
+    segment_names = csvdata[3,stack_idx_end+1:seg_idx_end]
     segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])
 
     DP_idx_end = seg_idx_end+n_segments+1
@@ -570,7 +571,7 @@ function readNuMadGeomCSV(NuMad_geom_file::String;section=nothing) #define secti
         end
     end
 
-    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp)
+    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,segment_names)
 end
 
 function readNuMadMaterialsCSV(NuMad_materials_xlscsv_file::OrderedCollections.OrderedDict{Symbol, Any})
@@ -757,18 +758,18 @@ function readMesh(filename)
     numNodes = parse(Int,temp[1])
     numEl = parse(Int,temp[2])
 
-    nodeNum = zeros(numNodes,1)
-    x = zeros(numNodes,1)
-    y = zeros(numNodes,1)
-    z = zeros(numNodes,1)
+    nodeNum = zeros(Int,numNodes)
+    x = zeros(numNodes)
+    y = zeros(numNodes)
+    z = zeros(numNodes)
 
-    conn = zeros(numEl,2)
-    elNum = zeros(numEl,1)
+    conn = zeros(Int,numEl,2)
+    elNum = zeros(Int,numEl)
 
     for i=1:numNodes            # read in node number and node coordinates
         line = readline(fid)
         temp = split(line)
-        nodeNum[i] = parse(Float64,temp[1])
+        nodeNum[i] = Int.(parse(Float64,temp[1]))
         x[i] = parse(Float64,temp[2])
         y[i] = parse(Float64,temp[3])
         z[i] = parse(Float64,temp[4])
@@ -777,10 +778,10 @@ function readMesh(filename)
     for i=1:numEl               # read in element number and connectivity list
         line = readline(fid)
         temp = split(line)
-        elNum[i] = parse(Float64,temp[1])
+        elNum[i] = parse(Int,temp[1])
 
-        conn[i,1] = parse(Float64,temp[3])
-        conn[i,2] = parse(Float64,temp[4])
+        conn[i,1] = parse(Int,temp[3])
+        conn[i,2] = parse(Int,temp[4])
     end
 
     line = readline(fid) #get blank line
@@ -804,9 +805,9 @@ function readMesh(filename)
     conn,
     zeros(Int,numEl),
     meshSeg,
-    0,
-    0,
-    0)
+    zeros(1,1),
+    zeros(Int,1,1),
+    zeros(Int,1,1))
 
     return mesh
 

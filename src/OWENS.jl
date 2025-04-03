@@ -14,6 +14,7 @@ import SparseArrays
 using StaticArrays
 import FLOWMath
 import HDF5
+import JLD2
 import GXBeam
 import QuadGK
 import Composites
@@ -44,9 +45,9 @@ export Modal#, Flutter
 # export Steady
 function __init__()
 
-println("\nThis program is running OWENS.jl, the Offshore/Onshore Wind/Water Energy Simulator
+println("\nThis program is running OWENS.jl, the Offshore/Onshore Wind/Water Energy Simulator for turbine type devices
 
-Copyright 2013-2024
+Copyright 2013-2025
 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
 Under the terms of Contract DE-NA0003525 with NTESS, 
 the U.S. Government retains certain rights in this software.

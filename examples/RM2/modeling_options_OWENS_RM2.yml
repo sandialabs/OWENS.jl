@@ -1,6 +1,6 @@
 OWENS_Options:
     analysisType: "Unsteady" # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
-    AeroModel: "AD" # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+    AeroModel: "DMS" # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
     structuralModel: "GX" #Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
     controlStrategy: "prescribedRPM" # should be in WindIO?- yes, 
     numTS: 10 # number of time steps TODO: change to sim time and make this derived

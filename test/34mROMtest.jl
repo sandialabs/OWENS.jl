@@ -15,10 +15,10 @@ myel2 = MAT.read(file,"myel")
 myjoint = MAT.read(file,"myjoint")
 close(file)
 
-mymesh = OWENSFEA.Mesh(mymesh2["nodeNum"],mymesh2["numEl"],mymesh2["numNodes"],
-mymesh2["x"],mymesh2["y"],mymesh2["z"],mymesh2["elNum"],mymesh2["conn"],
-mymesh2["type"],mymesh2["meshSeg"],mymesh2["structuralSpanLocNorm"],
-mymesh2["structuralNodeNumbers"],mymesh2["structuralElNumbers"])
+mymesh = OWENSFEA.Mesh(round.(Int,mymesh2["nodeNum"]),round.(Int,mymesh2["numEl"]),Int.(mymesh2["numNodes"]),
+mymesh2["x"],mymesh2["y"],mymesh2["z"],round.(Int,mymesh2["elNum"]),Int.(mymesh2["conn"]),
+Int.(mymesh2["type"]),Int.(mymesh2["meshSeg"]),mymesh2["structuralSpanLocNorm"],
+Int.(mymesh2["structuralNodeNumbers"]),Int.(mymesh2["structuralElNumbers"]))
 
 sectionPropsArray = Array{OWENSFEA.SectionPropsArray, 1}(undef, length(myel2["props"]))
 
@@ -94,7 +94,7 @@ topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesDMS,deformAero=deform
 
 file = "$(path)/data/newmesh_34mout34m_ROMtransient.mat"
 # mfile = MAT.matopen(file, "w")
-# MAT.write(mfile, "t", t)
+# MAT.write(mfile, "t", collect(t))
 # MAT.write(mfile, "FReactionHist", FReactionHist)
 # MAT.close(mfile)
 vars = MAT.matread(file)
@@ -105,8 +105,13 @@ FReactionHistold = vars["FReactionHist"]
 
 for i_t = round(Int,length(t)/20):length(t)
     # println(i_t)
-    atol = max(abs(FReactionHistold[i_t,3] * 0.015),1e-2)
-    @test isapprox(FReactionHistold[i_t,3],FReactionHist[i_t,3];atol)
+    digits = 1e-4 
+    @test isapprox(FReactionHistold[i_t,1],FReactionHist[i_t,1];atol= max(abs(FReactionHistold[i_t,1] * digits),digits))
+    @test isapprox(FReactionHistold[i_t,2],FReactionHist[i_t,2];atol= max(abs(FReactionHistold[i_t,2] * digits),digits))
+    @test isapprox(FReactionHistold[i_t,3],FReactionHist[i_t,3];atol= max(abs(FReactionHistold[i_t,3] * digits),digits))
+    @test isapprox(FReactionHistold[i_t,4],FReactionHist[i_t,4];atol= max(abs(FReactionHistold[i_t,4] * digits),digits))
+    @test isapprox(FReactionHistold[i_t,5],FReactionHist[i_t,5];atol= max(abs(FReactionHistold[i_t,5] * digits),digits))
+    @test isapprox(FReactionHistold[i_t,6],FReactionHist[i_t,6];atol= max(abs(FReactionHistold[i_t,6] * digits),digits))
 end
 
 
@@ -131,7 +136,7 @@ end
 #     PyPlot.plot(t,FReactionHist[:,idof]/1000,"+-",color=plot_cycle[1],label="New")
 #     PyPlot.xlabel("Time (s)")
 #     # PyPlot.xlim([0,50])
-#     PyPlot.ylabel("Torque (kN-m)")
+#     PyPlot.ylabel("dof $idof (kN-m)")
 #     PyPlot.legend()
 #     # PyPlot.savefig("$(path)/figs/34mRomTest.pdf",transparent = true)
 # end

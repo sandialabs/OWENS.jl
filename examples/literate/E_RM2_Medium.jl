@@ -53,7 +53,7 @@ Vinf = 1.2 # inflow velocity
 TSRrange = [3.0]#LinRange(1.0,5.0,2) range of tip speed ratios
 Nslices = 20 # vertical discretizations if DMS or AC aero model
 ntheta = 30 # azimuthal discretizations if DMS or AC aero model
-structuralModel = "GX"
+structuralModel = "TNB"
 ntelem = 100 # tower elements
 nbelem = 30 # blade elements
 nselem = 10 # strut elements
@@ -97,7 +97,7 @@ nothing
 # comment out the run command to run your own with more time
 WindType = 3
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
-run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
+# run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
 nothing
 # Here we would set up to run multiple different inflow conditions, and we can
@@ -190,6 +190,12 @@ iTSR = 1
         meshtype = turbineType)
 
     nothing
+
+    # PyPlot.figure()
+    # for idot = 1:length(sectionPropsArray[170].xaf)
+    #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
+    #     sleep(0.001)
+    # end
 
     ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
 
@@ -313,7 +319,7 @@ iTSR = 1
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
     mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
     kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor 
-    Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,delta_t,
     AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing)
 
     OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)

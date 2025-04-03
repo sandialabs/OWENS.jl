@@ -29,7 +29,7 @@ function runSim(;
     # Platform Properties
 
     bottomMesh = OWENS.OWENSFEA.Mesh(
-    [1.0, 2.0], #nodeNum
+    [1, 2], #nodeNum
     1, #numElx
     2, #numNodes
     [0.0, 0.0], #x
@@ -39,13 +39,13 @@ function runSim(;
     [1 2], #conn
     [0], #type
     [0, 1], #meshSeg
-    Any[], #structuralSpanLocNorm
-    Any[], #structuralNodeNumbers
-    Any[] #structuralElNumbers
+    zeros(1,1), #structuralSpanLocNorm
+    zeros(Int,1,1), #structuralNodeNumbers
+    zeros(Int,1,1) #structuralElNumbers
     )
 
     topMesh = OWENS.OWENSFEA.Mesh(
-    [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0], #nodeNum
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], #nodeNum
     10, #numEl
     11, #numNodes
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], #x
@@ -55,9 +55,9 @@ function runSim(;
     [1 2; 2 3; 3 4; 4 5; 5 6; 6 7; 7 8; 8 9; 9 10; 10 11], #conn
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], #type
     [0, 10], #meshSeg
-    Any[], #structuralSpanLocNorm
-    Any[], #structuralNodeNumbers
-    Any[] #structuralElNumbers
+    zeros(1,1), #structuralSpanLocNorm
+    zeros(Int,1,1), #structuralNodeNumbers
+    zeros(Int,1,1) #structuralElNumbers
     )
 
     bottom_ort = OWENS.OWENSFEA.Ort(
@@ -65,10 +65,8 @@ function runSim(;
     [-90.0],  #Theta_d
     [90.0], #Twist_d
     [10.0], #Length
-    [1.0], #elNum
-    [0.0; #Offset
-     0.0;
-     0.0]
+    ones(1,1), #elNum
+    zeros(3,1)#Offset
     )
 
     top_ort = OWENS.OWENSFEA.Ort(
@@ -76,8 +74,8 @@ function runSim(;
     [-90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0, -90.0],  #Theta_d
     [90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0], #Twist_d
     [7.76, 7.76, 7.76, 7.76, 7.76, 7.76, 7.76, 7.76, 7.76, 7.76], #Length
-    [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0], #elNum
-    [0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0; #Offset
+    (([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])'), #elNum
+    [0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0; 
         0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
         0.0 7.76 15.52 23.28 31.04 38.8 46.56 54.32 62.08 69.84] #TODO fix this too
     )
@@ -422,13 +420,29 @@ for iel = 1:length(tt_disps_UNIT) #note, purposely iterating over multidimension
     end
 end
 
-for iel = 1:length(FReaction_UNIT) #note, purposely iterating over multidimensional array with a single for loop
-    if isapprox(FReaction_UNIT[iel],FReaction[iel];atol=max(abs(FReaction_UNIT[iel])*mytol,1e-6))
+for iel = 1:length(FReaction_UNIT[:,1])
+    if isapprox(FReaction_UNIT[iel,1],FReaction[iel,1];atol=max(abs(FReaction_UNIT[iel,1])*mytol,1e-6))
         global pass += 1
     end
+    if isapprox(FReaction_UNIT[iel,2],FReaction[iel,2];atol=max(abs(FReaction_UNIT[iel,2])*mytol,1e-6))
+        global pass += 1
+    end
+    if isapprox(FReaction_UNIT[iel,3],FReaction[iel,3];atol=max(abs(FReaction_UNIT[iel,3])*mytol,1e-6))
+        global pass += 1
+    end
+    if isapprox(FReaction_UNIT[iel,4],FReaction[iel,4];atol=max(abs(FReaction_UNIT[iel,4])*mytol,1e-6))
+        global pass += 1
+    end
+    if isapprox(FReaction_UNIT[iel,5],FReaction[iel,5];atol=max(abs(FReaction_UNIT[iel,5])*mytol,1e-6))
+        global pass += 1
+    end
+    if isapprox(FReaction_UNIT[iel,6],FReaction[iel,6];atol=max(abs(FReaction_UNIT[iel,6])*mytol,1e-6))
+        global pass += 1
+    end
+
 end
-println(pass)
-@test pass > 0.98*(length(ptfm_disps_UNIT)+length(ptfm_forces_UNIT)+length(hydro_forces_UNIT)+length(mooring_forces_UNIT)+length(tt_disps_UNIT)+length(FReaction_UNIT))
+println("Tests Passed: $pass")
+@test pass > 0.98*(length(ptfm_disps_UNIT)+length(ptfm_forces_UNIT)+length(hydro_forces_UNIT)+length(mooring_forces_UNIT)+length(tt_disps_UNIT)+length(FReaction_UNIT[:,1])*6)
 
 # FReactionHist = FReaction
 # dt = .00625 # seconds
@@ -462,13 +476,13 @@ println(pass)
 
 # PyPlot.figure("Fx")
 # PyPlot.plot(FReaction_tvec,Fx,label="UNIT OWENS")
-# PyPlot.plot(FReaction_tvec,Fx_UNIT,label="Latest OWENS")
+# PyPlot.plot(FReaction_tvec,Fx_UNIT,"--",label="Latest OWENS")
 # PyPlot.legend()
 
 # PyPlot.figure("Fy")
 # # PyPlot.plot(Fy_oldowens[:,1],Fy_oldowens[:,2],label="Old OWENS")
 # PyPlot.plot(FReaction_tvec,Fy_UNIT,label="UNIT OWENS")
-# PyPlot.plot(FReaction_tvec,Fy,label="Latest OWENS")
+# PyPlot.plot(FReaction_tvec,Fy,"--",label="Latest OWENS")
 # # PyPlot.xlim([300,600])
 # # PyPlot.ylim([-150000,100000])
 # PyPlot.legend()
@@ -477,21 +491,25 @@ println(pass)
 # # PyPlot.plot(Fz_orig[:,1],Fz_orig[:,2].*1e6,"k",label="OpenFAST")
 # # PyPlot.plot(Fz_oldowens[:,1],Fz_oldowens[:,2].*1e6,label="Old OWENS")
 # PyPlot.plot(FReaction_tvec,Fz_UNIT,label="UNIT OWENS")
-# PyPlot.plot(FReaction_tvec,Fz,label="Latest OWENS")
+# PyPlot.plot(FReaction_tvec,Fz,"--",label="Latest OWENS")
 # # PyPlot.xlim([300,600])
 # # PyPlot.ylim([-5.5e6,-6.0e6])
 # PyPlot.legend()
 
 # PyPlot.figure("Mx")
-# PyPlot.plot(FReaction_tvec,Mx)
+# PyPlot.plot(FReaction_tvec,Mx_UNIT,label="UNIT OWENS")
+# PyPlot.plot(FReaction_tvec,Mx,"--",label="Latest OWENS")
+# PyPlot.legend()
 
 # PyPlot.figure("My")
-# PyPlot.plot(FReaction_tvec,My)
+# PyPlot.plot(FReaction_tvec,My_UNIT,label="UNIT OWENS")
+# PyPlot.plot(FReaction_tvec,My,"--",label="Latest OWENS")
+# PyPlot.legend()
 
 # PyPlot.figure("Mz")
 # # PyPlot.plot(Mz_oldowens[:,1],Mz_oldowens[:,2],label="Old OWENS")
 # PyPlot.plot(FReaction_tvec,Mz_UNIT,label="UNIT OWENS")
-# PyPlot.plot(FReaction_tvec,Mz,label="Latest OWENS")
+# PyPlot.plot(FReaction_tvec,Mz,"--",label="Latest OWENS")
 # # PyPlot.xlim([300,600])
 # # PyPlot.ylim([-5.5e6,-6.0e6])
 # PyPlot.legend()
