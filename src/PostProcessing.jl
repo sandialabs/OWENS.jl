@@ -452,14 +452,14 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
 
                     # reverse order of cycles
                     if issorted(Log_SN_cycles2Fail1)
-                        reverse!(SN_stressMpa1)
+                        reverse!(SN_stress)
                         reverse!(Log_SN_cycles2Fail1)
                     end
 
                     # check S-N curve monotonically decreasing with cycles sorted in decreasing order
                     err_sn(var, dir) = "S-N curve must be monotonically decreasing, and $(var) must be sorted in $(dir) order"
                     !(issorted(Log_SN_cycles2Fail1; rev=true)) && error(err_sn("cycles", "decreasing"))
-                    !(issorted(SN_stressMpa1)) && error(err_sn("stress", "increasing"))
+                    !(issorted(SN_stress)) && error(err_sn("stress", "increasing"))
 
                     damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)
                 end
@@ -470,7 +470,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     return topstrainout,damage
 end
 
-function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=1, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=1, mean_correction=false, wohler_exp=3, equiv_cycles=1)
     ncycles, mean_bins, amplitude_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
     amplitude_levels = (amplitude_bins[1:end-1] .+ amplitude_bins[2:end]) ./ 2 # bin centers
     mean_levels = (mean_bins[1:end-1] .+ mean_bins[2:end]) ./ 2 # bin centers
