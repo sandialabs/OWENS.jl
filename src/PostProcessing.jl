@@ -465,6 +465,28 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     return topstrainout,damage
 end
 
+"""
+    fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength;
+    nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+
+Calculate the fatigue damage using the rainflow and equivalent load methods, based on
+Miner's rule and optionally using Goodman's mean correction.
+
+# Inputs
+* `stress::Array{<:Real,1}`: Stress time-series
+* `sn_stress::Array{<:Real,1}`: Material S-N curve, stress values
+* `sn_log_cycles::Array{<:Real,1}`: Material S-N curve, log of number of cycles to failure
+* `ultimate_strength::Real`: Ultimate strength of the material
+* `nbins_amplitude::Int`: Number of bins for amplitude (default is 20)
+* `nbins_mean::Int`: Number of bins for mean (default is 10 if `mean_correction` is true, otherwise 1)
+* `mean_correction::Bool`: Whether to apply Goodman mean correction (default is true)
+* `wohler_exp::Real` : Wohler exponent (default is 3)
+* `equiv_cycles::Real`: The equivalent number of load cycles (default is 1, but normally the time duration in seconds is used)
+
+# Outputs:
+* `damage::Real`: The calculated fatigue damage (≥1.0 means failure)
+
+"""
 function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
     # default values
     isnothing(nbins_mean) && (nbins_mean = (mean_correction ? 10 : 1))
