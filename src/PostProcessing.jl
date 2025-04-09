@@ -456,11 +456,6 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                         reverse!(Log_SN_cycles2Fail1)
                     end
 
-                    # check S-N curve monotonically decreasing with cycles sorted in decreasing order
-                    err_sn(var, dir) = "S-N curve must be monotonically decreasing, and $(var) must be sorted in $(dir) order"
-                    !(issorted(Log_SN_cycles2Fail1; rev=true)) && error(err_sn("cycles", "decreasing"))
-                    !(issorted(SN_stress)) && error(err_sn("stress", "increasing"))
-
                     damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)
                 end
                 damage[i_station,j_lam] = maximum(damage_layers)
@@ -482,7 +477,7 @@ function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbi
         ncycles = sum(ncycles, dims=2) # sum over mean bins
         effective_amplitude_levels = amplitude_levels
     end
-    log_ncycles_fail = safeakima(reverse(sn_stress), reverse(sn_log_cycles), effective_amplitude_levels) # interpolation
+    log_ncycles_fail = safeakima(sn_stress, sn_log_cycles, effective_amplitude_levels) # interpolation
     ncycles_fail = 10.0 .^ log_ncycles_fail
     return sum(ncycles ./ ncycles_fail)
 end
