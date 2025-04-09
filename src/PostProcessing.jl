@@ -385,7 +385,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                 lowerplystrain, upperplystrain = my_getplystrain(lam, resultantstrain, offset)
                 topstrainout[its,i_station,j_lam,1:3] = upperplystrain[1]
                 topstrainout[its,i_station,j_lam,4:end] = resultantstrain[:]
-                upperplystress = q.*upperplystrain #TODO: bootom side of plies needed for inter-laminate failure?
+                upperplystress = q.*upperplystrain  #TODO: bottom side of plies needed for inter-laminate failure?
                 out = Composites.getmatfail.(upperplystress,materials,failmethod)
                 fail = [out[iii][1] for iii = 1:length(out)]
                 sf = [out[iii][2] for iii = 1:length(out)]
@@ -444,16 +444,22 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
             if calculate_fatigue
                 damage_layers = zeros(length(lam.nply))
                 for ilayer = 1:length(lam.nply)
-                    # #TODO: non-principal stress
+                    #TODO: non-principal stress
                     stressForFatigue = stress_eachlayer[:,ilayer,1]
                     ultimate_strength = materials[ilayer].xt
                     SN_stress = SN_stressMpa[ilayer] .* 1e6
                     Log_SN_cycles2Fail1 = Log_SN_cycles2Fail[ilayer]
 
-                    if Log_SN_cycles2Fail1[2]>Log_SN_cycles2Fail1[1]
+                    # reverse order of cycles
+                    if issorted(Log_SN_cycles2Fail1)
                         reverse!(SN_stressMpa1)
                         reverse!(Log_SN_cycles2Fail1)
                     end
+
+                    # check S-N curve monotonically decreasing with cycles sorted in decreasing order
+                    err_sn(var, dir) = "S-N curve must be monotonically decreasing, and $(var) must be sorted in $(dir) order"
+                    !(issorted(Log_SN_cycles2Fail1; rev=true)) && error(err_sn("cycles", "decreasing"))
+                    !(issorted(SN_stressMpa1)) && error(err_sn("stress", "increasing"))
 
                     damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)
                 end
@@ -476,7 +482,7 @@ function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbi
         ncycles = sum(ncycles, dims=2) # sum over mean bins
         effective_amplitude_levels = amplitude_levels
     end
-    log_ncycles_fail = safeakima(sn_stress, sn_log_cycles, effective_amplitude_levels) # interpolation
+    log_ncycles_fail = safeakima(reverse(sn_stress), reverse(sn_log_cycles), effective_amplitude_levels) # interpolation
     ncycles_fail = 10.0 .^ log_ncycles_fail
     return sum(ncycles ./ ncycles_fail)
 end
