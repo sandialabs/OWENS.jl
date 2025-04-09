@@ -175,7 +175,7 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
   - Time: 02:19:23
  Execution Info:
   - Date: 04/09/2025
-  - Time: 18:33:24+0000
+  - Time: 20:42:32+0000
 
  Running ADI.
  Running AeroDyn.
@@ -294,28 +294,28 @@ Running in specified rotor speed mode
 5.3%┣██▎                                        ┫ 1/19 [00:00&lt;Inf:Inf, InfGs/it]
  [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
  subsequent occurences.
-10.5%┣█████                                          ┫ 2/19 [00:03&lt;00:55, 3s/it]
+10.5%┣█████                                          ┫ 2/19 [00:03&lt;00:56, 3s/it]
 15.8%┣███████▍                                       ┫ 3/19 [00:06&lt;00:51, 3s/it]
-21.1%┣██████████                                     ┫ 4/19 [00:09&lt;00:44, 3s/it]
-26.3%┣████████████▍                                  ┫ 5/19 [00:14&lt;00:47, 3s/it]
-31.6%┣██████████████▉                                ┫ 6/19 [00:19&lt;00:49, 4s/it]
-36.8%┣█████████████████▎                             ┫ 7/19 [00:23&lt;00:45, 4s/it]
+21.1%┣██████████                                     ┫ 4/19 [00:09&lt;00:45, 3s/it]
+26.3%┣████████████▍                                  ┫ 5/19 [00:14&lt;00:48, 3s/it]
+31.6%┣██████████████▉                                ┫ 6/19 [00:19&lt;00:50, 4s/it]
+36.8%┣█████████████████▎                             ┫ 7/19 [00:23&lt;00:46, 4s/it]
 ┌ Warning: Maximum Iterations Met Breaking Iteration Loop
 └ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/Unsteady_Land.jl:523
-42.1%┣███████████████████▉                           ┫ 8/19 [00:31&lt;00:48, 4s/it]
+42.1%┣███████████████████▉                           ┫ 8/19 [00:31&lt;00:49, 4s/it]
 ┌ Warning: Maximum Iterations Met Breaking Iteration Loop
 └ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/Unsteady_Land.jl:523
-47.4%┣██████████████████████▎                        ┫ 9/19 [00:39&lt;00:49, 5s/it]
+47.4%┣██████████████████████▎                        ┫ 9/19 [00:40&lt;00:49, 5s/it]
 52.6%┣████████████████████████▏                     ┫ 10/19 [00:46&lt;00:46, 5s/it]
-57.9%┣██████████████████████████▋                   ┫ 11/19 [00:48&lt;00:38, 5s/it]
-63.2%┣█████████████████████████████                 ┫ 12/19 [00:53&lt;00:34, 5s/it]
-68.4%┣███████████████████████████████▌              ┫ 13/19 [00:57&lt;00:28, 5s/it]
-73.7%┣██████████████████████████████████            ┫ 14/19 [00:58&lt;00:22, 4s/it]
-78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:59&lt;00:17, 4s/it]
-84.2%┣██████████████████████████████████████▊       ┫ 16/19 [01:01&lt;00:12, 4s/it]
-89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [01:07&lt;00:08, 4s/it]
-94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [01:11&lt;00:04, 4s/it]
-100.0%┣█████████████████████████████████████████████┫ 19/19 [01:13&lt;00:00, 4s/it]
+57.9%┣██████████████████████████▋                   ┫ 11/19 [00:49&lt;00:39, 5s/it]
+63.2%┣█████████████████████████████                 ┫ 12/19 [00:54&lt;00:34, 5s/it]
+68.4%┣███████████████████████████████▌              ┫ 13/19 [00:57&lt;00:29, 5s/it]
+73.7%┣██████████████████████████████████            ┫ 14/19 [00:59&lt;00:23, 5s/it]
+78.9%┣████████████████████████████████████▎         ┫ 15/19 [01:00&lt;00:17, 4s/it]
+84.2%┣██████████████████████████████████████▊       ┫ 16/19 [01:02&lt;00:12, 4s/it]
+89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [01:08&lt;00:09, 4s/it]
+94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [01:12&lt;00:04, 4s/it]
+100.0%┣█████████████████████████████████████████████┫ 19/19 [01:14&lt;00:00, 4s/it]
 Simulation Complete.
  &gt;&gt;&gt; FINAL WRITE</code></pre><p>We can output vtk files viewable in paraview.  Here it is done for each time step and shows the deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina it also calculates analytical simply supported buckling safety factors</p><pre><code class="language-julia hljs">    ##########################################
     #### Ultimate Failure #####
@@ -355,14 +355,14 @@ nothing</code></pre><pre class="documenter-example-output"><code class="nohighli
 UPPER BLADE SURFACE
 Minimum Safety Factor on Surface: 70.8249642284895
 At time 0.07s at composite station 3 of 5 at lam 4 of 6
-Maximum Damage per hr: 7.71409078545011e-16
+Maximum Damage per hr: 7.657811153583331e-16
 At composite station 3 of 5 at lam 4 of 6
 
 
 LOWER BLADE SURFACE
 Minimum Safety Factor on Surface: 121.43649272326734
 At time 0.07s at composite station 3 of 5 at lam 4 of 6
-Maximum Damage per hr: 5.49180177202293e-16
+Maximum Damage per hr: 5.508983329188671e-16
 At composite station 3 of 5 at lam 4 of 6
 
 
@@ -370,7 +370,7 @@ UPPER TOWER
 
 Minimum Safety Factor on tower Surface: 65.5925637013707
 At time 0.19s at composite station 7 of 15 at lam 1 of 1
-Maximum Damage per hr: 1.2296434919040181e-15
+Maximum Damage per hr: 1.2395510287641423e-15
 At composite station 9 of 15 at lam 1 of 1
 
 
@@ -378,7 +378,7 @@ Lower TOWER
 
 Minimum Safety Factor on tower Surface: 54.07766052144522
 At time 0.06s at composite station 2 of 15 at lam 1 of 1
-Maximum Damage per hr: 4.118785222258201e-15
+Maximum Damage per hr: 4.1357831077658565e-15
 At composite station 9 of 15 at lam 1 of 1
 WRITING Output File to ./InitialDataOutputs_scripting.out
 Saving VTK time domain files</code></pre><p>Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK</p><pre><code class="language-julia hljs">rotSpdArrayRPM = [0.0, 42.64]
@@ -430,4 +430,4 @@ Saving Modeshapes to VTK</code></pre><pre><code class="language-julia hljs"># fo
 # PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
 # PyPlot.ylim([0,40.0])
 
-nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../D_simulatingFloatingPlatforms/">« Simulating Floating Platforms</a><a class="docs-footer-nextpage" href="../../OWENS_Dev_Guide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Wednesday 9 April 2025 18:35">Wednesday 9 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../D_simulatingFloatingPlatforms/">« Simulating Floating Platforms</a><a class="docs-footer-nextpage" href="../../OWENS_Dev_Guide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.1 on <span class="colophon-date" title="Wednesday 9 April 2025 20:44">Wednesday 9 April 2025</span>. Using Julia version 1.11.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
