@@ -335,12 +335,12 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
         thickness_precomp_lag_le = precompinput[i_station].chord - thickness_precomp_lag_te
 
         for j_lam = 1:length(lam_in[i_station,:])
-            
+
             idx_y = round(Int,lam_y_loc_le[j_lam]/precompinput[i_station].chord*length(precompinput[i_station].ynode)/2)
 
             if upper
                 thickness_precomp_flap = precompinput[i_station].ynode[idx_y]*precompinput[i_station].chord - precompoutput[i_station].x_sc
-            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards 
+            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards
                 thickness_precomp_flap = precompinput[i_station].ynode[end-idx_y+1]*precompinput[i_station].chord - precompoutput[i_station].x_sc
             end
             offsetz = -thickness_precomp_flap #Negative due to sign convention of strain; i.e. if the blade starts at the bottom of the turbine, and goes out and bends up, the top should be in compression and the bottom in tension, which is opposite to the strain convention
@@ -385,7 +385,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                 lowerplystrain, upperplystrain = my_getplystrain(lam, resultantstrain, offset)
                 topstrainout[its,i_station,j_lam,1:3] = upperplystrain[1]
                 topstrainout[its,i_station,j_lam,4:end] = resultantstrain[:]
-                upperplystress = q.*upperplystrain #TODO: bootom side of plies needed for inter-laminate failure?
+                upperplystress = q.*upperplystrain  #TODO: bottom side of plies needed for inter-laminate failure?
                 out = Composites.getmatfail.(upperplystress,materials,failmethod)
                 fail = [out[iii][1] for iii = 1:length(out)]
                 sf = [out[iii][2] for iii = 1:length(out)]
@@ -439,35 +439,50 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                 # cylinder_uniaxial_local_buckling_stress = Composites.cylinder_uniaxial_local_buckling(A, D, R, laminate_h)
                 # cylinder_bending_local_buckling_stress = Composites.cylinder_bending_local_buckling(A, D, R, laminate_h)
             end
-            
+
             # Miner's Damage
             if calculate_fatigue
                 damage_layers = zeros(length(lam.nply))
                 for ilayer = 1:length(lam.nply)
-                    #TODO: multiple mean ranges and goodman correction, also non-principal stress
+                    #TODO: non-principal stress
                     stressForFatigue = stress_eachlayer[:,ilayer,1]
-                    Ncycles,meanIntervals,rangeIntervals,_ = rainflow(stressForFatigue;nbins_range=20,nbins_mean=1,m=3,Teq=1)
-                    imean = 1
-                    cyclesatStressRanges = Ncycles[:,imean]
-                    stress_levels = (rangeIntervals[1:end-1] .+ rangeIntervals[2:end])./2 #from intervals to mean between the interval
-
-                    SN_stressMpa1 = SN_stressMpa[ilayer]
+                    ultimate_strength = materials[ilayer].xt
+                    SN_stress = SN_stressMpa[ilayer] .* 1e6
                     Log_SN_cycles2Fail1 = Log_SN_cycles2Fail[ilayer]
 
-                    if Log_SN_cycles2Fail1[2]>Log_SN_cycles2Fail1[1]
-                        reverse!(SN_stressMpa1)
+                    # reverse order of cycles
+                    if issorted(Log_SN_cycles2Fail1)
+                        reverse!(SN_stress)
                         reverse!(Log_SN_cycles2Fail1)
                     end
 
-                    logcycles2fail = safeakima(SN_stressMpa1.*1e6,Log_SN_cycles2Fail1,stress_levels)
-                    cycles2fail = 10.0 .^ logcycles2fail
-                    damage_layers[ilayer] = sum(cyclesatStressRanges./cycles2fail)
+                    damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)
                 end
                 damage[i_station,j_lam] = maximum(damage_layers)
             end
         end
     end
     return topstrainout,damage
+end
+
+function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+    # default values
+    isnothing(nbins_mean) && (nbins_mean = (mean_correction ? 10 : 1))
+
+    ncycles, mean_bins, amplitude_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
+    amplitude_levels = (amplitude_bins[1:end-1] .+ amplitude_bins[2:end]) ./ 2 # bin centers
+    mean_levels = (mean_bins[1:end-1] .+ mean_bins[2:end]) ./ 2 # bin centers
+    if mean_correction
+        ncycles = [(ncycles...)] # flatten matrix
+        effective_amplitude_levels = [iamplitude / (1 - imean / ultimate_strength) for iamplitude in amplitude_levels, imean in mean_levels]
+        effective_amplitude_levels = [(effective_amplitude_levels...)] # flatten matrix
+    else
+        ncycles = sum(ncycles, dims=2) # sum over mean bins
+        effective_amplitude_levels = amplitude_levels
+    end
+    log_ncycles_fail = safeakima(sn_stress, sn_log_cycles, effective_amplitude_levels) # interpolation
+    ncycles_fail = 10.0 .^ log_ncycles_fail
+    return sum(ncycles ./ ncycles_fail)
 end
 
 function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_station_name,lencomposites_span,lam_used,damage,delta_t,total_t;useStation=0)
@@ -480,8 +495,8 @@ function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_stati
     idx3 = idx[3]
     idxdamage1 = idxdamage[1]
     idxdamage2 = idxdamage[2]
-    
-    if useStation != 0 
+
+    if useStation != 0
         println("Using Specified composite station $useStation")
         SF_ultmin,idx = findmin(SF_ult[:,useStation,:])
         idx1 = idx[1]
@@ -491,7 +506,7 @@ function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_stati
         idxdamage1 = useStation
         idxdamage2 = idxdamage[1]
     end
-    
+
     damageperhour = damage[idxdamage1,idxdamage2]/total_t*60*60
 
     if verbosity>0
@@ -533,8 +548,8 @@ function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_stati
         idx1 = idx[1]
         idx2 = idx[2]
         idxdamage1 = idxdamage[1]
-        
-        if useStation != 0 
+
+        if useStation != 0
             println("Using Specified composite station $useStation")
             idx2 = useStation
             idxdamage1 = useStation
@@ -597,7 +612,7 @@ function printsf_twr(verbosity,lam_twr,SF_ult_T,SF_buck_T,lencomposites_span,Twr
                 println(minimum(SF_buck_T[minbuck_sfidx[1],istation,:]))
             end
         end
-    
+
     else
         if verbosity>3
             println("Buckling not a factor, no sections in compression")
@@ -728,7 +743,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         kappa_x_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
         kappa_y_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
         kappa_z_strut = zeros(Nbld*2,N_ts,length(strut_precompinput))
-        
+
         istrut = 0
         for ibld = Nbld+1:length(AD15bldNdIdxRng[:,1])
             istrut += 1
@@ -911,7 +926,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     println("\n\nLower TOWER")
     printsf_twr(verbosity,lam_L_twr,SF_ult_TL,SF_buck_TL,length(twr_precompinput),Twr_LE_L_idx,topDamage_tower_L,delta_t,total_t)
-   
+
     ##########################################
     #### Calculate Mass
     ##########################################
