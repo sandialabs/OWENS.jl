@@ -465,7 +465,10 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     return topstrainout,damage
 end
 
-function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=1, mean_correction=false, wohler_exp=3, equiv_cycles=1)
+function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+    # default values
+    isnothing(nbins_mean) && (nbins_mean = (mean_correction ? 10 : 1))
+
     ncycles, mean_bins, amplitude_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
     amplitude_levels = (amplitude_bins[1:end-1] .+ amplitude_bins[2:end]) ./ 2 # bin centers
     mean_levels = (mean_bins[1:end-1] .+ mean_bins[2:end]) ./ 2 # bin centers
