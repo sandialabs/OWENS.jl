@@ -74,9 +74,9 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     # end
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1,numNodes,numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:,1])
-    elNum = collect(LinRange(1,numEl,numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
@@ -93,9 +93,9 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
     meshSeg[2] = Nelem2
 
     # Not used for the beam case
-    structuralSpanLocNorm = []
-    structuralNodeNumbers = []
-    structuralElNumbers = []
+    structuralSpanLocNorm = zeros(1,1)
+    structuralNodeNumbers = zeros(1,1)
+    structuralElNumbers = zeros(1,1)
     # end
 
     mymesh = OWENSFEA.Mesh(nodeNum,numEl,numNodes,mesh_x,mesh_y,mesh_z,elNum,Int.(conn),meshtype,meshSeg,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers)
