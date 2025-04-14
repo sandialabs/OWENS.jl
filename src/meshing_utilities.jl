@@ -348,7 +348,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
     ####################################
     ###------------Tower--------------##
     ####################################
-    mesh_z = collect(LinRange(0,Htwr_blds+Htwr_base,ntelem+1))
+    mesh_z = collect(range(start = 0, stop = Htwr_blds + Htwr_base, length = ntelem + 1))
 
     # Insert mount point base
     mesh_z = sort([mesh_z;Htwr_base])
@@ -384,7 +384,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #####################################
 
     #connection points on tower are simply the bottom of the tower offset connecting to the bottom of the blades, which is jointed if Darrieus in the joint matrix below
-    bld_Z = collect(LinRange(0.0,Hbld,nbelem+1))
+    bld_Z = collect(range(start = zero(Hbld), stop = Hbld, length = nbelem + 1))
 
     # Insert bottom strut mount point
     for istrut = 1:Nstrut
@@ -415,9 +415,10 @@ function create_mesh_struts(;Htwr_base = 15.0,
 
     bld_Z .+= Htwr_base
 
-    b_Z = []
-    b_X = []
-    b_Y = []
+    b_Z = similar(bld_Z, 0)
+    b_X = similar(bld_X, 0)
+    b_Y = similar(bld_Y, 0)
+
     # Now using standard VAWT convention, blade 1 is zero degrees at top dead center, or North/Y+
     # and they are offset counter clockwise
     b_topidx = zeros(Int,nblade)
@@ -425,9 +426,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     conn_b = zeros(Int, length(bld_Z) - 1, 2)
     for ibld = 1:nblade
         myangle = (ibld-1)*2.0*pi/nblade + angularOffset
-        b_Z = [b_Z;bld_Z]
-        b_X = [b_X;bld_Y.*sin(myangle).+bld_X.*cos(myangle)]
-        b_Y = [b_Y;-bld_X.*sin(myangle).+bld_Y.*cos(myangle)]
+        append!(b_Z, bld_Z)
+        append!(b_X, bld_Y .* sin(myangle) .+ bld_X .* cos(myangle))
+        append!(b_Y, -bld_X .* sin(myangle) .+ bld_Y .* cos(myangle))
 
         # Element joint indices
         b_botidx[ibld] = length(mesh_z)+1 + length(bld_Z)*(ibld-1)
@@ -471,9 +472,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
         szend = mesh_z[sendidx]
 
         # Now draw the lines
-        s_x = collect(LinRange(sxstart,sxend,nselem+1))
-        s_y = collect(LinRange(systart,syend,nselem+1))
-        s_z = collect(LinRange(szstart,szend,nselem+1))
+        s_x = collect(range(start = sxstart, stop = sxend, length = nselem + 1))
+        s_y = collect(range(start = systart, stop = syend, length = nselem + 1))
+        s_z = collect(range(start = szstart, stop = szend, length = nselem + 1))
 
         hubIdx = 1
         if AD15hubR > 1e-6
@@ -511,10 +512,10 @@ function create_mesh_struts(;Htwr_base = 15.0,
         mesh_z = [mesh_z;s_z]
 
         # Intraconnectivity
-        conn_s = zeros(nselem,2)
-        conn_s[:,1] = collect(s2b_idx_internal:1:s2t_idx_internal-1)
-        conn_s[:,2] = collect(s2b_idx_internal+1:1:s2t_idx_internal)
-        conn = [conn;conn_s]
+        conn_s = zeros(Int, nselem, 2)
+        conn_s[:, 1] .= s2b_idx_internal:1:(s2t_idx_internal - 1)
+        conn_s[:, 2] .= (s2b_idx_internal + 1):1:s2t_idx_internal
+        conn = [conn; conn_s]
 
         return s2b_idx_internal,s2t_idx_internal,mesh_x,mesh_y,mesh_z,conn,hubIdx
     end
@@ -538,9 +539,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = 1:numNodes
-    numEl = length(conn[:,1])
-    elNum = 1:numEl
+    nodeNum = collect(Int, 1:numNodes)
+    numEl = size(conn, 1)
+    elNum = collect(Int, 1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower, treat struts like blades
@@ -560,22 +561,25 @@ function create_mesh_struts(;Htwr_base = 15.0,
     meshSeg[2:nblade+1] .= nbelem+Nstrut #+Nstrut for strut mount points
     meshSeg[nblade+2:end] .= nselem
 
+    # Normalized span
+    span_len = bld_Z .- Htwr_base # sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Htwr_base).^2.0)
+    normalize_span_len = span_len ./ maximum(span_len)
+
     # For each blade
-    structuralSpanLocNorm = zeros(nblade, length(bld_Z))
+    structuralSpanLocNorm = similar(normalize_span_len, nblade, length(bld_Z))
     structuralNodeNumbers = zeros(Int, nblade, length(bld_Z))
     structuralElNumbers = zeros(Int, nblade, length(bld_Z))
 
     for iblade = 1:nblade
 
         # Normalized Span
-        span_len = bld_Z.-Htwr_base#sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Htwr_base).^2.0)
-        structuralSpanLocNorm[iblade,:] = span_len./maximum(span_len)
+        structuralSpanLocNorm[iblade, :] .= normalize_span_len
 
         # Node Numbers
-        structuralNodeNumbers[iblade,:] = collect(b_botidx[iblade]:b_topidx[iblade])
+        structuralNodeNumbers[iblade, :] .= b_botidx[iblade]:b_topidx[iblade]
 
         # Element Numbers
-        structuralElNumbers[iblade,:] = structuralNodeNumbers[iblade,:].-iblade
+        structuralElNumbers[iblade, :] .= structuralNodeNumbers[iblade, :] .- iblade
         structuralElNumbers[iblade,end] = -1 #TODO: figure out why this is in the original OWENS setup and if it is used
     end
 
@@ -623,8 +627,8 @@ function create_mesh_struts(;Htwr_base = 15.0,
     njoint = length(jointconn[:,1]) # reset the number of joints
     myort = calculateElementOrientation(mymesh)
     # println("start")
-    Psi_d_joint = zeros(njoint)
-    Theta_d_joint = zeros(njoint)
+    Psi_d_joint = zeros(eltype(myort.Psi_d), njoint)
+    Theta_d_joint = zeros(eltype(myort.Theta_d), njoint)
     for jnt = 1:njoint
         elnum_of_joint = findall(x->x==jointconn[jnt,1],conn[:,1]) #gives index of the elNum vector which contains the point index we're after. (the elNum vector is a map between point index and element index)
         if length(elnum_of_joint)==0 #Use the other element associated with the joint
@@ -1102,6 +1106,7 @@ Calculates the orientation of elements in a mesh.
 * `elOr::OWENSFEA.Ort`  see ?OWENSFEA.Ort object containing element orientation data
 """
 function calculateElementOrientation(mesh)
+    T = eltype(mesh.x) # = eltype(mesh.y) = ...
 
     # Note on gimbal lock:
     #   when calculating a (roll -> pitch -> yaw) rotation sequence (twist -> theta -> psi) on a vertical element, it is ambiguous
@@ -1111,17 +1116,17 @@ function calculateElementOrientation(mesh)
     #   calculating DCM's when coupling to other codes.
 
     numEl = mesh.numEl #get number of elements
-    Psi_d=zeros(numEl) #initialize Psi, Theta, Twist, and Offset Arrays
-    Theta_d=zeros(numEl)
-    twist_d=zeros(numEl)
-    Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
+    Psi_d = zeros(T, numEl) #initialize Psi, Theta, Twist, and Offset Arrays
+    Theta_d = zeros(T, numEl)
+    twist_d = zeros(numEl)
+    Offset = zeros(T, 3, numEl) #offset is the hub frame coordinate of node 1 of the element
     elNum = zeros(Int, numEl, 2) #initialize element number array
 
-    lenv = zeros(numEl)
+    lenv = zeros(T, numEl)
     for i = 1:numEl #loop over elements
 
-        n1 = Int(mesh.conn[i,1]) #n1 := node number for node 1 of element i
-        n2 = Int(mesh.conn[i,2]) #n2 := node number for node 2 of element i
+        n1 = mesh.conn[i, 1] #n1 := node number for node 1 of element i
+        n2 = mesh.conn[i, 2] #n2 := node number for node 2 of element i
 
         p1 = [mesh.x[n1] mesh.y[n1] mesh.z[n1]] #nodal coordinates of n1
         p2 = [mesh.x[n2] mesh.y[n2] mesh.z[n2]] #nodal coordinates of n2
@@ -1171,7 +1176,7 @@ Calculates the transformation matrix assocaited with a general Euler rotation se
 function createGeneralTransformationMatrix(angleArray,axisArray)
 
     numRotations = length(angleArray) #get number of rotation to perform
-    dcmArray = zeros(3,3,numRotations) #initialize individual rotation direction cosine matrix arrays
+    dcmArray = zeros(eltype(angleArray), 3, 3, numRotations) #initialize individual rotation direction cosine matrix arrays
 
     for i=1:numRotations #calculate individual single rotatio direction cosine matrices
         dcmArray[:,:,i] = createSingleRotationDCM(angleArray[i],axisArray[i])
@@ -1190,22 +1195,29 @@ end
 """
 Creates a direction cosine matrix (dcm) associated with a rotation of angleDeg about axisNum.
 """
-function createSingleRotationDCM(angleDeg,axisNum)
+function createSingleRotationDCM(angleDeg::T, axisNum) where {T}
 
     angleRad = angleDeg*pi/180.0 #convert angle to radians
+    s, c = sincos(angleRad)
 
     if axisNum == 1 #direction cosine matrix about 1 axis
-        dcm = [1.0 0.0 0.0
-        0.0 cos(angleRad) sin(angleRad)
-        0.0 -sin(angleRad) cos(angleRad)]
+        dcm = T[
+             1  0  0
+             0  c  s
+             0 -s  c
+        ]
     elseif axisNum == 2 #direction cosine matrix about 2 axis
-        dcm = [cos(angleRad) 0.0 -sin(angleRad)
-        0.0 1.0 0.0
-        sin(angleRad) 0.0 cos(angleRad)]
+        dcm = T[
+             c  0 -s
+             0  1  0
+             s  0  c
+        ]
     elseif axisNum == 3 #direction cosine matrix about 3 axis
-        dcm = [cos(angleRad) sin(angleRad) 0.0
-        -sin(angleRad) cos(angleRad) 0.0
-        0.0 0.0 1.0]
+        dcm = T[
+             c  s  0
+            -s  c  0
+             0  0  1
+        ]
     else  #error catch
         error("Error: createSingleRotationDCM. Axis number must be 1, 2, or 3.")
     end
@@ -1621,6 +1633,7 @@ stiff, mass
 
 """
 function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AddedMass_Coeff_Ca=1.0,N_airfoil_coord=100)
+    NT = eltype(usedUnitSpan) # numeric type of the input (e.g. Float64, Dual, etc)
     # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
     # create spline of the precomp output to be used with the specified span array
     len_pc = length(precompoutput)
@@ -1644,8 +1657,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     tw_iner_d = zeros(len_pc)
     x_cm = zeros(len_pc)
     y_cm = zeros(len_pc)
-    added_M22 = zeros(length(usedUnitSpan))
-    added_M33 = zeros(length(usedUnitSpan))
+    added_M22 = zeros(NT, length(usedUnitSpan))
+    added_M33 = zeros(NT, length(usedUnitSpan))
 
     # extract the values from the precomp outputs
     for i_pc = 1:len_pc
@@ -1789,8 +1802,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
         end
 
         # Spline the airfoil data to align with the mesh elements
-        myxaf = zeros(length(usedUnitSpan)-1,N_airfoil_coord*2-1)
-        myyaf = zeros(length(usedUnitSpan)-1,N_airfoil_coord*2-1)
+        myxaf = zeros(NT, length(usedUnitSpan) - 1, N_airfoil_coord * 2 - 1)
+        myyaf = zeros(NT, length(usedUnitSpan) - 1, N_airfoil_coord * 2 - 1)
         # myzaf = [usedUnitSpan[i]+(usedUnitSpan[i+1]-usedUnitSpan[i])/2 for i = 1:length(usedUnitSpan)-1]
         myzaf = cumsum(diff(usedUnitSpan)) #TODO: revisit this since the vtk is off unless we use this offset.
         myzaf = myzaf .-= myzaf[1]
@@ -1839,8 +1852,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     end
     if GX #TODO: unify with one call since we always calculate this in preprocessing
 
-        stiff = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
-        mass = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
+        stiff = Vector{Matrix{NT}}(undef, length(usedUnitSpan) - 1)
+        mass = Vector{Matrix{NT}}(undef, length(usedUnitSpan) - 1)
 
         for i=1:length(usedUnitSpan)-1
             GA = ea_used[i]/2.6*5/6

@@ -226,8 +226,8 @@ function setupOWENS(OWENSAero,path;
     # Then this is where precomp.jl is called to get first the precomp outputs, then formatting those into the OWENS format, and then in the GXBeam.jl format for if GXBeam is used as the structural solver.
 
     twr_precompoutput,twr_precompinput,lam_U_twr,lam_L_twr,lam_W_twr = OWENS.getOWENSPreCompOutput(numadIn_twr;plyprops = plyprops_twr)
-    sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,fluid_density=rho,AddedMass_Coeff_Ca)
-    stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(LinRange(0,1,nTwrElem),numadIn_twr,twr_precompoutput;precompinputs=twr_precompinput,GX=true,fluid_density=rho,AddedMass_Coeff_Ca)
+    sectionPropsArray_twr = OWENS.getSectPropsFromOWENSPreComp(range(start = 0, stop = 1, length = nTwrElem), numadIn_twr, twr_precompoutput; precompinputs = twr_precompinput, fluid_density = rho, AddedMass_Coeff_Ca)
+    stiff_twr, mass_twr = OWENS.getSectPropsFromOWENSPreComp(range(start = 0, stop = 1, length = nTwrElem), numadIn_twr, twr_precompoutput; precompinputs = twr_precompinput, GX = true, fluid_density = rho, AddedMass_Coeff_Ca)
 
     nothing
 
