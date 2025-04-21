@@ -21,21 +21,22 @@ import DelimitedFiles
 using Statistics:mean
 using Test
 import FLOWMath
+import HDF5
 
-## import PyPlot
-## PyPlot.pygui(true)
-## PyPlot.rc("figure", figsize=(4.5, 3))
-## PyPlot.rc("font", size=10.0)
-## PyPlot.rc("lines", linewidth=1.5)
-## PyPlot.rc("lines", markersize=3.0)
-## PyPlot.rc("legend", frameon=false)
-## PyPlot.rc("axes.spines", right=false, top=false)
-## PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-## PyPlot.rc("figure",max_open_warning=500)
-## plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+import PyPlot
+PyPlot.pygui(true)
+PyPlot.rc("figure", figsize=(4.5, 3))
+PyPlot.rc("font", size=10.0)
+PyPlot.rc("lines", linewidth=1.5)
+PyPlot.rc("lines", markersize=3.0)
+PyPlot.rc("legend", frameon=false)
+PyPlot.rc("axes.spines", right=false, top=false)
+PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+PyPlot.rc("figure",max_open_warning=500)
+plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-## path = runpath = splitdir(@__FILE__)[1]
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
+path = runpath = splitdir(@__FILE__)[1]
+# runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
 
 nothing
 
@@ -58,7 +59,7 @@ ntelem = 100 # tower elements
 nbelem = 30 # blade elements
 nselem = 10 # strut elements
 ifw = false # use inflow wind, if DMS or AC aero model
-numTS = 20#321 # number of simulation time steps
+numTS = 321 # number of simulation time steps
 delta_t = 0.01 # simulation time step spacing
 adi_lib = nothing#"$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
 adi_rootname = "$path/RM2" # path and name that all the aerodyn files are saved with
@@ -199,25 +200,25 @@ iTSR = 1
 
     ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
 
-    ## PyPlot.figure()
-    ## for icon = 1:length(mymesh.conn[:,1])
-    ##     idx1 = mymesh.conn[icon,1]
-    ##     idx2 = mymesh.conn[icon,2]
-    ##     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    ##     PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
-    ##     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    ## end
-    ## for ijoint = 1:length(myjoint[:,1])
-    ##     idx2 = Int(myjoint[ijoint,2])
-    ##     idx1 = Int(myjoint[ijoint,3])
-    ##     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    ##     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-    ##     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
-    ## end
-    ## PyPlot.xlabel("x")
-    ## PyPlot.ylabel("y")
-    ## PyPlot.zlabel("z")
-    ## PyPlot.axis("equal")
+    PyPlot.figure()
+    for icon = 1:length(mymesh.conn[:,1])
+        idx1 = mymesh.conn[icon,1]
+        idx2 = mymesh.conn[icon,2]
+        PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+        PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
+        PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+    end
+    for ijoint = 1:length(myjoint[:,1])
+        idx2 = Int(myjoint[ijoint,2])
+        idx1 = Int(myjoint[ijoint,3])
+        PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+        PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
+        PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+    end
+    PyPlot.xlabel("x")
+    PyPlot.ylabel("y")
+    PyPlot.zlabel("z")
+    PyPlot.axis("equal")
 
     nothing
 
@@ -268,11 +269,12 @@ iTSR = 1
     joint = myjoint,
     platformTurbineConnectionNodeNumber = 1,
     pBC,
-    nlOn = false,
+    nlOn = true,
+    numModes = 70,
     gravityOn = [0,0,9.81], #positive since the turbine is upside down
     numNodes = mymesh.numNodes,
-    RayleighAlpha = 0.05,
-    RayleighBeta = 0.05,
+    RayleighAlpha = 0.005,
+    RayleighBeta = 0.005,
     AddedMass_Coeff_Ca,
     iterationType = "DI")
 
@@ -289,7 +291,7 @@ iTSR = 1
     topModel=FEAinputs,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,turbsimfile = windINPfilename)
 
     area = Blade_Height*2*Blade_Radius
-    full_rev_N_timesteps = round(Int,RPM/60/delta_t)
+    full_rev_N_timesteps = round(Int,RPM/60/delta_t)*2
     if full_rev_N_timesteps>numTS
         idx_start = 1
     else
@@ -339,57 +341,103 @@ iTSR = 1
 ## PyPlot.xlabel("TSR")
 ## PyPlot.ylabel("Cp")
 
-nothing
+# Open the HDF5 file in read mode
+carriage_pos = nothing
+drag_left = nothing
+drag_right = nothing
+time = nothing
+torque_arm = nothing
+torque_trans = nothing
+turbine_angle = nothing
+c = HDF5.h5open("$path/../../../../../../Downloads/Perf1.2b_11_nidata.h5", "r") do file
+    global carriage_pos = read(file,"data/carriage_pos")
+    global drag_left = read(file,"data/drag_left")
+    global drag_right = read(file,"data/drag_right")
+    global time = read(file,"data/time")
+    global torque_arm = read(file,"data/torque_arm")
+    global torque_trans = read(file,"data/torque_trans")
+    global turbine_angle = read(file,"data/turbine_angle")
+end
 
-# Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
+Qinst = FReactionHist[idx_start:end,6]
+Qinst2 = topFexternal_hist[idx_start:end,6]
 
-rotSpdArrayRPM = [0.0, 42.64]
+drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
 
-FEAinputs = OWENS.FEAModel(;analysisType = "GX",
-dataOutputFilename = "none",
-joint = myjoint,
-platformTurbineConnectionNodeNumber = 1,
-pBC,
-nlOn = false,
-gravityOn = [0,0,9.81], #positive since the turbine is upside down
-numNodes = mymesh.numNodes,
-RayleighAlpha = 0.05,
-RayleighBeta = 0.05,
-AddedMass_Coeff_Ca,
-iterationType = "DI")
+dat_strt = round(Int,160800/80*10)
+dat_end = round(Int,160800/80*12)
 
-freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    rotSpdArrayRPM,
-    VTKsavename=VTKsaveName,
-    saveModes = [1,3,5], #must be int
-    saveRPM = [2], #must be int
-    mode_scaling = 500.0,
-    )
-freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+PyPlot.figure()
+PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
+PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],torque_trans[dat_strt:dat_end],"k-",label="Exp. ")
+PyPlot.legend()
+PyPlot.xlabel("Time (s)")
+PyPlot.ylabel("Q (instantaneous)")
 
-nothing
+PyPlot.figure()
+# PyPlot.plot((t[idx_start:end].-t[idx_start]),drag,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
+PyPlot.plot((t[idx_start:end].-t[idx_start]),drag2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_left[dat_strt:dat_end],"k-",label="Exp. L")
+PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_right[dat_strt:dat_end],"k--",label="Exp. R")
+PyPlot.legend()
+PyPlot.xlabel("Time (s)")
+PyPlot.ylabel("Drag (instantaneous)")
 
-## Now the Campbell diagram can be generated
-## NperRevLines = 8
-## PyPlot.figure()
-## for i=1:NperRevLines
-##     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
-##     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
-##     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
-##     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
-## end
-## PyPlot.grid()
-## PyPlot.xlabel("Rotor Speed (RPM)")
-## PyPlot.ylabel("Frequency (Hz)")
-## PyPlot.plot(0,0,"k-",label="Experimental")
-## PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
-## PyPlot.legend()
-#
-## for i=1:1:FEAinputs.numModes
-##        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
-## end
-## PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
-## PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
-## PyPlot.ylim([0,40.0])
+# nothing
 
-nothing
+((59.4-31.5)-(60.0-25.5)) /(60.0-25.5)
+
+# # Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
+
+# rotSpdArrayRPM = [0.0, 42.64]
+
+# FEAinputs = OWENS.FEAModel(;analysisType = "GX",
+# dataOutputFilename = "none",
+# joint = myjoint,
+# platformTurbineConnectionNodeNumber = 1,
+# pBC,
+# nlOn = false,
+# gravityOn = [0,0,9.81], #positive since the turbine is upside down
+# numNodes = mymesh.numNodes,
+# RayleighAlpha = 0.05,
+# RayleighBeta = 0.05,
+# AddedMass_Coeff_Ca,
+# iterationType = "DI")
+
+# freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+#     rotSpdArrayRPM,
+#     VTKsavename=VTKsaveName,
+#     saveModes = [1,3,5], #must be int
+#     saveRPM = [2], #must be int
+#     mode_scaling = 500.0,
+#     )
+# freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+
+# nothing
+
+# ## Now the Campbell diagram can be generated
+# ## NperRevLines = 8
+# ## PyPlot.figure()
+# ## for i=1:NperRevLines
+# ##     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
+# ##     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
+# ##     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+# ##     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+# ## end
+# ## PyPlot.grid()
+# ## PyPlot.xlabel("Rotor Speed (RPM)")
+# ## PyPlot.ylabel("Frequency (Hz)")
+# ## PyPlot.plot(0,0,"k-",label="Experimental")
+# ## PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
+# ## PyPlot.legend()
+# #
+# ## for i=1:1:FEAinputs.numModes
+# ##        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
+# ## end
+# ## PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
+# ## PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
+# ## PyPlot.ylim([0,40.0])
+
+# nothing

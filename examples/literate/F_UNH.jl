@@ -21,6 +21,8 @@ import DelimitedFiles
 using Statistics:mean
 using Test
 import FLOWMath
+import MAT
+import HDF5
 
 import PyPlot
 PyPlot.pygui(true)
@@ -49,11 +51,12 @@ nothing
 # has been shortened to enable automated deployment, update as desired.
 
 turbineType = "H-VAWT" # turbine type, for the automatic meshing
-Vinf = 1.2 # inflow velocity
+Vinf = 1.1 # inflow velocity
+zH = 1.0
 TSRrange = [2.5]#LinRange(1.0,5.0,2) range of tip speed ratios
 Nslices = 20 # vertical discretizations if DMS or AC aero model
 ntheta = 30 # azimuthal discretizations if DMS or AC aero model
-structuralModel = "TNB"
+structuralModel = "GX"
 ntelem = 100 # tower elements
 nbelem = 30 # blade elements
 nselem = 10 # strut elements
@@ -178,8 +181,8 @@ iTSR = 1
         nbelem, 
         nselem,
         joint_type = 0,
-        strut_twr_mountpoint = [0.0,0.25],
-        strut_bld_mountpoint = [0.0,0.25],
+        strut_twr_mountpoint = [0.0,zH],
+        strut_bld_mountpoint = [0.0,zH],
         AeroModel, #AD, DMS, AC
         DynamicStallModel="BV",
         Aero_AddedMass_Active = false,
@@ -198,26 +201,29 @@ iTSR = 1
     # end
 
     ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
-
-    ## PyPlot.figure()
-    ## for icon = 1:length(mymesh.conn[:,1])
-    ##     idx1 = mymesh.conn[icon,1]
-    ##     idx2 = mymesh.conn[icon,2]
-    ##     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    ##     PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
-    ##     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    ## end
-    ## for ijoint = 1:length(myjoint[:,1])
-    ##     idx2 = Int(myjoint[ijoint,2])
-    ##     idx1 = Int(myjoint[ijoint,3])
-    ##     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    ##     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-    ##     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
-    ## end
-    ## PyPlot.xlabel("x")
-    ## PyPlot.ylabel("y")
-    ## PyPlot.zlabel("z")
-    ## PyPlot.axis("equal")
+    el_bld_0_25 = 0
+    PyPlot.figure()
+    for icon = 1:length(mymesh.conn[:,1])
+        idx1 = mymesh.conn[icon,1]
+        idx2 = mymesh.conn[icon,2]
+        if idx1 == 145
+            el_bld_0_25 = icon
+        end
+        PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+        PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
+        PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+    end
+    for ijoint = 1:length(myjoint[:,1])
+        idx2 = Int(myjoint[ijoint,2])
+        idx1 = Int(myjoint[ijoint,3])
+        PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+        PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
+        PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+    end
+    PyPlot.xlabel("x")
+    PyPlot.ylabel("y")
+    PyPlot.zlabel("z")
+    PyPlot.axis("equal")
 
     nothing
 
@@ -296,11 +302,12 @@ iTSR = 1
         idx_start = numTS-full_rev_N_timesteps
     end
     CP[iTSR] = mean(FReactionHist[idx_start:end,6].*OmegaHist[idx_start:end]*2*pi)/(0.5*fluid_density*mean(Vinfocp)^3*area)
+    CPinst = FReactionHist[idx_start:end,6].*OmegaHist[idx_start:end]*2*pi ./ (0.5*fluid_density*mean(Vinfocp)^3*area)
     TSR = mean(OmegaHist*2*pi*Blade_Radius/mean(Vinfocp))
     ReD = fluid_density*mean(Vinfocp)*Blade_Radius*2/fluid_dyn_viscosity
 
-    PyPlot.figure()
-    PyPlot.plot(aziHist[idx_start:end],FReactionHist[idx_start:end,6])
+    # PyPlot.figure()
+    # PyPlot.plot(aziHist[idx_start:end],FReactionHist[idx_start:end,6])
 
     nothing
 
@@ -331,6 +338,63 @@ iTSR = 1
         epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
         FReactionHist,topFexternal_hist;tsave_idx)
 
+
+    # # epsilon_x_hist = zeros(4,nel,numTS)
+    # epsilon_x_meanhist = mean(epsilon_x_hist[:,:,:],dims=1)[1,:,:]
+    # kappa_y_meanhist = mean(kappa_y_hist[:,:,:],dims=1)[1,:,:]
+    # strain_0_25 = epsilon_x_meanhist[el_bld_0_25,:]+kappa_y_meanhist[el_bld_0_25,:]*(0.095*0.18/2) #*chord*thickness/2 since symmetric
+
+    # PyPlot.figure()
+    # PyPlot.plot(aziHist./(2*pi).*360,strain_0_25.*1e6,".-",color=plot_cycle[1],label="$zH") #,color=color_cycle[2]
+    # # RM2_0_538D_RE_D_1_3E6 = DelimitedFiles.readdlm("$(path)/data_UNH/RM2_0.538D_RE_D_1.3E6.csv", ',',Float64)
+    # # PyPlot.plot(RM2_0_538D_RE_D_1_3E6[:,1],RM2_0_538D_RE_D_1_3E6[:,2],"k-",label="Exp. 1.3e6 RE_d")
+    # PyPlot.legend()
+    # PyPlot.xlabel("Azimuth (deg)")
+    # PyPlot.ylabel("Microstrain (ue)")
+
+    # Load in Exp Data
+    straight_HEG_Re = MAT.matread("$path/data_UNH/marone_data/HDF_V2/03_Straight_HollowEGlassFiber/straight_HEG_Re.mat")
+    segments = straight_HEG_Re["segments"]
+    if zH == 1.0
+        idxdata = 14
+    elseif zH == 0.25
+        idxdata = 60
+    end
+
+    cd_UNH = segments["cd"][idxdata]
+    Q_UNH = segments["Q"][idxdata]
+    Uinf_UNH = segments["Uinf"][idxdata]
+    Re_C_UNH = segments["Re_C"][idxdata]
+    time_UNH = segments["time"][idxdata]
+    angle_UNH = segments["angle"][idxdata]
+    cp_UNH = segments["cp"][idxdata]
+    zH_UNH = segments["zH"][idxdata]
+    omega_UNH = segments["omega"][idxdata]
+    cq_UNH = segments["cq"][idxdata]
+    tsr_UNH = segments["tsr"][idxdata]
+    Re_D_UNH = segments["Re_D"][idxdata]
+
+    Qinst = FReactionHist[idx_start:end,6]
+    Qinst2 = topFexternal_hist[idx_start:end,6]
+
+    CDinst = FReactionHist[idx_start:end,1] ./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+    CDinst2 = topFexternal_hist[idx_start:end,1] ./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+
+    PyPlot.figure()
+    PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,Qinst,".-",color=plot_cycle[1],label="$zH Reaction") #,color=color_cycle[2]
+    PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,-Qinst2,"x-",color=plot_cycle[2],label="$zH Applied") #,color=color_cycle[2]
+    PyPlot.plot(angle_UNH.-angle_UNH[1],Q_UNH,"k-",label="Exp. ")
+    PyPlot.legend()
+    PyPlot.xlabel("Azimuth (deg)")
+    PyPlot.ylabel("Q (instantaneous)")
+
+    PyPlot.figure()
+    PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,CDinst,".-",color=plot_cycle[1],label="$zH Reaction") #,color=color_cycle[2]
+    PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,CDinst2,"x-",color=plot_cycle[2],label="$zH Applied") #,color=color_cycle[2]
+    PyPlot.plot(angle_UNH.-angle_UNH[1],cd_UNH,"k-",label="Exp. ")
+    PyPlot.legend()
+    PyPlot.xlabel("Azimuth (deg)")
+    PyPlot.ylabel("CD (instantaneous)")
 
 ## end
 
