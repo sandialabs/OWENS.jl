@@ -1,4 +1,4 @@
-# OWENS (Onshore/Offshore Wind/Water ENergy Simulator)
+# OWENS (Onshore/Offshore Wind/Water ENergy Simulator)d
 
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sandialabs.github.io/OWENS.jl/dev)
 ![](https://github.com/sandialabs/OWENS.jl/workflows/CI/badge.svg)
