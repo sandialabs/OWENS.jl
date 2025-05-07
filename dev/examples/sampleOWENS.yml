@@ -16,7 +16,7 @@ operationParameters:
 
 turbulentInflow:
   ifw: false
-  WindType: 3
+  WindType: 1
   windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
   ifw_libfile: nothing
 
