@@ -11,6 +11,12 @@
 # available to users, which is helpful for explaining how the floating platform mesh
 # (or "bottom side") is defined and differs from the topside.
 
+#-
+#md # !!! tip
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`D_simulatingFloatingPlatforms.ipynb`](@__NBVIEWER_ROOT_URL__/examples/D_simulatingFloatingPlatforms.ipynb).
+#-
+
 ## import PyPlot
 
 import OWENS

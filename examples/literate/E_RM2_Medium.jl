@@ -11,7 +11,8 @@
 # ![](../assets/RM2_wake.png)
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook  
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`E_RM2_Medium.ipynb`](@__NBVIEWER_ROOT_URL__/examples/E_RM2_Medium.ipynb).
 #-
 
 # Load in all of the modules that we'll be using, and prettify the plotting options

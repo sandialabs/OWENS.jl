@@ -15,7 +15,8 @@
 #
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook  
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`A_simplyRunningOWENS.ipynb`](@__NBVIEWER_ROOT_URL__/examples/A_simplyRunningOWENS.ipynb).
 #-
 
 import OWENS
