@@ -60,7 +60,7 @@ ntelem = 100 # tower elements
 nbelem = 30 # blade elements
 nselem = 10 # strut elements
 ifw = false # use inflow wind, if DMS or AC aero model
-numTS = 321 # number of simulation time steps
+numTS = 21#321 # number of simulation time steps
 delta_t = 0.01 # simulation time step spacing
 adi_lib = nothing#"$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
 adi_rootname = "$path/RM2" # path and name that all the aerodyn files are saved with
@@ -387,18 +387,18 @@ dat_end = round(Int,160800/80*14.0)
 ## PyPlot.xlabel("Time (s)")
 ## PyPlot.ylabel("Drag (instantaneous)")
 
-# nothing
+## nothing
 
-# Calculate mean Q and compare
-mean_Q_owens = mean(Qinst)
-mean_Q_exp = mean(torque_trans[dat_strt:dat_end])
-println("Percent Difference in Torque: $((mean_Q_owens-mean_Q_exp)/mean_Q_exp*100)")
+## # Calculate mean Q and compare
+## mean_Q_owens = mean(Qinst)
+## mean_Q_exp = mean(torque_trans[dat_strt:dat_end])
+## println("Percent Difference in Torque: $((mean_Q_owens-mean_Q_exp)/mean_Q_exp*100)")
 
-dat_strt = round(Int,160800/80*10)
-dat_end = round(Int,160800/80*10.5)
-amp_Q_exp = maximum(torque_trans[dat_strt:dat_end])-minimum(torque_trans[dat_strt:dat_end])
-amp_Q_owens = maximum(Qinst[end-round(Int,0.5/delta_t):end])-minimum(Qinst[end-round(Int,0.5/delta_t):end])
-println("Percent Difference in Amplitude: $((amp_Q_owens-amp_Q_exp)/amp_Q_exp*100)")
+## dat_strt = round(Int,160800/80*10)
+## dat_end = round(Int,160800/80*10.5)
+## amp_Q_exp = maximum(torque_trans[dat_strt:dat_end])-minimum(torque_trans[dat_strt:dat_end])
+## amp_Q_owens = maximum(Qinst[end-round(Int,0.5/delta_t):end])-minimum(Qinst[end-round(Int,0.5/delta_t):end])
+## println("Percent Difference in Amplitude: $((amp_Q_owens-amp_Q_exp)/amp_Q_exp*100)")
 
 # Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
 
