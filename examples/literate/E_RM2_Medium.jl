@@ -327,9 +327,9 @@ iTSR = 1
 
     OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
         
-    OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
-        epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
-        FReactionHist,topFexternal_hist;tsave_idx)
+    ## OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+    ##     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+    ##     FReactionHist,topFexternal_hist;tsave_idx)
 
 
 ## end
@@ -360,7 +360,7 @@ c = HDF5.h5open("$path/data_RM2/Perf1.2b_16_nidata.h5", "r") do file
     global turbine_angle = read(file,"data/turbine_angle")
 end
 
-Qinst = FReactionHist[idx_start:end,6]
+Qinst = -FReactionHist[idx_start:end,6]
 Qinst2 = topFexternal_hist[idx_start:end,6]
 
 drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
