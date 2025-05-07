@@ -51,7 +51,7 @@ nothing
 
 turbineType = "H-VAWT" # turbine type, for the automatic meshing
 Vinf = 1.2 # inflow velocity
-TSRrange = [3.0]#LinRange(1.0,5.0,2) range of tip speed ratios
+TSRrange = [3.5]#LinRange(1.0,5.0,2) range of tip speed ratios
 Nslices = 20 # vertical discretizations if DMS or AC aero model
 ntheta = 30 # azimuthal discretizations if DMS or AC aero model
 structuralModel = "TNB"
@@ -70,7 +70,7 @@ fluid_density = 1000.0
 fluid_dyn_viscosity = 1.792E-3
 AddedMass_Coeff_Ca = 1.0 #For structural side added mass 
 Aero_Buoyancy_Active = true # For buoyancy forcing, handled by the OWENSAero module 
-AeroModel = "AD"
+AeroModel = "DMS"
 verbosity = 1 # verbosity level where higher is more
 if AeroModel=="AD"
     AD15On = true
@@ -96,8 +96,9 @@ nothing
 # For this simulation, using aerodyn ("AD"), we will use a turbulent inflow file, indicated as WindType 3
 # We can let the built in OWENS library for turbsim generate the file as so. Modify the inp file to your liking and 
 # comment out the run command to run your own with more time
-WindType = 3
+WindType = 1
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
+# windINPfilename = "$path/data_RM2/steady1pt2.inp"
 # run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
 nothing
@@ -269,7 +270,7 @@ iTSR = 1
     joint = myjoint,
     platformTurbineConnectionNodeNumber = 1,
     pBC,
-    nlOn = true,
+    nlOn = false,
     numModes = 70,
     gravityOn = [0,0,9.81], #positive since the turbine is upside down
     numNodes = mymesh.numNodes,
@@ -349,7 +350,7 @@ time = nothing
 torque_arm = nothing
 torque_trans = nothing
 turbine_angle = nothing
-c = HDF5.h5open("$path/../../../../../../Downloads/Perf1.2b_11_nidata.h5", "r") do file
+c = HDF5.h5open("$path/../../../../../../Downloads/Perf1.2b_16_nidata.h5", "r") do file
     global carriage_pos = read(file,"data/carriage_pos")
     global drag_left = read(file,"data/drag_left")
     global drag_right = read(file,"data/drag_right")
@@ -365,12 +366,12 @@ Qinst2 = topFexternal_hist[idx_start:end,6]
 drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
 drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
 
-dat_strt = round(Int,160800/80*10)
-dat_end = round(Int,160800/80*12)
+dat_strt = round(Int,160800/80*11.0)
+dat_end = round(Int,160800/80*14.0)
 
 PyPlot.figure()
 PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
-PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+# PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
 PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],torque_trans[dat_strt:dat_end],"k-",label="Exp. ")
 PyPlot.legend()
 PyPlot.xlabel("Time (s)")
@@ -387,7 +388,16 @@ PyPlot.ylabel("Drag (instantaneous)")
 
 # nothing
 
-((59.4-31.5)-(60.0-25.5)) /(60.0-25.5)
+# Calculate mean Q and compare
+mean_Q_owens = mean(Qinst)
+mean_Q_exp = mean(torque_trans[dat_strt:dat_end])
+println("Percent Difference in Torque: $((mean_Q_owens-mean_Q_exp)/mean_Q_exp*100)")
+
+dat_strt = round(Int,160800/80*10)
+dat_end = round(Int,160800/80*10.5)
+amp_Q_exp = maximum(torque_trans[dat_strt:dat_end])-minimum(torque_trans[dat_strt:dat_end])
+amp_Q_owens = maximum(Qinst[end-round(Int,0.5/delta_t):end])-minimum(Qinst[end-round(Int,0.5/delta_t):end])
+println("Percent Difference in Amplitude: $((amp_Q_owens-amp_Q_exp)/amp_Q_exp*100)")
 
 # # Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
 

@@ -64,15 +64,15 @@ ifw = false # use inflow wind, if DMS or AC aero model
 numTS = 150 # number of simulation time steps
 delta_t = 0.01 # simulation time step spacing
 adi_lib = nothing#"$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
-adi_rootname = "$path/RM2" # path and name that all the aerodyn files are saved with
+adi_rootname = "$path/UNH" # path and name that all the aerodyn files are saved with
 VTKsaveName = "$path/vtk/UNH" # path and name that all OWENS VTK files are saved with
 tsave_idx = 1:1:numTS-1 #you don't have to save every timestep in VTK 
 ifw_libfile = nothing#"$path/../../../openfast/build/modules/inflowwind/libifw_c_binding"
-fluid_density = 1000.0
-fluid_dyn_viscosity = 1.792E-3
+fluid_density = rho = 1025.0
+fluid_dyn_viscosity = mu = 1.08E-3
 AddedMass_Coeff_Ca = 1.0 #For structural side added mass 
 Aero_Buoyancy_Active = true # For buoyancy forcing, handled by the OWENSAero module 
-AeroModel = "DMS"
+AeroModel = "AD"
 verbosity = 1 # verbosity level where higher is more
 if AeroModel=="AD"
     AD15On = true
@@ -86,6 +86,16 @@ towerHeight = 0.17 # height of the tower past the blades
 Blade_Height = 0.9 # height of the blades
 Blade_Radius = 0.5 # radius of the turbine
 
+# Calculate Reynolds
+chordmid = 0.095
+omega = Vinf/Blade_Radius*TSRrange[1]
+rot_velocity = omega*Blade_Radius
+Re_check = rho*rot_velocity*chordmid/mu
+Re_plus = rho*(rot_velocity+Vinf)*chordmid/mu
+Re_minus = rho*(rot_velocity-Vinf)*chordmid/mu
+
+println("Reynolds: $Re_minus to $Re_plus")
+
 NuMad_geom_xlscsv_file_twr = "$path/data_UNH/TowerGeom.csv" # 
 NuMad_mat_xlscsv_file_twr = "$path/data_UNH/TowerMaterials.csv"
 NuMad_geom_xlscsv_file_bld = "$path/data_UNH/GeomBlades$AeroModel.csv"
@@ -98,7 +108,7 @@ nothing
 # For this simulation, using aerodyn ("AD"), we will use a turbulent inflow file, indicated as WindType 3
 # We can let the built in OWENS library for turbsim generate the file as so. Modify the inp file to your liking and 
 # comment out the run command to run your own with more time
-WindType = 3
+WindType = 1
 windINPfilename = "$path/data_UNH/3mx3m1pt2msNTM.bts"
 # run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
@@ -227,6 +237,128 @@ iTSR = 1
 
     nothing
 
+
+    # Nbld = number_of_blades
+    # radius = Blade_Radius
+    # blade_length = Blade_Height
+    # rho = fluid_density
+    # area = blade_length * radius*2
+        
+    # TSRrange = LinRange(2.0,3.0,16)
+    # Vinfrange = [25.0]#LinRange(18.0,19.0,5)
+    # CP1 = zeros(length(TSRrange),length(Vinfrange))
+    # power1 = zeros(length(TSRrange),length(Vinfrange))
+    # RpSteady = zeros(Nbld,Nslices,ntheta,length(TSRrange),length(Vinfrange))
+    # TpSteady = zeros(Nbld,Nslices,ntheta,length(TSRrange),length(Vinfrange))
+    # alphaSteady = zeros(Nbld,Nslices,ntheta,length(TSRrange),length(Vinfrange))
+    # thetavecSteady = []
+    
+    # for (iVinf,Vinf) in enumerate(collect(Vinfrange))
+    #     for (iTSR,TSR) in enumerate(collect(TSRrange))
+    #         # iTSR = 1
+    #         # TSR = 2.2
+    #         #Steady State Test
+    #         omega = Vinf/radius*TSR
+            
+    #         RPM = omega * 60 / (2*pi)
+    
+    #         global thetavecSteady
+    
+    #         CPSteady,
+    #         RpSteady[:,:,:,iTSR,iVinf],
+    #         TpSteady[:,:,:,iTSR,iVinf],
+    #         ZpSteady,
+    #         alphaSteady[:,:,:,iTSR,iVinf],
+    #         cl_afSteady,
+    #         cd_afSteady,
+    #         VlocSteady,
+    #         ReSteady,
+    #         thetavecSteady,
+    #         nstepSteady,
+    #         Fx_baseSteady,
+    #         Fy_baseSteady,
+    #         Fz_baseSteady,
+    #         Mx_baseSteady,
+    #         My_baseSteady,
+    #         Mz_baseSteady,
+    #         powerSteady,
+    #         power2Steady,torque,z3Dnorm,delta,Mz_base2 = OWENSAero.steadyTurb(;omega,Vinf)
+    
+    #         println("RPM: $RPM")
+    #         println(powerSteady)
+    
+    #         CP1[iTSR,iVinf] = powerSteady/(0.5*rho*Vinf^3*area)
+    #         power1[iTSR,iVinf] = powerSteady
+    
+    #     end
+    
+    #     PyPlot.figure("CP")
+    #     PyPlot.plot(TSRrange,CP1[:,iVinf] ,"-",color=plot_cycle[iVinf],label="Aero Only, Constant $Vinf m/s") #,color=color_cycle[2]
+    # end
+    
+    # PyPlot.figure("CP")
+    # # PyPlot.plot(TSRrange,CP1,"-",label="Aero Only, Constant $Vinf m/s") #,color=color_cycle[2]
+    # # PyPlot.legend()
+    # PyPlot.xlabel("TSR")
+    # PyPlot.ylabel("Cp")
+    # PyPlot.savefig("$(path)/figs/CP_aeroonly_multiRe.pdf",transparent = true)
+    
+    # PyPlot.figure("power")
+    # PyPlot.plot(TSRrange,power1./1000,"-",label="Aero Only, Constant Wind Speed") #,color=color_cycle[2]
+    # PyPlot.legend()
+    # PyPlot.xlabel("TSR")
+    # PyPlot.ylabel("Power (kW)")
+    
+     
+    # PyPlot.figure("Tp")
+    # for iVinf = 1:length(Vinfrange)
+    #     PyPlot.plot(thetavecSteady,TpSteady[1,15,:,3,iVinf],"-",label="Aero Only, Constant $(Vinfrange[iVinf]) m/s") #,color=color_cycle[2]
+    # end
+    # # PyPlot.legend()
+    # PyPlot.xlabel("Azimuth")
+    # PyPlot.ylabel("Tp")
+    # PyPlot.savefig("$(path)/figs/Tp_aeroonly_multiRe.jpg",transparent = true)
+
+
+# Load in Exp Data
+zH = 1.0
+target_TSR = 2.5
+# straight_HEG_Re = MAT.matread("$path/data_UNH/marone_data/HDF_V2/03_Straight_HollowEGlassFiber/straight_HEG_Re.mat")
+straight_HEG_Re = MAT.matread("$path/data_UNH/marone_data/HDF_V2/01_Straight_CarbonFiber/straight_CF_Re.mat")
+# straight_HEG_Re = MAT.matread("$path/data_UNH/marone_data/HDF_V2/02_Straight_EGlassFiber/straight_EG_Re.mat")
+# straight_HEG_Re = MAT.matread("$path/data_UNH/marone_data/HDF_V2/05_Helical_Titanium/helical_Ti_Re.mat")
+
+segments = straight_HEG_Re["segments"]
+instmean = straight_HEG_Re["instmean"]
+if zH == 1.0
+    idxdata = 0
+    for idxdatai = 1:length(instmean["zH"])
+        if instmean["zH"][idxdatai]=="1" && isapprox(instmean["Uinf"][idxdatai],1.1;atol = 1e-2) && isapprox(instmean["tsr"][idxdatai],target_TSR;atol = 1e-2) 
+            global idxdata = idxdatai
+        end
+    end
+elseif zH == 0.25
+    idxdata = 0
+    for idxdatai = 1:length(instmean["zH"])
+        if instmean["zH"][idxdatai]=="0.25" && isapprox(instmean["Uinf"][idxdatai],1.1;atol = 1e-2) && isapprox(instmean["tsr"][idxdatai],target_TSR;atol = 1e-2) 
+            global idxdata = idxdatai
+        end
+    end
+end
+
+cd_UNH = segments["cd"][idxdata]
+Q_UNH = segments["Q"][idxdata]
+Uinf_UNH = segments["Uinf"][idxdata]
+Re_C_UNH = segments["Re_C"][idxdata]
+time_UNH = segments["time"][idxdata]
+angle_UNH = segments["angle"][idxdata]
+cp_UNH = segments["cp"][idxdata]
+zH_UNH = segments["zH"][idxdata]
+omega_UNH = segments["omega"][idxdata]
+cq_UNH = segments["cq"][idxdata]
+tsr_UNH = segments["tsr"][idxdata]
+Re_D_UNH = segments["Re_D"][idxdata]
+
     # Here we apply the boundary conditions.  For this case, the tower base node which is 
     # 1 is constrained in all 6 degrees of freedom to have a displacement of 0, and the tower top is also constrained.
     # You can change this displacement to allow for things like pretension, and you can apply boundary conditions to any node.
@@ -352,28 +484,6 @@ iTSR = 1
     # PyPlot.xlabel("Azimuth (deg)")
     # PyPlot.ylabel("Microstrain (ue)")
 
-    # Load in Exp Data
-    straight_HEG_Re = MAT.matread("$path/data_UNH/marone_data/HDF_V2/03_Straight_HollowEGlassFiber/straight_HEG_Re.mat")
-    segments = straight_HEG_Re["segments"]
-    if zH == 1.0
-        idxdata = 14
-    elseif zH == 0.25
-        idxdata = 60
-    end
-
-    cd_UNH = segments["cd"][idxdata]
-    Q_UNH = segments["Q"][idxdata]
-    Uinf_UNH = segments["Uinf"][idxdata]
-    Re_C_UNH = segments["Re_C"][idxdata]
-    time_UNH = segments["time"][idxdata]
-    angle_UNH = segments["angle"][idxdata]
-    cp_UNH = segments["cp"][idxdata]
-    zH_UNH = segments["zH"][idxdata]
-    omega_UNH = segments["omega"][idxdata]
-    cq_UNH = segments["cq"][idxdata]
-    tsr_UNH = segments["tsr"][idxdata]
-    Re_D_UNH = segments["Re_D"][idxdata]
-
     Qinst = FReactionHist[idx_start:end,6]
     Qinst2 = topFexternal_hist[idx_start:end,6]
 
@@ -382,7 +492,7 @@ iTSR = 1
 
     PyPlot.figure()
     PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,Qinst,".-",color=plot_cycle[1],label="$zH Reaction") #,color=color_cycle[2]
-    PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,-Qinst2,"x-",color=plot_cycle[2],label="$zH Applied") #,color=color_cycle[2]
+    # PyPlot.plot((aziHist[idx_start:end].-aziHist[idx_start])./(2*pi).*360,-Qinst2,"x-",color=plot_cycle[2],label="$zH Applied") #,color=color_cycle[2]
     PyPlot.plot(angle_UNH.-angle_UNH[1],Q_UNH,"k-",label="Exp. ")
     PyPlot.legend()
     PyPlot.xlabel("Azimuth (deg)")
@@ -396,15 +506,15 @@ iTSR = 1
     PyPlot.xlabel("Azimuth (deg)")
     PyPlot.ylabel("CD (instantaneous)")
 
-## end
+# end
 
-## PyPlot.figure("CP2")
-## PyPlot.plot(TSRrange,CP,".-",color=plot_cycle[2],label="OWENS Aero, 1.3 RE_d (No Added Mass)") #,color=color_cycle[2]
-## RM2_0_538D_RE_D_1_3E6 = DelimitedFiles.readdlm("$(path)/data_UNH/RM2_0.538D_RE_D_1.3E6.csv", ',',Float64)
-## PyPlot.plot(RM2_0_538D_RE_D_1_3E6[:,1],RM2_0_538D_RE_D_1_3E6[:,2],"k-",label="Exp. 1.3e6 RE_d")
-## PyPlot.legend()
-## PyPlot.xlabel("TSR")
-## PyPlot.ylabel("Cp")
+# PyPlot.figure("CP2")
+# PyPlot.plot(TSRrange,CP,".-",color=plot_cycle[2],label="OWENS Aero, 1.3 RE_d (No Added Mass)") #,color=color_cycle[2]
+# RM2_0_538D_RE_D_1_3E6 = DelimitedFiles.readdlm("$(path)/data_UNH/RM2_0.538D_RE_D_1.3E6.csv", ',',Float64)
+# PyPlot.plot(RM2_0_538D_RE_D_1_3E6[:,1],RM2_0_538D_RE_D_1_3E6[:,2],"k-",label="Exp. 1.3e6 RE_d")
+# PyPlot.legend()
+# PyPlot.xlabel("TSR")
+# PyPlot.ylabel("Cp")
 
 nothing
 
