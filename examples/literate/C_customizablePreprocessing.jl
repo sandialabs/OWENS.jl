@@ -7,7 +7,8 @@
 # an properly map the sectional properties to each element and apply unique boundary conditions, etc.
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook  
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`C_customizablePreprocessing.ipynb`](@__NBVIEWER_ROOT_URL__/examples/C_customizablePreprocessing.ipynb).
 #-
 
 # This example is the same as example B except that the setupOWENS function is broken out and each step defined

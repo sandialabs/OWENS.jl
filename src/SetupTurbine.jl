@@ -636,7 +636,7 @@ function setupOWENS(OWENSAero,path;
 
         OWENSOpenFASTWrappers.writeOLAFfile(OLAF_filename;nNWPanel=200,nFWPanels=10)
 
-        OWENSOpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;windINPfilename)
+        OWENSOpenFASTWrappers.writeIWfile(Vinf,ifw_input_file;WindType,windINPfilename)
 
         OWENSOpenFASTWrappers.setupTurb(adi_lib,ad_input_file,ifw_input_file,adi_rootname,[shapeX],[shapeZ],[B],[Htwr_base],[mymesh],[myort],[AD15bldNdIdxRng],[AD15bldElIdxRng];
                 rho     = rho,

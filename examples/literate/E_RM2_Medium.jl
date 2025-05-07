@@ -11,7 +11,8 @@
 # ![](../assets/RM2_wake.png)
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook  
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`E_RM2_Medium.ipynb`](@__NBVIEWER_ROOT_URL__/examples/E_RM2_Medium.ipynb).
 #-
 
 # Load in all of the modules that we'll be using, and prettify the plotting options
@@ -21,18 +22,19 @@ import DelimitedFiles
 using Statistics:mean
 using Test
 import FLOWMath
+import HDF5
 
-## import PyPlot
-## PyPlot.pygui(true)
-## PyPlot.rc("figure", figsize=(4.5, 3))
-## PyPlot.rc("font", size=10.0)
-## PyPlot.rc("lines", linewidth=1.5)
-## PyPlot.rc("lines", markersize=3.0)
-## PyPlot.rc("legend", frameon=false)
-## PyPlot.rc("axes.spines", right=false, top=false)
-## PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-## PyPlot.rc("figure",max_open_warning=500)
-## plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# import PyPlot
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
 ## path = runpath = splitdir(@__FILE__)[1]
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
@@ -50,7 +52,7 @@ nothing
 
 turbineType = "H-VAWT" # turbine type, for the automatic meshing
 Vinf = 1.2 # inflow velocity
-TSRrange = [3.0]#LinRange(1.0,5.0,2) range of tip speed ratios
+TSRrange = [3.5]#LinRange(1.0,5.0,2) range of tip speed ratios
 Nslices = 20 # vertical discretizations if DMS or AC aero model
 ntheta = 30 # azimuthal discretizations if DMS or AC aero model
 structuralModel = "TNB"
@@ -58,7 +60,7 @@ ntelem = 100 # tower elements
 nbelem = 30 # blade elements
 nselem = 10 # strut elements
 ifw = false # use inflow wind, if DMS or AC aero model
-numTS = 20#321 # number of simulation time steps
+numTS = 21#321 # number of simulation time steps
 delta_t = 0.01 # simulation time step spacing
 adi_lib = nothing#"$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
 adi_rootname = "$path/RM2" # path and name that all the aerodyn files are saved with
@@ -69,7 +71,7 @@ fluid_density = 1000.0
 fluid_dyn_viscosity = 1.792E-3
 AddedMass_Coeff_Ca = 1.0 #For structural side added mass 
 Aero_Buoyancy_Active = true # For buoyancy forcing, handled by the OWENSAero module 
-AeroModel = "AD"
+AeroModel = "DMS"
 verbosity = 1 # verbosity level where higher is more
 if AeroModel=="AD"
     AD15On = true
@@ -95,8 +97,9 @@ nothing
 # For this simulation, using aerodyn ("AD"), we will use a turbulent inflow file, indicated as WindType 3
 # We can let the built in OWENS library for turbsim generate the file as so. Modify the inp file to your liking and 
 # comment out the run command to run your own with more time
-WindType = 3
+WindType = 1
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
+# windINPfilename = "$path/data_RM2/steady1pt2.inp"
 # run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
 
 nothing
@@ -191,28 +194,28 @@ iTSR = 1
 
     nothing
 
-    # PyPlot.figure()
-    # for idot = 1:length(sectionPropsArray[170].xaf)
-    #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
-    #     sleep(0.001)
-    # end
-
-    ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
-
+    ## # PyPlot.figure()
+    ## # for idot = 1:length(sectionPropsArray[170].xaf)
+    ## #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
+    ## #     sleep(0.001)
+    ## # end
+    ## 
+    ## ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
+    ## 
     ## PyPlot.figure()
     ## for icon = 1:length(mymesh.conn[:,1])
-    ##     idx1 = mymesh.conn[icon,1]
-    ##     idx2 = mymesh.conn[icon,2]
-    ##     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-    ##     PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
-    ##     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+        ## idx1 = mymesh.conn[icon,1]
+        ## idx2 = mymesh.conn[icon,2]
+        ## PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+        ## PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
+        ## PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
     ## end
     ## for ijoint = 1:length(myjoint[:,1])
-    ##     idx2 = Int(myjoint[ijoint,2])
-    ##     idx1 = Int(myjoint[ijoint,3])
-    ##     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-    ##     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-    ##     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+        ## idx2 = Int(myjoint[ijoint,2])
+        ## idx1 = Int(myjoint[ijoint,3])
+        ## PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+        ## PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
+        ## PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
     ## end
     ## PyPlot.xlabel("x")
     ## PyPlot.ylabel("y")
@@ -269,10 +272,11 @@ iTSR = 1
     platformTurbineConnectionNodeNumber = 1,
     pBC,
     nlOn = false,
+    numModes = 70,
     gravityOn = [0,0,9.81], #positive since the turbine is upside down
     numNodes = mymesh.numNodes,
-    RayleighAlpha = 0.05,
-    RayleighBeta = 0.05,
+    RayleighAlpha = 0.005,
+    RayleighBeta = 0.005,
     AddedMass_Coeff_Ca,
     iterationType = "DI")
 
@@ -289,7 +293,7 @@ iTSR = 1
     topModel=FEAinputs,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,turbsimfile = windINPfilename)
 
     area = Blade_Height*2*Blade_Radius
-    full_rev_N_timesteps = round(Int,RPM/60/delta_t)
+    full_rev_N_timesteps = round(Int,RPM/60/delta_t)*2
     if full_rev_N_timesteps>numTS
         idx_start = 1
     else
@@ -324,9 +328,9 @@ iTSR = 1
 
     OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
         
-    OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
-        epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
-        FReactionHist,topFexternal_hist;tsave_idx)
+    ## OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+    ##     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+    ##     FReactionHist,topFexternal_hist;tsave_idx)
 
 
 ## end
@@ -339,7 +343,62 @@ iTSR = 1
 ## PyPlot.xlabel("TSR")
 ## PyPlot.ylabel("Cp")
 
-nothing
+# Open the HDF5 file in read mode
+carriage_pos = nothing
+drag_left = nothing
+drag_right = nothing
+time = nothing
+torque_arm = nothing
+torque_trans = nothing
+turbine_angle = nothing
+c = HDF5.h5open("$path/data_RM2/Perf1.2b_16_nidata.h5", "r") do file
+    global carriage_pos = read(file,"data/carriage_pos")
+    global drag_left = read(file,"data/drag_left")
+    global drag_right = read(file,"data/drag_right")
+    global time = read(file,"data/time")
+    global torque_arm = read(file,"data/torque_arm")
+    global torque_trans = read(file,"data/torque_trans")
+    global turbine_angle = read(file,"data/turbine_angle")
+end
+
+Qinst = -FReactionHist[idx_start:end,6]
+Qinst2 = topFexternal_hist[idx_start:end,6]
+
+drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+
+dat_strt = round(Int,160800/80*11.0)
+dat_end = round(Int,160800/80*14.0)
+
+## PyPlot.figure()
+## PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
+## # PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+## PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],torque_trans[dat_strt:dat_end],"k-",label="Exp. ")
+## PyPlot.legend()
+## PyPlot.xlabel("Time (s)")
+## PyPlot.ylabel("Q (instantaneous)")
+## 
+## PyPlot.figure()
+## # PyPlot.plot((t[idx_start:end].-t[idx_start]),drag,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
+## PyPlot.plot((t[idx_start:end].-t[idx_start]),drag2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+## PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_left[dat_strt:dat_end],"k-",label="Exp. L")
+## PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_right[dat_strt:dat_end],"k--",label="Exp. R")
+## PyPlot.legend()
+## PyPlot.xlabel("Time (s)")
+## PyPlot.ylabel("Drag (instantaneous)")
+
+## nothing
+
+## # Calculate mean Q and compare
+## mean_Q_owens = mean(Qinst)
+## mean_Q_exp = mean(torque_trans[dat_strt:dat_end])
+## println("Percent Difference in Torque: $((mean_Q_owens-mean_Q_exp)/mean_Q_exp*100)")
+
+## dat_strt = round(Int,160800/80*10)
+## dat_end = round(Int,160800/80*10.5)
+## amp_Q_exp = maximum(torque_trans[dat_strt:dat_end])-minimum(torque_trans[dat_strt:dat_end])
+## amp_Q_owens = maximum(Qinst[end-round(Int,0.5/delta_t):end])-minimum(Qinst[end-round(Int,0.5/delta_t):end])
+## println("Percent Difference in Amplitude: $((amp_Q_owens-amp_Q_exp)/amp_Q_exp*100)")
 
 # Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
 

@@ -15,13 +15,14 @@
 #
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook  
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`A_simplyRunningOWENS.ipynb`](@__NBVIEWER_ROOT_URL__/examples/A_simplyRunningOWENS.ipynb).
 #-
 
 import OWENS
 
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-#### runpath = path = splitdir(@__FILE__)[1]
+## runpath = path = splitdir(@__FILE__)[1]
 
 modelopt = OWENS.ModelingOptions("$(path)/OWENS_Opt.yml")
 designparams = OWENS.Design_Data("$path/WINDIO_example.yaml")

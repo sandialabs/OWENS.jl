@@ -5,7 +5,8 @@
 # input file currently allows, but your design still fits within the setupOWENS helper function etc.
 #-
 #md # !!! tip
-#md #     This example is also available as a Jupyter notebook  
+#md #     This example is also available as a Jupyter notebook:
+#md #     [`B_detailedInputs.ipynb`](@__NBVIEWER_ROOT_URL__/examples/B_detailedInputs.ipynb).
 #-
 
 # First we import the packages.  If "using" was employed, then all of the functions of the packages
