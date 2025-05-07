@@ -24,20 +24,20 @@ using Test
 import FLOWMath
 import HDF5
 
-import PyPlot
-PyPlot.pygui(true)
-PyPlot.rc("figure", figsize=(4.5, 3))
-PyPlot.rc("font", size=10.0)
-PyPlot.rc("lines", linewidth=1.5)
-PyPlot.rc("lines", markersize=3.0)
-PyPlot.rc("legend", frameon=false)
-PyPlot.rc("axes.spines", right=false, top=false)
-PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
-PyPlot.rc("figure",max_open_warning=500)
-plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
+# import PyPlot
+# PyPlot.pygui(true)
+# PyPlot.rc("figure", figsize=(4.5, 3))
+# PyPlot.rc("font", size=10.0)
+# PyPlot.rc("lines", linewidth=1.5)
+# PyPlot.rc("lines", markersize=3.0)
+# PyPlot.rc("legend", frameon=false)
+# PyPlot.rc("axes.spines", right=false, top=false)
+# PyPlot.rc("figure.subplot", left=.18, bottom=.17, top=0.9, right=.9)
+# PyPlot.rc("figure",max_open_warning=500)
+# plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-path = runpath = splitdir(@__FILE__)[1]
-# runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
+## path = runpath = splitdir(@__FILE__)[1]
+runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
 
 nothing
 
@@ -194,33 +194,33 @@ iTSR = 1
 
     nothing
 
-    # PyPlot.figure()
-    # for idot = 1:length(sectionPropsArray[170].xaf)
-    #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
-    #     sleep(0.001)
-    # end
-
-    ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
-
-    PyPlot.figure()
-    for icon = 1:length(mymesh.conn[:,1])
-        idx1 = mymesh.conn[icon,1]
-        idx2 = mymesh.conn[icon,2]
-        PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
-        PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
-        PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
-    end
-    for ijoint = 1:length(myjoint[:,1])
-        idx2 = Int(myjoint[ijoint,2])
-        idx1 = Int(myjoint[ijoint,3])
-        PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
-        PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-        PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
-    end
-    PyPlot.xlabel("x")
-    PyPlot.ylabel("y")
-    PyPlot.zlabel("z")
-    PyPlot.axis("equal")
+    ## # PyPlot.figure()
+    ## # for idot = 1:length(sectionPropsArray[170].xaf)
+    ## #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
+    ## #     sleep(0.001)
+    ## # end
+    ## 
+    ## ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
+    ## 
+    ## PyPlot.figure()
+    ## for icon = 1:length(mymesh.conn[:,1])
+        ## idx1 = mymesh.conn[icon,1]
+        ## idx2 = mymesh.conn[icon,2]
+        ## PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"k.-")
+        ## PyPlot.plot3D([1,1],[1,1],[1,1],"k.-")
+        ## PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",ha="center",va="center")
+    ## end
+    ## for ijoint = 1:length(myjoint[:,1])
+        ## idx2 = Int(myjoint[ijoint,2])
+        ## idx1 = Int(myjoint[ijoint,3])
+        ## PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
+        ## PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
+        ## PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+    ## end
+    ## PyPlot.xlabel("x")
+    ## PyPlot.ylabel("y")
+    ## PyPlot.zlabel("z")
+    ## PyPlot.axis("equal")
 
     nothing
 
@@ -370,22 +370,22 @@ drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^
 dat_strt = round(Int,160800/80*11.0)
 dat_end = round(Int,160800/80*14.0)
 
-PyPlot.figure()
-PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
-# PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
-PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],torque_trans[dat_strt:dat_end],"k-",label="Exp. ")
-PyPlot.legend()
-PyPlot.xlabel("Time (s)")
-PyPlot.ylabel("Q (instantaneous)")
-
-PyPlot.figure()
-# PyPlot.plot((t[idx_start:end].-t[idx_start]),drag,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
-PyPlot.plot((t[idx_start:end].-t[idx_start]),drag2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
-PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_left[dat_strt:dat_end],"k-",label="Exp. L")
-PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_right[dat_strt:dat_end],"k--",label="Exp. R")
-PyPlot.legend()
-PyPlot.xlabel("Time (s)")
-PyPlot.ylabel("Drag (instantaneous)")
+## PyPlot.figure()
+## PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
+## # PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+## PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],torque_trans[dat_strt:dat_end],"k-",label="Exp. ")
+## PyPlot.legend()
+## PyPlot.xlabel("Time (s)")
+## PyPlot.ylabel("Q (instantaneous)")
+## 
+## PyPlot.figure()
+## # PyPlot.plot((t[idx_start:end].-t[idx_start]),drag,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
+## PyPlot.plot((t[idx_start:end].-t[idx_start]),drag2,"x-",color=plot_cycle[2],label="Applied") #,color=color_cycle[2]
+## PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_left[dat_strt:dat_end],"k-",label="Exp. L")
+## PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_right[dat_strt:dat_end],"k--",label="Exp. R")
+## PyPlot.legend()
+## PyPlot.xlabel("Time (s)")
+## PyPlot.ylabel("Drag (instantaneous)")
 
 # nothing
 
