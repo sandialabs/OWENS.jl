@@ -350,7 +350,7 @@ time = nothing
 torque_arm = nothing
 torque_trans = nothing
 turbine_angle = nothing
-c = HDF5.h5open("$path/../../../../../../Downloads/Perf1.2b_16_nidata.h5", "r") do file
+c = HDF5.h5open("$path/data_RM2/Perf1.2b_16_nidata.h5", "r") do file
     global carriage_pos = read(file,"data/carriage_pos")
     global drag_left = read(file,"data/drag_left")
     global drag_right = read(file,"data/drag_right")
@@ -399,55 +399,55 @@ amp_Q_exp = maximum(torque_trans[dat_strt:dat_end])-minimum(torque_trans[dat_str
 amp_Q_owens = maximum(Qinst[end-round(Int,0.5/delta_t):end])-minimum(Qinst[end-round(Int,0.5/delta_t):end])
 println("Percent Difference in Amplitude: $((amp_Q_owens-amp_Q_exp)/amp_Q_exp*100)")
 
-# # Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
+# Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK
 
-# rotSpdArrayRPM = [0.0, 42.64]
+rotSpdArrayRPM = [0.0, 42.64]
 
-# FEAinputs = OWENS.FEAModel(;analysisType = "GX",
-# dataOutputFilename = "none",
-# joint = myjoint,
-# platformTurbineConnectionNodeNumber = 1,
-# pBC,
-# nlOn = false,
-# gravityOn = [0,0,9.81], #positive since the turbine is upside down
-# numNodes = mymesh.numNodes,
-# RayleighAlpha = 0.05,
-# RayleighBeta = 0.05,
-# AddedMass_Coeff_Ca,
-# iterationType = "DI")
+FEAinputs = OWENS.FEAModel(;analysisType = "GX",
+dataOutputFilename = "none",
+joint = myjoint,
+platformTurbineConnectionNodeNumber = 1,
+pBC,
+nlOn = false,
+gravityOn = [0,0,9.81], #positive since the turbine is upside down
+numNodes = mymesh.numNodes,
+RayleighAlpha = 0.05,
+RayleighBeta = 0.05,
+AddedMass_Coeff_Ca,
+iterationType = "DI")
 
-# freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-#     rotSpdArrayRPM,
-#     VTKsavename=VTKsaveName,
-#     saveModes = [1,3,5], #must be int
-#     saveRPM = [2], #must be int
-#     mode_scaling = 500.0,
-#     )
-# freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    rotSpdArrayRPM,
+    VTKsavename=VTKsaveName,
+    saveModes = [1,3,5], #must be int
+    saveRPM = [2], #must be int
+    mode_scaling = 500.0,
+    )
+freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
 
-# nothing
+nothing
 
-# ## Now the Campbell diagram can be generated
-# ## NperRevLines = 8
-# ## PyPlot.figure()
-# ## for i=1:NperRevLines
-# ##     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
-# ##     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
-# ##     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
-# ##     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
-# ## end
-# ## PyPlot.grid()
-# ## PyPlot.xlabel("Rotor Speed (RPM)")
-# ## PyPlot.ylabel("Frequency (Hz)")
-# ## PyPlot.plot(0,0,"k-",label="Experimental")
-# ## PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
-# ## PyPlot.legend()
-# #
-# ## for i=1:1:FEAinputs.numModes
-# ##        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
-# ## end
-# ## PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
-# ## PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
-# ## PyPlot.ylim([0,40.0])
+## Now the Campbell diagram can be generated
+## NperRevLines = 8
+## PyPlot.figure()
+## for i=1:NperRevLines
+##     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
+##     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
+##     PyPlot.plot(linex,liney,"--k",linewidth=0.5)
+##     PyPlot.annotate("$i P",xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+## end
+## PyPlot.grid()
+## PyPlot.xlabel("Rotor Speed (RPM)")
+## PyPlot.ylabel("Frequency (Hz)")
+## PyPlot.plot(0,0,"k-",label="Experimental")
+## PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
+## PyPlot.legend()
+#
+## for i=1:1:FEAinputs.numModes
+##        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
+## end
+## PyPlot.plot(0,0,color=plot_cycle[2],"-",label="GXBeam")
+## PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
+## PyPlot.ylim([0,40.0])
 
-# nothing
+nothing
