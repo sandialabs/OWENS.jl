@@ -60,3 +60,4 @@ Mesh_Options:
 
 OWENSOpenFASTWrappers_Options:
     windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+    WindType: 1
