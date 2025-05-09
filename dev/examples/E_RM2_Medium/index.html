@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Marine Hydrokinetic RM2 · OWENS.jl</title><meta name="title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta property="og:title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta property="twitter:title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li><a class="tocitem" href="../C_customizablePreprocessing/">Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li class="is-active"><a class="tocitem" href>Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Marine Hydrokinetic RM2</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Marine Hydrokinetic RM2</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="RM2"><a class="docs-heading-anchor" href="#RM2">Marine Hydrokinetic RM2</a><a id="RM2-1"></a><a class="docs-heading-anchor-permalink" href="#RM2" title="Permalink"></a></h1><p>In this example we use the OWENS scripting method to model the RM2 turbine, based on “Experimental Study of a Reference Model Vertical-Axis Cross-Flow Turbine”, 2016, Bachant et al. While the windio modeling option based on input yaml files is also included in the OWENS.jl/examples directory, The scripting method enable much more flexibility and the ability to add detailed comments on the setup and use. Note that the documentation contains an API reference for nearly all of the functions where more details can be found also accessed via the julia REPL by loading the module of interest, and: ? ModuleName.functionname()</p><p><img src="../../assets/RM2_wake.png" alt/></p><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/E_RM2_Medium.ipynb"><code>E_RM2_Medium.ipynb</code></a>.</p></div></div><p>Load in all of the modules that we&#39;ll be using, and prettify the plotting options</p><pre><code class="language-julia hljs">import OWENS
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Marine Hydrokinetic RM2 · OWENS.jl</title><meta name="title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta property="og:title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta property="twitter:title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li><a class="tocitem" href="../C_customizablePreprocessing/">Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li class="is-active"><a class="tocitem" href>Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Marine Hydrokinetic RM2</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Marine Hydrokinetic RM2</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="RM2"><a class="docs-heading-anchor" href="#RM2">Marine Hydrokinetic RM2</a><a id="RM2-1"></a><a class="docs-heading-anchor-permalink" href="#RM2" title="Permalink"></a></h1><p>In this example we use the OWENS scripting method to model the RM2 turbine, based on “Experimental Study of a Reference Model Vertical-Axis Cross-Flow Turbine”, 2016, Bachant et al. While the windio modeling option based on input yaml files is also included in the OWENS.jl/examples directory, The scripting method enable much more flexibility and the ability to add detailed comments on the setup and use. Note that the documentation contains an API reference for nearly all of the functions where more details can be found also accessed via the julia REPL by loading the module of interest, and: ? ModuleName.functionname()</p><p><img src="../../assets/RM2_wake.png" alt/></p><div class="admonition is-success" id="Tip-a17fd7ece9c34d18"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-a17fd7ece9c34d18" title="Permalink"></a></header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/E_RM2_Medium.ipynb"><code>E_RM2_Medium.ipynb</code></a>.</p></div></div><p>Load in all of the modules that we&#39;ll be using, and prettify the plotting options</p><pre><code class="language-julia hljs">import OWENS
 import OWENSAero
 import DelimitedFiles
 using Statistics:mean
@@ -160,33 +160,14 @@ iTSR = 1
     # PyPlot.zlabel(&quot;z&quot;)
     # PyPlot.axis(&quot;equal&quot;)
 
-    nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/meshing_utilities.jl:361
-┌ Warning: Mesh warning: two points are directly on top of one another, consider adjusting number of elements to space out the mesh
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/meshing_utilities.jl:392
-Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
+    nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
 Moving strut point from [-0.1,6.123233995736766e-18,0.6199998498604652] to [-0.1,6.123233995736766e-18,0.6199998498604652]
 Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
 Moving strut point from [0.04999999999999998,0.08660254037844388,0.6199998498604652] to [0.04999999999999998,0.08660254037844388,0.6199998498604652]
 Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
 Moving strut point from [0.05000000000000004,-0.08660254037844387,0.6199998498604652] to [0.05000000000000004,-0.08660254037844387,0.6199998498604652]
-
- Combined Blades Mass Breakout
-Aluminum_6061_T6 4.28499672900603 kg, 11.0 $/kg: $47.13496401906633
-Mithril 0.0 kg, 1.0e10 $/kg: $0.0
-
- Combined Struts Mass Breakout
-Aluminum_6061_T6 3.450250450673763 kg, 11.0 $/kg: $37.95275495741139
-Mithril 9.076000118627978e-10 kg, 1.0e10 $/kg: $9.076000118627977
-
-Tower Mass Breakout
-Aluminum_6061_T6 10.665043507335158 kg, 11.0 $/kg: $117.31547858068673
-
-Total Mass: 18.40029068792255 kg
-Total Material Cost Blades: $47.13496401906633
-Total Material Cost Struts: $47.028755076039374
-Total Material Cost Tower: $117.31547858068673
-Total Material Cost: $211.47919767579242</code></pre><p>Here we apply the boundary conditions.  For this case, the tower base node which is 1 is constrained in all 6 degrees of freedom to have a displacement of 0, and the tower top is also constrained. You can change this displacement to allow for things like pretension, and you can apply boundary conditions to any node.</p><pre><code class="language-julia hljs">    pBC = [1 1 0
+┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:595</code></pre><p>Here we apply the boundary conditions.  For this case, the tower base node which is 1 is constrained in all 6 degrees of freedom to have a displacement of 0, and the tower top is also constrained. You can change this displacement to allow for things like pretension, and you can apply boundary conditions to any node.</p><pre><code class="language-julia hljs">    pBC = [1 1 0
     1 2 0
     1 3 0
     1 4 0
@@ -252,13 +233,13 @@ Total Material Cost: $211.47919767579242</code></pre><p>Here we apply the bounda
 Running in specified rotor speed mode
 
 5.0%┣██▏                                        ┫ 1/20 [00:00&lt;Inf:Inf, InfGs/it]
-10.0%┣████▊                                          ┫ 2/20 [00:01&lt;00:19, 1s/it]
-15.0%┣███████                                        ┫ 3/20 [00:02&lt;00:15, 1it/s]
-20.0%┣█████████▍                                     ┫ 4/20 [00:03&lt;00:16, 1s/it]
+10.0%┣████▊                                          ┫ 2/20 [00:01&lt;00:23, 1s/it]
+15.0%┣███████                                        ┫ 3/20 [00:02&lt;00:17, 1it/s]
+20.0%┣█████████▍                                     ┫ 4/20 [00:03&lt;00:16, 1it/s]
 25.0%┣███████████▊                                   ┫ 5/20 [00:04&lt;00:14, 1it/s]
 30.0%┣██████████████                                 ┫ 6/20 [00:04&lt;00:12, 1it/s]
 35.0%┣████████████████▌                              ┫ 7/20 [00:05&lt;00:12, 1it/s]
-40.0%┣██████████████████▉                            ┫ 8/20 [00:06&lt;00:10, 1it/s]
+40.0%┣██████████████████▉                            ┫ 8/20 [00:06&lt;00:11, 1it/s]
 45.0%┣█████████████████████▏                         ┫ 9/20 [00:07&lt;00:09, 1it/s]
 50.0%┣███████████████████████                       ┫ 10/20 [00:08&lt;00:09, 1it/s]
 55.0%┣█████████████████████████▎                    ┫ 11/20 [00:09&lt;00:08, 1it/s]
@@ -267,10 +248,10 @@ Running in specified rotor speed mode
 70.0%┣████████████████████████████████▏             ┫ 14/20 [00:11&lt;00:05, 1it/s]
 75.0%┣██████████████████████████████████▌           ┫ 15/20 [00:12&lt;00:04, 1it/s]
 80.0%┣████████████████████████████████████▉         ┫ 16/20 [00:13&lt;00:03, 1it/s]
-85.0%┣███████████████████████████████████████       ┫ 17/20 [00:14&lt;00:03, 1it/s]
+85.0%┣███████████████████████████████████████       ┫ 17/20 [00:13&lt;00:03, 1it/s]
 90.0%┣█████████████████████████████████████████▍    ┫ 18/20 [00:15&lt;00:02, 1it/s]
-95.0%┣███████████████████████████████████████████▊  ┫ 19/20 [00:16&lt;00:01, 1it/s]
-100.0%┣█████████████████████████████████████████████┫ 20/20 [00:17&lt;00:00, 1it/s]
+95.0%┣███████████████████████████████████████████▊  ┫ 19/20 [00:15&lt;00:01, 1it/s]
+100.0%┣█████████████████████████████████████████████┫ 20/20 [00:16&lt;00:00, 1it/s]
 Simulation Complete.</code></pre><p>We can output vtk files viewable in paraview.  Here it is done for each time step and shows the deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina it also calculates analytical simply supported buckling safety factors</p><pre><code class="language-julia hljs">    ##########################################
     #### Ultimate Failure #####
     ##########################################
@@ -301,36 +282,38 @@ Simulation Complete.</code></pre><p>We can output vtk files viewable in paraview
 # PyPlot.plot(RM2_0_538D_RE_D_1_3E6[:,1],RM2_0_538D_RE_D_1_3E6[:,2],&quot;k-&quot;,label=&quot;Exp. 1.3e6 RE_d&quot;)
 # PyPlot.legend()
 # PyPlot.xlabel(&quot;TSR&quot;)
-# PyPlot.ylabel(&quot;Cp&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Composite Ultimate and Buckling Safety Factors
+# PyPlot.ylabel(&quot;Cp&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/PostProcessing.jl:650
+Composite Ultimate and Buckling Safety Factors
 
 
 UPPER BLADE SURFACE
-Minimum Safety Factor on Surface: 6.206279131682437
+Minimum Safety Factor on Surface: 6.14152922209578
 At time 0.06s at composite station 3 of 5 at lam 4 of 6
-Maximum Damage per hr: 3.103635914991344e-10
+Maximum Damage per hr: 6.544018230047894e-6
 At composite station 3 of 5 at lam 4 of 6
 
 
 LOWER BLADE SURFACE
-Minimum Safety Factor on Surface: 8.072700255486943
+Minimum Safety Factor on Surface: 7.978408174351516
 At time 0.06s at composite station 3 of 5 at lam 4 of 6
-Maximum Damage per hr: 7.425788758794485e-13
+Maximum Damage per hr: 1.4146535619283752e-8
 At composite station 3 of 5 at lam 4 of 6
 
 
 UPPER TOWER
 
-Minimum Safety Factor on tower Surface: 22.57029345505375
-At time 0.02s at composite station 7 of 15 at lam 1 of 1
-Maximum Damage per hr: 4.129798380360438e-15
-At composite station 7 of 15 at lam 1 of 1
+Minimum Safety Factor on tower Surface: 22.283728551758717
+At time 0.02s at composite station 9 of 15 at lam 1 of 1
+Maximum Damage per hr: 6.847729948412745e-11
+At composite station 9 of 15 at lam 1 of 1
 
 
 Lower TOWER
 
-Minimum Safety Factor on tower Surface: 57.3727839593917
+Minimum Safety Factor on tower Surface: 49.71352070357911
 At time 0.07s at composite station 9 of 15 at lam 1 of 1
-Maximum Damage per hr: 2.6050178188367562e-15
+Maximum Damage per hr: 5.4449842472764716e-11
 At composite station 9 of 15 at lam 1 of 1
 WRITING Output File to ./InitialDataOutputs_scripting.out</code></pre><p>Open the HDF5 file in read mode</p><pre><code class="language-julia hljs">carriage_pos = nothing
 drag_left = nothing
@@ -435,4 +418,4 @@ Saving Modeshapes to VTK</code></pre><pre><code class="language-julia hljs"># fo
 # PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
 # PyPlot.ylim([0,40.0])
 
-nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../D_simulatingFloatingPlatforms/">« Simulating Floating Platforms</a><a class="docs-footer-nextpage" href="../../OWENS_Dev_Guide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.2 on <span class="colophon-date" title="Thursday 8 May 2025 13:24">Thursday 8 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../D_simulatingFloatingPlatforms/">« Simulating Floating Platforms</a><a class="docs-footer-nextpage" href="../../OWENS_Dev_Guide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.0 on <span class="colophon-date" title="Friday 9 May 2025 17:52">Friday 9 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
