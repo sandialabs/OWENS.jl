@@ -312,16 +312,15 @@ end
 #### Composite Failure & Buckling ########
 ##########################################
 
-function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
+function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
     kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1,calculate_fatigue=true)
-    topstrainout = zeros(length(eps_x[1,:,1]),lencomposites_span,length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
+    topstrainout = zeros(length(eps_x[:,1]),lencomposites_span,length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
 
     damage = zeros(lencomposites_span,length(lam_in[1,:])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
     for i_station = 1:lencomposites_span
         # i_station = 1
-        ibld = 1
-
+        
         if upper # Get laminate location starting and ending points
             lam_y_loc_le = precompinput[i_station].xsec_nodeU.*precompinput[i_station].chord
         else
@@ -335,12 +334,12 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
         thickness_precomp_lag_le = precompinput[i_station].chord - thickness_precomp_lag_te
 
         for j_lam = 1:length(lam_in[i_station,:])
-
+            
             idx_y = round(Int,lam_y_loc_le[j_lam]/precompinput[i_station].chord*length(precompinput[i_station].ynode)/2)
 
             if upper
                 thickness_precomp_flap = precompinput[i_station].ynode[idx_y]*precompinput[i_station].chord - precompoutput[i_station].x_sc
-            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards
+            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards 
                 thickness_precomp_flap = precompinput[i_station].ynode[end-idx_y+1]*precompinput[i_station].chord - precompoutput[i_station].x_sc
             end
             offsetz = -thickness_precomp_flap #Negative due to sign convention of strain; i.e. if the blade starts at the bottom of the turbine, and goes out and bends up, the top should be in compression and the bottom in tension, which is opposite to the strain convention
@@ -359,7 +358,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
 
             lam = lam_in[i_station,j_lam]
 
-            stress_eachlayer = zeros(length(eps_x[1,:,1]),length(lam.nply),3) #all timesteps for each stack layer
+            stress_eachlayer = zeros(length(eps_x[:,1]),length(lam.nply),3) #all timesteps for each stack layer
 
             mat_idx = [numadIn.stack_mat_types[imat] for imat in lam.matid] # Map from the stack number to the material number
             materials = [plyprops.plies[imat] for imat in mat_idx] # Then get the actual material used
@@ -369,17 +368,17 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
 
             q = Composites.getQ.(materials,lam.theta)
 
-            for its = 1:length(eps_x[1,:,1])
+            for its = 1:length(eps_x[:,1])
                 # j_lam = 5
                 # its = 1
                 # println("its $its j_lam $j_lam i_station $i_station")
                 resultantstrain = [
-                eps_x[ibld,its,i_station],
-                eps_z[ibld,its,i_station],
-                eps_y[ibld,its,i_station],
-                kappa_x[ibld,its,i_station],
-                kappa_y[ibld,its,i_station],
-                kappa_z[ibld,its,i_station]]
+                eps_x[its,i_station],
+                eps_z[its,i_station],
+                eps_y[its,i_station],
+                kappa_x[its,i_station],
+                kappa_y[its,i_station],
+                kappa_z[its,i_station]]
 
 
                 lowerplystrain, upperplystrain = my_getplystrain(lam, resultantstrain, offset)
@@ -456,7 +455,7 @@ function calcSF(stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                         reverse!(Log_SN_cycles2Fail1)
                     end
 
-                    damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)
+                    damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)/total_t*60*60 #Damage to damage rate per hour
                 end
                 damage[i_station,j_lam] = maximum(damage_layers)
             end
@@ -648,7 +647,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,throwawayTimeSteps=1,delta_t=0.001,AD15bldNdIdxRng=nothing,AD15bldElIdxRng=nothing,
     strut_precompoutput=nothing,strut_precompinput=nothing,plyprops_strut=nothing,numadIn_strut=nothing,lam_U_strut=nothing,lam_L_strut=nothing,calculate_fatigue=true)
 
-
+    @warn "extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow"
 
     # Linearly Superimpose the Strains
     epsilon_x_hist = epsilon_x_hist_ps#copy(epsilon_x_hist_ps).*0.0
@@ -658,7 +657,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     kappa_x_hist = kappa_x_hist_ps#copy(kappa_x_hist_ps).*0.0
     epsilon_y_hist = epsilon_y_hist_ps#copy(epsilon_y_hist_ps).*0.0
 
-    if epsilon_x_hist_1!=nothing
+    if !isnothing(epsilon_x_hist_1)
         for ipt = 1:4
             for jts = throwawayTimeSteps:length(epsilon_x_hist_ps[1,1,:])
                 epsilon_x_hist[ipt,:,jts] = epsilon_x_hist_ps[ipt,:,jts] + epsilon_x_hist_1[ipt,:,end]
@@ -818,9 +817,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_U = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]))
     SF_buck_U = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]))
 
-    topstrainout_blade_U,topDamage_blade_U = calcSF(stress_U,SF_ult_U,SF_buck_U,length(bld_precompinput),plyprops_bld,
-    bld_precompinput,bld_precompoutput,lam_U_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
-    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=true,calculate_fatigue)
+    topstrainout_blade_U,topDamage_blade_U = calcSF(total_t,stress_U,SF_ult_U,SF_buck_U,length(bld_precompinput),plyprops_bld,
+    bld_precompinput,bld_precompoutput,lam_U_bld,eps_x_bld[1,:,:],eps_z_bld[1,:,:],eps_y_bld[1,:,:],kappa_x_bld[1,:,:],
+    kappa_y_bld[1,:,:],kappa_z_bld[1,:,:],numadIn_bld;failmethod = "maxstress",upper=true,calculate_fatigue)
 
     if verbosity>0
         println("Composite Ultimate and Buckling Safety Factors")
@@ -837,9 +836,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_L = zeros(N_ts,length(bld_precompinput),length(lam_L_bld[1,:]))
     SF_buck_L = zeros(N_ts,length(bld_precompinput),length(lam_L_bld[1,:]))
 
-    topstrainout_blade_L,topDamage_blade_L = calcSF(stress_L,SF_ult_L,SF_buck_L,length(bld_precompinput),plyprops_bld,
-    bld_precompinput,bld_precompoutput,lam_L_bld,eps_x_bld,eps_z_bld,eps_y_bld,kappa_x_bld,
-    kappa_y_bld,kappa_z_bld,numadIn_bld;failmethod = "maxstress",upper=false,calculate_fatigue)
+    topstrainout_blade_L,topDamage_blade_L = calcSF(total_t,stress_L,SF_ult_L,SF_buck_L,length(bld_precompinput),plyprops_bld,
+    bld_precompinput,bld_precompoutput,lam_L_bld,eps_x_bld[1,:,:],eps_z_bld[1,:,:],eps_y_bld[1,:,:],kappa_x_bld[1,:,:],
+    kappa_y_bld[1,:,:],kappa_z_bld[1,:,:],numadIn_bld;failmethod = "maxstress",upper=false,calculate_fatigue)
 
     if verbosity>0
         println("\n\nLOWER BLADE SURFACE")
@@ -859,9 +858,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         SF_ult_U_strut = zeros(N_ts,length(strut_precompinput),length(lam_U_strut[1,:]))
         SF_buck_U_strut = zeros(N_ts,length(strut_precompinput),length(lam_U_strut[1,:]))
 
-        topstrainout_strut_U,topDamage_strut_U = calcSF(stress_U_strut,SF_ult_U_strut,SF_buck_U_strut,length(strut_precompinput),plyprops_strut,
-        strut_precompinput,strut_precompoutput,lam_U_strut,eps_x_strut,eps_z_strut,eps_y_strut,kappa_x_strut,
-        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=true,calculate_fatigue)
+        topstrainout_strut_U,topDamage_strut_U = calcSF(total_t,stress_U_strut,SF_ult_U_strut,SF_buck_U_strut,length(strut_precompinput),plyprops_strut,
+        strut_precompinput,strut_precompoutput,lam_U_strut,eps_x_strut[1,:,:],eps_z_strut[1,:,:],eps_y_strut[1,:,:],kappa_x_strut[1,:,:],
+        kappa_y_strut[1,:,:],kappa_z_strut[1,:,:],numadIn_strut;failmethod = "maxstress",upper=true,calculate_fatigue)
 
         if verbosity>0
             println("Composite Ultimate and Buckling Safety Factors")
@@ -878,9 +877,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         SF_ult_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_L_strut[1,:]))
         SF_buck_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_L_strut[1,:]))
 
-        topstrainout_strut_L,topDamage_strut_L = calcSF(stress_L_strut,SF_ult_L_strut,SF_buck_L_strut,length(strut_precompinput),plyprops_strut,
-        strut_precompinput,strut_precompoutput,lam_L_strut,eps_x_strut,eps_z_strut,eps_y_strut,kappa_x_strut,
-        kappa_y_strut,kappa_z_strut,numadIn_strut;failmethod = "maxstress",upper=false,calculate_fatigue)
+        topstrainout_strut_L,topDamage_strut_L = calcSF(total_t,stress_L_strut,SF_ult_L_strut,SF_buck_L_strut,length(strut_precompinput),plyprops_strut,
+        strut_precompinput,strut_precompoutput,lam_L_strut,eps_x_strut[1,:,:],eps_z_strut[1,:,:],eps_y_strut[1,:,:],kappa_x_strut[1,:,:],
+        kappa_y_strut[1,:,:],kappa_z_strut[1,:,:],numadIn_strut;failmethod = "maxstress",upper=false,calculate_fatigue)
 
         if verbosity>0
             println("\n\nLOWER STRUT SURFACE")
@@ -909,9 +908,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_TU = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
     SF_buck_TU = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
 
-    topstrainout_tower_U,topDamage_tower_U = calcSF(stress_TU,SF_ult_TU,SF_buck_TU,length(twr_precompinput),plyprops_twr,
-    twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
-    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=true,calculate_fatigue)
+    topstrainout_tower_U,topDamage_tower_U = calcSF(total_t,stress_TU,SF_ult_TU,SF_buck_TU,length(twr_precompinput),plyprops_twr,
+    twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr[1,:,:],eps_z_twr[1,:,:],eps_y_twr[1,:,:],kappa_x_twr[1,:,:],
+    kappa_y_twr[1,:,:],kappa_z_twr[1,:,:],numadIn_twr;failmethod = "maxstress",upper=true,calculate_fatigue)
 
     println("\n\nUPPER TOWER")
     printsf_twr(verbosity,lam_U_twr,SF_ult_TU,SF_buck_TU,length(twr_precompinput),Twr_LE_U_idx,topDamage_tower_U,delta_t,total_t)
@@ -920,9 +919,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     SF_ult_TL = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
     SF_buck_TL = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
 
-    topstrainout_tower_L,topDamage_tower_L = calcSF(stress_TL,SF_ult_TL,SF_buck_TL,length(twr_precompinput),plyprops_twr,
-    twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr,eps_z_twr,eps_y_twr,kappa_x_twr,
-    kappa_y_twr,kappa_z_twr,numadIn_twr;failmethod = "maxstress",upper=false,calculate_fatigue)
+    topstrainout_tower_L,topDamage_tower_L = calcSF(total_t,stress_TL,SF_ult_TL,SF_buck_TL,length(twr_precompinput),plyprops_twr,
+    twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr[1,:,:],eps_z_twr[1,:,:],eps_y_twr[1,:,:],kappa_x_twr[1,:,:],
+    kappa_y_twr[1,:,:],kappa_z_twr[1,:,:],numadIn_twr;failmethod = "maxstress",upper=false,calculate_fatigue)
 
     println("\n\nLower TOWER")
     printsf_twr(verbosity,lam_L_twr,SF_ult_TL,SF_buck_TL,length(twr_precompinput),Twr_LE_L_idx,topDamage_tower_L,delta_t,total_t)
@@ -963,4 +962,140 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
     topDamage_blade_L,topDamage_tower_U,topDamage_tower_L,topDamage_strut_U,topDamage_strut_L,
     stress_U_strut,SF_ult_U_strut,SF_buck_U_strut,stress_L_strut,SF_ult_L_strut,SF_buck_L_strut
+end
+
+struct PostProcessOptions
+    verbosity
+    usestationBld
+    usestationStrut
+    throwawayTimeSteps
+    calculate_fatigue
+end
+function PostProcessOptions(;verbosity=2,
+    usestationBld=0,
+    usestationStrut=0,
+    throwawayTimeSteps=1,
+    calculate_fatigue=true)
+    return PostProcessOptions(verbosity,usestationBld,usestationStrut,throwawayTimeSteps,calculate_fatigue)
+end
+
+function safetyfactor_fatigue(mymesh,components,delta_t; options=PostProcessOptions())
+    
+    
+    verbosity = options.verbosity
+    usestationBld = options.usestationBld
+    usestationStrut = options.usestationStrut
+    throwawayTimeSteps = options.throwawayTimeSteps
+    calculate_fatigue = options.calculate_fatigue
+    
+    for icomp = 1:size(components)[1]
+
+        composite_station_idx_U = []
+        composite_station_name_U = []
+        composite_station_idx_L = []  
+        composite_station_name_L = []
+        
+        numadIn = components[icomp].nuMadIn
+        preCompInput = components[icomp].preCompInput
+        preCompOutput = components[icomp].preCompOutput
+        plyprops = components[icomp].plyProps
+        lam_U = components[icomp].lam_U
+        lam_L = components[icomp].lam_L
+        e_x = components[icomp].e_x
+        e_y = components[icomp].e_y
+        e_z = components[icomp].e_z
+        k_x = components[icomp].k_x
+        k_y = components[icomp].k_y
+        k_z = components[icomp].k_z
+        
+        total_t = length(e_x[1,throwawayTimeSteps:end])*delta_t # for damage rate
+
+        ###############################
+        #### Get strain values ########
+        ###############################
+
+        N_ts = length(e_x[1,:])
+        e_x_numad = zeros(N_ts,length(preCompInput))
+        e_z_numad = zeros(N_ts,length(preCompInput))
+        e_y_numad = zeros(N_ts,length(preCompInput))
+        k_x_numad = zeros(N_ts,length(preCompInput))
+        k_y_numad = zeros(N_ts,length(preCompInput))
+        k_z_numad = zeros(N_ts,length(preCompInput))
+    
+        startN = components[icomp].nodeNumbers[1]
+        stopN = components[icomp].nodeNumbers[end]
+
+        startE = components[icomp].elNumbers[1]
+        stopE = components[icomp].elNumbers[end]
+
+        mesh_spanx = mymesh.x[startN:stopN].-mymesh.x[startN]
+        mesh_spany = mymesh.y[startN:stopN].-mymesh.y[startN]
+        mesh_spanz = mymesh.z[startN:stopN].-mymesh.z[startN]
+        mesh_span = sqrt.(mesh_spanx.^2 .+ mesh_spany.^2 .+ mesh_spanz.^2)
+        mesh_span_el = OWENS.safeakima(LinRange(0,1,length(mesh_span)),mesh_span,LinRange(0,1,stopE-startE+1))
+        span_numad = numadIn.span/maximum(numadIn.span)*maximum(mesh_span_el)
+
+        for its = 1:N_ts
+            # Interpolate to the composite inputs #TODO: verify node vs el in strain
+            e_x_numad[its,:] = OWENS.safeakima(mesh_span_el,e_x[:,its],span_numad)
+            e_z_numad[its,:] = OWENS.safeakima(mesh_span_el,e_y[:,its],span_numad)
+            e_y_numad[its,:] = OWENS.safeakima(mesh_span_el,e_z[:,its],span_numad)
+            k_x_numad[its,:] = OWENS.safeakima(mesh_span_el,k_x[:,its],span_numad)
+            k_y_numad[its,:] = OWENS.safeakima(mesh_span_el,k_y[:,its],span_numad)
+            k_z_numad[its,:] = OWENS.safeakima(mesh_span_el,k_z[:,its],span_numad)
+        end
+
+        ##########################################
+        #### Calculate Stress
+        ##########################################
+        stress_U = zeros(N_ts,length(preCompInput),length(lam_U[1,:]),3)
+        SF_ult_U = zeros(N_ts,length(preCompInput),length(lam_U[1,:]))
+        SF_buck_U = zeros(N_ts,length(preCompInput),length(lam_U[1,:]))
+
+        topstrainout_U,topDamage_U = calcSF(total_t,stress_U,SF_ult_U,SF_buck_U,length(preCompInput),plyprops,
+        preCompInput,preCompOutput,lam_U,e_x_numad,e_z_numad,e_y_numad,k_x_numad,
+        k_y_numad,k_z_numad,numadIn;failmethod = "maxstress",upper=true,calculate_fatigue)
+
+        if verbosity>0
+            println("\n\n$(components[icomp].name) Composite Ultimate and Buckling Safety Factors")
+            println("UPPER SURFACE")
+        end
+        if usestationBld !=0
+            println("maximum $(components[icomp].name) stress: $(maximum(stress_U[:,usestationBld,8,1]))")
+            println("minimum $(components[icomp].name) stress: $(minimum(stress_U[:,usestationBld,8,1]))")
+        end
+
+        OWENS.printSF(verbosity,SF_ult_U,SF_buck_U,composite_station_idx_U, composite_station_name_U,length(preCompInput),lam_U,topDamage_U,delta_t,total_t;useStation=usestationBld)
+
+        stress_L = zeros(N_ts,length(preCompInput),length(lam_L[1,:]),3)
+        SF_ult_L = zeros(N_ts,length(preCompInput),length(lam_L[1,:]))
+        SF_buck_L = zeros(N_ts,length(preCompInput),length(lam_L[1,:]))
+
+        topstrainout_L,topDamage_L = calcSF(total_t,stress_L,SF_ult_L,SF_buck_L,length(preCompInput),plyprops,
+        preCompInput,preCompOutput,lam_L,e_x_numad,e_z_numad,e_y_numad,k_x_numad,
+        k_y_numad,k_z_numad,numadIn;failmethod = "maxstress",upper=false,calculate_fatigue)
+
+        if verbosity>0
+            println("\n\nLOWER SURFACE")
+        end
+        if usestationBld !=0
+            println("maximum $(components[icomp].name) stress: $(maximum(stress_L[:,usestationBld,8,1]))")
+            println("minimum $(components[icomp].name) stress: $(minimum(stress_L[:,usestationBld,8,1]))")
+        end
+        OWENS.printSF(verbosity,SF_ult_L,SF_buck_L,composite_station_idx_L, composite_station_name_L,length(preCompInput),lam_L,topDamage_L,delta_t,total_t;useStation=usestationBld)
+
+        components[icomp].stress_U = stress_U
+        components[icomp].stress_L = stress_L
+        components[icomp].strain_U = topstrainout_U
+        components[icomp].strain_L = topstrainout_L
+        components[icomp].ultsafetyfactor_U = SF_ult_U
+        components[icomp].ultsafetyfactor_L = SF_ult_L
+        components[icomp].bucksafetyfactor_U = SF_buck_U
+        components[icomp].bucksafetyfactor_L = SF_buck_L
+        components[icomp].damage_U = topDamage_U
+        components[icomp].damage_L = topDamage_L
+
+    end
+
+    return components
 end
