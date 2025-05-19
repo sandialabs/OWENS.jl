@@ -47,7 +47,9 @@ ncelem = 10
 nselem = 5
 ifw = false
 AeroModel = "AD"
-windINPfilename = "$path/300mx300m12msETM_Coarse.bts"
+windINPfilename = "$path/300mx300m12msETM_Coarse.inp"
+run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $windINPfilename`)
+
 ifw_libfile = nothing#"$path/../../openfast/build/modules/inflowwind/libifw_c_binding"
 Blade_Height = 41.9
 Blade_Radius = 6.0

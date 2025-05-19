@@ -343,24 +343,6 @@ iTSR = 1
 ## PyPlot.xlabel("TSR")
 ## PyPlot.ylabel("Cp")
 
-# Open the HDF5 file in read mode
-carriage_pos = nothing
-drag_left = nothing
-drag_right = nothing
-time = nothing
-torque_arm = nothing
-torque_trans = nothing
-turbine_angle = nothing
-c = HDF5.h5open("$path/data_RM2/Perf1.2b_16_nidata.h5", "r") do file
-    global carriage_pos = read(file,"data/carriage_pos")
-    global drag_left = read(file,"data/drag_left")
-    global drag_right = read(file,"data/drag_right")
-    global time = read(file,"data/time")
-    global torque_arm = read(file,"data/torque_arm")
-    global torque_trans = read(file,"data/torque_trans")
-    global turbine_angle = read(file,"data/turbine_angle")
-end
-
 Qinst = -FReactionHist[idx_start:end,6]
 Qinst2 = topFexternal_hist[idx_start:end,6]
 
@@ -369,6 +351,27 @@ drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^
 
 dat_strt = round(Int,160800/80*11.0)
 dat_end = round(Int,160800/80*14.0)
+
+## # Open the HDF5 file in read mode
+## carriage_pos = nothing
+## drag_left = nothing
+## drag_right = nothing
+## time = nothing
+## torque_arm = nothing
+## torque_trans = nothing
+## turbine_angle = nothing
+## # This data is located at https://figshare.com/articles/dataset/UNH_RM2_tow_tank_experiment_Raw_data/1302029, with the file matching that here
+## c = HDF5.h5open("$path/data_RM2/Perf1.2b_16_nidata.h5", "r") do file
+##     global carriage_pos = read(file,"data/carriage_pos")
+##     global drag_left = read(file,"data/drag_left")
+##     global drag_right = read(file,"data/drag_right")
+##     global time = read(file,"data/time")
+##     global torque_arm = read(file,"data/torque_arm")
+##     global torque_trans = read(file,"data/torque_trans")
+##     global turbine_angle = read(file,"data/turbine_angle")
+## end
+
+
 
 ## PyPlot.figure()
 ## PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,".-",color=plot_cycle[1],label="Reaction") #,color=color_cycle[2]
@@ -443,7 +446,7 @@ nothing
 ## PyPlot.plot(0,0,"k-",label="Experimental")
 ## PyPlot.plot(0,0,color=plot_cycle[1],"-",label="OWENS")
 ## PyPlot.legend()
-#
+
 ## for i=1:1:FEAinputs.numModes
 ##        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],"-") #plot mode i at various rotor speeds
 ## end
