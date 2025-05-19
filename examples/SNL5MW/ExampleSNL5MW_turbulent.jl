@@ -20,6 +20,7 @@ import FLOWMath
 import HDF5
 
 import OWENSFEA
+import OWENSOpenFASTWrappers
 import OWENS
 import OWENSAero
 import Composites
@@ -48,7 +49,7 @@ delta_t = 0.05
 simtime = 6.0
 numTS = simtime/delta_t
 
-AeroModel = "AD"
+AeroModel = "DMS"
 turbineType = "Darrieus"
 
 if AeroModel=="AD" #TODO: unify flag
@@ -63,12 +64,15 @@ nselem = 10
 
 adi_lib=nothing
 adi_rootname="$path/SNL5MW"
-windINPfilename = "$(path)/data/300mx300m12msETM_Coarse.bts"
+windINPfilename = "$(path)/data/300mx300m12msETM_Coarse.inp"
+
+run(`$(OWENSOpenFASTWrappers.turbsim()) $windINPfilename`)
+
 ifw_libfile = nothing
 
 NuMad_geom_xlscsv_file_twr = "$path/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv"
 NuMad_mat_xlscsv_file_twr = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv"
-NuMad_geom_xlscsv_file_bld = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
+NuMad_geom_xlscsv_file_bld = "$path/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkinDMS.csv"
 NuMad_mat_xlscsv_file_bld = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv"
 NuMad_geom_xlscsv_file_strut = ["$path/data/NuMAD_Geom_SNL_5MW_struts.csv","$path/data/NuMAD_Geom_SNL_5MW_struts.csv"]
 NuMad_mat_xlscsv_file_strut = NuMad_mat_xlscsv_file_bld
@@ -279,7 +283,7 @@ pBC = [1 1 0
 1 5 0
 1 6 0]
 
-model = OWENS.Inputs(;verbosity,analysisType = "GX",
+model = OWENS.Inputs(;verbosity,analysisType = "TNB",
 tocp = [0.0,100000.1],
 Omegaocp = [RPM,RPM] ./ 60,
 tocp_Vinf = [0.0,100000.1],
@@ -289,7 +293,7 @@ AD15On,
 delta_t,
 aeroLoadsOn = 2)
 
-feamodel = OWENSFEA.FEAModel(;analysisType = "GX",
+feamodel = OWENSFEA.FEAModel(;analysisType = "TNB",
 dataOutputFilename = "none",
 joint = myjoint,
 platformTurbineConnectionNodeNumber = 1,
