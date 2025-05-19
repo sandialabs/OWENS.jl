@@ -150,7 +150,7 @@ mass_breakout_blds,mass_breakout_twr,system, assembly, sections = OWENS.setupOWE
 # PyPlot.ylabel("y")
 
 # node, dof, bc
-top_idx = Int(myjoint[7,2])
+top_idx = Int(myjoint[4,2])
 pBC = [1 1 0
 1 2 0
 1 3 0

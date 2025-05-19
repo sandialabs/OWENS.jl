@@ -295,7 +295,7 @@ PyPlot.savefig("$(path)/figs/34m_figCT_34RPM.pdf",transparent = true)
 ############ AeroElastic #################
 ##########################################
 
-top_idx = 23#Int(myjoint[7,2])
+top_idx = 25#Int(myjoint[7,2])
 pBC = [1 1 0
 1 2 0
 1 3 0
@@ -411,9 +411,10 @@ end
 # Load in experimental data
 SNL34m_5_4_FlatwiseStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.4AMF.csv",',',skipstart = 1)
 
+samplepoint = 5
 # Plots
 PyPlot.figure()
-PyPlot.plot(t.-offsetTime,flatwise_stress1[:,end-6]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
+PyPlot.plot(t.-offsetTime,flatwise_stress1[:,end-samplepoint]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
 PyPlot.plot(SNL34m_5_4_FlatwiseStress[:,1].-0.8,SNL34m_5_4_FlatwiseStress[:,2],"k-",label = "Experimental")
 PyPlot.xlabel("Time (s)")
 PyPlot.ylabel("Flapwise Stress (MPa)")
@@ -427,15 +428,15 @@ exp_std_flap = Statistics.std(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_std_flap $exp_std_flap")
 exp_mean_flap = Statistics.mean(SNL34m_5_4_FlatwiseStress[:,2])
 println("exp_mean_flap $exp_mean_flap")
-sim_std_flap = Statistics.std(flatwise_stress1[:,end-6]./1e6)
+sim_std_flap = Statistics.std(flatwise_stress1[:,end-samplepoint]./1e6)
 println("sim_std_flap $sim_std_flap")
-sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-6]./1e6)
+sim_mean_flap = Statistics.mean(flatwise_stress1[:,end-samplepoint]./1e6)
 println("sim_mean_flap $sim_mean_flap")
 
 SNL34m_5_4_LeadLagStress = DelimitedFiles.readdlm("$(path)/data/SAND-91-2228_Data/5.4AML.csv",',',skipstart = 1)
 
 PyPlot.figure()
-PyPlot.plot(t.-offsetTime,lag_stress1[:,end-6]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
+PyPlot.plot(t.-offsetTime,lag_stress1[:,end-samplepoint]./1e6,"-",color=plot_cycle[1],label = "OWENS Blade 1")
 PyPlot.plot(SNL34m_5_4_LeadLagStress[:,1],SNL34m_5_4_LeadLagStress[:,2],"k-",label = "Experimental")
 PyPlot.xlabel("Time (s)")
 PyPlot.ylabel("Lead-Lag Stress (MPa)")
@@ -447,9 +448,9 @@ exp_std_lag = Statistics.std(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_std_lag $exp_std_lag")
 exp_mean_lag = Statistics.mean(SNL34m_5_4_LeadLagStress[:,2])
 println("exp_mean_lag $exp_mean_lag")
-sim_std_lag = Statistics.std(lag_stress1[:,end-6]./1e6)
+sim_std_lag = Statistics.std(lag_stress1[:,end-samplepoint]./1e6)
 println("sim_std_lag $sim_std_lag")
-sim_mean_lag = Statistics.mean(lag_stress1[:,end-6]./1e6)
+sim_mean_lag = Statistics.mean(lag_stress1[:,end-samplepoint]./1e6)
 println("sim_mean_lag $sim_mean_lag")
 
 ##########################################
