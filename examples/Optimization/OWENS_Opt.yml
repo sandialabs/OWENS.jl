@@ -1,0 +1,63 @@
+OWENS_Options:
+    analysisType: "Unsteady" # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
+    AeroModel: "DMS" # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
+    structuralModel: "TNB" #Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
+    controlStrategy: "prescribedRPM" # should be in WindIO?- yes, 
+    numTS: 20 # number of time steps TODO: change to sim time and make this derived
+    delta_t: 0.01 # time step in seconds
+    dataOutputFilename: "./InitialDataOutputs.out" # data output filename with path, set to nothing or don't specify to not output anything
+    TOL: 1e-4 # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
+    MAXITER: 300 # gauss-seidel max iterations - i.e. the two-way iterations
+    verbosity: 2 # verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
+    VTKsaveName: "./vtk/windio" # Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+    aeroLoadsOn: 2 # Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
+    Prescribed_RPM_time_controlpoints: [0.0,100000.1]
+    Prescribed_RPM_RPM_controlpoints: [17.2,17.2]
+    Prescribed_Vinf_time_controlpoints: [0.0,100000.1]
+    Prescribed_Vinf_Vinf_controlpoints: [17.2,17.2]
+
+DLC_Options:
+    DLCs: ["1_1","2_1"] # name of DLC
+    Vinf_range: [17.2] # inflow Cutin to cutout and discretization
+    IEC_std: "\"1-ED3\"" # turbsim input file IEC standard
+    WindChar: "\"A\"" # turbsim wind charasteric 
+    WindClass: 1 # turbsim wind class
+    turbsimsavepath: "./turbsimfiles" # path where the turbsim files are saved
+    pathtoturbsim: nothing # path to the turbsim executable
+    NumGrid_Z: 38 # turbsim vertical discretizations 
+    NumGrid_Y: 26 # turbsim horizontal discretizations
+    Vref: 17.2 # reference/nominal wind speed m/s for turbsim or other inflow wind input file (depending on which DLC is selected)
+    Vdesign: 11.0 # Design or rated speed of turbine, used for certain DLC cases
+    grid_oversize: 1.1 # amount that the turbsim inflow is oversized compared to the turbine to allow for deflection
+    regenWindFiles: false #, force regeneration of turbsim files even if they already exist
+    delta_t_turbsim: 0.05 # turbsim timestep
+    simtime_turbsim: 600.0 # turbsim total time, which loops if simtime exceeds turbsim time
+
+OWENSAero_Options:
+    Nslices: 30 # number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
+    ntheta: 30 # number of azimuthal discretizations
+    ifw: false # use the OpenFASTWrappers inflow wind coupling to get inflow velocities
+    DynamicStallModel: "BV" # dynamic stall model, should be under an OWENSAero options
+    RPI: true # rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
+    Aero_Buoyancy_Active: false # flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
+
+OWENSFEA_Options:
+    nlOn: true #nonlinear effects
+    RayleighAlpha: 0.05 #damping coefficient scalar on the stiffness matrix
+    RayleighBeta: 0.05 #damping coefficient scalar on the mass matrix
+    iterationType: "DI" #internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+    numModes: 20 #if ROM model, number of modes used in the analysis type.  Less is faster but less accurate
+    tolerance: 1.0e-06 #total mesh unsteady analysis convergence tolerance for a timestep within the structural model
+    maxIterations: 50 #total mesh unsteady analysis convergence max iterations for a timestep
+    AddedMass_Coeff_Ca: 0.0 #added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+
+Mesh_Options:
+    ntelem: 10 # number of tower elements in each blade, plus nodes wherever there is a component overlap
+    nbelem: 60 # number of blade elements in each blade, plus nodes wherever there is a component overlap
+    nselem: 5 # number of elements in each strut
+    angularOffset: -1.5707963267948966
+    AD15hubR: 0.1 # parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
+    turbineType: Darrieus
+
+OWENSOpenFASTWrappers_Options:
+    windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts #OWENSOpenFASTWrappers If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test

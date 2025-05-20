@@ -1,0 +1,5 @@
+/OWENS_APP_COMPILED
+*/vtk
+*.vscode
+*turbsimfiles
+*.vtu

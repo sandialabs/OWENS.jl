@@ -1,0 +1,376 @@
+name: RM2 Example
+assembly: {number_of_blades: 3, hub_height: 0.62}
+components:
+    hub: {diameter: 0.1}
+    tower:
+        outer_shape_bem:
+            airfoil_position:
+                grid: &twr_grid [0.0, 0.008064516129032258, 0.016129032258064516, 0.020161290322580648, 0.20161290322580647, 0.4798387096774193, 0.48387096774193544, 0.5, 0.5161290322580645, 0.5201612903225806, 0.8064516129032259, 0.9798387096774194, 0.9838709677419355, 0.9919354838709677, 1.0]
+                labels: [circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular, circular]
+            chord:
+                grid: *twr_grid
+                values: [0.15,0.15,0.15,0.0635,0.0635,0.0635,0.15,0.15,0.15,0.0635,0.0635,0.0635,0.15,0.15,0.15]
+            twist:
+                grid: *twr_grid
+                values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+            pitch_axis:
+                grid: *twr_grid
+                values: [0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5]
+            reference_axis:
+                x:
+                    grid: *twr_grid
+                    values: &twr_x [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                y:
+                    grid: *twr_grid
+                    values: &twr_y [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                z:
+                    grid: *twr_grid
+                    values: &twr_z [0.0, 0.01, 0.02, 0.025, 0.25, 0.595, 0.6, 0.62, 0.64, 0.645, 1.0, 1.215, 1.22, 1.23, 1.24]
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: *twr_grid
+                    values: *twr_x
+                y:
+                    grid: *twr_grid
+                    values: *twr_y
+                z:
+                    grid: *twr_grid
+                    values: *twr_z
+            webs:
+            layers:
+               -  name: Panel_Face_outer
+                  material: Aluminum_6061_T6
+                  n_plies:
+                      grid: *twr_grid
+                      values: [35, 35, 25, 11, 11, 11, 35, 35, 35, 11, 11, 11, 25, 35, 35]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *twr_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+               -  name: Panel_Face_inner
+                  material: Aluminum_6061_T6
+                  n_plies:
+                      grid: *twr_grid
+                      values: [0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001,0.00001]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+                      grid: *twr_grid
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+                      grid: *twr_grid
+    blade:
+        outer_shape_bem:
+            blade_mountpoint: 0.5
+            airfoil_position:
+                grid: &id001 [0.0, 0.25, 0.5, 0.75, 1.0]
+                labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021]
+            chord:
+                grid: *id001
+                values: [0.04, 0.053335, 0.06667, 0.053335, 0.04]
+            twist:
+                grid: *id001
+                values: [0.0, 0.0, 0.0, 0.0, 0.0]
+            pitch_axis:
+                grid: *id001
+                values: [0.25, 0.25, 0.25, 0.25, 0.25]
+            reference_axis:
+                x:
+                    grid: *id001
+                    values: [0.5375, 0.5375, 0.5375, 0.5375, 0.5375]
+                y:
+                    grid: *id001
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *id001
+                    values: [0.0, 0.20175, 0.4035, 0.60525, 0.807]
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: *id001
+                    values: [0.5375, 0.5375, 0.5375, 0.5375, 0.5375]
+                y:
+                    grid: *id001
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *id001
+                    values: [0.0, 0.20175, 0.4035, 0.60525, 0.807]
+            webs:
+               -  name: web0
+                  start_nd_arc:
+                      grid: *id001
+                      values: [0.35,0.35,0.35,0.35,0.35]
+                  end_nd_arc:
+                      grid: *id001
+                      values: [0.65,0.65,0.65,0.65,0.65]
+            layers:
+               -  name: Panel_Face_outer
+                  material: Aluminum_6061_T6
+                  n_plies:
+                      grid: *id001
+                      values: [2.1, 2.8, 3.5, 2.8, 2.1]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0]
+                      grid: *id001
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+               -  name: Panel_Face_inner
+                  material: Aluminum_6061_T6
+                  n_plies:
+                      grid: *id001
+                      values: [2.1, 2.8, 3.5, 2.8, 2.1]
+                  start_nd_arc:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+                  end_nd_arc:
+                      values: [1.0,1.0,1.0,1.0,1.0]
+                      grid: *id001
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+               -  name: web0_face
+                  material: Aluminum_6061_T6
+                  web: web0
+                  n_plies:
+                      grid: *id001
+                      values: [0.0001,0.0001,0.0001,0.0001,0.0001]
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+               -  name: web0_core
+                  material: Foam
+                  web: web0
+                  n_plies:
+                      grid: *id001
+                      values: [0.0001,0.0001,0.0001,0.0001,0.0001]
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+               -  name: web0_face
+                  material: Aluminum_6061_T6
+                  web: web0
+                  n_plies:
+                      grid: *id001
+                      values: [0.0001,0.0001,0.0001,0.0001,0.0001]
+                  fiber_orientation:
+                      values: [0.0,0.0,0.0,0.0,0.0]
+                      grid: *id001
+    struts:
+      - name: strut1
+        mountfraction_tower: [0.5]
+        mountfraction_blade: [0.5]
+        outer_shape_bem:
+            airfoil_position:
+                grid: &id002 [0.0, 0.14697674418604653, 0.14883720930232558, 0.3330232558139535, 0.6669767441860465, 1.0]
+                labels: [NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021, NACA_0021]
+            chord:
+                grid: *id002
+                values: [0.06, 0.06, 0.06, 0.06, 0.06, 0.06]
+            twist:
+                grid: *id002
+                values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            pitch_axis:
+                grid: *id002
+                values: [0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+            reference_axis:
+                x:
+                    grid: *id002
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                y:
+                    grid: *id002
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *id002
+                    values: [0.0, 0.079, 0.08, 0.179, 0.3585, 0.5375]
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: *id002
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                y:
+                    grid: *id002
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: *id002
+                    values: [0.0, 0.079, 0.08, 0.179, 0.3585, 0.5375]
+            webs:
+               -  name: web0
+                  start_nd_arc:
+                      grid: *id002
+                      values: [0.35,0.35,0.35,0.35,0.35,0.35]
+                  end_nd_arc:
+                      grid: *id002
+                      values: [0.65,0.65,0.65,0.65,0.65,0.65]
+            layers:
+               -  name: Panel_Face_outer
+                  material: Aluminum_6061_T6
+                  n_plies:
+                      grid: *id002
+                      values: [3.15, 3.15, 3.15, 3.15, 3.15, 3.15]
+                  start_nd_arc:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+                  end_nd_arc:
+                      values: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                      grid: *id002
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+               -  name: Panel_Face_inner
+                  material: Aluminum_6061_T6
+                  n_plies:
+                      grid: *id002
+                      values: [3.15, 3.15, 3.15, 3.15, 3.15, 3.15]
+                  start_nd_arc:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+                  end_nd_arc:
+                      values: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+                      grid: *id002
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+               -  name: web0_face
+                  material: Stiff
+                  web: web0
+                  n_plies:
+                      grid: *id002
+                      values: [1,1,0.0001,0.0001,0.0001,0.0001]
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+               -  name: web0_core
+                  material: Foam
+                  web: web0
+                  n_plies:
+                      grid: *id002
+                      values: [0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+               -  name: web0_face
+                  material: Stiff
+                  web: web0
+                  n_plies:
+                      grid: *id002
+                      values: [1,1,0.0001,0.0001,0.0001,0.0001]
+                  fiber_orientation:
+                      values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                      grid: *id002
+airfoils:
+   -  name: NACA6_1000
+      coordinates:
+          x: [1.0, 0.993181, 0.972909, 0.939737, 0.89457, 0.838641, 0.773474, 0.700848, 0.622743, 0.54129, 0.45870999999999995, 0.37725699999999995, 0.299152, 0.226526, 0.16135900000000003, 0.10543000000000002, 0.060262999999999955, 0.027090999999999976, 0.0068190000000000195, 0.0, 0.0068190000000000195, 0.027090999999999976, 0.060262999999999955, 0.10543000000000002, 0.16135900000000003, 0.226526, 0.299152, 0.37725699999999995, 0.45870999999999995, 0.54129, 0.622743, 0.700848, 0.773474, 0.838641, 0.89457, 0.939737, 0.972909, 0.993181, 1.0]
+          y: [0.0, 0.082442, 0.162359, 0.237976, 0.307106, 0.367865, 0.418583, 0.457883, 0.484712, 0.498283, 0.498283, 0.484712, 0.457883, 0.418583, 0.367865, 0.307106, 0.237976, 0.162359, 0.082442, 0.0, -0.082442, -0.162359, -0.237976, -0.307106, -0.367865, -0.418583, -0.457883, -0.484712, -0.498283, -0.498283, -0.484712, -0.457883, -0.418583, -0.367865, -0.307106, -0.237976, -0.162359, -0.082442, 0.0]
+      relative_thickness: 1.0
+      aerodynamic_center: 0.25
+      polars:
+         -  configuration: ''
+            re: 2000000.0
+            c_l:
+                grid: [-3.141592653589793, 0.0, 3.141592653589793]
+                values: [0.0, 0.0, 0.0]
+            c_d:
+                grid: [-3.141592653589793, 0.0, 3.141592653589793]
+                values: [0.3, 0.3, 0.3]
+            c_m:
+                grid: [-3.141592653589793, 0.0, 3.141592653589793]
+                values: [0.0, 0.0, 0.0]
+materials:
+   -  name: Generic_Pultrusion
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [27000000000.0, 6000000000.0, 6000000000.0]
+      G: [3000000000.0, 3000000000.0, 3000000000.0]
+      nu: [0.26, 0.36, 0.26]
+      rho: 1850.0
+      Xt: [400000000.0, 100000000.0, 100000000.0]
+      Xc: [200000000.0, 200000000.0, 200000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 3.00
+      A: [400.0,350.0,325.0,275.0,200.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: Generic_Skin
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [27000000000.0, 6000000000.0, 6000000000.0]
+      G: [3000000000.0, 3000000000.0, 3000000000.0]
+      nu: [0.26, 0.36, 0.26]
+      rho: 1850.0
+      Xt: [400000000.0, 100000000.0, 100000000.0]
+      Xc: [200000000.0, 200000000.0, 200000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 3.00
+      A: [400.0,350.0,325.0,275.0,200.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: steel
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [199948000000.0, 199948000000.0, 199948000000.0]
+      G: [76877000000.0, 76877000000.0, 76877000000.0]
+      nu: [0.3, 0.3, 0.3]
+      rho: 7861.092935
+      Xt: [420000000.0, 420000000.0, 420000000.0]
+      Xc: [250000000.0, 250000000.0, 250000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 1.00
+      A: [420.0,415.0,375.0,275.0,190.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: Aluminum_6061_T6
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [6.89E10, 6.89E10, 6.89E10]
+      G: [2.58E10, 2.58E10, 2.58E10]
+      nu: [0.33, 0.33, 0.33]
+      rho: 2700.0
+      Xt: [270000000.0, 270000000.0, 270000000.0]
+      Xc: [240000000.0, 240000000.0, 240000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 11.00
+      A: [310.0,250.0,200.0,150.0,100.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: Stiff
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [6.89E16, 6.89E16, 6.89E16]
+      G: [2.58E16, 2.58E16, 2.58E16]
+      nu: [0.33, 0.33, 0.33]
+      rho: 0.00001
+      Xt: [27000000000.0, 27000000000.0, 27000000000.0]
+      Xc: [24000000000.0, 24000000000.0, 24000000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 1E10
+      A: [31000.0,25000.0,20000.0,15000.0,10000.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+   -  name: Foam
+      description: a description of the material
+      source: source link
+      ply_t: 0.001
+      E: [1000000000.0, 1000000000.0, 1000000000.0]
+      G: [100000000.0, 100000000.0, 100000000.0]
+      nu: [0.3, 0.3, 0.3]
+      rho: 100.0
+      Xt: [50000000.0, 50000000.0, 50000000.0]
+      Xc: [50000000.0, 50000000.0, 50000000.0]
+      S: [100000000.0, 100000000.0, 100000000.0]
+      unit_cost: 0.10
+      A: [50.0,45.0,40.0,35.0,20.0,0.0]
+      m: [0.0,1.0,2.0,4.0,6.0,20.0]
+environment: {air_density: 1000.0, air_dyn_viscosity: 1.792E-3, gravity: [0,0,-9.81]}

@@ -1,0 +1,32 @@
+
+general:
+  analysisType: unsteady # unsteady, modal
+  turbineType: Darrieus #Darrieus, H-VAWT, ARCUS
+  numTS: 20 #
+  delta_t: 0.01 # s
+
+Inflow:
+  Vinf: 17.2 # m/s #optional, supersceeded if ifw=true
+  ifw: false
+  WindType: 3
+  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: nothing
+
+controlParameters:
+  controlStrategy: constantRPM # TODO: incorporate the others
+  RPM: 17.2 #RPM
+
+AeroParameters:
+  Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
+  ntheta: 30 # number of OWENSAero azimuthal discretizations
+  AeroModel: AD # AD, DMS, AC
+  adi_lib: nothing
+  adi_rootname: "/RM2"
+  
+structuralParameters:
+  structuralModel: GX #GX, TNB, ROM
+  nonlinear: false #TODO: propogate
+  ntelem: 20 #tower elements in each 
+  nbelem: 50 #blade elements in each 
+  ncelem: 10 #central cable elements in each if turbineType is ARCUS
+  nselem: 5 #strut elements in each if turbineType has struts
