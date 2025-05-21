@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Simply Running OWENS · OWENS.jl</title><meta name="title" content="Simply Running OWENS · OWENS.jl"/><meta property="og:title" content="Simply Running OWENS · OWENS.jl"/><meta property="twitter:title" content="Simply Running OWENS · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li><a class="tocitem" href="../C_customizablePreprocessing/">Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li><a class="tocitem" href="../E_RM2_Medium/">Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Simply Running OWENS</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Simply Running OWENS</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="simple1"><a class="docs-heading-anchor" href="#simple1">Simply Running OWENS</a><a id="simple1-1"></a><a class="docs-heading-anchor-permalink" href="#simple1" title="Permalink"></a></h1><p>In this example, we show the first level of what is going on behind the precompiled binary Running julia directly with this as a starting point could make things like automating many runs in a way that is not compatible with the current interface, but your design design fits.</p><p>OWENS is comprised of many building blocks.  These series of examples progressively shows the internals of several of the key building blocks a new user might employ for their projects.  Fundamentally, OWENS has been built to be as generalizable as possible. The lowest level of building blocks enable this, however, there are many common use cases for which helper functions have been developed, such as for meshing certain standard architectures and calculating and applying sectional properties to these architectures. The figure below summarizes this at a high level.</p><p><img src="../../assets/OWENS_Example_Figure_Building_Blocks.png" alt/></p><div class="admonition is-success" id="Tip-28dc009c289a9091"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-28dc009c289a9091" title="Permalink"></a></header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/A_simplyRunningOWENS.ipynb"><code>A_simplyRunningOWENS.ipynb</code></a>.</p></div></div><pre><code class="language-julia hljs">import OWENS
+
+runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quot; # to run locally, change to splitdir(@__FILE__)[1]
+# runpath = path = splitdir(@__FILE__)[1]
+
+modelopt = OWENS.ModelingOptions(&quot;$(path)/OWENS_Opt.yml&quot;)
+designparams = OWENS.Design_Data(&quot;$path/WINDIO_example.yaml&quot;)
+
+OWENS.runOWENSWINDIO(modelopt,designparams,runpath)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Running: WINDIO Example
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [-0.09999999999999999,6.1232339957367656e-18,15.120120012] to [-0.09999999999999999,6.1232339957367656e-18,15.120120012]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999998,0.08660254037844387,15.120120012] to [0.04999999999999998,0.08660254037844387,15.120120012]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000003,-0.08660254037844385,15.120120012] to [0.05000000000000003,-0.08660254037844385,15.120120012]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [-0.09999999999999999,6.1232339957367656e-18,101.062789188] to [-0.09999999999999999,6.1232339957367656e-18,101.062789188]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999998,0.08660254037844387,101.062789188] to [0.04999999999999998,0.08660254037844387,101.062789188]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000003,-0.08660254037844385,101.062789188] to [0.05000000000000003,-0.08660254037844385,101.062789188]
+┌ Error: The windio grids must all be the same for a given component at this time
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:39
+┌ Error: The windio grids must all be the same for a given component at this time
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:39
+┌ Error: The windio grids must all be the same for a given component at this time
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:39
+Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee668f59fa694053de285aeb6d77f/lib/libaerodyn_inflow_c_binding.so
+
+ **************************************************************************************************
+ AeroDyn-Inflow library
+
+ Copyright (C) 2024 National Renewable Energy Laboratory
+ Copyright (C) 2024 Envision Energy USA LTD
+
+ This program is licensed under Apache License Version 2.0 and comes with ABSOLUTELY NO WARRANTY.
+ See the &quot;LICENSE&quot; file distributed with this software for details.
+ **************************************************************************************************
+
+ AeroDyn-Inflow library-v2.5.0-3490-g24c05a74
+ Compile Info:
+  - Compiler: GCC version 8.1.0
+  - Architecture: 64 bit
+  - Precision: double
+  - OpenMP: No
+  - Date: Nov  5 2024
+  - Time: 02:19:23
+ Execution Info:
+  - Date: 05/21/2025
+  - Time: 14:16:54+0000
+
+ Running ADI.
+ Running AeroDyn.
+ Running OLAF.
+  - Directory:         /home/runner/work/OWENS.jl/OWENS.jl/docs/build/examples
+  - RootName:          /home/runner/work/OWENS.jl/OWENS.jl/examples/literate/aerodyn.
+  - Reading advanced options for OLAF:
+ [WARN] Line ignored: &quot;VERT2&quot;   DEFAULT      -10       30.   400     5.      5.     1     5.136    15.136  100
+  - OLAF regularization parameters (for wing 1):
+    WingReg (min/max) :  12.2425 23.9214
+    WakeReg (min/max) :  12.2425 23.9214
+    k = alpha delta nu:   0.0368
+ Running InflowWind.
+┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:595
+controlStrategy: prescribedRPM
+Running Unsteady
+Running in specified rotor speed mode
+
+5.3%┣██▎                                        ┫ 1/19 [00:00&lt;Inf:Inf, InfGs/it]
+ [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
+ subsequent occurences.
+10.5%┣█████                                          ┫ 2/19 [00:03&lt;00:44, 3s/it]
+15.8%┣███████▍                                       ┫ 3/19 [00:05&lt;00:39, 2s/it]
+21.1%┣██████████                                     ┫ 4/19 [00:08&lt;00:38, 3s/it]
+26.3%┣████████████▍                                  ┫ 5/19 [00:09&lt;00:33, 2s/it]
+31.6%┣██████████████▉                                ┫ 6/19 [00:11&lt;00:29, 2s/it]
+36.8%┣█████████████████▎                             ┫ 7/19 [00:13&lt;00:26, 2s/it]
+42.1%┣███████████████████▉                           ┫ 8/19 [00:15&lt;00:23, 2s/it]
+47.4%┣██████████████████████▎                        ┫ 9/19 [00:17&lt;00:21, 2s/it]
+52.6%┣████████████████████████▏                     ┫ 10/19 [00:19&lt;00:19, 2s/it]
+57.9%┣██████████████████████████▋                   ┫ 11/19 [00:21&lt;00:17, 2s/it]
+63.2%┣█████████████████████████████                 ┫ 12/19 [00:22&lt;00:14, 2s/it]
+68.4%┣███████████████████████████████▌              ┫ 13/19 [00:24&lt;00:12, 2s/it]
+73.7%┣██████████████████████████████████            ┫ 14/19 [00:26&lt;00:10, 2s/it]
+78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:28&lt;00:08, 2s/it]
+84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:29&lt;00:06, 2s/it]
+89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:30&lt;00:04, 2s/it]
+94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:32&lt;00:02, 2s/it]
+100.0%┣█████████████████████████████████████████████┫ 19/19 [00:33&lt;00:00, 2s/it]
+Simulation Complete.
+ &gt;&gt;&gt; FINAL WRITE
+Saving VTK time domain files
+┌ Warning: extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/PostProcessing.jl:650
+Composite Ultimate and Buckling Safety Factors
+
+
+UPPER BLADE SURFACE
+Minimum Safety Factor on Surface: 6.5596095741404
+At time 0.19s at composite station 23 of 31 at lam 5 of 6
+Maximum Damage per hr: 6.719332186762483e-10
+At composite station 23 of 31 at lam 5 of 6
+
+
+LOWER BLADE SURFACE
+Minimum Safety Factor on Surface: 7.056593604491137
+At time 0.19s at composite station 3 of 31 at lam 6 of 6
+Maximum Damage per hr: 4.461144222848268e-10
+At composite station 3 of 31 at lam 6 of 6
+
+
+UPPER TOWER
+
+Minimum Safety Factor on tower Surface: 7.605660675061304
+At time 0.19s at composite station 21 of 21 at lam 1 of 1
+Maximum Damage per hr: 2.9450774948933163e-10
+At composite station 21 of 21 at lam 1 of 1
+
+
+Lower TOWER
+
+Minimum Safety Factor on tower Surface: 7.272118240920412
+At time 0.19s at composite station 21 of 21 at lam 1 of 1
+Maximum Damage per hr: 3.6503522193612305e-10
+At composite station 21 of 21 at lam 1 of 1
+
+Mass of Turbine: 385923.43991763535 kg
+WRITING Output File to nothing</code></pre><p>Here is an example of using the same model against the automated DLC run script. TODO: issue with CI version of turbsim Note that for a setup cutom to a specific design, you&#39;ll want to go to the B level to get all of the detailed inputs correct One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.</p><p>modelopt.DLC<em>Options.DLCs = [&quot;1</em>1&quot;] #&quot;normal&quot;</p><h4 id="modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;"><a class="docs-heading-anchor" href="#modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;">modelopt.DLC<em>Options.DLCs = [&quot;1</em>3&quot;,&quot;6_1&quot;] #&quot;normal&quot;</a><a id="modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;-1"></a><a class="docs-heading-anchor-permalink" href="#modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;" title="Permalink"></a></h4><p>OWENS.runDLC(modelopt,designparams,runpath)</p><pre><code class="language-julia hljs">nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../indepth_installation/">« Installation</a><a class="docs-footer-nextpage" href="../B_detailedInputs/">Detailed Inputs »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:19">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

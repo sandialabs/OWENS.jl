@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Simulating Floating Platforms · OWENS.jl</title><meta name="title" content="Simulating Floating Platforms · OWENS.jl"/><meta property="og:title" content="Simulating Floating Platforms · OWENS.jl"/><meta property="twitter:title" content="Simulating Floating Platforms · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li><a class="tocitem" href="../C_customizablePreprocessing/">Customizable Preprocessing</a></li><li class="is-active"><a class="tocitem" href>Simulating Floating Platforms</a></li><li><a class="tocitem" href="../E_RM2_Medium/">Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Simulating Floating Platforms</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Simulating Floating Platforms</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="simple4"><a class="docs-heading-anchor" href="#simple4">Simulating Floating Platforms</a><a id="simple4-1"></a><a class="docs-heading-anchor-permalink" href="#simple4" title="Permalink"></a></h1><p>In this example, we make the OWENS model more complex by simulation a floating wind turbine instead of a land-based one. This involves coupling two meshes together: one representing the wind turbine (this will be similar to meshes used in previous tutorials), and one representing the floating platform.</p><p>The wind turbine mesh (or &quot;topside&quot;) will be created similarly to the previous tutorial, though we will overwrite some of the inputs so the simulation works better for a floating system. This will help with revealing some more internals of OWENS and the potential inputs available to users, which is helpful for explaining how the floating platform mesh (or &quot;bottom side&quot;) is defined and differs from the topside.</p><div class="admonition is-success" id="Tip-ad95c8c35b0a2f2c"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-ad95c8c35b0a2f2c" title="Permalink"></a></header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/D_simulatingFloatingPlatforms.ipynb"><code>D_simulatingFloatingPlatforms.ipynb</code></a>.</p></div></div><pre><code class="language-julia hljs"># import PyPlot
+
+import OWENS
+import OWENSFEA
+import OWENSAero
+
+runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quot;
+##runpath = path = splitdir(@__FILE__)[1] # use to run locally
+
+nothing</code></pre><p>First, create the inputs for the topside mesh as done previous in tutorials A and B.</p><pre><code class="language-julia hljs">Inp = OWENS.MasterInput(&quot;$runpath/sampleOWENS.yml&quot;)
+
+analysisType = &quot;TNB&quot; # this differs from previous tutorials, as it has been verified to work well with floating capabilities
+turbineType = Inp.turbineType
+eta = Inp.eta
+Nbld = Inp.Nbld
+towerHeight = Inp.towerHeight
+rho = Inp.rho
+Vinf = Inp.Vinf
+controlStrategy = Inp.controlStrategy
+RPM = Inp.RPM
+Nslices = Inp.Nslices
+ntheta = Inp.ntheta
+structuralModel = Inp.structuralModel
+ntelem = Inp.ntelem
+nbelem = Inp.nbelem
+ncelem = Inp.ncelem
+nselem = Inp.nselem
+ifw = Inp.ifw
+WindType = Inp.WindType
+AeroModel = &quot;DMS&quot;#Inp.AeroModel
+windINPfilename = &quot;$(path)$(Inp.windINPfilename)&quot;
+ifw_libfile = Inp.ifw_libfile
+if ifw_libfile == &quot;nothing&quot;
+    ifw_libfile = nothing
+end
+Blade_Height = Inp.Blade_Height
+Blade_Radius = Inp.Blade_Radius
+numTS = 5 # shortened since the floating simulation can take awhile
+delta_t = Inp.delta_t
+NuMad_geom_xlscsv_file_twr = &quot;$(path)$(Inp.NuMad_geom_xlscsv_file_twr)&quot;
+NuMad_mat_xlscsv_file_twr = &quot;$(path)$(Inp.NuMad_mat_xlscsv_file_twr)&quot;
+NuMad_geom_xlscsv_file_bld = &quot;$(path)$(Inp.NuMad_geom_xlscsv_file_bld[1:end-4])DMS.csv&quot;
+NuMad_mat_xlscsv_file_bld = &quot;$(path)$(Inp.NuMad_mat_xlscsv_file_bld)&quot;
+NuMad_geom_xlscsv_file_strut = &quot;$(path)$(Inp.NuMad_geom_xlscsv_file_strut)&quot;
+NuMad_mat_xlscsv_file_strut = &quot;$(path)$(Inp.NuMad_mat_xlscsv_file_strut)&quot;
+adi_lib = Inp.adi_lib
+if adi_lib == &quot;nothing&quot;
+    adi_lib = nothing
+end
+adi_rootname = &quot;$(path)$(Inp.adi_rootname)&quot;
+
+B = Nbld
+R = Blade_Radius#177.2022*0.3048 #m
+H = Blade_Height#1.02*R*2 #m
+
+shapeZ = collect(LinRange(0,H,Nslices+1))
+shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/topRunDLC.jl:647</code></pre><p>We will continue to use helper functions here to fully define the topside mesh, sectional properties, and their connection. However, note that our naming convention will be different in order to differentiate this mesh from the bottom side mesh. The outputs to the helper functions not being used elsewhere in the tutorial are returned as &quot;_&quot; to improve clarity.</p><p>Note that, unlike the previous examples, we will <strong>not</strong> apply a boundary condition to this mesh. The boundary condition previously was essentially fixing the bottom of the turbine tower in place, since it is installed in the ground. However, for our floating platform, we want the loads from the topside to propagate to the platform, so our restoring hydrodynamics and mooring loads will &quot;constain&quot; the combined meshes as we want.</p><pre><code class="language-julia hljs">topMesh, topEl, topOrt, topJoint, topSectionProps,
+_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+aeroForces, deformAero, _, _,topSystem,topAssembly, sections, _, _ = OWENS.setupOWENS(OWENSAero,path;
+    rho, Nslices, ntheta, RPM, Vinf, eta, B, H, R, shapeZ, shapeX,
+    ifw, WindType, delta_t, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile,
+    NuMad_geom_xlscsv_file_twr,# = &quot;$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv&quot;,
+    NuMad_mat_xlscsv_file_twr,# = &quot;$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv&quot;,
+    NuMad_geom_xlscsv_file_bld,# = &quot;$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv&quot;,
+    NuMad_mat_xlscsv_file_bld,# = &quot;$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv&quot;,
+    NuMad_geom_xlscsv_file_strut,
+    NuMad_mat_xlscsv_file_strut,
+    Htwr_base=towerHeight,
+    ntelem,
+    nbelem,
+    ncelem,
+    nselem,
+    joint_type = 0,
+    c_mount_ratio = 0.05,
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel=&quot;BV&quot;,
+    RPI=true,
+    cables_connected_to_blade_base = true,
+    meshtype = turbineType)
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [-0.1,6.123233995736766e-18,30.5457273] to [-0.1,6.123233995736766e-18,30.5457273]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999999,0.08660254037844388,30.5457273] to [0.04999999999999999,0.08660254037844388,30.5457273]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000003,-0.08660254037844385,30.5457273] to [0.05000000000000003,-0.08660254037844385,30.5457273]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [-0.1,6.123233995736767e-18,85.6371819] to [-0.1,6.123233995736767e-18,85.6371819]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999999,0.08660254037844388,85.6371819] to [0.04999999999999999,0.08660254037844388,85.6371819]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000004,-0.08660254037844385,85.6371819] to [0.05000000000000004,-0.08660254037844385,85.6371819]
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:595</code></pre><p>Now we need to define the properties of the bottom side mesh, which we will do manually here instead of reading in values from a YAML file. This mesh is very simple: it consists of a single element with a nodal connection on either end. OWENS assumes the platform is a rigid body, so the element has very high stiffness to effectively function as a point mass.</p><pre><code class="language-julia hljs">nothing</code></pre><p>Since the mesh is so simple, most of these inputs are trivial and affect little. However, a few items are of note:</p><ul><li>The z positions in <code>bottomMesh</code> start at zero for the first node, and the second node is at the height of the tower base above the platform reference point (aka the platform location at the still water level above the platform centroid). In the case of the OC4 platform, this is 10 meters. This is also reflected in the Length argument in bottomOrt</li><li>The <code>bottomSectionProps</code> structure has very large values for EIyy, EIzz, GJ, and EA, which are all the relevant stiffness properties, in order to effectively model the platform as a rigid body.</li><li>The <code>zcm</code> parameter in <code>bottomSectionProps</code> is set to the vertical distance of the platform with respect to the platform reference point. For the OC4 platform, this is 8.6588 meters below sea level.</li></ul><pre><code class="language-julia hljs">bottomMesh = OWENSFEA.Mesh(
+    [1, 2], #nodeNum
+    1, #numElx
+    2, #numNodes
+    [0.0, 0.0], #x
+    [0.0, 0.0], #y
+    [0.0, 10.0], #z
+    [1], #elNum
+    [1 2], #conn
+    [0], #type
+    [0, 1], #meshSeg
+    zeros(1,1), #structuralSpanLocNorm
+    zeros(Int,1,1), #structuralNodeNumbers
+    zeros(Int,1,1) #structuralElNumbers
+    )
+numBottomNodes = length(bottomMesh.z)
+bottomOrt = OWENSFEA.Ort(
+    [180.0], #Psi_d
+    [-90.0],  #Theta_d
+    [90.0], #Twist_d
+    [10.0], #Length
+    ones(1,1), #elNum
+    zeros(3,1)#Offset
+    )
+n_ptfm_elem = 1
+bottomSectionProps = Array{OWENSFEA.SectionPropsArray,1}(undef, n_ptfm_elem)
+for ii = 1:n_ptfm_elem
+    bottomSectionProps[ii] = OWENSFEA.SectionPropsArray(
+        [0.0, 0.0], #ac
+        [0.0, 0.0], #twist_d
+        [0.0, 0.0], #rhoA
+        [1e18, 1e18], #EIyy
+        [1e18, 1e18], #EIzz
+        [1e18, 1e18], #GJ
+        [1e18, 1e18], #EA
+        [0.0, 0.0], #rhoIyy
+        [0.0, 0.0], #rhoIzz
+        [0.0, 0.0], #rhoJ
+        [-8.6588, 0.0], #zcm
+        [0.0, 0.0], #ycm,
+        [0.0, 0.0], #a
+        [0.0, 0.0], #EIyz
+        [0.0, 0.0], #alpha1
+        [0.0, 0.0], #alpha2
+        [0.0, 0.0], #alpha3
+        [0.0, 0.0], #alpha4
+        [0.0, 0.0], #alpha5
+        [0.0, 0.0], #alpha6
+        [0.0, 0.0], #rhoIyz
+        [0.0, 0.0], #b
+        [0.0, 0.0], #a0
+        [0.0, 0.0], #aeroCenterOffset
+    )
+end
+
+nothing</code></pre><p>We also want to provide some additional general inputs to enable floating simulation. <code>platformActive</code> being the principal and obvious one, but also the input files needed by HydroDyn and MoorDyn, which are the external libraries that calculate the hydrodynamic and mooring loads to send to the bottom side mesh. These input files include:</p><ul><li>interpOrder: the degree of interpolation used to predict the future states within HydroDyn and MoorDyn, used in the <code>HD_UpdateStates</code> and <code>MD_UpdateStates</code> functions</li><li>hd<em>input</em>file: the base HydroDyn input file with a <code>.dat</code> extension</li><li>md<em>input</em>file: the base MoorDyn input file with a <code>.dat</code> extension</li><li>ss<em>input</em>file: the sea state input file with a <code>.dat</code> extension used to define the environmental conditions of the sea. This is used within HydroDyn.</li><li>potfilefile: the prefix of the potential flow files. At minimum, the directory must contain the .1, .3, and .hst WAMIT output files. This is also used within HydroDyn.</li></ul><p>See the OpenFAST documentation for HydroDyn (https://openfast.readthedocs.io/en/main/source/user/hydrodyn/input_files.html) and MoorDyn (https://moordyn.readthedocs.io/en/latest/inputs.html) for more information about how to format these input files. For simplicity here, we will use predefined input files for the OC4 semisubmersible platform, which comes with OpenFAST and is copied to the <code>data</code> folder here.</p><pre><code class="language-julia hljs">if AeroModel==&quot;AD&quot;
+    AD15On = true
+else
+    AD15On = false
+end
+platformActive = true
+interpOrder = 2
+hd_input_file = &quot;$(path)/data/HydroDyn.dat&quot;
+md_input_file = &quot;$(path)/data/MoorDyn.dat&quot;
+ss_input_file = &quot;$(path)/data/SeaState.dat&quot;
+potflowfile = &quot;$(path)/data/potflowdata/marin_semi&quot;
+
+inputs = OWENS.Inputs(;analysisType = analysisType,
+tocp = [0.0,100000.1],
+Omegaocp = [RPM,RPM] ./ 60,
+tocp_Vinf = [0.0,100000.1],
+Vinfocp = [Vinf,Vinf],
+numTS,
+delta_t,
+AD15On,
+aeroLoadsOn = 2,
+platformActive,
+interpOrder,
+hd_input_file,
+md_input_file,
+ss_input_file,
+potflowfile)
+
+nothing</code></pre><p>We also will need to specify where the HydroDyn and MoorDyn libraries exist on the computer. We will set these to <code>nothing</code> so the auto-installed libraries will be used by default. Change these variables as needed if the location of these libraries are different.</p><pre><code class="language-julia hljs">hd_lib = nothing
+md_lib = nothing
+bin = OWENS.Bin(hd_lib, md_lib)
+
+nothing</code></pre><p>As in previous examples, we need to define the inputs for the finite element models, though now we need a definition for both the topside and the bottom side.</p><p>The changes to the topside from example A are the lack of boundary conditions, non-default gamma and alpha terms (for better convergence with the platform mesh).</p><pre><code class="language-julia hljs">topFEAModel = OWENS.FEAModel(;
+    analysisType = analysisType,
+    dataOutputFilename = &quot;none&quot;,
+    joint = topJoint,
+    platformTurbineConnectionNodeNumber = 1,
+    nlOn = true,
+    numNodes = topMesh.numNodes,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    iterationType = &quot;DI&quot;,
+    gamma = 1.0,
+    alpha = 0.5)
+
+nothing</code></pre><p>The bottom finite element mesh will use the same inputs with two exceptions: <code>joints</code> is now empty (since we&#39;re considering the platform as a single rigid body), and we add an additional concentrated term at the bottom node to represent the rigid body mass matrix of the platform. The values here are pulled from the report &quot;Definition of the Semisubmersible Floating System for Phase II of OC4&quot; by Robertson et al. (2014) (https://doi.org/10.2172/1155123).</p><pre><code class="language-julia hljs">numDOFPerNode = 6
+
+ptfm_mass = 3.85218e6
+ptfm_roll_iner = 2.56193e9
+ptfm_pitch_iner = 2.56193e9
+ptfm_yaw_iner = 4.24265e9
+ptfm_Ixx = ptfm_roll_iner
+ptfm_Iyy = ptfm_pitch_iner
+ptfm_Izz = ptfm_yaw_iner
+ptfm_Ixy = 0.0
+ptfm_Iyz = 0.0
+ptfm_Ixz = 0.0
+ptfm_mass = [
+    ptfm_mass 0.0 0.0 0.0 0.0 0.0
+    0.0 ptfm_mass 0.0 0.0 0.0 0.0
+    0.0 0.0 ptfm_mass 0.0 0.0 0.0
+    0.0 0.0 0.0 ptfm_Ixx ptfm_Ixy ptfm_Ixz
+    0.0 0.0 0.0 ptfm_Ixy ptfm_Iyy -ptfm_Iyz
+    0.0 0.0 0.0 ptfm_Ixz -ptfm_Iyz ptfm_Izz
+]
+bottomConcInputs = [
+    1 &quot;M6&quot; 1 1 ptfm_mass[1, 1]
+    1 &quot;M6&quot; 1 2 ptfm_mass[1, 2]
+    1 &quot;M6&quot; 1 3 ptfm_mass[1, 3]
+    1 &quot;M6&quot; 1 4 ptfm_mass[1, 4]
+    1 &quot;M6&quot; 1 5 ptfm_mass[1, 5]
+    1 &quot;M6&quot; 1 6 ptfm_mass[1, 6]
+    1 &quot;M6&quot; 2 1 ptfm_mass[2, 1]
+    1 &quot;M6&quot; 2 2 ptfm_mass[2, 2]
+    1 &quot;M6&quot; 2 3 ptfm_mass[2, 3]
+    1 &quot;M6&quot; 2 4 ptfm_mass[2, 4]
+    1 &quot;M6&quot; 2 5 ptfm_mass[2, 5]
+    1 &quot;M6&quot; 2 6 ptfm_mass[2, 6]
+    1 &quot;M6&quot; 3 1 ptfm_mass[3, 1]
+    1 &quot;M6&quot; 3 2 ptfm_mass[3, 2]
+    1 &quot;M6&quot; 3 3 ptfm_mass[3, 3]
+    1 &quot;M6&quot; 3 4 ptfm_mass[3, 4]
+    1 &quot;M6&quot; 3 5 ptfm_mass[3, 5]
+    1 &quot;M6&quot; 3 6 ptfm_mass[3, 6]
+    1 &quot;M6&quot; 4 1 ptfm_mass[4, 1]
+    1 &quot;M6&quot; 4 2 ptfm_mass[4, 2]
+    1 &quot;M6&quot; 4 3 ptfm_mass[4, 3]
+    1 &quot;M6&quot; 4 4 ptfm_mass[4, 4]
+    1 &quot;M6&quot; 4 5 ptfm_mass[4, 5]
+    1 &quot;M6&quot; 4 6 ptfm_mass[4, 6]
+    1 &quot;M6&quot; 5 1 ptfm_mass[5, 1]
+    1 &quot;M6&quot; 5 2 ptfm_mass[5, 2]
+    1 &quot;M6&quot; 5 3 ptfm_mass[5, 3]
+    1 &quot;M6&quot; 5 4 ptfm_mass[5, 4]
+    1 &quot;M6&quot; 5 5 ptfm_mass[5, 5]
+    1 &quot;M6&quot; 5 6 ptfm_mass[5, 6]
+    1 &quot;M6&quot; 6 1 ptfm_mass[6, 1]
+    1 &quot;M6&quot; 6 2 ptfm_mass[6, 2]
+    1 &quot;M6&quot; 6 3 ptfm_mass[6, 3]
+    1 &quot;M6&quot; 6 4 ptfm_mass[6, 4]
+    1 &quot;M6&quot; 6 5 ptfm_mass[6, 5]
+    1 &quot;M6&quot; 6 6 ptfm_mass[6, 6]
+]
+bottomConcTerms = OWENSFEA.applyConcentratedTerms(
+    bottomMesh.numNodes,
+    numDOFPerNode,
+    data=bottomConcInputs,
+    jointData=[])
+bottomFEAModel = OWENS.FEAModel(;
+    analysisType = analysisType,
+    dataOutputFilename = &quot;none&quot;,
+    joint = [],
+    platformTurbineConnectionNodeNumber = 1,
+    nlOn = true,
+    numNodes = bottomMesh.numNodes,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    iterationType = &quot;DI&quot;,
+    gamma = 1.0,
+    alpha = 0.5,
+    nodalTerms=bottomConcTerms)
+
+nothing</code></pre><p>Finally, some additional structure definitions for the bottom mesh. These don&#39;t contain anything new, but are required for OWENS to run properly.</p><pre><code class="language-julia hljs">bottomEl = OWENSFEA.El(bottomSectionProps,
+                       bottomOrt.Length,
+                       bottomOrt.Psi_d,
+                       bottomOrt.Theta_d,
+                       bottomOrt.Twist_d,
+                       ones(bottomMesh.numEl))
+
+nothing</code></pre><p>We can now run our floating simulation in OWENS. Note that we are using <code>OWENS.Unsteady</code> now instead of <code>OWENS.Unsteady_Land</code>.</p><pre><code class="language-julia hljs">println(&quot;Running Unsteady&quot;)
+t, aziHist, OmegaHist, OmegaDotHist, gbHist, gbDotHist, gbDotDotHist, FReactionHist, FTwrBsHist,
+genTorque, genPower, torqueDriveShaft, uHist, uHist_prp,
+epsilon_x_hist, epsilon_y_hist, epsilon_z_hist, kappa_x_hist, kappa_y_hist, kappa_z_hist,
+FPtfmHist, FHydroHist, FMooringHist = OWENS.Unsteady(inputs,
+    system=topSystem,
+    assembly=topAssembly,
+    topModel=topFEAModel,
+    topMesh=topMesh,
+    topEl=topEl,
+    aero=aeroForces,
+    deformAero=deformAero,
+    bottomModel=bottomFEAModel,
+    bottomMesh=bottomMesh,
+    bottomEl=bottomEl,
+    bin=bin)
+
+if AD15On #TODO: move this into the run functions
+    OWENS.OWENSOpenFASTWrappers.endTurb()
+end
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Running Unsteady
+Reading HydroDyn data from /home/runner/work/OWENS.jl/OWENS.jl/examples/literate/data/HydroDyn.dat.
+Reading SeaState data from /home/runner/work/OWENS.jl/OWENS.jl/examples/literate/data/SeaState.dat.
+
+ **************************************************************************************************
+ HydroDyn+SeaState library
+
+ Copyright (C) 2024 National Renewable Energy Laboratory
+ Copyright (C) 2024 Envision Energy USA LTD
+
+ This program is licensed under Apache License Version 2.0 and comes with ABSOLUTELY NO WARRANTY.
+ See the &quot;LICENSE&quot; file distributed with this software for details.
+ **************************************************************************************************
+
+ HydroDyn+SeaState library-v2.5.0-3490-g24c05a74
+ Compile Info:
+  - Compiler: GCC version 8.1.0
+  - Architecture: 64 bit
+  - Precision: double
+  - OpenMP: No
+  - Date: Nov  5 2024
+  - Time: 02:19:23
+ Execution Info:
+  - Date: 05/21/2025
+  - Time: 14:18:22+0000
+
+ Running SeaState.
+  Generating incident wave kinematics and current time history.
+ Running HydroDyn.
+  Reading in WAMIT output with root name
+  &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate/data/potflowdata/marin_semi&quot;.
+  Computing radiation impulse response functions and wave diffraction forces.
+Reading MoorDyn data from /home/runner/work/OWENS.jl/OWENS.jl/examples/literate/data/MoorDyn.dat.
+
+ **************************************************************************************************
+ MoorDyn library
+
+ Copyright (C) 2024 National Renewable Energy Laboratory
+ Copyright (C) 2024 Envision Energy USA LTD
+
+ This program is licensed under Apache License Version 2.0 and comes with ABSOLUTELY NO WARRANTY.
+ See the &quot;LICENSE&quot; file distributed with this software for details.
+ **************************************************************************************************
+
+ MoorDyn library-v2.5.0-3490-g24c05a74
+ Compile Info:
+  - Compiler: GCC version 8.1.0
+  - Architecture: 64 bit
+  - Precision: double
+  - OpenMP: No
+  - Date: Nov  5 2024
+  - Time: 02:19:23
+ Execution Info:
+  - Date: 05/21/2025
+  - Time: 14:18:31+0000
+
+ Running MoorDyn (v2.0.0, 2022-12-08).
+    This is MoorDyn v2, with significant input file changes from v1.
+    Copyright: (C) 2022 National Renewable Energy Laboratory, (C) 2019 Matt Hall
+    Parsing MoorDyn input file: notUsed
+   Created mooring system:  3 lines, 6 points, 0 rods, 0 bodies.
+    Finalizing initial conditions using dynamic relaxation.
+
+   t=1  FairTen 1: 1.18264E+06, 1, 2                                                                 t=2  FairTen 1: 1.24078E+06, 1.18264E+06, 1                                                       t=3  FairTen 1: 1.01721E+06, 1.24078E+06, 1.18264E+06                                             t=4  FairTen 1: 1.11839E+06, 1.01721E+06, 1.24078E+06                                             t=5  FairTen 1: 1.13732E+06, 1.11839E+06, 1.01721E+06                                             t=6  FairTen 1: 1.05990E+06, 1.13732E+06, 1.11839E+06                                             t=7  FairTen 1: 1.10862E+06, 1.05990E+06, 1.13732E+06                                             t=8  FairTen 1: 1.13130E+06, 1.10862E+06, 1.05990E+06                                             t=9  FairTen 1: 1.09750E+06, 1.13130E+06, 1.10862E+06                                             t=10  FairTen 1: 1.07609E+06, 1.09750E+06, 1.13130E+06                                            t=11  FairTen 1: 1.12607E+06, 1.07609E+06, 1.09750E+06                                            t=12  FairTen 1: 1.10720E+06, 1.12607E+06, 1.07609E+06                                            t=13  FairTen 1: 1.08413E+06, 1.10720E+06, 1.12607E+06                                            t=14  FairTen 1: 1.12831E+06, 1.08413E+06, 1.10720E+06                                            t=15  FairTen 1: 1.09024E+06, 1.12831E+06, 1.08413E+06                                            t=16  FairTen 1: 1.08803E+06, 1.09024E+06, 1.12831E+06                                            t=17  FairTen 1: 1.13554E+06, 1.08803E+06, 1.09024E+06                                            t=18  FairTen 1: 1.08932E+06, 1.13554E+06, 1.08803E+06                                            t=19  FairTen 1: 1.09424E+06, 1.08932E+06, 1.13554E+06                                            t=20  FairTen 1: 1.11980E+06, 1.09424E+06, 1.08932E+06                                            t=21  FairTen 1: 1.09232E+06, 1.11980E+06, 1.09424E+06                                            t=22  FairTen 1: 1.10695E+06, 1.09232E+06, 1.11980E+06                                            t=23  FairTen 1: 1.11280E+06, 1.10695E+06, 1.09232E+06                                            t=24  FairTen 1: 1.09306E+06, 1.11280E+06, 1.10695E+06                                            t=25  FairTen 1: 1.10221E+06, 1.09306E+06, 1.11280E+06                                            t=26  FairTen 1: 1.11079E+06, 1.10221E+06, 1.09306E+06                                            t=27  FairTen 1: 1.10566E+06, 1.11079E+06, 1.10221E+06                                            t=28  FairTen 1: 1.09657E+06, 1.10566E+06, 1.11079E+06                                            t=29  FairTen 1: 1.10655E+06, 1.09657E+06, 1.10566E+06                                            t=30  FairTen 1: 1.10621E+06, 1.10655E+06, 1.09657E+06                                            t=31  FairTen 1: 1.09677E+06, 1.10621E+06, 1.10655E+06                                            t=32  FairTen 1: 1.11356E+06, 1.09677E+06, 1.10621E+06                                            t=33  FairTen 1: 1.10210E+06, 1.11356E+06, 1.09677E+06                                            t=34  FairTen 1: 1.09210E+06, 1.10210E+06, 1.11356E+06                                            t=35  FairTen 1: 1.11583E+06, 1.09210E+06, 1.10210E+06                                            t=36  FairTen 1: 1.10303E+06, 1.11583E+06, 1.09210E+06                                            t=37  FairTen 1: 1.09724E+06, 1.10303E+06, 1.11583E+06                                            t=38  FairTen 1: 1.11096E+06, 1.09724E+06, 1.10303E+06                                            t=39  FairTen 1: 1.09837E+06, 1.11096E+06, 1.09724E+06                                            t=40  FairTen 1: 1.10299E+06, 1.09837E+06, 1.11096E+06                                            t=41  FairTen 1: 1.11057E+06, 1.10299E+06, 1.09837E+06                                            t=42  FairTen 1: 1.10042E+06, 1.11057E+06, 1.10299E+06                                            t=43  FairTen 1: 1.10069E+06, 1.10042E+06, 1.11057E+06                                            t=44  FairTen 1: 1.10549E+06, 1.10069E+06, 1.10042E+06                                            t=45  FairTen 1: 1.10619E+06, 1.10549E+06, 1.10069E+06                                            t=46  FairTen 1: 1.10234E+06, 1.10619E+06, 1.10549E+06                                            t=47  FairTen 1: 1.10330E+06, 1.10234E+06, 1.10619E+06                                            t=48  FairTen 1: 1.10515E+06, 1.10330E+06, 1.10234E+06                                             Fairlead tensions converged to 1% after 48 seconds.
+    MoorDyn initialization completed.
+Running in specified rotor speed mode
+
+25.0%┣██████████▊                                ┫ 1/4 [00:00&lt;Inf:Inf, InfGs/it]
+50.0%┣████████████████████████                        ┫ 2/4 [00:04&lt;00:07, 4s/it]
+75.0%┣████████████████████████████████████            ┫ 3/4 [00:06&lt;00:03, 3s/it]
+100.0%┣███████████████████████████████████████████████┫ 4/4 [00:09&lt;00:00, 3s/it]
+Simulation Complete.</code></pre><p>Since we ran the simulation for such a short time period for sake of demonstrating completion of the simulation, the plots below are not too interesting. Try experimenting with changing the <code>numTS</code> variable above to a longer simulation to see how the floating VAWT responds over time. Note that the platform modeled here is not necessarily design for the Darrieus VAWT it is supporting, so your mileage may vary on the simulation results. PyPlot.plot(t, uHist_prp[:, 1]) PyPlot.title(&quot;Platform Surge Response&quot;) PyPlot.xlabel(&quot;Time [s]&quot;) PyPlot.ylabel(&quot;Force [N]&quot;) PyPlot.plot(t, FHydroHist[:, 1]) PyPlot.xlabel(&quot;Time [s]&quot;) PyPlot.ylabel(&quot;Force [N]&quot;) PyPlot.title(&quot;Hydrodynamic Surge Loading&quot;)</p><pre><code class="language-julia hljs">nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../C_customizablePreprocessing/">« Customizable Preprocessing</a><a class="docs-footer-nextpage" href="../E_RM2_Medium/">Marine Hydrokinetic RM2 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:19">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

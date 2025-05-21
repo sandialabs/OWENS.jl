@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Installation · OWENS.jl</title><meta name="title" content="Installation · OWENS.jl"/><meta property="og:title" content="Installation · OWENS.jl"/><meta property="twitter:title" content="Installation · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Installation</a><ul class="internal"><li><a class="tocitem" href="#Main-New-Programs&#39;-Installation-(Julia,-Paraview,-Optionally-VSCode)"><span>Main New Programs&#39; Installation (Julia, Paraview, Optionally VSCode)</span></a></li><li class="toplevel"><a class="tocitem" href="#Environment-Variables"><span>Environment Variables</span></a></li><li class="toplevel"><a class="tocitem" href="#Test-That-Julia-Runs"><span>Test That Julia Runs</span></a></li><li class="toplevel"><a class="tocitem" href="#Brief-Julia-Primer"><span>Brief Julia Primer</span></a></li><li><a class="tocitem" href="#OWENS-Installation-for-Julia-1.11"><span>OWENS Installation for Julia 1.11+</span></a></li><li><a class="tocitem" href="#OWENS-Installation-for-Julia-1.10-and-older-(down-to-1.6)"><span>OWENS Installation for Julia 1.10 and older (down to 1.6)</span></a></li><li class="toplevel"><a class="tocitem" href="#Testing-Your-Build-of-OWENS"><span>Testing Your Build of OWENS</span></a></li><li class="toplevel"><a class="tocitem" href="#Visual-Studio-Code-IDE"><span>Visual Studio Code IDE</span></a></li><li><a class="tocitem" href="#VSCode-Julia-Debugger"><span>VSCode Julia Debugger</span></a></li><li><a class="tocitem" href="#Install-custom-repositories-you-want-to-develop"><span>Install custom repositories you want to develop</span></a></li><li class="toplevel"><a class="tocitem" href="#Custom-Install-of-Optional-OpenFAST-Dependices"><span>Custom Install of Optional OpenFAST Dependices</span></a></li><li class="toplevel"><a class="tocitem" href="#Set-up-SSH-Keys"><span>Set up SSH Keys</span></a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../examples/A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../examples/B_detailedInputs/">Detailed Inputs</a></li><li><a class="tocitem" href="../examples/C_customizablePreprocessing/">Customizable Preprocessing</a></li><li><a class="tocitem" href="../examples/D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li><a class="tocitem" href="../examples/E_RM2_Medium/">Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Installation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Installation</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="In-Depth-Installation-Instructions-for-New-Users,-Developer-Install,-and-Julia-1.10-and-Older"><a class="docs-heading-anchor" href="#In-Depth-Installation-Instructions-for-New-Users,-Developer-Install,-and-Julia-1.10-and-Older">In-Depth Installation Instructions for New Users, Developer Install, and Julia 1.10 and Older</a><a id="In-Depth-Installation-Instructions-for-New-Users,-Developer-Install,-and-Julia-1.10-and-Older-1"></a><a class="docs-heading-anchor-permalink" href="#In-Depth-Installation-Instructions-for-New-Users,-Developer-Install,-and-Julia-1.10-and-Older" title="Permalink"></a></h1><p>The OWENS software has been developed and designed to highly flexible and to operate in the paradigm similar to modern open source software, leveraging tools such as the terminal, git, public software repositories, and automated package management both for the operating system and the programming language. Before attempting these instructions, if you are not familiar with these types of tools, please consider becoming familiar with them prior to proceeding.  Here are some of the first google hits for guides:</p><ul><li>https://www.redhat.com/sysadmin/beginners-guide-vim</li><li>https://www.freecodecamp.org/news/the-beginners-guide-to-git-github.com/</li><li>https://www.howtogeek.com/63997/how-to-install-programs-in-ubuntu-in-the-command-line/</li></ul><p>The use of precompiled binaries for the optional OpenFAST fortran libraries significantly simplifies use and installation.  However, if you need to make modifications to the OpenFAST coupling, it requires an entirely different level of software development skills, and would require the user to become proficient at developing and compiling the standalone OpenFAST code first.</p><h2 id="Main-New-Programs&#39;-Installation-(Julia,-Paraview,-Optionally-VSCode)"><a class="docs-heading-anchor" href="#Main-New-Programs&#39;-Installation-(Julia,-Paraview,-Optionally-VSCode)">Main New Programs&#39; Installation (Julia, Paraview, Optionally VSCode)</a><a id="Main-New-Programs&#39;-Installation-(Julia,-Paraview,-Optionally-VSCode)-1"></a><a class="docs-heading-anchor-permalink" href="#Main-New-Programs&#39;-Installation-(Julia,-Paraview,-Optionally-VSCode)" title="Permalink"></a></h2><p>Install julia, paraview, and visual studio by downloading/installing the OS specific versions for each, either manually (links below for your convenience) or through your favorite package manager:</p><ul><li>https://julialang.org/downloads/</li><li>https://www.paraview.org/download/</li><li>https://visualstudio.microsoft.com/downloads/</li></ul><p>Be sure julia is on your path (should happen automatically as part of the installation process)</p><p>It is recommended, but not required to set up VS code as also described below.</p><p>Windows notes: </p><ul><li>details are key, hash mismatch may mean that you are behind a proxy and the proxy isn&#39;t setup correctly.  For visual studio, the default installation and recommendations should work.  If importing the provided vs-code profile, the quick keys may need to be remapped to control from cmd.  </li><li>Set up the environment variables below and be sure Julia is also on the path (https://www.wikihow.com/Create-an-Environment-Variable-in-Windows-10)</li></ul><h1 id="Environment-Variables"><a class="docs-heading-anchor" href="#Environment-Variables">Environment Variables</a><a id="Environment-Variables-1"></a><a class="docs-heading-anchor-permalink" href="#Environment-Variables" title="Permalink"></a></h1><p>If you are using a proxy, such as those at the national labs be sure that the proxy variables are also declared/exported in your .bash_profile or .bashrc or the equivalent list of environment variables in Windows.  Additionally, you may need to tell your system where the SSL cert file is, and CA bundle. For those at Sandia, more information can be found at: https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&amp;HTTPS/SSLinterception-SSLCertificate.1.  </p><p>You cay need to then tell julia where the SSL<em>CA</em>ROOTS are.  Then in some instances, the built in julia git system has trouble with proxies, so you can tell it to use the command line interface git.</p><p>Here is an example section of a mac .zshrc script with dummy variables filled in assuming the machine is behind a proxy. If you aren&#39;t behind a proxy you should be able to just ignore all of the first block, and possibly the SSL CA, and CLI_GIT variables depending on your operating system and if you choose to use SSH keys.</p><pre><code class="nohighlight hljs">export HTTP_PROXY=&quot;http://user:nopass@proxy.yourproxy.com:80/&quot;
+export HTTPS_PROXY=&quot;http://user:nopass@proxy.yourproxy.com:80/&quot;
+export no_proxy=*.local,169.254/16,*.yourproxy.com,*.srn.yourproxy.com,localhost,127.0.0.1,::1
+export NO_PROXY=*.local,169.254/16,*.yourproxy.com,*.srn.yourproxy.com,localhost,127.0.0.1,::1
+git config --global http.proxy http://user:nopass@proxy.yourproxy.com:80
+git config --global https.proxy http://user:nopass@proxy.yourproxy.com:80
+
+export SSL_CERT_FILE=/Users/kevmoor/.ssh/your_root_ca.pem
+export REQUESTS_CA_BUNDLE=${SSL_CERT_FILE}
+
+export JULIA_SSL_CA_ROOTS_PATH=&quot;&quot;
+export JULIA_PKG_USE_CLI_GIT=true
+export JULIA_NUM_THREADS=1
+export OMP_NUM_THREADS=10</code></pre><h1 id="Test-That-Julia-Runs"><a class="docs-heading-anchor" href="#Test-That-Julia-Runs">Test That Julia Runs</a><a id="Test-That-Julia-Runs-1"></a><a class="docs-heading-anchor-permalink" href="#Test-That-Julia-Runs" title="Permalink"></a></h1><p>the following should get you in and out of the julia interactive repl, open up a terminal and type</p><pre><code class="nohighlight hljs">julia 
+exit()</code></pre><h1 id="Brief-Julia-Primer"><a class="docs-heading-anchor" href="#Brief-Julia-Primer">Brief Julia Primer</a><a id="Brief-Julia-Primer-1"></a><a class="docs-heading-anchor-permalink" href="#Brief-Julia-Primer" title="Permalink"></a></h1><p>Now open the julia interactive repl and run the following blocks, a multi-line block should be entered as one.</p><p>julia</p><pre><code class="language-julia hljs">
+println(&quot;This is intended just to get you rolling, comprehensive documentation can be found at https://docs.julialang.org/en/v1/&quot;)
+println(&quot;More detail on major differences between codes can be found at https://docs.julialang.org/en/v1/manual/noteworthy-differences/&quot;)
+
+###############################################################
+###############################################################
+###############################################################
+
+println(&quot;#####################&quot;)
+println(&quot;Basic Data Handling&quot;)
+println(&quot;#####################&quot;)
+# Create a multidimensional array
+newMatrix = zeros(2,3)
+# Mutate the contents
+newMatrix[1,2] = 1.0
+
+#Create New Scalar
+newScalar = 5.0
+
+println(&quot;Print the first matrix&quot;)
+# Print the contents and observe the mutation
+for irow = 1:length(newMatrix[:,1])
+    println(newMatrix[irow,:])
+end
+
+# Copy the newMatrix and scalar
+newMatrix2 = newMatrix
+newScalar2 = newScalar
+# Mutate the second matrix and scalar
+newMatrix[1,2] = 2.0
+newScalar2 = 2.0
+
+#Make a printing function inline
+function printme(matrix, scalar)
+    for irow = 1:length(matrix[:,1])
+        println(matrix[irow,:])
+    end
+    println(&quot;Scalar: $scalar&quot;)
+end
+
+println(&quot;Printing the second matrix and scalar&quot;)
+printme(newMatrix2,newScalar2)
+println(&quot;Printing the first matrix again&quot;)
+printme(newMatrix,newScalar)
+if newMatrix[1,2] == newMatrix2[1,2]
+    println(&quot;B=A references the arrays&quot;)
+    println(&quot;B=copy(A) breaks the reference and does a true copy&quot;)
+    println(&quot;B=deepcopy(A) is needed if it is a multi-level type, like a struct or dictionary&quot;)
+    println(&quot;However, scalars are not linked.  This is because a scalar is directly looking at a memory element, while arrays are pointing to the memory elements&quot;)
+end
+
+###############################################################
+###############################################################
+###############################################################
+
+println(&quot;\n#####################&quot;)
+println(&quot;Scope of Functions&quot;)
+println(&quot;#####################&quot;)
+
+
+function coolfunction(input1,input2; mykeyname=&quot;default&quot;,mykeyname2=5.0)
+    if mykeyname==&quot;default&quot;
+        return input1.+input2[1,1,1], 1.0
+    else
+        input2[1,1,1] = 1.0 # Since arrays are always passed by reference, we can mutate it here and it will be mutated above
+        return input1.+mykeyname2, 0.0
+    end
+end
+
+outputs = coolfunction(ones(3).*5,zeros(4,5,2)) 
+println(&quot;use the defaults for the optional args and dump the output into a tuple&quot;)
+println(&quot;First output $(outputs[1]), Second output $(outputs[2])&quot;)
+
+println(&quot;supply the optional args and dump the output into newly allocated items&quot;)
+myinput = zeros(4,5,2)
+mykeyname = &quot;notdefault&quot;
+testinput = 5.0
+outputs1, output2 = coolfunction(ones(3).*5,myinput;mykeyname,mykeyname2=testinput)
+println(&quot;First output $(outputs1), Second output $(output2)&quot;)
+
+println(&quot;now show that myinput was mutated within the function since it was passed by reference&quot;)
+println(myinput)
+
+
+###############################################################
+###############################################################
+###############################################################
+
+println(&quot;\n#####################&quot;)
+println(&quot;Types&quot;)
+println(&quot;#####################&quot;)
+
+first = 1.0
+println(typeof(first))
+
+second = 2
+println(typeof(second))
+
+###############################################################
+###############################################################
+###############################################################
+
+println(&quot;\n#####################&quot;)
+println(&quot;Structs&quot;)
+println(&quot;#####################&quot;)
+
+mutable struct mystruct
+    coolterm1
+    othercoolterm
+end
+
+newStruct = mystruct(1.0,2.0)
+
+println(newStruct.coolterm1)
+println(newStruct.othercoolterm)
+
+###############################################################
+###############################################################
+###############################################################
+
+println(&quot;\n#####################&quot;)
+println(&quot;Package Manager with Standard Packages&quot;)
+println(&quot;#####################&quot;)
+
+using Pkg
+Pkg.add(&quot;PyPlot&quot;) #Note, this will take a while (maybe 10 min depending on your connection) since it is pulling conda and installing it behind the ~/.julia folder 
+# if you want to use your already installed python, you can instead run
+# ENV[&quot;PYTHON&quot;] = &quot;path to your desired python install&quot;
+# Pkg.add(&quot;PyCall&quot;)
+# Pkg.add(&quot;PyPlot&quot;)
+
+Pkg.add(&quot;DelimitedFiles&quot;)
+
+import PyPlot
+import DelimitedFiles
+
+x = [1; 2; 3; 4];
+
+y = [5; 6; 7; 8];
+
+open(&quot;delim_file.txt&quot;, &quot;w&quot;) do io
+        DelimitedFiles.writedlm(io, [x y])
+       end
+
+data = DelimitedFiles.readdlm(&quot;delim_file.txt&quot;, &#39;\t&#39;, Int, &#39;\n&#39;)
+
+PyPlot.figure()
+PyPlot.plot(data[:,1],data[:,2],label=&quot;data&quot;)
+PyPlot.xlabel(&quot;x&quot;)
+PyPlot.ylabel(&quot;y&quot;)
+PyPlot.legend()
+
+thisFilesPath = splitdir(@__FILE__)[1]
+
+PyPlot.savefig(&quot;$(thisFilesPath)/saveme.pdf&quot;,transparent = true)
+
+run(`rm $(thisFilesPath)/saveme.pdf`) #system run
+rm(&quot;delim_file.txt&quot;) # julia&#39;s function that does the same thing
+
+###############################################################
+###############################################################
+###############################################################</code></pre><h2 id="OWENS-Installation-for-Julia-1.11"><a class="docs-heading-anchor" href="#OWENS-Installation-for-Julia-1.11">OWENS Installation for Julia 1.11+</a><a id="OWENS-Installation-for-Julia-1.11-1"></a><a class="docs-heading-anchor-permalink" href="#OWENS-Installation-for-Julia-1.11" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Pkg
+Pkg.add(PackageSpec(url=&quot;https://github.com/sandialabs/OWENS.jl.git&quot;))</code></pre><p>Note that there are many packages used in the examples.  While they are installed within the OWENS.jl environment, if you want to additionally install them in your 1.11+ environment where you will likely be running from:</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add([&quot;Statistics&quot;,&quot;Dierckx&quot;,&quot;QuadGK&quot;,&quot;FLOWMath&quot;,&quot;HDF5&quot;,&quot;ImplicitAD&quot;,&quot;GXBeam&quot;,&quot;DelimitedFiles&quot;,&quot;FFTW&quot;,&quot;YAML&quot;,&quot;OrderedCollections&quot;])</code></pre><p>If you want to show any of the plots in the examples, they currently use the PyPlot interface, which means that julia has to install its own conda in the back end, which can take some time.  Alternatively, you can point to your own python if desired.</p><pre><code class="language-julia hljs">using Pkg
+# Install PyPlot if not already installed
+Pkg.add(&quot;PyPlot&quot;) #Note, this will take a while (maybe 10 min depending on your connection) since it is pulling conda and installing it behind the ~/.julia folder 
+# if you want to use your already installed python, you can instead run
+# ENV[&quot;PYTHON&quot;] = &quot;path to your desired python install&quot;
+# Pkg.add(&quot;PyCall&quot;)
+# Pkg.add(&quot;PyPlot&quot;)</code></pre><h2 id="OWENS-Installation-for-Julia-1.10-and-older-(down-to-1.6)"><a class="docs-heading-anchor" href="#OWENS-Installation-for-Julia-1.10-and-older-(down-to-1.6)">OWENS Installation for Julia 1.10 and older (down to 1.6)</a><a id="OWENS-Installation-for-Julia-1.10-and-older-(down-to-1.6)-1"></a><a class="docs-heading-anchor-permalink" href="#OWENS-Installation-for-Julia-1.10-and-older-(down-to-1.6)" title="Permalink"></a></h2><p>These steps require a secure download, such as through the SSH keys detailed above, to avoid man-in-the-middle attacks. </p><pre><code class="language-julia hljs">
+using Pkg
+
+println(&quot;\n#####################&quot;)
+println(&quot;Install OWENS&quot;)
+println(&quot;#####################&quot;)
+
+Pkg.add([&quot;Statistics&quot;,&quot;Dierckx&quot;,&quot;QuadGK&quot;,&quot;FLOWMath&quot;,&quot;HDF5&quot;,&quot;ImplicitAD&quot;,&quot;GXBeam&quot;,&quot;DelimitedFiles&quot;,&quot;FFTW&quot;,&quot;YAML&quot;,&quot;OrderedCollections&quot;])
+
+Pkg.add([
+PackageSpec(url=&quot;https://github.com/byuflowlab/Composites.jl.git&quot;),
+PackageSpec(url=&quot;https://github.com/sandialabs/OWENSOpenFAST_jll.jl.git&quot;),
+PackageSpec(url=&quot;https://github.com/sandialabs/OWENSOpenFASTWrappers.jl.git&quot;),
+PackageSpec(url=&quot;https://github.com/sandialabs/OWENSAero.jl.git&quot;),
+PackageSpec(url=&quot;https://github.com/sandialabs/OWENSFEA.jl.git&quot;),
+PackageSpec(url=&quot;https://github.com/sandialabs/OWENS.jl.git&quot;),
+])</code></pre><h1 id="Testing-Your-Build-of-OWENS"><a class="docs-heading-anchor" href="#Testing-Your-Build-of-OWENS">Testing Your Build of OWENS</a><a id="Testing-Your-Build-of-OWENS-1"></a><a class="docs-heading-anchor-permalink" href="#Testing-Your-Build-of-OWENS" title="Permalink"></a></h1><p>clone the owens repository which contains example scripts that will setup and run example turbines from end to end</p><pre><code class="nohighlight hljs">git clone git@github.com:sandialabs/OWENS.jl
+cd OWENS.jl/examples/literate/
+julia B_detailedInputs.jl</code></pre><p>You can visualize the output vtk/vtu/pvd paraview files with paraview, install paraview via     apt-get -y install paraview # or on mac, brew install paraview</p><p>You can also run julia more interactively and maintain variables in scope for inspections etc if you don&#39;t have an IDE set up (but be careful of assuming a variable was cleared when it wasn&#39;t!) by starting the repl and essentially copying and pasing the run script via</p><pre><code class="nohighlight hljs">julia</code></pre><pre><code class="language-julia hljs">    include(&quot;path/to/file.jl&quot;)</code></pre><h1 id="Visual-Studio-Code-IDE"><a class="docs-heading-anchor" href="#Visual-Studio-Code-IDE">Visual Studio Code IDE</a><a id="Visual-Studio-Code-IDE-1"></a><a class="docs-heading-anchor-permalink" href="#Visual-Studio-Code-IDE" title="Permalink"></a></h1><p>You can install VScode and get a debugger etc.  In VScode, there is a setting file which sets up VS code for julia and sets some quick keys that can be changed if desired (OWENS.jl/docs/OWENS.code-profile). </p><p>With the sample profile loaded into VSCode, If you want to clear out all the variables and restart do </p><pre><code class="nohighlight hljs">cmd-j cmd-k,</code></pre><p>if you want to clear out the console </p><pre><code class="nohighlight hljs">cmd-j cmd-c</code></pre><p>open the workspace </p><pre><code class="nohighlight hljs">cmd-j cmd-w</code></pre><p>run highlighted code </p><pre><code class="nohighlight hljs">shift-enter</code></pre><p>run the currently selected file</p><pre><code class="nohighlight hljs">cmd-shift-enter</code></pre><p>You can also use the gui buttons.</p><h2 id="VSCode-Julia-Debugger"><a class="docs-heading-anchor" href="#VSCode-Julia-Debugger">VSCode Julia Debugger</a><a id="VSCode-Julia-Debugger-1"></a><a class="docs-heading-anchor-permalink" href="#VSCode-Julia-Debugger" title="Permalink"></a></h2><p>It is a lot like matlab, but you are working with a compiled code, so in the debugger portion of the vscode gui, you need to check which code is compiled and which is interpereted, and turn off the compilation for the packages you are trying to debug.  The debugger will not step through compiled code. Also, some lines of code have many instructions, particularly function calls with conversions on the inputs, etc, so if you are trying to use the step in gui button, you may need to click it multiple times.</p><p>If you are working on a module and want it to reload with your most recent local changes without committing to master, pushing, and telling julia to update the package which is pointing to the git repo:</p><h2 id="Install-custom-repositories-you-want-to-develop"><a class="docs-heading-anchor" href="#Install-custom-repositories-you-want-to-develop">Install custom repositories you want to develop</a><a id="Install-custom-repositories-you-want-to-develop-1"></a><a class="docs-heading-anchor-permalink" href="#Install-custom-repositories-you-want-to-develop" title="Permalink"></a></h2><p>start Julia from the cloned directory and use the command:</p><pre><code class="nohighlight hljs">] dev .</code></pre><p>This type of installation will cause the module to reload each time Julia starts without needing to tell Julia to update. NOTE: even though julia 1.11 can to a regular install with a single line and resolve the custom dependencies, for the dev install it doesn&#39;t appear to automatically do so; so you may need to be careful about the installation order of dev packages to ensure you have downstream dependencies satisfied.</p><p>Alternatively, you can effectively copy and paste the module in, like so:</p><pre><code class="language-julia hljs">include(&quot;path/to/module.jl/source/module.jl&quot;)</code></pre><p>then you don&#39;t even have to restart julia when you make changes, but be careful to only do this for a limited number of modules, and if you are changing constants, like c library interfaces, or the libraries themselves, then you need to restart julia to get it to pick up the most recent changes.</p><p>You can also install a specific branch of a remote repository package without having to clone the repo and checkout the branch:</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add(url = &quot;git@github.com:sandialabs/OWENS.jl.git&quot;, rev = &quot;dev&quot;)</code></pre><h1 id="Custom-Install-of-Optional-OpenFAST-Dependices"><a class="docs-heading-anchor" href="#Custom-Install-of-Optional-OpenFAST-Dependices">Custom Install of Optional OpenFAST Dependices</a><a id="Custom-Install-of-Optional-OpenFAST-Dependices-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-Install-of-Optional-OpenFAST-Dependices" title="Permalink"></a></h1><p>You&#39;ll need your system to be capable of compiling OpenFAST (https://openfast.readthedocs.io/en/main/), either with cmake, and the sample instructions below, or the OpenFAST visual studio code recipes, more of which can be found in the OpenFAST documentation.     mkdir coderepos     cd coderepos     # Install openfast coupled libraries !NOTE!: if you change the location of the compiled libraries, you may need to update the rpath variable, or recompile.     git clone –depth 1 git@github.com:andrew-platt/openfast.git     # if this errors, you can clone git@github.com:OpenFAST/openfast.git it just doesn&#39;t have the latest updates from Andy, but the interface should be the same and should run.     cd openfast     git remote set-branches origin &#39;*&#39;     git fetch –depth 1 origin f/ADI<em>c</em>binding<em>multiRotor     git checkout f/ADI</em>c<em>binding</em>multiRotor     mkdir build     cd build     # can also add -DOPENMP=ON if desired for acceleration of OLAF     # you can rebuild later by removing the build folder and following these instructions again.     cmake -DBUILD<em>SHARED</em>LIBS=ON ..     make ifw<em>c</em>binding     make moordyn<em>c</em>binding     make hydrodyn<em>c</em>binding     make aerodyn<em>inflow</em>c<em>binding     make aerodyn</em>driver     make turbsim     cd ../../</p><p>There is also a OWENSOpenFASTWrappers.jl/deps/legacy_build.jl script which can be useful.</p><p>Then, within OWENS, you would provide the path to the resulting binaries you&#39;d like to use. e.g. </p><pre><code class="language-julia hljs">adi_lib=&quot;buildpath/openfast/build/modules/AeroDyn/libaerodyn_inflow_c_binding.so&quot;</code></pre><p>instead of the default, which points to the precompiled OWENSOpenFAST_jll.jl binaries.</p><h1 id="Set-up-SSH-Keys"><a class="docs-heading-anchor" href="#Set-up-SSH-Keys">Set up SSH Keys</a><a id="Set-up-SSH-Keys-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-SSH-Keys" title="Permalink"></a></h1><p>If you choose to install packages using ssh instead of https, (or if you make a private repository), you&#39;ll need to set up SSH keys and replace all of the https://github.com with git@github.com in the installation steps. Note that for installation behind the Sandia network, you will need to be on the network and follow additional instructions at https://wiki.sandia.gov/pages/viewpage.action?pageId=227381234#SandiaProxyConfiguration,Troubleshooting&amp;HTTPS/SSLinterception-SSLCertificate.1. For windows, note that you may have to use id_ecdsa keys.</p><pre><code class="nohighlight hljs"># Go to your gihub account settings
+# left side, SSH and GPG keys
+# new ssh key
+# name: owensrepos # or whatever you&#39;d like
+# back in the terminal, use the following, or the equivalent for Windows found in the github docs (https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+ssh-keygen -t rsa -m PEM -C username@youremail.gov
+# enter, enter, enter (i.e. use defaults with !NO PASSWORD! since it is not necessary)
+cd ~
+ls -a
+cd .ssh
+vim id_rsa.pub
+#copy the contents to github.com (User icon &gt; Settings &gt; SSH and GPG &gt; New SSH Key) and paste them back in your browser to the ssh key box and create the key
+# esc : q enter # to get out of vim
+cd ~</code></pre><p>Additionally, if you find that your ssh is erroring when you try to install packages, try editing your ~/.ssh/config and add:</p><pre><code class="nohighlight hljs">Host *
+PubkeyAcceptedAlgorithms +ssh-rsa
+PubkeyAcceptedAlgorithms +ssh-ed25519</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../examples/A_simplyRunningOWENS/">Simply Running OWENS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:19">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

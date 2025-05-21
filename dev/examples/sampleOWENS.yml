@@ -1,0 +1,49 @@
+
+general:
+  analysisType: unsteady # unsteady, steady, modal
+  turbineType: Darrieus #Darrieus, H-VAWT, ARCUS
+
+designParameters:
+  eta: 0.5 # blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
+  Nbld: 3 # number of blades
+  Blade_Radius: 54.01123056 # blade height m
+  Blade_Height: 110.1829092 # blade radius m
+  towerHeight: 3.0 # m tower extension height below blades
+
+operationParameters:
+  rho: 1.225 # air density
+  Vinf: 17.2 # m/s #optional, supersceeded if ifw=true
+
+turbulentInflow:
+  ifw: false
+  WindType: 1
+  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: nothing
+
+controlParameters:
+  controlStrategy: normal # TODO: incorporate the others
+  RPM: 17.2 #RPM
+  numTS: 20 #
+  delta_t: 0.01 # s
+
+
+AeroParameters:
+  Nslices: 30 # number of OWENSAero discritizations #TODO: AD parameters
+  ntheta: 30 # number of OWENSAero azimuthal discretizations
+  AeroModel: AD # AD, DMS, AC
+  adi_lib: nothing
+  adi_rootname: "/ExampleB"
+  
+structuralParameters:
+  structuralModel: GX #GX, TNB, ROM
+  nonlinear: false #TODO: propogate
+  ntelem: 20 #tower elements in each 
+  nbelem: 50 #blade elements in each 
+  ncelem: 10 #central cable elements in each if turbineType is ARCUS
+  nselem: 5 #strut elements in each if turbineType has struts
+  NuMad_geom_xlscsv_file_twr: /data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv
+  NuMad_mat_xlscsv_file_twr: /data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_bld: /data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv
+  NuMad_mat_xlscsv_file_bld: /data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_strut: /data/NuMAD_Geom_SNL_5MW_Struts.csv
+  NuMad_mat_xlscsv_file_strut: /data/NuMAD_Materials_SNL_5MW.csv

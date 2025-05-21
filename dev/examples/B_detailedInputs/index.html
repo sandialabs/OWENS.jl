@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Detailed Inputs · OWENS.jl</title><meta name="title" content="Detailed Inputs · OWENS.jl"/><meta property="og:title" content="Detailed Inputs · OWENS.jl"/><meta property="twitter:title" content="Detailed Inputs · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li class="is-active"><a class="tocitem" href>Detailed Inputs</a></li><li><a class="tocitem" href="../C_customizablePreprocessing/">Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li><a class="tocitem" href="../E_RM2_Medium/">Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Detailed Inputs</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Detailed Inputs</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="simple2"><a class="docs-heading-anchor" href="#simple2">Detailed Inputs</a><a id="simple2-1"></a><a class="docs-heading-anchor-permalink" href="#simple2" title="Permalink"></a></h1><p>In this example, we show the second level of what is going on behind the precompiled binary This would be appropriate if you need more customization in the run and design parameters than the input file currently allows, but your design still fits within the setupOWENS helper function etc.</p><div class="admonition is-success" id="Tip-93533659e05723d"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-93533659e05723d" title="Permalink"></a></header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/B_detailedInputs.ipynb"><code>B_detailedInputs.ipynb</code></a>.</p></div></div><p>First we import the packages.  If &quot;using&quot; was employed, then all of the functions of the packages specified would be made available, but &quot;import&quot; requires PackageName.FunctionName to be used unless the function was explicitely exported in the package.  If &quot;include(&quot;filepath/filename.jl)&quot; is used, that is the same as copying and pasting.  Please see the respective page on YAML input (TODO) for a description of the YAML inputs</p><pre><code class="language-julia hljs">import OWENS
+import OWENSAero
+#### import PyPlot
+runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quot; # to run locally, change to splitdir(@__FILE__)[1]
+# runpath = path = splitdir(@__FILE__)[1]
+Inp = OWENS.MasterInput(&quot;$runpath/sampleOWENS.yml&quot;)
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/topRunDLC.jl:647</code></pre><p>Unpack inputs, or you could directly input them here and bypass the file</p><pre><code class="language-julia hljs">verbosity = 1
+
+analysisType = Inp.analysisType
+turbineType = Inp.turbineType
+eta = Inp.eta
+Nbld = Inp.Nbld
+towerHeight = Inp.towerHeight
+rho = Inp.rho
+Vinf = Inp.Vinf
+controlStrategy = Inp.controlStrategy
+RPM = Inp.RPM
+Nslices = Inp.Nslices
+ntheta = Inp.ntheta
+structuralModel = Inp.structuralModel
+ntelem = Inp.ntelem
+nbelem = Inp.nbelem
+ncelem = Inp.ncelem
+nselem = Inp.nselem
+ifw = Inp.ifw
+WindType = Inp.WindType
+AeroModel = Inp.AeroModel
+windINPfilename = &quot;$(path)$(Inp.windINPfilename)&quot;
+ifw_libfile = Inp.ifw_libfile
+if ifw_libfile == &quot;nothing&quot;
+    ifw_libfile = nothing
+end
+Blade_Height = Inp.Blade_Height
+Blade_Radius = Inp.Blade_Radius
+numTS = Inp.numTS
+delta_t = Inp.delta_t
+NuMad_geom_xlscsv_file_twr = &quot;$(path)$(Inp.NuMad_geom_xlscsv_file_twr)&quot;
+NuMad_mat_xlscsv_file_twr = &quot;$(path)$(Inp.NuMad_mat_xlscsv_file_twr)&quot;
+NuMad_geom_xlscsv_file_bld = &quot;$(path)$(Inp.NuMad_geom_xlscsv_file_bld)&quot;
+NuMad_mat_xlscsv_file_bld = &quot;$(path)$(Inp.NuMad_mat_xlscsv_file_bld)&quot;
+NuMad_geom_xlscsv_file_strut = &quot;$(path)$(Inp.NuMad_geom_xlscsv_file_strut)&quot;
+NuMad_mat_xlscsv_file_strut = &quot;$(path)$(Inp.NuMad_mat_xlscsv_file_strut)&quot;
+adi_lib = Inp.adi_lib
+if adi_lib == &quot;nothing&quot;
+    adi_lib = nothing
+end
+adi_rootname = &quot;$(path)$(Inp.adi_rootname)&quot;
+
+B = Nbld
+R = Blade_Radius#177.2022*0.3048 #m
+H = Blade_Height#1.02*R*2 #m
+
+shapeZ = collect(LinRange(0,H,Nslices+1))
+shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
+
+nothing</code></pre><p>Call the helper function that builds the mesh, calculates the sectional properties, and aligns the sectional properties to the mesh elements,</p><pre><code class="language-julia hljs">mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+stiff_twr, stiff_bld,bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
+mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+    rho,
+    Nslices,
+    ntheta,
+    RPM,
+    Vinf,
+    eta,
+    B,
+    H,
+    R,
+    shapeZ,
+    shapeX,
+    ifw,
+    WindType,
+    delta_t,
+    numTS,
+    adi_lib,
+    adi_rootname,
+    windINPfilename,
+    ifw_libfile,
+    NuMad_geom_xlscsv_file_twr,# = &quot;$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv&quot;,
+    NuMad_mat_xlscsv_file_twr,# = &quot;$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv&quot;,
+    NuMad_geom_xlscsv_file_bld,# = &quot;$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv&quot;,
+    NuMad_mat_xlscsv_file_bld,# = &quot;$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv&quot;,
+    NuMad_geom_xlscsv_file_strut,
+    NuMad_mat_xlscsv_file_strut,
+    Htwr_base=towerHeight,
+    strut_twr_mountpoint = [0.2,0.8],
+    strut_bld_mountpoint = [0.2,0.8],
+    ntelem,
+    nbelem,
+    ncelem,
+    nselem,
+    joint_type = 0,
+    c_mount_ratio = 0.05,
+    AeroModel, #AD, DMS, AC
+    DynamicStallModel=&quot;BV&quot;,
+    RPI=true,
+    cables_connected_to_blade_base = true,
+    meshtype = turbineType)
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [-0.1,6.123233995736766e-18,25.03658152124881] to [-0.1,6.123233995736766e-18,25.03658152124881]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999998,0.08660254037844388,25.03658152124881] to [0.04999999999999998,0.08660254037844388,25.03658152124881]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000004,-0.08660254037844385,25.03658152124881] to [0.05000000000000004,-0.08660254037844385,25.03658152124881]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [-0.1,6.123233995736766e-18,91.1463270412512] to [-0.1,6.123233995736766e-18,91.1463270412512]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999998,0.08660254037844388,91.1463270412512] to [0.04999999999999998,0.08660254037844388,91.1463270412512]
+Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000003,-0.08660254037844385,91.1463270412512] to [0.05000000000000003,-0.08660254037844385,91.1463270412512]
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/fileio.jl:660
+Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee668f59fa694053de285aeb6d77f/lib/libaerodyn_inflow_c_binding.so
+
+ **************************************************************************************************
+ AeroDyn-Inflow library
+
+ Copyright (C) 2024 National Renewable Energy Laboratory
+ Copyright (C) 2024 Envision Energy USA LTD
+
+ This program is licensed under Apache License Version 2.0 and comes with ABSOLUTELY NO WARRANTY.
+ See the &quot;LICENSE&quot; file distributed with this software for details.
+ **************************************************************************************************
+
+ AeroDyn-Inflow library-v2.5.0-3490-g24c05a74
+ Compile Info:
+  - Compiler: GCC version 8.1.0
+  - Architecture: 64 bit
+  - Precision: double
+  - OpenMP: No
+  - Date: Nov  5 2024
+  - Time: 02:19:23
+ Execution Info:
+  - Date: 05/21/2025
+  - Time: 14:17:33+0000
+
+ Running ADI.
+ Running AeroDyn.
+ Running OLAF.
+  - Directory:         /home/runner/work/OWENS.jl/OWENS.jl/docs/build/examples
+  - RootName:          /home/runner/work/OWENS.jl/OWENS.jl/examples/literate/ExampleB.
+  - Reading advanced options for OLAF:
+ [WARN] Line ignored: &quot;VERT2&quot;   DEFAULT      -10       30.   400     5.      5.     1     5.136    15.136  100
+  - OLAF regularization parameters (for wing 1):
+    WingReg (min/max) :  12.2425 25.2472
+    WakeReg (min/max) :  12.2425 25.2472
+    k = alpha delta nu:   0.0368
+ Running InflowWind.
+┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:595</code></pre><p>Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface to work with OWENS inputs as well.</p><pre><code class="language-julia hljs">nothing</code></pre><p>If the sectional properties material files includes cost information, that is combined with the density to estimate the overall material cost of of materials in the blades</p><pre><code class="language-julia hljs">if verbosity&gt;0
+
+    println(&quot;\nBlades&#39; Mass Breakout&quot;)
+    for (i,name) in enumerate(plyprops_bld.names)
+        println(&quot;$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])&quot;)
+    end
+
+    println(&quot;\nTower Mass Breakout&quot;)
+    for (i,name) in enumerate(plyprops_twr.names)
+        println(&quot;$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])&quot;)
+    end
+
+    println(&quot;Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))&quot;)
+    println(&quot;Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))&quot;)
+    println(&quot;Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))&quot;)
+
+end
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+Blades&#39; Mass Breakout
+CLA_5500 6890.098827630393 kg, 2.06 $/kg: $14193.60358491861
+CBX_2400 3243.4725862181945 kg, 2.1 $/kg: $6811.292431058208
+ETLX_2400 0.0 kg, 2.21 $/kg: $0.0
+Airex_C70_55 263.19915878291914 kg, 7.23 $/kg: $1902.9299180005055
+EBX_2400_x10 0.0 kg, 2.06 $/kg: $0.0
+ETLX_2400_x10 0.0 kg, 2.1 $/kg: $0.0
+Airex_C70_55_x10 0.0 kg, 7.23 $/kg: $0.0
+
+Tower Mass Breakout
+CLA_5500 133368.60013602406 kg, 2.06 $/kg: $274739.3162802096
+CBX_2400 32523.066445448334 kg, 2.1 $/kg: $68298.4395354415
+ETLX_2400 0.0 kg, 2.21 $/kg: $0.0
+Airex_C70_55 0.0 kg, 7.23 $/kg: $0.0
+EBX_2400_x10 0.0 kg, 2.06 $/kg: $0.0
+ETLX_2400_x10 0.0 kg, 2.1 $/kg: $0.0
+Airex_C70_55_x10 0.0 kg, 7.23 $/kg: $0.0
+Total Material Cost Blades: $22907.82593397732
+Total Material Cost Tower: $343037.7558156511
+Total Material Cost: $365945.5817496284</code></pre><p>Here we apply the boundary conditions.  For this case, with a regular cantelever tower, the tower base node which is 1 is constrained in all 6 degrees of freedom to have a displacement of 0.  You can change this displacement to allow for things like pretension, and you can apply boundary conditions to any node.</p><pre><code class="language-julia hljs">pBC = [1 1 0
+1 2 0
+1 3 0
+1 4 0
+1 5 0
+1 6 0]
+
+nothing</code></pre><p>There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options</p><pre><code class="language-julia hljs">if AeroModel==&quot;AD&quot;
+    AD15On = true
+else
+    AD15On = false
+end
+
+inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
+tocp = [0.0,100000.1],
+Omegaocp = [RPM,RPM] ./ 60,
+tocp_Vinf = [0.0,100000.1],
+Vinfocp = [Vinf,Vinf],
+numTS,
+delta_t,
+AD15On,
+aeroLoadsOn = 2)
+
+nothing</code></pre><p>Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)</p><pre><code class="language-julia hljs">feamodel = OWENS.FEAModel(;analysisType = structuralModel,
+dataOutputFilename = &quot;none&quot;,
+joint = myjoint,
+platformTurbineConnectionNodeNumber = 1,
+pBC,
+nlOn = true,
+numNodes = mymesh.numNodes,
+RayleighAlpha = 0.05,
+RayleighBeta = 0.05,
+iterationType = &quot;DI&quot;)
+
+nothing</code></pre><p>Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together and propogates things in time.</p><pre><code class="language-julia hljs">println(&quot;Running Unsteady&quot;)
+t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
+
+if AD15On #TODO: move this into the run functions
+    OWENS.OWENSOpenFASTWrappers.endTurb()
+end
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Running Unsteady
+Running in specified rotor speed mode
+
+5.3%┣██▎                                        ┫ 1/19 [00:00&lt;Inf:Inf, InfGs/it]
+ [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
+ subsequent occurences.
+10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:38, 2s/it]
+15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:26, 2s/it]
+21.1%┣██████████                                     ┫ 4/19 [00:04&lt;00:21, 1s/it]
+26.3%┣████████████▍                                  ┫ 5/19 [00:05&lt;00:17, 1s/it]
+31.6%┣██████████████▉                                ┫ 6/19 [00:06&lt;00:15, 1s/it]
+36.8%┣█████████████████▎                             ┫ 7/19 [00:07&lt;00:13, 1s/it]
+42.1%┣███████████████████▉                           ┫ 8/19 [00:07&lt;00:12, 1s/it]
+47.4%┣██████████████████████▎                        ┫ 9/19 [00:08&lt;00:10, 1s/it]
+52.6%┣████████████████████████▏                     ┫ 10/19 [00:09&lt;00:09, 1it/s]
+57.9%┣██████████████████████████▋                   ┫ 11/19 [00:10&lt;00:08, 1it/s]
+63.2%┣█████████████████████████████                 ┫ 12/19 [00:11&lt;00:07, 1it/s]
+68.4%┣███████████████████████████████▌              ┫ 13/19 [00:12&lt;00:06, 1it/s]
+73.7%┣██████████████████████████████████            ┫ 14/19 [00:13&lt;00:05, 1it/s]
+78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:13&lt;00:04, 1it/s]
+84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:14&lt;00:03, 1it/s]
+89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:14&lt;00:02, 1it/s]
+94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:15&lt;00:01, 1it/s]
+100.0%┣█████████████████████████████████████████████┫ 19/19 [00:16&lt;00:00, 1it/s]
+Simulation Complete.
+ &gt;&gt;&gt; FINAL WRITE</code></pre><p>Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO</p><pre><code class="language-julia hljs">println(&quot;Saving VTK time domain files&quot;)
+OWENS.OWENSFEA_VTK(&quot;$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue&quot;,t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Saving VTK time domain files</code></pre><p>This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina it also calculates analytical simply supported buckling safety factors</p><pre><code class="language-julia hljs">##########################################
+#### Ultimate Failure #####
+##########################################
+
+massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
+topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
+bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+composite_station_idx_U_strut = [1,6,3,2,5],
+composite_station_name_U_strut = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+composite_station_idx_L_strut = [1,6,3,2,5],
+composite_station_name_L_strut = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+composite_station_idx_U_bld = [1,6,3,2,5],
+composite_station_name_U_bld = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+composite_station_idx_L_bld = [1,6,3,2,5],
+composite_station_name_L_bld = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/PostProcessing.jl:650
+Composite Ultimate and Buckling Safety Factors
+
+
+UPPER BLADE SURFACE
+Minimum Safety Factor on Surface: 6.867203588909989
+At time 0.015s at composite station 11 of 21 at lam 6 of 6
+Maximum Damage per hr: 28720.221606732415
+At composite station 14 of 21 at lam 2 of 6
+
+
+LOWER BLADE SURFACE
+Minimum Safety Factor on Surface: 6.801006867316413
+At time 0.015s at composite station 11 of 21 at lam 6 of 6
+Maximum Damage per hr: 21540.166205122434
+At composite station 6 of 21 at lam 2 of 6
+
+
+UPPER TOWER
+
+Minimum Safety Factor on tower Surface: 22.384199207647143
+At time 0.017s at composite station 18 of 21 at lam 1 of 1
+Maximum Damage per hr: 5385.041551714922
+At composite station 1 of 21 at lam 1 of 1
+
+
+Lower TOWER
+
+Minimum Safety Factor on tower Surface: 19.37474867160012
+At time 0.019s at composite station 14 of 21 at lam 1 of 1
+Maximum Damage per hr: 5385.0415523268375
+At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:19">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Marine Hydrokinetic RM2 · OWENS.jl</title><meta name="title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta property="og:title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta property="twitter:title" content="Marine Hydrokinetic RM2 · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li><a class="tocitem" href="../C_customizablePreprocessing/">Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li class="is-active"><a class="tocitem" href>Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Marine Hydrokinetic RM2</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Marine Hydrokinetic RM2</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="RM2"><a class="docs-heading-anchor" href="#RM2">Marine Hydrokinetic RM2</a><a id="RM2-1"></a><a class="docs-heading-anchor-permalink" href="#RM2" title="Permalink"></a></h1><p>In this example we use the OWENS scripting method to model the RM2 turbine, based on “Experimental Study of a Reference Model Vertical-Axis Cross-Flow Turbine”, 2016, Bachant et al. While the windio modeling option based on input yaml files is also included in the OWENS.jl/examples directory, The scripting method enable much more flexibility and the ability to add detailed comments on the setup and use. Note that the documentation contains an API reference for nearly all of the functions where more details can be found also accessed via the julia REPL by loading the module of interest, and: ? ModuleName.functionname()</p><p><img src="../../assets/RM2_wake.png" alt/></p><div class="admonition is-success" id="Tip-a17fd7ece9c34d18"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-a17fd7ece9c34d18" title="Permalink"></a></header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/E_RM2_Medium.ipynb"><code>E_RM2_Medium.ipynb</code></a>.</p></div></div><p>Load in all of the modules that we&#39;ll be using, and prettify the plotting options</p><pre><code class="language-julia hljs">import OWENS
+import OWENSAero
+import DelimitedFiles
+using Statistics:mean
+using Test
+import FLOWMath
+import HDF5</code></pre><p>import PyPlot PyPlot.pygui(true) PyPlot.rc(&quot;figure&quot;, figsize=(4.5, 3)) PyPlot.rc(&quot;font&quot;, size=10.0) PyPlot.rc(&quot;lines&quot;, linewidth=1.5) PyPlot.rc(&quot;lines&quot;, markersize=3.0) PyPlot.rc(&quot;legend&quot;, frameon=false) PyPlot.rc(&quot;axes.spines&quot;, right=false, top=false) PyPlot.rc(&quot;figure.subplot&quot;, left=.18, bottom=.17, top=0.9, right=.9) PyPlot.rc(&quot;figure&quot;,max<em>open</em>warning=500) plot_cycle=[&quot;#348ABD&quot;, &quot;#A60628&quot;, &quot;#009E73&quot;, &quot;#7A68A6&quot;, &quot;#D55E00&quot;, &quot;#CC79A7&quot;]</p><pre><code class="language-julia hljs"># path = runpath = splitdir(@__FILE__)[1]
+runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quot; # to run locally, change to splitdir(@__FILE__)[1]
+
+nothing</code></pre><p>Here we set the parametric inputs to the preprocessing and run methods.  Defaults are used otherwise Note that for the OpenFAST coupling, such as adi_lib, setting these to nothing will force the program to use the precompiled binaries that are part of the OWENS installation. Again, please refer the to API reference for more detailed options of inputs, but of note is that we are running with AeroModel = &quot;AD&quot; which will automatically generate all of the AeroDyn files necessary to run the structural definition generated here.  Also note that this scripting method relys on the NuMAD formatted CSV files for the composite layup that gets run through PreComp.jl to calculate the sectional properties. Finally, this has been shortened to enable automated deployment, update as desired.</p><pre><code class="language-julia hljs">turbineType = &quot;H-VAWT&quot; # turbine type, for the automatic meshing
+Vinf = 1.2 # inflow velocity
+TSRrange = [3.5]#LinRange(1.0,5.0,2) range of tip speed ratios
+Nslices = 20 # vertical discretizations if DMS or AC aero model
+ntheta = 30 # azimuthal discretizations if DMS or AC aero model
+structuralModel = &quot;TNB&quot;
+ntelem = 100 # tower elements
+nbelem = 30 # blade elements
+nselem = 10 # strut elements
+ifw = false # use inflow wind, if DMS or AC aero model
+numTS = 21#321 # number of simulation time steps
+delta_t = 0.01 # simulation time step spacing
+adi_lib = nothing#&quot;$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding&quot;
+adi_rootname = &quot;$path/RM2&quot; # path and name that all the aerodyn files are saved with
+VTKsaveName = &quot;$path/vtk/RM2_medium&quot; # path and name that all OWENS VTK files are saved with
+tsave_idx = 1:1:numTS-1 #you don&#39;t have to save every timestep in VTK
+ifw_libfile = nothing#&quot;$path/../../../openfast/build/modules/inflowwind/libifw_c_binding&quot;
+fluid_density = 1000.0
+fluid_dyn_viscosity = 1.792E-3
+AddedMass_Coeff_Ca = 1.0 #For structural side added mass
+Aero_Buoyancy_Active = true # For buoyancy forcing, handled by the OWENSAero module
+AeroModel = &quot;DMS&quot;
+verbosity = 1 # verbosity level where higher is more
+if AeroModel==&quot;AD&quot;
+    AD15On = true
+else
+    AD15On = false
+end
+
+eta = 0.5 # blade-strut mount point ratio, fraction from leading edge
+number_of_blades = 3 # number of blades
+towerHeight = 0.2165 # height of the tower past the blades
+Blade_Height = 0.807 # height of the blades
+Blade_Radius = 0.5375 # radius of the turbine
+
+NuMad_geom_xlscsv_file_twr = &quot;$path/data_RM2/TowerGeom.csv&quot; #
+NuMad_mat_xlscsv_file_twr = &quot;$path/data_RM2/TowerMaterials.csv&quot;
+NuMad_geom_xlscsv_file_bld = &quot;$path/data_RM2/GeomBlades$AeroModel.csv&quot;
+NuMad_mat_xlscsv_file_bld = &quot;$path/data_RM2/materials_NuMAD.csv&quot;
+NuMad_geom_xlscsv_file_strut = &quot;$path/data_RM2/GeomStruts$AeroModel.csv&quot;
+NuMad_mat_xlscsv_file_strut = &quot;$path/data_RM2/materials_NuMAD.csv&quot;
+
+nothing</code></pre><p>For this simulation, using aerodyn (&quot;AD&quot;), we will use a turbulent inflow file, indicated as WindType 3 We can let the built in OWENS library for turbsim generate the file as so. Modify the inp file to your liking and comment out the run command to run your own with more time</p><pre><code class="language-julia hljs">WindType = 1
+windINPfilename = &quot;$path/data_RM2/3mx3m1pt2msNTM.bts&quot;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate/data_RM2/3mx3m1pt2msNTM.bts&quot;</code></pre><p>windINPfilename = &quot;<span>$path/data_RM2/steady1pt2.inp&quot; run(`$</span>(OWENS.OWENSOpenFASTWrappers.turbsim()) windINPfilename[1:end - 3]inp`)</p><pre><code class="language-julia hljs">nothing</code></pre><p>Here we would set up to run multiple different inflow conditions, and we can allow the preprocessing to re-run each time since it only takes a few seconds. The for loop is commented out to enable this example to be parsed by the literate package that auto generates the docs.</p><pre><code class="language-julia hljs">CP = zeros(length(TSRrange))
+mymesh = []
+myel = []
+system = []
+assembly = []
+sections = []
+myjoint = []
+pBC = []
+# for (iTSR,TSR) in enumerate(collect(TSRrange))
+TSR = TSRrange[1]
+iTSR = 1
+    global Vinf
+    global mymesh
+    global myel
+    global system
+    global assembly
+    global sections
+    global myjoint
+    global pBC
+
+    omega = Vinf/Blade_Radius*TSR
+    RPM = omega * 60 / (2*pi)
+
+    println(RPM)
+
+    nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">74.61775936587465</code></pre><p>Here we run the OWENS preprocessing, which creates the beam mesh and joints, calculates the sectional properties maps the sectional properties to the elements.  It also sets up the aero module being used.</p><pre><code class="language-julia hljs">    shapeZ = collect(LinRange(0,Blade_Height,Nslices+1))
+    helix_angle = 0.0#-pi/4
+    shapeX = cos.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius
+    shapeY = sin.(shapeZ/maximum(shapeZ)*helix_angle).*Blade_Radius
+
+    mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
+    stiff_twr, stiff_bld,bld_precompinput,
+    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
+    mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+        rho=fluid_density,
+        mu=fluid_dyn_viscosity,
+        Nslices,
+        ntheta,
+        RPM,
+        Vinf,
+        eta,
+        B=number_of_blades,
+        H = Blade_Height,
+        R = Blade_Radius,
+        shapeZ,
+        shapeX,
+        shapeY,
+        ifw,
+        WindType,
+        delta_t,
+        numTS,
+        adi_lib,
+        adi_rootname,
+        windINPfilename,
+        ifw_libfile,
+        NuMad_geom_xlscsv_file_twr,
+        NuMad_mat_xlscsv_file_twr,
+        NuMad_geom_xlscsv_file_bld,
+        NuMad_mat_xlscsv_file_bld,
+        NuMad_geom_xlscsv_file_strut,
+        NuMad_mat_xlscsv_file_strut,
+        Htwr_base=towerHeight,
+        Htwr_blds = Blade_Height+towerHeight,
+        ntelem,
+        nbelem,
+        nselem,
+        joint_type = 0,
+        strut_twr_mountpoint = [0.5],
+        strut_bld_mountpoint = [0.5],
+        AeroModel, #AD, DMS, AC
+        DynamicStallModel=&quot;BV&quot;,
+        Aero_AddedMass_Active = false,
+        Aero_RotAccel_Active = false,
+        AddedMass_Coeff_Ca,
+        Aero_Buoyancy_Active,
+        verbosity,
+        meshtype = turbineType)
+
+    nothing
+
+    # # PyPlot.figure()
+    # # for idot = 1:length(sectionPropsArray[170].xaf)
+    # #     PyPlot.scatter(sectionPropsArray[170].xaf[idot],sectionPropsArray[170].yaf[idot])
+    # #     sleep(0.001)
+    # # end
+    #
+    # ## This plots the mesh and node numbering of the resulting mesh and overlays the joint connections
+    #
+    # PyPlot.figure()
+    # for icon = 1:length(mymesh.conn[:,1])
+        # idx1 = mymesh.conn[icon,1]
+        # idx2 = mymesh.conn[icon,2]
+        # PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],&quot;k.-&quot;)
+        # PyPlot.plot3D([1,1],[1,1],[1,1],&quot;k.-&quot;)
+        # PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,&quot;$idx1&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)
+    # end
+    # for ijoint = 1:length(myjoint[:,1])
+        # idx2 = Int(myjoint[ijoint,2])
+        # idx1 = Int(myjoint[ijoint,3])
+        # PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],&quot;r.-&quot;)
+        # PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,&quot;$idx1&quot;,color=&quot;r&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)
+        # PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,&quot;$idx2&quot;,color=&quot;r&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)
+    # end
+    # PyPlot.xlabel(&quot;x&quot;)
+    # PyPlot.ylabel(&quot;y&quot;)
+    # PyPlot.zlabel(&quot;z&quot;)
+    # PyPlot.axis(&quot;equal&quot;)
+
+    nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
+Moving strut point from [-0.1,6.123233995736766e-18,0.6199998498604652] to [-0.1,6.123233995736766e-18,0.6199998498604652]
+Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
+Moving strut point from [0.04999999999999998,0.08660254037844388,0.6199998498604652] to [0.04999999999999998,0.08660254037844388,0.6199998498604652]
+Hub crossing at idx 3 and radially at -0.007499999999999993 with AD15 hub radius of 0.1
+Moving strut point from [0.05000000000000004,-0.08660254037844387,0.6199998498604652] to [0.05000000000000004,-0.08660254037844387,0.6199998498604652]
+┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:595</code></pre><p>Here we apply the boundary conditions.  For this case, the tower base node which is 1 is constrained in all 6 degrees of freedom to have a displacement of 0, and the tower top is also constrained. You can change this displacement to allow for things like pretension, and you can apply boundary conditions to any node.</p><pre><code class="language-julia hljs">    pBC = [1 1 0
+    1 2 0
+    1 3 0
+    1 4 0
+    1 5 0
+    1 6 0
+    AD15bldElIdxRng[1,2]-1 1 0
+    AD15bldElIdxRng[1,2]-1 2 0
+    AD15bldElIdxRng[1,2]-1 3 0
+    AD15bldElIdxRng[1,2]-1 4 0
+    AD15bldElIdxRng[1,2]-1 5 0]
+
+    nothing</code></pre><p>There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options: ? OWENS.Inputs()</p><pre><code class="language-julia hljs">    tocp = [0.0;10.0; 1e6]
+    Omegaocp = [RPM; RPM; RPM]./60 #control inputs
+
+    tocp_Vinf = [0.0;10.0; 1e6]
+    Vinfocp = [Vinf;Vinf;Vinf]
+
+    inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
+    tocp,
+    dataOutputFilename = &quot;./InitialDataOutputs_scripting.out&quot;,
+    Omegaocp,
+    tocp_Vinf,
+    Vinfocp,
+    numTS,
+    delta_t,
+    AD15On,
+    aeroLoadsOn = 2,
+    MAXITER = 20)
+
+    nothing</code></pre><p>Then there are inputs for the finite element models, also, please see the api reference for specifics on the options</p><pre><code class="language-julia hljs">    FEAinputs = OWENS.FEAModel(;analysisType = structuralModel,
+    dataOutputFilename = &quot;./InitialDataOutputs_scripting.out&quot;,
+    joint = myjoint,
+    platformTurbineConnectionNodeNumber = 1,
+    pBC,
+    nlOn = false,
+    numModes = 70,
+    gravityOn = [0,0,9.81], #positive since the turbine is upside down
+    numNodes = mymesh.numNodes,
+    RayleighAlpha = 0.005,
+    RayleighBeta = 0.005,
+    AddedMass_Coeff_Ca,
+    iterationType = &quot;DI&quot;)
+
+    nothing</code></pre><p>Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together and propogates things in time. Note that for the sake of quickly deployable docs, a shortened simulation is conducted and the CP will not be correct</p><pre><code class="language-julia hljs">    println(&quot;Running Unsteady&quot;)
+    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+    topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
+    topModel=FEAinputs,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,turbsimfile = windINPfilename)
+
+    area = Blade_Height*2*Blade_Radius
+    full_rev_N_timesteps = round(Int,RPM/60/delta_t)*2
+    if full_rev_N_timesteps&gt;numTS
+        idx_start = 1
+    else
+        idx_start = numTS-full_rev_N_timesteps
+    end
+    CP[iTSR] = mean(FReactionHist[idx_start:end,6].*OmegaHist[idx_start:end]*2*pi)/(0.5*fluid_density*mean(Vinfocp)^3*area)
+    TSR = mean(OmegaHist*2*pi*Blade_Radius/mean(Vinfocp))
+    ReD = fluid_density*mean(Vinfocp)*Blade_Radius*2/fluid_dyn_viscosity
+
+    nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Running Unsteady
+Running in specified rotor speed mode
+
+5.0%┣██▏                                        ┫ 1/20 [00:00&lt;Inf:Inf, InfGs/it]
+10.0%┣████▊                                          ┫ 2/20 [00:01&lt;00:23, 1s/it]
+15.0%┣███████                                        ┫ 3/20 [00:02&lt;00:17, 1it/s]
+20.0%┣█████████▍                                     ┫ 4/20 [00:03&lt;00:16, 1it/s]
+25.0%┣███████████▊                                   ┫ 5/20 [00:04&lt;00:14, 1it/s]
+30.0%┣██████████████                                 ┫ 6/20 [00:04&lt;00:12, 1it/s]
+35.0%┣████████████████▌                              ┫ 7/20 [00:05&lt;00:11, 1it/s]
+40.0%┣██████████████████▉                            ┫ 8/20 [00:06&lt;00:11, 1it/s]
+45.0%┣█████████████████████▏                         ┫ 9/20 [00:07&lt;00:09, 1it/s]
+50.0%┣███████████████████████                       ┫ 10/20 [00:08&lt;00:09, 1it/s]
+55.0%┣█████████████████████████▎                    ┫ 11/20 [00:09&lt;00:08, 1it/s]
+60.0%┣███████████████████████████▋                  ┫ 12/20 [00:10&lt;00:07, 1it/s]
+65.0%┣██████████████████████████████                ┫ 13/20 [00:10&lt;00:06, 1it/s]
+70.0%┣████████████████████████████████▏             ┫ 14/20 [00:11&lt;00:05, 1it/s]
+75.0%┣██████████████████████████████████▌           ┫ 15/20 [00:12&lt;00:04, 1it/s]
+80.0%┣████████████████████████████████████▉         ┫ 16/20 [00:13&lt;00:03, 1it/s]
+85.0%┣███████████████████████████████████████       ┫ 17/20 [00:14&lt;00:03, 1it/s]
+90.0%┣█████████████████████████████████████████▍    ┫ 18/20 [00:15&lt;00:02, 1it/s]
+95.0%┣███████████████████████████████████████████▊  ┫ 19/20 [00:15&lt;00:01, 1it/s]
+100.0%┣█████████████████████████████████████████████┫ 20/20 [00:16&lt;00:00, 1it/s]
+Simulation Complete.</code></pre><p>We can output vtk files viewable in paraview.  Here it is done for each time step and shows the deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina it also calculates analytical simply supported buckling safety factors</p><pre><code class="language-julia hljs">    ##########################################
+    #### Ultimate Failure #####
+    ##########################################
+
+    massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+    SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+    topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
+    topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
+    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+    mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+    kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,delta_t,
+    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing)
+
+    OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
+
+    # OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
+    #     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
+    #     FReactionHist,topFexternal_hist;tsave_idx)
+
+
+# end
+
+# PyPlot.figure(&quot;CP2&quot;)
+# PyPlot.plot(TSRrange,CP,&quot;.-&quot;,color=plot_cycle[2],label=&quot;OWENS Aero, 1.3 RE_d (No Added Mass)&quot;) #,color=color_cycle[2]
+# RM2_0_538D_RE_D_1_3E6 = DelimitedFiles.readdlm(&quot;$(path)/data_RM2/RM2_0.538D_RE_D_1.3E6.csv&quot;, &#39;,&#39;,Float64)
+# PyPlot.plot(RM2_0_538D_RE_D_1_3E6[:,1],RM2_0_538D_RE_D_1_3E6[:,2],&quot;k-&quot;,label=&quot;Exp. 1.3e6 RE_d&quot;)
+# PyPlot.legend()
+# PyPlot.xlabel(&quot;TSR&quot;)
+# PyPlot.ylabel(&quot;Cp&quot;)
+
+Qinst = -FReactionHist[idx_start:end,6]
+Qinst2 = topFexternal_hist[idx_start:end,6]
+
+drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+
+dat_strt = round(Int,160800/80*11.0)
+dat_end = round(Int,160800/80*14.0)
+
+# # Open the HDF5 file in read mode
+# carriage_pos = nothing
+# drag_left = nothing
+# drag_right = nothing
+# time = nothing
+# torque_arm = nothing
+# torque_trans = nothing
+# turbine_angle = nothing
+# # This data is located at https://figshare.com/articles/dataset/UNH_RM2_tow_tank_experiment_Raw_data/1302029, with the file matching that here
+# c = HDF5.h5open(&quot;$path/data_RM2/Perf1.2b_16_nidata.h5&quot;, &quot;r&quot;) do file
+#     global carriage_pos = read(file,&quot;data/carriage_pos&quot;)
+#     global drag_left = read(file,&quot;data/drag_left&quot;)
+#     global drag_right = read(file,&quot;data/drag_right&quot;)
+#     global time = read(file,&quot;data/time&quot;)
+#     global torque_arm = read(file,&quot;data/torque_arm&quot;)
+#     global torque_trans = read(file,&quot;data/torque_trans&quot;)
+#     global turbine_angle = read(file,&quot;data/turbine_angle&quot;)
+# end
+
+
+
+# PyPlot.figure()
+# PyPlot.plot((t[idx_start:end].-t[idx_start]),Qinst,&quot;.-&quot;,color=plot_cycle[1],label=&quot;Reaction&quot;) #,color=color_cycle[2]
+# # PyPlot.plot((t[idx_start:end].-t[idx_start]),-Qinst2,&quot;x-&quot;,color=plot_cycle[2],label=&quot;Applied&quot;) #,color=color_cycle[2]
+# PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],torque_trans[dat_strt:dat_end],&quot;k-&quot;,label=&quot;Exp. &quot;)
+# PyPlot.legend()
+# PyPlot.xlabel(&quot;Time (s)&quot;)
+# PyPlot.ylabel(&quot;Q (instantaneous)&quot;)
+#
+# PyPlot.figure()
+# # PyPlot.plot((t[idx_start:end].-t[idx_start]),drag,&quot;.-&quot;,color=plot_cycle[1],label=&quot;Reaction&quot;) #,color=color_cycle[2]
+# PyPlot.plot((t[idx_start:end].-t[idx_start]),drag2,&quot;x-&quot;,color=plot_cycle[2],label=&quot;Applied&quot;) #,color=color_cycle[2]
+# PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_left[dat_strt:dat_end],&quot;k-&quot;,label=&quot;Exp. L&quot;)
+# PyPlot.plot(time[dat_strt:dat_end].-time[dat_strt],drag_right[dat_strt:dat_end],&quot;k--&quot;,label=&quot;Exp. R&quot;)
+# PyPlot.legend()
+# PyPlot.xlabel(&quot;Time (s)&quot;)
+# PyPlot.ylabel(&quot;Drag (instantaneous)&quot;)
+
+# nothing
+
+# # Calculate mean Q and compare
+# mean_Q_owens = mean(Qinst)
+# mean_Q_exp = mean(torque_trans[dat_strt:dat_end])
+# println(&quot;Percent Difference in Torque: $((mean_Q_owens-mean_Q_exp)/mean_Q_exp*100)&quot;)
+
+# dat_strt = round(Int,160800/80*10)
+# dat_end = round(Int,160800/80*10.5)
+# amp_Q_exp = maximum(torque_trans[dat_strt:dat_end])-minimum(torque_trans[dat_strt:dat_end])
+# amp_Q_owens = maximum(Qinst[end-round(Int,0.5/delta_t):end])-minimum(Qinst[end-round(Int,0.5/delta_t):end])
+# println(&quot;Percent Difference in Amplitude: $((amp_Q_owens-amp_Q_exp)/amp_Q_exp*100)&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">28140</code></pre><p>Here we use the automated campbell diagram function to run the modal analysis of the turbine and save the modeshapes to VTK</p><pre><code class="language-julia hljs">rotSpdArrayRPM = [0.0, 42.64]
+
+FEAinputs = OWENS.FEAModel(;analysisType = &quot;GX&quot;,
+dataOutputFilename = &quot;none&quot;,
+joint = myjoint,
+platformTurbineConnectionNodeNumber = 1,
+pBC,
+nlOn = false,
+gravityOn = [0,0,9.81], #positive since the turbine is upside down
+numNodes = mymesh.numNodes,
+RayleighAlpha = 0.05,
+RayleighBeta = 0.05,
+AddedMass_Coeff_Ca,
+iterationType = &quot;DI&quot;)
+
+freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+    rotSpdArrayRPM,
+    VTKsavename=VTKsaveName,
+    saveModes = [1,3,5], #must be int
+    saveRPM = [2], #must be int
+    mode_scaling = 500.0,
+    )
+freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+
+nothing
+
+# Now the Campbell diagram can be generated
+# NperRevLines = 8
+# PyPlot.figure()
+# for i=1:NperRevLines
+#     linex=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5]
+#     liney=[rotSpdArrayRPM[1], rotSpdArrayRPM[end]+5].*i./60.0
+#     PyPlot.plot(linex,liney,&quot;--k&quot;,linewidth=0.5)
+#     PyPlot.annotate(&quot;$i P&quot;,xy=(0.95*linex[2],liney[2]+.05+(i-1)*.01))
+# end
+# PyPlot.grid()
+# PyPlot.xlabel(&quot;Rotor Speed (RPM)&quot;)
+# PyPlot.ylabel(&quot;Frequency (Hz)&quot;)
+# PyPlot.plot(0,0,&quot;k-&quot;,label=&quot;Experimental&quot;)
+# PyPlot.plot(0,0,color=plot_cycle[1],&quot;-&quot;,label=&quot;OWENS&quot;)
+# PyPlot.legend()
+
+# for i=1:1:FEAinputs.numModes
+#        PyPlot.plot(rotSpdArrayRPM,freq2[:,i],color=plot_cycle[2],&quot;-&quot;) #plot mode i at various rotor speeds
+# end
+# PyPlot.plot(0,0,color=plot_cycle[2],&quot;-&quot;,label=&quot;GXBeam&quot;)
+# PyPlot.legend(fontsize=8.5,loc = (0.09,0.8),ncol=2,handleheight=1.8, labelspacing=0.03)
+# PyPlot.ylim([0,40.0])
+
+nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1 of 2
+2 of 2
+Saving Modeshapes to VTK</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../D_simulatingFloatingPlatforms/">« Simulating Floating Platforms</a><a class="docs-footer-nextpage" href="../../OWENS_Dev_Guide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:19">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
