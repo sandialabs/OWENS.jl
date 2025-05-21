@@ -1,6 +1,6 @@
 # OWENS (Onshore/Offshore Wind/Water ENergy Simulator)
 
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sandialabs.github.io/OWENS.jl/dev)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sandialabs.github.io/OWENS.jl)
 ![](https://github.com/sandialabs/OWENS.jl/workflows/CI/badge.svg)
 [![codecov.io](https://codecov.io/github/sandialabs/OWENS.jl/coverage.svg?branch=master)](https://codecov.io/github/sandialabs/OWENS.jl?branch=master)
 
