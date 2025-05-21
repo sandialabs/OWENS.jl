@@ -155,7 +155,7 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
   - Time: 02:19:23
  Execution Info:
   - Date: 05/21/2025
-  - Time: 14:17:33+0000
+  - Time: 14:18:45+0000
 
  Running ADI.
  Running AeroDyn.
@@ -260,11 +260,11 @@ Running in specified rotor speed mode
  subsequent occurences.
 10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:38, 2s/it]
 15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:26, 2s/it]
-21.1%┣██████████                                     ┫ 4/19 [00:04&lt;00:21, 1s/it]
+21.1%┣██████████                                     ┫ 4/19 [00:04&lt;00:20, 1s/it]
 26.3%┣████████████▍                                  ┫ 5/19 [00:05&lt;00:17, 1s/it]
 31.6%┣██████████████▉                                ┫ 6/19 [00:06&lt;00:15, 1s/it]
-36.8%┣█████████████████▎                             ┫ 7/19 [00:07&lt;00:13, 1s/it]
-42.1%┣███████████████████▉                           ┫ 8/19 [00:07&lt;00:12, 1s/it]
+36.8%┣█████████████████▎                             ┫ 7/19 [00:06&lt;00:13, 1s/it]
+42.1%┣███████████████████▉                           ┫ 8/19 [00:07&lt;00:11, 1s/it]
 47.4%┣██████████████████████▎                        ┫ 9/19 [00:08&lt;00:10, 1s/it]
 52.6%┣████████████████████████▏                     ┫ 10/19 [00:09&lt;00:09, 1it/s]
 57.9%┣██████████████████████████▋                   ┫ 11/19 [00:10&lt;00:08, 1it/s]
@@ -275,7 +275,7 @@ Running in specified rotor speed mode
 84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:14&lt;00:03, 1it/s]
 89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:14&lt;00:02, 1it/s]
 94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:15&lt;00:01, 1it/s]
-100.0%┣█████████████████████████████████████████████┫ 19/19 [00:16&lt;00:00, 1it/s]
+100.0%┣█████████████████████████████████████████████┫ 19/19 [00:15&lt;00:00, 1it/s]
 Simulation Complete.
  &gt;&gt;&gt; FINAL WRITE</code></pre><p>Like described above, we can output vtk files viewable in paraview.  Here it is done for each time step and shows the deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO</p><pre><code class="language-julia hljs">println(&quot;Saving VTK time domain files&quot;)
 OWENS.OWENSFEA_VTK(&quot;$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue&quot;,t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
@@ -335,4 +335,4 @@ Lower TOWER
 Minimum Safety Factor on tower Surface: 19.37474867160012
 At time 0.019s at composite station 14 of 21 at lam 1 of 1
 Maximum Damage per hr: 5385.0415523268375
-At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:19">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 21 May 2025 14:21">Wednesday 21 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
