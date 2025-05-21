@@ -171,7 +171,7 @@ function count_cycles(peaks::Array{Float64,1},t::Array{Float64,1})
             currentvalue = abs(list[currentindex+1]-list[currentindex])
             nextvalue = abs(list[nextindex+1]-list[nextindex])
         if nextvalue > currentvalue
-            if currentindex == 1 # This case counts a half and cycle deletes the poit that is counted
+            if currentindex == 1 # This case counts a half and cycle deletes the point that is counted
                 push!(cycles,cycle(0.5 ,list[currentindex], time[currentindex], list[currentindex+1],time[currentindex+1]))
                 popfirst!(list) # Removes the first entrance in ext and time
                 popfirst!(time)
@@ -311,6 +311,7 @@ end
 ##########################################
 #### Composite Failure & Buckling ########
 ##########################################
+# NOTE: All functions above worked with ranges. All functions below work with amplitudes. Amplitude is half the range.
 
 function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
@@ -459,7 +460,9 @@ function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                     damage_layers[ilayer] = fatigue_damage_rate(
                         total_t, stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength;
                         nbins_amplitude, nbins_mean, mean_correction, wohler_exp, equiv_cycles)
+                end
                 damage[i_station,j_lam] = maximum(damage_layers)
+
             end
         end
     end
@@ -494,7 +497,8 @@ function rainflow_mean_corrected(stress, ultimate_strength=nothing; nbins_amplit
     if (mean_correction && isnothing(ultimate_strength))
         error("Ultimate strength must be provided for mean correction")
     end
-    ncycles, mean_bins, amplitude_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
+    ncycles, mean_bins, range_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
+    amplitude_bins = range_bins ./ 2
     amplitude_levels = (amplitude_bins[1:end-1] .+ amplitude_bins[2:end]) ./ 2 # bin centers
     mean_levels = (mean_bins[1:end-1] .+ mean_bins[2:end]) ./ 2 # bin centers
     if mean_correction
@@ -565,8 +569,6 @@ function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbi
     log_ncycles_fail = sn_curve_mean_corrected(sn_stress, sn_log_cycles, amplitude_levels_effective)
     ncycles_fail = 10.0 .^ log_ncycles_fail
     return sum(ncycles ./ ncycles_fail)
-    # TODO: return per hour damage rate (divide by time (in hours)). Time variable should now be propagated in latest push.
-    # TODO: variable name change amplitude --> range
 end
 
 """
@@ -1085,6 +1087,7 @@ struct PostProcessOptions
     throwawayTimeSteps
     calculate_fatigue
 end
+
 function PostProcessOptions(;verbosity=2,
     usestationBld=0,
     usestationStrut=0,
@@ -1094,8 +1097,6 @@ function PostProcessOptions(;verbosity=2,
 end
 
 function safetyfactor_fatigue(mymesh,components,delta_t; options=PostProcessOptions())
-
-
     verbosity = options.verbosity
     usestationBld = options.usestationBld
     usestationStrut = options.usestationStrut
