@@ -4,7 +4,7 @@
 ![](https://github.com/sandialabs/OWENS.jl/workflows/CI/badge.svg)
 [![codecov.io](https://codecov.io/github/sandialabs/OWENS.jl/coverage.svg?branch=master)](https://codecov.io/github/sandialabs/OWENS.jl?branch=master)
 
-* *Documentation:* [sandialabs.github.io/OWENS.jl/](https://sandialabs.github.io/OWENS.jl/dev)
+* *Documentation:* [sandialabs.github.io/OWENS.jl/](https://sandialabs.github.io/OWENS.jl)
 * *Code:* [github.com/sandialabs/OWENS.jl](https://github.com/sandialabs/OWENS.jl)
 
 This package is for experienced researchers and analyists with both software and engineering experience who need generalized flexibility and performance that is 100% open source and is compatible with gradient based optimization with automatic gradients in process.  If you want a windows compatible GUI, please use QBlade.  
