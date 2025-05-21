@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VTKFile type="Collection" version="1.0" byte_order="LittleEndian" compressor="vtkZLibDataCompressor">
+  <Collection>
+    <DataSet timestep="0.0" part="0" file="windio-step1.vtu"/>
+    <DataSet timestep="0.03" part="0" file="windio-step2.vtu"/>
+    <DataSet timestep="0.06" part="0" file="windio-step3.vtu"/>
+    <DataSet timestep="0.09" part="0" file="windio-step4.vtu"/>
+    <DataSet timestep="0.12" part="0" file="windio-step5.vtu"/>
+    <DataSet timestep="0.15" part="0" file="windio-step6.vtu"/>
+    <DataSet timestep="0.18" part="0" file="windio-step7.vtu"/>
+  </Collection>
+</VTKFile>
