@@ -318,7 +318,7 @@ function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1,
     calculate_fatigue=true, nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
 
-    topstrainout = zeros(length(eps_x[1,:,1]),lencomposites_span,length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
+    topstrainout = zeros(length(eps_x[:, 1]), lencomposites_span, length(lam_in[1, :]), 9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
 
     damage = zeros(lencomposites_span,length(lam_in[1,:])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
     for i_station = 1:lencomposites_span
