@@ -108,6 +108,12 @@ Airfoil polars are currently in different formats for OWENSAero and AeroDyn, see
 
 Future work is planned to include enabling OWENSAero to read in the same airfoil files as AeroDyn, and to automatically generate polars from xfoil.jl.
 
+# Fatigue Analysis
+
+Fatigue analysis is based on Miner's damage using rainflow count and (optionally) Goodman's mean correction. Goodman's correction calculates an effective stress due to the non-zero mean of the cycle. A damage of 1 or greater indicates failure. We often work with the damage rate (per hour).
+
+Fatigue calculations require the material's S-N curve indicating the number of cycles to failure for a given stress amplitude level. The stress amplitude, and not the stress range, is used for S-N curves. The amplitude is half the range.
+
 # OWENSAero Aerodynamics (AC and DMS)
 
 ![VAWT 2D section looking downwards with induced velocity $w$ vector
@@ -128,10 +134,10 @@ symmetric gust velocity will match (if the simple iec uniform gust is
 used). All else for CACTUS follows the description above.
 
 Aerodynamics forces are radial inward positive and tangential in direction of rotation positive.
-So, the blade local accelerations in the radial will be outward positive and in the tangential 
+So, the blade local accelerations in the radial will be outward positive and in the tangential
 will be in the opposite direction of rotation for a CCW rotor.  CW rotors are still in work and
 would need to have the local frame of reference rotation verified.  Therefor, for the added mass
- equations, the forces should be negated. 
+ equations, the forces should be negated.
 
 ## OWENSFEA Structures
 
