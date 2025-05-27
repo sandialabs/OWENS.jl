@@ -1,3 +1,91 @@
+"""
+    TopData
+
+Data structure containing all the time history and state variables for the topside (rotor/nacelle) simulation.
+
+# Fields
+* `delta_t::float`: Time step size (s)
+* `numTS::int`: Number of time steps
+* `numDOFPerNode::int`: Number of degrees of freedom per node
+* `CN2H::Array{<:float}`: Rotation matrix from inertial to hub frame
+* `t::Array{<:float}`: Time array
+* `integrator::float`: Integrator value for generator control
+* `integrator_j::float`: Previous integrator value
+* `topDispOut::Array`: Top displacement output array
+* `uHist::Array{<:float}`: Displacement history array
+* `udotHist::Array{<:float}`: Velocity history array
+* `uddotHist::Array{<:float}`: Acceleration history array
+* `epsilon_x_hist::Array{<:float}`: Strain history in x direction
+* `epsilon_y_hist::Array{<:float}`: Strain history in y direction
+* `epsilon_z_hist::Array{<:float}`: Strain history in z direction
+* `kappa_x_hist::Array{<:float}`: Curvature history in x direction
+* `kappa_y_hist::Array{<:float}`: Curvature history in y direction
+* `kappa_z_hist::Array{<:float}`: Curvature history in z direction
+* `FReactionHist::Array{<:float}`: Reaction force history
+* `FTwrBsHist::Array{<:float}`: Tower base force history
+* `aziHist::Array{<:float}`: Azimuth angle history
+* `OmegaHist::Array{<:float}`: Rotor speed history
+* `OmegaDotHist::Array{<:float}`: Rotor acceleration history
+* `gbHist::Array{<:float}`: Gearbox position history
+* `gbDotHist::Array{<:float}`: Gearbox velocity history
+* `gbDotDotHist::Array{<:float}`: Gearbox acceleration history
+* `genTorque::Array{<:float}`: Generator torque history
+* `genPower::Array{<:float}`: Generator power history
+* `torqueDriveShaft::Array{<:float}`: Drive shaft torque history
+* `uHist_prp::Array{<:float}`: Platform displacement history
+* `FPtfmHist::Array{<:float}`: Platform force history
+* `FHydroHist::Array{<:float}`: Hydrodynamic force history
+* `FMooringHist::Array{<:float}`: Mooring force history
+* `rbData::Array{<:float}`: Rigid body data
+* `rbDataHist::Array{<:float}`: Rigid body data history
+* `u_s::Array{<:float}`: Current displacement state
+* `udot_s::Array{<:float}`: Current velocity state
+* `uddot_s::Array{<:float}`: Current acceleration state
+* `u_sm1::Array{<:float}`: Previous displacement state
+* `topDispData1::Array{<:float}`: Top displacement data 1
+* `topDispData2::Array{<:float}`: Top displacement data 2
+* `topElStrain::Array{<:float}`: Top element strain
+* `gb_s::float`: Current gearbox position
+* `gbDot_s::float`: Current gearbox velocity
+* `gbDotDot_s::float`: Current gearbox acceleration
+* `azi_s::float`: Current azimuth angle
+* `Omega_s::float`: Current rotor speed
+* `OmegaDot_s::float`: Current rotor acceleration
+* `genTorque_s::float`: Current generator torque
+* `torqueDriveShaft_s::float`: Current drive shaft torque
+* `topFexternal::Array{<:float}`: Current external force
+* `topFexternal_hist::Array{<:float}`: External force history
+* `rotorSpeedForGenStart::float`: Rotor speed for generator start
+* `top_rom::Array{<:float}`: Top reduced order model
+* `topJointTransformTrans::Array{<:float}`: Top joint transform transpose
+* `u_sRed::Array{<:float}`: Reduced displacement state
+* `udot_sRed::Array{<:float}`: Reduced velocity state
+* `uddot_sRed::Array{<:float}`: Reduced acceleration state
+* `topBC::Array{<:float}`: Top boundary conditions
+* `u_s2::Array{<:float}`: Secondary displacement state
+* `udot_s2::Array{<:float}`: Secondary velocity state
+* `uddot_s2::Array{<:float}`: Secondary acceleration state
+* `top_invPhi::Array{<:float}`: Top inverse phi matrix
+* `eta_s::Array{<:float}`: Current eta state
+* `etadot_s::Array{<:float}`: Current eta velocity
+* `etaddot_s::Array{<:float}`: Current eta acceleration
+* `topsideMass::float`: Topside mass
+* `topsideMOI::Array{<:float}`: Topside moment of inertia
+* `topsideCG::Array{<:float}`: Topside center of gravity
+* `u_j::float`: Previous displacement
+* `udot_j::float`: Previous velocity
+* `uddot_j::float`: Previous acceleration
+* `azi_j::float`: Previous azimuth angle
+* `Omega_j::float`: Previous rotor speed
+* `OmegaDot_j::float`: Previous rotor acceleration
+* `gb_j::float`: Previous gearbox position
+* `gbDot_j::float`: Previous gearbox velocity
+* `gbDotDot_j::float`: Previous gearbox acceleration
+* `genTorque_j::float`: Previous generator torque
+* `torqueDriveShaft_j::float`: Previous drive shaft torque
+* `FReactionsm1::Array{<:float}`: Previous reaction forces
+* `topFReaction_j::Array{<:float}`: Previous top reaction forces
+"""
 mutable struct TopData
     delta_t
     numTS

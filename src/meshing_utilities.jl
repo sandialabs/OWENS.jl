@@ -123,7 +123,7 @@ function mesh_beam(;L1 = 31.5, #first section of beam length
         Psi_d_joint[jnt] = ort.Psi_d[elnum_of_joint[1]]
         Theta_d_joint[jnt] = ort.Theta_d[elnum_of_joint[1]]
     end
-    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element's e2 axis, 3 = hinge joint axis about slave node element's e1 axis, 4 = hinge joint axis about slave node element's e3 axis)
 
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn zeros(njoint) zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
@@ -258,7 +258,7 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
         Psi_d_joint[jnt] = ort.Psi_d[elnum_of_joint[1]]
         Theta_d_joint[jnt] = ort.Theta_d[elnum_of_joint[1]]
     end
-    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element's e2 axis, 3 = hinge joint axis about slave node element's e1 axis, 4 = hinge joint axis about slave node element's e3 axis)
 
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) Int.(jointconn) zeros(njoint) zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
@@ -266,6 +266,47 @@ function mesh_beam_centered(;L1 = 6.0, #first section of beam length
     return mymesh, ort, myjoint
 end
 
+"""
+    Component
+
+Data structure containing all the information associated with preprocessing and postprocessing of a structural component.
+This struct is used to store and manage data for individual components of the wind turbine structure (e.g., blades, tower, struts).
+
+# Fields
+* `name::String`: Name of the component
+* `nodeNumbers::Array{Int}`: Array of node numbers associated with this component
+* `elNumbers::Array{Int}`: Array of element numbers associated with this component
+* `e_x::Array{<:float}`: Strain in x direction
+* `e_y::Array{<:float}`: Strain in y direction
+* `e_z::Array{<:float}`: Strain in z direction
+* `k_x::Array{<:float}`: Curvature in x direction
+* `k_y::Array{<:float}`: Curvature in y direction
+* `k_z::Array{<:float}`: Curvature in z direction
+* `lam_U::Array{<:float}`: Upper surface laminate properties
+* `lam_L::Array{<:float}`: Lower surface laminate properties
+* `lam_W::Array{<:float}`: Web laminate properties
+* `input_layup::Array`: Input layup configuration
+* `input_materials::Array`: Input material properties
+* `preCompInput::Array`: PreComp input data
+* `preCompOutput::Array`: PreComp output data
+* `plyProps::Array`: Ply properties
+* `nuMadIn::Array`: NuMad input data
+* `stiff_matrix::Array{<:float}`: Stiffness matrix
+* `mass_matrix::Array{<:float}`: Mass matrix
+* `sectionProps::Array`: Section properties
+* `stress_U::Array{<:float}`: Upper surface stress
+* `stress_L::Array{<:float}`: Lower surface stress
+* `strain_U::Array{<:float}`: Upper surface strain
+* `strain_L::Array{<:float}`: Lower surface strain
+* `ultsafetyfactor_U::Array{<:float}`: Upper surface ultimate safety factor
+* `ultsafetyfactor_L::Array{<:float}`: Lower surface ultimate safety factor
+* `bucksafetyfactor_U::Array{<:float}`: Upper surface buckling safety factor
+* `bucksafetyfactor_L::Array{<:float}`: Lower surface buckling safety factor
+* `damage_U::Array{<:float}`: Upper surface damage
+* `damage_L::Array{<:float}`: Lower surface damage
+* `mass::float`: Component mass
+* `cost::float`: Component cost
+"""
 mutable struct Component
     name
     nodeNumbers
@@ -1072,7 +1113,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
         Psi_d_joint[jnt] = myort.Psi_d[elnum_of_joint[1]]
         Theta_d_joint[jnt] = myort.Theta_d[elnum_of_joint[1]]
     end
-    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element's e2 axis, 3 = hinge joint axis about slave node element's e1 axis, 4 = hinge joint axis about slave node element's e3 axis)
 
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn jointtype zeros(njoint) jointnames Psi_d_joint.+Psi_d_joint_offset Theta_d_joint.+Theta_d_joint_offset]
@@ -1401,7 +1442,7 @@ function create_arcus_mesh(;
         Psi_d_joint[jnt] = ort.Psi_d[elnum_of_joint[1]]
         Theta_d_joint[jnt] = ort.Theta_d[elnum_of_joint[1]]
     end
-    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element's e2 axis, 3 = hinge joint axis about slave node element's e1 axis, 4 = hinge joint axis about slave node element's e3 axis)
 
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn zeros(njoint).+joint_type zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
@@ -2546,7 +2587,7 @@ function create_hawt_mesh(;
         Psi_d_joint[jnt] = ort.Psi_d[elnum_of_joint[1]]
         Theta_d_joint[jnt] = ort.Theta_d[elnum_of_joint[1]]
     end
-    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element's e2 axis, 3 = hinge joint axis about slave node element's e1 axis, 4 = hinge joint axis about slave node element's e3 axis)
 
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn zeros(njoint).+joint_type zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
@@ -2863,7 +2904,7 @@ function create_hawt_biwing_mesh(;
         Psi_d_joint[jnt] = ort.Psi_d[elnum_of_joint[1]]
         Theta_d_joint[jnt] = ort.Theta_d[elnum_of_joint[1]]
     end
-    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element’s e2 axis, 3 = hinge joint axis about slave node element’s e1 axis, 4 = hinge joint axis about slave node element’s e3 axis)
+    #Joint Types: (0 = weld(fixed), 1=pinned, 2 = hinge joint with axis about slave node element's e2 axis, 3 = hinge joint axis about slave node element's e1 axis, 4 = hinge joint axis about slave node element's e3 axis)
 
     #Joint Number,   Joint Connections, Joint Type, Joint Mass, Not Used, Psi_D, Theta_D
     myjoint = [Float64.(1:1:njoint) jointconn zeros(njoint).+joint_type zeros(njoint) zeros(njoint) Psi_d_joint Theta_d_joint]
