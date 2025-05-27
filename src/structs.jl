@@ -305,7 +305,7 @@ Parameters defining the blade composite layup. See NuMad user guide SAND2012_702
 - `te_type::Vector{String}`: trailing edge type
 - `twist_d::Vector{Float64}`: twist_d in degrees
 - `chord::Vector{Float64}`: chord length
-- `xoffset::Vector{Float64}`: The distance from the “nose” of a station to the blade reference axis.
+- `xoffset::Vector{Float64}`: The distance from the "nose" of a station to the blade reference axis.
 - `aerocenter::Vector{Float64}`: This is an aerodynamic parameter that is an output from aerodynamic performance analysis of a two-dimensional airfoil section. The aerodynamic center is the point along the chord where the aerodynamic pitching moment does not vary with changes in angle of attack.
 - `stack_mat_types::Vector{Int64}`: Material numbers used that correspond to each stack number
 - `stack_layers::Array{Int64,2}`: number of layers at each span used corresponding to each material type (first index corresponds to spanwise position, second index corresponds to the stack number)
@@ -337,10 +337,24 @@ mutable struct NuMad
 end
 NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp) = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,repeat(["unnamed"],n_segments))
 
-mutable struct Seq
-    seq
-end
+"""
+    plyproperties
 
+Structure containing material properties and fatigue data for composite plies.
+
+# Fields
+* `names::Array{String}`: Names of the materials
+* `plies::Array{Composites.Material}`: Material properties for each ply
+* `costs::Array{Float64}`: Cost per unit for each material
+* `SN_stressMpa::Array{Float64}`: Control points for S-N curve stress values (matrix material × 6)
+* `Log_SN_cycles2Fail::Array{Float64}`: Control points for S-N curve cycle values (matrix material × 6)
+
+# Constructor
+```julia
+plyproperties(names, plies)
+plyproperties(names, plies, costs, SN_stressMpa, Log_SN_cycles2Fail)
+```
+"""
 struct plyproperties
     names#::Array{String,1}
     plies#::Array{Composites.Material,1}
@@ -714,4 +728,21 @@ function plyproperties()
     plythickness[25]=0.07E-3 #meters
 
     return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness))
+end
+
+"""
+    Seq
+
+Structure representing a sequence of indices, typically used for layup sequences in composite materials.
+
+# Fields
+* `seq::Vector{Int64}`: Array of indices representing the sequence
+
+# Notes
+- Used in composite layup definitions for both skin and web sequences
+- First index corresponds to spanwise position
+- Second index corresponds to section or web number
+"""
+mutable struct Seq
+    seq
 end

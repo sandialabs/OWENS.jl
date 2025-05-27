@@ -269,43 +269,49 @@ end
 """
     Component
 
-Data structure containing all the information associated with preprocessing and postprocessing of a structural component.
-This struct is used to store and manage data for individual components of the wind turbine structure (e.g., blades, tower, struts).
+Structure storing critical information for preprocessing and postprocessing of structural components.
 
 # Fields
-* `name::String`: Name of the component
-* `nodeNumbers::Array{Int}`: Array of node numbers associated with this component
-* `elNumbers::Array{Int}`: Array of element numbers associated with this component
-* `e_x::Array{<:float}`: Strain in x direction
-* `e_y::Array{<:float}`: Strain in y direction
-* `e_z::Array{<:float}`: Strain in z direction
-* `k_x::Array{<:float}`: Curvature in x direction
-* `k_y::Array{<:float}`: Curvature in y direction
-* `k_z::Array{<:float}`: Curvature in z direction
-* `lam_U::Array{<:float}`: Upper surface laminate properties
-* `lam_L::Array{<:float}`: Lower surface laminate properties
-* `lam_W::Array{<:float}`: Web laminate properties
+* `name::String`: Component identifier
+* `nodeNumbers::Array{Int}`: Array of node numbers associated with the component
+* `elNumbers::Array{Int}`: Array of element numbers associated with the component
+* `e_x::Array{Float64}`: x-direction unit vectors at each element (m)
+* `e_y::Array{Float64}`: y-direction unit vectors at each element (m)
+* `e_z::Array{Float64}`: z-direction unit vectors at each element (m)
+* `k_x::Array{Float64}`: Curvature in x direction (1/m)
+* `k_y::Array{Float64}`: Curvature in y direction (1/m)
+* `k_z::Array{Float64}`: Curvature in z direction (1/m)
+* `lam_U::Array{Float64}`: Upper surface laminate properties (stiffness matrix)
+* `lam_L::Array{Float64}`: Lower surface laminate properties (stiffness matrix)
+* `lam_W::Array{Float64}`: Web laminate properties (stiffness matrix)
 * `input_layup::Array`: Input layup configuration
 * `input_materials::Array`: Input material properties
 * `preCompInput::Array`: PreComp input data
 * `preCompOutput::Array`: PreComp output data
-* `plyProps::Array`: Ply properties
-* `nuMadIn::Array`: NuMad input data
-* `stiff_matrix::Array{<:float}`: Stiffness matrix
-* `mass_matrix::Array{<:float}`: Mass matrix
-* `sectionProps::Array`: Section properties
-* `stress_U::Array{<:float}`: Upper surface stress
-* `stress_L::Array{<:float}`: Lower surface stress
-* `strain_U::Array{<:float}`: Upper surface strain
-* `strain_L::Array{<:float}`: Lower surface strain
-* `ultsafetyfactor_U::Array{<:float}`: Upper surface ultimate safety factor
-* `ultsafetyfactor_L::Array{<:float}`: Lower surface ultimate safety factor
-* `bucksafetyfactor_U::Array{<:float}`: Upper surface buckling safety factor
-* `bucksafetyfactor_L::Array{<:float}`: Lower surface buckling safety factor
-* `damage_U::Array{<:float}`: Upper surface damage
-* `damage_L::Array{<:float}`: Lower surface damage
-* `mass::float`: Component mass
-* `cost::float`: Component cost
+* `plyProps::Array`: Ply properties including material data and fatigue parameters
+* `nuMadIn::Array`: NuMad input data for composite analysis
+* `stiff_matrix::Array{Float64}`: Component stiffness matrix (N/m)
+* `mass_matrix::Array{Float64}`: Component mass matrix (kg)
+* `sectionProps::Array`: Section properties including area, moments of inertia, etc.
+* `stress_U::Array{Float64}`: Upper surface stress (Pa)
+* `stress_L::Array{Float64}`: Lower surface stress (Pa)
+* `strain_U::Array{Float64}`: Upper surface strain (dimensionless)
+* `strain_L::Array{Float64}`: Lower surface strain (dimensionless)
+* `ultsafetyfactor_U::Array{Float64}`: Upper surface ultimate safety factor
+* `ultsafetyfactor_L::Array{Float64}`: Lower surface ultimate safety factor
+* `bucksafetyfactor_U::Array{Float64}`: Upper surface buckling safety factor
+* `bucksafetyfactor_L::Array{Float64}`: Lower surface buckling safety factor
+* `damage_U::Array{Float64}`: Upper surface fatigue damage (dimensionless)
+* `damage_L::Array{Float64}`: Lower surface fatigue damage (dimensionless)
+* `mass::Float64`: Component mass (kg)
+* `cost::Float64`: Component cost (currency units)
+
+# Notes
+- This structure is used to store both preprocessing and postprocessing data for structural components
+- Arrays of components are typically generated during the mesh stage
+- The structure supports both linear and nonlinear analysis
+- Safety factors are calculated based on material properties and loading conditions
+- Damage values represent accumulated fatigue damage based on S-N curves
 """
 mutable struct Component
     name

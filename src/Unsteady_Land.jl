@@ -1,90 +1,97 @@
 """
     TopData
 
-Data structure containing all the time history and state variables for the topside (rotor/nacelle) simulation.
+Structure containing time history data and state variables for the top section of the wind turbine.
 
 # Fields
-* `delta_t::float`: Time step size (s)
-* `numTS::int`: Number of time steps
-* `numDOFPerNode::int`: Number of degrees of freedom per node
-* `CN2H::Array{<:float}`: Rotation matrix from inertial to hub frame
-* `t::Array{<:float}`: Time array
-* `integrator::float`: Integrator value for generator control
-* `integrator_j::float`: Previous integrator value
-* `topDispOut::Array`: Top displacement output array
-* `uHist::Array{<:float}`: Displacement history array
-* `udotHist::Array{<:float}`: Velocity history array
-* `uddotHist::Array{<:float}`: Acceleration history array
-* `epsilon_x_hist::Array{<:float}`: Strain history in x direction
-* `epsilon_y_hist::Array{<:float}`: Strain history in y direction
-* `epsilon_z_hist::Array{<:float}`: Strain history in z direction
-* `kappa_x_hist::Array{<:float}`: Curvature history in x direction
-* `kappa_y_hist::Array{<:float}`: Curvature history in y direction
-* `kappa_z_hist::Array{<:float}`: Curvature history in z direction
-* `FReactionHist::Array{<:float}`: Reaction force history
-* `FTwrBsHist::Array{<:float}`: Tower base force history
-* `aziHist::Array{<:float}`: Azimuth angle history
-* `OmegaHist::Array{<:float}`: Rotor speed history
-* `OmegaDotHist::Array{<:float}`: Rotor acceleration history
-* `gbHist::Array{<:float}`: Gearbox position history
-* `gbDotHist::Array{<:float}`: Gearbox velocity history
-* `gbDotDotHist::Array{<:float}`: Gearbox acceleration history
-* `genTorque::Array{<:float}`: Generator torque history
-* `genPower::Array{<:float}`: Generator power history
-* `torqueDriveShaft::Array{<:float}`: Drive shaft torque history
-* `uHist_prp::Array{<:float}`: Platform displacement history
-* `FPtfmHist::Array{<:float}`: Platform force history
-* `FHydroHist::Array{<:float}`: Hydrodynamic force history
-* `FMooringHist::Array{<:float}`: Mooring force history
-* `rbData::Array{<:float}`: Rigid body data
-* `rbDataHist::Array{<:float}`: Rigid body data history
-* `u_s::Array{<:float}`: Current displacement state
-* `udot_s::Array{<:float}`: Current velocity state
-* `uddot_s::Array{<:float}`: Current acceleration state
-* `u_sm1::Array{<:float}`: Previous displacement state
-* `topDispData1::Array{<:float}`: Top displacement data 1
-* `topDispData2::Array{<:float}`: Top displacement data 2
-* `topElStrain::Array{<:float}`: Top element strain
-* `gb_s::float`: Current gearbox position
-* `gbDot_s::float`: Current gearbox velocity
-* `gbDotDot_s::float`: Current gearbox acceleration
-* `azi_s::float`: Current azimuth angle
-* `Omega_s::float`: Current rotor speed
-* `OmegaDot_s::float`: Current rotor acceleration
-* `genTorque_s::float`: Current generator torque
-* `torqueDriveShaft_s::float`: Current drive shaft torque
-* `topFexternal::Array{<:float}`: Current external force
-* `topFexternal_hist::Array{<:float}`: External force history
-* `rotorSpeedForGenStart::float`: Rotor speed for generator start
-* `top_rom::Array{<:float}`: Top reduced order model
-* `topJointTransformTrans::Array{<:float}`: Top joint transform transpose
-* `u_sRed::Array{<:float}`: Reduced displacement state
-* `udot_sRed::Array{<:float}`: Reduced velocity state
-* `uddot_sRed::Array{<:float}`: Reduced acceleration state
-* `topBC::Array{<:float}`: Top boundary conditions
-* `u_s2::Array{<:float}`: Secondary displacement state
-* `udot_s2::Array{<:float}`: Secondary velocity state
-* `uddot_s2::Array{<:float}`: Secondary acceleration state
-* `top_invPhi::Array{<:float}`: Top inverse phi matrix
-* `eta_s::Array{<:float}`: Current eta state
-* `etadot_s::Array{<:float}`: Current eta velocity
-* `etaddot_s::Array{<:float}`: Current eta acceleration
-* `topsideMass::float`: Topside mass
-* `topsideMOI::Array{<:float}`: Topside moment of inertia
-* `topsideCG::Array{<:float}`: Topside center of gravity
-* `u_j::float`: Previous displacement
-* `udot_j::float`: Previous velocity
-* `uddot_j::float`: Previous acceleration
-* `azi_j::float`: Previous azimuth angle
-* `Omega_j::float`: Previous rotor speed
-* `OmegaDot_j::float`: Previous rotor acceleration
-* `gb_j::float`: Previous gearbox position
-* `gbDot_j::float`: Previous gearbox velocity
-* `gbDotDot_j::float`: Previous gearbox acceleration
-* `genTorque_j::float`: Previous generator torque
-* `torqueDriveShaft_j::float`: Previous drive shaft torque
-* `FReactionsm1::Array{<:float}`: Previous reaction forces
-* `topFReaction_j::Array{<:float}`: Previous top reaction forces
+* `delta_t::Float64`: Time step size (s)
+* `numTS::Int`: Number of time steps
+* `numDOFPerNode::Int`: Number of degrees of freedom per node
+* `CN2H::Array{Float64}`: Coordinate transformation matrix
+* `t::Array{Float64}`: Time array (s)
+* `integrator::String`: Integration method
+* `integrator_j::String`: Previous integration method
+* `topDispOut::Array{Float64}`: Top displacement output
+* `uHist::Array{Float64}`: Displacement history
+* `udotHist::Array{Float64}`: Velocity history
+* `uddotHist::Array{Float64}`: Acceleration history
+* `epsilon_x_hist::Array{Float64}`: Axial strain history
+* `epsilon_y_hist::Array{Float64}`: Transverse strain history (y)
+* `epsilon_z_hist::Array{Float64}`: Transverse strain history (z)
+* `kappa_x_hist::Array{Float64}`: Torsional curvature history
+* `kappa_y_hist::Array{Float64}`: Bending curvature history (y)
+* `kappa_z_hist::Array{Float64}`: Bending curvature history (z)
+* `FReactionHist::Array{Float64}`: Reaction force history
+* `FTwrBsHist::Array{Float64}`: Tower base force history
+* `aziHist::Array{Float64}`: Azimuth angle history (rad)
+* `OmegaHist::Array{Float64}`: Rotor speed history (rad/s)
+* `OmegaDotHist::Array{Float64}`: Rotor acceleration history (rad/s²)
+* `gbHist::Array{Float64}`: Gearbox position history
+* `gbDotHist::Array{Float64}`: Gearbox velocity history
+* `gbDotDotHist::Array{Float64}`: Gearbox acceleration history
+* `genTorque::Array{Float64}`: Generator torque (N⋅m)
+* `genPower::Array{Float64}`: Generator power (W)
+* `torqueDriveShaft::Array{Float64}`: Drive shaft torque (N⋅m)
+* `uHist_prp::Array{Float64}`: Prescribed displacement history
+* `FPtfmHist::Array{Float64}`: Platform force history
+* `FHydroHist::Array{Float64}`: Hydrodynamic force history
+* `FMooringHist::Array{Float64}`: Mooring force history
+* `rbData::Array{Float64}`: Rigid body data
+* `rbDataHist::Array{Float64}`: Rigid body data history
+* `u_s::Array{Float64}`: Current displacement state
+* `udot_s::Array{Float64}`: Current velocity state
+* `uddot_s::Array{Float64}`: Current acceleration state
+* `u_sm1::Array{Float64}`: Previous displacement state
+* `topDispData1::Array{Float64}`: Top displacement data set 1
+* `topDispData2::Array{Float64}`: Top displacement data set 2
+* `topElStrain::Array{Float64}`: Top element strain
+* `gb_s::Float64`: Current gearbox position
+* `gbDot_s::Float64`: Current gearbox velocity
+* `gbDotDot_s::Float64`: Current gearbox acceleration
+* `azi_s::Float64`: Current azimuth angle (rad)
+* `Omega_s::Float64`: Current rotor speed (rad/s)
+* `OmegaDot_s::Float64`: Current rotor acceleration (rad/s²)
+* `genTorque_s::Float64`: Current generator torque (N⋅m)
+* `torqueDriveShaft_s::Float64`: Current drive shaft torque (N⋅m)
+* `topFexternal::Array{Float64}`: Current external forces
+* `topFexternal_hist::Array{Float64}`: External force history
+* `rotorSpeedForGenStart::Float64`: Rotor speed for generator start (rad/s)
+* `top_rom::Array{Float64}`: Reduced order model data
+* `topJointTransformTrans::Array{Float64}`: Joint transformation matrix
+* `u_sRed::Array{Float64}`: Reduced displacement state
+* `udot_sRed::Array{Float64}`: Reduced velocity state
+* `uddot_sRed::Array{Float64}`: Reduced acceleration state
+* `topBC::Array{Float64}`: Top boundary conditions
+* `u_s2::Array{Float64}`: Secondary displacement state
+* `udot_s2::Array{Float64}`: Secondary velocity state
+* `uddot_s2::Array{Float64}`: Secondary acceleration state
+* `top_invPhi::Array{Float64}`: Inverse modal matrix
+* `eta_s::Array{Float64}`: Current modal coordinates
+* `etadot_s::Array{Float64}`: Current modal velocities
+* `etaddot_s::Array{Float64}`: Current modal accelerations
+* `topsideMass::Float64`: Topside mass (kg)
+* `topsideMOI::Array{Float64}`: Topside moment of inertia (kg⋅m²)
+* `topsideCG::Array{Float64}`: Topside center of gravity (m)
+* `u_j::Array{Float64}`: Previous displacement state
+* `udot_j::Array{Float64}`: Previous velocity state
+* `uddot_j::Array{Float64}`: Previous acceleration state
+* `azi_j::Float64`: Previous azimuth angle (rad)
+* `Omega_j::Float64`: Previous rotor speed (rad/s)
+* `OmegaDot_j::Float64`: Previous rotor acceleration (rad/s²)
+* `gb_j::Float64`: Previous gearbox position
+* `gbDot_j::Float64`: Previous gearbox velocity
+* `gbDotDot_j::Float64`: Previous gearbox acceleration
+* `genTorque_j::Float64`: Previous generator torque (N⋅m)
+* `torqueDriveShaft_j::Float64`: Previous drive shaft torque (N⋅m)
+* `FReactionsm1::Array{Float64}`: Previous reaction forces
+* `topFReaction_j::Array{Float64}`: Previous top reaction forces
+
+# Notes
+- This structure stores both time history data and current state variables
+- Used for time integration and state tracking in unsteady analysis
+- Contains data for structural, aerodynamic, and control system states
+- Supports both full-order and reduced-order modeling
+- Includes platform and mooring system data when applicable
 """
 mutable struct TopData
     delta_t
