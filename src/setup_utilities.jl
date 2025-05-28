@@ -396,7 +396,6 @@ function setup_sectional_props(
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_bld
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_bld
         elseif contains(components[icomponent].name,"strut")
-            println("DEBUG: NuMad_geom_xlscsv_file_strut = ", NuMad_geom_xlscsv_file_strut)
             istrut = parse(Int,components[icomponent].name[end]) #This assumes that you have a numad file for each strut, and that you have 9 or fewer struts
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_strut[istrut]
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_strut
@@ -492,7 +491,7 @@ function setup_aerodynamic_model(
     mu = aero_config.mu
     eta = aero_config.eta
     ifw = aero_config.ifw
-    B = blade_config.B
+    Nbld = blade_config.B
     mymesh = mesh_props.mymesh
     myort = mesh_props.myort
     myjoint = mesh_props.myjoint
