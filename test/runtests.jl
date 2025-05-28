@@ -38,3 +38,8 @@ end
     path = splitdir(@__FILE__)[1]
     include("$path/../examples/Optimization/windio_example.jl")
 end
+
+@testset "Fatigue Damage" begin
+    path = splitdir(@__FILE__)[1]
+    include("$path/../examples/fatigue_damage.jl")
+end

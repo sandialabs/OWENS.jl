@@ -28,7 +28,7 @@ makedocs(;
         "Legacy VAWTGen Guide" => "VAWTGenUserGuide.md",
     ],
     sitename = "OWENS.jl",
-    authors = "Kevin R. Moore <kevmoor@sandia.gov>",
+    authors = "Kevin R. Moore <kevmoor@sandia.gov>, and collaborators",
     remotes = nothing
 )
 

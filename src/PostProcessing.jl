@@ -171,7 +171,7 @@ function count_cycles(peaks::Array{Float64,1},t::Array{Float64,1})
             currentvalue = abs(list[currentindex+1]-list[currentindex])
             nextvalue = abs(list[nextindex+1]-list[nextindex])
         if nextvalue > currentvalue
-            if currentindex == 1 # This case counts a half and cycle deletes the poit that is counted
+            if currentindex == 1 # This case counts a half and cycle deletes the point that is counted
                 push!(cycles,cycle(0.5 ,list[currentindex], time[currentindex], list[currentindex+1],time[currentindex+1]))
                 popfirst!(list) # Removes the first entrance in ext and time
                 popfirst!(time)
@@ -311,16 +311,19 @@ end
 ##########################################
 #### Composite Failure & Buckling ########
 ##########################################
+# NOTE: All functions above worked with ranges. All functions below work with amplitudes. Amplitude is half the range.
 
 function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
-    kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1,calculate_fatigue=true)
-    topstrainout = zeros(length(eps_x[:,1]),lencomposites_span,length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
+    kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1,
+    calculate_fatigue=true, nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+
+    topstrainout = zeros(length(eps_x[:, 1]), lencomposites_span, length(lam_in[1, :]), 9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
 
     damage = zeros(lencomposites_span,length(lam_in[1,:])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
     for i_station = 1:lencomposites_span
         # i_station = 1
-        
+
         if upper # Get laminate location starting and ending points
             lam_y_loc_le = precompinput[i_station].xsec_nodeU.*precompinput[i_station].chord
         else
@@ -334,12 +337,12 @@ function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
         thickness_precomp_lag_le = precompinput[i_station].chord - thickness_precomp_lag_te
 
         for j_lam = 1:length(lam_in[i_station,:])
-            
+
             idx_y = round(Int,lam_y_loc_le[j_lam]/precompinput[i_station].chord*length(precompinput[i_station].ynode)/2)
 
             if upper
                 thickness_precomp_flap = precompinput[i_station].ynode[idx_y]*precompinput[i_station].chord - precompoutput[i_station].x_sc
-            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards 
+            else # Since the airfoil data wraps around (and is splined to always be the same number of points top and bottom), we index backwards
                 thickness_precomp_flap = precompinput[i_station].ynode[end-idx_y+1]*precompinput[i_station].chord - precompoutput[i_station].x_sc
             end
             offsetz = -thickness_precomp_flap #Negative due to sign convention of strain; i.e. if the blade starts at the bottom of the turbine, and goes out and bends up, the top should be in compression and the bottom in tension, which is opposite to the strain convention
@@ -454,34 +457,147 @@ function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
                         reverse!(SN_stress)
                         reverse!(Log_SN_cycles2Fail1)
                     end
-
-                    damage_layers[ilayer] = fatigue_damage(stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength)/total_t*60*60 #Damage to damage rate per hour
+                    damage_layers[ilayer] = fatigue_damage_rate(
+                        total_t, stressForFatigue, SN_stress, Log_SN_cycles2Fail1, ultimate_strength;
+                        nbins_amplitude, nbins_mean, mean_correction, wohler_exp, equiv_cycles)
                 end
                 damage[i_station,j_lam] = maximum(damage_layers)
+
             end
         end
     end
     return topstrainout,damage
 end
 
-function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+"""
+    rainflow_mean_corrected(stress, ultimate_strength;
+    nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+
+Rainflow count including Goodman's mean correction for the amplitude levels.
+
+# Inputs
+* `stress::Array{<:Real,1}`: Stress time-series
+* `ultimate_strength::Real`: Ultimate strength of the material
+* `nbins_amplitude::Int`: Number of bins for amplitude (default is 20)
+* `nbins_mean::Int`: Number of bins for mean (default is 10 if `mean_correction` is true, otherwise 1)
+* `mean_correction::Bool`: Whether to apply Goodman mean correction (default is true)
+* `wohler_exp::Real` : Wohler exponent (default is 3)
+* `equiv_cycles::Real`: The equivalent number of load cycles (default is 1, but normally the time duration in seconds is used)
+
+# Outputs:
+* `mean_levels::Array{<:Real,1}`: Mean stress at bin centers. Size [nbins_mean]
+* `amplitude_levels::Array{<:Real,1}`: Stress amplitude at bin centers. Size [nbins_amplitude]
+* `ncycles`::Array{<:Real,2}`: Number of cycles in each bin from rainflow count. Size [nbins_amplitude, nbins_mean]
+* `amplitude_levels_effective::Array{<:Real,2}`: Stress amplitude at bin centers after mean correction. Size [nbins_amplitude, nbins_mean]
+
+"""
+function rainflow_mean_corrected(stress, ultimate_strength=nothing; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
     # default values
     isnothing(nbins_mean) && (nbins_mean = (mean_correction ? 10 : 1))
-
-    ncycles, mean_bins, amplitude_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
+    if (mean_correction && isnothing(ultimate_strength))
+        error("Ultimate strength must be provided for mean correction")
+    end
+    ncycles, mean_bins, range_bins, _ = rainflow(stress; nbins_range=nbins_amplitude, nbins_mean, m=wohler_exp, Teq=equiv_cycles)
+    amplitude_bins = range_bins ./ 2
     amplitude_levels = (amplitude_bins[1:end-1] .+ amplitude_bins[2:end]) ./ 2 # bin centers
     mean_levels = (mean_bins[1:end-1] .+ mean_bins[2:end]) ./ 2 # bin centers
     if mean_correction
-        ncycles = [(ncycles...)] # flatten matrix
-        effective_amplitude_levels = [iamplitude / (1 - imean / ultimate_strength) for iamplitude in amplitude_levels, imean in mean_levels]
-        effective_amplitude_levels = [(effective_amplitude_levels...)] # flatten matrix
+        amplitude_levels_effective = [iamplitude / (1 - imean / ultimate_strength) for iamplitude in amplitude_levels, imean in mean_levels]
     else
-        ncycles = sum(ncycles, dims=2) # sum over mean bins
-        effective_amplitude_levels = amplitude_levels
+        amplitude_levels_effective = amplitude_levels
     end
-    log_ncycles_fail = safeakima(sn_stress, sn_log_cycles, effective_amplitude_levels) # interpolation
+    return mean_levels, amplitude_levels, ncycles, amplitude_levels_effective
+end
+
+"""
+    sn_curve_mean_corrected(sn_stress, sn_log_cycles, amplitude_levels_effective)
+
+Obtain new S-N curve values for bins, based on mean corrected bin amplitudes.
+
+# Inputs
+* `sn_stress::Array{<:Real,1}`: Material S-N curve, stress values
+* `sn_log_cycles::Array{<:Real,1}`: Material S-N curve, log of number of cycles to failure
+* `amplitude_levels_effective::Array{<:Real,2}`: Stress amplitude at bin centers after mean correction. Size [nbins_amplitude, nbins_mean]
+
+# Outputs:
+* `log_ncycles_fail::Array{<:Real,2}`: Number of cycles to failure for each bin accounting for mean correction. Size [nbins_amplitude, nbins_mean]
+
+"""
+function sn_curve_mean_corrected(sn_stress, sn_log_cycles, amplitude_levels_effective)
+    nbins_amplitude, nbins_mean = size(amplitude_levels_effective)
+    # log_ncycles_fail = safeakima(sn_stress, sn_log_cycles, [(amplitude_levels_effective...)]) # interpolation
+    function interp(x)
+        x₀, y₀ = sn_stress, sn_log_cycles
+        if issorted(y₀)
+            reverse!(x₀)
+            reverse!(y₀)
+        end
+        if x < x₀[begin] || x > x₀[end]
+            return nothing
+        end
+        return safeakima(x₀, y₀, x)
+    end
+    log_ncycles_fail = interp.([(amplitude_levels_effective...)]) # interpolation
+    return reshape(log_ncycles_fail, (nbins_amplitude, nbins_mean))
+end
+
+"""
+    fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength;
+    nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+
+Calculate the fatigue damage using the rainflow and equivalent load methods, based on
+Miner's rule and optionally using Goodman's mean correction.
+
+# Inputs
+* `stress::Array{<:Real,1}`: Stress time-series
+* `sn_stress::Array{<:Real,1}`: Material S-N curve, stress values
+* `sn_log_cycles::Array{<:Real,1}`: Material S-N curve, log of number of cycles to failure
+* `ultimate_strength::Real`: Ultimate strength of the material
+* `nbins_amplitude::Int`: Number of bins for amplitude (default is 20)
+* `nbins_mean::Int`: Number of bins for mean (default is 10 if `mean_correction` is true, otherwise 1)
+* `mean_correction::Bool`: Whether to apply Goodman mean correction (default is true)
+* `wohler_exp::Real` : Wohler exponent (default is 3)
+* `equiv_cycles::Real`: The equivalent number of load cycles (default is 1, but normally the time duration in seconds is used)
+
+# Outputs:
+* `damage::Real`: The calculated fatigue damage (≥1.0 means failure)
+
+"""
+function fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+    _, _, ncycles, amplitude_levels_effective = rainflow_mean_corrected(
+        stress, ultimate_strength; nbins_amplitude, nbins_mean, mean_correction, wohler_exp, equiv_cycles)
+    log_ncycles_fail = sn_curve_mean_corrected(sn_stress, sn_log_cycles, amplitude_levels_effective)
     ncycles_fail = 10.0 .^ log_ncycles_fail
     return sum(ncycles ./ ncycles_fail)
+end
+
+"""
+    fatigue_damage_rate(total_t, stress, sn_stress, sn_log_cycles, ultimate_strength;
+    nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+
+Calculate the fatigue damage rate (damage per hour) using the rainflow and equivalent load
+methods, based on Miner's rule and optionally using Goodman's mean correction.
+
+# Inputs
+* `total_t::Real`: Total time (length) of stress time-series in seconds
+* `stress::Array{<:Real,1}`: Stress time-series
+* `sn_stress::Array{<:Real,1}`: Material S-N curve, stress values
+* `sn_log_cycles::Array{<:Real,1}`: Material S-N curve, log of number of cycles to failure
+* `ultimate_strength::Real`: Ultimate strength of the material
+* `nbins_amplitude::Int`: Number of bins for amplitude (default is 20)
+* `nbins_mean::Int`: Number of bins for mean (default is 10 if `mean_correction` is true, otherwise 1)
+* `mean_correction::Bool`: Whether to apply Goodman mean correction (default is true)
+* `wohler_exp::Real` : Wohler exponent (default is 3)
+* `equiv_cycles::Real`: The equivalent number of load cycles (default is 1, but normally the time duration in seconds is used)
+
+# Outputs:
+* `damage_rate::Real`: The calculated fatigue damage (≥1.0 means failure) per hour
+
+"""
+function fatigue_damage_rate(total_t, stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+    damage = fatigue_damage(stress, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=20, nbins_mean=nothing, mean_correction=true, wohler_exp=3, equiv_cycles=1)
+    nhours = total_t/(60*60)
+    return damage/nhours
 end
 
 function printSF(verbosity,SF_ult,SF_buck,composite_station_idx, composite_station_name,lencomposites_span,lam_used,damage,delta_t,total_t;useStation=0)
@@ -971,6 +1087,7 @@ struct PostProcessOptions
     throwawayTimeSteps
     calculate_fatigue
 end
+
 function PostProcessOptions(;verbosity=2,
     usestationBld=0,
     usestationStrut=0,
@@ -980,21 +1097,19 @@ function PostProcessOptions(;verbosity=2,
 end
 
 function safetyfactor_fatigue(mymesh,components,delta_t; options=PostProcessOptions())
-    
-    
     verbosity = options.verbosity
     usestationBld = options.usestationBld
     usestationStrut = options.usestationStrut
     throwawayTimeSteps = options.throwawayTimeSteps
     calculate_fatigue = options.calculate_fatigue
-    
+
     for icomp = 1:size(components)[1]
 
         composite_station_idx_U = []
         composite_station_name_U = []
-        composite_station_idx_L = []  
+        composite_station_idx_L = []
         composite_station_name_L = []
-        
+
         numadIn = components[icomp].nuMadIn
         preCompInput = components[icomp].preCompInput
         preCompOutput = components[icomp].preCompOutput
@@ -1007,7 +1122,7 @@ function safetyfactor_fatigue(mymesh,components,delta_t; options=PostProcessOpti
         k_x = components[icomp].k_x
         k_y = components[icomp].k_y
         k_z = components[icomp].k_z
-        
+
         total_t = length(e_x[1,throwawayTimeSteps:end])*delta_t # for damage rate
 
         ###############################
@@ -1021,7 +1136,7 @@ function safetyfactor_fatigue(mymesh,components,delta_t; options=PostProcessOpti
         k_x_numad = zeros(N_ts,length(preCompInput))
         k_y_numad = zeros(N_ts,length(preCompInput))
         k_z_numad = zeros(N_ts,length(preCompInput))
-    
+
         startN = components[icomp].nodeNumbers[1]
         stopN = components[icomp].nodeNumbers[end]
 
