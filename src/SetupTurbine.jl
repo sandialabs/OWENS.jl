@@ -1,6 +1,47 @@
-# * `strut_twr_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the tower # This puts struts at top and bottom, as a fraction of the blade position
-# * `strut_bld_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the blade # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
-# NuMad_geom_xlscsv_file_strut = nothing, or sting for the filename, or array of strings matching length of Nstruts (length(strut_twr_mountpoint))
+"""
+    setupOWENS_config(path::String; mesh_config = default_mesh_config(), tower_config = default_tower_config(), blade_config = default_blade_config(), material_config = default_material_config(), aero_config = default_aero_config(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
+
+Set up and configure an OWENS turbine mesh.
+
+This function handles the setup process for an OWENS turbine model, including mesh generation,
+sectional properties calculation, and aerodynamic model initialization. It processes various configuration
+parameters and returns the assembled system components for analysis.
+
+# Arguments
+- `path::String`: Base path for file operations and data access
+
+# Keyword Arguments
+- `mesh_config`: Configuration for mesh generation (default: default_mesh_config())
+- `tower_config`: Configuration for tower properties (default: default_tower_config())
+- `blade_config`: Configuration for blade properties (default: default_blade_config())
+- `material_config`: Configuration for material properties (default: default_material_config())
+- `aero_config`: Configuration for aerodynamic properties (default: default_aero_config())
+- `VTKmeshfilename`: Optional filename for VTK mesh output
+- `verbosity`: Level of output verbosity (default: 1)
+- `return_componentized`: Whether to return componentized model (default: false)
+
+# Returns
+When `return_componentized=true`:
+- `mymesh`: Mesh properties
+- `myel`: Element properties
+- `myort`: Orientation properties
+- `myjoint`: Joint properties
+- `components`: Component definitions
+- `aeroForces`: Aerodynamic forces
+- `deformAero`: Aerodynamic deformation
+- `system`: System properties
+- `assembly`: Assembly properties
+- `sections`: Section properties
+
+When `return_componentized=false`:
+Returns an extended set of properties including mass matrices, stiffness matrices, and various component-specific properties.
+
+# Notes
+- The function performs mesh setup, sectional properties calculation, and aerodynamic model initialization
+- Supports both AD15 and ACDMS aerodynamic models
+- Handles both componentized and non-componentized return formats
+- Calculates total mass and material costs when verbosity > 1
+"""
 function setupOWENS_config(
     path::String;
     mesh_config = default_mesh_config(),
