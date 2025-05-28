@@ -42,7 +42,6 @@ initialElementCalculations = OWENSFEA.initialElementCalculations
 export Unsteady #, UnsteadyROM
 export owens
 export Modal#, Flutter
-export Component
 # export Steady
 function __init__()
 
@@ -80,10 +79,5 @@ include("./SetupTurbine.jl")
 include("./SetupTurbineCompat.jl")
 include("./topRunDLC.jl")
 include("./windio.jl")
-
-# Export the compatibility version as the main setupOWENS
-export setupOWENS
-# Export the new version with a different name
-export setupOWENS_config
 
 end
