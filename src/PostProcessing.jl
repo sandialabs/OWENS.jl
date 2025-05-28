@@ -504,7 +504,7 @@ function rainflow_mean_corrected(stress, ultimate_strength=nothing; nbins_amplit
     if mean_correction
         amplitude_levels_effective = [iamplitude / (1 - imean / ultimate_strength) for iamplitude in amplitude_levels, imean in mean_levels]
     else
-        amplitude_levels_effective = nothing
+        amplitude_levels_effective = amplitude_levels
     end
     return mean_levels, amplitude_levels, ncycles, amplitude_levels_effective
 end

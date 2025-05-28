@@ -1,4 +1,4 @@
-# # [Fatigue Analysis](@id simple1)
+# # [Fatigue Analysis](@id fatigue)
 #
 # In this example, we illustrate how to use OWENS for fatigue damage calculation, including correction for non-zero mean stress.
 # We also walk step by step, showing intermediate results to show what is going on behind the hood.
@@ -33,8 +33,8 @@ mean_n138 = [missing, missing, 218.0, 176.8, 157.1];
 
 ultimate_strength = 572e6
 sn_stress = mean_0 * 1e6
-sn_log_cycles = log10.(ncycles_exp);
-
+sn_log_cycles = log10.(ncycles_exp)
+nothing
 
 
 # ## **2.** Stress Time-Series
@@ -46,7 +46,7 @@ time = range(0, stop=2π * ncyc, length=ncyc * npercyc)
 function stress(stress_amplitude, stress_mean)
     return stress_amplitude * cos.(time) .+ stress_mean + randn(length(time)) * stress_amplitude * 0.01
 end
-
+nothing
 
 # ### **2.1** Example
 # Example synthetic stress time-series for one of the points on the graph.
@@ -62,7 +62,6 @@ hline!([stress_mean] * 1e-6, c=:black, label=:none, linestyle=:dashdot)
 hline!([stress_mean + stress_amplitude, stress_mean - stress_amplitude] * 1e-6, c=:black, label=:none, linestyle=:dash)
 
 
-
 # ## **3.** OWENS
 # Calculating the effective S-N curve and total damage accounting for Goodman mean correction using OWENS.
 # ### 3.1 Effective S-N Curves
@@ -71,7 +70,8 @@ hline!([stress_mean + stress_amplitude, stress_mean - stress_amplitude] * 1e-6, 
 # First, we compute the rainflow count accounting for mean correction.
 
 nbins_amplitude, nbins_mean = 21, 3
-mean_levels, amplitude_levels, ncycles, amplitude_levels_effective = OWENS.rainflow_mean_corrected(stress(stress_amplitude, stress_mean), ultimate_strength; nbins_amplitude, nbins_mean);
+mean_levels, amplitude_levels, ncycles, amplitude_levels_effective = OWENS.rainflow_mean_corrected(stress(stress_amplitude, stress_mean), ultimate_strength; nbins_amplitude, nbins_mean)
+nothing
 
 # The mean level at the center position corresponds to our desired mean level.
 
@@ -93,14 +93,13 @@ println("Cycles at desired bin: $(ncycles[end, mean_bins_mid])")
 
 # The effective amplitude is higher than the real amplitude due to the effect of the non-zero mean.
 
-# display(amplitude_levels_effective * 1e-6)
-
 println("Real stress amplitude: $(stress_amplitude*1e-6) MPa")
 println("Effective stress amplitude: $(amplitude_levels_effective[end, mean_bins_mid]*1e-6) MPa")
 
 # We now use the effective amplitude to calculate the number of cycles to failure for this amplitude and mean.
 
 log_ncycles_fail = OWENS.sn_curve_mean_corrected(sn_stress, sn_log_cycles, amplitude_levels_effective)
+nothing
 
 # The effective S-N point is then:
 
@@ -146,24 +145,23 @@ end
 color_0 = :black
 color_138, color_276, color_414 = :blue, :red, :green
 markersize, markercolor = 5, :white
-# mean
+## mean
 plot(ncycles_exp, mean_0, label=:none, color=color_0, lw=3, xaxis=:log, title="Experimental S-N Curves for 7075-T6 Aluminum\nkt=1, axial", xlabel="Cycles to Faliures", ylabel="Stress Amplitude (MPa)", legend=:topright, grid=true)
 scatter!(ncycles_exp, mean_0, label="σₘ=0", color=markercolor, markerstrokecolor=color_0, markersize=markersize)
-# positive
+## positive
 for (mean, color, label) in zip([mean_138, mean_276, mean_414], [color_138, color_276, color_414], [138, 276, 414])
     plot!(ncycles_exp, mean, label=:none, color=color)
     scatter!(ncycles_exp, mean, label="σₘ=$label MPa", color=markercolor, markerstrokecolor=color, markersize=markersize)
 end
-#negative
+## negative
 for (mean, color, label) in zip([mean_n138,], [color_138,], [-138,])
     plot!(ncycles_exp, mean, label=:none, color=color, linestyle=:dash)
     scatter!(ncycles_exp, mean, label="σₘ=$label MPa", color=markercolor, markerstrokecolor=color, markersize=markersize)
 end
-# Miner's rule + Goodman's correction
+## Miner's rule + Goodman's correction
 plot!(10 .^ logN_138, stress_amplitudes_138 * 1e-6, color=color_138, markershape=:star5, markerstrokecolor=color_138, markersize=markersize, label="OWENS: σₘ=138 MPa")
 plot!(10 .^ logN_276, stress_amplitudes_276 * 1e-6, color=color_276, markershape=:star5, markerstrokecolor=color_276, markersize=markersize, label="OWENS: σₘ=276 MPa")
 plot!(10 .^ logN_n138, stress_amplitudes_n138 * 1e-6, color=color_138, linestyle=:dashdot, markershape=:star5, markerstrokecolor=color_138, markersize=markersize, label="OWENS: σₘ=-138 MPa")
-
 plot!()
 
 
