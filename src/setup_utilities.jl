@@ -798,7 +798,7 @@ function setup_aerodynamic_model(
         OWENSAero.setupTurb(
             shapeX,
             shapeZ,
-            B,
+            Nbld,
             chord,
             tsr,
             Vinf;
