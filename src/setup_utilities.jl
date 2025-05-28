@@ -65,10 +65,10 @@ Contains the configuration for the tower.
 - `joint_type::Int`: The type of joint between the tower and the blades.
 - `c_mount_ratio::Float64`: The mount point of the struts to the tower.
 - `angularOffset::Float64`: The angular offset of the tower.
-- `NuMad_geom_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}`: The path to the tower geometry file.
-- `NuMad_mat_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}`: The path to the tower material file.
-- `NuMad_geom_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}`: The path to the strut geometry file.
-- `NuMad_mat_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}`: The path to the strut material file.
+- `NuMad_geom_xlscsv_file_twr::Any`: The path to the tower geometry file.
+- `NuMad_mat_xlscsv_file_twr::Any`: The path to the tower material file.
+- `NuMad_geom_xlscsv_file_strut::Any`: The path to the strut geometry file.
+- `NuMad_mat_xlscsv_file_strut::Any`: The path to the strut material file.
 """
 mutable struct TowerConfig
     Htwr_base::Float64
@@ -78,15 +78,15 @@ mutable struct TowerConfig
     joint_type::Int
     c_mount_ratio::Float64
     angularOffset::Float64
-    NuMad_geom_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}
-    NuMad_mat_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}
-    NuMad_geom_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}
-    NuMad_mat_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}
+    NuMad_geom_xlscsv_file_twr::Any
+    NuMad_mat_xlscsv_file_twr::Any
+    NuMad_geom_xlscsv_file_strut::Any
+    NuMad_mat_xlscsv_file_strut::Any
 
     function TowerConfig(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
     end
-    function TowerConfig(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_mat_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_geom_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_mat_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing)
+    function TowerConfig(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
     end
 end
@@ -103,8 +103,8 @@ Contains the configuration for the blades.
 - `shapeZ::Vector{Float64}`: The z-coordinates of the blade.
 - `shapeX::Vector{Float64}`: The x-coordinates of the blade.
 - `shapeY::Vector{Float64}`: The y-coordinates of the blade.
-- `NuMad_geom_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}`: The path to the blade geometry file.
-- `NuMad_mat_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}`: The path to the blade material file.
+- `NuMad_geom_xlscsv_file_bld::Any`: The path to the blade geometry file.
+- `NuMad_mat_xlscsv_file_bld::Any`: The path to the blade material file.
 """
 mutable struct BladeConfig
     B::Int
@@ -113,13 +113,13 @@ mutable struct BladeConfig
     shapeZ::Vector{Float64}
     shapeX::Vector{Float64}
     shapeY::Vector{Float64}
-    NuMad_geom_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}
-    NuMad_mat_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}
+    NuMad_geom_xlscsv_file_bld::Any
+    NuMad_mat_xlscsv_file_bld::Any
 
     function BladeConfig(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
     end
-    function BladeConfig(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_mat_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing)
+    function BladeConfig(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
     end
 end
@@ -396,14 +396,10 @@ function setup_sectional_props(
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_bld
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_bld
         elseif contains(components[icomponent].name,"strut")
+            println("DEBUG: NuMad_geom_xlscsv_file_strut = ", NuMad_geom_xlscsv_file_strut)
             istrut = parse(Int,components[icomponent].name[end]) #This assumes that you have a numad file for each strut, and that you have 9 or fewer struts
-            if !isnothing(NuMad_geom_xlscsv_file_strut)
-                components[icomponent].input_layup = NuMad_geom_xlscsv_file_strut[istrut]
-                components[icomponent].input_materials = NuMad_mat_xlscsv_file_strut
-            else
-                components[icomponent].input_layup = nothing
-                components[icomponent].input_materials = nothing
-            end
+            components[icomponent].input_layup = NuMad_geom_xlscsv_file_strut[istrut]
+            components[icomponent].input_materials = NuMad_mat_xlscsv_file_strut
         elseif contains(components[icomponent].name,"intra_cable")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_intra_blade_cable
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_intra_blade_cable
@@ -464,7 +460,7 @@ function setup_aerodynamic_model(
     mesh_props::MeshProperties,
     components::Vector{OWENS.Component},
     numadIn_bld::Any,
-    numadIn_strut::Vector{Nothing},
+    numadIn_strut::Any,
     path::String,
     myel::OWENSFEA.El,
     verbosity::Int64 = 1,

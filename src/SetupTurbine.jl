@@ -36,11 +36,8 @@ function setupOWENS_config(
 
     Nstrutperbld = length(tower_config.strut_twr_mountpoint)
 
-    if !isnothing(tower_config.NuMad_geom_xlscsv_file_strut)
-        if typeof(tower_config.NuMad_geom_xlscsv_file_strut)==String ||
-           typeof(tower_config.NuMad_geom_xlscsv_file_strut)==OrderedCollections.OrderedDict{Symbol,Any}
-            tower_config.NuMad_geom_xlscsv_file_strut = fill(tower_config.NuMad_geom_xlscsv_file_strut, Nstrutperbld)
-        end
+    if typeof(tower_config.NuMad_geom_xlscsv_file_strut)==String || typeof(tower_config.NuMad_geom_xlscsv_file_strut)==OrderedCollections.OrderedDict{Symbol, Any}
+        tower_config.NuMad_geom_xlscsv_file_strut = fill(tower_config.NuMad_geom_xlscsv_file_strut,Nstrutperbld)
     end
 
     nothing
