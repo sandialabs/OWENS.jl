@@ -42,6 +42,7 @@ initialElementCalculations = OWENSFEA.initialElementCalculations
 export Unsteady #, UnsteadyROM
 export owens
 export Modal#, Flutter
+export Component
 # export Steady
 function __init__()
 
@@ -68,14 +69,21 @@ include("Unsteady_Land.jl")
 include("utilities.jl")
 include("Unsteady_utilities.jl")
 include("structs.jl")
+include("meshing_utilities.jl")
+include("setup_utilities.jl")
 include("./PostProcessing.jl")
 include("./visualization.jl")
 include("./AeroMapping.jl")
 include("./fileio.jl")
-include("./meshing_utilities.jl")
 include("./gxbeam_conversion.jl")
 include("./SetupTurbine.jl")
+include("./SetupTurbineCompat.jl")
 include("./topRunDLC.jl")
 include("./windio.jl")
+
+# Export the compatibility version as the main setupOWENS
+export setupOWENS
+# Export the new version with a different name
+export setupOWENS_config
 
 end

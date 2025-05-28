@@ -1,7 +1,7 @@
 # * `strut_twr_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the tower # This puts struts at top and bottom, as a fraction of the blade position
 # * `strut_bld_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the blade # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
 # NuMad_geom_xlscsv_file_strut = nothing, or sting for the filename, or array of strings matching length of Nstruts (length(strut_twr_mountpoint))
-function setupOWENS(
+function setupOWENS_config(
     OWENSAero::Module,
     path::String;
     verbosity = 1,
@@ -13,6 +13,7 @@ function setupOWENS(
     material_config = default_material_config(),
     aero_config = default_aero_config(),
 )
+    custom_mesh_outputs = []
 
     # Unpack the mesh config
     meshtype = mesh_config.meshtype
@@ -21,17 +22,12 @@ function setupOWENS(
 
     # Unpack the blade config
     B = blade_config.B
-    shapeZ = blade_config.shapeZ
-
-    # Unpack the aero config
-    AeroModel = aero_config.AeroModel
-    aero_config.AD15On = AeroModel == "AD"
-
-    custom_mesh_outputs = []
-
-    if minimum(shapeZ)!=0
+    if minimum(blade_config.shapeZ)!=0
         @error "blade shapeZ must start at 0.0"
     end
+
+    # Unpack the aero config
+    aero_config.AD15On = aero_config.AeroModel == "AD"
 
     aero_config.centrifugal_force_flag =  material_config.AddedMass_Coeff_Ca>0.0
 
@@ -40,12 +36,11 @@ function setupOWENS(
 
     Nstrutperbld = length(tower_config.strut_twr_mountpoint)
 
-    NuMad_geom_xlscsv_file_strut = tower_config.NuMad_geom_xlscsv_file_strut
-    NuMad_mat_xlscsv_file_strut = tower_config.NuMad_mat_xlscsv_file_strut
-
-    if typeof(NuMad_geom_xlscsv_file_strut)==String ||
-       typeof(NuMad_geom_xlscsv_file_strut)==OrderedCollections.OrderedDict{Symbol,Any}
-        NuMad_geom_xlscsv_file_strut = fill(NuMad_geom_xlscsv_file_strut, Nstrutperbld)
+    if !isnothing(tower_config.NuMad_geom_xlscsv_file_strut)
+        if typeof(tower_config.NuMad_geom_xlscsv_file_strut)==String ||
+           typeof(tower_config.NuMad_geom_xlscsv_file_strut)==OrderedCollections.OrderedDict{Symbol,Any}
+            tower_config.NuMad_geom_xlscsv_file_strut = fill(tower_config.NuMad_geom_xlscsv_file_strut, Nstrutperbld)
+        end
     end
 
     nothing
@@ -57,11 +52,21 @@ function setupOWENS(
     #########################################
     ### Set up mesh
     #########################################
-    mesh_props = setup_mesh(mesh_config, blade_config, tower_config, verbosity)
+    mesh_props = setup_mesh(mesh_config, blade_config, tower_config, aero_config, verbosity)
 
+    # Unpack the mesh properties
     mymesh = mesh_props.mymesh
     myort = mesh_props.myort
     myjoint = mesh_props.myjoint
+    AD15bldNdIdxRng = mesh_props.AD15bldNdIdxRng
+    AD15bldElIdxRng = mesh_props.AD15bldElIdxRng
+
+    components,
+    s2t_idx,
+    intra_blade_cable_startidx_el,
+    intra_blade_cable_endidx_el,
+    topel_idx,
+    s2b_idx = mesh_props.custom_mesh_outputs
 
     # nTwrElem = Int(mymesh.meshSeg[1])+1
     # try
@@ -92,18 +97,6 @@ function setupOWENS(
     #     # sleep(0.1)
     # end
 
-    # Unpack to get the element numbers for the extra components
-    components,
-    s2t_idx,
-    intra_blade_cable_startidx_el,
-    intra_blade_cable_endidx_el,
-    topel_idx,
-    s2b_idx = mesh_props.custom_mesh_outputs
-
-    # Unpack AD15bldNdIdxRng from mesh_props
-    AD15bldNdIdxRng = mesh_props.AD15bldNdIdxRng
-    AD15bldElIdxRng = mesh_props.AD15bldElIdxRng
-
     # This is where the sectional properties for the tower are either read in from the file, or are directly input and could be manuplated here in the script
 
     #########################################
@@ -111,17 +104,12 @@ function setupOWENS(
     #########################################
 
     sectional_props = setup_sectional_props(
-        components,
-        mymesh,
+        mesh_props,
+        material_config,
+        aero_config,
+        tower_config,
+        blade_config,
         path,
-        aero_config.rho,
-        material_config.AddedMass_Coeff_Ca,
-        tower_config.NuMad_geom_xlscsv_file_twr,
-        tower_config.NuMad_mat_xlscsv_file_twr,
-        blade_config.NuMad_geom_xlscsv_file_bld,
-        blade_config.NuMad_mat_xlscsv_file_bld,
-        tower_config.NuMad_geom_xlscsv_file_strut,
-        tower_config.NuMad_mat_xlscsv_file_strut,
         # TODO: Add these
         nothing, # NuMad_geom_xlscsv_file_intra_blade_cable
         nothing, # NuMad_mat_xlscsv_file_intra_blade_cable

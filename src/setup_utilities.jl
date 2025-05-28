@@ -1,5 +1,7 @@
 using OrderedCollections: OrderedDict
 
+export default_mesh_config, default_tower_config, default_blade_config, default_material_config, default_aero_config
+
 """
     MeshConfig
 
@@ -29,18 +31,10 @@ mutable struct MeshConfig
     connectBldTips2Twr::Bool
     AD15_ccw::Bool
 
-    function MeshConfig(;
-        Nslices::Int,
-        ntheta::Int,
-        ntelem::Int,
-        nbelem::Int,
-        ncelem::Int,
-        nselem::Int,
-        meshtype::String,
-        custommesh::Union{Nothing,Function}=nothing,
-        connectBldTips2Twr::Bool=false,
-        AD15_ccw::Bool=true
-    )
+    function MeshConfig(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
+        new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
+    end
+    function MeshConfig(; Nslices::Int, ntheta::Int, ntelem::Int, nbelem::Int, ncelem::Int, nselem::Int, meshtype::String, custommesh::Union{Nothing,Function}=nothing, connectBldTips2Twr::Bool=false, AD15_ccw::Bool=true)
         new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
     end
 end
@@ -89,21 +83,11 @@ mutable struct TowerConfig
     NuMad_geom_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}
     NuMad_mat_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}
 
-    function TowerConfig(;
-        Htwr_base::Float64,
-        Htwr_blds::Float64,
-        strut_twr_mountpoint::Vector{Float64},
-        strut_bld_mountpoint::Vector{Float64},
-        joint_type::Int,
-        c_mount_ratio::Float64,
-        angularOffset::Float64,
-        NuMad_geom_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing,
-        NuMad_mat_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing,
-        NuMad_geom_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing,
-        NuMad_mat_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing
-    )
-        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset,
-            NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
+    function TowerConfig(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
+        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
+    end
+    function TowerConfig(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_mat_xlscsv_file_twr::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_geom_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_mat_xlscsv_file_strut::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing)
+        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
     end
 end
 
@@ -132,16 +116,10 @@ mutable struct BladeConfig
     NuMad_geom_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}
     NuMad_mat_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}
 
-    function BladeConfig(;
-        B::Int,
-        H::Float64,
-        R::Float64,
-        shapeZ::Vector{Float64},
-        shapeX::Vector{Float64},
-        shapeY::Vector{Float64},
-        NuMad_geom_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing,
-        NuMad_mat_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing
-    )
+    function BladeConfig(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
+        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
+    end
+    function BladeConfig(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing, NuMad_mat_xlscsv_file_bld::Union{Nothing,String,OrderedDict{Symbol,Any}}=nothing)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
     end
 end
@@ -165,13 +143,10 @@ mutable struct MaterialConfig
     thickness_scale::Vector{Float64}
     AddedMass_Coeff_Ca::Float64
 
-    function MaterialConfig(;
-        stack_layers_bld::Union{Nothing,Matrix{Float64}}=nothing,
-        stack_layers_scale::Vector{Float64}=[1.0, 1.0],
-        chord_scale::Vector{Float64}=[1.0, 1.0],
-        thickness_scale::Vector{Float64}=[1.0, 1.0],
-        AddedMass_Coeff_Ca::Float64=0.0
-    )
+    function MaterialConfig(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
+        new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
+    end
+    function MaterialConfig(; stack_layers_bld::Union{Nothing,Matrix{Float64}}=nothing, stack_layers_scale::Vector{Float64}=[1.0, 1.0], chord_scale::Vector{Float64}=[1.0, 1.0], thickness_scale::Vector{Float64}=[1.0, 1.0], AddedMass_Coeff_Ca::Float64=0.0)
         new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
     end
 end
@@ -228,33 +203,11 @@ mutable struct AeroConfig
     centrifugal_force_flag::Bool
     AD15On::Bool
 
-    function AeroConfig(;
-        rho::Float64=1.225,
-        mu::Float64=1.7894e-5,
-        RPM::Float64=1e-6,
-        Vinf::Float64=25.0,
-        eta::Float64=0.5,
-        delta_t::Float64=0.01,
-        AD15hubR::Float64=0.1,
-        WindType::Int=1,
-        AeroModel::String="DMS",
-        DynamicStallModel::String="BV",
-        numTS::Int=100,
-        adi_lib::Union{Nothing,String}=nothing,
-        adi_rootname::Union{Nothing,String}=nothing,
-        windINPfilename::Union{Nothing,String}=nothing,
-        ifw_libfile::Union{Nothing,String}=nothing,
-        ifw::Bool=false,
-        RPI::Bool=true,
-        Aero_AddedMass_Active::Bool=false,
-        Aero_RotAccel_Active::Bool=false,
-        Aero_Buoyancy_Active::Bool=false,
-        centrifugal_force_flag::Bool=false,
-        AD15On::Bool=false
-    )
-        new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel,
-            numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI,
-            Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, AD15On)
+    function AeroConfig(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag)
+        new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, false)
+    end
+    function AeroConfig(; rho::Float64=1.225, mu::Float64=1.7894e-5, RPM::Float64=1e-6, Vinf::Float64=25.0, eta::Float64=0.5, delta_t::Float64=0.01, AD15hubR::Float64=0.1, WindType::Int=1, AeroModel::String="DMS", DynamicStallModel::String="BV", numTS::Int=100, adi_lib::Union{Nothing,String}=nothing, adi_rootname::Union{Nothing,String}=nothing, windINPfilename::Union{Nothing,String}=nothing, ifw_libfile::Union{Nothing,String}=nothing, ifw::Bool=false, RPI::Bool=true, Aero_AddedMass_Active::Bool=false, Aero_RotAccel_Active::Bool=false, Aero_Buoyancy_Active::Bool=false, centrifugal_force_flag::Bool=false, AD15On::Bool=false)
+        new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, AD15On)
     end
 end
 
@@ -344,6 +297,7 @@ function setup_mesh(
     mesh_config::MeshConfig,
     blade_config::BladeConfig,
     tower_config::TowerConfig,
+    aero_config::AeroConfig,
     verbosity::Int64 = 1
 )
     mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs =
@@ -352,7 +306,7 @@ function setup_mesh(
             Htwr_blds = tower_config.Htwr_blds,
             Hbld = blade_config.H,
             R = blade_config.R,
-            AD15hubR = 0.1,  # TODO: Make this configurable
+            AD15hubR = aero_config.AD15hubR,
             nblade = blade_config.B,
             ntelem = mesh_config.ntelem,
             nbelem = mesh_config.nbelem,
@@ -385,39 +339,75 @@ struct SectionalProperties
     rotationalEffects::Any
     end
 
-function setup_sectional_props(components, mymesh, path, rho, AddedMass_Coeff_Ca, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, NuMad_geom_xlscsv_file_intra_blade_cable, NuMad_mat_xlscsv_file_intra_blade_cable, NuMad_geom_xlscsv_file_guys, NuMad_mat_xlscsv_file_guys, verbosity)
+function setup_sectional_props(
+    mesh_props,
+    material_config, 
+    aero_config, 
+    tower_config, 
+    blade_config, 
+    path, 
+    NuMad_geom_xlscsv_file_intra_blade_cable, 
+    NuMad_mat_xlscsv_file_intra_blade_cable, 
+    NuMad_geom_xlscsv_file_guys, 
+    NuMad_mat_xlscsv_file_guys, 
+    verbosity)
+    # Unpack the mesh properties
+    mymesh = mesh_props.mymesh
+    myort = mesh_props.myort
+    myjoint = mesh_props.myjoint
+    AD15bldNdIdxRng = mesh_props.AD15bldNdIdxRng
+    AD15bldElIdxRng = mesh_props.AD15bldElIdxRng
+    
+    components,
+    s2t_idx,
+    intra_blade_cable_startidx_el,
+    intra_blade_cable_endidx_el,
+    topel_idx,
+    s2b_idx = mesh_props.custom_mesh_outputs
+
+    # Unpack the aero config
+    rho = aero_config.rho
+
+    # Unpack the material config
+    AddedMass_Coeff_Ca = material_config.AddedMass_Coeff_Ca
+
+    # Unpack the tower config
+    NuMad_geom_xlscsv_file_twr = tower_config.NuMad_geom_xlscsv_file_twr
+    NuMad_mat_xlscsv_file_twr = tower_config.NuMad_mat_xlscsv_file_twr
+
+    # Unpack the blade config
+    NuMad_geom_xlscsv_file_bld = blade_config.NuMad_geom_xlscsv_file_bld
+    NuMad_mat_xlscsv_file_bld = blade_config.NuMad_mat_xlscsv_file_bld
+
+    # Unpack the strut config
+    NuMad_geom_xlscsv_file_strut = tower_config.NuMad_geom_xlscsv_file_strut
+    NuMad_mat_xlscsv_file_strut = tower_config.NuMad_mat_xlscsv_file_strut
+    
     sectionPropsArray = []
     stiff_array = []
     mass_array = []
     rotationalEffects = ones(mymesh.numEl)
 
     for icomponent = 1:size(components)[1]
-        if contains(components[icomponent].name, "tower")
+        if contains(components[icomponent].name,"tower")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_twr
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_twr
-        elseif contains(components[icomponent].name, "blade")
+        elseif contains(components[icomponent].name,"blade")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_bld
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_bld
-        elseif contains(components[icomponent].name, "strut")
-            istrut = parse(Int, components[icomponent].name[end]) #This assumes that you have a numad file for each strut, and that you have 9 or fewer struts
-            if isnothing(NuMad_geom_xlscsv_file_strut)
-                components[icomponent].input_layup = nothing
-            elseif typeof(NuMad_geom_xlscsv_file_strut) == String
-                components[icomponent].input_layup = NuMad_geom_xlscsv_file_strut
-            else
+        elseif contains(components[icomponent].name,"strut")
+            istrut = parse(Int,components[icomponent].name[end]) #This assumes that you have a numad file for each strut, and that you have 9 or fewer struts
+            if !isnothing(NuMad_geom_xlscsv_file_strut)
                 components[icomponent].input_layup = NuMad_geom_xlscsv_file_strut[istrut]
-            end
-            if isnothing(NuMad_mat_xlscsv_file_strut)
-                components[icomponent].input_materials = nothing
-            elseif typeof(NuMad_mat_xlscsv_file_strut) == String
                 components[icomponent].input_materials = NuMad_mat_xlscsv_file_strut
             else
-                components[icomponent].input_materials = NuMad_mat_xlscsv_file_strut
+                components[icomponent].input_layup = nothing
+                components[icomponent].input_materials = nothing
             end
-        elseif contains(components[icomponent].name, "intra_cable")
+        elseif contains(components[icomponent].name,"intra_cable")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_intra_blade_cable
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_intra_blade_cable
-        elseif contains(components[icomponent].name, "guy")
+        elseif contains(components[icomponent].name,"guy")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_guys
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_guys
             rotationalEffects[components[icomponent].elNumbers] .= 0.0 #turn rotational effects off for guy wires

@@ -1,4 +1,5 @@
-
+using OrderedCollections
+import ..OWENS: MeshConfig, TowerConfig, BladeConfig, MaterialConfig, AeroConfig
 
 function setupOWENS(
     OWENSAero,
@@ -135,7 +136,7 @@ function setupOWENS(
     )
 
     # Run the setup function with the config structs
-    return setupOWENS(
+    return setupOWENS_config(
         OWENSAero,
         path;
         verbosity = verbosity,
