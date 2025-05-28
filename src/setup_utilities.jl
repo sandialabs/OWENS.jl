@@ -458,12 +458,19 @@ function setup_aerodynamic_model(
     mesh_config::MeshConfig,
     mesh_props::MeshProperties,
     components::Vector{OWENS.Component},
-    numadIn_bld::Any,
-    numadIn_strut::Any,
     path::String,
     myel::OWENSFEA.El,
     verbosity::Int64 = 1,
 )
+
+    blade_component_index = findfirst(s -> s.name[1:(end-1)] == "blade", components) #This assumes 9 or fewer blades, not including struts
+    numadIn_bld = components[blade_component_index].nuMadIn
+
+    strut_component_index = findall(s -> contains(s.name, "strut"), components) #This assumes 9 or fewer blades, not including struts
+    numadIn_strut = [
+        components[strut_component_index1].nuMadIn for
+        strut_component_index1 in strut_component_index[1:blade_config.B:end]
+    ]
     # Initialize aerodynamic variables to nothing
     # TODO: Add types to the variables for proper allocation
     aeroForcesAD = nothing

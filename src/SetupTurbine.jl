@@ -2,16 +2,15 @@
 # * `strut_bld_mountpoint::float` = [0.01,0.5,0.9], # factor of blade height where the bottom strut attaches on the blade # This puts struts at bottom 0, mid 0.5, and top 1.0 as a fraction of the blade position
 # NuMad_geom_xlscsv_file_strut = nothing, or sting for the filename, or array of strings matching length of Nstruts (length(strut_twr_mountpoint))
 function setupOWENS_config(
-    OWENSAero::Module,
     path::String;
-    verbosity = 1,
-    VTKmeshfilename = nothing,
-    return_componentized = false,
     mesh_config = default_mesh_config(),
     tower_config = default_tower_config(),
     blade_config = default_blade_config(),
     material_config = default_material_config(),
     aero_config = default_aero_config(),
+    VTKmeshfilename = nothing,
+    verbosity = 1,
+    return_componentized = false,
 )
     custom_mesh_outputs = []
 
@@ -21,7 +20,6 @@ function setupOWENS_config(
 
 
     # Unpack the blade config
-    B = blade_config.B
     if minimum(blade_config.shapeZ)!=0
         @error "blade shapeZ must start at 0.0"
     end
@@ -195,14 +193,6 @@ function setupOWENS_config(
     end
 
     # Set up the OWENSAero aerodynamics if used
-    blade_component_index = findfirst(s -> s.name[1:(end-1)] == "blade", components) #This assumes 9 or fewer blades, not including struts
-    numadIn_bld = components[blade_component_index].nuMadIn
-
-    strut_component_index = findall(s -> contains(s.name, "strut"), components) #This assumes 9 or fewer blades, not including struts
-    numadIn_strut = [
-        components[strut_component_index1].nuMadIn for
-        strut_component_index1 in strut_component_index[1:B:end]
-    ]
     
     aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS = setup_aerodynamic_model(
         blade_config,
@@ -211,8 +201,6 @@ function setupOWENS_config(
         mesh_config,
         mesh_props,
         components,
-        numadIn_bld,
-        numadIn_strut,
         path,
         myel,
         verbosity,

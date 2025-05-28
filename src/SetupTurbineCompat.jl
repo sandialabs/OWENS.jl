@@ -139,15 +139,14 @@ function setupOWENS(
 
     # Run the setup function with the config structs
     return setupOWENS_config(
-        OWENSAero,
-        path;
-        verbosity = verbosity,
-        VTKmeshfilename = VTKmeshfilename,
-        return_componentized = return_componentized,
+        path,
         mesh_config = mesh_config,
         tower_config = tower_config,
         blade_config = blade_config,
         material_config = material_config,
-        aero_config = aero_config,
+        aero_config = aero_config,  
+        VTKmeshfilename = VTKmeshfilename,
+        verbosity = verbosity,
+        return_componentized = return_componentized,
     )
 end
