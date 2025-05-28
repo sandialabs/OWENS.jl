@@ -28,6 +28,7 @@ mean_138 = [316.2, 219.4, 155.8, 127.8, 117.2]
 mean_276 = [249.7, 173.1, 123.9, 103.1, 95.6]
 mean_414 = [157.3, 114.3, 84.2, 69.7, 67.7]
 mean_n138 = [missing, missing, 218.0, 176.8, 157.1];
+nothing
 
 # Material properties:
 
@@ -60,6 +61,7 @@ plot(time, stress(stress_amplitude, stress_mean) * 1e-6, label=:none, xlabel="Ti
 hline!([0,], c=:black, label=:none)
 hline!([stress_mean] * 1e-6, c=:black, label=:none, linestyle=:dashdot)
 hline!([stress_mean + stress_amplitude, stress_mean - stress_amplitude] * 1e-6, c=:black, label=:none, linestyle=:dash)
+nothing
 
 
 # ## **3.** OWENS
@@ -79,22 +81,26 @@ mean_bins_mid = ceil(Int, nbins_mean / 2)
 display(mean_levels * 1e-6)
 println("Real mean stress: $(stress_mean*1e-6) MPa")
 println("Center bin mean stress: $(mean_levels[mean_bins_mid]*1e-6) MPa")
+nothing
 
 # The stress amplitude level at the final position corresponds to our desired mean level.
 
 display(amplitude_levels * 1e-6)
 println("Real stress amplitude: $(stress_amplitude*1e-6) MPa")
 println("Center bin stress amplitude: $(amplitude_levels[end]*1e-6) MPa")
+nothing
 
 # We can verify that the count at the corresponding bin is 10.
 
 display(ncycles)
 println("Cycles at desired bin: $(ncycles[end, mean_bins_mid])")
+nothing
 
 # The effective amplitude is higher than the real amplitude due to the effect of the non-zero mean.
 
 println("Real stress amplitude: $(stress_amplitude*1e-6) MPa")
 println("Effective stress amplitude: $(amplitude_levels_effective[end, mean_bins_mid]*1e-6) MPa")
+nothing
 
 # We now use the effective amplitude to calculate the number of cycles to failure for this amplitude and mean.
 
@@ -106,7 +112,7 @@ nothing
 println("Point on effective S-N curve for mean=$(stress_mean*1e-6) MPa")
 println("    N-cycles to failure: 10^$(log_ncycles_fail[end, mean_bins_mid])")
 println("    Stress amplitude: $(stress_amplitude*1e-6) MPa")
-
+nothing
 
 # #### **3.1.2** Effective S-N Curves
 # The experimental S-N curve has a limited range, and because of the interpolation required (interpolation based on stress amplitude), we can only perform the verification for a few points.
@@ -163,7 +169,7 @@ plot!(10 .^ logN_138, stress_amplitudes_138 * 1e-6, color=color_138, markershape
 plot!(10 .^ logN_276, stress_amplitudes_276 * 1e-6, color=color_276, markershape=:star5, markerstrokecolor=color_276, markersize=markersize, label="OWENS: σₘ=276 MPa")
 plot!(10 .^ logN_n138, stress_amplitudes_n138 * 1e-6, color=color_138, linestyle=:dashdot, markershape=:star5, markerstrokecolor=color_138, markersize=markersize, label="OWENS: σₘ=-138 MPa")
 plot!()
-
+nothing
 
 # ### **3.2** Damage
 # In most cases we simply want to calculate the damage (not plot effective S-N curves as above) due to an arbitrary stress timeseries. We can do this with a single function call to OWENS. The damage is calculated using Miner's rule with Goodman's mean correction. A damage of 1 or greater indicates failure. We'll use a different example since the S-N curves above do not cover a large enough range of stress amplitude for calculating damage from a random signal.
@@ -179,13 +185,14 @@ stress_timeseries = (rand(rng, length(time)) .- 0.5) * amplitude .+ mean
 plot(time, stress_timeseries; xlabel="time [s]", ylabel="stress [Pa]", label=nothing, xlim=(0, Inf))
 hline!([mean], label=nothing, color=:black, linestyle=:dash)
 hline!([0], label=nothing, color=:black, linestyle=:solid)
-
+nothing
 
 # #### **3.2.2** Material Properties
 
 ## Ultimate strength
 ultimate_strength = 500e6
 println("Ultimate strength: ", ultimate_strength, " Pa")
+nothing
 
 ## S-N curve
 failure_strength_coefficient = 250e6
@@ -197,9 +204,10 @@ ncycles = vcat(ncycles, 1e7)
 sn_log_cycles = vcat(sn_log_cycles, log10(1e7))
 sn_stress = vcat(sn_stress, 1e5)
 plot(ncycles, sn_stress; xscale=:log10, xlabel="log(cycles)", ylabel="stress [Pa]", label=nothing)
-
+nothing
 
 # #### **3.2.3** Fatigue Damage
 
 damage = OWENS.fatigue_damage(stress_timeseries, sn_stress, sn_log_cycles, ultimate_strength; nbins_amplitude=21, nbins_mean=3, mean_correction=true)
 println("Damage: ", damage)
+nothing
