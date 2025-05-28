@@ -499,8 +499,11 @@ function setup_aerodynamic_model(
     shapeZ = blade_config.shapeZ
     shapeY = blade_config.shapeY
     AD15bldNdIdxRng = mesh_props.AD15bldNdIdxRng
+    AD15bldElIdxRng = mesh_props.AD15bldElIdxRng
     H = blade_config.H
     Htwr_base = tower_config.Htwr_base
+
+    Nstrutperbld = length(tower_config.strut_twr_mountpoint)
     
     # Calculate tsr locally
     omega = aero_config.RPM / 60 * 2 * pi
@@ -620,7 +623,7 @@ function setup_aerodynamic_model(
                 BlSpn0=ADshapeZ
                 BlCrvAC0=ADshapeXspl
 
-                bladeangle = (iADBody-1)*2.0*pi/Nbld + angularOffset #TODO: pitch offset and twist offset that isn't from the helical
+                bladeangle = (iADBody-1)*2.0*pi/Nbld + tower_config.angularOffset #TODO: pitch offset and twist offset that isn't from the helical
 
                 BlSpn = ADshapeZ
                 blade_twist = atan.(xmesh, ymesh) .- bladeangle
@@ -687,24 +690,24 @@ function setup_aerodynamic_model(
         OWENSOpenFASTWrappers.writeIWfile(Vinf, ifw_input_file; WindType, windINPfilename)
 
         OWENSOpenFASTWrappers.setupTurb(
-            adi_lib,
+            aero_config.adi_lib,
             ad_input_file,
             ifw_input_file,
-            adi_rootname,
+            aero_config.adi_rootname,
             [shapeX],
             [shapeZ],
-            [B],
+            [Nbld],
             [Htwr_base],
             [mymesh],
             [myort],
             [AD15bldNdIdxRng],
             [AD15bldElIdxRng];
             rho = rho,
-            adi_dt = delta_t,
-            adi_tmax = numTS*delta_t,
+            adi_dt = aero_config.delta_t,
+            adi_tmax = aero_config.numTS*aero_config.delta_t,
             omega = [omega],
             adi_wrOuts = 1,     # write output file [0 none, 1 txt, 2 binary, 3 both]
-            adi_DT_Outs = delta_t,   # output frequency
+            adi_DT_Outs = aero_config.delta_t,   # output frequency
             numTurbines = 1,
             refPos = [[0, 0, 0]],
             hubPos = [[0, 0, 0.0]],
