@@ -61,8 +61,7 @@ plot(time, stress(stress_amplitude, stress_mean) * 1e-6, label=:none, xlabel="Ti
 hline!([0,], c=:black, label=:none)
 hline!([stress_mean] * 1e-6, c=:black, label=:none, linestyle=:dashdot)
 hline!([stress_mean + stress_amplitude, stress_mean - stress_amplitude] * 1e-6, c=:black, label=:none, linestyle=:dash)
-nothing
-
+plot!()
 
 # ## **3.** OWENS
 # Calculating the effective S-N curve and total damage accounting for Goodman mean correction using OWENS.
@@ -169,7 +168,6 @@ plot!(10 .^ logN_138, stress_amplitudes_138 * 1e-6, color=color_138, markershape
 plot!(10 .^ logN_276, stress_amplitudes_276 * 1e-6, color=color_276, markershape=:star5, markerstrokecolor=color_276, markersize=markersize, label="OWENS: σₘ=276 MPa")
 plot!(10 .^ logN_n138, stress_amplitudes_n138 * 1e-6, color=color_138, linestyle=:dashdot, markershape=:star5, markerstrokecolor=color_138, markersize=markersize, label="OWENS: σₘ=-138 MPa")
 plot!()
-nothing
 
 # ### **3.2** Damage
 # In most cases we simply want to calculate the damage (not plot effective S-N curves as above) due to an arbitrary stress timeseries. We can do this with a single function call to OWENS. The damage is calculated using Miner's rule with Goodman's mean correction. A damage of 1 or greater indicates failure. We'll use a different example since the S-N curves above do not cover a large enough range of stress amplitude for calculating damage from a random signal.
@@ -185,7 +183,7 @@ stress_timeseries = (rand(rng, length(time)) .- 0.5) * amplitude .+ mean
 plot(time, stress_timeseries; xlabel="time [s]", ylabel="stress [Pa]", label=nothing, xlim=(0, Inf))
 hline!([mean], label=nothing, color=:black, linestyle=:dash)
 hline!([0], label=nothing, color=:black, linestyle=:solid)
-nothing
+plot!()
 
 # #### **3.2.2** Material Properties
 
@@ -204,7 +202,7 @@ ncycles = vcat(ncycles, 1e7)
 sn_log_cycles = vcat(sn_log_cycles, log10(1e7))
 sn_stress = vcat(sn_stress, 1e5)
 plot(ncycles, sn_stress; xscale=:log10, xlabel="log(cycles)", ylabel="stress [Pa]", label=nothing)
-nothing
+plot!()
 
 # #### **3.2.3** Fatigue Damage
 
