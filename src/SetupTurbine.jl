@@ -118,6 +118,7 @@ function setupOWENS(OWENSAero,path;
     Htwr_blds = H,
     strut_twr_mountpoint = [0.25,0.75],
     strut_bld_mountpoint = [0.25,0.75],
+    blade_joint_angle_Degrees=0.0,
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -206,6 +207,7 @@ function setupOWENS(OWENSAero,path;
     angularOffset, #Blade shape, magnitude is irrelevant, scaled based on height and radius above
     AD15_ccw = true,
     verbosity, # 0 nothing, 1 basic, 2 lots: amount of printed information)
+    blade_joint_angle_Degrees,
     connectBldTips2Twr,
     
     )
