@@ -47,8 +47,8 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
   - Date: Nov  5 2024
   - Time: 02:19:23
  Execution Info:
-  - Date: 05/28/2025
-  - Time: 23:02:23+0000
+  - Date: 05/29/2025
+  - Time: 16:29:39+0000
 
  Running ADI.
  Running AeroDyn.
@@ -72,14 +72,14 @@ Running in specified rotor speed mode
  [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
  subsequent occurences.
 10.5%┣█████                                          ┫ 2/19 [00:03&lt;00:44, 3s/it]
-15.8%┣███████▍                                       ┫ 3/19 [00:05&lt;00:41, 3s/it]
-21.1%┣██████████                                     ┫ 4/19 [00:07&lt;00:37, 2s/it]
+15.8%┣███████▍                                       ┫ 3/19 [00:05&lt;00:39, 2s/it]
+21.1%┣██████████                                     ┫ 4/19 [00:08&lt;00:38, 3s/it]
 26.3%┣████████████▍                                  ┫ 5/19 [00:09&lt;00:32, 2s/it]
-31.6%┣██████████████▉                                ┫ 6/19 [00:11&lt;00:29, 2s/it]
+31.6%┣██████████████▉                                ┫ 6/19 [00:11&lt;00:28, 2s/it]
 36.8%┣█████████████████▎                             ┫ 7/19 [00:13&lt;00:26, 2s/it]
 42.1%┣███████████████████▉                           ┫ 8/19 [00:15&lt;00:23, 2s/it]
-47.4%┣██████████████████████▎                        ┫ 9/19 [00:17&lt;00:21, 2s/it]
-52.6%┣████████████████████████▏                     ┫ 10/19 [00:18&lt;00:18, 2s/it]
+47.4%┣██████████████████████▎                        ┫ 9/19 [00:16&lt;00:21, 2s/it]
+52.6%┣████████████████████████▏                     ┫ 10/19 [00:19&lt;00:19, 2s/it]
 57.9%┣██████████████████████████▋                   ┫ 11/19 [00:20&lt;00:16, 2s/it]
 63.2%┣█████████████████████████████                 ┫ 12/19 [00:22&lt;00:14, 2s/it]
 68.4%┣███████████████████████████████▌              ┫ 13/19 [00:24&lt;00:12, 2s/it]
@@ -87,7 +87,7 @@ Running in specified rotor speed mode
 78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:28&lt;00:08, 2s/it]
 84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:29&lt;00:06, 2s/it]
 89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:30&lt;00:04, 2s/it]
-94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:31&lt;00:02, 2s/it]
+94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:32&lt;00:02, 2s/it]
 100.0%┣█████████████████████████████████████████████┫ 19/19 [00:33&lt;00:00, 2s/it]
 Simulation Complete.
  &gt;&gt;&gt; FINAL WRITE
@@ -127,4 +127,4 @@ Maximum Damage per hr: 2.6203321416176863e-11
 At composite station 21 of 21 at lam 1 of 1
 
 Mass of Turbine: 385923.43991763535 kg
-WRITING Output File to nothing</code></pre><p>Here is an example of using the same model against the automated DLC run script. TODO: issue with CI version of turbsim Note that for a setup cutom to a specific design, you&#39;ll want to go to the B level to get all of the detailed inputs correct One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.</p><p>modelopt.DLC<em>Options.DLCs = [&quot;1</em>1&quot;] #&quot;normal&quot;</p><h4 id="modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;"><a class="docs-heading-anchor" href="#modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;">modelopt.DLC<em>Options.DLCs = [&quot;1</em>3&quot;,&quot;6_1&quot;] #&quot;normal&quot;</a><a id="modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;-1"></a><a class="docs-heading-anchor-permalink" href="#modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;" title="Permalink"></a></h4><p>OWENS.runDLC(modelopt,designparams,runpath)</p><pre><code class="language-julia hljs">nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../indepth_installation/">« Installation</a><a class="docs-footer-nextpage" href="../B_detailedInputs/">Detailed Inputs »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Wednesday 28 May 2025 23:05">Wednesday 28 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+WRITING Output File to nothing</code></pre><p>Here is an example of using the same model against the automated DLC run script. TODO: issue with CI version of turbsim Note that for a setup cutom to a specific design, you&#39;ll want to go to the B level to get all of the detailed inputs correct One of these is the controller where a discon controller library can be coupled instead of the specified RPM control.</p><p>modelopt.DLC<em>Options.DLCs = [&quot;1</em>1&quot;] #&quot;normal&quot;</p><h4 id="modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;"><a class="docs-heading-anchor" href="#modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;">modelopt.DLC<em>Options.DLCs = [&quot;1</em>3&quot;,&quot;6_1&quot;] #&quot;normal&quot;</a><a id="modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;-1"></a><a class="docs-heading-anchor-permalink" href="#modelopt.DLC*Options.DLCs-[&quot;1*3&quot;,&quot;6_1&quot;]-#&quot;normal&quot;" title="Permalink"></a></h4><p>OWENS.runDLC(modelopt,designparams,runpath)</p><pre><code class="language-julia hljs">nothing</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../indepth_installation/">« Installation</a><a class="docs-footer-nextpage" href="../B_detailedInputs/">Detailed Inputs »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Thursday 29 May 2025 16:32">Thursday 29 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
