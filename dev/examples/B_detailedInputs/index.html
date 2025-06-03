@@ -155,7 +155,7 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
   - Time: 02:19:23
  Execution Info:
   - Date: 06/03/2025
-  - Time: 20:19:17+0000
+  - Time: 21:15:43+0000
 
  Running ADI.
  Running AeroDyn.
@@ -170,7 +170,7 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
     k = alpha delta nu:   0.0368
  Running InflowWind.
 ┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:604</code></pre><p>Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface to work with OWENS inputs as well.</p><pre><code class="language-julia hljs">nothing</code></pre><p>If the sectional properties material files includes cost information, that is combined with the density to estimate the overall material cost of of materials in the blades</p><pre><code class="language-julia hljs">if verbosity&gt;0
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/SetupTurbine.jl:607</code></pre><p>Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface to work with OWENS inputs as well.</p><pre><code class="language-julia hljs">nothing</code></pre><p>If the sectional properties material files includes cost information, that is combined with the density to estimate the overall material cost of of materials in the blades</p><pre><code class="language-julia hljs">if verbosity&gt;0
 
     println(&quot;\nBlades&#39; Mass Breakout&quot;)
     for (i,name) in enumerate(plyprops_bld.names)
@@ -258,22 +258,22 @@ Running in specified rotor speed mode
 5.3%┣██▎                                        ┫ 1/19 [00:00&lt;Inf:Inf, InfGs/it]
  [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
  subsequent occurences.
-10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:38, 2s/it]
-15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:26, 2s/it]
-21.1%┣██████████                                     ┫ 4/19 [00:04&lt;00:20, 1s/it]
+10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:39, 2s/it]
+15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:27, 2s/it]
+21.1%┣██████████                                     ┫ 4/19 [00:04&lt;00:21, 1s/it]
 26.3%┣████████████▍                                  ┫ 5/19 [00:05&lt;00:17, 1s/it]
 31.6%┣██████████████▉                                ┫ 6/19 [00:06&lt;00:15, 1s/it]
-36.8%┣█████████████████▎                             ┫ 7/19 [00:06&lt;00:13, 1s/it]
-42.1%┣███████████████████▉                           ┫ 8/19 [00:07&lt;00:11, 1s/it]
+36.8%┣█████████████████▎                             ┫ 7/19 [00:07&lt;00:13, 1s/it]
+42.1%┣███████████████████▉                           ┫ 8/19 [00:07&lt;00:12, 1s/it]
 47.4%┣██████████████████████▎                        ┫ 9/19 [00:08&lt;00:10, 1s/it]
-52.6%┣████████████████████████▏                     ┫ 10/19 [00:09&lt;00:09, 1it/s]
+52.6%┣████████████████████████▏                     ┫ 10/19 [00:09&lt;00:09, 1s/it]
 57.9%┣██████████████████████████▋                   ┫ 11/19 [00:10&lt;00:08, 1s/it]
-63.2%┣█████████████████████████████                 ┫ 12/19 [00:11&lt;00:07, 1it/s]
+63.2%┣█████████████████████████████                 ┫ 12/19 [00:11&lt;00:07, 1s/it]
 68.4%┣███████████████████████████████▌              ┫ 13/19 [00:12&lt;00:06, 1it/s]
 73.7%┣██████████████████████████████████            ┫ 14/19 [00:13&lt;00:05, 1it/s]
 78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:13&lt;00:04, 1it/s]
 84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:14&lt;00:03, 1it/s]
-89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:14&lt;00:02, 1it/s]
+89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:15&lt;00:02, 1it/s]
 94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:15&lt;00:01, 1it/s]
 100.0%┣█████████████████████████████████████████████┫ 19/19 [00:16&lt;00:00, 1it/s]
 Simulation Complete.
@@ -335,4 +335,4 @@ Lower TOWER
 Minimum Safety Factor on tower Surface: 19.37474867160012
 At time 0.019s at composite station 14 of 21 at lam 1 of 1
 Maximum Damage per hr: 5385.0415523268375
-At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Tuesday 3 June 2025 20:21">Tuesday 3 June 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Tuesday 3 June 2025 21:18">Tuesday 3 June 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
