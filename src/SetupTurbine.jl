@@ -118,6 +118,8 @@ function setupOWENS(OWENSAero,path;
     Htwr_blds = H,
     strut_twr_mountpoint = [0.25,0.75],
     strut_bld_mountpoint = [0.25,0.75],
+    strut_tower_joint_type = 2,
+    strut_blade_joint_type = 0,
     blade_joint_angle_Degrees=0.0,
     joint_type = 2,
     c_mount_ratio = 0.05,
@@ -209,7 +211,8 @@ function setupOWENS(OWENSAero,path;
     verbosity, # 0 nothing, 1 basic, 2 lots: amount of printed information)
     blade_joint_angle_Degrees,
     connectBldTips2Twr,
-    
+    strut_tower_joint_type,
+    strut_blade_joint_type,
     )
 
     nTwrElem = Int(mymesh.meshSeg[1])+1
