@@ -981,7 +981,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
                 # connect tower to each strut
                 joint_idx += 1
                 jointconn[joint_idx,:] = [t2s_idx[istrut] s2t_idx[ibld,istrut]]
-                jointtype[joint_idx] = 2 #fixed
+                jointtype[joint_idx] = 0 #fixed
                 Psi_d_joint_offset[joint_idx] = 0 #no offset
                 Theta_d_joint_offset[joint_idx] = 0 #no offset
                 jointnames[joint_idx] = "connect tower to each strut t2s_idx[istrut] s2t_idx"
@@ -1002,7 +1002,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
             # connect strut to blade
             joint_idx += 1
             jointconn[joint_idx,:] = [s2b_idx[ibld,istrut] b2s_idx[ibld,istrut]]
-            jointtype[joint_idx] = 0 # about second axis (y in blade local coordinates which is about the chord) This is to allow for hinged pitched blades 
+            jointtype[joint_idx] = 2 # about second axis (y in blade local coordinates which is about the chord) This is to allow for hinged pitched blades 
             Psi_d_joint_offset[joint_idx] = blade_joint_angle_Degrees
             Theta_d_joint_offset[joint_idx] = 0 #no offset
             jointnames[joint_idx] = "connect strut to blade s2b_idx[ibld,istrut] b2s_idx"

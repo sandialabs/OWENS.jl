@@ -288,7 +288,14 @@ function setupOWENS(OWENSAero,path;
 
     if verbosity>1
         println("\nTotal Mass: $(mapreduce(sum, +, [components[icomponent].mass for icomponent = 1:size(components)[1]])) kg")
-        println("Total Material Cost: \$$(mapreduce(sum, +, [components[icomponent].mass for icomponent = 1:size(components)[1]]))")
+        println("Total Material Cost: \$$(mapreduce(sum, +, [components[icomponent].mass .* components[icomponent].plyProps.costs for icomponent = 1:size(components)[1]]))")
+        if verbosity>2
+            for component in components
+                # println("$(component.name) Materials' Masses: $(component.mass)")
+                println("$(component.name) cost \$$(sum(component.mass .* component.plyProps.costs))")
+
+            end
+        end
     end
 
     # # Plot the rotational effects' status
