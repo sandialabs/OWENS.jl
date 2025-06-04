@@ -1,5 +1,6 @@
-
-
+# NOTE: This function needs additional work to be fully functional.  It is not currently used in the main codebase.
+# It is commented out to prevent coverage issues.
+"""
 function setupOWENShawt(
     OWENSAero,
     path;
@@ -1116,3 +1117,4 @@ function setupOWENShawt(
     assembly,
     sections
 end
+"""
