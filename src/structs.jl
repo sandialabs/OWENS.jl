@@ -348,7 +348,14 @@ struct plyproperties
     SN_stressMpa # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
     Log_SN_cycles2Fail # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
 end
-plyproperties(names,plies) = plyproperties(names,plies,zeros(length(names)),collect(cat(fill(collect(LinRange(1e12,0,6)),length(names))[:,:]...,dims=2)'),collect(cat(fill(collect(LinRange(0,7,6)),length(names))[:,:]...,dims=2)')) #Backwards compatible convenience function
+plyproperties(names,plies) = plyproperties(
+    names,
+    plies,
+    zeros(length(names)),
+    collect(cat(fill(collect(LinRange(1e12,0,6)),
+    length(names))[:,:]...,dims=2)'),
+    collect(cat(fill(collect(LinRange(0,7,6)),
+    length(names))[:,:]...,dims=2)')) #Backwards compatible convenience function
 
 """
 Struct containing

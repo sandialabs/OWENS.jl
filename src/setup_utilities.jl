@@ -85,6 +85,7 @@ Contains the configuration for the tower.
 - `NuMad_mat_xlscsv_file_twr::Any`: The path to the tower material file.
 - `NuMad_geom_xlscsv_file_strut::Any`: The path to the strut geometry file.
 - `NuMad_mat_xlscsv_file_strut::Any`: The path to the strut material file.
+- `strut_tower_joint_type::Any`: TODO
 """
 mutable struct TowerSetupOptions
     Htwr_base::Float64
@@ -98,12 +99,13 @@ mutable struct TowerSetupOptions
     NuMad_mat_xlscsv_file_twr::Any
     NuMad_geom_xlscsv_file_strut::Any
     NuMad_mat_xlscsv_file_strut::Any
+    strut_tower_joint_type::Any
 
     function TowerSetupOptions(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
-        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
+        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
     end
     function TowerSetupOptions(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing)
-        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
+        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
     end
     # Default constructor
     function TowerSetupOptions()
@@ -118,7 +120,8 @@ mutable struct TowerSetupOptions
             nothing,       # NuMad_geom_xlscsv_file_twr
             nothing,       # NuMad_mat_xlscsv_file_twr
             nothing,       # NuMad_geom_xlscsv_file_strut
-            nothing        # NuMad_mat_xlscsv_file_strut
+            nothing,       # NuMad_mat_xlscsv_file_strut
+            2              # strut_tower_joint_type
         )
     end
     function TowerSetupOptions(dict::OrderedDict{Symbol,Any})
@@ -134,6 +137,7 @@ mutable struct TowerSetupOptions
             get(dict, :NuMad_mat_xlscsv_file_twr, nothing),
             get(dict, :NuMad_geom_xlscsv_file_strut, nothing),
             get(dict, :NuMad_mat_xlscsv_file_strut, nothing),
+            get(dict, :strut_tower_joint_type, 2)
         )
     end
 end
@@ -152,6 +156,7 @@ Contains the configuration for the blades.
 - `shapeY::Vector{Float64}`: The y-coordinates of the blade.
 - `NuMad_geom_xlscsv_file_bld::Any`: The path to the blade geometry file.
 - `NuMad_mat_xlscsv_file_bld::Any`: The path to the blade material file.
+- `strut_blade_joint_type::Any`: TODO
 """
 mutable struct BladeSetupOptions
     B::Int
@@ -162,12 +167,14 @@ mutable struct BladeSetupOptions
     shapeY::Vector{Float64}
     NuMad_geom_xlscsv_file_bld::Any
     NuMad_mat_xlscsv_file_bld::Any
+    strut_blade_joint_type::Any
+    blade_joint_angle_Degrees::Any
 
     function BladeSetupOptions(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
-        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
+        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
     end
     function BladeSetupOptions(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing)
-        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
+        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
     end
     # Default constructor
     function BladeSetupOptions()
@@ -179,7 +186,9 @@ mutable struct BladeSetupOptions
             2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),  # shapeX
             zeros(31),  # shapeY
             nothing,  # NuMad_geom_xlscsv_file_bld
-            nothing   # NuMad_mat_xlscsv_file_bld
+            nothing,   # NuMad_mat_xlscsv_file_bld
+            0,
+            0.0
         )
     end
     function BladeSetupOptions(dict::OrderedDict{Symbol,Any})
@@ -192,6 +201,8 @@ mutable struct BladeSetupOptions
             get(dict, :shapeY, zeros(31)),
             get(dict, :NuMad_geom_xlscsv_file_bld, nothing),
             get(dict, :NuMad_mat_xlscsv_file_bld, nothing),
+            get(dict, :strut_blade_joint_type, 0),
+            get(dict, :blade_joint_angle_Degrees, 0.0),
         )
     end
 end
@@ -448,7 +459,10 @@ function setup_mesh(
             angularOffset = tower_config.angularOffset,
             AD15_ccw = mesh_config.AD15_ccw,
             verbosity = verbosity,
+            blade_joint_angle_Degrees = blade_config.blade_joint_angle_Degrees,
             connectBldTips2Twr = mesh_config.connectBldTips2Twr,
+            strut_tower_joint_type = tower_config.strut_tower_joint_type,
+            strut_blade_joint_type = blade_config.strut_blade_joint_type,
             )
     return MeshProperties(
         mymesh = mymesh,
