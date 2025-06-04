@@ -351,7 +351,55 @@ end
 
 
 """
-Internal, reads cactus .geom file and stores each column in an array within the CactusGeom struct
+    readCactusGeom(geom_fn)
+
+Reads a CACTUS geometry file and creates a CactusGeom structure containing blade and strut geometry data.
+
+The CACTUS geometry file format is as follows:
+- First 6 lines contain global parameters:
+  1. Number of blades
+  2. Number of struts
+  3. Rotor normal vector (3 components)
+  4. Rotor position vector (3 components)
+  5. Reference area
+  6. Reference radius
+- Following sections contain blade data (repeated for each blade):
+  - Number of elements
+  - Flip normal flag
+  - Quarter chord points (x,y,z)
+  - Tangent vectors (x,y,z)
+  - Chord to radius ratios
+  - Panel edge points (x,y,z)
+  - Tangent vectors at edges (x,y,z)
+  - Normal vectors at edges (x,y,z)
+  - Span vectors at edges (x,y,z)
+  - Element chord to radius ratios
+  - Element area ratios
+  - Section indices
+- Final sections contain strut data (repeated for each strut):
+  - Number of elements
+  - Thickness to chord ratio
+  - Mid-chord points (x,y,z)
+  - Chord to radius ratios
+  - Panel edge points (x,y,z)
+  - Span vectors at edges (x,y,z)
+  - Element chord to radius ratios
+  - Element area ratios
+  - Blade indices (start/end)
+
+# Arguments
+* `geom_fn::String`: Path to the CACTUS geometry file
+
+# Returns
+* `CactusGeom`: Structure containing:
+  - `NBlade`: Number of blades
+  - `NStrut`: Number of struts
+  - `RotN`: Rotor normal vector
+  - `RotP`: Rotor position vector
+  - `RefAR`: Reference area
+  - `RefR`: Reference radius
+  - `blade`: Array of Blade structures
+  - `strut`: Array of Strut structures
 """
 function readCactusGeom(geom_fn)
 
