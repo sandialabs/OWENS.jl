@@ -1,5 +1,5 @@
 """
-    setupOWENS_config(path::String; mesh_config = default_mesh_config(), tower_config = default_tower_config(), blade_config = default_blade_config(), material_config = default_material_config(), aero_config = default_aero_config(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
+    setupOWENS_config(path::String; mesh_config = MeshConfig(), tower_config = TowerConfig(), blade_config = BladeConfig(), material_config = MaterialConfig(), aero_config = AeroConfig(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
 
 Set up and configure an OWENS turbine mesh.
 
@@ -11,11 +11,11 @@ parameters and returns the assembled system components for analysis.
 - `path::String`: Base path for file operations and data access
 
 # Keyword Arguments
-- `mesh_config`: Configuration for mesh generation (default: default_mesh_config())
-- `tower_config`: Configuration for tower properties (default: default_tower_config())
-- `blade_config`: Configuration for blade properties (default: default_blade_config())
-- `material_config`: Configuration for material properties (default: default_material_config())
-- `aero_config`: Configuration for aerodynamic properties (default: default_aero_config())
+- `mesh_config`: Configuration for mesh generation (default: MeshConfig())
+- `tower_config`: Configuration for tower properties (default: TowerConfig())
+- `blade_config`: Configuration for blade properties (default: BladeConfig())
+- `material_config`: Configuration for material properties (default: MaterialConfig())
+- `aero_config`: Configuration for aerodynamic properties (default: AeroConfig())
 - `VTKmeshfilename`: Optional filename for VTK mesh output
 - `verbosity`: Level of output verbosity (default: 1)
 - `return_componentized`: Whether to return componentized model (default: false)
@@ -44,11 +44,11 @@ Returns an extended set of properties including mass matrices, stiffness matrice
 """
 function setupOWENS_config(
     path::String;
-    mesh_config = default_mesh_config(),
-    tower_config = default_tower_config(),
-    blade_config = default_blade_config(),
-    material_config = default_material_config(),
-    aero_config = default_aero_config(),
+    mesh_config = MeshConfig(),
+    tower_config = TowerConfig(),
+    blade_config = BladeConfig(),
+    material_config = MaterialConfig(),
+    aero_config = AeroConfig(),
     VTKmeshfilename = nothing,
     verbosity = 1,
     return_componentized = false,

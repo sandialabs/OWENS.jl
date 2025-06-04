@@ -37,18 +37,20 @@ mutable struct MeshConfig
     function MeshConfig(; Nslices::Int, ntheta::Int, ntelem::Int, nbelem::Int, ncelem::Int, nselem::Int, meshtype::String, custommesh::Union{Nothing,Function}=nothing, connectBldTips2Twr::Bool=false, AD15_ccw::Bool=true)
         new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
     end
-end
-
-struct MeshProperties
-    mymesh
-    myort
-    myjoint
-    AD15bldNdIdxRng
-    AD15bldElIdxRng
-    custom_mesh_outputs
-
-    function MeshProperties(; mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs)
-        new(mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs)
+    # Default constructor
+    function MeshConfig()
+        new(
+            30,  # Nslices
+            30,  # ntheta
+            10,  # ntelem
+            60,  # nbelem
+            10,  # ncelem
+            5,   # nselem
+            "Darrieus",  # meshtype
+            nothing,  # custommesh
+            false,  # connectBldTips2Twr
+            true,   # AD15_ccw
+        )
     end
 end
 
@@ -89,6 +91,22 @@ mutable struct TowerConfig
     function TowerConfig(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
     end
+    # Default constructor
+    function TowerConfig()
+        new(
+            2.0,           # Htwr_base
+            5.0,           # Htwr_blds
+            [0.25, 0.75],  # strut_twr_mountpoint
+            [0.25, 0.75],  # strut_bld_mountpoint
+            2,             # joint_type
+            0.05,          # c_mount_ratio
+            -pi/2,         # angularOffset
+            nothing,       # NuMad_geom_xlscsv_file_twr
+            nothing,       # NuMad_mat_xlscsv_file_twr
+            nothing,       # NuMad_geom_xlscsv_file_strut
+            nothing        # NuMad_mat_xlscsv_file_strut
+        )
+    end
 end
 
 """
@@ -122,6 +140,19 @@ mutable struct BladeConfig
     function BladeConfig(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
     end
+    # Default constructor
+    function BladeConfig()
+        new(
+            3,  # B
+            5.0,  # H
+            2.5,  # R
+            collect(LinRange(0, 5.0, 31)),  # shapeZ
+            2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),  # shapeX
+            zeros(31),  # shapeY
+            nothing,  # NuMad_geom_xlscsv_file_bld
+            nothing   # NuMad_mat_xlscsv_file_bld
+        )
+    end
 end
 
 """
@@ -148,6 +179,16 @@ mutable struct MaterialConfig
     end
     function MaterialConfig(; stack_layers_bld::Union{Nothing,Matrix{Float64}}=nothing, stack_layers_scale::Vector{Float64}=[1.0, 1.0], chord_scale::Vector{Float64}=[1.0, 1.0], thickness_scale::Vector{Float64}=[1.0, 1.0], AddedMass_Coeff_Ca::Float64=0.0)
         new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
+    end
+    # Default constructor
+    function MaterialConfig()
+        new(
+            nothing,      # stack_layers_bld
+            [1.0, 1.0],   # stack_layers_scale
+            [1.0, 1.0],   # chord_scale
+            [1.0, 1.0],   # thickness_scale
+            0.0           # AddedMass_Coeff_Ca
+        )
     end
 end
 
@@ -209,87 +250,46 @@ mutable struct AeroConfig
     function AeroConfig(; rho::Float64=1.225, mu::Float64=1.7894e-5, RPM::Float64=1e-6, Vinf::Float64=25.0, eta::Float64=0.5, delta_t::Float64=0.01, AD15hubR::Float64=0.1, WindType::Int=1, AeroModel::String="DMS", DynamicStallModel::String="BV", numTS::Int=100, adi_lib::Union{Nothing,String}=nothing, adi_rootname::Union{Nothing,String}=nothing, windINPfilename::Union{Nothing,String}=nothing, ifw_libfile::Union{Nothing,String}=nothing, ifw::Bool=false, RPI::Bool=true, Aero_AddedMass_Active::Bool=false, Aero_RotAccel_Active::Bool=false, Aero_Buoyancy_Active::Bool=false, centrifugal_force_flag::Bool=false, AD15On::Bool=false)
         new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, AD15On)
     end
+    # Default constructor
+    function AeroConfig()
+        new(
+            1.225,        # rho
+            1.7894e-5,    # mu
+            1e-6,         # RPM
+            25.0,         # Vinf
+            0.5,          # eta
+            0.01,         # delta_t
+            0.1,          # AD15hubR
+            1,            # WindType
+            "DMS",        # AeroModel
+            "BV",         # DynamicStallModel
+            100,          # numTS
+            "",           # adi_lib
+            "",           # adi_rootname
+            "",           # windINPfilename
+            "",           # ifw_libfile
+            false,        # ifw
+            true,         # RPI
+            false,        # Aero_AddedMass_Active
+            false,        # Aero_RotAccel_Active
+            false,        # Aero_Buoyancy_Active
+            false,        # centrifugal_force_flag
+            false         # AD15On
+        )
+    end
 end
 
-# Factory functions for default configurations
-function default_mesh_config()
-    MeshConfig(
-        30,  # Nslices
-        30,  # ntheta
-        10,  # ntelem
-        60,  # nbelem
-        10,  # ncelem
-        5,   # nselem
-        "Darrieus",  # meshtype
-        nothing,  # custommesh
-        false,  # connectBldTips2Twr
-        true,   # AD15_ccw
-    )
-end
+struct MeshProperties
+    mymesh
+    myort
+    myjoint
+    AD15bldNdIdxRng
+    AD15bldElIdxRng
+    custom_mesh_outputs
 
-function default_tower_config()
-    TowerConfig(
-        2.0,           # Htwr_base
-        5.0,           # Htwr_blds
-        [0.25, 0.75],  # strut_twr_mountpoint
-        [0.25, 0.75],  # strut_bld_mountpoint
-        2,             # joint_type
-        0.05,          # c_mount_ratio
-        -pi/2,         # angularOffset
-        nothing,       # NuMad_geom_xlscsv_file_twr
-        nothing,       # NuMad_mat_xlscsv_file_twr
-        nothing,       # NuMad_geom_xlscsv_file_strut
-        nothing        # NuMad_mat_xlscsv_file_strut
-    )
-end
-
-function default_blade_config()
-    BladeConfig(
-        3,  # B
-        5.0,  # H
-        2.5,  # R
-        collect(LinRange(0, 5.0, 31)),  # shapeZ
-        2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),  # shapeX
-        zeros(31),  # shapeY
-        nothing,  # NuMad_geom_xlscsv_file_bld
-        nothing   # NuMad_mat_xlscsv_file_bld
-    )
-end
-
-function default_material_config()
-    MaterialConfig(
-        nothing,      # stack_layers_bld
-        [1.0, 1.0],   # stack_layers_scale
-        [1.0, 1.0],   # chord_scale
-        [1.0, 1.0],   # thickness_scale
-        0.0           # AddedMass_Coeff_Ca
-    )
-end
-
-function default_aero_config()
-    AeroConfig(
-        1.225,        # rho
-        1.7894e-5,    # mu
-        1e-6,         # RPM
-        25.0,         # Vinf
-        0.5,          # eta
-        0.01,         # delta_t
-        0.1,          # AD15hubR
-        1,            # WindType
-        "DMS",        # AeroModel
-        "BV",         # DynamicStallModel
-        100,          # numTS
-        "",           # adi_lib
-        "",           # adi_rootname
-        "",           # windINPfilename
-        "",           # ifw_libfile
-        false,         # ifw
-        true,          # RPI
-        false,         # Aero_AddedMass_Active
-        false,         # Aero_RotAccel_Active
-        false,         # Aero_Buoyancy_Active
-        false          # centrifugal_force_flag
-    )
+    function MeshProperties(; mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs)
+        new(mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs)
+    end
 end
 
 # Component setup functions
