@@ -1,9 +1,9 @@
 using OrderedCollections: OrderedDict
 
-export default_mesh_config, default_tower_config, default_blade_config, default_material_config, default_aero_config
+export MeshSetupOptions, TowerSetupOptions, BladeSetupOptions, MaterialSetupOptions, AeroSetupOptions, SetupOptions
 
 """
-    MeshConfig
+    MeshSetupOptions
 
 Contains the configuration for the mesh.
 
@@ -19,7 +19,7 @@ Contains the configuration for the mesh.
 - `connectBldTips2Twr::Bool`: Whether to connect the blade tips to the tower.
 - `AD15_ccw::Bool`: Whether to use the AD15 convention of VAWT counter-clockwise with blade root at top (blade points down).
 """
-mutable struct MeshConfig
+mutable struct MeshSetupOptions
     Nslices::Int
     ntheta::Int
     ntelem::Int
@@ -31,14 +31,14 @@ mutable struct MeshConfig
     connectBldTips2Twr::Bool
     AD15_ccw::Bool
 
-    function MeshConfig(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
+    function MeshSetupOptions(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
         new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
     end
-    function MeshConfig(; Nslices::Int, ntheta::Int, ntelem::Int, nbelem::Int, ncelem::Int, nselem::Int, meshtype::String, custommesh::Union{Nothing,Function}=nothing, connectBldTips2Twr::Bool=false, AD15_ccw::Bool=true)
+    function MeshSetupOptions(; Nslices::Int, ntheta::Int, ntelem::Int, nbelem::Int, ncelem::Int, nselem::Int, meshtype::String, custommesh::Union{Nothing,Function}=nothing, connectBldTips2Twr::Bool=false, AD15_ccw::Bool=true)
         new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
     end
     # Default constructor
-    function MeshConfig()
+    function MeshSetupOptions()
         new(
             30,  # Nslices
             30,  # ntheta
@@ -55,7 +55,7 @@ mutable struct MeshConfig
 end
 
 """
-    TowerConfig
+    TowerSetupOptions
 
 Contains the configuration for the tower.
 
@@ -72,7 +72,7 @@ Contains the configuration for the tower.
 - `NuMad_geom_xlscsv_file_strut::Any`: The path to the strut geometry file.
 - `NuMad_mat_xlscsv_file_strut::Any`: The path to the strut material file.
 """
-mutable struct TowerConfig
+mutable struct TowerSetupOptions
     Htwr_base::Float64
     Htwr_blds::Float64
     strut_twr_mountpoint::Vector{Float64}
@@ -85,14 +85,14 @@ mutable struct TowerConfig
     NuMad_geom_xlscsv_file_strut::Any
     NuMad_mat_xlscsv_file_strut::Any
 
-    function TowerConfig(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
+    function TowerSetupOptions(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
     end
-    function TowerConfig(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing)
+    function TowerSetupOptions(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut)
     end
     # Default constructor
-    function TowerConfig()
+    function TowerSetupOptions()
         new(
             2.0,           # Htwr_base
             5.0,           # Htwr_blds
@@ -110,7 +110,7 @@ mutable struct TowerConfig
 end
 
 """
-    BladeConfig
+    BladeSetupOptions
 
 Contains the configuration for the blades.
 
@@ -124,7 +124,7 @@ Contains the configuration for the blades.
 - `NuMad_geom_xlscsv_file_bld::Any`: The path to the blade geometry file.
 - `NuMad_mat_xlscsv_file_bld::Any`: The path to the blade material file.
 """
-mutable struct BladeConfig
+mutable struct BladeSetupOptions
     B::Int
     H::Float64
     R::Float64
@@ -134,14 +134,14 @@ mutable struct BladeConfig
     NuMad_geom_xlscsv_file_bld::Any
     NuMad_mat_xlscsv_file_bld::Any
 
-    function BladeConfig(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
+    function BladeSetupOptions(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
     end
-    function BladeConfig(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing)
+    function BladeSetupOptions(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld)
     end
     # Default constructor
-    function BladeConfig()
+    function BladeSetupOptions()
         new(
             3,  # B
             5.0,  # H
@@ -156,7 +156,7 @@ mutable struct BladeConfig
 end
 
 """
-    MaterialConfig
+    MaterialSetupOptions
 
 Contains the material properties for the blades, struts, and tower.
 
@@ -167,21 +167,21 @@ Contains the material properties for the blades, struts, and tower.
 - `thickness_scale::Vector{Float64}`: The scale factors for the thickness.
 - `AddedMass_Coeff_Ca::Float64`: The added mass coefficient.
 """
-mutable struct MaterialConfig
+mutable struct MaterialSetupOptions
     stack_layers_bld::Union{Nothing,Matrix{Float64}}
     stack_layers_scale::Vector{Float64}
     chord_scale::Vector{Float64}
     thickness_scale::Vector{Float64}
     AddedMass_Coeff_Ca::Float64
 
-    function MaterialConfig(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
+    function MaterialSetupOptions(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
         new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
     end
-    function MaterialConfig(; stack_layers_bld::Union{Nothing,Matrix{Float64}}=nothing, stack_layers_scale::Vector{Float64}=[1.0, 1.0], chord_scale::Vector{Float64}=[1.0, 1.0], thickness_scale::Vector{Float64}=[1.0, 1.0], AddedMass_Coeff_Ca::Float64=0.0)
+    function MaterialSetupOptions(; stack_layers_bld::Union{Nothing,Matrix{Float64}}=nothing, stack_layers_scale::Vector{Float64}=[1.0, 1.0], chord_scale::Vector{Float64}=[1.0, 1.0], thickness_scale::Vector{Float64}=[1.0, 1.0], AddedMass_Coeff_Ca::Float64=0.0)
         new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
     end
     # Default constructor
-    function MaterialConfig()
+    function MaterialSetupOptions()
         new(
             nothing,      # stack_layers_bld
             [1.0, 1.0],   # stack_layers_scale
@@ -193,7 +193,7 @@ mutable struct MaterialConfig
 end
 
 """
-    AeroConfig
+    AeroSetupOptions
 
 Contains the configuration for the aerodynamic model.
 
@@ -220,7 +220,7 @@ Contains the configuration for the aerodynamic model.
 - `Aero_Buoyancy_Active::Bool`: Whether to use the buoyancy model.
 - `centrifugal_force_flag::Bool`: Whether to use the centrifugal force model.
 """
-mutable struct AeroConfig
+mutable struct AeroSetupOptions
     rho::Float64
     mu::Float64
     RPM::Float64
@@ -244,14 +244,14 @@ mutable struct AeroConfig
     centrifugal_force_flag::Bool
     AD15On::Bool
 
-    function AeroConfig(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag)
+    function AeroSetupOptions(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag)
         new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, false)
     end
-    function AeroConfig(; rho::Float64=1.225, mu::Float64=1.7894e-5, RPM::Float64=1e-6, Vinf::Float64=25.0, eta::Float64=0.5, delta_t::Float64=0.01, AD15hubR::Float64=0.1, WindType::Int=1, AeroModel::String="DMS", DynamicStallModel::String="BV", numTS::Int=100, adi_lib::Union{Nothing,String}=nothing, adi_rootname::Union{Nothing,String}=nothing, windINPfilename::Union{Nothing,String}=nothing, ifw_libfile::Union{Nothing,String}=nothing, ifw::Bool=false, RPI::Bool=true, Aero_AddedMass_Active::Bool=false, Aero_RotAccel_Active::Bool=false, Aero_Buoyancy_Active::Bool=false, centrifugal_force_flag::Bool=false, AD15On::Bool=false)
+    function AeroSetupOptions(; rho::Float64=1.225, mu::Float64=1.7894e-5, RPM::Float64=1e-6, Vinf::Float64=25.0, eta::Float64=0.5, delta_t::Float64=0.01, AD15hubR::Float64=0.1, WindType::Int=1, AeroModel::String="DMS", DynamicStallModel::String="BV", numTS::Int=100, adi_lib::Union{Nothing,String}=nothing, adi_rootname::Union{Nothing,String}=nothing, windINPfilename::Union{Nothing,String}=nothing, ifw_libfile::Union{Nothing,String}=nothing, ifw::Bool=false, RPI::Bool=true, Aero_AddedMass_Active::Bool=false, Aero_RotAccel_Active::Bool=false, Aero_Buoyancy_Active::Bool=false, centrifugal_force_flag::Bool=false, AD15On::Bool=false)
         new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, AD15On)
     end
     # Default constructor
-    function AeroConfig()
+    function AeroSetupOptions()
         new(
             1.225,        # rho
             1.7894e-5,    # mu
@@ -279,6 +279,47 @@ mutable struct AeroConfig
     end
 end
 
+"""
+    SetupOptions
+
+Contains all setup options for the OWENS turbine model.
+
+# Fields
+- `mesh::MeshSetupOptions`: Mesh configuration options
+- `tower::TowerSetupOptions`: Tower configuration options
+- `blade::BladeSetupOptions`: Blade configuration options
+- `material::MaterialSetupOptions`: Material configuration options
+- `aero::AeroSetupOptions`: Aerodynamic configuration options
+"""
+mutable struct SetupOptions
+    mesh::MeshSetupOptions
+    tower::TowerSetupOptions
+    blade::BladeSetupOptions
+    material::MaterialSetupOptions
+    aero::AeroSetupOptions
+
+    function SetupOptions(; 
+        mesh::MeshSetupOptions = MeshSetupOptions(),
+        tower::TowerSetupOptions = TowerSetupOptions(),
+        blade::BladeSetupOptions = BladeSetupOptions(),
+        material::MaterialSetupOptions = MaterialSetupOptions(),
+        aero::AeroSetupOptions = AeroSetupOptions()
+    )
+        new(mesh, tower, blade, material, aero)
+    end
+
+    # Default constructor
+    function SetupOptions()
+        new(
+            MeshSetupOptions(),
+            TowerSetupOptions(),
+            BladeSetupOptions(),
+            MaterialSetupOptions(),
+            AeroSetupOptions()
+        )
+    end
+end
+
 struct MeshProperties
     mymesh
     myort
@@ -294,10 +335,10 @@ end
 
 # Component setup functions
 function setup_mesh(
-    mesh_config::MeshConfig,
-    blade_config::BladeConfig,
-    tower_config::TowerConfig,
-    aero_config::AeroConfig,
+    mesh_config::MeshSetupOptions,
+    blade_config::BladeSetupOptions,
+    tower_config::TowerSetupOptions,
+    aero_config::AeroSetupOptions,
     verbosity::Int64 = 1
 )
     mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs =
@@ -452,10 +493,10 @@ function setup_sectional_props(
 end
 
 function setup_aerodynamic_model(
-    blade_config::BladeConfig,
-    aero_config::AeroConfig,
-    tower_config::TowerConfig,
-    mesh_config::MeshConfig,
+    blade_config::BladeSetupOptions,
+    aero_config::AeroSetupOptions,
+    tower_config::TowerSetupOptions,
+    mesh_config::MeshSetupOptions,
     mesh_props::MeshProperties,
     components::Vector{OWENS.Component},
     path::String,

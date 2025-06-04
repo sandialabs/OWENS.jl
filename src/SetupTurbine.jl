@@ -1,5 +1,5 @@
 """
-    setupOWENS_config(path::String; mesh_config = MeshConfig(), tower_config = TowerConfig(), blade_config = BladeConfig(), material_config = MaterialConfig(), aero_config = AeroConfig(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
+    setupOWENS_config(path::String; setup_options = SetupOptions(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
 
 Set up and configure an OWENS turbine mesh.
 
@@ -11,11 +11,7 @@ parameters and returns the assembled system components for analysis.
 - `path::String`: Base path for file operations and data access
 
 # Keyword Arguments
-- `mesh_config`: Configuration for mesh generation (default: MeshConfig())
-- `tower_config`: Configuration for tower properties (default: TowerConfig())
-- `blade_config`: Configuration for blade properties (default: BladeConfig())
-- `material_config`: Configuration for material properties (default: MaterialConfig())
-- `aero_config`: Configuration for aerodynamic properties (default: AeroConfig())
+- `setup_options`: Configuration options for the turbine setup (default: SetupOptions())
 - `VTKmeshfilename`: Optional filename for VTK mesh output
 - `verbosity`: Level of output verbosity (default: 1)
 - `return_componentized`: Whether to return componentized model (default: false)
@@ -44,21 +40,23 @@ Returns an extended set of properties including mass matrices, stiffness matrice
 """
 function setupOWENS_config(
     path::String;
-    mesh_config = MeshConfig(),
-    tower_config = TowerConfig(),
-    blade_config = BladeConfig(),
-    material_config = MaterialConfig(),
-    aero_config = AeroConfig(),
+    setup_options = SetupOptions(),
     VTKmeshfilename = nothing,
     verbosity = 1,
     return_componentized = false,
 )
     custom_mesh_outputs = []
 
+    # Unpack the setup options
+    mesh_config = setup_options.mesh
+    tower_config = setup_options.tower
+    blade_config = setup_options.blade
+    material_config = setup_options.material
+    aero_config = setup_options.aero
+
     # Unpack the mesh config
     meshtype = mesh_config.meshtype
     mesh_config.connectBldTips2Twr = meshtype == "Darrieus"
-
 
     # Unpack the blade config
     if minimum(blade_config.shapeZ)!=0
