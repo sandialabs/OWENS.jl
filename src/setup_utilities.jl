@@ -52,6 +52,20 @@ mutable struct MeshSetupOptions
             true,   # AD15_ccw
         )
     end
+    function MeshSetupOptions(dict::OrderedDict{Symbol,Any})
+        new(
+            get(dict, :Nslices, 30),
+            get(dict, :ntheta, 30),
+            get(dict, :ntelem, 10),
+            get(dict, :nbelem, 60),
+            get(dict, :ncelem, 10),
+            get(dict, :nselem, 5),
+            get(dict, :meshtype, "Darrieus"),
+            get(dict, :custommesh, nothing),
+            get(dict, :connectBldTips2Twr, false),
+            get(dict, :AD15_ccw, true),
+        )
+    end
 end
 
 """
@@ -107,6 +121,21 @@ mutable struct TowerSetupOptions
             nothing        # NuMad_mat_xlscsv_file_strut
         )
     end
+    function TowerSetupOptions(dict::OrderedDict{Symbol,Any})
+        new(
+            get(dict, :Htwr_base, 2.0),
+            get(dict, :Htwr_blds, 5.0),
+            get(dict, :strut_twr_mountpoint, [0.25, 0.75]),
+            get(dict, :strut_bld_mountpoint, [0.25, 0.75]),
+            get(dict, :joint_type, 2),
+            get(dict, :c_mount_ratio, 0.05),
+            get(dict, :angularOffset, -pi/2),
+            get(dict, :NuMad_geom_xlscsv_file_twr, nothing),
+            get(dict, :NuMad_mat_xlscsv_file_twr, nothing),
+            get(dict, :NuMad_geom_xlscsv_file_strut, nothing),
+            get(dict, :NuMad_mat_xlscsv_file_strut, nothing),
+        )
+    end
 end
 
 """
@@ -153,6 +182,18 @@ mutable struct BladeSetupOptions
             nothing   # NuMad_mat_xlscsv_file_bld
         )
     end
+    function BladeSetupOptions(dict::OrderedDict{Symbol,Any})
+        new(
+            get(dict, :B, 3),
+            get(dict, :H, 5.0),
+            get(dict, :R, 2.5),
+            get(dict, :shapeZ, collect(LinRange(0, 5.0, 31))),
+            get(dict, :shapeX, 2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2)),
+            get(dict, :shapeY, zeros(31)),
+            get(dict, :NuMad_geom_xlscsv_file_bld, nothing),
+            get(dict, :NuMad_mat_xlscsv_file_bld, nothing),
+        )
+    end
 end
 
 """
@@ -188,6 +229,15 @@ mutable struct MaterialSetupOptions
             [1.0, 1.0],   # chord_scale
             [1.0, 1.0],   # thickness_scale
             0.0           # AddedMass_Coeff_Ca
+        )
+    end
+    function MaterialSetupOptions(dict::OrderedDict{Symbol,Any})
+        new(
+            get(dict, :stack_layers_bld, nothing),
+            get(dict, :stack_layers_scale, [1.0, 1.0]),
+            get(dict, :chord_scale, [1.0, 1.0]),
+            get(dict, :thickness_scale, [1.0, 1.0]),
+            get(dict, :AddedMass_Coeff_Ca, 0.0),
         )
     end
 end
@@ -277,6 +327,32 @@ mutable struct AeroSetupOptions
             false         # AD15On
         )
     end
+    function AeroSetupOptions(dict::OrderedDict{Symbol,Any})
+        new(
+            get(dict, :rho, 1.225),
+            get(dict, :mu, 1.7894e-5),
+            get(dict, :RPM, 1e-6),
+            get(dict, :Vinf, 25.0),
+            get(dict, :eta, 0.5),
+            get(dict, :delta_t, 0.01),
+            get(dict, :AD15hubR, 0.1),
+            get(dict, :WindType, 1),
+            get(dict, :AeroModel, "DMS"),
+            get(dict, :DynamicStallModel, "BV"),
+            get(dict, :numTS, 100),
+            get(dict, :adi_lib, ""),
+            get(dict, :adi_rootname, ""),
+            get(dict, :windINPfilename, ""),
+            get(dict, :ifw_libfile, ""),
+            get(dict, :ifw, false),
+            get(dict, :RPI, true),
+            get(dict, :Aero_AddedMass_Active, false),
+            get(dict, :Aero_RotAccel_Active, false),
+            get(dict, :Aero_Buoyancy_Active, false),
+            get(dict, :centrifugal_force_flag, false),
+            get(dict, :AD15On, false),
+        )
+    end
 end
 
 """
@@ -317,6 +393,18 @@ mutable struct SetupOptions
             MaterialSetupOptions(),
             AeroSetupOptions()
         )
+    end
+
+    # Constructor that takes a YAML dictionary
+    function SetupOptions(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        # Extract each section from the dictionary, using default constructors if not present
+        mesh = haskey(dict_in, :mesh) ? MeshSetupOptions(dict_in[:mesh]) : MeshSetupOptions()
+        tower = haskey(dict_in, :tower) ? TowerSetupOptions(dict_in[:tower]) : TowerSetupOptions()
+        blade = haskey(dict_in, :blade) ? BladeSetupOptions(dict_in[:blade]) : BladeSetupOptions()
+        material = haskey(dict_in, :material) ? MaterialSetupOptions(dict_in[:material]) : MaterialSetupOptions()
+        aero = haskey(dict_in, :aero) ? AeroSetupOptions(dict_in[:aero]) : AeroSetupOptions()
+
+        new(mesh, tower, blade, material, aero)
     end
 end
 
