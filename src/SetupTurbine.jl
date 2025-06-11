@@ -413,7 +413,7 @@ function setupOWENS(
     return_componentized = false,
 )
     # Bundle the inputs into config structs
-    mesh_config = MeshConfig(
+    mesh_config = MeshSetupOptions(
         Nslices = Nslices,
         ntheta = ntheta,
         ntelem = ntelem,
@@ -426,7 +426,7 @@ function setupOWENS(
         AD15_ccw = true,
     )
 
-    tower_config = TowerConfig(
+    tower_config = TowerSetupOptions(
         Htwr_base = Htwr_base,
         Htwr_blds = Htwr_blds,
         strut_twr_mountpoint = strut_twr_mountpoint,
@@ -441,7 +441,7 @@ function setupOWENS(
         strut_tower_joint_type = strut_tower_joint_type
     )
 
-    blade_config = BladeConfig(
+    blade_config = BladeSetupOptions(
         B = B,
         H = H,
         R = R,
@@ -454,7 +454,7 @@ function setupOWENS(
         blade_joint_angle_Degrees = blade_joint_angle_Degrees
     )
 
-    material_config = MaterialConfig(
+    material_config = MaterialSetupOptions(
         stack_layers_bld = stack_layers_bld,
         stack_layers_scale = stack_layers_scale,
         chord_scale = chord_scale,
@@ -462,7 +462,7 @@ function setupOWENS(
         AddedMass_Coeff_Ca = AddedMass_Coeff_Ca,
     )
 
-    aero_config = AeroConfig(
+    aero_config = AeroSetupOptions(
         rho = rho,
         mu = mu,
         RPM = RPM,
