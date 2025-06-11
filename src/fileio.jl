@@ -1,4 +1,3 @@
-
 """
 readNuMadGeomCSV(WindIO_Dict)
 
@@ -815,18 +814,31 @@ end
 
 """
 
-    readBCdata(bcfilename,numNodes,numDOFPerNode)
+    readBCdata(bcfilename, numNodes, numDOFPerNode)
 
-This function reads the boundray condition file and stores data in the
-boundary condition object.
+Reads boundary condition data from a file and creates a boundary condition structure.
 
-#Input
-* `bcfilename::string`:    string containing boundary condition filename
-* `numNodes::int`:      number of nodes in structural model
-* `numDOFPerNode::int`: number of degrees of freedom per node
+The boundary condition file should have the following format:
+- First line: Number of boundary conditions (numpBC)
+- Following lines: Space-separated values for each boundary condition:
+  - Node number
+  - Local DOF number
+  - Boundary condition value (typically zero)
 
-#Output
-* `BC::OWENSFEA.BC_struct`:   see OWENSFEA.BC_struct, object containing boundary condition data
+# Arguments
+* `bcfilename::String`: Path to the boundary condition file
+* `numNodes::Int`: Number of nodes in the structural model
+* `numDOFPerNode::Int`: Number of degrees of freedom per node
+
+# Returns
+* `BC::OWENSFEA.BC_struct`: Boundary condition structure containing:
+  - `numpBC`: Number of displacement boundary conditions
+  - `pBC`: Array of boundary conditions (node number, DOF, value)
+  - `numsBC`: Number of spring boundary conditions (not used)
+  - `nummBC`: Number of mass boundary conditions (not used)
+  - `isConstrained`: Vector indicating which DOFs are constrained (0=unconstrained, 1=constrained)
+  - `sBC`: Spring boundary conditions (empty)
+  - `mBC`: Mass boundary conditions (empty)
 """
 function readBCdata(bcfilename,numNodes,numDOFPerNode)
 
@@ -888,13 +900,32 @@ end
 
     readBladeData(filename)
 
-This function reads blade data from file
+Reads blade data from a tab-delimited file and creates a BladeData structure.
 
-#Input
-* `filename::string`:   string containing /path/to/bladedata.bld
+The blade data file should have the following format:
+- Tab-delimited values with columns:
+  - Blade number
+  - Structural span location (normalized)
+  - Node number
+  - Element number
+  - (Optional) Additional data
 
-#Output
-* `bladeData::BladeData`:  see ?BladeData object containing blade data
+# Arguments
+* `filename::String`: Path to the blade data file (e.g., "path/to/bladedata.bld")
+
+# Returns
+* `bladeData::BladeData`: Structure containing:
+  - `numBlades`: Number of blades
+  - `bladeNum`: Array of blade numbers
+  - `h`: Array of structural span locations
+  - `nodeNum`: Array of node numbers
+  - `elementNum`: Array of element numbers
+  - `remaining`: Any additional data from the file
+
+# Notes
+- The file is expected to be tab-delimited
+- The function handles both blade and strut data sections
+- Structural span locations are normalized by the maximum span
 """
 function readBladeData(filename)
 

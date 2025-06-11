@@ -964,6 +964,27 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     stress_U_strut,SF_ult_U_strut,SF_buck_U_strut,stress_L_strut,SF_ult_L_strut,SF_buck_L_strut
 end
 
+"""
+    PostProcessOptions
+
+Options structure for controlling post-processing behavior in the OWENS code.
+
+# Fields
+* `verbosity::Int`: Controls the level of output verbosity (0=none, 1=warnings, 2=summary, 3=detailed)
+* `usestationBld::Int`: Index of the blade station to use for detailed output (0=all stations)
+* `usestationStrut::Int`: Index of the strut station to use for detailed output (0=all stations)
+* `throwawayTimeSteps::Int`: Number of initial time steps to discard from analysis
+* `calculate_fatigue::Bool`: Whether to calculate fatigue damage
+
+# Constructor
+```julia
+PostProcessOptions(;verbosity=2,
+    usestationBld=0,
+    usestationStrut=0,
+    throwawayTimeSteps=1,
+    calculate_fatigue=true)
+```
+"""
 struct PostProcessOptions
     verbosity
     usestationBld

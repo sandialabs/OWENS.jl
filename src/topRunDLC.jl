@@ -1,3 +1,80 @@
+"""
+    MasterInput
+
+Configuration structure containing all input parameters for OWENS analysis.
+
+# Fields
+* `analysisType::String`: Type of analysis to perform ("unsteady", "steady", "modal")
+* `turbineType::String`: Type of turbine ("Darrieus", "H-VAWT", "ARCUS")
+* `eta::Float64`: Blade mount point ratio (0.5 = blade half chord perpendicular to axis of rotation)
+* `Nbld::Int`: Number of blades
+* `towerHeight::Float64`: Tower extension height below blades in meters
+* `rho::Float64`: Air density in kg/m³
+* `Vinf::Float64`: Inflow wind speed in m/s
+* `controlStrategy::String`: Control strategy type
+* `RPM::Float64`: Rotor speed in RPM
+* `Nslices::Int`: Number of VAWTAero discretizations
+* `ntheta::Int`: Number of VAWTAero azimuthal discretizations
+* `structuralModel::String`: Structural model type ("GX", "TNB", "ROM")
+* `ntelem::Int`: Number of tower elements
+* `nbelem::Int`: Number of blade elements
+* `ncelem::Int`: Number of central cable elements (for ARCUS)
+* `nselem::Int`: Number of strut elements
+* `AeroModel::String`: Aerodynamic model type
+* `ifw::Bool`: Inflow wind flag
+* `WindType::Int`: Wind type specification
+* `windINPfilename::String`: Path to wind input file
+* `ifw_libfile::String`: Path to inflow wind library
+* `adi_lib::String`: Path to aerodyn library
+* `adi_rootname::String`: Root name for aerodyn files
+* `Blade_Height::Float64`: Blade height in meters
+* `Blade_Radius::Float64`: Blade radius in meters
+* `numTS::Int`: Number of timesteps
+* `delta_t::Float64`: Timestep size in seconds
+* `NuMad_geom_xlscsv_file_twr::String`: Path to tower geometry file
+* `NuMad_mat_xlscsv_file_twr::String`: Path to tower material file
+* `NuMad_geom_xlscsv_file_bld::String`: Path to blade geometry file
+* `NuMad_mat_xlscsv_file_bld::String`: Path to blade material file
+* `NuMad_geom_xlscsv_file_strut::String`: Path to strut geometry file
+* `NuMad_mat_xlscsv_file_strut::String`: Path to strut material file
+
+# Constructor
+```julia
+MasterInput(;
+    analysisType = "unsteady",
+    turbineType = "Darrieus",
+    eta = 0.5,
+    Nbld = 3,
+    towerHeight = 3.0,
+    rho = 1.225,
+    Vinf = 17.2,
+    controlStrategy = "constantRPM",
+    RPM = 17.2,
+    Nslices = 30,
+    ntheta = 30,
+    structuralModel = "GX",
+    ntelem = 10,
+    nbelem = 60,
+    ncelem = 10,
+    nselem = 5,
+    AeroModel = "AD",
+    ifw = false,
+    WindType = 1,
+    ifw_libfile = "./../openfast/build/modules/inflowwind/libifw_c_binding",
+    adi_lib = "./../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding",
+    adi_rootname = "./Example",
+    numTS = 100,
+    delta_t = 0.01,
+    windINPfilename = "path/to/wind/file.bts",
+    NuMad_geom_xlscsv_file_twr = "none",
+    NuMad_mat_xlscsv_file_twr = "none",
+    NuMad_geom_xlscsv_file_bld = "none",
+    NuMad_mat_xlscsv_file_bld = "none",
+    NuMad_geom_xlscsv_file_strut = "none",
+    NuMad_mat_xlscsv_file_strut = "none"
+)
+```
+"""
 mutable struct MasterInput
     analysisType
     turbineType
@@ -1076,6 +1153,41 @@ function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
     end
 end
 
+"""
+    DLC_internal
+
+Internal structure for Design Load Case (DLC) analysis parameters and results.
+
+# Fields
+* `Vinf_range_used::Array{Float64}`: Range of wind speeds used in the analysis
+* `analysis_type::String`: Type of analysis ("U"=unsteady, "F"=fatigue, "UF"=unsteady fatigue)
+* `controlStrategy::String`: Control strategy type
+* `RandSeed1::Int`: Random seed for turbulent wind generation
+* `NumGrid_Z::Int`: Number of vertical grid points
+* `NumGrid_Y::Int`: Number of horizontal grid points
+* `TimeStep::Float64`: Time step size in seconds
+* `HubHt::Float64`: Hub height in meters
+* `AnalysisTime::Float64`: Total analysis time in seconds
+* `GridHeight::Float64`: Grid height in meters
+* `GridWidth::Float64`: Grid width in meters
+* `VFlowAng::Float64`: Vertical mean flow angle in degrees
+* `HFlowAng::Float64`: Horizontal mean flow angle in degrees
+* `TurbModel::String`: Turbulence model specification
+* `IECstandard::String`: IEC standard reference (e.g., "1-ED3")
+* `IECturbc::String`: IEC turbulence characteristic ("A", "B", "C" or TI%)
+* `IEC_WindType::String`: IEC turbulence type ("NTM", "xETM", "xEWM1", "xEWM50")
+* `RefHt::Float64`: Reference height for wind speed in meters
+* `URef::Float64`: Reference wind speed in m/s
+* `time::Array{Float64}`: Time series array
+* `windvel::Array{Float64}`: Wind velocity time series
+* `winddir::Array{Float64}`: Wind direction time series
+* `windvertvel::Array{Float64}`: Vertical wind velocity time series
+* `horizshear::Array{Float64}`: Horizontal wind shear profile
+* `pwrLawVertShear::Float64`: Power law vertical shear coefficient
+* `LinVertShear::Float64`: Linear vertical shear coefficient
+* `gustvel::Array{Float64}`: Gust velocity time series
+* `UpflowAngle::Float64`: Upflow angle in degrees
+"""
 mutable struct DLC_internal
     Vinf_range_used
     analysis_type # "U", "F", "UF"
