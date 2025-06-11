@@ -76,16 +76,16 @@ Contains the configuration for the tower.
 # Fields
 - `Htwr_base::Float64`: The height of the tower base.
 - `Htwr_blds::Float64`: The height of the tower blades.
-- `strut_twr_mountpoint::Vector{Float64}`: The mount point of the struts to the tower.
-- `strut_bld_mountpoint::Vector{Float64}`: The mount point of the struts to the blades.
-- `joint_type::Int`: The type of joint between the tower and the blades.
+- `strut_twr_mountpoint::Vector{Float64}`: The mount points of the struts on the tower.
+- `strut_bld_mountpoint::Vector{Float64}`: The mount points of the struts on the blades.
+- `joint_type::Int`: The type of joint between the struts and tower.
 - `c_mount_ratio::Float64`: The mount point of the struts to the tower.
 - `angularOffset::Float64`: The angular offset of the tower.
-- `NuMad_geom_xlscsv_file_twr::Union{Nothing,String,Vector{String}}`: The path to the tower geometry file.
-- `NuMad_mat_xlscsv_file_twr::Union{Nothing,String,Vector{String}}`: The path to the tower material file.
-- `NuMad_geom_xlscsv_file_strut::Union{Nothing,String,Vector{String}}`: The path to the strut geometry file.
-- `NuMad_mat_xlscsv_file_strut::Union{Nothing,String,Vector{String}}`: The path to the strut material file.
-- `strut_tower_joint_type::Int`: TODO
+- `NuMad_geom_xlscsv_file_twr::Any`: The path to the tower geometry file. Can be nothing, String, or Vector{String}.
+- `NuMad_mat_xlscsv_file_twr::Any`: The path to the tower material file. Can be nothing, String, or Vector{String}.
+- `NuMad_geom_xlscsv_file_strut::Any`: The path to the strut geometry file. Can be nothing, String, or Vector{String}.
+- `NuMad_mat_xlscsv_file_strut::Any`: The path to the strut material file. Can be nothing, String, or Vector{String}.
+- `strut_tower_joint_type::Int`: The type of joint between the struts and tower.
 """
 mutable struct TowerSetupOptions
     Htwr_base::Float64
@@ -154,10 +154,10 @@ Contains the configuration for the blades.
 - `shapeZ::Vector{Float64}`: The z-coordinates of the blade.
 - `shapeX::Vector{Float64}`: The x-coordinates of the blade.
 - `shapeY::Vector{Float64}`: The y-coordinates of the blade.
-- `NuMad_geom_xlscsv_file_bld::Union{Nothing,String,Vector{String}}`: The path to the blade geometry file.
-- `NuMad_mat_xlscsv_file_bld::Union{Nothing,String,Vector{String}}`: The path to the blade material file.
-- `strut_blade_joint_type::Int`: TODO
-- `blade_joint_angle_Degrees::Float64`: TODO
+- `NuMad_geom_xlscsv_file_bld::Any`: The path to the blade geometry file. Can be nothing, String, or Vector{String}.
+- `NuMad_mat_xlscsv_file_bld::Any`: The path to the blade material file. Can be nothing, String, or Vector{String}.
+- `strut_blade_joint_type::Int`: The type of joint between the struts and blades.
+- `blade_joint_angle_Degrees::Float64`: The angle of the blade joint in degrees.
 """
 mutable struct BladeSetupOptions
     B::Int
