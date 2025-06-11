@@ -614,7 +614,6 @@ Unified_Options
     * `OWENSOpenFASTWrappers_Options::OWENSOpenFASTWrappers_Options`:
     * `Mesh_Options::Mesh_Options`:
     * `Drivetrain_Options::Drivetrain_Options`:
-    * `Setup_Options::SetupOptions`:
 
     # Output
     * `Unified_Options`: 
@@ -627,7 +626,6 @@ mutable struct Unified_Options
     OWENSOpenFASTWrappers_Options::OWENSOpenFASTWrappers_Options
     Mesh_Options::Mesh_Options
     Drivetrain_Options::Drivetrain_Options
-    Setup_Options::SetupOptions
 end
 
 """
@@ -694,13 +692,7 @@ function ModelingOptions(yamlInputfile=nothing)
         drivetrain_options = Drivetrain_Options(dummy_dict)
     end
 
-    if haskey(yamlInput,:Setup_Options)
-        setup_options = SetupOptions(yamlInput[:Setup_Options])
-    else
-        setup_options = SetupOptions()
-    end
-
-    return Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options,setup_options)
+    return Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
 end
 
 
