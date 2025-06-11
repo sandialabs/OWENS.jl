@@ -2,7 +2,7 @@ include("topRunDLC.jl")
 import .OWENS: Design_Data, ModelingOptions
 
 """
-    setupOWENS_config(path::String; setup_options = SetupOptions(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
+    setupOWENS(path::String; setup_options = SetupOptions(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
 
 Set up and configure an OWENS turbine mesh.
 
@@ -238,7 +238,6 @@ function setupOWENS(
     end
 
     # Set up the OWENSAero aerodynamics if used
-    aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS
     aero_properties = setup_aerodynamic_model(
         blade_config,
         aero_config,
@@ -250,6 +249,12 @@ function setupOWENS(
         myel,
         verbosity,
     )
+
+    # Initialize aerodynamic variables from properties
+    aeroForcesAD = aero_properties.aeroForcesAD
+    deformAeroAD = aero_properties.deformAeroAD
+    aeroForcesACDMS = aero_properties.aeroForcesACDMS
+    deformAeroACDMS = aero_properties.deformAeroACDMS
 
     # Initialize mass and stiffness variables
     # mass_twr = nothing
@@ -505,72 +510,4 @@ function setupOWENS(
         verbosity = verbosity,
         return_componentized = return_componentized,
     )
-end
-
-"""
-    setupOWENS(design_data::OWENS.Design_Data, model_opt::OWENS.ModelingOptions, path::String; VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
-
-Set up OWENS model using WindIO Design_Data and ModelingOptions objects.
-
-# Arguments
-* `design_data::OWENS.Design_Data`: WindIO design data object containing turbine geometry and parameters
-* `model_opt::OWENS.ModelingOptions`: WindIO modeling options object containing simulation settings
-* `path::String`: Path to the working directory
-
-# Keyword Arguments
-* `VTKmeshfilename`: Optional filename for VTK mesh output
-* `verbosity`: Verbosity level (default: 1)
-* `return_componentized`: Whether to return componentized results (default: false)
-
-# Returns
-* Tuple containing mesh, elements, orientations, joints, section properties, masses, stiffnesses, and other model data
-"""
-function setupOWENS(design_data::OWENS.Design_Data, model_opt::OWENS.ModelingOptions, path::String; VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
-    # Extract parameters from design_data
-    number_of_blades = design_data.assembly.number_of_blades
-    hub_height = design_data.assembly.hub_height
-    blade_x = design_data.components.blade.x
-    blade_y = design_data.components.blade.y
-    blade_z = design_data.components.blade.z
-    tower_x = design_data.components.tower.x
-    tower_y = design_data.components.tower.y
-    tower_z = design_data.components.tower.z
-
-    # Calculate blade dimensions
-    Blade_Height = maximum(blade_z) - minimum(blade_z)
-    Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
-
-    # Create setup options from model_opt
-    setup_options = SetupOptions(
-        mesh = MeshSetupOptions(
-            ntelem = model_opt.OWENS_Options.ntelem,
-            nbelem = model_opt.OWENS_Options.nbelem,
-            Nslices = model_opt.OWENSAero_Options.Nslices,
-            ntheta = model_opt.OWENSAero_Options.ntheta
-        ),
-        tower = TowerSetupOptions(
-            NuMad_geom_xlscsv_file = model_opt.OWENS_Options.NuMad_geom_xlscsv_file_twr,
-            NuMad_mat_xlscsv_file = model_opt.OWENS_Options.NuMad_mat_xlscsv_file_twr
-        ),
-        blade = BladeSetupOptions(
-            NuMad_geom_xlscsv_file = model_opt.OWENS_Options.NuMad_geom_xlscsv_file_bld,
-            NuMad_mat_xlscsv_file = model_opt.OWENS_Options.NuMad_mat_xlscsv_file_bld
-        ),
-        material = MaterialSetupOptions(
-            AddedMass_Coeff_Ca = model_opt.OWENSFEA_Options.AddedMass_Coeff_Ca
-        ),
-        aero = AeroSetupOptions(
-            AeroModel = model_opt.OWENS_Options.AeroModel,
-            Nslices = model_opt.OWENSAero_Options.Nslices,
-            ntheta = model_opt.OWENSAero_Options.ntheta,
-            DynamicStallModel = model_opt.OWENSAero_Options.DynamicStallModel,
-            RPI = model_opt.OWENSAero_Options.RPI,
-            Aero_Buoyancy_Active = model_opt.OWENSAero_Options.Aero_Buoyancy_Active,
-            Aero_AddedMass_Active = model_opt.OWENSAero_Options.Aero_AddedMass_Active,
-            Aero_RotAccel_Active = model_opt.OWENSAero_Options.Aero_RotAccel_Active
-        )
-    )
-
-    # Call main setupOWENS function
-    return setupOWENS_config(path; setup_options = setup_options, VTKmeshfilename = VTKmeshfilename, verbosity = verbosity, return_componentized = return_componentized)
 end

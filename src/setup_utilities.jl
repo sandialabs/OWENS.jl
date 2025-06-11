@@ -1151,3 +1151,130 @@ function get_material_mass(
     end
     return mass_component_material
 end
+
+"""
+    preprocess_windio_setup(modelopt, windio, path)
+
+Creates and populates a SetupOptions instance from the windio and modelopt inputs.
+
+# Arguments
+- `modelopt`: The modeling options containing configuration parameters
+- `windio`: The windio data containing turbine geometry and properties
+- `path`: The base path for file operations
+
+# Returns
+- `SetupOptions`: A populated SetupOptions instance containing all configuration parameters
+"""
+function preprocess_windio_setup(modelopt, windio, path)
+    # Extract basic geometry parameters
+    number_of_blades = windio[:assembly][:number_of_blades]
+    hub_height = windio[:assembly][:hub_height]
+    
+    # Extract blade geometry
+    blade_x = windio[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values]
+    blade_y = windio[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values]
+    blade_z = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values]
+    tower_z = windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values]
+    
+    # Calculate derived geometry
+    Blade_Height = maximum(blade_z)
+    Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
+    Htwr_base = hub_height - Blade_Height/2
+    Htwr_blds = maximum(tower_z) - Htwr_base
+    
+    # Extract strut parameters
+    tower_strut_connection = windio[:components][:struts][1][:mountfraction_tower]
+    blade_strut_connection = windio[:components][:struts][1][:mountfraction_blade]
+    
+    # Extract environment parameters
+    air_density = windio[:environment][:air_density]
+    air_dyn_viscosity = windio[:environment][:air_dyn_viscosity]
+    
+    # Create mesh options
+    mesh_opts = MeshSetupOptions(
+        Nslices = modelopt.OWENSAero_Options.Nslices,
+        ntheta = modelopt.OWENSAero_Options.ntheta,
+        ntelem = modelopt.Mesh_Options.ntelem,
+        nbelem = modelopt.Mesh_Options.nbelem,
+        ncelem = modelopt.Mesh_Options.ncelem,
+        nselem = modelopt.Mesh_Options.nselem,
+        meshtype = modelopt.Mesh_Options.turbineType,
+        custommesh = nothing,
+        connectBldTips2Twr = modelopt.Mesh_Options.cables_connected_to_blade_base,
+        AD15_ccw = true
+    )
+    
+    # Create tower options
+    tower_opts = TowerSetupOptions(
+        Htwr_base = Htwr_base,
+        Htwr_blds = Htwr_blds,
+        strut_twr_mountpoint = tower_strut_connection,
+        strut_bld_mountpoint = blade_strut_connection,
+        joint_type = modelopt.Mesh_Options.joint_type,
+        c_mount_ratio = modelopt.Mesh_Options.c_mount_ratio,
+        angularOffset = modelopt.Mesh_Options.angularOffset,
+        NuMad_geom_xlscsv_file_twr = windio,
+        NuMad_mat_xlscsv_file_twr = windio,
+        NuMad_geom_xlscsv_file_strut = windio,
+        NuMad_mat_xlscsv_file_strut = windio,
+        strut_tower_joint_type = 2
+    )
+    
+    # Create blade options
+    blade_opts = BladeSetupOptions(
+        B = number_of_blades,
+        H = Blade_Height,
+        R = Blade_Radius,
+        shapeZ = blade_z,
+        shapeX = blade_x,
+        shapeY = blade_y,
+        NuMad_geom_xlscsv_file_bld = windio,
+        NuMad_mat_xlscsv_file_bld = windio,
+        strut_blade_joint_type = 0,
+        blade_joint_angle_Degrees = 0.0
+    )
+    
+    # Create material options
+    material_opts = MaterialSetupOptions(
+        stack_layers_bld = nothing,
+        stack_layers_scale = [1.0, 1.0],
+        chord_scale = [1.0, 1.0],
+        thickness_scale = [1.0, 1.0],
+        AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca
+    )
+    
+    # Create aero options
+    aero_opts = AeroSetupOptions(
+        rho = air_density,
+        mu = air_dyn_viscosity,
+        RPM = modelopt.OWENS_Options.Prescribed_RPM_RPM_controlpoints[1],
+        Vinf = modelopt.OWENS_Options.Prescribed_Vinf_Vinf_controlpoints[1],
+        eta = windio[:components][:blade][:outer_shape_bem][:blade_mountpoint],
+        delta_t = modelopt.OWENS_Options.delta_t,
+        AD15hubR = modelopt.Mesh_Options.AD15hubR,
+        WindType = modelopt.OWENSOpenFASTWrappers_Options.WindType,
+        AeroModel = modelopt.OWENS_Options.AeroModel,
+        DynamicStallModel = modelopt.OWENSAero_Options.DynamicStallModel,
+        numTS = modelopt.OWENS_Options.numTS,
+        adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib == "nothing" ? nothing : modelopt.OWENSOpenFASTWrappers_Options.adi_lib,
+        adi_rootname = "$(path)$(modelopt.OWENSOpenFASTWrappers_Options.adi_rootname)",
+        windINPfilename = "$(path)$(modelopt.OWENSOpenFASTWrappers_Options.windINPfilename)",
+        ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile == "nothing" ? nothing : modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile,
+        ifw = modelopt.OWENSAero_Options.ifw,
+        RPI = modelopt.OWENSAero_Options.RPI,
+        Aero_AddedMass_Active = modelopt.OWENSAero_Options.Aero_AddedMass_Active,
+        Aero_RotAccel_Active = modelopt.OWENSAero_Options.Aero_RotAccel_Active,
+        Aero_Buoyancy_Active = modelopt.OWENSAero_Options.Aero_Buoyancy_Active,
+        centrifugal_force_flag = false,
+        AD15On = modelopt.OWENS_Options.AeroModel == "AD"
+    )
+    
+    # Create and return the complete SetupOptions instance
+    return SetupOptions(
+        mesh = mesh_opts,
+        tower = tower_opts,
+        blade = blade_opts,
+        material = material_opts,
+        aero = aero_opts
+    )
+end
