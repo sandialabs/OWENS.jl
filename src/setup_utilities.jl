@@ -95,16 +95,16 @@ mutable struct TowerSetupOptions
     joint_type::Int
     c_mount_ratio::Float64
     angularOffset::Float64
-    NuMad_geom_xlscsv_file_twr::Union{Nothing,String,Vector{String}}
-    NuMad_mat_xlscsv_file_twr::Union{Nothing,String,Vector{String}}
-    NuMad_geom_xlscsv_file_strut::Union{Nothing,String,Vector{String}}
-    NuMad_mat_xlscsv_file_strut::Union{Nothing,String,Vector{String}}
+    NuMad_geom_xlscsv_file_twr::Any
+    NuMad_mat_xlscsv_file_twr::Any
+    NuMad_geom_xlscsv_file_strut::Any
+    NuMad_mat_xlscsv_file_strut::Any
     strut_tower_joint_type::Int
 
     function TowerSetupOptions(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
     end
-    function TowerSetupOptions(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Union{Nothing,String,Vector{String}}=nothing, NuMad_mat_xlscsv_file_twr::Union{Nothing,String,Vector{String}}=nothing, NuMad_geom_xlscsv_file_strut::Union{Nothing,String,Vector{String}}=nothing, NuMad_mat_xlscsv_file_strut::Union{Nothing,String,Vector{String}}=nothing, strut_tower_joint_type::Int=2)
+    function TowerSetupOptions(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing, strut_tower_joint_type::Int=2)
         new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
     end
     # Default constructor
@@ -166,15 +166,15 @@ mutable struct BladeSetupOptions
     shapeZ::Vector{Float64}
     shapeX::Vector{Float64}
     shapeY::Vector{Float64}
-    NuMad_geom_xlscsv_file_bld::Union{Nothing,String,Vector{String}}
-    NuMad_mat_xlscsv_file_bld::Union{Nothing,String,Vector{String}}
+    NuMad_geom_xlscsv_file_bld::Any
+    NuMad_mat_xlscsv_file_bld::Any
     strut_blade_joint_type::Int
     blade_joint_angle_Degrees::Float64
 
     function BladeSetupOptions(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
     end
-    function BladeSetupOptions(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Union{Nothing,String,Vector{String}}=nothing, NuMad_mat_xlscsv_file_bld::Union{Nothing,String,Vector{String}}=nothing, strut_blade_joint_type::Int=0, blade_joint_angle_Degrees::Float64=0.0)
+    function BladeSetupOptions(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing, strut_blade_joint_type::Int=0, blade_joint_angle_Degrees::Float64=0.0)
         new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
     end
     # Default constructor
