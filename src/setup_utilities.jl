@@ -420,6 +420,10 @@ mutable struct SetupOptions
     end
 end
 
+###
+# Setup functions
+###
+
 struct MeshProperties
     mymesh::Any  # Type depends on mesh implementation
     myort::Any   # Type depends on orientation implementation
@@ -475,11 +479,19 @@ function setup_mesh(
     )
 end
 
-# TODO add types
+"""
+Contains the sectional properties of the components.
+
+# Fields
+- `sectionPropsArray::Vector{Any}`: The sectional properties of the components.
+- `stiff_array::Vector{Any}`: The stiffness of the components.
+- `mass_array::Vector{Any}`: The mass of the components.
+- `rotationalEffects::Vector{Float64}`: The rotational effects of the components.
+"""
 struct SectionalProperties
-    sectionPropsArray::Vector{Any}  # Type depends on section properties implementation
-    stiff_array::Vector{Any}        # Type depends on stiffness implementation
-    mass_array::Vector{Any}         # Type depends on mass implementation
+    sectionPropsArray::Vector{Any}
+    stiff_array::Vector{Any}
+    mass_array::Vector{Any}
     rotationalEffects::Vector{Float64}
 
     function SectionalProperties(sectionPropsArray, stiff_array, mass_array, rotationalEffects)
@@ -597,6 +609,16 @@ function setup_sectional_props(
         stiff_array,
         mass_array,
         rotationalEffects)
+end
+
+mutable struct AeroProperties
+    aeroForcesAD::Any
+    deformAeroAD::Any
+    aeroForcesACDMS::Any
+    deformAeroACDMS::Any
+
+    function AeroProperties(aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS)
+
 end
 
 function setup_aerodynamic_model(
@@ -984,7 +1006,7 @@ function setup_aerodynamic_model(
     end
 
     # Always return all four values, even if some are nothing
-    return aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS
+    return AeroProperties(aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS)
 end
 
 function addSectionalPropertiesComponent!(
