@@ -618,7 +618,8 @@ mutable struct AeroProperties
     deformAeroACDMS::Any
 
     function AeroProperties(aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS)
-
+        new(aeroForcesAD, deformAeroAD, aeroForcesACDMS, deformAeroACDMS)
+    end
 end
 
 function setup_aerodynamic_model(
