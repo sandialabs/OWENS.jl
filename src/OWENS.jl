@@ -76,7 +76,6 @@ include("./AeroMapping.jl")
 include("./fileio.jl")
 include("./gxbeam_conversion.jl")
 include("./SetupTurbine.jl")
-include("./SetupTurbineCompat.jl")
 include("./topRunDLC.jl")
 include("./windio.jl")
 
