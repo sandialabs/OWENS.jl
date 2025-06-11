@@ -486,14 +486,18 @@ function setupOWENS(
         centrifugal_force_flag = AddedMass_Coeff_Ca > 0.0,
     )
 
+    setup_options = SetupOptions(
+        mesh = mesh_config,
+        tower = tower_config,
+        blade = blade_config,
+        material = material_config,
+        aero = aero_config,
+    )
+
     # Run the setup function with the config structs
     return setupOWENS(
         path,
-        mesh_config = mesh_config,
-        tower_config = tower_config,
-        blade_config = blade_config,
-        material_config = material_config,
-        aero_config = aero_config,  
+        setup_options = setup_options,
         VTKmeshfilename = VTKmeshfilename,
         verbosity = verbosity,
         return_componentized = return_componentized,
