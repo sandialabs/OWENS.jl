@@ -28,18 +28,26 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
-[sources]
-Composites = {url = "https://github.com/byuflowlab/Composites.jl.git"}
-OWENSAero = {url = "https://github.com/sandialabs/OWENSAero.jl"}
-OWENSFEA = {url = "https://github.com/sandialabs/OWENSFEA.jl"}
-OWENSOpenFASTWrappers = {url = "https://github.com/sandialabs/OWENSOpenFASTWrappers.jl"}
-OWENSOpenFAST_jll = {url = "https://github.com/sandialabs/OWENSOpenFAST_jll.jl"}
+[sources.Composites]
+url = "https://github.com/byuflowlab/Composites.jl.git"
+
+[sources.OWENSAero]
+url = "https://github.com/sandialabs/OWENSAero.jl"
+
+[sources.OWENSFEA]
+url = "https://github.com/sandialabs/OWENSFEA.jl"
+
+[sources.OWENSOpenFASTWrappers]
+url = "https://github.com/sandialabs/OWENSOpenFASTWrappers.jl"
+
+[sources.OWENSOpenFAST_jll]
+url = "https://github.com/sandialabs/OWENSOpenFAST_jll.jl"
 
 [compat]
 DelimitedFiles = "1"
 Dierckx = "0.5"
 FFTW = "1"
-FLOWMath = "0.3, 0.4"
+FLOWMath = "0.3, 0.4, 1"
 GXBeam = "0.5.1"
 HDF5 = "0.17"
 JLD2 = "0.5.10"
