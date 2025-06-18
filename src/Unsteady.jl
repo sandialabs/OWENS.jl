@@ -917,6 +917,9 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j::AbstractVector{T},udd
 
                 #asssembly
                 for m = 1:length(dofList)
+                    # XXX: Is this an error? `u_j_local` and `uddot_j_local` are overwritten
+                    #      for each loop iteration and then the final value is used after
+                    #      loop?
                     u_j_local[dofList[m]] =  u_j_local[dofList[m]]+localdisp[m]
                     uddot_j_local[dofList[m]] =  uddot_j_local[dofList[m]]+localdispddot[m]
                 end
@@ -934,14 +937,14 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j::AbstractVector{T},udd
         # disp_twist3 = [u_j_local[i] for i = 6:6:length(u_j_local)]
 
         sz = (size(mesh.structuralNodeNumbers, 1), size(mesh.structuralNodeNumbers, 2) - 1)
-        bld_x = zeros(T, sz)
-        bld_y = zeros(T, sz)
-        bld_z = zeros(T, sz)
+        bld_x = zeros(promote_type(eltype(mesh.x), eltype(disp_x)), sz)
+        bld_y = zeros(promote_type(eltype(mesh.y), eltype(disp_y)), sz)
+        bld_z = zeros(promote_type(eltype(mesh.z), eltype(disp_z)), sz)
         bld_twist = zeros(T, sz)
         accel_flap_in = zeros(T, sz)
         accel_edge_in = zeros(T, sz)
 
-        for jbld = 1:length(mesh.structuralNodeNumbers[:,1])
+        for jbld = 1:size(mesh.structuralNodeNumbers, 1)
             bld_indices = Int.(mesh.structuralNodeNumbers[jbld,1:end-1])
             bld_x[jbld,:] = mesh.x[bld_indices]+disp_x[bld_indices]
             bld_y[jbld,:] = mesh.y[bld_indices]+disp_y[bld_indices]
@@ -1061,8 +1064,9 @@ function allocate_topside(inputs,topMesh,topEl,topModel,numDOFPerNode,u_s,assemb
     OmegaDot_s = 0
     genTorque_s = 0
     torqueDriveShaft_s = 0
-    topFexternal = zeros(top_totalNumDOF)
-    topFexternal_hist = zeros(Int(inputs.numTS),top_totalNumDOF)
+    T = eltype(topMesh.x)
+    topFexternal = zeros(T, top_totalNumDOF)
+    topFexternal_hist = zeros(T, Int(inputs.numTS), top_totalNumDOF)
     return u_s,udot_s,uddot_s,u_sm1,topDispData1,topDispData2,topElStrain,gb_s,gbDot_s,gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,torqueDriveShaft_s,topFexternal,topFexternal_hist
 end
 
@@ -1341,39 +1345,41 @@ end
 
 function allocate_general(inputs,topModel,topMesh,numDOFPerNode,numTS,assembly)
 
+    # TODO: Type might depend on other input too.
+    T = eltype(topMesh.x)
     ## History array initialization
     if inputs.topsideOn
         if inputs.analysisType == "GX"
             nel = length(assembly.start) #TODO: these should be the same.
-            uHist = zeros(numTS, length(assembly.points)*numDOFPerNode)
+            uHist = zeros(T, numTS, length(assembly.points) * numDOFPerNode)
         else
             nel = topMesh.numEl
-            uHist = zeros(numTS, topMesh.numNodes*numDOFPerNode)
+            uHist = zeros(T, numTS, topMesh.numNodes * numDOFPerNode)
         end
-        epsilon_x_hist = zeros(4,nel,numTS)
-        epsilon_y_hist = zeros(4,nel,numTS)
-        epsilon_z_hist = zeros(4,nel,numTS)
-        kappa_x_hist = zeros(4,nel,numTS)
-        kappa_y_hist = zeros(4,nel,numTS)
-        kappa_z_hist = zeros(4,nel,numTS)
+        epsilon_x_hist = zeros(T, 4, nel, numTS)
+        epsilon_y_hist = zeros(T, 4, nel, numTS)
+        epsilon_z_hist = zeros(T, 4, nel, numTS)
+        kappa_x_hist = zeros(T, 4, nel, numTS)
+        kappa_y_hist = zeros(T, 4, nel, numTS)
+        kappa_z_hist = zeros(T, 4, nel, numTS)
     else
-        uHist = zeros(numTS, numDOFPerNode)
-        epsilon_x_hist = zeros(4,1, numTS)
-        epsilon_y_hist = zeros(4,1, numTS)
-        epsilon_z_hist = zeros(4,1, numTS)
-        kappa_x_hist = zeros(4,1, numTS)
-        kappa_y_hist = zeros(4,1, numTS)
-        kappa_z_hist = zeros(4,1, numTS)
+        uHist = zeros(T, numTS, numDOFPerNode)
+        epsilon_x_hist = zeros(T, 4, 1, numTS)
+        epsilon_y_hist = zeros(T, 4, 1, numTS)
+        epsilon_z_hist = zeros(T, 4, 1, numTS)
+        kappa_x_hist = zeros(T, 4, 1, numTS)
+        kappa_y_hist = zeros(T, 4, 1, numTS)
+        kappa_z_hist = zeros(T, 4, 1, numTS)
     end
     
 
-    FReactionHist = zeros(numTS,length(uHist[1,:]))
+    FReactionHist = zeros(T, numTS, size(uHist, 2))
     FTwrBsHist = zeros(numTS, 6)
-    aziHist = zeros(numTS)
-    OmegaHist = zeros(numTS)
-    OmegaDotHist = zeros(numTS)
-    gbHist = zeros(numTS)
-    gbDotHist = zeros(numTS)
+    aziHist = zeros(T, numTS)
+    OmegaHist = zeros(typeof(inputs.OmegaInit), numTS)
+    OmegaDotHist = zeros(typeof(inputs.OmegaInit), numTS)
+    gbHist = zeros(typeof(inputs.OmegaInit), numTS)
+    gbDotHist = zeros(typeof(inputs.OmegaInit), numTS)
     gbDotDotHist = zeros(numTS)
     genTorque = zeros(numTS)
     genPower = zeros(numTS)

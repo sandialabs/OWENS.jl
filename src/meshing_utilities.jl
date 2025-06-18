@@ -662,7 +662,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
     ####################################
     ###------------Tower--------------##
     ####################################
-    mesh_z = collect(LinRange(0,Htwr_blds+Htwr_base,ntelem+1))
+    mesh_z = collect(range(0, Htwr_blds + Htwr_base; length = ntelem + 1))
 
     # Insert mount point base
     mesh_z = sort([mesh_z;Htwr_base])
@@ -717,7 +717,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
     #####################################
 
     #connection points on tower are simply the bottom of the tower offset connecting to the bottom of the blades, which is jointed if Darrieus in the joint matrix below
-    bld_Z = collect(LinRange(0.0,Hbld,nbelem+1))
+    bld_Z = collect(range(0.0, Hbld; length = nbelem + 1))
 
     # Insert strut mount point
     for istrut = 1:Nstrut
@@ -828,9 +828,9 @@ function create_mesh_struts(;Htwr_base = 15.0,
         end
 
         # Now draw the lines
-        s_x = collect(LinRange(sxstart,sxend,nelem+1))
-        s_y = collect(LinRange(systart,syend,nelem+1))
-        s_z = collect(LinRange(szstart,szend,nelem+1))
+        s_x = collect(range(sxstart, sxend; length = nelem + 1))
+        s_y = collect(range(systart, syend; length = nelem + 1))
+        s_z = collect(range(szstart, szend; length = nelem + 1))
 
         hubIdx = 1
         if AD15hubR > 1e-6
@@ -868,10 +868,10 @@ function create_mesh_struts(;Htwr_base = 15.0,
         mesh_z = [mesh_z;s_z]
 
         # Intraconnectivity
-        conn_s = zeros(nelem,2)
-        conn_s[:,1] = collect(s2b_idx_internal:1:s2t_idx_internal-1)
-        conn_s[:,2] = collect(s2b_idx_internal+1:1:s2t_idx_internal)
-        conn = [conn;conn_s]
+        conn_s = zeros(Int, nelem, 2)
+        conn_s[:, 1] = s2b_idx_internal:1:(s2t_idx_internal - 1)
+        conn_s[:, 2] = (s2b_idx_internal + 1):1:s2t_idx_internal
+        conn = [conn; conn_s]
 
         return s2b_idx_internal,s2t_idx_internal,mesh_x,mesh_y,mesh_z,conn,hubIdx
     end
@@ -935,7 +935,7 @@ function create_mesh_struts(;Htwr_base = 15.0,
 
     numNodes = length(mesh_z)
     nodeNum = collect(1:numNodes)
-    numEl = length(conn[:,1])
+    numEl = size(conn, 1)
     elNum = collect(1:numEl)
 
     # Define Mesh Types
@@ -976,6 +976,10 @@ function create_mesh_struts(;Htwr_base = 15.0,
     meshSeg[2:nblade+1] .= nbelem+Nstrut #+Nstrut for strut mount points
     meshSeg[nblade+2:end] .= nselem
 
+    # Normalized span
+    span_len = bld_Z .- Htwr_base # sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Htwr_base).^2.0)
+    normalized_span_len = span_len ./ maximum(span_len)
+
     # For each blade
     structuralSpanLocNorm = zeros(nblade, length(bld_Z))
     structuralNodeNumbers = zeros(Int, nblade, length(bld_Z))
@@ -984,14 +988,13 @@ function create_mesh_struts(;Htwr_base = 15.0,
     for iblade = 1:nblade
 
         # Normalized Span
-        span_len = bld_Z.-Htwr_base#sqrt.(bld_X.^2.0.+bld_Y.^2.0.+(bld_Z.-Htwr_base).^2.0)
-        structuralSpanLocNorm[iblade,:] = span_len./maximum(span_len)
+        structuralSpanLocNorm[iblade, :] .= normalized_span_len
 
         # Node Numbers
-        structuralNodeNumbers[iblade,:] = collect(b_botidx[iblade]:b_topidx[iblade])
+        structuralNodeNumbers[iblade, :] .= b_botidx[iblade]:b_topidx[iblade]
 
         # Element Numbers
-        structuralElNumbers[iblade,:] = structuralNodeNumbers[iblade,:].-iblade
+        structuralElNumbers[iblade, :] .= structuralNodeNumbers[iblade, :] .- iblade
         structuralElNumbers[iblade,end] = -1 #TODO: figure out why this is in the original OWENS setup and if it is used
     end
 
@@ -1108,8 +1111,8 @@ function create_mesh_struts(;Htwr_base = 15.0,
         myort.Twist_d[end-ibld*nselem+1:end-(ibld-1)*nselem] .= myort.Twist_d[end-ibld*nselem+1]
     end
 
-    Psi_d_joint = zeros(njoint)
-    Theta_d_joint = zeros(njoint)
+    Psi_d_joint = zeros(eltype(myort.Psi_d), njoint)
+    Theta_d_joint = zeros(eltype(myort.Theta_d), njoint)
     for jnt = 1:njoint
         elnum_of_joint = findall(x->x==jointconn[jnt,1],conn[:,1]) #gives index of the elNum vector which contains the point index we're after. (the elNum vector is a map between point index and element index)
         if length(elnum_of_joint)==0 #Use the other element associated with the joint
@@ -1477,6 +1480,8 @@ function create_arcus_mesh(;
 end
 
 function calculateElementOrientation2(mesh)
+    # TODO: This should likely depend on other input types too.
+    T = eltype(mesh.x)
 
     # Note on gimbal lock:
     #   when calculating a (roll -> pitch -> yaw) rotation sequence (twist -> theta -> psi) on a vertical element, it is ambiguous
@@ -1486,22 +1491,21 @@ function calculateElementOrientation2(mesh)
     #   calculating DCM's when coupling to other codes.
 
     numEl = mesh.numEl #get number of elements
-    Psi_d=zeros(numEl) #initialize Psi, Theta, Twist, and Offset Arrays
-    Theta_d=zeros(numEl)
-    twist_d=zeros(numEl)
-    twist_d2=zeros(numEl)
-    Offset=zeros(3,numEl)    #offset is the hub frame coordinate of node 1 of the element
+    Psi_d=zeros(T, numEl) #initialize Psi, Theta, Twist, and Offset Arrays
+    Theta_d=zeros(T, numEl)
+    twist_d=zeros(T, numEl)
+    Offset=zeros(T, 3,numEl)    #offset is the hub frame coordinate of node 1 of the element
     vsave=zeros(numEl,3)    #offset is the hub frame coordinate of node 1 of the element
     elNum = zeros(Int, numEl, 2) #initialize element number array
 
 
     #calculate "mesh centroid"
     meshCentroid = [0.0 0.0 Statistics.mean(mesh.z)] #calculate a geometric centroid using all nodal coordinates
-    lenv = zeros(numEl)
+    lenv = zeros(T, numEl)
     for i = 1:numEl #loop over elements
 
-        n1 = Int(mesh.conn[i,1]) #n1 := node number for node 1 of element i
-        n2 = Int(mesh.conn[i,2]) #n2 := node number for node 2 of element i
+        n1 = mesh.conn[i,1] #n1 := node number for node 1 of element i
+        n2 = mesh.conn[i,2] #n2 := node number for node 2 of element i
 
         p1 = [mesh.x[n1] mesh.y[n1] mesh.z[n1]] #nodal coordinates of n1
         p2 = [mesh.x[n2] mesh.y[n2] mesh.z[n2]] #nodal coordinates of n2
@@ -1658,7 +1662,7 @@ Calculates the transformation matrix assocaited with a general Euler rotation se
 function createGeneralTransformationMatrix(angleArray,axisArray)
 
     numRotations = length(angleArray) #get number of rotation to perform
-    dcmArray = zeros(3,3,numRotations) #initialize individual rotation direction cosine matrix arrays
+    dcmArray = zeros(eltype(angleArray), 3, 3, numRotations) #initialize individual rotation direction cosine matrix arrays
 
     for i=1:numRotations #calculate individual single rotatio direction cosine matrices
         dcmArray[:,:,i] = createSingleRotationDCM(angleArray[i],axisArray[i])
@@ -1677,22 +1681,29 @@ end
 """
 Creates a direction cosine matrix (dcm) associated with a rotation of angleDeg about axisNum.
 """
-function createSingleRotationDCM(angleDeg,axisNum)
+function createSingleRotationDCM(angleDeg::T, axisNum) where {T}
 
     angleRad = angleDeg*pi/180.0 #convert angle to radians
+    s, c = sincos(angleRad)
 
     if axisNum == 1 #direction cosine matrix about 1 axis
-        dcm = [1.0 0.0 0.0
-        0.0 cos(angleRad) sin(angleRad)
-        0.0 -sin(angleRad) cos(angleRad)]
+        dcm = T[
+             1  0  0
+             0  c  s
+             0 -s  c
+        ]
     elseif axisNum == 2 #direction cosine matrix about 2 axis
-        dcm = [cos(angleRad) 0.0 -sin(angleRad)
-        0.0 1.0 0.0
-        sin(angleRad) 0.0 cos(angleRad)]
+        dcm = T[
+             c  0 -s
+             0  1  0
+             s  0  c
+        ]
     elseif axisNum == 3 #direction cosine matrix about 3 axis
-        dcm = [cos(angleRad) sin(angleRad) 0.0
-        -sin(angleRad) cos(angleRad) 0.0
-        0.0 0.0 1.0]
+        dcm = T[
+             c  s  0
+            -s  c  0
+             0  0  1
+        ]
     else  #error catch
         error("Error: createSingleRotationDCM. Axis number must be 1, 2, or 3.")
     end
@@ -1937,7 +1948,7 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
             end
         end
 
-        n_pliesU = zeros(sum(n_laminaU))
+        n_pliesU = zeros(eltype(numadIn.stack_layers), sum(n_laminaU))
         mat_lamU = zeros(Int,sum(n_laminaU))
         t_lamU = zeros(sum(n_laminaU)) #TODO: hook this into the optimization parameters and or the material properties
         tht_lamU = zeros(sum(n_laminaU)) #TODO: same with this
@@ -1969,7 +1980,7 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
             end
         end
 
-        n_pliesL = zeros(sum(n_laminaL))
+        n_pliesL = zeros(eltype(numadIn.stack_layers), sum(n_laminaL))
         mat_lamL = zeros(Int,sum(n_laminaL))
         t_lamL = zeros(sum(n_laminaL)) #TODO: hook this into the optimization parameters and or the material properties
         tht_lamL = zeros(sum(n_laminaL)) #TODO: same with this
@@ -2020,7 +2031,7 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         xnode_filtered = Float64.(xnode_filtered)
         ynode_filtered = Float64.(ynode_filtered)
 
-        n_pliesW = zeros(sum(n_laminaW))
+        n_pliesW = zeros(eltype(numadIn.stack_layers), sum(n_laminaW))
         mat_lamW = zeros(Int,sum(n_laminaW))
         t_lamW = zeros(sum(n_laminaW)) #TODO: hook this into the optimization parameters and or the material properties
         tht_lamW = zeros(sum(n_laminaW)) #TODO: same with this
@@ -2038,14 +2049,21 @@ function getOWENSPreCompOutput(numadIn;yscale=1.0,plyprops = plyproperties())
         ########################################
         ## Create the Precomp Input Structure ##
         ########################################
+        # TODO: This type computation should likely depend on other input too
+        TI = promote_type(typeof(normalchord[i_station]), eltype(n_pliesU))
+        VTI = Vector{TI}
         precompinput[i_station] = OWENSPreComp.Input(
-        normalchord[i_station],
-        -twist_d[i_station],-twistrate_d[i_station],
-        leloc[i_station],xnode_filtered,ynode_filtered,
-        e1,e2,g12,anu12,density,
-        xsec_nodeU,n_laminaU,n_pliesU,t_lamU,tht_lamU,mat_lamU,
-        xsec_nodeL,n_laminaL,n_pliesL,t_lamL,tht_lamL,mat_lamL,
-        loc_web,n_laminaW,n_pliesW,t_lamW,tht_lamW,mat_lamW)
+            convert(TI, normalchord[i_station]), convert(TI, -twist_d[i_station]),
+            convert(TI, -twistrate_d[i_station]), convert(TI, leloc[i_station]),
+            convert(VTI, xnode_filtered), convert(VTI, ynode_filtered), convert(VTI, e1),
+            convert(VTI, e2), convert(VTI, g12), convert(VTI, anu12), convert(VTI, density),
+            convert(VTI, xsec_nodeU), n_laminaU, convert(VTI, n_pliesU),
+            convert(VTI, t_lamU), convert(VTI, tht_lamU), mat_lamU,
+            convert(VTI, xsec_nodeL), n_laminaL, convert(VTI, n_pliesL),
+            convert(VTI, t_lamL), convert(VTI, tht_lamL), mat_lamL, convert(VTI, loc_web),
+            n_laminaW, convert(VTI, n_pliesW), convert(VTI, t_lamW),
+            convert(VTI, tht_lamW), mat_lamW,
+        )
 
         # calculate composite properties: stiffness, mass, etc
         precompoutput[i_station] = OWENSPreComp.properties(precompinput[i_station])
@@ -2108,55 +2126,39 @@ stiff, mass
 
 """
 function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=false,precompinputs=nothing,fluid_density=0.0,AddedMass_Coeff_Ca=1.0,N_airfoil_coord=100)
+    NT = eltype(usedUnitSpan)
     # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
     # create spline of the precomp output to be used with the specified span array
-    len_pc = length(precompoutput)
-    ei_flap = zeros(len_pc)
-    ei_lag = zeros(len_pc)
-    gj = zeros(len_pc)
-    ea = zeros(len_pc)
-    s_fl = zeros(len_pc)
-    s_af = zeros(len_pc)
-    s_al = zeros(len_pc)
-    s_ft = zeros(len_pc)
-    s_lt = zeros(len_pc)
-    s_at = zeros(len_pc)
-    x_sc = zeros(len_pc)
-    y_sc = zeros(len_pc)
-    x_tc = zeros(len_pc)
-    y_tc = zeros(len_pc)
-    mass = zeros(len_pc)
-    flap_iner = zeros(len_pc)
-    lag_iner = zeros(len_pc)
-    tw_iner_d = zeros(len_pc)
-    x_cm = zeros(len_pc)
-    y_cm = zeros(len_pc)
-    added_M22 = zeros(length(usedUnitSpan))
-    added_M33 = zeros(length(usedUnitSpan))
 
     # extract the values from the precomp outputs
-    for i_pc = 1:len_pc
-        ei_flap[i_pc] = precompoutput[i_pc].ei_flap
-        ei_lag[i_pc] = precompoutput[i_pc].ei_lag
-        gj[i_pc] = precompoutput[i_pc].gj.*5.1
-        ea[i_pc] = precompoutput[i_pc].ea
-        s_fl[i_pc] = precompoutput[i_pc].s_fl
-        s_af[i_pc] = precompoutput[i_pc].s_af
-        s_al[i_pc] = precompoutput[i_pc].s_al
-        s_ft[i_pc] = precompoutput[i_pc].s_ft
-        s_lt[i_pc] = precompoutput[i_pc].s_lt
-        s_at[i_pc] = precompoutput[i_pc].s_at
-        x_sc[i_pc] = precompoutput[i_pc].x_sc
-        y_sc[i_pc] = precompoutput[i_pc].y_sc
-        x_tc[i_pc] = precompoutput[i_pc].x_tc
-        y_tc[i_pc] = precompoutput[i_pc].y_tc
-        mass[i_pc] = precompoutput[i_pc].mass
-        flap_iner[i_pc] = precompoutput[i_pc].flap_iner
-        lag_iner[i_pc] = precompoutput[i_pc].lag_iner
-        tw_iner_d[i_pc] = precompoutput[i_pc].tw_iner_d
-        x_cm[i_pc] = precompoutput[i_pc].x_cm
-        y_cm[i_pc] = precompoutput[i_pc].y_cm
+    ei_flap = map(pco -> pco.ei_flap, precompoutput)
+    ei_lag = map(pco -> pco.ei_lag, precompoutput)
+    gj = map(pco -> pco.gj * 5.1, precompoutput)
+    ea = map(pco -> pco.ea, precompoutput)
+    s_fl = map(pco -> pco.s_fl, precompoutput)
+    s_af = map(pco -> pco.s_af, precompoutput)
+    s_al = map(pco -> pco.s_al, precompoutput)
+    s_ft = map(pco -> pco.s_ft, precompoutput)
+    s_lt = map(pco -> pco.s_lt, precompoutput)
+    s_at = map(pco -> pco.s_at, precompoutput)
+    x_sc = map(pco -> pco.x_sc, precompoutput)
+    y_sc = map(pco -> pco.y_sc, precompoutput)
+    x_tc = map(pco -> pco.x_tc, precompoutput)
+    y_tc = map(pco -> pco.y_tc, precompoutput)
+    mass = map(pco -> pco.mass, precompoutput)
+    flap_iner = map(pco -> pco.flap_iner, precompoutput)
+    lag_iner = map(pco -> pco.lag_iner, precompoutput)
+    tw_iner_d = map(pco -> pco.tw_iner_d, precompoutput)
+    x_cm = map(pco -> pco.x_cm, precompoutput)
+    y_cm = map(pco -> pco.y_cm, precompoutput)
+
+    MT = if precompinputs !== nothing
+        eltype(precompinputs[1].xnode)
+    else
+        NT
     end
+    added_M22 = zeros(MT, length(usedUnitSpan))
+    added_M33 = zeros(MT, length(usedUnitSpan))
 
     # Now create the splines and sample them at the used span
     origUnitSpan = numadIn.span./numadIn.span[end]
@@ -2230,10 +2232,11 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     if !isnothing(precompinputs)
         # Airfoil data for visualization
         # Spline the airfoil data to a common size
-        myxafpc = zeros(length(precompinputs),N_airfoil_coord*2-1)
-        myyafpc = zeros(length(precompinputs),N_airfoil_coord*2-1)
+        mT = eltype(typeof(precompinputs[1].xnode))
+        myxafpc = zeros(mT, length(precompinputs),N_airfoil_coord*2-1)
+        myyafpc = zeros(mT, length(precompinputs),N_airfoil_coord*2-1)
         myzafpc = numadIn.span./maximum(numadIn.span)
-        mychord = zeros(length(precompinputs))
+        mychord = zeros(typeof(precompinputs[1].chord), length(precompinputs))
         for ipci = 1:length(precompinputs)
             mychord[ipci] = precompinputs[ipci].chord
             xaf = precompinputs[ipci].xnode .* mychord[ipci]
@@ -2256,8 +2259,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
             yaf_bot = reverse(yaf[te_idx:end])
 
             # Create new x-arrays for the top and bottom based on the common alignment.  They should be 0 to chord.
-            myxpts_top = LinRange(xaf_top[1],xaf_top[end],N_airfoil_coord)
-            myxpts_bot = LinRange(xaf_bot[1],xaf_bot[end],N_airfoil_coord)
+            myxpts_top = range(xaf_top[1], xaf_top[end]; length = N_airfoil_coord)
+            myxpts_bot = range(xaf_bot[1], xaf_bot[end]; length = N_airfoil_coord)
 
             # Spline the top and bottom curves to the new common discretization
             myypts_top = safeakima(xaf_top,yaf_top,myxpts_top)
@@ -2276,8 +2279,8 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
         end
 
         # Spline the airfoil data to align with the mesh elements
-        myxaf = zeros(length(usedUnitSpan)-1,N_airfoil_coord*2-1)
-        myyaf = zeros(length(usedUnitSpan)-1,N_airfoil_coord*2-1)
+        myxaf = zeros(eltype(myxafpc), length(usedUnitSpan)-1,N_airfoil_coord*2-1)
+        myyaf = zeros(eltype(myyafpc), length(usedUnitSpan)-1,N_airfoil_coord*2-1)
         # myzaf = [usedUnitSpan[i]+(usedUnitSpan[i+1]-usedUnitSpan[i])/2 for i = 1:length(usedUnitSpan)-1]
         myzaf = cumsum(diff(usedUnitSpan)) #TODO: revisit this since the vtk is off unless we use this offset.
         myzaf = myzaf .-= myzaf[1]
@@ -2326,26 +2329,29 @@ function getSectPropsFromOWENSPreComp(usedUnitSpan,numadIn,precompoutput;GX=fals
     end
     if GX #TODO: unify with one call since we always calculate this in preprocessing
 
-        stiff = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
-        mass = Array{Array{Float64,2}, 1}(undef, length(usedUnitSpan)-1)
+        stiff = map(1:(length(usedUnitSpan) - 1)) do i
+            GA = ea_used[i] / 2.6 * 5 / 6
+            [
+                ea_used[i] 0.0 0.0 s_at_used[i] s_af_used[i] s_al_used[i]
+                0.0 GA 0.0 0.0 0.0 0.0
+                0.0 0.0 GA 0.0 0.0 0.0
+                s_at_used[i] 0.0 0.0 gj_used[i] s_ft_used[i] s_lt_used[i]
+                s_af_used[i] 0.0 0.0 s_ft_used[i] ei_flap_used[i] s_fl_used[i]
+                s_al_used[i] 0.0 0.0 s_lt_used[i] s_fl_used[i] ei_lag_used[i]
+            ]
+        end
 
-        for i=1:length(usedUnitSpan)-1
-            GA = ea_used[i]/2.6*5/6
-            stiff[i]= [ea_used[i] 0.0 0.0 s_at_used[i] s_af_used[i] s_al_used[i]
-                            0.0 GA 0.0 0.0 0.0 0.0
-                            0.0 0.0 GA 0.0 0.0 0.0
-                            s_at_used[i] 0.0 0.0 gj_used[i] s_ft_used[i] s_lt_used[i]
-                            s_af_used[i] 0.0 0.0 s_ft_used[i] ei_flap_used[i] s_fl_used[i]
-                            s_al_used[i] 0.0 0.0 s_lt_used[i] s_fl_used[i] ei_lag_used[i]]
-
+        mass = map(1:(length(usedUnitSpan) - 1)) do i
             ux3 = (mass_used[i]*y_cm_used[i])
             ux2 = (mass_used[i]*x_cm_used[i])
-            mass[i] = [mass_used[i] 0.0 0.0 0.0 ux3 -ux2
-                          0.0 mass_used[i]+added_M22[i] 0.0 -ux3 0.0 0.0
-                          0.0 0.0 mass_used[i]+added_M33[i] ux2 0.0 0.0
-                          0.0 -ux3 ux2 flap_iner_used[i]+lag_iner_used[i] 0.0 0.0
-                          ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
-                          -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]]
+            [
+                mass_used[i] 0.0 0.0 0.0 ux3 -ux2
+                0.0 mass_used[i] + added_M22[i] 0.0 -ux3 0.0 0.0
+                0.0 0.0 mass_used[i] + added_M33[i] ux2 0.0 0.0
+                0.0 -ux3 ux2 flap_iner_used[i] + lag_iner_used[i] 0.0 0.0
+                ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
+                -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]
+            ]
         end
 
         return stiff, mass

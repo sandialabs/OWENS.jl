@@ -23,9 +23,11 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_arr
     start = Int.(vcat(mymesh.conn[:,1],myjoint[:,2]))
     stop = Int.(vcat(mymesh.conn[:,2],myjoint[:,3]))
 
-    frames = Array{Array{Float64,2}, 1}(undef, length(start))
-    xaf = zeros(length(start),length(sectionPropsArray[1].xaf))
-    yaf = zeros(length(start),length(sectionPropsArray[1].xaf))
+    NT = promote_type(eltype(myort.Psi_d), eltype(myort.Theta_d), eltype(myort.Twist_d))
+
+    frames = Vector{Matrix{NT}}(undef, length(start))
+    xaf = zeros(NT, length(start), length(sectionPropsArray[1].xaf))
+    yaf = zeros(NT, length(start), length(sectionPropsArray[1].xaf))
 
     for ielem = 1:length(start)
 
@@ -58,8 +60,8 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_arr
             frames[ielem] = [1 0 0; 0 1 0; 0 0 1]
         end
 
-        xaf[ielem,:] = sectionPropsArray[elNum].xaf
-        yaf[ielem,:] = sectionPropsArray[elNum].yaf
+        xaf[ielem, :] .= sectionPropsArray[elNum].xaf
+        yaf[ielem, :] .= sectionPropsArray[elNum].yaf
     end
 
     #Combine everything
@@ -86,7 +88,7 @@ function owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_arr
 
     system = GXBeam.DynamicSystem(assembly)#;prescribed_points=keys(prescribed_conditionsidx))
 
-    sections = zeros(3,length(sectionPropsArray[1].xaf),length(assembly.points))
+    sections = zeros(NT, 3, length(sectionPropsArray[1].xaf), length(assembly.points))
 
     for ipt = 1:length(assembly.points)
 

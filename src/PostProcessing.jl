@@ -114,7 +114,7 @@ function my_getplystrain(nply::AbstractArray{<:Integer,1}, tply::AbstractArray{<
 
     # local strains at top and bottom of each lamina
     # localstrain = [resultantstrain[1:3]+z[k]*resultantstrain[4:6] for k=1:nlam+1]
-    localstrain = zeros(3,nlam+1)
+    localstrain = zeros(eltype(resultantstrain), 3, nlam + 1)
     # 4 is curvature about x axis, 5 is about y axis
     localstrain[1,:] = [resultantstrain[1]+z[k]*resultantstrain[5]+offset[2]*resultantstrain[6] for k=1:nlam+1]
     localstrain[2,:] = [resultantstrain[2]+z[k]*resultantstrain[4] for k=1:nlam+1]
@@ -134,32 +134,36 @@ my_getplystrain(lam.nply, lam.tply, lam.theta, resultantstrain, offset)
 
 
 """ This function sorts out points where the slope changes sign"""
-function sort_peaks(signal::AbstractArray{Float64,1}, dt=collect(1.:length(signal)))
+function sort_peaks(signal::AbstractVector{T}, dt = collect(1.0:length(signal))) where {T}
     slope = diff(signal)
     # Determines if the point is local extremum
     is_extremum = vcat(true, (slope[1:end-1].*slope[2:end]).<=0., true)
     return signal[is_extremum] , dt[is_extremum]
 end
 
-struct Cycle  # This is the information stored for each cycle found
-    count::Float64
-    range::Float64
-    mean::Float64
-    Rvalue::Float64   # value
-    v_s::Float64   # value start
-    t_s::Float64   # time start
-    v_e::Float64   # value end
-    t_e::Float64   # time end
+struct Cycle{T}  # This is the information stored for each cycle found
+    count::T
+    range::T
+    mean::T
+    Rvalue::T   # value
+    v_s::T   # value start
+    t_s::T   # time start
+    v_e::T   # value end
+    t_e::T   # time end
+end
+
+function Cycle(args...)
+    return Cycle(promote(args...)...)
 end
 
 show(io::IO,x::Cycle) = print(io, "Cycle: count=", x.count, ", range=",x.range, ", mean=",x.mean, ", R=", x.Rvalue)
 
-function cycle(count::Float64, v_s::Float64, t_s::Float64, v_e::Float64, t_e::Float64)
+function cycle(count::Number, v_s::Number, t_s::Number, v_e::Number, t_e::Number)
     Cycle(count, abs(v_s-v_e), (v_s+v_e)/2, min(v_s,v_e)/max(v_s,v_e), v_s, t_s, v_e, t_e)
 end
 
 """ Count the cycles from the data """
-function count_cycles(peaks::Array{Float64,1},t::Array{Float64,1})
+function count_cycles(peaks::AbstractVector{T}, t::Array{Float64, 1}) where {T}
     list = copy(peaks) # Makes a copy because they will be sorted in the vectors
     time = copy(t)
     currentindex = 1
@@ -195,19 +199,20 @@ function count_cycles(peaks::Array{Float64,1},t::Array{Float64,1})
     return cycles
 end
 
-mutable struct Cycles_bounds #
-    min_mean::Float64
-    max_mean::Float64
-    max_range::Float64
-    min_R::Float64
-    max_R::Float64
+mutable struct Cycles_bounds{T} #
+    min_mean::T
+    max_mean::T
+    max_range::T
+    min_R::T
+    max_R::T
 end
 
 show(io::IO,x::Cycles_bounds) = print(io, "Cycles_bounds : min mean value=", x.min_mean, ", max mean value=", x.max_mean, ", max range=",x.max_range, ", min R=", x.min_R, ", max R=",x.max_R)
 
 """ Find the minimum and maximum mean value and maximum range from a vector of cycles"""
 function find_boundary_vals(cycles::Array{Cycle,1})
-    bounds = Cycles_bounds(Inf, -Inf, -Inf, Inf, -Inf)
+    InfT = convert(typeof(cycles[1].count), Inf)
+    bounds = Cycles_bounds(InfT, -InfT, -InfT, InfT, -InfT)
     for cycle in cycles
         cycle.mean > bounds.max_mean && setfield!(bounds, :max_mean, cycle.mean)
         cycle.mean < bounds.min_mean && setfield!(bounds, :min_mean, cycle.mean)
@@ -218,8 +223,15 @@ function find_boundary_vals(cycles::Array{Cycle,1})
     return bounds
 end
 
+using ForwardDiff: ForwardDiff
+
 """ Returns the range index where the value is found """
 function find_range(interval::Array{T,1},value) where {T <: Real}
+    # TODO: This discrete counting is most likely incorrect for Dual numbers. Note also
+    #       https://github.com/JuliaDiff/ForwardDiff.jl/pull/481 which changes how some of
+    #       the Dual comparisons work in ForwardDiff version 1 compared to 0.X.
+    interval = ForwardDiff.value.(interval)
+    value = ForwardDiff.value(value)
     for i=1:length(interval)-1
         if interval[i] <= value < interval[i+1]
             return i
@@ -229,8 +241,7 @@ function find_range(interval::Array{T,1},value) where {T <: Real}
             return i
         end
     end
-    println(interval[i])
-    println(interval[i+1])
+    println(interval)
     println(value)
     error("The value is not in range")
 end
@@ -240,7 +251,7 @@ Interval{T} = Union{Array{T,1}, StepRangeLen{T}}
 """ Sums the cycle count given intervals of range_intervals and mean_intervals. The range_intervals and mean_intervals are given in fraction of range size"""
 function sum_cycles(cycles::Array{Cycle,1}, range_intervals::Interval{T}, mean_intervals::Interval{T}) where {T <: Real}
     bounds = find_boundary_vals(cycles)
-    bins = zeros(length(range_intervals)-1, length(mean_intervals)-1)
+    bins = zeros(typeof(cycles[1].count), length(range_intervals) - 1, length(mean_intervals) - 1)
     range_in = (range_intervals*bounds.max_range)/100
     mean_in = (mean_intervals*(bounds.max_mean-bounds.min_mean))/100
     mean_in = mean_in .+ bounds.min_mean
@@ -293,13 +304,13 @@ Convenience function that returns the binned cycles with the corresponding range
 function rainflow(signal;nbins_range=10,nbins_mean=10,m=3,Teq=1)
     extremum, t = sort_peaks(signal) # Sorts the signal to local extrema's, could optionally take a time vector
     cycles = count_cycles(extremum, t) # find all the cycles in the data
-    range_intervals_percent = collect(LinRange(0,100,nbins_range+1)) # User defined intervals can also be specified
-    mean_intervals_perc = collect(LinRange(0,100,nbins_mean+1))
+    range_intervals_percent = collect(range(0, 100; length = nbins_range + 1)) # User defined intervals can also be specified
+    mean_intervals_perc = collect(range(0, 100; length = nbins_mean + 1))
     Ncycles,meanIntervals,rangeIntervals = sum_cycles(cycles, range_intervals_percent, mean_intervals_perc) # Sums the cycles in the given intervals
 
     # get DEL
     rangeIntervalLevels = (rangeIntervals[1:end-1] + rangeIntervals[2:end])./2 # as opposed to the edges
-    equivalentLoad = zeros(nbins_mean)
+    equivalentLoad = zeros(eltype(rangeIntervalLevels), nbins_mean)
     for imean = 1:nbins_mean
         DELs = rangeIntervalLevels.^m .* Ncycles[:,imean] ./ Teq
         equivalentLoad[imean] = sum(DELs) ^ (1/m)
@@ -315,9 +326,10 @@ end
 function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
     precompinput,precompoutput,lam_in,eps_x,eps_z,eps_y,kappa_x,
     kappa_y,kappa_z,numadIn;failmethod = "maxstress",CLT=false,upper=true,layer=-1,calculate_fatigue=true)
-    topstrainout = zeros(length(eps_x[:,1]),lencomposites_span,length(lam_in[1,:]),9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
+    # TODO: The type here may depend on other input too, not just `eps_x`.
+    topstrainout = zeros(eltype(eps_x), length(eps_x[:, 1]), lencomposites_span, length(lam_in[1, :]), 9) # time, span, lam, x,y, Assumes you use zero plies for sections that aren't used
 
-    damage = zeros(lencomposites_span,length(lam_in[1,:])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
+    damage = zeros(eltype(eps_x), lencomposites_span, length(lam_in[1, :])) #span length, with number of laminates, with number of plies NOTE: this assumes the number of plies is constant across all span and laminate locations
     for i_station = 1:lencomposites_span
         # i_station = 1
         
@@ -358,7 +370,7 @@ function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
 
             lam = lam_in[i_station,j_lam]
 
-            stress_eachlayer = zeros(length(eps_x[:,1]),length(lam.nply),3) #all timesteps for each stack layer
+            stress_eachlayer = zeros(eltype(eps_x), length(eps_x[:, 1]), length(lam.nply), 3) #all timesteps for each stack layer
 
             mat_idx = [numadIn.stack_mat_types[imat] for imat in lam.matid] # Map from the stack number to the material number
             materials = [plyprops.plies[imat] for imat in mat_idx] # Then get the actual material used
@@ -441,7 +453,7 @@ function calcSF(total_t,stress,SF_ult,SF_buck,lencomposites_span,plyprops,
 
             # Miner's Damage
             if calculate_fatigue
-                damage_layers = zeros(length(lam.nply))
+                damage_layers = zeros(eltype(stress_eachlayer), length(lam.nply))
                 for ilayer = 1:length(lam.nply)
                     #TODO: non-principal stress
                     stressForFatigue = stress_eachlayer[:,ilayer,1]
@@ -693,12 +705,13 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     meanepsilon_y_hist = Statistics.mean(epsilon_y_hist,dims=1)
 
     N_ts = length(epsilon_x_hist[1,1,:])
-    eps_x_bld = zeros(Nbld,N_ts,length(bld_precompinput))
-    eps_z_bld = zeros(Nbld,N_ts,length(bld_precompinput))
-    eps_y_bld = zeros(Nbld,N_ts,length(bld_precompinput))
-    kappa_x_bld = zeros(Nbld,N_ts,length(bld_precompinput))
-    kappa_y_bld = zeros(Nbld,N_ts,length(bld_precompinput))
-    kappa_z_bld = zeros(Nbld,N_ts,length(bld_precompinput))
+    bld_len = length(bld_precompinput)
+    eps_x_bld = zeros(eltype(epsilon_x_hist), Nbld, N_ts, bld_len)
+    eps_y_bld = zeros(eltype(meanepsilon_y_hist), Nbld, N_ts, bld_len)
+    eps_z_bld = zeros(eltype(meanepsilon_z_hist), Nbld, N_ts, bld_len)
+    kappa_x_bld = zeros(eltype(kappa_x_hist), Nbld, N_ts, bld_len)
+    kappa_y_bld = zeros(eltype(kappa_y_hist), Nbld, N_ts, bld_len)
+    kappa_z_bld = zeros(eltype(kappa_z_hist), Nbld, N_ts, bld_len)
     for ibld = 1:Nbld
         startN = Int(AD15bldNdIdxRng[ibld,1])
         stopN = Int(AD15bldNdIdxRng[ibld,2])
@@ -783,13 +796,14 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     #### Get strain values at the tower #####
     ##########################################
 
-    N_ts = length(epsilon_x_hist[1,1,:])
-    eps_x_twr = zeros(1,N_ts,length(twr_precompinput))
-    eps_z_twr = zeros(1,N_ts,length(twr_precompinput))
-    eps_y_twr = zeros(1,N_ts,length(twr_precompinput))
-    kappa_x_twr = zeros(1,N_ts,length(twr_precompinput))
-    kappa_y_twr = zeros(1,N_ts,length(twr_precompinput))
-    kappa_z_twr = zeros(1,N_ts,length(twr_precompinput))
+    N_ts = size(epsilon_x_hist, 3)
+    twr_len = length(twr_precompinput)
+    eps_x_twr = zeros(eltype(epsilon_x_hist), 1, N_ts, twr_len)
+    eps_y_twr = zeros(eltype(meanepsilon_y_hist), 1, N_ts, twr_len)
+    eps_z_twr = zeros(eltype(meanepsilon_z_hist), 1, N_ts, twr_len)
+    kappa_x_twr = zeros(eltype(kappa_x_hist), 1, N_ts, twr_len)
+    kappa_y_twr = zeros(eltype(kappa_y_hist), 1, N_ts, twr_len)
+    kappa_z_twr = zeros(eltype(kappa_z_hist), 1, N_ts, twr_len)
 
     start = 1
     stop = length(mymesh.type[mymesh.type.==1])
@@ -813,9 +827,10 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     #### Calculate Stress At the Blades
     ##########################################
 
-    stress_U = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]),3)
-    SF_ult_U = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]))
-    SF_buck_U = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]))
+    NT = eltype(epsilon_x_hist)
+    stress_U = zeros(NT, N_ts, length(bld_precompinput), size(lam_U_bld, 2), 3)
+    SF_ult_U = zeros(NT, N_ts, length(bld_precompinput), size(lam_U_bld, 2))
+    SF_buck_U = zeros(NT, N_ts, length(bld_precompinput), size(lam_U_bld, 2))
 
     topstrainout_blade_U,topDamage_blade_U = calcSF(total_t,stress_U,SF_ult_U,SF_buck_U,length(bld_precompinput),plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_U_bld,eps_x_bld[1,:,:],eps_z_bld[1,:,:],eps_y_bld[1,:,:],kappa_x_bld[1,:,:],
@@ -832,9 +847,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     printSF(verbosity,SF_ult_U,SF_buck_U,composite_station_idx_U_bld, composite_station_name_U_bld,length(bld_precompinput),lam_U_bld,topDamage_blade_U,delta_t,total_t;useStation=usestationBld)
 
-    stress_L = zeros(N_ts,length(bld_precompinput),length(lam_U_bld[1,:]),3)
-    SF_ult_L = zeros(N_ts,length(bld_precompinput),length(lam_L_bld[1,:]))
-    SF_buck_L = zeros(N_ts,length(bld_precompinput),length(lam_L_bld[1,:]))
+    stress_L = zeros(NT, N_ts, length(bld_precompinput), size(lam_U_bld, 2), 3)
+    SF_ult_L = zeros(NT, N_ts, length(bld_precompinput), size(lam_L_bld, 2))
+    SF_buck_L = zeros(NT, N_ts, length(bld_precompinput), size(lam_L_bld, 2))
 
     topstrainout_blade_L,topDamage_blade_L = calcSF(total_t,stress_L,SF_ult_L,SF_buck_L,length(bld_precompinput),plyprops_bld,
     bld_precompinput,bld_precompoutput,lam_L_bld,eps_x_bld[1,:,:],eps_z_bld[1,:,:],eps_y_bld[1,:,:],kappa_x_bld[1,:,:],
@@ -873,9 +888,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         end
         printSF(verbosity,SF_ult_U_strut,SF_buck_U_strut,composite_station_idx_U_strut, composite_station_name_U_strut,length(strut_precompinput),lam_U_strut,topDamage_strut_U,delta_t,total_t;useStation=usestationStrut)
 
-        stress_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_U_strut[1,:]),3)
-        SF_ult_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_L_strut[1,:]))
-        SF_buck_L_strut = zeros(N_ts,length(strut_precompinput),length(lam_L_strut[1,:]))
+        stress_L_strut = zeros(NT, N_ts, length(strut_precompinput), size(lam_U_strut, 2), 3)
+        SF_ult_L_strut = zeros(NT, N_ts, length(strut_precompinput), size(lam_L_strut, 2))
+        SF_buck_L_strut = zeros(NT, N_ts, length(strut_precompinput), size(lam_L_strut, 2))
 
         topstrainout_strut_L,topDamage_strut_L = calcSF(total_t,stress_L_strut,SF_ult_L_strut,SF_buck_L_strut,length(strut_precompinput),plyprops_strut,
         strut_precompinput,strut_precompoutput,lam_L_strut,eps_x_strut[1,:,:],eps_z_strut[1,:,:],eps_y_strut[1,:,:],kappa_x_strut[1,:,:],
@@ -904,9 +919,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     #### Calculate Stress At the Tower
     ##########################################
 
-    stress_TU = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]),3)
-    SF_ult_TU = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
-    SF_buck_TU = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
+    stress_TU = zeros(NT, N_ts, length(twr_precompinput), size(lam_U_twr, 2), 3)
+    SF_ult_TU = zeros(NT, N_ts, length(twr_precompinput), size(lam_U_twr, 2))
+    SF_buck_TU = zeros(NT, N_ts, length(twr_precompinput), size(lam_U_twr, 2))
 
     topstrainout_tower_U,topDamage_tower_U = calcSF(total_t,stress_TU,SF_ult_TU,SF_buck_TU,length(twr_precompinput),plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr[1,:,:],eps_z_twr[1,:,:],eps_y_twr[1,:,:],kappa_x_twr[1,:,:],
@@ -915,9 +930,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     println("\n\nUPPER TOWER")
     printsf_twr(verbosity,lam_U_twr,SF_ult_TU,SF_buck_TU,length(twr_precompinput),Twr_LE_U_idx,topDamage_tower_U,delta_t,total_t)
 
-    stress_TL = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]),3)
-    SF_ult_TL = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
-    SF_buck_TL = zeros(N_ts,length(twr_precompinput),length(lam_U_twr[1,:]))
+    stress_TL = zeros(NT, N_ts, length(twr_precompinput), size(lam_U_twr, 2), 3)
+    SF_ult_TL = zeros(NT, N_ts, length(twr_precompinput), size(lam_U_twr, 2))
+    SF_buck_TL = zeros(NT, N_ts, length(twr_precompinput), size(lam_U_twr, 2))
 
     topstrainout_tower_L,topDamage_tower_L = calcSF(total_t,stress_TL,SF_ult_TL,SF_buck_TL,length(twr_precompinput),plyprops_twr,
     twr_precompinput,twr_precompoutput,lam_U_twr,eps_x_twr[1,:,:],eps_z_twr[1,:,:],eps_y_twr[1,:,:],kappa_x_twr[1,:,:],
@@ -932,8 +947,9 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
 
     function calcMass(sectionPropsArray,myort)
         mass = 0.0
-        lens = zeros(length(sectionPropsArray))
-        rhoAs = zeros(length(sectionPropsArray))
+        lenT = eltype(myort.Length)
+        lens = zeros(lenT, length(sectionPropsArray))
+        rhoAs = zeros(lenT, length(sectionPropsArray))
         for (i,sectionProp) in enumerate(sectionPropsArray)
             lenEl = 0
             try
@@ -948,7 +964,7 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
         end
         span_array = cumsum(lens)
         spl_rhoa = FLOWMath.Akima(span_array,rhoAs)
-        mass2, error = QuadGK.quadgk(spl_rhoa, span_array[1], span_array[end], atol=1e-10)
+        mass2, _ = quadgk_or_trapz(spl_rhoa, span_array[1], span_array[end], atol=1e-10)
         return mass, mass2
     end
 
@@ -962,6 +978,26 @@ function extractSF(bld_precompinput,bld_precompoutput,plyprops_bld,numadIn_bld,l
     topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
     topDamage_blade_L,topDamage_tower_U,topDamage_tower_L,topDamage_strut_U,topDamage_strut_L,
     stress_U_strut,SF_ult_U_strut,SF_buck_U_strut,stress_L_strut,SF_ult_L_strut,SF_buck_L_strut
+end
+
+using ForwardDiff: ForwardDiff
+
+# TODO: QuadGK isn't happy with Dual endpoints so for Dual numbers this use a simple trapz
+#       integration schema for now. Note that this might be a source for ForwardDiff vs
+#       FiniteDiff discrepancy.
+function quadgk_or_trapz(f::F, start::Float64, stop::Float64; atol) where {F}
+    return QuadGK.quadgk(f, start, stop; atol = atol)
+end
+function quadgk_or_trapz(f::F, start::ForwardDiff.Dual, stop::ForwardDiff.Dual; atol) where {F}
+    npoints = 1000
+    err = nothing
+    x = range(start, stop; length = npoints)
+    y = f.(x)
+    ret = zero(promote_type(eltype(x), eltype(y)))
+    for i in 1:(length(x) - 1)
+        ret += (x[i + 1] - x[i]) * (y[i] + y[i + 1]) / 2
+    end
+    return ret, err
 end
 
 """
