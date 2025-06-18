@@ -366,7 +366,7 @@ function setupOWENS(
     B = 3,
     H = 5.0,
     R = 2.5,
-    shapeZ = collect(LinRange(0, H, Nslices+1)),
+    shapeZ = collect(range(0, H, length = Nslices + 1)),
     shapeX = R .* (1.0 .- 4.0 .* (shapeZ/H .- 0.5) .^ 2),#shapeX_spline(shapeZ)
     ntelem = 10, #tower elements
     nbelem = 60, #blade elements

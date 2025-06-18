@@ -24,16 +24,17 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
 
     
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
-    ForceValHist = [zeros(Int(mesh[iturb].numNodes*6),numAeroTS) for iturb = 1:Nturb]
+    T = Float64 # TODO: This is a placeholer, likely needs to be something else for full AD support.
+    ForceValHist = [zeros(T, Int(mesh[iturb].numNodes*6),numAeroTS) for iturb = 1:Nturb]
     # DOFs are sequential through all nodes
     ForceDof=[collect(1:1:mesh[iturb].numNodes*6) for iturb = 1:Nturb]
 
     for iturb = 1:Nturb
         # Map loads over from advanceTurb
-        Fx_base = zeros(numAeroTS)
-        Fy_base = zeros(numAeroTS)
-        Fz_base = zeros(numAeroTS)
-        Mz_base = zeros(numAeroTS)
+        Fx_base = zeros(T, numAeroTS)
+        Fy_base = zeros(T, numAeroTS)
+        Fz_base = zeros(T, numAeroTS)
+        Mz_base = zeros(T, numAeroTS)
         for i=1:mesh[iturb].numNodes
             ForceValHist[iturb][(i-1)*6+1,:] = Fx[iturb][i,1:numAeroTS]
             ForceValHist[iturb][(i-1)*6+2,:] = Fy[iturb][i,1:numAeroTS]
@@ -111,7 +112,7 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
         end
     end
 
-    spanLocNorm = zeros(NBlade,Nslices)
+    spanLocNorm = zeros(eltype(z3Dnorm), NBlade, Nslices)
 
     for i=1:NBlade
         spanLocNorm[i,:] = z3Dnorm #Note that the lookup for this is not the span position, but the vertical position
