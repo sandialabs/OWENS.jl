@@ -199,6 +199,8 @@ element is forced to be away from the machine for consistency. During
 the meshing process, the component type need to be known in order to get
 this right: Mesh Type: 0-blade 1-tower 2-strut.
 
+Note: Precomp calculates the sectional properties based on the input airfoil geometry.  A change in the leading edge offset will change the sectional properties.  The beam mesh in OWENS always aligns with the precomp defined axis.  This should align with reality, if for example, you define the leading edge offset as the quarter chord (so the beam forces align with the aero definition), then applied forces on the beam will bend with expected coupling, just like an airfoil with forcing that does not correspond to the sectional shear center.  There are terms for "a" in the structural solver, which which are for the internal flutter calculation.  These terms DO NOT offset the sectional property calculation.
+
 ## Marine Considerations
 When we turn on AddedMass_Coeff_Ca>0.0, this causes a few changes.  The added mass is included in the GXBeam 6x6 inertia terms (2,2 and 3,3) since a force coupling is unstable.  This changes the more smooth gravitational and centrifugal loads, so they are offloaded to the aero model, and are handled in the buoyancy and centrifugal force respectively.  Note, that for the GX implementation, this is required, but
 for the Timoshenko implementation, added mass is not coupled to the internal centrifugal force, so one
