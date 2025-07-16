@@ -1,3 +1,4 @@
+__precompile__(false)
 module OWENS
 
 # Custom unregistered (julia) packages
@@ -62,21 +63,32 @@ See the License for the specific language governing permissions and
 limitations under the License.\n")
 end
 
-include("Steady.jl")
-include("Unsteady.jl")
-include("Unsteady_Land.jl")
+# Core utilities and structs
 include("utilities.jl")
-include("Unsteady_utilities.jl")
 include("structs.jl")
-include("meshing_utilities.jl")
-include("setup_utilities.jl")
-include("./PostProcessing.jl")
-include("./visualization.jl")
-include("./AeroMapping.jl")
-include("./fileio.jl")
-include("./gxbeam_conversion.jl")
-include("./SetupTurbine.jl")
-include("./topRunDLC.jl")
-include("./windio.jl")
+
+# Input/Output functionality
+include("io/fileio.jl")
+include("io/windio.jl")
+
+# Preprocessing functionality
+include("preprocessing/meshing_utilities.jl")
+include("preprocessing/setup_utilities.jl")
+include("preprocessing/gxbeam_conversion.jl")
+include("preprocessing/SetupTurbine.jl")
+# include("preprocessing/SetupTurbineHAWT.jl")  # Temporarily disabled due to path variable issues
+# include("preprocessing/SetupTurbine_orig.jl")  # Temporarily disabled
+
+# Runtime functionality
+include("runtime/Steady.jl")
+include("runtime/Unsteady.jl")
+include("runtime/Unsteady_Land.jl")
+include("runtime/Unsteady_utilities.jl")
+include("runtime/topRunDLC.jl")
+
+# Postprocessing functionality
+include("postprocess/PostProcessing.jl")
+include("postprocess/visualization.jl")
+include("postprocess/AeroMapping.jl")
 
 end
