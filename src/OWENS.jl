@@ -89,7 +89,7 @@ include("runtime/Unsteady.jl")
 include("runtime/Unsteady_Land.jl")
 include("runtime/Unsteady_utilities.jl")
 include("runtime/DLCAnalysis.jl")
-include("postprocess/AeroMapping.jl")
+include("runtime/AeroMapping.jl")
 
 ``
 # Postprocessing functionality
