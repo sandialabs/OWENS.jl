@@ -63,27 +63,29 @@ See the License for the specific language governing permissions and
 limitations under the License.\n")
 end
 
-# Core utilities and structs
-include("utilities.jl")
-include("structs.jl")
+# Core functionality - fundamental data structures and configuration
+include("core/ModelingOptions.jl")
+include("core/structs.jl")
+include("core/utilities.jl")
+
 
 # Input/Output functionality
 include("io/fileio.jl")
 include("io/windio.jl")
 
 # Preprocessing functionality
+include("preprocessing/gxbeam_conversion.jl")
 include("preprocessing/meshing_utilities.jl")
 include("preprocessing/setup_utilities.jl")
-include("preprocessing/gxbeam_conversion.jl")
 include("preprocessing/SetupTurbine.jl")
-# include("preprocessing/SetupTurbineHAWT.jl")  # Temporarily disabled due to path variable issues
-# include("preprocessing/SetupTurbine_orig.jl")  # Temporarily disabled
+# include("preprocessing/SetupTurbineHAWT.jl")  # Temporarily disabled
 
 # Runtime functionality
 include("runtime/Steady.jl")
 include("runtime/Unsteady.jl")
 include("runtime/Unsteady_Land.jl")
 include("runtime/Unsteady_utilities.jl")
+include("runtime/DLCAnalysis.jl")
 include("runtime/topRunDLC.jl")
 
 # Postprocessing functionality
