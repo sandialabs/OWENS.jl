@@ -67,6 +67,9 @@ end
 include("core/ModelingOptions.jl")
 include("core/structs.jl")
 include("core/utilities.jl")
+include("core/TurbineModel.jl")
+include("core/InputTranslation.jl")
+include("core/UnifiedDriver.jl")
 
 
 # Input/Output functionality
@@ -86,11 +89,11 @@ include("runtime/Unsteady.jl")
 include("runtime/Unsteady_Land.jl")
 include("runtime/Unsteady_utilities.jl")
 include("runtime/DLCAnalysis.jl")
-include("runtime/topRunDLC.jl")
+include("postprocess/AeroMapping.jl")
 
+``
 # Postprocessing functionality
 include("postprocess/PostProcessing.jl")
 include("postprocess/visualization.jl")
-include("postprocess/AeroMapping.jl")
 
 end
