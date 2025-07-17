@@ -45,7 +45,6 @@ function simpleGenerator(inputs,genSpeed)
 
 end
 
-
 function safeakima(x,y,xpt;extrapolate=false)
     if minimum(xpt)<(minimum(x)-(abs(minimum(x))*0.1+1e-4)) || maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
         msg="Extrapolating on akima spline results in undefined solutions minimum(xpt)<minimum(x) $(minimum(xpt))<$(minimum(x)) or maximum(xpt)>maximum(x) $(maximum(xpt))>$(maximum(x))"
@@ -56,4 +55,37 @@ function safeakima(x,y,xpt;extrapolate=false)
         end
     end
     return FLOWMath.akima(x,y,xpt)
+end
+
+"""
+    setInitConditions(initDisps, numNodes, numDOFPerNode)
+
+Creates the formatted initial conditions array needed by OWENSFEA
+
+#Input
+* `initDisps`: an array of length numDOFPerNode specifying the initial displacement of each DOF
+* `numNodes`: the number of nodes in the given mesh
+* `numDOFPerNode`: the number of unconstrained degrees of freedom calculated in each node
+
+#Output
+* `initCond`: array containing initial conditions.
+    initCond(i,1) node number for init cond i.
+    initCond(i,2) local DOF number for init cond i.
+    initCond(i,3) value for init cond i.
+"""
+function createInitCondArray(initDisps, numNodes, numDOFPerNode)
+    if initDisps == zeros(length(initDisps))
+        initCond = []
+    else
+        initCond = zeros(numNodes*numDOFPerNode, 3)
+        for i = 1:length(initDisps)
+            if initDisps[i] != 0.0
+                dof_initCond = hcat(collect(1:numNodes), ones(Int,numNodes)*i, ones(numNodes)*initDisps[i])
+                initCond[(i-1)*numNodes+1:i*numNodes,:] = dof_initCond
+            end
+        end
+        initCond = initCond[vec(mapslices(col -> any(col .!= 0), initCond, dims = 2)), :] #removes rows of all zeros
+    end
+
+    return initCond
 end
