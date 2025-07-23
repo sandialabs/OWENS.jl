@@ -213,7 +213,7 @@ mutable struct OWENS_Options
     Prescribed_Vinf_Vinf_controlpoints
 
     # Constructor that takes a dictionary
-    function OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+    function OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any}, path::String="")
         # Use get to provide default values for missing fields
         new(
             get(dict_in,:analysisType, "Unsteady"), # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
@@ -225,12 +225,12 @@ mutable struct OWENS_Options
             get(dict_in,:platformActive, false), # flag to indicate if the floating platform model is active.  
             get(dict_in,:topsideOn, true), # flat to be able to turn off the rotor and just run the floating portions
             get(dict_in,:interpOrder, 2), # if platformActive, order used for extrapolating inputs and states, 0 flat, 1 linear, 2 quadratic
-            get(dict_in,:dataOutputFilename, "./default_savename"), # data output filename with path, set to nothing or don't specify to not output anything
+            (file = get(dict_in,:dataOutputFilename, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # data output filename with path, set to nothing or don't specify to not output anything
             get(dict_in,:rigid, false), # this bypasses the structural solve and just mapps the applied loads as the reaction loads, and the deflections remain 0
             get(dict_in,:TOL, 1e-4), # gauss-seidel iteration tolerance - i.e. the two-way iteration tolerance
             get(dict_in,:MAXITER, 300), # gauss-seidel max iterations - i.e. the two-way iterations
             get(dict_in,:verbosity, 2), # verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
-            get(dict_in,:VTKsaveName, "./vtk/windio"), # Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
+            (file = get(dict_in,:VTKsaveName, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # Path and name of the VTK outputs, recommended to put it in its own folder (which it will automatically create if needed)
             get(dict_in,:aeroLoadsOn, 2), # Level of aero coupling 0 structures only, 1 no deformation passed to the aero, 2 two-way coupling, 1.5 last time step's deformations passed to this timesteps aero and no internal iteration.
             get(dict_in,:Prescribed_RPM_time_controlpoints, [0.0,100000.1]), # If controlStrategy is "fixedRPM", array of time control points for the internal spline
             get(dict_in,:Prescribed_RPM_RPM_controlpoints, [17.2,17.2]), # If controlStrategy is "fixedRPM", array of RPM control points for the internal spline
@@ -287,7 +287,7 @@ mutable struct DLC_Options
     DLCParams
 
     # Constructor that takes a dictionary
-    function DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+    function DLC_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any}, path::String="")
         # Use get to provide default values for missing fields
         new(
             get(dict_in,:DLCs,["none"]), # name of DLC
@@ -295,7 +295,7 @@ mutable struct DLC_Options
             get(dict_in,:IEC_std,"\"1-ED3\""), # turbsim input file IEC standard
             get(dict_in,:WindChar,"\"A\""), # turbsim wind charasteric 
             get(dict_in,:WindClass,1), # DLC turbsim wind class
-            get(dict_in,:turbsimsavepath,"./turbsimfiles"), # path where the turbsim files are saved
+            (file = get(dict_in,:turbsimsavepath, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path where the turbsim files are saved
             get(dict_in,:pathtoturbsim,nothing), # path to the turbsim executable
             get(dict_in,:NumGrid_Z,38), # turbsim vertical discretizations 
             get(dict_in,:NumGrid_Y,26), # turbsim horizontal discretizations
@@ -307,7 +307,6 @@ mutable struct DLC_Options
             get(dict_in,:simtime_turbsim,600.0), # turbsim total time, which loops if simtime exceeds turbsim time
             get(dict_in,:RandSeed1,40071), # turbsim random seed number
             get(dict_in,:DLCParams,nothing), # must be filled in with the DLC generator
-            
         )
     end
 end
@@ -483,19 +482,19 @@ mutable struct OWENSOpenFASTWrappers_Options
     WindType
 
     # Constructor that takes a dictionary
-    function OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+    function OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any}, path::String="")
         # Use get to provide default values for missing fields
         new(       
-            get(dict_in,:windINPfilename, nothing), # If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
+            (file = get(dict_in,:windINPfilename, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If ifw or AeroDyn is being used, gets overwritten if using the DLC analysis type, the moordyn file location, like in the unit test
             get(dict_in,:ifw_libfile, nothing), # location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:hd_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:md_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:adi_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:adi_rootname, "/aerodyn"),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:hd_input_file, "none"), # If platformActive, the hydrodyn file location, like in the unit test
-            get(dict_in,:ss_input_file, "none"), # If platformActive, the sea state file location, like in the unit test
-            get(dict_in,:md_input_file, "none"), # If platformActive, the moordyn file location, like in the unit test
-            get(dict_in,:potflowfile, nothing),# If platformActive, the potential flow files location, like in the unit test
+            get(dict_in,:adi_rootname, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            (file = get(dict_in,:hd_input_file, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If platformActive, the hydrodyn file location, like in the unit test
+            (file = get(dict_in,:ss_input_file, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If platformActive, the sea state file location, like in the unit test
+            (file = get(dict_in,:md_input_file, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If platformActive, the moordyn file location, like in the unit test
+            (file = get(dict_in,:potflowfile, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))),# If platformActive, the potential flow files location, like in the unit test
             get(dict_in,:WindType, 3),#Derived parameter, inflowwind wind file type when DLC generator is active, matches inflowwind WindType 
         )
     end
@@ -553,7 +552,7 @@ mutable struct Mesh_Options
     NuMad_mat_xlscsv_file_strut
     
     # Constructor that takes a dictionary
-    function Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+    function Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any}, path::String="")
         # Use get to provide default values for missing fields
         new(       
             get(dict_in,:ntelem, 20), # number of tower elements in each blade, plus nodes wherever there is a component overlap
@@ -570,12 +569,12 @@ mutable struct Mesh_Options
             get(dict_in,:Blade_Height, 54.01123056), # blade height in meters
             get(dict_in,:Blade_Radius, 110.1829092), # blade radius in meters
             get(dict_in,:towerHeight, 3.0), # tower extension height below blades in meters
-            get(dict_in,:NuMad_geom_xlscsv_file_twr, "none"), # path to tower geometry file
-            get(dict_in,:NuMad_mat_xlscsv_file_twr, "none"), # path to tower material file
-            get(dict_in,:NuMad_geom_xlscsv_file_bld, "none"), # path to blade geometry file
-            get(dict_in,:NuMad_mat_xlscsv_file_bld, "none"), # path to blade material file
-            get(dict_in,:NuMad_geom_xlscsv_file_strut, "none"), # path to strut geometry file
-            get(dict_in,:NuMad_mat_xlscsv_file_strut, "none"), # path to strut material file
+            (file = get(dict_in,:NuMad_geom_xlscsv_file_twr, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path to tower geometry file
+            (file = get(dict_in,:NuMad_mat_xlscsv_file_twr, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path to tower material file
+            (file = get(dict_in,:NuMad_geom_xlscsv_file_bld, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path to blade geometry file
+            (file = get(dict_in,:NuMad_mat_xlscsv_file_bld, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path to blade material file
+            (file = get(dict_in,:NuMad_geom_xlscsv_file_strut, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path to strut geometry file
+            (file = get(dict_in,:NuMad_mat_xlscsv_file_strut, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # path to strut material file
         )
     end
 end
@@ -685,7 +684,7 @@ ModelingOptions(yamlInputfile)
     # Output
     * `Unified_Options::Unified_Options`: Struct of structs containing all of the OWENS Options
 """
-function ModelingOptions(yamlInputfile=nothing)
+function ModelingOptions(yamlInputfile=nothing; path="")
 
     if !isnothing(yamlInputfile)
         yamlInput = YAML.load_file(yamlInputfile;dicttype=OrderedCollections.OrderedDict{Symbol,Any})
@@ -697,7 +696,7 @@ function ModelingOptions(yamlInputfile=nothing)
     dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
 
     if haskey(yamlInput,:DLC_Options)
-        dlc_options = DLC_Options(yamlInput[:DLC_Options])
+        dlc_options = DLC_Options(yamlInput[:DLC_Options], path)
     else
         dlc_options = DLC_Options(dummy_dict)
     end
@@ -709,7 +708,7 @@ function ModelingOptions(yamlInputfile=nothing)
     end
 
     if haskey(yamlInput,:OWENS_Options)
-        owens_options = OWENS_Options(yamlInput[:OWENS_Options])
+        owens_options = OWENS_Options(yamlInput[:OWENS_Options], path)
     else
         owens_options = OWENS_Options(dummy_dict)
     end
@@ -721,13 +720,13 @@ function ModelingOptions(yamlInputfile=nothing)
     end
 
     if haskey(yamlInput,:OWENSOpenFASTWrappers_Options)
-        owensopenfastwrappers_options = OWENSOpenFASTWrappers_Options(yamlInput[:OWENSOpenFASTWrappers_Options])
+        owensopenfastwrappers_options = OWENSOpenFASTWrappers_Options(yamlInput[:OWENSOpenFASTWrappers_Options], path)
     else
         owensopenfastwrappers_options = OWENSOpenFASTWrappers_Options(dummy_dict)
     end
 
     if haskey(yamlInput,:Mesh_Options)
-        mesh_options = Mesh_Options(yamlInput[:Mesh_Options])
+        mesh_options = Mesh_Options(yamlInput[:Mesh_Options], path)
     else
         mesh_options = Mesh_Options(dummy_dict)
     end
