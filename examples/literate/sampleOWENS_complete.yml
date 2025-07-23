@@ -1,0 +1,48 @@
+# Complete OWENS Configuration File
+# This file contains all the data from app/OWENS_APP/src/sampleOWENS.yml
+# mapped to the extended Unified_Options structure
+
+# Main OWENS simulation options
+OWENS_Options:
+  analysisType: unsteady
+  AeroModel: AD
+  structuralModel: GX
+  controlStrategy: normal
+  numTS: 20
+  delta_t: 0.01
+
+# Aerodynamic model options
+OWENSAero_Options:
+  Nslices: 30
+  ntheta: 30
+  ifw: false
+  eta: 0.5
+  rho: 1.225
+  Vinf: 17.2
+  RPM: 17.2
+
+# OpenFAST wrapper options
+OWENSOpenFASTWrappers_Options:
+  windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
+  ifw_libfile: null
+  adi_lib: null
+  adi_rootname: null
+  WindType: 1
+
+# Mesh configuration options
+Mesh_Options:
+  ntelem: 20
+  nbelem: 50
+  ncelem: 10
+  nselem: 5
+  turbineType: Darrieus
+  Nbld: 3
+  Blade_Height: 110.1829092
+  Blade_Radius: 54.01123056
+  towerHeight: 3.0
+  NuMad_geom_xlscsv_file_twr: data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv
+  NuMad_mat_xlscsv_file_twr: data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_bld: data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv
+  NuMad_mat_xlscsv_file_bld: data/NuMAD_Materials_SNL_5MW.csv
+  NuMad_geom_xlscsv_file_strut: data/NuMAD_Geom_SNL_5MW_Struts.csv
+  NuMad_mat_xlscsv_file_strut: data/NuMAD_Materials_SNL_5MW.csv

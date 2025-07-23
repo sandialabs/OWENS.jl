@@ -18,112 +18,29 @@
 import OWENS
 import OWENSAero
 #### import PyPlot
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-## runpath = path = splitdir(@__FILE__)[1]
-Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
+# runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
+runpath = path =  splitdir(@__FILE__)[1]
 
-nothing
-
-# Unpack inputs, or you could directly input them here and bypass the file 
-
-verbosity = 1
-
-analysisType = Inp.analysisType
-turbineType = Inp.turbineType
-eta = Inp.eta
-Nbld = Inp.Nbld
-towerHeight = Inp.towerHeight
-rho = Inp.rho
-Vinf = Inp.Vinf
-controlStrategy = Inp.controlStrategy
-RPM = Inp.RPM
-Nslices = Inp.Nslices
-ntheta = Inp.ntheta
-structuralModel = Inp.structuralModel
-ntelem = Inp.ntelem
-nbelem = Inp.nbelem
-ncelem = Inp.ncelem
-nselem = Inp.nselem
-ifw = Inp.ifw
-WindType = Inp.WindType
-AeroModel = Inp.AeroModel
-windINPfilename = "$(path)$(Inp.windINPfilename)"
-ifw_libfile = Inp.ifw_libfile
-if ifw_libfile == "nothing"
-    ifw_libfile = nothing
-end
-Blade_Height = Inp.Blade_Height
-Blade_Radius = Inp.Blade_Radius
-numTS = Inp.numTS
-delta_t = Inp.delta_t
-NuMad_geom_xlscsv_file_twr = "$(path)$(Inp.NuMad_geom_xlscsv_file_twr)"
-NuMad_mat_xlscsv_file_twr = "$(path)$(Inp.NuMad_mat_xlscsv_file_twr)"
-NuMad_geom_xlscsv_file_bld = "$(path)$(Inp.NuMad_geom_xlscsv_file_bld)"
-NuMad_mat_xlscsv_file_bld = "$(path)$(Inp.NuMad_mat_xlscsv_file_bld)"
-NuMad_geom_xlscsv_file_strut = "$(path)$(Inp.NuMad_geom_xlscsv_file_strut)"
-NuMad_mat_xlscsv_file_strut = "$(path)$(Inp.NuMad_mat_xlscsv_file_strut)"
-adi_lib = Inp.adi_lib
-if adi_lib == "nothing"
-    adi_lib = nothing
-end
-adi_rootname = "$(path)$(Inp.adi_rootname)"
-
-B = Nbld
-R = Blade_Radius#177.2022*0.3048 #m
-H = Blade_Height#1.02*R*2 #m
-
-shapeZ = collect(LinRange(0,H,Nslices+1))
-shapeX = R.*(1.0.-4.0.*(shapeZ/H.-.5).^2)#shapeX_spline(shapeZ)
-
-nothing
+# Load the unified options using ModelingOptions with the complete YAML file
+modelingOptions = OWENS.ModelingOptions("$runpath/sampleOWENS_complete.yml", path=path)
 
 # Call the helper function that builds the mesh, calculates the sectional properties,
-# and aligns the sectional properties to the mesh elements, 
+# and aligns the sectional properties to the mesh elements
+# We can now use the ModelingOptions struct directly with setupOWENS
 
-mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
-stiff_twr, stiff_bld,bld_precompinput,
-bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
-    rho,
-    Nslices,
-    ntheta,
-    RPM,
-    Vinf,
-    eta,
-    B,
-    H,
-    R,
-    shapeZ,
-    shapeX,
-    ifw,
-    WindType,
-    delta_t,
-    numTS,
-    adi_lib,
-    adi_rootname,
-    windINPfilename,
-    ifw_libfile,
-    NuMad_geom_xlscsv_file_twr,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS_Cables.csv",
-    NuMad_mat_xlscsv_file_twr,# = "$path/data/NuMAD_Materials_SNL_5MW_D_TaperedTower.csv",
-    NuMad_geom_xlscsv_file_bld,# = "$path/data/NuMAD_Geom_SNL_5MW_ARCUS.csv",
-    NuMad_mat_xlscsv_file_bld,# = "$path/data/NuMAD_Materials_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
-    NuMad_geom_xlscsv_file_strut,
-    NuMad_mat_xlscsv_file_strut,
-    Htwr_base=towerHeight,
-    strut_twr_mountpoint = [0.2,0.8],
-    strut_bld_mountpoint = [0.2,0.8],
-    ntelem, 
-    nbelem, 
-    ncelem,
-    nselem,
-    joint_type = 0,
-    c_mount_ratio = 0.05,
-    AeroModel, #AD, DMS, AC
-    DynamicStallModel="BV",
-    RPI=true,
-    cables_connected_to_blade_base = true,
-    meshtype = turbineType)
+# Method 1: Using the new preprocess_unified_options_setup function
+setup_options = OWENS.preprocess_unified_options_setup(modelingOptions, path)
+
+mymesh, myel, myort, myjoint, sectionPropsArray, mass_twr, mass_bld,
+stiff_twr, stiff_bld, bld_precompinput,
+bld_precompoutput, plyprops_bld, numadIn_bld, lam_U_bld, lam_L_bld,
+twr_precompinput, twr_precompoutput, plyprops_twr, numadIn_twr, lam_U_twr, lam_L_twr, aeroForces, deformAero,
+mass_breakout_blds, mass_breakout_twr, system, assembly, sections, AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(
+    path;
+    setup_options = setup_options,
+    verbosity = 1
+)
+
 
 nothing
 
@@ -178,30 +95,38 @@ else
     AD15On = false
 end
 
-inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
-tocp = [0.0,100000.1],
-Omegaocp = [RPM,RPM] ./ 60,
-tocp_Vinf = [0.0,100000.1],
-Vinfocp = [Vinf,Vinf],
-numTS,
-delta_t,
-AD15On,
-aeroLoadsOn = 2)
+inputs = OWENS.Inputs(;
+    verbosity,
+    analysisType = structuralModel,
+    tocp = owens_options.Prescribed_RPM_time_controlpoints,
+    Omegaocp = owens_options.Prescribed_RPM_RPM_controlpoints ./ 60,
+    tocp_Vinf = owens_options.Prescribed_Vinf_time_controlpoints,
+    Vinfocp = owens_options.Prescribed_Vinf_Vinf_controlpoints,
+    numTS,
+    delta_t,
+    AD15On,
+    aeroLoadsOn = owens_options.aeroLoadsOn
+)
 
 nothing
 
 # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options (TODO: ensure that this is propogated to the docs)
 
-feamodel = OWENS.FEAModel(;analysisType = structuralModel,
-dataOutputFilename = "none",
-joint = myjoint,
-platformTurbineConnectionNodeNumber = 1,
-pBC,
-nlOn = true,
-numNodes = mymesh.numNodes,
-RayleighAlpha = 0.05,
-RayleighBeta = 0.05,
-iterationType = "DI")
+# Use OWENSFEA_Options for FEA model parameters
+fea_options = modelingOptions.OWENSFEA_Options
+
+feamodel = OWENS.FEAModel(;
+    analysisType = structuralModel,
+    dataOutputFilename = owens_options.dataOutputFilename,
+    joint = myjoint,
+    platformTurbineConnectionNodeNumber = fea_options.platformTurbineConnectionNodeNumber,
+    pBC,
+    nlOn = fea_options.nlOn,
+    numNodes = mymesh.numNodes,
+    RayleighAlpha = fea_options.RayleighAlpha,
+    RayleighBeta = fea_options.RayleighBeta,
+    iterationType = fea_options.iterationType
+)
 
 nothing
 
