@@ -326,10 +326,10 @@ mutable struct AeroSetupOptions
             "DMS",        # AeroModel
             "BV",         # DynamicStallModel
             100,          # numTS
-            "",           # adi_lib
-            "",           # adi_rootname
-            "",           # windINPfilename
-            "",           # ifw_libfile
+            nothing,           # adi_lib
+            nothing,           # adi_rootname
+            nothing,           # windINPfilename
+            nothing,           # ifw_libfile
             false,        # ifw
             true,         # RPI
             false,        # Aero_AddedMass_Active
@@ -352,10 +352,10 @@ mutable struct AeroSetupOptions
             get(dict, :AeroModel, "DMS"),
             get(dict, :DynamicStallModel, "BV"),
             get(dict, :numTS, 100),
-            get(dict, :adi_lib, ""),
-            get(dict, :adi_rootname, ""),
-            get(dict, :windINPfilename, ""),
-            get(dict, :ifw_libfile, ""),
+            get(dict, :adi_lib, nothing),
+            get(dict, :adi_rootname, "/aerodyn"),
+            get(dict, :windINPfilename, nothing),
+            get(dict, :ifw_libfile, nothing),
             get(dict, :ifw, false),
             get(dict, :RPI, true),
             get(dict, :Aero_AddedMass_Active, false),
@@ -1257,8 +1257,8 @@ function preprocess_unified_options_setup(modelopt, path)
         DynamicStallModel = modelopt.OWENSAero_Options.DynamicStallModel,
         numTS = modelopt.OWENS_Options.numTS,
         adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib,
-        adi_rootname = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.adi_rootname),
-        windINPfilename = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.windINPfilename),
+        adi_rootname = modelopt.OWENSOpenFASTWrappers_Options.adi_rootname,
+        windINPfilename = modelopt.OWENSOpenFASTWrappers_Options.windINPfilename,
         ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile,
         ifw = modelopt.OWENSAero_Options.ifw,
         RPI = modelopt.OWENSAero_Options.RPI,
@@ -1383,10 +1383,10 @@ function preprocess_windio_setup(modelopt, windio, path)
         AeroModel = modelopt.OWENS_Options.AeroModel,
         DynamicStallModel = modelopt.OWENSAero_Options.DynamicStallModel,
         numTS = modelopt.OWENS_Options.numTS,
-        adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib == "nothing" ? nothing : modelopt.OWENSOpenFASTWrappers_Options.adi_lib,
-        adi_rootname = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.adi_rootname),
-        windINPfilename = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.windINPfilename),
-        ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile == "nothing" ? nothing : modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile,
+        adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib,
+        adi_rootname = modelopt.OWENSOpenFASTWrappers_Options.adi_rootname,
+        windINPfilename = modelopt.OWENSOpenFASTWrappers_Options.windINPfilename,
+        ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile,
         ifw = modelopt.OWENSAero_Options.ifw,
         RPI = modelopt.OWENSAero_Options.RPI,
         Aero_AddedMass_Active = modelopt.OWENSAero_Options.Aero_AddedMass_Active,
