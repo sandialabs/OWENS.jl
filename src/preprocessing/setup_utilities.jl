@@ -1153,6 +1153,133 @@ function get_material_mass(
 end
 
 """
+    preprocess_unified_options_setup(modelopt, path)
+
+Creates and populates a SetupOptions instance from the Unified_Options input.
+This is a simplified version of preprocess_windio_setup that doesn't require windio data.
+
+# Arguments
+- `modelopt`: The Unified_Options containing all configuration parameters
+- `path`: The base path for file operations
+
+# Returns
+- `SetupOptions`: A populated SetupOptions instance containing all configuration parameters
+"""
+function preprocess_unified_options_setup(modelopt, path)
+    # Extract basic geometry parameters from Mesh_Options
+    number_of_blades = modelopt.Mesh_Options.Nbld
+    Blade_Height = modelopt.Mesh_Options.Blade_Height
+    Blade_Radius = modelopt.Mesh_Options.Blade_Radius
+    towerHeight = modelopt.Mesh_Options.towerHeight
+    
+    # Calculate derived geometry
+    Htwr_base = towerHeight
+    Htwr_blds = Blade_Height  # This is a simplification, could be refined
+    
+    # Default strut parameters (can be overridden if needed)
+    tower_strut_connection = [0.2, 0.8]
+    blade_strut_connection = [0.2, 0.8]
+    
+    # Extract environment parameters from OWENSAero_Options
+    air_density = modelopt.OWENSAero_Options.rho
+    air_dyn_viscosity = 1.789e-5  # Default value, could be added to options
+    
+    # Create default blade geometry (circular arc approximation)
+    Nslices = modelopt.OWENSAero_Options.Nslices
+    shapeZ = collect(LinRange(0, Blade_Height, Nslices + 1))
+    shapeX = Blade_Radius .* (1.0 .- 4.0 .* (shapeZ ./ Blade_Height .- 0.5).^2)
+    shapeY = zeros(length(shapeZ))
+    
+    # Create mesh options
+    mesh_opts = MeshSetupOptions(
+        Nslices = modelopt.OWENSAero_Options.Nslices,
+        ntheta = modelopt.OWENSAero_Options.ntheta,
+        ntelem = modelopt.Mesh_Options.ntelem,
+        nbelem = modelopt.Mesh_Options.nbelem,
+        ncelem = modelopt.Mesh_Options.ncelem,
+        nselem = modelopt.Mesh_Options.nselem,
+        meshtype = modelopt.Mesh_Options.turbineType,
+        custommesh = nothing,
+        connectBldTips2Twr = modelopt.Mesh_Options.cables_connected_to_blade_base,
+        AD15_ccw = true
+    )
+    
+    # Create tower options
+    tower_opts = TowerSetupOptions(
+        Htwr_base = Htwr_base,
+        Htwr_blds = Htwr_blds,
+        strut_twr_mountpoint = tower_strut_connection,
+        strut_bld_mountpoint = blade_strut_connection,
+        joint_type = modelopt.Mesh_Options.joint_type,
+        c_mount_ratio = modelopt.Mesh_Options.c_mount_ratio,
+        angularOffset = modelopt.Mesh_Options.angularOffset,
+        NuMad_geom_xlscsv_file_twr = joinpath(path, modelopt.Mesh_Options.NuMad_geom_xlscsv_file_twr),
+        NuMad_mat_xlscsv_file_twr = joinpath(path, modelopt.Mesh_Options.NuMad_mat_xlscsv_file_twr),
+        NuMad_geom_xlscsv_file_strut = joinpath(path, modelopt.Mesh_Options.NuMad_geom_xlscsv_file_strut),
+        NuMad_mat_xlscsv_file_strut = joinpath(path, modelopt.Mesh_Options.NuMad_mat_xlscsv_file_strut),
+        strut_tower_joint_type = 2
+    )
+    
+    # Create blade options
+    blade_opts = BladeSetupOptions(
+        B = number_of_blades,
+        H = Blade_Height,
+        R = Blade_Radius,
+        shapeZ = shapeZ,
+        shapeX = shapeX,
+        shapeY = shapeY,
+        NuMad_geom_xlscsv_file_bld = joinpath(path, modelopt.Mesh_Options.NuMad_geom_xlscsv_file_bld),
+        NuMad_mat_xlscsv_file_bld = joinpath(path, modelopt.Mesh_Options.NuMad_mat_xlscsv_file_bld),
+        strut_blade_joint_type = 0,
+        blade_joint_angle_Degrees = 0.0
+    )
+    
+    # Create material options
+    material_opts = MaterialSetupOptions(
+        stack_layers_bld = nothing,
+        stack_layers_scale = [1.0, 1.0],
+        chord_scale = [1.0, 1.0],
+        thickness_scale = [1.0, 1.0],
+        AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca
+    )
+    
+    # Create aero options
+    aero_opts = AeroSetupOptions(
+        rho = air_density,
+        mu = air_dyn_viscosity,
+        RPM = modelopt.OWENSAero_Options.RPM,
+        Vinf = modelopt.OWENSAero_Options.Vinf,
+        eta = modelopt.OWENSAero_Options.eta,
+        delta_t = modelopt.OWENS_Options.delta_t,
+        AD15hubR = modelopt.Mesh_Options.AD15hubR,
+        WindType = modelopt.OWENSOpenFASTWrappers_Options.WindType,
+        AeroModel = modelopt.OWENS_Options.AeroModel,
+        DynamicStallModel = modelopt.OWENSAero_Options.DynamicStallModel,
+        numTS = modelopt.OWENS_Options.numTS,
+        adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib,
+        adi_rootname = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.adi_rootname),
+        windINPfilename = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.windINPfilename),
+        ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile,
+        ifw = modelopt.OWENSAero_Options.ifw,
+        RPI = modelopt.OWENSAero_Options.RPI,
+        Aero_AddedMass_Active = modelopt.OWENSAero_Options.Aero_AddedMass_Active,
+        Aero_RotAccel_Active = modelopt.OWENSAero_Options.Aero_RotAccel_Active,
+        Aero_Buoyancy_Active = modelopt.OWENSAero_Options.Aero_Buoyancy_Active,
+        centrifugal_force_flag = false,
+        AD15On = modelopt.OWENS_Options.AeroModel == "AD"
+    )
+    
+    # Create and return the complete SetupOptions instance
+    return SetupOptions(
+        mesh = mesh_opts,
+        tower = tower_opts,
+        blade = blade_opts,
+        material = material_opts,
+        aero = aero_opts
+    )
+end
+
+"""
     preprocess_windio_setup(modelopt, windio, path)
 
 Creates and populates a SetupOptions instance from the windio and modelopt inputs.
@@ -1257,8 +1384,8 @@ function preprocess_windio_setup(modelopt, windio, path)
         DynamicStallModel = modelopt.OWENSAero_Options.DynamicStallModel,
         numTS = modelopt.OWENS_Options.numTS,
         adi_lib = modelopt.OWENSOpenFASTWrappers_Options.adi_lib == "nothing" ? nothing : modelopt.OWENSOpenFASTWrappers_Options.adi_lib,
-        adi_rootname = "$(path)$(modelopt.OWENSOpenFASTWrappers_Options.adi_rootname)",
-        windINPfilename = "$(path)$(modelopt.OWENSOpenFASTWrappers_Options.windINPfilename)",
+        adi_rootname = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.adi_rootname),
+        windINPfilename = joinpath(path, modelopt.OWENSOpenFASTWrappers_Options.windINPfilename),
         ifw_libfile = modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile == "nothing" ? nothing : modelopt.OWENSOpenFASTWrappers_Options.ifw_libfile,
         ifw = modelopt.OWENSAero_Options.ifw,
         RPI = modelopt.OWENSAero_Options.RPI,

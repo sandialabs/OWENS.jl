@@ -320,12 +320,15 @@ OWENSAero_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `Nslices`: default 20, number of 3-D slices for the strip method to go from 2D to 3D considering curved deforming blades
     * `ntheta`: default 30, number of azimuthal discretizations
     * `ifw`: default false, use the inflow wind coupling to get inflow velocities TODO: change ifw to inflowwind inflowwind_active etc everywhere
-    * `DynamicStallModel`: defaultBV", dynamic stall model, should be under an OWENSAero options
+    * `DynamicStallModel`: default "BV", dynamic stall model, should be under an OWENSAero options
     * `RPI`: default true, rotating point iterative method (i.e. it just calculates at the blade positions and is much faster)
     * `Aero_Buoyancy_Active`: default false, flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
     * `Aero_AddedMass_Active`: default false, flag to turn added mass forces on, don't turn on if the added mass in the structures are on
     * `Aero_RotAccel_Active`: default false, flag to turn added mass forces on, don't turn on if the added mass in the structures are on
-
+    * `eta`: default 0.5, blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
+    * `rho`: default 1.225, air density in kg/m³
+    * `Vinf`: default 17.2, inflow wind speed in m/s
+    * `RPM`: default 17.2, rotor speed in RPM
 
     # Output
     * `OWENSAero_Options`: 
@@ -339,6 +342,10 @@ mutable struct OWENSAero_Options #TODO: move these downstream to their respectiv
     Aero_Buoyancy_Active
     Aero_AddedMass_Active
     Aero_RotAccel_Active
+    eta
+    rho
+    Vinf
+    RPM
     
     # Constructor that takes a dictionary
     function OWENSAero_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -352,6 +359,10 @@ mutable struct OWENSAero_Options #TODO: move these downstream to their respectiv
             get(dict_in,:Aero_Buoyancy_Active, false), # flag to turn buoyancy on for the blades.  This is likely to be replaced by a different model
             get(dict_in,:Aero_AddedMass_Active, false), # flag to turn added mass forces on, don't turn on if the added mass in the structures are on
             get(dict_in,:Aero_RotAccel_Active, false), # flag to turn added mass forces on, don't turn on if the added mass in the structures are on
+            get(dict_in,:eta, 0.5), # blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
+            get(dict_in,:rho, 1.225), # air density in kg/m³
+            get(dict_in,:Vinf, 17.2), # inflow wind speed in m/s
+            get(dict_in,:RPM, 17.2), # rotor speed in RPM
         )
     end
 end
@@ -492,7 +503,6 @@ end
 
 
 """
-
 Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
    
     # Input
@@ -505,7 +515,17 @@ Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `c_mount_ratio`: default 0.05, for ARCUS, where the cable mounts on the lower side of the blade
     * `AD15hubR`: default 0.1, parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
     * `cables_connected_to_blade_base`: default true, for ARCUS, for the two part simulation of the blade bending
-    * `turbineType`: default "Darrieus", mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not. 
+    * `turbineType`: default "Darrieus", mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
+    * `Nbld`: default 3, number of blades
+    * `Blade_Height`: default 54.01123056, blade height in meters
+    * `Blade_Radius`: default 110.1829092, blade radius in meters
+    * `towerHeight`: default 3.0, tower extension height below blades in meters
+    * `NuMad_geom_xlscsv_file_twr`: default "none", path to tower geometry file
+    * `NuMad_mat_xlscsv_file_twr`: default "none", path to tower material file
+    * `NuMad_geom_xlscsv_file_bld`: default "none", path to blade geometry file
+    * `NuMad_mat_xlscsv_file_bld`: default "none", path to blade material file
+    * `NuMad_geom_xlscsv_file_strut`: default "none", path to strut geometry file
+    * `NuMad_mat_xlscsv_file_strut`: default "none", path to strut material file
             
     # Output
     * `Mesh_Options`: 
@@ -521,6 +541,16 @@ mutable struct Mesh_Options
     AD15hubR
     cables_connected_to_blade_base
     turbineType
+    Nbld
+    Blade_Height
+    Blade_Radius
+    towerHeight
+    NuMad_geom_xlscsv_file_twr
+    NuMad_mat_xlscsv_file_twr
+    NuMad_geom_xlscsv_file_bld
+    NuMad_mat_xlscsv_file_bld
+    NuMad_geom_xlscsv_file_strut
+    NuMad_mat_xlscsv_file_strut
     
     # Constructor that takes a dictionary
     function Mesh_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -536,6 +566,16 @@ mutable struct Mesh_Options
             get(dict_in,:AD15hubR, 0.1), # parameter, used in aerodyn coupling for the hub radius so that the vortex sheets don't go within the hub
             get(dict_in,:cables_connected_to_blade_base, true), # for ARCUS, for the two part simulation of the blade bending
             get(dict_in,:turbineType, "Darrieus"), #mesh Darrieus, H-VAWT, controls if the tips of the blades are joined to the tower in the mesh or not.
+            get(dict_in,:Nbld, 3), # number of blades
+            get(dict_in,:Blade_Height, 54.01123056), # blade height in meters
+            get(dict_in,:Blade_Radius, 110.1829092), # blade radius in meters
+            get(dict_in,:towerHeight, 3.0), # tower extension height below blades in meters
+            get(dict_in,:NuMad_geom_xlscsv_file_twr, "none"), # path to tower geometry file
+            get(dict_in,:NuMad_mat_xlscsv_file_twr, "none"), # path to tower material file
+            get(dict_in,:NuMad_geom_xlscsv_file_bld, "none"), # path to blade geometry file
+            get(dict_in,:NuMad_mat_xlscsv_file_bld, "none"), # path to blade material file
+            get(dict_in,:NuMad_geom_xlscsv_file_strut, "none"), # path to strut geometry file
+            get(dict_in,:NuMad_mat_xlscsv_file_strut, "none"), # path to strut material file
         )
     end
 end
@@ -701,6 +741,87 @@ function ModelingOptions(yamlInputfile=nothing)
     return Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
 end
 
+"""
+    convertMasterInputToUnifiedOptions(masterInput::MasterInput)
+
+Converts a MasterInput struct to Unified_Options by mapping the fields appropriately.
+
+# Arguments
+- `masterInput::MasterInput`: The legacy MasterInput struct
+
+# Returns
+- `Unified_Options`: The new unified options structure
+"""
+function convertMasterInputToUnifiedOptions(masterInput::MasterInput)
+    # Create default option structs
+    dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
+    
+    # Create OWENS_Options with values from MasterInput
+    owens_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
+        :analysisType => masterInput.analysisType,
+        :AeroModel => masterInput.AeroModel,
+        :structuralModel => masterInput.structuralModel,
+        :controlStrategy => masterInput.controlStrategy,
+        :numTS => masterInput.numTS,
+        :delta_t => masterInput.delta_t,
+        :Prescribed_RPM_RPM_controlpoints => [masterInput.RPM],
+        :Prescribed_Vinf_Vinf_controlpoints => [masterInput.Vinf]
+    )
+    owens_options = OWENS_Options(owens_options_dict)
+    
+    # Create OWENSAero_Options with values from MasterInput
+    aero_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
+        :Nslices => masterInput.Nslices,
+        :ntheta => masterInput.ntheta,
+        :ifw => masterInput.ifw,
+        :eta => masterInput.eta,
+        :rho => masterInput.rho,
+        :Vinf => masterInput.Vinf,
+        :RPM => masterInput.RPM
+    )
+    owensaero_options = OWENSAero_Options(aero_options_dict)
+    
+    # Create Mesh_Options with values from MasterInput
+    mesh_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
+        :ntelem => masterInput.ntelem,
+        :nbelem => masterInput.nbelem,
+        :ncelem => masterInput.ncelem,
+        :nselem => masterInput.nselem,
+        :turbineType => masterInput.turbineType,
+        :Nbld => masterInput.Nbld,
+        :Blade_Height => masterInput.Blade_Height,
+        :Blade_Radius => masterInput.Blade_Radius,
+        :towerHeight => masterInput.towerHeight,
+        :NuMad_geom_xlscsv_file_twr => masterInput.NuMad_geom_xlscsv_file_twr,
+        :NuMad_mat_xlscsv_file_twr => masterInput.NuMad_mat_xlscsv_file_twr,
+        :NuMad_geom_xlscsv_file_bld => masterInput.NuMad_geom_xlscsv_file_bld,
+        :NuMad_mat_xlscsv_file_bld => masterInput.NuMad_mat_xlscsv_file_bld,
+        :NuMad_geom_xlscsv_file_strut => masterInput.NuMad_geom_xlscsv_file_strut,
+        :NuMad_mat_xlscsv_file_strut => masterInput.NuMad_mat_xlscsv_file_strut
+    )
+    mesh_options = Mesh_Options(mesh_options_dict)
+    
+    # Create OpenFAST wrapper options
+    openfast_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
+        :windINPfilename => masterInput.windINPfilename,
+        :ifw_libfile => masterInput.ifw_libfile,
+        :adi_lib => masterInput.adi_lib,
+        :adi_rootname => masterInput.adi_rootname,
+        :WindType => masterInput.WindType
+    )
+    openfast_options = OWENSOpenFASTWrappers_Options(openfast_options_dict)
+    
+    # Create other options with defaults
+    dlc_options = DLC_Options(dummy_dict)
+    fea_options = OWENSFEA_Options(dummy_dict)
+    drivetrain_options = Drivetrain_Options(dummy_dict)
+    
+    # Create and return the unified options
+    unified_options = Unified_Options(owens_options, dlc_options, owensaero_options, 
+                                    fea_options, openfast_options, mesh_options, drivetrain_options)
+    
+    return unified_options
+end
 
 function Design_Data(file_path=nothing; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")
     # Load the YAML files
