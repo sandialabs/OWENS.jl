@@ -209,21 +209,6 @@ mutable struct Iteration_Parameters
     MAXITER # = 2 #max iteration for various modules
 end
 
-# Cactus Related Structs
-"""
-Internal, struct containing the CACTUS geometry file data
-"""
-mutable struct CactusGeom
-    NBlade
-    NStrut
-    RotN
-    RotP
-    RefAR
-    RefR
-    blade
-    strut
-end
-
 """
 Internal, struct containing the CACTUS geometry file data for a blade
 """
