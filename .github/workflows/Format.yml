@@ -22,7 +22,7 @@ jobs:
           version: '1.10'
 
       - name: Install JuliaFormatter
-        run: julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
+        run: julia -e 'using Pkg; Pkg.add(Pkg.PackageSpec(name="JuliaFormatter", version="2.1.2"))'
 
       - name: Check formatting in src/
         run: |
