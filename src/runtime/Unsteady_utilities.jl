@@ -1,25 +1,27 @@
 """
 Internal, gets specified rotor speed at time
 """
-function omegaSpecCheck(tCurrent,tocp,Omegaocp,delta_t)
+function omegaSpecCheck(tCurrent, tocp, Omegaocp, delta_t)
 
     if (tocp[length(tocp)]<tCurrent)
-        println("Simulation time is greater than that specified in control points for prescribed rotor speed profile.")
+        println(
+            "Simulation time is greater than that specified in control points for prescribed rotor speed profile.",
+        )
         println("Terminating simulation.")
         terminateSimulation = true
         OmegaCurrent = 0.0
         OmegaDotCurrent = 0.0
     else
-        spl = FLOWMath.Akima(tocp,Omegaocp)
+        spl = FLOWMath.Akima(tocp, Omegaocp)
         OmegaCurrent = spl(tCurrent)
-        OmegaDotCurrent = FLOWMath.derivative(spl,tCurrent)
+        OmegaDotCurrent = FLOWMath.derivative(spl, tCurrent)
 
         terminateSimulation = false
         if (isnan(OmegaCurrent) || isnan(OmegaDotCurrent))
             error("Omega calcualted a NaN. Exiting.")
         end
     end
-    return OmegaCurrent,OmegaDotCurrent,terminateSimulation
+    return OmegaCurrent, OmegaDotCurrent, terminateSimulation
 end
 
 """
@@ -32,7 +34,18 @@ Internal, generator definintion
 
 # If shutdown
 
-function internaluserDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,omegadotlast,dt,integrator,omegasetpoint)
+function internaluserDefinedGenerator(
+    newVinf,
+    t,
+    gb_j,
+    omega,
+    omegalast,
+    omegadot,
+    omegadotlast,
+    dt,
+    integrator,
+    omegasetpoint,
+)
     # omega is in hz
     omega_RPM = omega*60
     omegalast_RPM = omegalast*60
@@ -45,25 +58,25 @@ function internaluserDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,om
     #     println("off setpoint $(omegasetpoint*60) RPM $(omega_RPM)")
     #     controllerQ = 0
     # elseif isapprox(omegasetpoint,omega;atol=omegasetpoint*0.07)#operPhase == "normal" #Level controller
-        controlnamecurrent = "normal"
-        # println(" ")
-        # println("normal setpoint $(omegasetpoint*60) RPM $(omega*60)")
-        Kpfactor = 1.0#newVinf^2 / 10.0^2
-        omega_RPM0 = omegasetpoint*60 #33.92871
-        Kp = 10.62992345720471*Kpfactor
-        Ki = 5.2553876053628725*Kpfactor
-        Kd = 0.0
-        Q0 = -320.1533668398164*Kpfactor
-        integrator = integrator + (omega_RPM - omega_RPM0)*dt
-        deriv = (omega_RPM-omegalast_RPM)/dt
-        controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator
-        # if t>40.0
-        #     controllerQ = 145.0
-        # end
-        # if omega_RPM<0.0 || t>75.0
-        #     controllerQ = 20*(omega_RPM)
-        # end
-        # println("$t $controllerQ")
+    controlnamecurrent = "normal"
+    # println(" ")
+    # println("normal setpoint $(omegasetpoint*60) RPM $(omega*60)")
+    Kpfactor = 1.0#newVinf^2 / 10.0^2
+    omega_RPM0 = omegasetpoint*60 #33.92871
+    Kp = 10.62992345720471*Kpfactor
+    Ki = 5.2553876053628725*Kpfactor
+    Kd = 0.0
+    Q0 = -320.1533668398164*Kpfactor
+    integrator = integrator + (omega_RPM - omega_RPM0)*dt
+    deriv = (omega_RPM-omegalast_RPM)/dt
+    controllerQ = Q0 + Kp*(omega_RPM) + Kd*deriv + Ki*integrator
+    # if t>40.0
+    #     controllerQ = 145.0
+    # end
+    # if omega_RPM<0.0 || t>75.0
+    #     controllerQ = 20*(omega_RPM)
+    # end
+    # println("$t $controllerQ")
     #     # # Synchronous Generator: 17m generator from SAND-78-0577 x10 and scaled up for rotation rate
     #     # k = 57.6 #N-m-s/rad
     #     # D = 1.27e3 #N-m/rad
@@ -121,7 +134,7 @@ function internaluserDefinedGenerator(newVinf,t,gb_j,omega,omegalast,omegadot,om
     #     controllerQ = 150.0*2
     # end
 
-    return controllerQ*1000,integrator,controlnamecurrent
+    return controllerQ*1000, integrator, controlnamecurrent
 end
 
 """
@@ -141,7 +154,7 @@ the azimuth, speed, and acceleration of the rotor.
 * `rotorSpeed`   rotor speed (Hz) at time
 * `rotorAcceleration` rotor acceleration (Hz/s) at time
 """
-function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
+function getRotorPosSpeedAccelAtTime(t0, time, aziInit, delta_t)
 
     rotorSpeed = userDefinedRotorSpeedProfile(time) #get rotor speed at time
 
@@ -155,18 +168,19 @@ function getRotorPosSpeedAccelAtTime(t0,time,aziInit,delta_t)
     #--------------------------------------------------------------------------
 
     #estimate rotor acceleration with difference calculation
-    rotorAcceleration = diff([omega_m1,omega_p1])/(2*dt)
+    rotorAcceleration = diff([omega_m1, omega_p1])/(2*dt)
 
     #calculate rotor azimuth using trapezoidal rule
-    rotorAzimuth = trapezoidalRule(aziInit,userDefinedRotorSpeedProfile[t0],rotorSpeed,time-t0)
+    rotorAzimuth =
+        trapezoidalRule(aziInit, userDefinedRotorSpeedProfile[t0], rotorSpeed, time-t0)
 
-    return rotorAzimuth,rotorSpeed,rotorAcceleration
+    return rotorAzimuth, rotorSpeed, rotorAcceleration
 end
 
 """
 Internal, simple trapezoidal rule integration
 """
-function trapezoidalRule(aziInit,rotorSpeedStart,rotorSpeedEnd,dt)
+function trapezoidalRule(aziInit, rotorSpeedStart, rotorSpeedEnd, dt)
     return (aziInit + 0.5*dt*(rotorSpeedStart+rotorSpeedEnd)/(2*pi))
 end
 
@@ -179,36 +193,36 @@ which assumes small rotations. A full description of this matrix is found in the
 "FASTCoordinateSystems.doc" document by Jason Jonkman.
 """
 function transMat(theta1, theta2, theta3)
-    theta11      = theta1 * theta1
-    theta22      = theta2 * theta2
-    theta33      = theta3 * theta3
+    theta11 = theta1 * theta1
+    theta22 = theta2 * theta2
+    theta33 = theta3 * theta3
 
-    sqrdSum      = theta11 + theta22 + theta33
-    sqrt1sqrdSum = sqrt( 1.0 + sqrdSum )
-    comDenom     = sqrdSum * sqrt1sqrdSum
+    sqrdSum = theta11 + theta22 + theta33
+    sqrt1sqrdSum = sqrt(1.0 + sqrdSum)
+    comDenom = sqrdSum * sqrt1sqrdSum
 
-    theta12S     = theta1 * theta2 * ( sqrt1sqrdSum - 1.0 )
-    theta13S     = theta1 * theta3 * ( sqrt1sqrdSum - 1.0 )
-    theta23S     = theta2 * theta3 * ( sqrt1sqrdSum - 1.0 )
+    theta12S = theta1 * theta2 * (sqrt1sqrdSum - 1.0)
+    theta13S = theta1 * theta3 * (sqrt1sqrdSum - 1.0)
+    theta23S = theta2 * theta3 * (sqrt1sqrdSum - 1.0)
 
 
     # Define the transformation matrix:
-    transMat = Array{Float32}(undef, 3,3)
+    transMat = Array{Float32}(undef, 3, 3)
     if comDenom == 0.0  # All angles are zero and matrix is ill-conditioned (the matrix is derived assuming that the angles are not zero); return identity
 
         transMat = LinearAlgebra.I(3)
 
     else  # At least one angle is nonzero
 
-        transMat[1,1] = ( theta11*sqrt1sqrdSum + theta22              + theta33              ) / comDenom
-        transMat[2,2] = ( theta11              + theta22*sqrt1sqrdSum + theta33              ) / comDenom
-        transMat[3,3] = ( theta11              + theta22              + theta33*sqrt1sqrdSum ) / comDenom
-        transMat[1,2] = (  theta3*sqrdSum + theta12S ) / comDenom
-        transMat[2,1] = ( -theta3*sqrdSum + theta12S ) / comDenom
-        transMat[1,3] = ( -theta2*sqrdSum + theta13S ) / comDenom
-        transMat[3,1] = (  theta2*sqrdSum + theta13S ) / comDenom
-        transMat[2,3] = (  theta1*sqrdSum + theta23S ) / comDenom
-        transMat[3,2] = ( -theta1*sqrdSum + theta23S ) / comDenom
+        transMat[1, 1] = (theta11*sqrt1sqrdSum + theta22 + theta33) / comDenom
+        transMat[2, 2] = (theta11 + theta22*sqrt1sqrdSum + theta33) / comDenom
+        transMat[3, 3] = (theta11 + theta22 + theta33*sqrt1sqrdSum) / comDenom
+        transMat[1, 2] = (theta3*sqrdSum + theta12S) / comDenom
+        transMat[2, 1] = (-theta3*sqrdSum + theta12S) / comDenom
+        transMat[1, 3] = (-theta2*sqrdSum + theta13S) / comDenom
+        transMat[3, 1] = (theta2*sqrdSum + theta13S) / comDenom
+        transMat[2, 3] = (theta1*sqrdSum + theta23S) / comDenom
+        transMat[3, 2] = (-theta1*sqrdSum + theta23S) / comDenom
 
     end
 
@@ -252,12 +266,12 @@ respectively.
 * `Fexternal`: vector of external loads (forces/moments)
 * `Fdof`:      vector of corresponding DOF numbers to apply loads to
 """
-function externalForcing(time,timeArray,ForceValHist,ForceDof)
+function externalForcing(time, timeArray, ForceValHist, ForceDof)
 
-    Fexternal = zeros( length(ForceDof))
+    Fexternal = zeros(length(ForceDof))
 
     for i = 1:length(ForceDof)
-        Fexternal[i] = FLOWMath.linear(timeArray,ForceValHist[i,:],time)
+        Fexternal[i] = FLOWMath.linear(timeArray, ForceValHist[i, :], time)
     end
     Fdof = ForceDof
 
@@ -280,7 +294,13 @@ Internal, calculates reaction torque of driveshaft
 #Output
 * `torque`: reaction torque of drive shaft
 """
-function calculateDriveShaftReactionTorque(driveShaftProps,thetaRotor,thetaGB,thetaDotRotor,thetaDotGB)
+function calculateDriveShaftReactionTorque(
+    driveShaftProps,
+    thetaRotor,
+    thetaGB,
+    thetaDotRotor,
+    thetaDotGB,
+)
 
     k = driveShaftProps.k  #drive shaft stiffness
     c = driveShaftProps.c  #drive shaft damping
@@ -313,18 +333,36 @@ Internal, updates the rotor rotation given rotor properties and external torques
 * `OmegaDot_sp1`:  rotor acceleration (Hz/s) at end of time step
 
 """
-function updateRotorRotation(Irotor,Crotor,Krotor,shaftTorque,genTorque,azi_s,Omega_s,OmegaDot_s, delta_t)
+function updateRotorRotation(
+    Irotor,
+    Crotor,
+    Krotor,
+    shaftTorque,
+    genTorque,
+    azi_s,
+    Omega_s,
+    OmegaDot_s,
+    delta_t,
+)
 
     Frotor = shaftTorque + genTorque #calculate effective torque on rotor
     Omega_s = Omega_s*2*pi #conversion from Hz to rad/s
     OmegaDot_s = OmegaDot_s*2*pi
-    azi_sp1,Omega_sp1,OmegaDot_sp1,Fhat = timeIntegrateSubSystem(Irotor,Krotor,Crotor,Frotor, #time integrate using Newmark-Beta
-    delta_t,azi_s,Omega_s,OmegaDot_s)
+    azi_sp1, Omega_sp1, OmegaDot_sp1, Fhat = timeIntegrateSubSystem(
+        Irotor,
+        Krotor,
+        Crotor,
+        Frotor, #time integrate using Newmark-Beta
+        delta_t,
+        azi_s,
+        Omega_s,
+        OmegaDot_s,
+    )
 
     Omega_sp1 = Omega_sp1/(2*pi) #convert to Hz, etc.
     OmegaDot_sp1 = OmegaDot_sp1/(2*pi)
 
-    return azi_sp1,Omega_sp1,OmegaDot_sp1,Frotor
+    return azi_sp1, Omega_sp1, OmegaDot_sp1, Frotor
 
 end
 
@@ -351,7 +389,7 @@ Internal, performs integration of a system using the Newmark-Beta method (consta
 * `uddotnp1`:   acceleration at end of time step
 
 """
-function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
+function timeIntegrateSubSystem(M, K, C, F, delta_t, u, udot, uddot)
 
     alpha = 0.5 #constant avg accel scheme
     gamma = 0.5
@@ -369,15 +407,15 @@ function timeIntegrateSubSystem(M,K,C,F,delta_t,u,udot,uddot)
     A = a3*u + a4*udot + a5*uddot
     B = a6*u + a7*udot + a8*uddot
 
-    Khat = K + a3.*M + a6.*C
+    Khat = K + a3 .* M + a6 .* C
     Fhat = F + M*(A') + C*(B')
 
     unp1 = Khat\Fhat
 
     uddotnp1 = a3*(unp1-u) - a4*udot - a5*uddot
-    udotnp1 =  udot + a2*uddot + a1*uddotnp1
+    udotnp1 = udot + a2*uddot + a1*uddotnp1
 
-    return unp1,udotnp1,uddotnp1,Fhat
+    return unp1, udotnp1, uddotnp1, Fhat
 
 end
 
@@ -397,25 +435,32 @@ Internal, calculates predicted values at t_out based on previous values at earli
 """
 function extrap_pred_vals(curr_vals, ts, t_out, interp_order)
 
-    pred_vals = zeros(Float32, length(curr_vals[:,1]))
+    pred_vals = zeros(Float32, length(curr_vals[:, 1]))
 
     # reduce times to relative values (fixes extrapolation problems when t gets large)
     t = ts .- ts[3]
     tout = t_out - ts[3]
 
     if interp_order == 0
-        pred_vals = copy(curr_vals[:,end])
+        pred_vals = copy(curr_vals[:, end])
     elseif interp_order == 1
         k = tout / t[end-1]
         for i = 1:size(curr_vals, 1)
-            pred_vals[i] = curr_vals[i,end] + (curr_vals[i,end-1] - curr_vals[i,end])*k
+            pred_vals[i] = curr_vals[i, end] + (curr_vals[i, end-1] - curr_vals[i, end])*k
         end
     elseif interp_order == 2
         k = tout / (t[end-1]*t[end-2]*(t[end-1]-t[end-2]))
         for i = 1:size(curr_vals, 1)
-            pred_vals[i] =   curr_vals[i,end] +
-            (t[end-2]^2 * (curr_vals[i,end] - curr_vals[i,end-1]) + t[end-1]^2 * (-curr_vals[i,end] + curr_vals[i,end-2]))*k +
-            ((t[end-1]-t[end-2])*curr_vals[i,end] + t[end-2]*curr_vals[i,end-1] - t[end-1]*curr_vals[i,end-2])*k*tout
+            pred_vals[i] =
+                curr_vals[i, end] +
+                (
+                    t[end-2]^2 * (curr_vals[i, end] - curr_vals[i, end-1]) +
+                    t[end-1]^2 * (-curr_vals[i, end] + curr_vals[i, end-2])
+                )*k +
+                (
+                    (t[end-1]-t[end-2])*curr_vals[i, end] + t[end-2]*curr_vals[i, end-1] -
+                    t[end-1]*curr_vals[i, end-2]
+                )*k*tout
         end
     else
         error("interp_order must equal 0, 1, or 2")
@@ -439,7 +484,7 @@ Internal, transfers 6 DOFs element-wise to a new reference frame
 """
 function frame_convert(init_frame_vals, trans_mat)
 
-    out_frame_vals = copy(init_frame_vals).*0.0
+    out_frame_vals = copy(init_frame_vals) .* 0.0
     out_frame_vals[1:3] = trans_mat * init_frame_vals[1:3]
     out_frame_vals[4:6] = trans_mat * init_frame_vals[4:6]
 
@@ -450,7 +495,7 @@ end
 function calcHubRotMat(ptfmRot, azi_j)
 
     CN2P = transMat(ptfmRot[1], ptfmRot[2], ptfmRot[3])
-    CP2H = [cos(azi_j) sin(azi_j) 0; -sin(azi_j) cos(azi_j) 0;0 0 1]
+    CP2H = [cos(azi_j) sin(azi_j) 0; -sin(azi_j) cos(azi_j) 0; 0 0 1]
 
     CN2H = CN2P*CP2H
 
@@ -481,7 +526,7 @@ function calcHydroResidual(accels_new, FHydro_new, FMooring_new, u, FMultiplier)
 
     resid = Vector{Float32}(undef, length(Fnew) + length(accels_new))
     resid[1:length(Fnew)] = u[1:length(Fnew)] - Fnew/FMultiplier
-    resid[length(Fnew)+1:end] = u[length(Fnew)+1:end] - accels_new
+    resid[(length(Fnew)+1):end] = u[(length(Fnew)+1):end] - accels_new
 
     return resid
 end

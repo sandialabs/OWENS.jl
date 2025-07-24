@@ -33,6 +33,16 @@ Please make all feature changes and bug fixes as branches and then
 create pull requests against the dev branch. The dev branch will be
 periodically pulled into master.
 
+## Julia Code Formatting
+
+To ensure code consistency, all Julia code in the `src/` folder must be formatted using [JuliaFormatter.jl](https://github.com/domluna/JuliaFormatter.jl). Formatting is automatically checked in continuous integration (CI) for all changes to the `src/` directory. Contributors are required to run JuliaFormatter locally on the `src/` folder before submitting pull requests. You can do this by running:
+
+```bash
+julia --project -e 'using JuliaFormatter; format("src")'
+```
+
+Only the `src/` folder is required to be formatted. Other folders (such as `examples/` or `test/`) are not currently enforced by CI.
+
 # Glue Code Basic Theory
 
 Due to the nonlinearity and non-closed-form nature of the floating
