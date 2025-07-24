@@ -15,7 +15,7 @@ runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quo
 Inp = OWENS.MasterInput(&quot;$runpath/sampleOWENS.yml&quot;)
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/core/ModelingOptions.jl:729</code></pre><p>Unpack inputs, or you could directly input them here and bypass the file</p><pre><code class="language-julia hljs">verbosity = 1
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/core/ModelingOptions.jl:788</code></pre><p>Unpack inputs, or you could directly input them here and bypass the file</p><pre><code class="language-julia hljs">verbosity = 1
 
 analysisType = Inp.analysisType
 turbineType = Inp.turbineType
@@ -282,7 +282,7 @@ sectionPropsArray_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,b
 stiff_bld, mass_bld = OWENS.getSectPropsFromOWENSPreComp(spanpos,numadIn_bld,bld_precompoutput;GX=true)
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659</code></pre><p>Similarly for the struts, we do what was done for the blades</p><pre><code class="language-julia hljs">numadIn_strut = Array{OWENS.NuMad, 1}(undef, Nstrutperbld)
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747</code></pre><p>Similarly for the struts, we do what was done for the blades</p><pre><code class="language-julia hljs">numadIn_strut = Array{OWENS.NuMad, 1}(undef, Nstrutperbld)
 strut_precompoutput = Array{Array{OWENS.OWENSPreComp.Output, 1},1}(undef, Nstrutperbld)
 strut_precompinput = Array{Array{OWENS.OWENSPreComp.Input, 1},1}(undef, Nstrutperbld)
 plyprops_strut = Array{OWENS.plyproperties, 1}(undef, Nstrutperbld)
@@ -366,9 +366,9 @@ nothing</code></pre><pre class="documenter-example-output"><code class="nohighli
 ┌ Warning: Assignment to `yscale` in soft scope is ambiguous because a global variable by the same name exists: `yscale` will be treated as a new local. Disambiguate by using `local yscale` to suppress this warning or `global yscale` to assign to the existing global variable.
 └ @ C_customizablePreprocessing.md:439
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659</code></pre><p>Here we combine the section properties into an array matching the mesh elements</p><pre><code class="language-julia hljs">bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747</code></pre><p>Here we combine the section properties into an array matching the mesh elements</p><pre><code class="language-julia hljs">bldssecprops = collect(Iterators.flatten(fill(sectionPropsArray_bld, Nbld)))
 #### strutssecprops = collect(Iterators.flatten(fill(sectionPropsArray_strut, Nstrutperbld*Nbld)))
 
 if meshtype == &quot;ARCUS&quot;
@@ -641,8 +641,8 @@ nothing</code></pre><pre class="documenter-example-output"><code class="nohighli
   - Date: Nov  5 2024
   - Time: 02:19:23
  Execution Info:
-  - Date: 07/23/2025
-  - Time: 10:54:41+0000
+  - Date: 07/24/2025
+  - Time: 15:19:01+0000
 
  Running ADI.
  Running AeroDyn.
@@ -780,17 +780,17 @@ Running in specified rotor speed mode
 5.3%┣██▎                                        ┫ 1/19 [00:00&lt;Inf:Inf, InfGs/it]
  [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
  subsequent occurences.
-10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:40, 2s/it]
+10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:34, 2s/it]
 15.8%┣███████▍                                       ┫ 3/19 [00:04&lt;00:29, 2s/it]
 21.1%┣██████████                                     ┫ 4/19 [00:05&lt;00:25, 2s/it]
 26.3%┣████████████▍                                  ┫ 5/19 [00:06&lt;00:22, 2s/it]
 31.6%┣██████████████▉                                ┫ 6/19 [00:07&lt;00:19, 1s/it]
-36.8%┣█████████████████▎                             ┫ 7/19 [00:08&lt;00:16, 1s/it]
+36.8%┣█████████████████▎                             ┫ 7/19 [00:08&lt;00:17, 1s/it]
 42.1%┣███████████████████▉                           ┫ 8/19 [00:09&lt;00:15, 1s/it]
 47.4%┣██████████████████████▎                        ┫ 9/19 [00:10&lt;00:13, 1s/it]
-52.6%┣████████████████████████▏                     ┫ 10/19 [00:12&lt;00:12, 1s/it]
+52.6%┣████████████████████████▏                     ┫ 10/19 [00:11&lt;00:11, 1s/it]
 57.9%┣██████████████████████████▋                   ┫ 11/19 [00:13&lt;00:10, 1s/it]
-63.2%┣█████████████████████████████                 ┫ 12/19 [00:13&lt;00:08, 1s/it]
+63.2%┣█████████████████████████████                 ┫ 12/19 [00:13&lt;00:09, 1s/it]
 68.4%┣███████████████████████████████▌              ┫ 13/19 [00:14&lt;00:07, 1s/it]
 73.7%┣██████████████████████████████████            ┫ 14/19 [00:15&lt;00:06, 1s/it]
 78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:15&lt;00:04, 1s/it]
@@ -802,7 +802,7 @@ Simulation Complete.
  &gt;&gt;&gt; FINAL WRITE
 Saving VTK time domain files
 ┌ Warning: extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/postprocess/PostProcessing.jl:662
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/postprocess/PostProcessing.jl:929
 Composite Ultimate and Buckling Safety Factors
 
 
@@ -833,4 +833,4 @@ Lower TOWER
 Minimum Safety Factor on tower Surface: 5.634428542931615
 At time 0.019s at composite station 1 of 21 at lam 1 of 1
 Maximum Damage per hr: 5385.041551516965
-At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../B_detailedInputs/">« Detailed Inputs</a><a class="docs-footer-nextpage" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Wednesday 23 July 2025 10:56">Wednesday 23 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../B_detailedInputs/">« Detailed Inputs</a><a class="docs-footer-nextpage" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 24 July 2025 15:20">Thursday 24 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

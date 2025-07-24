@@ -7,7 +7,7 @@ runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quo
 Inp = OWENS.MasterInput(&quot;$runpath/sampleOWENS.yml&quot;)
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/core/ModelingOptions.jl:729</code></pre><p>Unpack inputs, or you could directly input them here and bypass the file</p><pre><code class="language-julia hljs">verbosity = 1
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/core/ModelingOptions.jl:788</code></pre><p>Unpack inputs, or you could directly input them here and bypass the file</p><pre><code class="language-julia hljs">verbosity = 1
 
 analysisType = Inp.analysisType
 turbineType = Inp.turbineType
@@ -114,25 +114,25 @@ Moving strut point from [0.04999999999999998,0.08660254037844388,91.146327041251
 Hub crossing at idx 1 and radially at 0.1 with AD15 hub radius of 0.1
 Moving strut point from [0.05000000000000003,-0.08660254037844385,91.1463270412512] to [0.05000000000000003,-0.08660254037844385,91.1463270412512]
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:659
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee668f59fa694053de285aeb6d77f/lib/libaerodyn_inflow_c_binding.so
 
  **************************************************************************************************
@@ -154,8 +154,8 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
   - Date: Nov  5 2024
   - Time: 02:19:23
  Execution Info:
-  - Date: 07/23/2025
-  - Time: 10:54:17+0000
+  - Date: 07/24/2025
+  - Time: 15:18:36+0000
 
  Running ADI.
  Running AeroDyn.
@@ -170,7 +170,7 @@ Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee66
     k = alpha delta nu:   0.0368
  Running InflowWind.
 ┌ Warning: Not using the componetized model is being depreciated, please consider updating to return_componentized=true
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/preprocessing/SetupTurbine.jl:292</code></pre><p>Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface to work with OWENS inputs as well.</p><pre><code class="language-julia hljs">nothing</code></pre><p>If the sectional properties material files includes cost information, that is combined with the density to estimate the overall material cost of of materials in the blades</p><pre><code class="language-julia hljs">if verbosity&gt;0
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/preprocessing/SetupTurbine.jl:320</code></pre><p>Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl this requires that the OWENS style inputs are converted to the GXBeam inputs.  This interface also includes the ability to output VTK files, which can be viewed in paraview.  We have adapted this interface to work with OWENS inputs as well.</p><pre><code class="language-julia hljs">nothing</code></pre><p>If the sectional properties material files includes cost information, that is combined with the density to estimate the overall material cost of of materials in the blades</p><pre><code class="language-julia hljs">if verbosity&gt;0
 
     println(&quot;\nBlades&#39; Mass Breakout&quot;)
     for (i,name) in enumerate(plyprops_bld.names)
@@ -259,7 +259,7 @@ Running in specified rotor speed mode
  [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
  subsequent occurences.
 10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:33, 2s/it]
-15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:27, 2s/it]
+15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:24, 2s/it]
 21.1%┣██████████                                     ┫ 4/19 [00:04&lt;00:21, 1s/it]
 26.3%┣████████████▍                                  ┫ 5/19 [00:05&lt;00:18, 1s/it]
 31.6%┣██████████████▉                                ┫ 6/19 [00:06&lt;00:15, 1s/it]
@@ -271,9 +271,9 @@ Running in specified rotor speed mode
 63.2%┣█████████████████████████████                 ┫ 12/19 [00:11&lt;00:07, 1it/s]
 68.4%┣███████████████████████████████▌              ┫ 13/19 [00:12&lt;00:06, 1it/s]
 73.7%┣██████████████████████████████████            ┫ 14/19 [00:13&lt;00:05, 1it/s]
-78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:14&lt;00:04, 1it/s]
+78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:13&lt;00:04, 1it/s]
 84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:14&lt;00:03, 1it/s]
-89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:15&lt;00:02, 1it/s]
+89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:14&lt;00:02, 1it/s]
 94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:15&lt;00:01, 1it/s]
 100.0%┣█████████████████████████████████████████████┫ 19/19 [00:16&lt;00:00, 1it/s]
 Simulation Complete.
@@ -304,7 +304,7 @@ Twr_LE_U_idx=1,Twr_LE_L_idx=1,
 AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing) #TODO: add in ability to have material safety factors and load safety factors
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/postprocess/PostProcessing.jl:662
+└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/postprocess/PostProcessing.jl:929
 Composite Ultimate and Buckling Safety Factors
 
 
@@ -335,4 +335,4 @@ Lower TOWER
 Minimum Safety Factor on tower Surface: 19.374748671600052
 At time 0.019s at composite station 14 of 21 at lam 1 of 1
 Maximum Damage per hr: 5385.0415523268375
-At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Wednesday 23 July 2025 10:56">Wednesday 23 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../A_simplyRunningOWENS/">« Simply Running OWENS</a><a class="docs-footer-nextpage" href="../C_customizablePreprocessing/">Customizable Preprocessing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 24 July 2025 15:20">Thursday 24 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
