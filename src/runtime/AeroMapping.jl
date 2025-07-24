@@ -13,21 +13,29 @@ map AD15 forces to OWENS mesh dofs
 * `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
 
 """
-function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbosity=0)
+function mapAD15(
+    t,
+    azi_j,
+    mesh,
+    advanceAD15;
+    numAeroTS = 1,
+    alwaysrecalc = true,
+    verbosity = 0,
+)
     Nturb = length(mesh)
-    n_steps,Fx,Fy,Fz,Mx,My,Mz = advanceAD15(t,mesh,azi_j)
+    n_steps, Fx, Fy, Fz, Mx, My, Mz = advanceAD15(t, mesh, azi_j)
 
     # NOTE on AD15 advanceTurb values (Fx,Fy,Fz,Mx,My,Mz)
     #       - forces/moments are in hub coordinates (converted in advanceAD15)
     #       - array length is the number of OWENS mesh points
     #       - This includes the struts (and could include tower when we add that to the AD15 interface)
 
-    
+
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     T = Float64 # TODO: This is a placeholer, likely needs to be something else for full AD support.
-    ForceValHist = [zeros(T, Int(mesh[iturb].numNodes*6),numAeroTS) for iturb = 1:Nturb]
+    ForceValHist = [zeros(T, Int(mesh[iturb].numNodes*6), numAeroTS) for iturb = 1:Nturb]
     # DOFs are sequential through all nodes
-    ForceDof=[collect(1:1:mesh[iturb].numNodes*6) for iturb = 1:Nturb]
+    ForceDof=[collect(1:1:(mesh[iturb].numNodes*6)) for iturb = 1:Nturb]
 
     for iturb = 1:Nturb
         # Map loads over from advanceTurb
@@ -35,29 +43,31 @@ function mapAD15(t,azi_j,mesh,advanceAD15;numAeroTS = 1,alwaysrecalc=true,verbos
         Fy_base = zeros(T, numAeroTS)
         Fz_base = zeros(T, numAeroTS)
         Mz_base = zeros(T, numAeroTS)
-        for i=1:mesh[iturb].numNodes
-            ForceValHist[iturb][(i-1)*6+1,:] = Fx[iturb][i,1:numAeroTS]
-            ForceValHist[iturb][(i-1)*6+2,:] = Fy[iturb][i,1:numAeroTS]
-            ForceValHist[iturb][(i-1)*6+3,:] = Fz[iturb][i,1:numAeroTS]
-            ForceValHist[iturb][(i-1)*6+4,:] = Mx[iturb][i,1:numAeroTS]
-            ForceValHist[iturb][(i-1)*6+5,:] = My[iturb][i,1:numAeroTS]
-            ForceValHist[iturb][(i-1)*6+6,:] = Mz[iturb][i,1:numAeroTS]
+        for i = 1:mesh[iturb].numNodes
+            ForceValHist[iturb][(i-1)*6+1, :] = Fx[iturb][i, 1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+2, :] = Fy[iturb][i, 1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+3, :] = Fz[iturb][i, 1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+4, :] = Mx[iturb][i, 1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+5, :] = My[iturb][i, 1:numAeroTS]
+            ForceValHist[iturb][(i-1)*6+6, :] = Mz[iturb][i, 1:numAeroTS]
 
-            Fx_base .+= Fx[iturb][i,1:numAeroTS]
-            Fy_base .+= Fy[iturb][i,1:numAeroTS]
-            Fz_base .+= Fz[iturb][i,1:numAeroTS]
+            Fx_base .+= Fx[iturb][i, 1:numAeroTS]
+            Fy_base .+= Fy[iturb][i, 1:numAeroTS]
+            Fz_base .+= Fz[iturb][i, 1:numAeroTS]
 
-            Mz_base .+= Fy[iturb][i,1:numAeroTS].*mesh[iturb].x[i]-Fx[iturb][i,1:numAeroTS].*mesh[iturb].y[i]
+            Mz_base .+=
+                Fy[iturb][i, 1:numAeroTS] .*
+                mesh[iturb].x[i]-Fx[iturb][i, 1:numAeroTS] .* mesh[iturb].y[i]
         end
 
         # TODO: This assumes that the 1st node is the tower connection node, which is constrained so it enables passing of values without using them on the structural side
-        ForceValHist[iturb][1,1:numAeroTS] .= Fx_base
-        ForceValHist[iturb][2,1:numAeroTS] .= Fy_base
-        ForceValHist[iturb][3,1:numAeroTS] .= Fz_base
-        ForceValHist[iturb][6,1:numAeroTS] .= Mz_base
+        ForceValHist[iturb][1, 1:numAeroTS] .= Fx_base
+        ForceValHist[iturb][2, 1:numAeroTS] .= Fy_base
+        ForceValHist[iturb][3, 1:numAeroTS] .= Fz_base
+        ForceValHist[iturb][6, 1:numAeroTS] .= Mz_base
     end
-    
-    return ForceValHist,ForceDof
+
+    return ForceValHist, ForceDof
 end
 
 
@@ -76,13 +86,48 @@ map OWENSAero forces to OWENS mesh dofs
 * `ForceDof::Array(<:int)`: DOF numbers cooresponding to forces (i.e. mesh element 1 has dofs 1-6, 2 has dofs 7-12, etc)
 
 """
-function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,outputfile=nothing,offsetmomentarm=0.0)
-    CP,Rp,Tp,Zp,alpha,cl,cd_af,Vloc,Re,thetavec,n_steps,Fx_base,Fy_base,Fz_base,
-    Mx_base,My_base,Mz_base,power,power2,rev_step,z3Dnorm,delta,Xp,Yp,
-    M_addedmass_Np,M_addedmass_Tp,F_addedmass_Np,F_addedmass_Tp = advanceTurb(t;azi=azi_j,alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
+function mapACDMS(
+    t,
+    azi_j,
+    mesh,
+    el,
+    advanceTurb;
+    numAeroTS = 1,
+    alwaysrecalc = true,
+    outputfile = nothing,
+    offsetmomentarm = 0.0,
+)
+    CP,
+    Rp,
+    Tp,
+    Zp,
+    alpha,
+    cl,
+    cd_af,
+    Vloc,
+    Re,
+    thetavec,
+    n_steps,
+    Fx_base,
+    Fy_base,
+    Fz_base,
+    Mx_base,
+    My_base,
+    Mz_base,
+    power,
+    power2,
+    rev_step,
+    z3Dnorm,
+    delta,
+    Xp,
+    Yp,
+    M_addedmass_Np,
+    M_addedmass_Tp,
+    F_addedmass_Np,
+    F_addedmass_Tp = advanceTurb(t; azi = azi_j, alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
 
-    NBlade = length(Rp[:,1,1])
-    Nslices = length(Rp[1,:,1])
+    NBlade = length(Rp[:, 1, 1])
+    Nslices = length(Rp[1, :, 1])
 
     # Initialize bladeForces
     # TODO: This should be `eltype(Rp)` or similar but currently that return `Real` instead of a concrete type
@@ -94,28 +139,28 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     Z = zeros(TT, NBlade, numAeroTS, Nslices)
     M25 = zeros(TT, NBlade, numAeroTS, Nslices)
 
-    for iTS=1:numAeroTS
+    for iTS = 1:numAeroTS
         if numAeroTS == 1
-            t_idx = length(Rp[1,1,:])
+            t_idx = length(Rp[1, 1, :])
         else
             t_idx = iTS
         end
-        for jbld=1:NBlade
-            for islice=1:Nslices
-                N[jbld,iTS,islice] = Rp[jbld,islice,t_idx] #Normal force on the structure is inward, OWENSAero normal is inward positive #we multiply by cos(delta) to go from force per height to force per span, and then divide by cos(delta) to go from radial to normal, so they cancel
-                T[jbld,iTS,islice] = -Tp[jbld,islice,t_idx]*cos(delta[jbld,islice]) ##Tangential force on the structure is against turbine rotation, OWENSAero tangential is with rotation positive # multiply by delta to convert from force per height to force per span
-                M25[jbld,iTS,islice] = Rp[jbld,islice,t_idx]*offsetmomentarm #0.0#M25perSpan[index]
-                X[jbld,iTS,islice] = Xp[jbld,islice,t_idx]#*cos(-azi_j) + Yp[jbld,islice,t_idx]*sin(-azi_j) #*cos(delta[jbld,islice]) 
-                Y[jbld,iTS,islice] = Yp[jbld,islice,t_idx]#*sin(-azi_j) + Yp[jbld,islice,t_idx]*cos(-azi_j)#*cos(delta[jbld,islice]) 
-                Z[jbld,iTS,islice] = Zp[jbld,islice,t_idx]#*cos(delta[jbld,islice])
+        for jbld = 1:NBlade
+            for islice = 1:Nslices
+                N[jbld, iTS, islice] = Rp[jbld, islice, t_idx] #Normal force on the structure is inward, OWENSAero normal is inward positive #we multiply by cos(delta) to go from force per height to force per span, and then divide by cos(delta) to go from radial to normal, so they cancel
+                T[jbld, iTS, islice] = -Tp[jbld, islice, t_idx]*cos(delta[jbld, islice]) ##Tangential force on the structure is against turbine rotation, OWENSAero tangential is with rotation positive # multiply by delta to convert from force per height to force per span
+                M25[jbld, iTS, islice] = Rp[jbld, islice, t_idx]*offsetmomentarm #0.0#M25perSpan[index]
+                X[jbld, iTS, islice] = Xp[jbld, islice, t_idx]#*cos(-azi_j) + Yp[jbld,islice,t_idx]*sin(-azi_j) #*cos(delta[jbld,islice]) 
+                Y[jbld, iTS, islice] = Yp[jbld, islice, t_idx]#*sin(-azi_j) + Yp[jbld,islice,t_idx]*cos(-azi_j)#*cos(delta[jbld,islice]) 
+                Z[jbld, iTS, islice] = Zp[jbld, islice, t_idx]#*cos(delta[jbld,islice])
             end
         end
     end
 
     spanLocNorm = zeros(eltype(z3Dnorm), NBlade, Nslices)
 
-    for i=1:NBlade
-        spanLocNorm[i,:] = z3Dnorm #Note that the lookup for this is not the span position, but the vertical position
+    for i = 1:NBlade
+        spanLocNorm[i, :] = z3Dnorm #Note that the lookup for this is not the span position, but the vertical position
     end
 
     structuralSpanLocNorm = mesh.structuralSpanLocNorm # this is also just the blade z position
@@ -132,19 +177,43 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     if maximum(structuralSpanLocNorm)>1.0001 || minimum(structuralSpanLocNorm)<-1e-4
         @warn "extrapolating on akima spline, unexpected behavior may occur (very large numbers)."
     end
-    for i=1:NBlade
-        for j=1:numAeroTS
+    for i = 1:NBlade
+        for j = 1:numAeroTS
             # AC and DMS calculate inbetween aero slices, so we add the 0 and 1 normed values here to ensure we don't extrapolate
-            struct_N[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;N[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_T[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;T[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_M25[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;M25[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_X[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;X[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_Y[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;Y[i,j,:];0.0],structuralSpanLocNorm[i,:])
-            struct_Z[i,j,:] = safeakima([0.0;spanLocNorm[i,:];1.0],[0.0;Z[i,j,:];0.0],structuralSpanLocNorm[i,:])
+            struct_N[i, j, :] = safeakima(
+                [0.0; spanLocNorm[i, :]; 1.0],
+                [0.0; N[i, j, :]; 0.0],
+                structuralSpanLocNorm[i, :],
+            )
+            struct_T[i, j, :] = safeakima(
+                [0.0; spanLocNorm[i, :]; 1.0],
+                [0.0; T[i, j, :]; 0.0],
+                structuralSpanLocNorm[i, :],
+            )
+            struct_M25[i, j, :] = safeakima(
+                [0.0; spanLocNorm[i, :]; 1.0],
+                [0.0; M25[i, j, :]; 0.0],
+                structuralSpanLocNorm[i, :],
+            )
+            struct_X[i, j, :] = safeakima(
+                [0.0; spanLocNorm[i, :]; 1.0],
+                [0.0; X[i, j, :]; 0.0],
+                structuralSpanLocNorm[i, :],
+            )
+            struct_Y[i, j, :] = safeakima(
+                [0.0; spanLocNorm[i, :]; 1.0],
+                [0.0; Y[i, j, :]; 0.0],
+                structuralSpanLocNorm[i, :],
+            )
+            struct_Z[i, j, :] = safeakima(
+                [0.0; spanLocNorm[i, :]; 1.0],
+                [0.0; Z[i, j, :]; 0.0],
+                structuralSpanLocNorm[i, :],
+            )
         end
     end
 
-    _,numNodesPerBlade = size(structuralNodeNumbers)
+    _, numNodesPerBlade = size(structuralNodeNumbers)
 
     #integrate over elements
 
@@ -153,20 +222,25 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     #     [~,~,timeLen] = size(aeroDistLoadsArrayTime)
     Fg = zeros(TT, mesh.numNodes * 6, numAeroTS)
     Fg_global = zeros(TT, mesh.numNodes * 6, numAeroTS)
-    for i=1:numAeroTS
+    for i = 1:numAeroTS
         for j = 1:NBlade
-            for k = 1:numNodesPerBlade-1
+            for k = 1:(numNodesPerBlade-1)
                 #get element aero_data
                 # orientation angle,xloc,sectionProps,element order]
-                elNum = Int(structuralElNumbers[j,k])
+                elNum = Int(structuralElNumbers[j, k])
                 #get dof map
-                node1 = Int(structuralNodeNumbers[j,k])
-                node2 = Int(structuralNodeNumbers[j,k+1])
-                dofList = [(node1-1)*numDOFPerNode.+(1:6) (node2-1)*numDOFPerNode.+(1:6)]
+                node1 = Int(structuralNodeNumbers[j, k])
+                node2 = Int(structuralNodeNumbers[j, k+1])
+                dofList =
+                    [(node1-1)*numDOFPerNode .+ (1:6) (node2-1)*numDOFPerNode .+ (1:6)]
 
                 elementOrder = 1
                 x = [mesh.x[node1], mesh.x[node2]]
-                elLength = sqrt((mesh.x[node2]-mesh.x[node1])^2 + (mesh.y[node2]-mesh.y[node1])^2 + (mesh.z[node2]-mesh.z[node1])^2)
+                elLength = sqrt(
+                    (mesh.x[node2]-mesh.x[node1])^2 +
+                    (mesh.y[node2]-mesh.y[node1])^2 +
+                    (mesh.z[node2]-mesh.z[node1])^2,
+                )
                 elHeight = abs(mesh.z[node2]-mesh.z[node1])
                 xloc = [0 elLength]
                 twist = el.props[elNum].twist
@@ -174,18 +248,41 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
                 coneAngle = el.theta[elNum]
                 rollAngle = el.roll[elNum]
 
-                extDistF2Node = [struct_T[j,i,k]    struct_T[j,i,k+1]]
-                extDistF3Node = [struct_N[j,i,k]    struct_N[j,i,k+1]]
-                extDistF4Node = [struct_M25[j,i,k]  struct_M25[j,i,k+1]]
+                extDistF2Node = [struct_T[j, i, k] struct_T[j, i, k+1]]
+                extDistF3Node = [struct_N[j, i, k] struct_N[j, i, k+1]]
+                extDistF4Node = [struct_M25[j, i, k] struct_M25[j, i, k+1]]
 
-                Fe = OWENSFEA.calculateLoadVecFromDistForce(elementOrder,x,xloc,twist,sweepAngle,coneAngle,rollAngle,extDistF2Node,extDistF3Node,extDistF4Node)
-                Fe_global = [struct_X[j,i,k]*elHeight,struct_Y[j,i,k]*elHeight,struct_Z[j,i,k]*elHeight,0.0,0.0,0.0,
-                            struct_X[j,i,k+1]*elHeight,struct_Y[j,i,k+1]*elHeight,struct_Z[j,i,k+1]*elHeight,0.0,0.0,0.0]
+                Fe = OWENSFEA.calculateLoadVecFromDistForce(
+                    elementOrder,
+                    x,
+                    xloc,
+                    twist,
+                    sweepAngle,
+                    coneAngle,
+                    rollAngle,
+                    extDistF2Node,
+                    extDistF3Node,
+                    extDistF4Node,
+                )
+                Fe_global = [
+                    struct_X[j, i, k]*elHeight,
+                    struct_Y[j, i, k]*elHeight,
+                    struct_Z[j, i, k]*elHeight,
+                    0.0,
+                    0.0,
+                    0.0,
+                    struct_X[j, i, k+1]*elHeight,
+                    struct_Y[j, i, k+1]*elHeight,
+                    struct_Z[j, i, k+1]*elHeight,
+                    0.0,
+                    0.0,
+                    0.0,
+                ]
 
                 #assembly
                 for m = 1:length(dofList)
-                    Fg[dofList[m],i] =  Fg[dofList[m],i]+Fe[m]
-                    Fg_global[dofList[m],i] =  Fg_global[dofList[m],i]+Fe_global[m]
+                    Fg[dofList[m], i] = Fg[dofList[m], i]+Fe[m]
+                    Fg_global[dofList[m], i] = Fg_global[dofList[m], i]+Fe_global[m]
                 end
 
             end
@@ -200,12 +297,12 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     ForceValHist = zeros(TT, size(Fg))
     ForceDof = zeros(Int, size(Fg, 1))
     index = 1
-    for i=1:Int(mesh.numNodes*6)
+    for i = 1:Int(mesh.numNodes*6)
         # if !isempty(findall(x->x!=0,Fg[i,:]))
 
-            ForceValHist[index,:] = Fg[i,:]
-            ForceDof[index] = i
-            index = index + 1
+        ForceValHist[index, :] = Fg[i, :]
+        ForceDof[index] = i
+        index = index + 1
         # end
     end
 
@@ -213,69 +310,78 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
         DelimitedFiles.open(string("$(outputfile)_fullmesh.txt"), "a") do io
             if t==0
                 header1 = ["t" "azi" "nodenum" "Fx" "Fy" "Fz" "Mx" "My" "Mz"]
-                header2 = ["(s)" "(rad)" "(#)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
-            
+                header2 =
+                    ["(s)" "(rad)" "(#)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+
                 DelimitedFiles.writedlm(io, header1, '\t')
                 DelimitedFiles.writedlm(io, header2, '\t')
             end
-            Fx = ForceValHist[1:6:end,end]
-            Fy = ForceValHist[2:6:end,end]
-            Fz = ForceValHist[3:6:end,end]
-            Mx = ForceValHist[4:6:end,end]
-            My = ForceValHist[5:6:end,end]
-            Mz = ForceValHist[6:6:end,end]
+            Fx = ForceValHist[1:6:end, end]
+            Fy = ForceValHist[2:6:end, end]
+            Fz = ForceValHist[3:6:end, end]
+            Mx = ForceValHist[4:6:end, end]
+            My = ForceValHist[5:6:end, end]
+            Mz = ForceValHist[6:6:end, end]
             for inode = 1:Int(mesh.numNodes)
 
-                data = [t azi_j inode Fx[inode] Fy[inode] Fz[inode] Mx[inode] My[inode] Mz[inode]]
-        
+                data =
+                    [t azi_j inode Fx[inode] Fy[inode] Fz[inode] Mx[inode] My[inode] Mz[inode]]
+
                 DelimitedFiles.writedlm(io, data, '\t')
-        
+
             end
-        
+
         end
 
         for j = 1:NBlade
             DelimitedFiles.open(string("$(outputfile)_blade$j.txt"), "a") do io
                 if t==0
                     header1 = ["t" "azi" "nodenum" "Fx" "Fy" "Fz" "Mx" "My" "Mz"]
-                    header2 = ["(s)" "(rad)" "(#)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
-                
+                    header2 =
+                        ["(s)" "(rad)" "(#)" "(m/s)" "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
+
                     DelimitedFiles.writedlm(io, header1, '\t')
                     DelimitedFiles.writedlm(io, header2, '\t')
                 end
-                Fx = ForceValHist[1:6:end,end]
-                Fy = ForceValHist[2:6:end,end]
-                Fz = ForceValHist[3:6:end,end]
-                Mx = ForceValHist[4:6:end,end]
-                My = ForceValHist[5:6:end,end]
-                Mz = ForceValHist[6:6:end,end]
+                Fx = ForceValHist[1:6:end, end]
+                Fy = ForceValHist[2:6:end, end]
+                Fz = ForceValHist[3:6:end, end]
+                Mx = ForceValHist[4:6:end, end]
+                My = ForceValHist[5:6:end, end]
+                Mz = ForceValHist[6:6:end, end]
                 for k = 1:numNodesPerBlade
                     #get element aero_data
                     # orientation angle,xloc,sectionProps,element order]
-                    elNum = Int(structuralElNumbers[j,k])
+                    elNum = Int(structuralElNumbers[j, k])
                     #get dof map
-                    inode = Int(structuralNodeNumbers[j,k])
-    
-                    data = [t azi_j inode Fx[inode] Fy[inode] Fz[inode] Mx[inode] My[inode] Mz[inode]]
-            
+                    inode = Int(structuralNodeNumbers[j, k])
+
+                    data =
+                        [t azi_j inode Fx[inode] Fy[inode] Fz[inode] Mx[inode] My[inode] Mz[inode]]
+
                     DelimitedFiles.writedlm(io, data, '\t')
-            
+
                 end
-            
+
             end
         end
     end
 
     # This assumes that the 1st node is the tower connection node, which is constrained so it enables passing of values without using them on the structural side
-    ForceValHist[1,1:numAeroTS] .= Fx_base
-    ForceValHist[2,1:numAeroTS] .= Fy_base
-    ForceValHist[3,1:numAeroTS] .= Fz_base
-    ForceValHist[4,1:numAeroTS] .= Mx_base
-    ForceValHist[5,1:numAeroTS] .= My_base
-    ForceValHist[6,1:numAeroTS] .= Mz_base
+    ForceValHist[1, 1:numAeroTS] .= Fx_base
+    ForceValHist[2, 1:numAeroTS] .= Fy_base
+    ForceValHist[3, 1:numAeroTS] .= Fz_base
+    ForceValHist[4, 1:numAeroTS] .= Mx_base
+    ForceValHist[5, 1:numAeroTS] .= My_base
+    ForceValHist[6, 1:numAeroTS] .= Mz_base
 
     # return Fexternal, Fdof
-    return ForceValHist[:,1:numAeroTS],ForceDof,Fg_global,ForceDof,ForceValHist[:,1:numAeroTS],z3Dnorm
+    return ForceValHist[:, 1:numAeroTS],
+    ForceDof,
+    Fg_global,
+    ForceDof,
+    ForceValHist[:, 1:numAeroTS],
+    z3Dnorm
 end
 
 # """

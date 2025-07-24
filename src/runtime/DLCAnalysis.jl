@@ -1,8 +1,8 @@
 using OrderedCollections: OrderedDict
 using YAML
 
-export DLC_internal, runDLC, getDLCparams, generateUniformwind, generateTurbsimBTS, 
-       getGustVel, simpleGustVel
+export DLC_internal,
+    runDLC, getDLCparams, generateUniformwind, generateTurbsimBTS, getGustVel, simpleGustVel
 
 """
     DLC_internal
@@ -40,34 +40,34 @@ Internal structure for Design Load Case (DLC) analysis parameters and results.
 * `UpflowAngle::Float64`: Upflow angle in degrees
 """
 mutable struct DLC_internal
-    Vinf_range_used
-    analysis_type # "U", "F", "UF"
-    controlStrategy # "constRPM", function handle
-    RandSeed1 # Turbulent Random Seed Number
-    NumGrid_Z # Vertical grid-point matrix dimension
-    NumGrid_Y # Horizontal grid-point matrix dimension
-    TimeStep # Time step [s]
-    HubHt # Hub height [m] (should be > 0.5*GridHeight)
-    AnalysisTime # Length of analysis time series [s] (program will add time if necessary)
-    GridHeight # Grid height [m]
-    GridWidth # Grid width [m] (should be >= 2*(RotorRadius+ShaftLength))
-    VFlowAng # Vertical mean flow (uptilt) angle [degrees]
-    HFlowAng # Horizontal mean flow (skew) angle [degrees]
-    TurbModel # Turbulence model (see Table 4 for valid codes)
-    IECstandard # Number of the IEC standard (61400-x, x=1,2,3) with optional 61400-1 ed. number
-    IECturbc # IEC turbulence characteristic ("A", "B", "C" or TI in %) or KHTEST
-    IEC_WindType # IEC turbulence type ("NTM", "xETM", "xEWM1", or "xEWM50" for x=class 1, 2, or 3)
-    RefHt # Height of the reference wind speed [m]
-    URef # Mean wind speed at the reference height [m/s] [must be 1-hr mean for API model]
-    time
-    windvel
-    winddir
-    windvertvel
-    horizshear
-    pwrLawVertShear
-    LinVertShear
-    gustvel
-    UpflowAngle
+    Vinf_range_used::Any
+    analysis_type::Any # "U", "F", "UF"
+    controlStrategy::Any # "constRPM", function handle
+    RandSeed1::Any # Turbulent Random Seed Number
+    NumGrid_Z::Any # Vertical grid-point matrix dimension
+    NumGrid_Y::Any # Horizontal grid-point matrix dimension
+    TimeStep::Any # Time step [s]
+    HubHt::Any # Hub height [m] (should be > 0.5*GridHeight)
+    AnalysisTime::Any # Length of analysis time series [s] (program will add time if necessary)
+    GridHeight::Any # Grid height [m]
+    GridWidth::Any # Grid width [m] (should be >= 2*(RotorRadius+ShaftLength))
+    VFlowAng::Any # Vertical mean flow (uptilt) angle [degrees]
+    HFlowAng::Any # Horizontal mean flow (skew) angle [degrees]
+    TurbModel::Any # Turbulence model (see Table 4 for valid codes)
+    IECstandard::Any # Number of the IEC standard (61400-x, x=1,2,3) with optional 61400-1 ed. number
+    IECturbc::Any # IEC turbulence characteristic ("A", "B", "C" or TI in %) or KHTEST
+    IEC_WindType::Any # IEC turbulence type ("NTM", "xETM", "xEWM1", or "xEWM50" for x=class 1, 2, or 3)
+    RefHt::Any # Height of the reference wind speed [m]
+    URef::Any # Mean wind speed at the reference height [m/s] [must be 1-hr mean for API model]
+    time::Any
+    windvel::Any
+    winddir::Any
+    windvertvel::Any
+    horizshear::Any
+    pwrLawVertShear::Any
+    LinVertShear::Any
+    gustvel::Any
+    UpflowAngle::Any
 end
 
 """
@@ -84,7 +84,7 @@ runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
     # Output
     * `nothing`: 
 """
-function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
+function runDLC(modelopt, designparams, path; runScript = OWENS.runOWENSWINDIO)
 
     if isa(designparams, String)
         designparams = Design_Data(designparams)
@@ -116,31 +116,49 @@ function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
     end
 
     # Fill in DLC parameters based on model inputs
-    DLCParams = Array{DLC_internal, 1}(undef, length(DLCs))
+    DLCParams = Array{DLC_internal,1}(undef, length(DLCs))
 
     for (iDLC, DLC) in enumerate(DLCs) #TODO parallelize this
 
-        DLCParams[iDLC] = getDLCparams(DLC, modelopt, designparams, Vinf_range, Vdesign, Vref, WindChar,WindClass, IEC_std;grid_oversize,simtime_turbsim,delta_t_turbsim,NumGrid_Z,NumGrid_Y,RandSeed1)
+        DLCParams[iDLC] = getDLCparams(
+            DLC,
+            modelopt,
+            designparams,
+            Vinf_range,
+            Vdesign,
+            Vref,
+            WindChar,
+            WindClass,
+            IEC_std;
+            grid_oversize,
+            simtime_turbsim,
+            delta_t_turbsim,
+            NumGrid_Z,
+            NumGrid_Y,
+            RandSeed1,
+        )
 
         # Run Simulation at each Wind Speed
         for windspeed in DLCParams[iDLC].Vinf_range_used #TODO: parallelize this
 
             DLCParams[iDLC].URef = windspeed
             # Check if turbulent inflow file exists, if not create it
-            windspeedStr = round(windspeed;digits=2)
-            windspeedStr = lpad(windspeedStr,4,"0")
+            windspeedStr = round(windspeed; digits = 2)
+            windspeedStr = lpad(windspeedStr, 4, "0")
             println("Running DLC $DLC at Vinf $windspeedStr m/s")
             windINPfilename = "$turbsimsavepath/DLC$(DLC)Vinf$(windspeedStr).inp"
-            
-            if contains(DLCParams[iDLC].IEC_WindType, "NTM") || contains(DLCParams[iDLC].IEC_WindType, "ETM") || contains(DLCParams[iDLC].IEC_WindType, "EWM")
+
+            if contains(DLCParams[iDLC].IEC_WindType, "NTM") ||
+               contains(DLCParams[iDLC].IEC_WindType, "ETM") ||
+               contains(DLCParams[iDLC].IEC_WindType, "EWM")
                 if !isfile(windINPfilename) || regenWindFiles
-                    generateTurbsimBTS(DLCParams[iDLC],windINPfilename,pathtoturbsim)
+                    generateTurbsimBTS(DLCParams[iDLC], windINPfilename, pathtoturbsim)
                 end
                 modelopt.OWENSOpenFASTWrappers_Options.WindType = 3
                 modelopt.OWENSOpenFASTWrappers_Options.windINPfilename = "$(windINPfilename[1:end-4]).bts"
             else
                 if !isfile(windINPfilename) || regenWindFiles
-                    generateUniformwind(DLCParams[iDLC],windINPfilename)
+                    generateUniformwind(DLCParams[iDLC], windINPfilename)
                 end
                 modelopt.OWENSOpenFASTWrappers_Options.windINPfilename = windINPfilename
                 modelopt.OWENSOpenFASTWrappers_Options.WindType = 2
@@ -150,26 +168,39 @@ function runDLC(modelopt,designparams,path;runScript = OWENS.runOWENSWINDIO)
             modelopt.OWENS_Options.controlStrategy = DLCParams[iDLC].controlStrategy
             modelopt.DLC_Options.DLCParams = DLCParams[iDLC]
             # run owens simulation
-            runScript(modelopt,designparams,path)
+            runScript(modelopt, designparams, path)
         end
     end
 end
 
-function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vref, WindChar, WindClass, IEC_std;
+function getDLCparams(
+    DLC_case,
+    modelopt,
+    designparams,
+    Vinf_range,
+    Vdesign,
+    Vref,
+    WindChar,
+    WindClass,
+    IEC_std;
     RandSeed1 = 40071,
-    grid_oversize=1.2,
-    simtime_turbsim=nothing,
-    delta_t_turbsim=nothing,
-    NumGrid_Z=nothing,
-    NumGrid_Y=nothing)
-    
+    grid_oversize = 1.2,
+    simtime_turbsim = nothing,
+    delta_t_turbsim = nothing,
+    NumGrid_Z = nothing,
+    NumGrid_Y = nothing,
+)
+
     hub_height = designparams[:assembly][:hub_height]
-    blade_x = designparams[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] #Used
-    blade_y = designparams[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values] #Used
-    blade_z = designparams[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
+    blade_x =
+        designparams[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] #Used
+    blade_y =
+        designparams[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values] #Used
+    blade_z =
+        designparams[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values] #Used
     Blade_Height = maximum(blade_z) #TODO: resolve DLC dependence
-    Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
-    
+    Blade_Radius = maximum(sqrt.(blade_x .^ 2 .+ blade_y .^ 2))
+
     Htwr_base = hub_height-Blade_Height/2
 
     Ve50 = 50.0 #TODO change by class etc
@@ -190,7 +221,7 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
         NumGrid_Z = modelopt.Mesh_Options.ntelem+modelopt.Mesh_Options.nbelem
         NumGrid_Y = modelopt.Mesh_Options.nbelem
     end
-    
+
     if !isnothing(simtime_turbsim)
         AnalysisTime = simtime_turbsim
     else
@@ -199,11 +230,11 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
 
     VFlowAng = 0.0
     HFlowAng = 0.0
-    
+
     IECstandard = IEC_std
     IECturbc = WindChar
     TurbModel = "\"IECKAI\""
-    
+
     RefHt = round(HubHt)
     URef = 0.0 #gets filled in later from the Vinf_range when the .bst is generated
 
@@ -213,43 +244,43 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
         TimeStep = delta_t
     end
 
-    time = LinRange(0,10,10)
+    time = LinRange(0, 10, 10)
     windvel = nothing # gets supersceded   
-    winddir = nothing  
-    windvertvel = nothing  
-    horizshear = nothing  
-    pwrLawVertShear = nothing  
-    LinVertShear = nothing  
-    gustvel = nothing  
-    UpflowAngle = nothing  
+    winddir = nothing
+    windvertvel = nothing
+    horizshear = nothing
+    pwrLawVertShear = nothing
+    LinVertShear = nothing
+    gustvel = nothing
+    UpflowAngle = nothing
 
-    if contains(IEC_std,"1-")
+    if contains(IEC_std, "1-")
         if DLC_case == "1_1" || DLC_case == "1_2"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "UF"
-            IEC_WindType = "\"$(WindClass)NTM\""                        
+            IEC_WindType = "\"$(WindClass)NTM\""
 
         elseif DLC_case == "1_3"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ETM\""
-            
+
         elseif DLC_case == "1_4"
             ControlStrategy = "normal"
-            Vinf_range_used = [Vdesign-2.0,Vdesign+2.0]
+            Vinf_range_used = [Vdesign-2.0, Vdesign+2.0]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECD\""
 
-            time = [0,10,15,20,25,30,10000.0]#LinRange(0,10,10)
-            winddir = [0,0,45,90,45,0,0.0] 
-            windvertvel = zeros(length(time))   
-            horizshear = zeros(length(time))  
-            pwrLawVertShear = zeros(length(time))   
-            LinVertShear = zeros(length(time))  
-            gustvel = [0,0,7.0,15,7.5,0.0,0.0]  
-            UpflowAngle = zeros(length(time))    
+            time = [0, 10, 15, 20, 25, 30, 10000.0]#LinRange(0,10,10)
+            winddir = [0, 0, 45, 90, 45, 0, 0.0]
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = zeros(length(time))
+            LinVertShear = zeros(length(time))
+            gustvel = [0, 0, 7.0, 15, 7.5, 0.0, 0.0]
+            UpflowAngle = zeros(length(time))
 
         elseif DLC_case == "1_5"
             ControlStrategy = "normal"
@@ -257,141 +288,158 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWS\""
 
-            time = [0,10,15,20,25,30,10000.0]#LinRange(0,10,10)
-            winddir = zeros(length(time))  
-            windvertvel = zeros(length(time))   
-            horizshear = [0,0,5.0,0,0,0,0]#ones(length(time)).*10.0   
-            pwrLawVertShear = zeros(length(time))   
-            LinVertShear = [0,0,0,0,5.0,0,0]#ones(length(time)).*10.0 
-            gustvel = zeros(length(time))   
-            UpflowAngle = zeros(length(time))  
-            
+            time = [0, 10, 15, 20, 25, 30, 10000.0]#LinRange(0,10,10)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = [0, 0, 5.0, 0, 0, 0, 0]#ones(length(time)).*10.0   
+            pwrLawVertShear = zeros(length(time))
+            LinVertShear = [0, 0, 0, 0, 5.0, 0, 0]#ones(length(time)).*10.0 
+            gustvel = zeros(length(time))
+            UpflowAngle = zeros(length(time))
+
 
         elseif DLC_case == "2_1" || DLC_case == "2_2" || DLC_case == "2_4"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
 
         elseif DLC_case == "2_3"
             ControlStrategy = "freewheelatNormalOperatingRPM"
-            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
+            Vinf_range_used =
+                [collect(LinRange(Vdesign-2.0, Vdesign+2.0, 2)); Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG\""
 
-            time = LinRange(0,30,100)
-            winddir = zeros(length(time))     
-            windvertvel = zeros(length(time))      
-            horizshear = zeros(length(time))   
-            pwrLawVertShear = zeros(length(time))      
-            LinVertShear = zeros(length(time))   
-            UpflowAngle = zeros(length(time))     
+            time = LinRange(0, 30, 100)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = zeros(length(time))
+            LinVertShear = zeros(length(time))
+            UpflowAngle = zeros(length(time))
 
             time_delay = 10.0 #sec
             time_delay2 = 20.0
             G_amp = 15.0 #m/s
             gustT = 10.0
-            gustvel = simpleGustVel.(time, time_delay, G_amp,gustT) .+ simpleGustVel.(time, time_delay2, G_amp,gustT)
-            
+            gustvel =
+                simpleGustVel.(time, time_delay, G_amp, gustT) .+
+                simpleGustVel.(time, time_delay2, G_amp, gustT)
+
         elseif DLC_case == "3_1"
             ControlStrategy = "startup"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NWP\""
 
-            time = LinRange(0,30,10)
-            winddir = zeros(length(time))     
-            windvertvel = zeros(length(time))      
-            horizshear = zeros(length(time))   
-            pwrLawVertShear = ones(length(time)).*0.2  
-            LinVertShear = zeros(length(time))   
-            gustvel = zeros(length(time))   
-            UpflowAngle = zeros(length(time))     
-            
+            time = LinRange(0, 30, 10)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = ones(length(time)) .* 0.2
+            LinVertShear = zeros(length(time))
+            gustvel = zeros(length(time))
+            UpflowAngle = zeros(length(time))
+
         elseif DLC_case == "3_2"
             ControlStrategy = "startup"
-            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
+            Vinf_range_used = [
+                Vinf_range[1];
+                collect(LinRange(Vdesign-2.0, Vdesign+2.0, 2));
+                Vinf_range[end]
+            ]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG\""
 
-            time = LinRange(0,30,100)
-            winddir = zeros(length(time))     
-            windvertvel = zeros(length(time))      
-            horizshear = zeros(length(time))   
-            pwrLawVertShear = zeros(length(time))      
-            LinVertShear = zeros(length(time))   
-            UpflowAngle = zeros(length(time))     
+            time = LinRange(0, 30, 100)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = zeros(length(time))
+            LinVertShear = zeros(length(time))
+            UpflowAngle = zeros(length(time))
 
             time_delay = 10.0 #sec
             time_delay2 = 20.0
             G_amp = 15.0 #m/s
             gustT = 10.0
-            gustvel = simpleGustVel.(time, time_delay, G_amp,gustT) .+ simpleGustVel.(time, time_delay2, G_amp,gustT)
-            
+            gustvel =
+                simpleGustVel.(time, time_delay, G_amp, gustT) .+
+                simpleGustVel.(time, time_delay2, G_amp, gustT)
+
         elseif DLC_case == "3_3"
             ControlStrategy = "startup"
-            Vinf_range_used = [Vinf_range[1];collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
+            Vinf_range_used = [
+                Vinf_range[1];
+                collect(LinRange(Vdesign-2.0, Vdesign+2.0, 2));
+                Vinf_range[end]
+            ]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECD\""
 
-            time = [0,10,15,20,25,30,10000.0]#LinRange(0,10,10)
-            winddir = [0,0,45,90,45,0,0.0] 
-            windvertvel = zeros(length(time))   
-            horizshear = zeros(length(time))  
-            pwrLawVertShear = zeros(length(time))   
-            LinVertShear = zeros(length(time))  
-            gustvel = [0,0,7.0,15,7.5,0.0,0.0]  
-            UpflowAngle = zeros(length(time)) 
-            
+            time = [0, 10, 15, 20, 25, 30, 10000.0]#LinRange(0,10,10)
+            winddir = [0, 0, 45, 90, 45, 0, 0.0]
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = zeros(length(time))
+            LinVertShear = zeros(length(time))
+            gustvel = [0, 0, 7.0, 15, 7.5, 0.0, 0.0]
+            UpflowAngle = zeros(length(time))
+
         elseif DLC_case == "4_1"
             ControlStrategy = "shutdown"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NWP\""
 
-            time = LinRange(0,30,10)
-            winddir = zeros(length(time))     
-            windvertvel = zeros(length(time))      
-            horizshear = zeros(length(time))   
-            pwrLawVertShear = ones(length(time)).*0.2  
-            LinVertShear = zeros(length(time))   
-            gustvel = zeros(length(time))   
-            UpflowAngle = zeros(length(time))     
-            
+            time = LinRange(0, 30, 10)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = ones(length(time)) .* 0.2
+            LinVertShear = zeros(length(time))
+            gustvel = zeros(length(time))
+            UpflowAngle = zeros(length(time))
+
         elseif DLC_case == "4_2"
             ControlStrategy = "shutdown"
-            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
+            Vinf_range_used =
+                [collect(LinRange(Vdesign-2.0, Vdesign+2.0, 2)); Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG\""
 
-            time = LinRange(0,30,100)
-            winddir = zeros(length(time))     
-            windvertvel = zeros(length(time))      
-            horizshear = zeros(length(time))   
-            pwrLawVertShear = zeros(length(time))      
-            LinVertShear = zeros(length(time))   
-            UpflowAngle = zeros(length(time))     
+            time = LinRange(0, 30, 100)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = zeros(length(time))
+            LinVertShear = zeros(length(time))
+            UpflowAngle = zeros(length(time))
 
             time_delay = 10.0 #sec
             time_delay2 = 20.0
             G_amp = 15.0 #m/s
             gustT = 10.0
-            gustvel = simpleGustVel.(time, time_delay, G_amp,gustT) .+ simpleGustVel.(time, time_delay2, G_amp,gustT)
-            
-            
+            gustvel =
+                simpleGustVel.(time, time_delay, G_amp, gustT) .+
+                simpleGustVel.(time, time_delay2, G_amp, gustT)
+
+
         elseif DLC_case == "5_1"
             ControlStrategy = "emergencyshutdown"
-            Vinf_range_used = [collect(LinRange(Vdesign-2.0,Vdesign+2.0,2));Vinf_range[end]]
+            Vinf_range_used =
+                [collect(LinRange(Vdesign-2.0, Vdesign+2.0, 2)); Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
         elseif DLC_case == "6_1"
             ControlStrategy = "parked"
             Vinf_range_used = [Ve50]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM50\""
-            
+
         elseif DLC_case == "6_2"
             ControlStrategy = "parked_idle"
             Vinf_range_used = [Ve50]
@@ -415,7 +463,7 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
             Vinf_range_used = [Ve1]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM1\""
-            
+
         elseif DLC_case == "8_1" #Startup
             ControlStrategy = "transport"
             Vinf_range_used = [Vdesign]
@@ -428,126 +476,128 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NWP\""
 
-            time = LinRange(0,30,10)
-            winddir = zeros(length(time))     
-            windvertvel = zeros(length(time))      
-            horizshear = zeros(length(time))   
-            pwrLawVertShear = ones(length(time)).*0.2  
-            LinVertShear = zeros(length(time))   
-            gustvel = zeros(length(time))   
-            UpflowAngle = zeros(length(time))  
-            
+            time = LinRange(0, 30, 10)
+            winddir = zeros(length(time))
+            windvertvel = zeros(length(time))
+            horizshear = zeros(length(time))
+            pwrLawVertShear = ones(length(time)) .* 0.2
+            LinVertShear = zeros(length(time))
+            gustvel = zeros(length(time))
+            UpflowAngle = zeros(length(time))
+
         else
             error("IEC61400_1 DLC_cases such as 1_1, 1_2 defined, you requested $DLC_case")
         end
 
-    elseif contains(IEC_std,"2")
+    elseif contains(IEC_std, "2")
         error("IEC61400_2 DLC_cases are not fully defined")
         if DLC_case == "1_1"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "UF"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
 
         elseif DLC_case == "1_2"
             ControlStrategy = "normal"
             Vinf_range_used = [Vdesign]
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)ECD\""
-            
+
 
         elseif DLC_case == "1_3"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG50\""
-            
+
 
         elseif DLC_case == "1_4"
             ControlStrategy = "normal"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECD50\""
-            
+
 
         elseif DLC_case == "1_5"
             ControlStrategy = "normal"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)ECG\""
-            
+
 
         elseif DLC_case == "2_1"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NWP\""
-            
+
 
         elseif DLC_case == "2_2"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = Vinf_range
             analysis_type = "UF"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
 
         elseif DLC_case == "2_3"
             ControlStrategy = "freewheelatNormalOperatingRPM"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG1\""
-            
+
 
         elseif DLC_case == "3_1"
             ControlStrategy = "shutdown"
             Vinf_range_used = Vinf_range
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
 
         elseif DLC_case == "3_2"
             ControlStrategy = "shutdown"
             Vinf_range_used = [Vinf_range[end]]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EOG1\""
-            
+
 
         elseif DLC_case == "4_1"
             ControlStrategy = "shutdown"
             Vinf_range_used = [Vdesign]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
 
         elseif DLC_case == "5_1"
             ControlStrategy = "freewheelatIdle"
             Vinf_range_used = [Ve50]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM\""
-            
+
 
         elseif DLC_case == "5_2"
             ControlStrategy = "idle"
             Vinf_range_used = [Vdesign]
             analysis_type = "F"
             IEC_WindType = "\"$(WindClass)NTM\""
-            
+
 
         elseif DLC_case == "6_1"
             ControlStrategy = "parked"
             Vinf_range_used = [Ve1]
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM\""
-            
+
         elseif DLC_case == "8_1" #Startup
             ControlStrategy = "startup"
             Vinf_range_used = Vinf_range
             analysis_type = "U"
             IEC_WindType = "\"$(WindClass)EWM\""
-            
+
         else
-            error("IEC61400_2 DLC_cases [1.1,1.2,1.3,1.4,1.5,2.1,2.2,2.3,3.1,3.2,4.1,5.1,5.2,6.1] defined, you requested $DLC")
+            error(
+                "IEC61400_2 DLC_cases [1.1,1.2,1.3,1.4,1.5,2.1,2.2,2.3,3.1,3.2,4.1,5.1,5.2,6.1] defined, you requested $DLC",
+            )
         end
     else
         error("IEC_std 61400 1-ED3 and 2 defined, you requested $IEC_std")
@@ -585,7 +635,7 @@ function getDLCparams(DLC_case, modelopt, designparams, Vinf_range, Vdesign, Vre
     )
 end
 
-function generateUniformwind(DLCParams,windINPfilename)
+function generateUniformwind(DLCParams, windINPfilename)
 
     time = DLCParams.time
     windvel = ones(length(DLCParams.time)) .* DLCParams.URef
@@ -597,21 +647,26 @@ function generateUniformwind(DLCParams,windINPfilename)
     gustvel = DLCParams.gustvel
     UpflowAngle = DLCParams.UpflowAngle
 
-    lines = ["! OpenFAST Deterministic Wind File",
-    "#",
-    "# Comment lines begin with \"!\" or \"#\" or \"%\", then the data lines must contain the following columns:",
-    "#",
-    "# If there are only 8 columns, upflow is assumed to be 0.",
-    "#",
-    "# Parameters are interpolated linearly between time steps; using nearest neighbor before the first time ",
-    "# listed in this file and after the last time listed in the file. ",
-    "#",
-    "! Time     Wind    Wind    Vertical    Horiz.      Pwr.Law     Lin.Vert.   Gust     Upflow",
-    "!          Speed   Dir     Speed       Shear       Vert.Shr    Shear       Speed    Angle ",
-    "! (sec)    (m/s)   (Deg)   (m/s)                                            (m/s)   (deg)"]
+    lines = [
+        "! OpenFAST Deterministic Wind File",
+        "#",
+        "# Comment lines begin with \"!\" or \"#\" or \"%\", then the data lines must contain the following columns:",
+        "#",
+        "# If there are only 8 columns, upflow is assumed to be 0.",
+        "#",
+        "# Parameters are interpolated linearly between time steps; using nearest neighbor before the first time ",
+        "# listed in this file and after the last time listed in the file. ",
+        "#",
+        "! Time     Wind    Wind    Vertical    Horiz.      Pwr.Law     Lin.Vert.   Gust     Upflow",
+        "!          Speed   Dir     Speed       Shear       Vert.Shr    Shear       Speed    Angle ",
+        "! (sec)    (m/s)   (Deg)   (m/s)                                            (m/s)   (deg)",
+    ]
 
     for itime = 1:length(time)
-        lines = [lines; "$(time[itime]) $(windvel[itime]) $(winddir[itime]) $(windvertvel[itime]) $(horizShear[itime]) $(pwrLawVertShear[itime]) $(LinVertShear[itime]) $(gustvel[itime]) $(UpflowAngle[itime])"]
+        lines = [
+            lines;
+            "$(time[itime]) $(windvel[itime]) $(winddir[itime]) $(windvertvel[itime]) $(horizShear[itime]) $(pwrLawVertShear[itime]) $(LinVertShear[itime]) $(gustvel[itime]) $(UpflowAngle[itime])"
+        ]
     end
 
     # Write the new file
@@ -623,19 +678,26 @@ function generateUniformwind(DLCParams,windINPfilename)
     end
 end
 
-function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile="$module_path/template_files/templateTurbSim.inp") 
+function generateTurbsimBTS(
+    DLCParams,
+    windINPfilename,
+    pathtoturbsim;
+    templatefile = "$module_path/template_files/templateTurbSim.inp",
+)
 
     lines = readlines(templatefile)
 
     for fieldname in fieldnames(typeof(DLCParams))
         turbsimKeyName = String(fieldname)
-        myvalue = getfield(DLCParams,fieldname)
-        if turbsimKeyName != "Vinf_range_used" || turbsimKeyName != "analysis_type" || turbsimKeyName != "ControlStrategy"# || other strings
-            for (iline,line) in enumerate(lines)
-                if contains(line," - ") #TODO: this assumes that the keys aren't in the comments
-                    linenocomments,comments = split(line," - ")
-                    if contains(linenocomments,turbsimKeyName)
-                        value,descriptor = split(linenocomments)
+        myvalue = getfield(DLCParams, fieldname)
+        if turbsimKeyName != "Vinf_range_used" ||
+           turbsimKeyName != "analysis_type" ||
+           turbsimKeyName != "ControlStrategy"# || other strings
+            for (iline, line) in enumerate(lines)
+                if contains(line, " - ") #TODO: this assumes that the keys aren't in the comments
+                    linenocomments, comments = split(line, " - ")
+                    if contains(linenocomments, turbsimKeyName)
+                        value, descriptor = split(linenocomments)
                         newline = "$myvalue $turbsimKeyName - $comments"
                         lines[iline] = newline
                         break
@@ -644,7 +706,7 @@ function generateTurbsimBTS(DLCParams,windINPfilename,pathtoturbsim;templatefile
             end
         end
     end
-    
+
     # Write the new file
     open(windINPfilename, "w") do file
         # Write new data to file
@@ -668,13 +730,14 @@ end
 * `gustT::TF`: IEC gust duration (s)
 * `gustDelayT::TF`: IEC gust delay time
 """
-function getGustVel(time,nominalVinf,R,G_amp,gustT,gustDelayT)
+function getGustVel(time, nominalVinf, R, G_amp, gustT, gustDelayT)
     ele_x = 0.0 #TODO: I don't think inflowwind takes in account the 3D nature of a vawt
 
     gustT = gustT * nominalVinf / R
     tr = time .- ele_x .- gustDelayT / R
     if (tr >= 0) && (tr<=gustT)
-        IECGustFactor = 1.0 - 0.37 * G_amp/nominalVinf * sin(3*pi*tr/gustT)  * (1.0 - cos(2*pi*tr/gustT))
+        IECGustFactor =
+            1.0 - 0.37 * G_amp/nominalVinf * sin(3*pi*tr/gustT) * (1.0 - cos(2*pi*tr/gustT))
         return nominalVinf*IECGustFactor
     else
         return nominalVinf
@@ -682,10 +745,10 @@ function getGustVel(time,nominalVinf,R,G_amp,gustT,gustDelayT)
 
 end
 
-function simpleGustVel(time, time_delay, G_amp,gustT)
+function simpleGustVel(time, time_delay, G_amp, gustT)
     timeused = time - time_delay
     if (timeused >= 0) && (timeused<=gustT)
-        gustV = -0.37 * G_amp * sin(3*pi*timeused/gustT)  * (1.0 - cos(2*pi*timeused/gustT))
+        gustV = -0.37 * G_amp * sin(3*pi*timeused/gustT) * (1.0 - cos(2*pi*timeused/gustT))
     else
         gustV = 0.0
     end

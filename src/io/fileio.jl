@@ -11,7 +11,12 @@ Parameters defining the rotor (apply to all sections).
 **Returns**
 - `Output::NuMad`: numad structure as defined in the NuMad structure docstrings.
 """
-function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, Any};section=:blade,subsection=nothing,span=nothing)
+function readNuMadGeomCSV(
+    WindIO_Dict::OrderedCollections.OrderedDict{Symbol,Any};
+    section = :blade,
+    subsection = nothing,
+    span = nothing,
+)
 
     # Reuse the input file as the dictionary input
     if isnothing(subsection)
@@ -39,20 +44,21 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
     end
 
     if isnothing(span)
-        span = sqrt.((ref_x.-ref_x[1]).^2 .+ (ref_y.-ref_y[1]).^2 .+ ref_z.^2)
+        span = sqrt.((ref_x .- ref_x[1]) .^ 2 .+ (ref_y .- ref_y[1]) .^ 2 .+ ref_z .^ 2)
         # println("Custom span is not specified in OWENS input, using WindIO outer_shape_bem sqrt.(reference_axis_x.^2 .+ reference_axis_y.^2 .+ reference_axis_z.^2) as common span that all the other values are splined to")
     end
 
-    norm_span = span./maximum(span)
+    norm_span = span ./ maximum(span)
 
     if airfoil_grid[1]!=0.0 && airfoil_grid[end]!=1.0
         @error "ALL grid definitions must extend from root 0, to tip 1"
     end
 
-    airfoil = Array{String,1}(undef,length(span))
+    airfoil = Array{String,1}(undef, length(span))
     airfoil_names = sec_Dict[:outer_shape_bem][:airfoil_position][:labels]
     # spline the airfoils used to the current overall grid, then round to enable mapping to the discrete airfoil inputs
-    airfoil_station_numbers = round.(Int,safeakima(airfoil_grid,collect(1:length(airfoil_names)),norm_span))
+    airfoil_station_numbers =
+        round.(Int, safeakima(airfoil_grid, collect(1:length(airfoil_names)), norm_span))
     # Now map the resulting airfoils to the new grid
     for istation = 1:length(airfoil_station_numbers)
         for iaf = 1:length(airfoil_names)
@@ -66,7 +72,7 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
     n_web = 0
     try
         n_web = size(sec_Dict[:internal_structure_2d_fem][:webs])[1] # number of shear webs
-    catch   
+    catch
     end
 
     n_stack = size(sec_Dict[:internal_structure_2d_fem][:layers])[1] # number of stacks, note the to comply with the current windio, all layers are considered a stack
@@ -75,15 +81,15 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
 
     twist_grid = sec_Dict[:outer_shape_bem][:twist][:grid]
     twist_vals = sec_Dict[:outer_shape_bem][:twist][:values]
-    twist_d = safeakima(twist_grid,twist_vals,norm_span) .* 180/pi
+    twist_d = safeakima(twist_grid, twist_vals, norm_span) .* 180/pi
 
     chord_grid = sec_Dict[:outer_shape_bem][:chord][:grid]
     chord_vals = sec_Dict[:outer_shape_bem][:chord][:values]
-    chord = safeakima(chord_grid,chord_vals,norm_span)
+    chord = safeakima(chord_grid, chord_vals, norm_span)
 
     pitch_axis_grid = sec_Dict[:outer_shape_bem][:pitch_axis][:grid]
     pitch_axis_vals = sec_Dict[:outer_shape_bem][:pitch_axis][:values]
-    pitch_axis = safeakima(pitch_axis_grid,pitch_axis_vals,norm_span)
+    pitch_axis = safeakima(pitch_axis_grid, pitch_axis_vals, norm_span)
 
     xoffset = pitch_axis
     aerocenter = pitch_axis #TODO: this was originally used for the automated flutter analysis within the original OWENS code, which is not currently implemented
@@ -101,16 +107,20 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
 
     # This is insanity, revert to just requiring each grid within a layer to being the same and only arc start and stop positions are accepted
 
-    segments_bld = Array{Any,2}(undef,n_stack,2)
-    notweb = zeros(Int,n_stack)
+    segments_bld = Array{Any,2}(undef, n_stack, 2)
+    notweb = zeros(Int, n_stack)
     for istack = 1:n_stack
         layer_Dict = sec_Dict[:internal_structure_2d_fem][:layers][istack]
         # println(istack)
         # println(layer_Dict[:name])
-        if !(contains(layer_Dict[:name],"web"))
+        if !(contains(layer_Dict[:name], "web"))
             notweb[istack] = 1
-           
-            if haskey(layer_Dict,:n_plies) && haskey(layer_Dict,:start_nd_arc) && haskey(layer_Dict,:end_nd_arc) && haskey(layer_Dict[:start_nd_arc],:grid) && haskey(layer_Dict[:end_nd_arc],:grid)
+
+            if haskey(layer_Dict, :n_plies) &&
+               haskey(layer_Dict, :start_nd_arc) &&
+               haskey(layer_Dict, :end_nd_arc) &&
+               haskey(layer_Dict[:start_nd_arc], :grid) &&
+               haskey(layer_Dict[:end_nd_arc], :grid)
                 material = layer_Dict[:material]
 
                 n_plies_grid = layer_Dict[:n_plies][:grid]
@@ -124,8 +134,10 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
 
                 end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
                 end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-                    
-                if (n_plies_grid != fiber_orientation_grid) && (n_plies_grid != start_nd_arc_grid) && (n_plies_grid != end_nd_arc_grid)
+
+                if (n_plies_grid != fiber_orientation_grid) &&
+                   (n_plies_grid != start_nd_arc_grid) &&
+                   (n_plies_grid != end_nd_arc_grid)
                     @error "specified grids within a layer must be the same"
                 end
             else
@@ -137,115 +149,129 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
 5) Material n_plies instead of thickness is used"
             end
 
-            segments_bld[istack,1] = start_nd_arc_vals
-            segments_bld[istack,2] = end_nd_arc_vals
+            segments_bld[istack, 1] = start_nd_arc_vals
+            segments_bld[istack, 2] = end_nd_arc_vals
         end # if not web
     end # each layer
 
-    segments_web = Array{Any,2}(undef,n_web,2)
+    segments_web = Array{Any,2}(undef, n_web, 2)
     # println("Webs")
     for iweb = 1:n_web # it is a web
         layer_Dict = sec_Dict[:internal_structure_2d_fem][:webs][iweb]
         # either we have a rotation and offset
         # println(iweb)
         # println(layer_Dict[:name])
- 
-        if haskey(layer_Dict,:start_nd_arc) && haskey(layer_Dict,:end_nd_arc) && haskey(layer_Dict[:start_nd_arc],:grid) && haskey(layer_Dict[:end_nd_arc],:grid)
+
+        if haskey(layer_Dict, :start_nd_arc) &&
+           haskey(layer_Dict, :end_nd_arc) &&
+           haskey(layer_Dict[:start_nd_arc], :grid) &&
+           haskey(layer_Dict[:end_nd_arc], :grid)
             # println("web start and end arc points")
 
             start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
             start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,norm_span)
+            start_nd_arc = safeakima(start_nd_arc_grid, start_nd_arc_vals, norm_span)
 
             end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
             end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,norm_span)
-        else 
+            end_nd_arc = safeakima(end_nd_arc_grid, end_nd_arc_vals, norm_span)
+        else
             # println("web rotation and offset")
 
             @error "Please specify web locations using the start and end arc points as defined in the windio and not the offset and rotation (this is not yet implemented)"
 
         end
 
-        segments_web[iweb,1] = start_nd_arc
-        segments_web[iweb,2] = end_nd_arc
+        segments_web[iweb, 1] = start_nd_arc
+        segments_web[iweb, 2] = end_nd_arc
     end
 
 
     # Combine to get the common keypoints since we are doing a square matrix for each span location and each chordwise location
-    segments_temp2 = [segments_bld[notweb.==1,:];segments_web] 
+    segments_temp2 = [segments_bld[notweb .== 1, :]; segments_web]
     # determine unique keypoints
-    start_nd_arc = segments_temp2[1,1]
-    end_nd_arc = segments_temp2[1,2]
-    common_segments_unsrt = unique([start_nd_arc;end_nd_arc])
-    for istack = 2:length(segments_temp2[:,1])
-        start_nd_arc = segments_temp2[istack,1]
-        end_nd_arc = segments_temp2[istack,2]
+    start_nd_arc = segments_temp2[1, 1]
+    end_nd_arc = segments_temp2[1, 2]
+    common_segments_unsrt = unique([start_nd_arc; end_nd_arc])
+    for istack = 2:length(segments_temp2[:, 1])
+        start_nd_arc = segments_temp2[istack, 1]
+        end_nd_arc = segments_temp2[istack, 2]
 
-        common_segments_unsrt = unique([common_segments_unsrt;start_nd_arc;end_nd_arc;[0.0,0.5,1.0]]) #add on ending points and leading edge to ensure they are there
+        common_segments_unsrt =
+            unique([common_segments_unsrt; start_nd_arc; end_nd_arc; [0.0, 0.5, 1.0]]) #add on ending points and leading edge to ensure they are there
     end
     common_segments = sort(common_segments_unsrt)
     n_segments = length(common_segments)
 
-    segments_windio = zeros(length(span),n_segments)
-    segments = zeros(length(span),n_segments) #note the reverse in definition between windio and numad!!!
+    segments_windio = zeros(length(span), n_segments)
+    segments = zeros(length(span), n_segments) #note the reverse in definition between windio and numad!!!
     for ispan = 1:length(span)
-        segments_windio[ispan,:] = common_segments
-        segments[ispan,:] = reverse(-((common_segments .* 2.0) .- 1.0)) # convert from 0-0.5-1 trailing_lp-leading-trailing_hp, to Numad's 1-0-(-1), and then reverse, so that the high pressure side trailing edge is first
+        segments_windio[ispan, :] = common_segments
+        segments[ispan, :] = reverse(-((common_segments .* 2.0) .- 1.0)) # convert from 0-0.5-1 trailing_lp-leading-trailing_hp, to Numad's 1-0-(-1), and then reverse, so that the high pressure side trailing edge is first
     end
 
     # Now that we have the common segments, we need an array of bit logic for each layer, matching the size of the segments, and we need to say if the stack is active for the given segment
     # Note that the High pressure trailing edge point is not included, but rather the low pressure is used, so all the matrices are one column shorter, but the segments are read in and the correction is applied internally
 
-    stacks_active_windio_bld = zeros(Int,length(span),n_segments,n_stack)
-    stacks_active_windio_web = zeros(Int,length(span),n_web,n_stack)
-    
+    stacks_active_windio_bld = zeros(Int, length(span), n_segments, n_stack)
+    stacks_active_windio_web = zeros(Int, length(span), n_web, n_stack)
+
     # Also get the material types and layers used for each stack
-    layer_mat_names = Array{String,1}(undef,n_stack)
-    stack_mat_types = zeros(Int,n_stack) 
+    layer_mat_names = Array{String,1}(undef, n_stack)
+    stack_mat_types = zeros(Int, n_stack)
     N_materials = length(WindIO_Dict[:materials])
     input_material_names = [WindIO_Dict[:materials][imat][:name] for imat = 1:N_materials]
-    stack_layers = zeros(length(span),n_stack) 
+    stack_layers = zeros(length(span), n_stack)
 
-    for istack = 1:n_stack 
+    for istack = 1:n_stack
         layer_Dict = sec_Dict[:internal_structure_2d_fem][:layers][istack]
-        
+
         # println(istack)
         # println(layer_Dict[:name])
 
         # Fill in the material types, which are in order based on the material names inputs
-        stack_mat_types[istack] = findfirst(x->x==layer_Dict[:material],input_material_names)
+        stack_mat_types[istack] =
+            findfirst(x->x==layer_Dict[:material], input_material_names)
 
         # get the number of plies
         n_plies_grid = layer_Dict[:n_plies][:grid]
         n_plies_vals = layer_Dict[:n_plies][:values]
-        stack_layers[:,istack] = safeakima(n_plies_grid,n_plies_vals,norm_span) #note that since we cut off layers in the stack sequences below, extrapolated values are not used here
+        stack_layers[:, istack] = safeakima(n_plies_grid, n_plies_vals, norm_span) #note that since we cut off layers in the stack sequences below, extrapolated values are not used here
 
-        if !(contains(layer_Dict[:name],"web")) 
+        if !(contains(layer_Dict[:name], "web"))
             start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
             start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-            start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,norm_span)
+            start_nd_arc = safeakima(start_nd_arc_grid, start_nd_arc_vals, norm_span)
 
             end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
             end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-            end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,norm_span)
+            end_nd_arc = safeakima(end_nd_arc_grid, end_nd_arc_vals, norm_span)
 
             for ispan = 1:length(span)
-                for iseg=1:length(common_segments)
+                for iseg = 1:length(common_segments)
                     # check that the layer is active for the span position, and that it is active for the chordwise position for the given span
                     # Note that the code assumes -1 numad position (1 position windio) is the starting point, so the numad assumes the prior position is the starting point, and the defined position is the ending point.  The logic below translates windio which defines both the starting and ending positions to that numad assumption
-                    if (norm_span[ispan]>=start_nd_arc_grid[1] && norm_span[ispan]<=end_nd_arc_grid[end]) && (common_segments[iseg]>=start_nd_arc[ispan] && common_segments[iseg]<end_nd_arc[ispan])
-                        stacks_active_windio_bld[ispan,iseg,istack] = 1
+                    if (
+                        norm_span[ispan]>=start_nd_arc_grid[1] &&
+                        norm_span[ispan]<=end_nd_arc_grid[end]
+                    ) && (
+                        common_segments[iseg]>=start_nd_arc[ispan] &&
+                        common_segments[iseg]<end_nd_arc[ispan]
+                    )
+                        stacks_active_windio_bld[ispan, iseg, istack] = 1
                     end
                 end
             end
-        else   
+        else
             for ispan = 1:length(span)
-                for iweb=0:n_web-1 #this is per the windio standard...
+                for iweb = 0:(n_web-1) #this is per the windio standard...
 
                     # check that the layer is active for the span position, and that it is active for the chordwise position for the given span
-                    if contains(layer_Dict[:web],"$iweb") && (norm_span[ispan]>=n_plies_grid[1] && norm_span[ispan]<=n_plies_grid[end])
-                        stacks_active_windio_web[ispan,iweb+1,istack] = 1
+                    if contains(layer_Dict[:web], "$iweb") && (
+                        norm_span[ispan]>=n_plies_grid[1] &&
+                        norm_span[ispan]<=n_plies_grid[end]
+                    )
+                        stacks_active_windio_web[ispan, iweb+1, istack] = 1
                     end
                 end
             end
@@ -254,287 +280,308 @@ function readNuMadGeomCSV(WindIO_Dict::OrderedCollections.OrderedDict{Symbol, An
     end
 
     # flip the array to align with numad
-    stacks_active_bld = reverse(stacks_active_windio_bld,dims=2)
-    stacks_active_web = reverse(stacks_active_windio_web,dims=2)
+    stacks_active_bld = reverse(stacks_active_windio_bld, dims = 2)
+    stacks_active_web = reverse(stacks_active_windio_web, dims = 2)
 
     # Now take that logic and create the stack sequences
-    skin_seq = Array{OWENS.Seq, 2}(undef, length(span),length(common_segments)) #can be any number of stack nums, so we have to make non-square containers
+    skin_seq = Array{OWENS.Seq,2}(undef, length(span), length(common_segments)) #can be any number of stack nums, so we have to make non-square containers
 
     for sta_idx = 1:length(span)
         # sta_idx = 1
         for seg_idx = 1:length(common_segments)
             # seg_idx = 1
             stack_array = []
-            for istack = 1:n_stack       
-                if stacks_active_bld[sta_idx,seg_idx,istack] == 1
-                    stack_array = Int.([stack_array;istack])
+            for istack = 1:n_stack
+                if stacks_active_bld[sta_idx, seg_idx, istack] == 1
+                    stack_array = Int.([stack_array; istack])
                 end
             end
-            skin_seq[sta_idx,seg_idx] = OWENS.Seq(stack_array)
+            skin_seq[sta_idx, seg_idx] = OWENS.Seq(stack_array)
         end
     end
-    
+
     # Now do the same but for the web
-    web_seq = Array{OWENS.Seq, 2}(undef, length(span),n_web) #can be any number of stack nums, so we have to make non-square containers
-    web_dp = Array{OWENS.Seq, 2}(undef, length(span),n_web) #this is fixed size square, but it's easier to do it this way
+    web_seq = Array{OWENS.Seq,2}(undef, length(span), n_web) #can be any number of stack nums, so we have to make non-square containers
+    web_dp = Array{OWENS.Seq,2}(undef, length(span), n_web) #this is fixed size square, but it's easier to do it this way
 
     for iweb = 1:n_web
         # iweb = 1
-        start_nd_arc = segments_web[iweb,1]
-        end_nd_arc = segments_web[iweb,2]
+        start_nd_arc = segments_web[iweb, 1]
+        end_nd_arc = segments_web[iweb, 2]
         for ispan = 1:length(span)
             # ispan = 1
             stack_array = []
-            for istack = 1:n_stack       
-                if stacks_active_web[ispan,iweb,istack] == 1
-                    stack_array = Int.([stack_array;istack])
+            for istack = 1:n_stack
+                if stacks_active_web[ispan, iweb, istack] == 1
+                    stack_array = Int.([stack_array; istack])
                 end
             end
             if isempty(stack_array)
                 @error "Please define shear webs for the entire span of the blade and set thickness to 0 where they are not included"
             end
-            web_seq[ispan,iweb] = OWENS.Seq(stack_array)
+            web_seq[ispan, iweb] = OWENS.Seq(stack_array)
 
-            
 
-            web_lp_idx_windio = findfirst(x->isapprox(start_nd_arc[ispan],x),segments_windio[ispan,:])
-            web_hp_idx_windio = findfirst(x->isapprox(end_nd_arc[ispan],x),segments_windio[ispan,:])
+
+            web_lp_idx_windio =
+                findfirst(x->isapprox(start_nd_arc[ispan], x), segments_windio[ispan, :])
+            web_hp_idx_windio =
+                findfirst(x->isapprox(end_nd_arc[ispan], x), segments_windio[ispan, :])
             # now to from windio chordwise station to numad chordwise station by reversing the numbering
             # 1 2 3 4 5 6 7 8
             # 8 7 6 5 4 3 2 1
-            web_lp_idx_temp = length(segments_windio[ispan,:])-web_lp_idx_windio
-            web_hp_idx_temp = length(segments_windio[ispan,:])-web_hp_idx_windio
+            web_lp_idx_temp = length(segments_windio[ispan, :])-web_lp_idx_windio
+            web_hp_idx_temp = length(segments_windio[ispan, :])-web_hp_idx_windio
 
             # then since numad reuses the high pressure trailing edge position as the low pressure trailing edge (that is windio's last position), it is the first in numad, so offset everything by 1 to align
             web_lp_idx = web_lp_idx_temp
             web_hp_idx = web_hp_idx_temp
 
-            web_dp[ispan,iweb] = OWENS.Seq([web_lp_idx;web_hp_idx;web_hp_idx;web_lp_idx])
+            web_dp[ispan, iweb] =
+                OWENS.Seq([web_lp_idx; web_hp_idx; web_hp_idx; web_lp_idx])
         end
     end
 
-    return NuMad(n_web,n_stack,n_segments-1,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq[:,2:end],web_seq,web_dp)
+    return NuMad(
+        n_web,
+        n_stack,
+        n_segments-1,
+        span,
+        airfoil,
+        te_type,
+        twist_d,
+        chord,
+        xoffset,
+        aerocenter,
+        stack_mat_types,
+        stack_layers,
+        segments,
+        DPtypes,
+        skin_seq[:, 2:end],
+        web_seq,
+        web_dp,
+    )
 end
 
-    # segments_bld = Array{Any,2}(undef,n_stack,2)
-    # notweb = zeros(Int,n_stack)
-    # for istack = 1:n_stack
-    #     layer_Dict = sec_Dict[:internal_structure_2d_fem][:layers][istack]
-    #     println(istack)
-    #     println(layer_Dict[:name])
-    #     if !(contains(layer_Dict[:name],"web"))
-    #         notweb[istack] = 1
-    #         tryfailed = false
-    #         # midpoint and width
-    #         try # midpoint is defined
-    #             println("# midpoint is defined")
-    #             try # midpoint has grid and vals
-    #                 println("# midpoint has grid and vals")
-    #                 midpoint_nd_arc_grid = layer_Dict[:midpoint_nd_arc][:grid]
-    #                 midpoint_nd_arc_vals = layer_Dict[:midpoint_nd_arc][:values]
-    #                 # midpoint_nd_arc = safeakima(midpoint_nd_arc_grid,midpoint_nd_arc_vals,span)
-    #             catch # midpoint is LE or TE
-    #                 println("# midpoint is LE or TE")
-    #                 if layer_Dict[:midpoint_nd_arc][:fixed] == "LE"
-    #                     midpoint_nd_arc_vals = ones(length(span)).*0.5
-    #                 elseif layer_Dict[:midpoint_nd_arc][:fixed] == "TE"
-    #                     midpoint_nd_arc_vals = ones(length(span)).*0.0
-    #                 else
-    #                     @error "midpoint_nd_arc fixed must be LE or TE"
-    #                 end
-    #                 midpoint_nd_arc_grid = span
-    #             end
+# segments_bld = Array{Any,2}(undef,n_stack,2)
+# notweb = zeros(Int,n_stack)
+# for istack = 1:n_stack
+#     layer_Dict = sec_Dict[:internal_structure_2d_fem][:layers][istack]
+#     println(istack)
+#     println(layer_Dict[:name])
+#     if !(contains(layer_Dict[:name],"web"))
+#         notweb[istack] = 1
+#         tryfailed = false
+#         # midpoint and width
+#         try # midpoint is defined
+#             println("# midpoint is defined")
+#             try # midpoint has grid and vals
+#                 println("# midpoint has grid and vals")
+#                 midpoint_nd_arc_grid = layer_Dict[:midpoint_nd_arc][:grid]
+#                 midpoint_nd_arc_vals = layer_Dict[:midpoint_nd_arc][:values]
+#                 # midpoint_nd_arc = safeakima(midpoint_nd_arc_grid,midpoint_nd_arc_vals,span)
+#             catch # midpoint is LE or TE
+#                 println("# midpoint is LE or TE")
+#                 if layer_Dict[:midpoint_nd_arc][:fixed] == "LE"
+#                     midpoint_nd_arc_vals = ones(length(span)).*0.5
+#                 elseif layer_Dict[:midpoint_nd_arc][:fixed] == "TE"
+#                     midpoint_nd_arc_vals = ones(length(span)).*0.0
+#                 else
+#                     @error "midpoint_nd_arc fixed must be LE or TE"
+#                 end
+#                 midpoint_nd_arc_grid = span
+#             end
 
-    #             width_grid = layer_Dict[:width][:grid]
-    #             width_vals = layer_Dict[:width][:values]
-    #             width = safeakima(width_grid,width_vals,midpoint_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
-    #             start_nd_arc = midpoint_nd_arc_vals - width./2
-    #             end_nd_arc = midpoint_nd_arc_vals + width./2
-    #             tryfailed = false
-    #         catch
-    #             tryfailed = true
-    #         end
+#             width_grid = layer_Dict[:width][:grid]
+#             width_vals = layer_Dict[:width][:values]
+#             width = safeakima(width_grid,width_vals,midpoint_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+#             start_nd_arc = midpoint_nd_arc_vals - width./2
+#             end_nd_arc = midpoint_nd_arc_vals + width./2
+#             tryfailed = false
+#         catch
+#             tryfailed = true
+#         end
 
-    #         if tryfailed
-    #             # start and width, or start and end
-    #             try # start is defined
-    #                 println("# start is defined")
+#         if tryfailed
+#             # start and width, or start and end
+#             try # start is defined
+#                 println("# start is defined")
 
-    #                 try #start had grid and vals
-    #                     println("#start had grid and vals")
-    #                     start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
-    #                     start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
-    #                     # start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
-    #                 catch # start is LE or TE
-    #                     println("# start is LE or TE")
-    #                     if layer_Dict[:start_nd_arc][:fixed] == "LE"
-    #                         start_nd_arc_vals = ones(length(span)).*0.5
-    #                     elseif layer_Dict[:start_nd_arc][:fixed] == "TE"
-    #                         start_nd_arc_vals = ones(length(span)).*0.0
-    #                     else
-    #                         @error "start_nd_arc fixed must be LE or TE"
-    #                     end
-    #                     start_nd_arc_grid = span
-    #                 end
+#                 try #start had grid and vals
+#                     println("#start had grid and vals")
+#                     start_nd_arc_grid = layer_Dict[:start_nd_arc][:grid]
+#                     start_nd_arc_vals = layer_Dict[:start_nd_arc][:values]
+#                     # start_nd_arc = safeakima(start_nd_arc_grid,start_nd_arc_vals,span)
+#                 catch # start is LE or TE
+#                     println("# start is LE or TE")
+#                     if layer_Dict[:start_nd_arc][:fixed] == "LE"
+#                         start_nd_arc_vals = ones(length(span)).*0.5
+#                     elseif layer_Dict[:start_nd_arc][:fixed] == "TE"
+#                         start_nd_arc_vals = ones(length(span)).*0.0
+#                     else
+#                         @error "start_nd_arc fixed must be LE or TE"
+#                     end
+#                     start_nd_arc_grid = span
+#                 end
 
-    #                 try # if width is defined
-    #                     println("# if width is defined")
-    #                     width_grid = layer_Dict[:width][:grid]
-    #                     if minimum(width_grid)>minimum(start_nd_arc_grid) || maximum(width_grid)<maximum(start_nd_arc_grid)
-    #                         @error "width grid must be the same span as th start grid, and if the start_nd_arc is fixed, that is 0 to 1"
-    #                     end
-    #                     width_vals = layer_Dict[:width][:values]
-    #                     width = safeakima(width_grid,width_vals,start_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio) to be converted to the arc definition where 0.5 is leading edge, so span is approx 2x chord.
-    #                     end_nd_arc_vals = start_nd_arc_vals+width
+#                 try # if width is defined
+#                     println("# if width is defined")
+#                     width_grid = layer_Dict[:width][:grid]
+#                     if minimum(width_grid)>minimum(start_nd_arc_grid) || maximum(width_grid)<maximum(start_nd_arc_grid)
+#                         @error "width grid must be the same span as th start grid, and if the start_nd_arc is fixed, that is 0 to 1"
+#                     end
+#                     width_vals = layer_Dict[:width][:values]
+#                     width = safeakima(width_grid,width_vals,start_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio) to be converted to the arc definition where 0.5 is leading edge, so span is approx 2x chord.
+#                     end_nd_arc_vals = start_nd_arc_vals+width
 
-    #                 catch #otherwise, end must be specified
-    #                     println("#otherwise, end must be specified")
-    #                     try #end has grid and vals
-    #                         # end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
-    #                         end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-    #                         # end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
-    #                     catch # end is LE or TE
-    #                         println("# end is LE or TE")
-    #                         if layer_Dict[:end_nd_arc][:fixed] == "LE"
-    #                             end_nd_arc_vals = ones(length(span)).*0.5
-    #                         elseif layer_Dict[:end_nd_arc][:fixed] == "TE"
-    #                             end_nd_arc_vals = ones(length(span)).*0.0
-    #                         else
-    #                             @error "end_nd_arc fixed must be LE or TE"
-    #                         end
-    #                     end
-                        
-    #                 end
-    #                 tryfailed = false
-    #             catch
-    #                 tryfailed = true
-    #             end
-    #         end
+#                 catch #otherwise, end must be specified
+#                     println("#otherwise, end must be specified")
+#                     try #end has grid and vals
+#                         # end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
+#                         end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
+#                         # end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
+#                     catch # end is LE or TE
+#                         println("# end is LE or TE")
+#                         if layer_Dict[:end_nd_arc][:fixed] == "LE"
+#                             end_nd_arc_vals = ones(length(span)).*0.5
+#                         elseif layer_Dict[:end_nd_arc][:fixed] == "TE"
+#                             end_nd_arc_vals = ones(length(span)).*0.0
+#                         else
+#                             @error "end_nd_arc fixed must be LE or TE"
+#                         end
+#                     end
 
-    #         if tryfailed
-    #             # end and width
-    #             try
-    #                 println("#end must be specified")
-    #                 try #end has grid and vals
-    #                     end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
-    #                     end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
-    #                     # end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
-    #                 catch # end is LE or TE
-    #                     println("# end is LE or TE")
-    #                     if layer_Dict[:end_nd_arc][:fixed] == "LE"
-    #                         end_nd_arc = ones(length(span)).*0.5
-    #                     elseif layer_Dict[:end_nd_arc][:fixed] == "TE"
-    #                         end_nd_arc = ones(length(span)).*0.0
-    #                     else
-    #                         @error "end_nd_arc fixed must be LE or TE"
-    #                     end
-    #                     end_nd_arc_grid = span
-    #                 end
-    #                 println("# if width is defined")
-    #                 width_grid = layer_Dict[:width][:grid]
-    #                 if minimum(width_grid)>minimum(end_nd_arc_grid) || maximum(width_grid)<maximum(end_nd_arc_grid)
-    #                     @error "width grid must be the same span as th end grid, and if the end_nd_arc is fixed, that is 0 to 1"
-    #                 end
-    #                 width_vals = layer_Dict[:width][:values]
-    #                 width = safeakima(width_grid,width_vals,end_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
-    #                 start_nd_arc_vals = end_nd_arc_vals-width
+#                 end
+#                 tryfailed = false
+#             catch
+#                 tryfailed = true
+#             end
+#         end
 
-    #                 tryfailed = false
-    #             catch
-    #                 tryfailed = true
-    #             end
-    #         end
+#         if tryfailed
+#             # end and width
+#             try
+#                 println("#end must be specified")
+#                 try #end has grid and vals
+#                     end_nd_arc_grid = layer_Dict[:end_nd_arc][:grid]
+#                     end_nd_arc_vals = layer_Dict[:end_nd_arc][:values]
+#                     # end_nd_arc = safeakima(end_nd_arc_grid,end_nd_arc_vals,span)
+#                 catch # end is LE or TE
+#                     println("# end is LE or TE")
+#                     if layer_Dict[:end_nd_arc][:fixed] == "LE"
+#                         end_nd_arc = ones(length(span)).*0.5
+#                     elseif layer_Dict[:end_nd_arc][:fixed] == "TE"
+#                         end_nd_arc = ones(length(span)).*0.0
+#                     else
+#                         @error "end_nd_arc fixed must be LE or TE"
+#                     end
+#                     end_nd_arc_grid = span
+#                 end
+#                 println("# if width is defined")
+#                 width_grid = layer_Dict[:width][:grid]
+#                 if minimum(width_grid)>minimum(end_nd_arc_grid) || maximum(width_grid)<maximum(end_nd_arc_grid)
+#                     @error "width grid must be the same span as th end grid, and if the end_nd_arc is fixed, that is 0 to 1"
+#                 end
+#                 width_vals = layer_Dict[:width][:values]
+#                 width = safeakima(width_grid,width_vals,end_nd_arc_grid)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+#                 start_nd_arc_vals = end_nd_arc_vals-width
 
-    #         if tryfailed
-    #             # offset_y_pa and width
-    #             println("offset_y_pa and width")
-    #             offset_y_pa_grid = layer_Dict[:offset_y_pa][:grid]
-    #             if minimum(offset_y_pa_grid)>minimum(span) || maximum(offset_y_pa_grid)<maximum(span)
-    #                 @error "offset_y_pa_grid grid must span 0 to 1, set thickness to 0 for the layer for the span positions it is not present"
-    #             end
-    #             offset_y_pa_vals = layer_Dict[:offset_y_pa][:values]
-    #             offset_y_pa = safeakima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
+#                 tryfailed = false
+#             catch
+#                 tryfailed = true
+#             end
+#         end
 
-    #             side = layer_Dict[:side]
+#         if tryfailed
+#             # offset_y_pa and width
+#             println("offset_y_pa and width")
+#             offset_y_pa_grid = layer_Dict[:offset_y_pa][:grid]
+#             if minimum(offset_y_pa_grid)>minimum(span) || maximum(offset_y_pa_grid)<maximum(span)
+#                 @error "offset_y_pa_grid grid must span 0 to 1, set thickness to 0 for the layer for the span positions it is not present"
+#             end
+#             offset_y_pa_vals = layer_Dict[:offset_y_pa][:values]
+#             offset_y_pa = safeakima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
 
-    #             if side == "suction"
-    #                 midpoint_nd_arc = 0.5 .- (pitch_axis+offset_y_pa)./(chord*2) # 0.5 is the arc length where the reference axis is, minus the distance to the defined position normalized by the double arc length of the chord for the upper and lower halves
-    #             else
-    #                 midpoint_nd_arc = 0.5 .+ (pitch_axis+offset_y_pa)./(chord*2) # 0.5 is the arc length where the reference axis is, plus the distance to the defined position normalized by the double arc length of the chord for the upper and lower halves
-    #             end
+#             side = layer_Dict[:side]
 
-    #             width_grid = layer_Dict[:width][:grid]
-    #             width_vals = layer_Dict[:width][:values]
-    #             width = safeakima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
-    #             start_nd_arc_vals = midpoint_nd_arc .- width./2
-    #             end_nd_arc_vals = midpoint_nd_arc .+ width./2
+#             if side == "suction"
+#                 midpoint_nd_arc = 0.5 .- (pitch_axis+offset_y_pa)./(chord*2) # 0.5 is the arc length where the reference axis is, minus the distance to the defined position normalized by the double arc length of the chord for the upper and lower halves
+#             else
+#                 midpoint_nd_arc = 0.5 .+ (pitch_axis+offset_y_pa)./(chord*2) # 0.5 is the arc length where the reference axis is, plus the distance to the defined position normalized by the double arc length of the chord for the upper and lower halves
+#             end
 
-    #             @warn "Please consider directly specifying the start and ending node arc positions for the highest accuracy"
-    #             tryfailed = false
-    #         end
+#             width_grid = layer_Dict[:width][:grid]
+#             width_vals = layer_Dict[:width][:values]
+#             width = safeakima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+#             start_nd_arc_vals = midpoint_nd_arc .- width./2
+#             end_nd_arc_vals = midpoint_nd_arc .+ width./2
 
-    #         if tryfailed
-    #             @error "Composite layer definitions do not comply with windio standard, please review"
-    #         end
+#             @warn "Please consider directly specifying the start and ending node arc positions for the highest accuracy"
+#             tryfailed = false
+#         end
 
-    #         if maximum(start_nd_arc_vals .< 0.0) || maximum(end_nd_arc_vals .> 1.0)
-    #             @error "composite length definition exceeds arc length of 0 to 1 where 0 is the trailing suction side, 0.5 is leading edge, and 1.0 is trailing pressure side"
-    #         end
+#         if tryfailed
+#             @error "Composite layer definitions do not comply with windio standard, please review"
+#         end
 
-    #         segments_bld[istack,1] = start_nd_arc_vals
-    #         segments_bld[istack,2] = end_nd_arc_vals
-    #     end # if not web
-    # end # each layer
+#         if maximum(start_nd_arc_vals .< 0.0) || maximum(end_nd_arc_vals .> 1.0)
+#             @error "composite length definition exceeds arc length of 0 to 1 where 0 is the trailing suction side, 0.5 is leading edge, and 1.0 is trailing pressure side"
+#         end
 
-    # rotation_grid = layer_Dict[:rotation][:grid]
-    # rotation_vals = layer_Dict[:rotation][:values]
-    # rotation = safeakima(rotation_grid,rotation_vals,span) # in meters, need to convert to side
+#         segments_bld[istack,1] = start_nd_arc_vals
+#         segments_bld[istack,2] = end_nd_arc_vals
+#     end # if not web
+# end # each layer
 
-    # offset_y_pa_grid = layer_Dict[:offset_y_pa][:grid]
-    # offset_y_pa_vals = layer_Dict[:offset_y_pa][:values]
-    # offset_y_pa = safeakima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
+# rotation_grid = layer_Dict[:rotation][:grid]
+# rotation_vals = layer_Dict[:rotation][:values]
+# rotation = safeakima(rotation_grid,rotation_vals,span) # in meters, need to convert to side
 
-    # width_grid = layer_Dict[:width][:grid]
-    # width_vals = layer_Dict[:width][:values]
-    # width = safeakima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
-    # start_nd_arc = midpoint_nd_arc - width./2
-    # end_nd_arc = midpoint_nd_arc + width./2
+# offset_y_pa_grid = layer_Dict[:offset_y_pa][:grid]
+# offset_y_pa_vals = layer_Dict[:offset_y_pa][:values]
+# offset_y_pa = safeakima(offset_y_pa_grid,offset_y_pa_vals,span) # in meters, need to convert to side
 
-    # this requires having the airfoil coordinates, which has not been implemented yet at this pitch_system_mass_cost_coeff
+# width_grid = layer_Dict[:width][:grid]
+# width_vals = layer_Dict[:width][:values]
+# width = safeakima(width_grid,width_vals,span)./(chord*2) # unifying around start and end arc points requires width in meters (as defined by windio to be converted to the arc definition where)
+# start_nd_arc = midpoint_nd_arc - width./2
+# end_nd_arc = midpoint_nd_arc + width./2
+
+# this requires having the airfoil coordinates, which has not been implemented yet at this pitch_system_mass_cost_coeff
 
 
-   
 
-function readNuMadGeomCSV(NuMad_geom_file::String;section=nothing,subsection=nothing) #define section for multiple dispatch compatability
+
+function readNuMadGeomCSV(NuMad_geom_file::String; section = nothing, subsection = nothing) #define section for multiple dispatch compatability
     #TODO: add composite orientation
-    csvdata = DelimitedFiles.readdlm(NuMad_geom_file,',',skipstart = 0)
+    csvdata = DelimitedFiles.readdlm(NuMad_geom_file, ',', skipstart = 0)
 
-    n_station = length(csvdata[4:end,1])- sum(isempty.(csvdata[4:end,1]))
-    n_web = Int(csvdata[1,6])
-    n_stack = Int(csvdata[1,8])
-    n_segments = Int(csvdata[2,8])
-    span = Float64.(csvdata[4:n_station+3,2])
+    n_station = length(csvdata[4:end, 1]) - sum(isempty.(csvdata[4:end, 1]))
+    n_web = Int(csvdata[1, 6])
+    n_stack = Int(csvdata[1, 8])
+    n_segments = Int(csvdata[2, 8])
+    span = Float64.(csvdata[4:(n_station+3), 2])
     #TODO: interpolations
-    airfoil = csvdata[4:n_station+3,3]
-    te_type = csvdata[4:n_station+3,4]
-    twist_d = Float64.(csvdata[4:n_station+3,5])
-    chord = Float64.(csvdata[4:n_station+3,6])
-    xoffset = Float64.(csvdata[4:n_station+3,7])
-    aerocenter = Float64.(csvdata[4:n_station+3,8])
+    airfoil = csvdata[4:(n_station+3), 3]
+    te_type = csvdata[4:(n_station+3), 4]
+    twist_d = Float64.(csvdata[4:(n_station+3), 5])
+    chord = Float64.(csvdata[4:(n_station+3), 6])
+    xoffset = Float64.(csvdata[4:(n_station+3), 7])
+    aerocenter = Float64.(csvdata[4:(n_station+3), 8])
 
     # Read stack info
     stack_idx_end = 10+n_stack-1
-    stack_mat_types = Int.(csvdata[2,10:stack_idx_end])
-    stack_layers = Float64.(csvdata[4:n_station+3,10:stack_idx_end])
+    stack_mat_types = Int.(csvdata[2, 10:stack_idx_end])
+    stack_layers = Float64.(csvdata[4:(n_station+3), 10:stack_idx_end])
 
     seg_idx_end = stack_idx_end+n_segments+1
-    segment_names = csvdata[3,stack_idx_end+1:seg_idx_end]
-    segments = Float64.(csvdata[4:n_station+3,stack_idx_end+1:seg_idx_end])
+    segment_names = csvdata[3, (stack_idx_end+1):seg_idx_end]
+    segments = Float64.(csvdata[4:(n_station+3), (stack_idx_end+1):seg_idx_end])
 
     DP_idx_end = seg_idx_end+n_segments+1
-    DPtypes = csvdata[4:n_station+3,seg_idx_end+1:DP_idx_end]
+    DPtypes = csvdata[4:(n_station+3), (seg_idx_end+1):DP_idx_end]
 
-    skin_seq = Array{Seq, 2}(undef, n_station,n_segments) #can be any number of stack nums, so we have to make non-square containers
+    skin_seq = Array{Seq,2}(undef, n_station, n_segments) #can be any number of stack nums, so we have to make non-square containers
 
     skin_idx_end = DP_idx_end+n_segments
 
@@ -542,44 +589,73 @@ function readNuMadGeomCSV(NuMad_geom_file::String;section=nothing,subsection=not
         # sta_idx = 1
         for seg_idx = 1:n_segments
             # seg_idx = 1
-            str = split(csvdata[3+sta_idx,DP_idx_end+seg_idx],",")
+            str = split(csvdata[3+sta_idx, DP_idx_end+seg_idx], ",")
             if length(str)>1 && str[2]=="" #allow for single number
                 str = str[1]
             end
-            skin_seq[sta_idx,seg_idx] = Seq([parse(Int,x) for x in str])
+            skin_seq[sta_idx, seg_idx] = Seq([parse(Int, x) for x in str])
         end
     end
 
-    web_seq = Array{Seq, 2}(undef, n_station,n_web) #can be any number of stack nums, so we have to make non-square containers
-    web_dp = Array{Seq, 2}(undef, n_station,n_web) #this is fixed size square, but it's easier to do it this way
+    web_seq = Array{Seq,2}(undef, n_station, n_web) #can be any number of stack nums, so we have to make non-square containers
+    web_dp = Array{Seq,2}(undef, n_station, n_web) #this is fixed size square, but it's easier to do it this way
 
     for web_idx = 1:n_web
         # web_idx = 1
         for sta_idx = 1:n_station
             # sta_idx = 1
-            str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2-1],",")
+            str = split(csvdata[3+sta_idx, skin_idx_end+web_idx*2-1], ",")
             if !isempty(str[1])
                 if str[2]=="" #allow for single number
                     str = str[1]
                 end
-                web_seq[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
+                web_seq[sta_idx, web_idx] = Seq([parse(Int, x) for x in str])
 
-                str = split(csvdata[3+sta_idx,skin_idx_end+web_idx*2],",")
-                web_dp[sta_idx,web_idx] = Seq([parse(Int,x) for x in str])
+                str = split(csvdata[3+sta_idx, skin_idx_end+web_idx*2], ",")
+                web_dp[sta_idx, web_idx] = Seq([parse(Int, x) for x in str])
             end
         end
     end
 
-    return NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,segment_names)
+    return NuMad(
+        n_web,
+        n_stack,
+        n_segments,
+        span,
+        airfoil,
+        te_type,
+        twist_d,
+        chord,
+        xoffset,
+        aerocenter,
+        stack_mat_types,
+        stack_layers,
+        segments,
+        DPtypes,
+        skin_seq,
+        web_seq,
+        web_dp,
+        segment_names,
+    )
 end
 
-function readNuMadMaterialsCSV(NuMad_materials_xlscsv_file::OrderedCollections.OrderedDict{Symbol, Any})
+function readNuMadMaterialsCSV(
+    NuMad_materials_xlscsv_file::OrderedCollections.OrderedDict{Symbol,Any},
+)
     mat_Dict = NuMad_materials_xlscsv_file[:materials]
 
     N_materials = size(mat_Dict)[1]
     # Error checking on input file
-    for  imat = 1:N_materials
-        if !haskey(mat_Dict[imat],:name) || !haskey(mat_Dict[imat],:ply_t) || !haskey(mat_Dict[imat],:E) || !haskey(mat_Dict[imat],:G) || !haskey(mat_Dict[imat],:nu) || !haskey(mat_Dict[imat],:rho) || !haskey(mat_Dict[imat],:Xt) || !haskey(mat_Dict[imat],:Xc) || !haskey(mat_Dict[imat],:S)
+    for imat = 1:N_materials
+        if !haskey(mat_Dict[imat], :name) ||
+           !haskey(mat_Dict[imat], :ply_t) ||
+           !haskey(mat_Dict[imat], :E) ||
+           !haskey(mat_Dict[imat], :G) ||
+           !haskey(mat_Dict[imat], :nu) ||
+           !haskey(mat_Dict[imat], :rho) ||
+           !haskey(mat_Dict[imat], :Xt) ||
+           !haskey(mat_Dict[imat], :Xc) ||
+           !haskey(mat_Dict[imat], :S)
             @error "Materials must specify name, ply_t, E, G, nu, rho, Xt, Xc, S,
 Additionally, these are very useful: unit_cost, S, and m.  
 Note that S is currently implemented as an array of floats corresponding to spline control points for stress in MPa, it should start near the ultimate strength and end near 0.  Then m is a corresponding array of floats that gives the Log10 of the cycles to failure, with a very large number corresponding to 0 stress (i.e. 20).  The number of control points for each material should be the same.
@@ -587,7 +663,7 @@ Also Note: the material names defined must match those used in the layers
 And all materials are currently expecting orthotropic inputs, so please input multiples for steel etc."
         end
     end
-    
+
     # TODO: propogate the unused orthogonal terms?
     names = [mat_Dict[imat][:name] for imat = 1:N_materials]
     plythickness = [mat_Dict[imat][:ply_t] for imat = 1:N_materials]
@@ -602,10 +678,18 @@ And all materials are currently expecting orthotropic inputs, so please input mu
     yc = [mat_Dict[imat][:Xc][2] for imat = 1:N_materials]
     s = [mat_Dict[imat][:S][1] for imat = 1:N_materials]
     costs = [mat_Dict[imat][:unit_cost] for imat = 1:N_materials]
-    SN_stressMpa = collect(cat([mat_Dict[imat][:A] for imat = 1:N_materials][:,:]...,dims=2)')
-    Log_SN_cycles2Fail = collect(cat([mat_Dict[imat][:m] for imat = 1:N_materials][:,:]...,dims=2)')
+    SN_stressMpa =
+        collect(cat([mat_Dict[imat][:A] for imat = 1:N_materials][:, :]..., dims = 2)')
+    Log_SN_cycles2Fail =
+        collect(cat([mat_Dict[imat][:m] for imat = 1:N_materials][:, :]..., dims = 2)')
 
-    return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness),costs,SN_stressMpa,Log_SN_cycles2Fail)
+    return plyproperties(
+        names,
+        Composites.Material.(e1, e2, g12, anu, rho, xt, xc, yt, yc, s, plythickness),
+        costs,
+        SN_stressMpa,
+        Log_SN_cycles2Fail,
+    )
 end
 """
 readNuMadMaterialsCSV(NuMad_materials_xlscsv_file)
@@ -622,113 +706,158 @@ Parameters defining the rotor materials.
 function readNuMadMaterialsCSV(NuMad_materials_xlscsv_file)
 
 
-    csvdata = DelimitedFiles.readdlm(NuMad_materials_xlscsv_file,',',skipstart = 0)
+    csvdata = DelimitedFiles.readdlm(NuMad_materials_xlscsv_file, ',', skipstart = 0)
 
     data_start = 0
-    data_end = length(csvdata[:,1])
-    for ii = 1:length(csvdata[:,1])
-        if csvdata[ii,1]=="Material ID"
+    data_end = length(csvdata[:, 1])
+    for ii = 1:length(csvdata[:, 1])
+        if csvdata[ii, 1]=="Material ID"
             data_start = ii+1
         end
 
-        if data_start!=0 && ii>data_start && !isa(csvdata[ii,1],Number) # in case they have a file with excess rows
+        if data_start!=0 && ii>data_start && !isa(csvdata[ii, 1], Number) # in case they have a file with excess rows
             data_end = ii-1
             break
         end
     end
 
-    names = csvdata[data_start:data_end,2]
-    plythickness = Float64.(csvdata[data_start:data_end,4]) .* 1e-3 #meters
-    e1 = Float64.(csvdata[data_start:data_end,5]) .* 1e6
-    e2 = Float64.(csvdata[data_start:data_end,6]) .* 1e6
-    g12 = Float64.(csvdata[data_start:data_end,8]) .* 1e6
-    anu = Float64.(csvdata[data_start:data_end,11])  #ratio
-    rho = Float64.(csvdata[data_start:data_end,14])  #g/cc * 1000 #kg/m3
-    xt = abs.(Float64.(csvdata[data_start:data_end,15]) .* 1e6)  #pa
-    xc = abs.(Float64.(csvdata[data_start:data_end,16]) .* 1e6)  #pa, abs since composites is looking for positive failure values and handles the negative.
-    if length(csvdata[4,:])>17
-        yt = abs.(Float64.(csvdata[data_start:data_end,17]) .* 1e6)  #pa
-        yc = abs.(Float64.(csvdata[data_start:data_end,18]) .* 1e6)  #pa, abs since composites is looking for positive failure values and handles the negative.
-        costs = Float64.(csvdata[data_start:data_end,21]) #$/kg
+    names = csvdata[data_start:data_end, 2]
+    plythickness = Float64.(csvdata[data_start:data_end, 4]) .* 1e-3 #meters
+    e1 = Float64.(csvdata[data_start:data_end, 5]) .* 1e6
+    e2 = Float64.(csvdata[data_start:data_end, 6]) .* 1e6
+    g12 = Float64.(csvdata[data_start:data_end, 8]) .* 1e6
+    anu = Float64.(csvdata[data_start:data_end, 11])  #ratio
+    rho = Float64.(csvdata[data_start:data_end, 14])  #g/cc * 1000 #kg/m3
+    xt = abs.(Float64.(csvdata[data_start:data_end, 15]) .* 1e6)  #pa
+    xc = abs.(Float64.(csvdata[data_start:data_end, 16]) .* 1e6)  #pa, abs since composites is looking for positive failure values and handles the negative.
+    if length(csvdata[4, :])>17
+        yt = abs.(Float64.(csvdata[data_start:data_end, 17]) .* 1e6)  #pa
+        yc = abs.(Float64.(csvdata[data_start:data_end, 18]) .* 1e6)  #pa, abs since composites is looking for positive failure values and handles the negative.
+        costs = Float64.(csvdata[data_start:data_end, 21]) #$/kg
         try
-            SN_stressMpa = Float64.(csvdata[data_start:data_end,23:28])
-            Log_SN_cycles2Fail = Float64.(csvdata[data_start:data_end,29:34])
+            SN_stressMpa = Float64.(csvdata[data_start:data_end, 23:28])
+            Log_SN_cycles2Fail = Float64.(csvdata[data_start:data_end, 29:34])
         catch
-            SN_stressMpa = collect(cat(fill(collect(LinRange(1e12,0,6)),length(names))[:,:]...,dims=2)')
-            Log_SN_cycles2Fail = collect(cat(fill(collect(LinRange(0,7,6)),length(names))[:,:]...,dims=2)')
+            SN_stressMpa = collect(
+                cat(fill(collect(LinRange(1e12, 0, 6)), length(names))[:, :]..., dims = 2)',
+            )
+            Log_SN_cycles2Fail = collect(
+                cat(fill(collect(LinRange(0, 7, 6)), length(names))[:, :]..., dims = 2)',
+            )
             @warn "Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10"
         end
     else
         yt = ones(length(e1)) .* 100.0e6 #made up
         yc = ones(length(e1)) .* 100.0e6  #made up, abs since composites is looking for positive failure values and handles the negative.
         costs = zeros(length(e1)) #$/kg
-        SN_stressMpa = collect(cat(fill(collect(LinRange(1e12,0,6)),length(names))[:,:]...,dims=2)')
-        Log_SN_cycles2Fail = collect(cat(fill(collect(LinRange(0,7,6)),length(names))[:,:]...,dims=2)')
+        SN_stressMpa = collect(
+            cat(fill(collect(LinRange(1e12, 0, 6)), length(names))[:, :]..., dims = 2)',
+        )
+        Log_SN_cycles2Fail = collect(
+            cat(fill(collect(LinRange(0, 7, 6)), length(names))[:, :]..., dims = 2)',
+        )
     end
 
     s = abs.(ones(length(e1)) .* 100.0e6)  #made up, abs since composites.jl is expecting positive failure values
 
-    return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness),costs,SN_stressMpa,Log_SN_cycles2Fail)
+    return plyproperties(
+        names,
+        Composites.Material.(e1, e2, g12, anu, rho, xt, xc, yt, yc, s, plythickness),
+        costs,
+        SN_stressMpa,
+        Log_SN_cycles2Fail,
+    )
 
 end
 
 
-function saveOWENSfiles(filename,mymesh,myort,myjoint,myEl,pBC,numadIn_bld)
+function saveOWENSfiles(filename, mymesh, myort, myjoint, myEl, pBC, numadIn_bld)
     # Create Filenames
 
     # Save mesh
     DelimitedFiles.open("$filename.mesh", "w") do io
-           DelimitedFiles.writedlm(io, [mymesh.numNodes mymesh.numEl], ' ')
-           DelimitedFiles.writedlm(io, [round.(Int,mymesh.nodeNum) mymesh.x mymesh.y mymesh.z], ' ')
-           DelimitedFiles.writedlm(io, [round.(Int,mymesh.elNum) zeros(Int,length(mymesh.elNum)).+2 round.(Int,mymesh.conn)], ' ')
-           DelimitedFiles.writedlm(io, " ", ' ')
-           DelimitedFiles.writedlm(io, [length(mymesh.meshSeg) [meshSeg for meshSeg in mymesh.meshSeg]'], ' ')
-       end
+        DelimitedFiles.writedlm(io, [mymesh.numNodes mymesh.numEl], ' ')
+        DelimitedFiles.writedlm(
+            io,
+            [round.(Int, mymesh.nodeNum) mymesh.x mymesh.y mymesh.z],
+            ' ',
+        )
+        DelimitedFiles.writedlm(
+            io,
+            [round.(Int, mymesh.elNum) zeros(Int, length(mymesh.elNum)) .+ 2 round.(
+                Int,
+                mymesh.conn,
+            )],
+            ' ',
+        )
+        DelimitedFiles.writedlm(io, " ", ' ')
+        DelimitedFiles.writedlm(
+            io,
+            [length(mymesh.meshSeg) [meshSeg for meshSeg in mymesh.meshSeg]'],
+            ' ',
+        )
+    end
 
     # Save El
 
     DelimitedFiles.open("$filename.el", "w") do io
         for ii = 1:mymesh.numEl
-            DelimitedFiles.writedlm(io, [mymesh.z[ii]/maximum(mymesh.z) -(myEl.props[ii].ac[1].+0.5)./2 myEl.props[ii].twist[1] myEl.props[ii].rhoA[1] myEl.props[ii].EIyy[1] myEl.props[ii].EIzz[1] myEl.props[ii].GJ[1] myEl.props[ii].EA[1] myEl.props[ii].alpha1[1] myEl.props[ii].rhoIyy[1] myEl.props[ii].rhoIzz[1] 0.0 0.0 myEl.props[ii].zcm[1] myEl.props[ii].ycm[1] 0.0 myEl.props[ii].a[1]], ' ')
-            DelimitedFiles.writedlm(io, [mymesh.z[ii]/maximum(mymesh.z) -(myEl.props[ii].ac[2].+0.5)./2 myEl.props[ii].twist[2] myEl.props[ii].rhoA[2] myEl.props[ii].EIyy[2] myEl.props[ii].EIzz[2] myEl.props[ii].GJ[2] myEl.props[ii].EA[2] myEl.props[ii].alpha1[2] myEl.props[ii].rhoIyy[2] myEl.props[ii].rhoIzz[2] 0.0 0.0 myEl.props[ii].zcm[2] myEl.props[ii].ycm[2] 0.0 myEl.props[ii].a[2]], ' ')
+            DelimitedFiles.writedlm(
+                io,
+                [mymesh.z[ii]/maximum(mymesh.z) -(myEl.props[ii].ac[1] .+ 0.5) ./ 2 myEl.props[ii].twist[1] myEl.props[ii].rhoA[1] myEl.props[ii].EIyy[1] myEl.props[ii].EIzz[1] myEl.props[ii].GJ[1] myEl.props[ii].EA[1] myEl.props[ii].alpha1[1] myEl.props[ii].rhoIyy[1] myEl.props[ii].rhoIzz[1] 0.0 0.0 myEl.props[ii].zcm[1] myEl.props[ii].ycm[1] 0.0 myEl.props[ii].a[1]],
+                ' ',
+            )
+            DelimitedFiles.writedlm(
+                io,
+                [mymesh.z[ii]/maximum(mymesh.z) -(myEl.props[ii].ac[2] .+ 0.5) ./ 2 myEl.props[ii].twist[2] myEl.props[ii].rhoA[2] myEl.props[ii].EIyy[2] myEl.props[ii].EIzz[2] myEl.props[ii].GJ[2] myEl.props[ii].EA[2] myEl.props[ii].alpha1[2] myEl.props[ii].rhoIyy[2] myEl.props[ii].rhoIzz[2] 0.0 0.0 myEl.props[ii].zcm[2] myEl.props[ii].ycm[2] 0.0 myEl.props[ii].a[2]],
+                ' ',
+            )
         end
-       end
+    end
 
     # Save Joint
     DelimitedFiles.open("$filename.jnt", "w") do io
-           DelimitedFiles.writedlm(io, myjoint, '\t')
-       end
+        DelimitedFiles.writedlm(io, myjoint, '\t')
+    end
 
     # Save Ort
     DelimitedFiles.open("$filename.ort", "w") do io
-           DelimitedFiles.writedlm(io, [myort.elNum[:,1] myort.Psi_d myort.Theta_d myort.Twist_d myort.Length myort.Offset'], ' ')
-       end
+        DelimitedFiles.writedlm(
+            io,
+            [myort.elNum[:, 1] myort.Psi_d myort.Theta_d myort.Twist_d myort.Length myort.Offset'],
+            ' ',
+        )
+    end
 
     # Save pBC
     DelimitedFiles.open("$filename.bc", "w") do io
-           DelimitedFiles.writedlm(io, pBC, '\t')
-       end
+        DelimitedFiles.writedlm(io, pBC, '\t')
+    end
 
     # Save Blade
     # Used
-    chord = safeakima(numadIn_bld.span./maximum(numadIn_bld.span),numadIn_bld.chord,mymesh.structuralSpanLocNorm[1,:])
+    chord = safeakima(
+        numadIn_bld.span ./ maximum(numadIn_bld.span),
+        numadIn_bld.chord,
+        mymesh.structuralSpanLocNorm[1, :],
+    )
 
-    bldArray = zeros(length(mymesh.structuralSpanLocNorm),16)
+    bldArray = zeros(length(mymesh.structuralSpanLocNorm), 16)
     row = 1
-    for ibld = 1:length(mymesh.structuralSpanLocNorm[:,1])
-        for ispan = 1:length(mymesh.structuralSpanLocNorm[1,:])
-            bldArray[row,1] = ibld
-            bldArray[row,2] = mymesh.structuralSpanLocNorm[ibld,ispan]
-            bldArray[row,3] = mymesh.structuralNodeNumbers[ibld,ispan]
-            bldArray[row,4] = mymesh.structuralElNumbers[ibld,ispan]
-            bldArray[row,14] = chord[ispan]
-            bldArray[row,16] = 2*pi
+    for ibld = 1:length(mymesh.structuralSpanLocNorm[:, 1])
+        for ispan = 1:length(mymesh.structuralSpanLocNorm[1, :])
+            bldArray[row, 1] = ibld
+            bldArray[row, 2] = mymesh.structuralSpanLocNorm[ibld, ispan]
+            bldArray[row, 3] = mymesh.structuralNodeNumbers[ibld, ispan]
+            bldArray[row, 4] = mymesh.structuralElNumbers[ibld, ispan]
+            bldArray[row, 14] = chord[ispan]
+            bldArray[row, 16] = 2*pi
             row += 1
         end
     end
     DelimitedFiles.open("$filename.bld", "w") do io
-           DelimitedFiles.writedlm(io, bldArray, '\t')
-       end
+        DelimitedFiles.writedlm(io, bldArray, '\t')
+    end
 
     return nothing
 end
@@ -748,65 +877,67 @@ output:
 """
 function readMesh(filename)
 
-    fid = open(filename,"r")   #open mesh file
+    fid = open(filename, "r")   #open mesh file
 
     # temp = fscanf(fid,'#i',2)   #read in number of nodes and number of elements
     line = readline(fid)
     temp = split(line)
 
-    numNodes = parse(Int,temp[1])
-    numEl = parse(Int,temp[2])
+    numNodes = parse(Int, temp[1])
+    numEl = parse(Int, temp[2])
 
-    nodeNum = zeros(Int,numNodes)
+    nodeNum = zeros(Int, numNodes)
     x = zeros(numNodes)
     y = zeros(numNodes)
     z = zeros(numNodes)
 
-    conn = zeros(Int,numEl,2)
-    elNum = zeros(Int,numEl)
+    conn = zeros(Int, numEl, 2)
+    elNum = zeros(Int, numEl)
 
-    for i=1:numNodes            # read in node number and node coordinates
+    for i = 1:numNodes            # read in node number and node coordinates
         line = readline(fid)
         temp = split(line)
-        nodeNum[i] = Int.(parse(Float64,temp[1]))
-        x[i] = parse(Float64,temp[2])
-        y[i] = parse(Float64,temp[3])
-        z[i] = parse(Float64,temp[4])
+        nodeNum[i] = Int.(parse(Float64, temp[1]))
+        x[i] = parse(Float64, temp[2])
+        y[i] = parse(Float64, temp[3])
+        z[i] = parse(Float64, temp[4])
     end
 
-    for i=1:numEl               # read in element number and connectivity list
+    for i = 1:numEl               # read in element number and connectivity list
         line = readline(fid)
         temp = split(line)
-        elNum[i] = parse(Int,temp[1])
+        elNum[i] = parse(Int, temp[1])
 
-        conn[i,1] = parse(Int,temp[3])
-        conn[i,2] = parse(Int,temp[4])
+        conn[i, 1] = parse(Int, temp[3])
+        conn[i, 2] = parse(Int, temp[4])
     end
 
     line = readline(fid) #get blank line
     line = readline(fid)
     temp = split(line)
-    numComponents = parse(Int,temp[1])
-    meshSeg = zeros(Int,numComponents)
-    for i=1:numComponents
-        meshSeg[i] = parse(Int,temp[i+1])
+    numComponents = parse(Int, temp[1])
+    meshSeg = zeros(Int, numComponents)
+    for i = 1:numComponents
+        meshSeg[i] = parse(Int, temp[i+1])
     end
 
     close(fid)  #close mesh file
 
-    mesh = OWENSFEA.Mesh(nodeNum,
-    numEl,
-    numNodes,
-    x,
-    y,
-    z,
-    elNum,
-    conn,
-    zeros(Int,numEl),
-    meshSeg,
-    zeros(1,1),
-    zeros(Int,1,1),
-    zeros(Int,1,1))
+    mesh = OWENSFEA.Mesh(
+        nodeNum,
+        numEl,
+        numNodes,
+        x,
+        y,
+        z,
+        elNum,
+        conn,
+        zeros(Int, numEl),
+        meshSeg,
+        zeros(1, 1),
+        zeros(Int, 1, 1),
+        zeros(Int, 1, 1),
+    )
 
     return mesh
 
@@ -840,22 +971,23 @@ The boundary condition file should have the following format:
   - `sBC`: Spring boundary conditions (empty)
   - `mBC`: Mass boundary conditions (empty)
 """
-function readBCdata(bcfilename,numNodes,numDOFPerNode)
+function readBCdata(bcfilename, numNodes, numDOFPerNode)
 
     fid = open(bcfilename)       #open boundary condition file
-    numpBC = parse(Int,readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
-    pBC = zeros(Int,numpBC,3)         #initialize boundary conditions
-    for i=1:numpBC
+    numpBC = parse(Int, readline(fid)) #read in number of boundary conditions (displacement boundary conditions)
+    pBC = zeros(Int, numpBC, 3)         #initialize boundary conditions
+    for i = 1:numpBC
 
         line = readline(fid)
 
         # Find where all of the delimiters are
         #first two are boundary condition node number and local DOF number
         #third is boundary condition value (typically zero)
-        delimiter_idx = [0;collect.(Int,findall(" ",line));length(line)+1]
+        delimiter_idx = [0; collect.(Int, findall(" ", line)); length(line)+1]
         # Extract the data from the beginning to the last delimiter
         for k = 2:length(delimiter_idx)
-            pBC[i,k-1] = Int(parse(Float64,line[delimiter_idx[k-1][1]+1:delimiter_idx[k][1]-1]))
+            pBC[i, k-1] =
+                Int(parse(Float64, line[(delimiter_idx[k-1][1]+1):(delimiter_idx[k][1]-1)]))
         end
 
     end
@@ -872,11 +1004,11 @@ function readBCdata(bcfilename,numNodes,numDOFPerNode)
 
 
     #calculate constrained dof vector
-    isConstrained = zeros(totalNumDof,1)
-    constDof = (pBC[:,1].-1)*numDOFPerNode + pBC[:,2]
+    isConstrained = zeros(totalNumDof, 1)
+    constDof = (pBC[:, 1] .- 1)*numDOFPerNode + pBC[:, 2]
     index = 1
-    for i=1:numNodes
-        for j=1:numDOFPerNode
+    for i = 1:numNodes
+        for j = 1:numDOFPerNode
             if ((i-1)*numDOFPerNode + j in constDof)
                 isConstrained[index] = 1
             end
@@ -884,13 +1016,7 @@ function readBCdata(bcfilename,numNodes,numDOFPerNode)
         end
     end
 
-    BC = OWENSFEA.BC_struct(numpBC,
-    pBC,
-    numsBC,
-    nummBC,
-    isConstrained,
-    [],
-    [])
+    BC = OWENSFEA.BC_struct(numpBC, pBC, numsBC, nummBC, isConstrained, [], [])
 
     return BC
 
@@ -929,9 +1055,9 @@ The blade data file should have the following format:
 """
 function readBladeData(filename)
 
-    a = DelimitedFiles.readdlm(filename,'\t',skipstart = 0)
+    a = DelimitedFiles.readdlm(filename, '\t', skipstart = 0)
 
-    bladeNum = a[:,1]
+    bladeNum = a[:, 1]
 
     numBlades = Int(maximum(bladeNum))
     #     numStruts = min(bladeNum)
@@ -942,8 +1068,8 @@ function readBladeData(filename)
     #     end
 
     strutStartIndex = 0
-    for i=1:length(bladeNum)
-        if (isempty(a[i,end]))
+    for i = 1:length(bladeNum)
+        if (isempty(a[i, end]))
             strutStartIndex = i
             break
         end
@@ -962,27 +1088,33 @@ function readBladeData(filename)
         strutStartIndex = temp[1] + 1
     end
 
-    bladeDataBlock = a[1:strutStartIndex-1,:]
+    bladeDataBlock = a[1:(strutStartIndex-1), :]
     bladeEntries, _ = size(bladeDataBlock)
-    numNodesPerBlade = round(Int,bladeEntries/numBlades)
+    numNodesPerBlade = round(Int, bladeEntries/numBlades)
 
-    structuralSpanLocNorm = zeros(numBlades,numNodesPerBlade)
-    structuralNodeNumbers = zeros(numBlades,numNodesPerBlade)
-    structuralElNumbers = zeros(numBlades,numNodesPerBlade)
-    for i=1:numBlades
-        structuralSpanLocNorm[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,2]./bladeDataBlock[i*numNodesPerBlade,2]
-        structuralNodeNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,3]
-        structuralElNumbers[i,:] = bladeDataBlock[(i-1)*numNodesPerBlade+1:1:i*numNodesPerBlade,4]
+    structuralSpanLocNorm = zeros(numBlades, numNodesPerBlade)
+    structuralNodeNumbers = zeros(numBlades, numNodesPerBlade)
+    structuralElNumbers = zeros(numBlades, numNodesPerBlade)
+    for i = 1:numBlades
+        structuralSpanLocNorm[i, :] =
+            bladeDataBlock[((i-1)*numNodesPerBlade+1):1:(i*numNodesPerBlade), 2] ./
+            bladeDataBlock[i*numNodesPerBlade, 2]
+        structuralNodeNumbers[i, :] =
+            bladeDataBlock[((i-1)*numNodesPerBlade+1):1:(i*numNodesPerBlade), 3]
+        structuralElNumbers[i, :] =
+            bladeDataBlock[((i-1)*numNodesPerBlade+1):1:(i*numNodesPerBlade), 4]
     end
 
-    bladeData = BladeData(numBlades,  #assign data to bladeData object
-    bladeDataBlock[:,1],
-    bladeDataBlock[:,2],
-    bladeDataBlock[:,3],
-    bladeDataBlock[:,4],
-    bladeDataBlock[:,5:end])
+    bladeData = BladeData(
+        numBlades,  #assign data to bladeData object
+        bladeDataBlock[:, 1],
+        bladeDataBlock[:, 2],
+        bladeDataBlock[:, 3],
+        bladeDataBlock[:, 4],
+        bladeDataBlock[:, 5:end],
+    )
 
-    return bladeData,structuralSpanLocNorm,structuralNodeNumbers,structuralElNumbers
+    return bladeData, structuralSpanLocNorm, structuralNodeNumbers, structuralElNumbers
 
 end
 
@@ -1002,9 +1134,9 @@ object.
 #Output
 * `el::OWENSFEA.El`:       see OWENSFEA.El    element data object
 """
-function readElementData(numElements,elfile,ortfile,bladeData_struct)
+function readElementData(numElements, elfile, ortfile, bladeData_struct)
 
-    fid = open(elfile,"r") #open element data file
+    fid = open(elfile, "r") #open element data file
 
     ac = zeros(2)
     twist = zeros(2)
@@ -1031,22 +1163,22 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     a0 = zeros(2)
     aeroCenterOffset = zeros(2)
 
-    sectionPropsArray = Array{OWENSFEA.SectionPropsArray, 1}(undef, numElements)
+    sectionPropsArray = Array{OWENSFEA.SectionPropsArray,1}(undef, numElements)
 
-    data1 = zeros(1,17)
-    data2 = zeros(1,17)
-    for i=1:numElements
-        data1=parse.(Float64,split(readline(fid))) #read element data
-        data2=parse.(Float64,split(readline(fid)))
+    data1 = zeros(1, 17)
+    data2 = zeros(1, 17)
+    for i = 1:numElements
+        data1=parse.(Float64, split(readline(fid))) #read element data
+        data2=parse.(Float64, split(readline(fid)))
 
         #structural properties
-        ac = -([data1[2], data2[2]].-0.5) #TODO: why are we doing it this way???
+        ac = -([data1[2], data2[2]] .- 0.5) #TODO: why are we doing it this way???
         twist=[data1[3], data2[3]]
         rhoA = [data1[4], data2[4]]
         EIyy = [data1[5], data2[5]]
         EIzz = [data1[6], data2[6]]
         if (minimum(abs.(EIyy - EIzz)) < 1.0e-3)
-            EIzz = EIzz.*1.0001
+            EIzz = EIzz .* 1.0001
         end
         GJ = [data1[7], data2[7]]
         EA = [data1[8], data2[8]]
@@ -1071,7 +1203,32 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
         b = [0.0, 0.0]
         a0 = [2*pi, 2*pi]
 
-        sectionPropsArray[i] = OWENSFEA.SectionPropsArray(ac,twist,rhoA,EIyy,EIzz,GJ,EA,rhoIyy,rhoIzz,rhoJ,zcm,ycm,a,EIyz,alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,rhoIyz,b,a0,aeroCenterOffset)
+        sectionPropsArray[i] = OWENSFEA.SectionPropsArray(
+            ac,
+            twist,
+            rhoA,
+            EIyy,
+            EIzz,
+            GJ,
+            EA,
+            rhoIyy,
+            rhoIzz,
+            rhoJ,
+            zcm,
+            ycm,
+            a,
+            EIyz,
+            alpha1,
+            alpha2,
+            alpha3,
+            alpha4,
+            alpha5,
+            alpha6,
+            rhoIyz,
+            b,
+            a0,
+            aeroCenterOffset,
+        )
 
     end
     close(fid) #close element file
@@ -1080,25 +1237,31 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     elNum = Int.(bladeData_struct.elementNum)    #element number associated with blade section
     bladeData = bladeData_struct.remaining  #blade data
 
-    chord = zeros(maximum(Int,nodeNum),1)
-    for i=1:length(elNum)
-        chord[nodeNum[i]] = bladeData[i,10]  #store chord of blade sections
+    chord = zeros(maximum(Int, nodeNum), 1)
+    for i = 1:length(elNum)
+        chord[nodeNum[i]] = bladeData[i, 10]  #store chord of blade sections
     end
 
-    for i=1:length(elNum)
+    for i = 1:length(elNum)
         if (elNum[i]!=-1)
 
-            sectionPropsArray[elNum[i]].b = 0.5.*[chord[nodeNum[i]], chord[nodeNum[i+1]]] #element semi chord
-            sectionPropsArray[elNum[i]].a0 = [bladeData[i,12], bladeData[i+1,12]]         #element lift curve slope (needed for flutter analysis)
+            sectionPropsArray[elNum[i]].b = 0.5 .* [chord[nodeNum[i]], chord[nodeNum[i+1]]] #element semi chord
+            sectionPropsArray[elNum[i]].a0 = [bladeData[i, 12], bladeData[i+1, 12]]         #element lift curve slope (needed for flutter analysis)
 
             #convert "a" to semichord fraction aft of halfchord
-            sectionPropsArray[elNum[i]].a = (sectionPropsArray[elNum[i]].a + 0.25*(2*sectionPropsArray[elNum[i]].b) - sectionPropsArray[elNum[i]].b)./sectionPropsArray[elNum[i]].b
+            sectionPropsArray[elNum[i]].a =
+                (
+                    sectionPropsArray[elNum[i]].a + 0.25*(2*sectionPropsArray[elNum[i]].b) -
+                    sectionPropsArray[elNum[i]].b
+                ) ./ sectionPropsArray[elNum[i]].b
 
             #convert "ac" to semichord fraction foreward of halfchord TODO: why are we doing it this way???
-            sectionPropsArray[elNum[i]].ac = (sectionPropsArray[elNum[i]].ac).*2
+            sectionPropsArray[elNum[i]].ac = (sectionPropsArray[elNum[i]].ac) .* 2
 
             #physical aero center offset from elastic axis
-            sectionPropsArray[elNum[i]].aeroCenterOffset = (sectionPropsArray[elNum[i]].ac).*sectionPropsArray[elNum[i]].b - sectionPropsArray[elNum[i]].a
+            sectionPropsArray[elNum[i]].aeroCenterOffset =
+                (sectionPropsArray[elNum[i]].ac) .* sectionPropsArray[elNum[i]].b -
+                sectionPropsArray[elNum[i]].a
         end
     end
 
@@ -1110,9 +1273,9 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     psi = zeros(numElements)
     theta = zeros(numElements)
     roll = zeros(numElements)
-    fid = open(ortfile,"r")
-    for i=1:numElements
-        temp = parse.(Float64,split(readline(fid)))
+    fid = open(ortfile, "r")
+    for i = 1:numElements
+        temp = parse.(Float64, split(readline(fid)))
         elLen[i]=temp[5]
         psi[i]=temp[2]
         theta[i]=temp[3]
@@ -1123,7 +1286,7 @@ function readElementData(numElements,elfile,ortfile,bladeData_struct)
     rotationalEffects = ones(numElements)
 
     #store data in element object
-    el = OWENSFEA.El(sectionPropsArray,elLen,psi,theta,roll,rotationalEffects)
+    el = OWENSFEA.El(sectionPropsArray, elLen, psi, theta, roll, rotationalEffects)
 
     return el
 
@@ -1188,12 +1351,15 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
         # write out the boundary conditions into the file
         for nn = 1:length(nodes)
             # [row, col, val] = find(cmkValues[nn])
-            indices = findall(x->x!=0,cmkValues[:,:,nn])
+            indices = findall(x->x!=0, cmkValues[:, :, nn])
             # println(indices)
             for ii = 1:length(indices)
                 row = indices[ii][1]
                 col = indices[ii][2]
-                write(file, "$(nodes[nn]) $(cmkType[nn]) $(row) $(col) $(cmkValues[row,col,nn])\n")
+                write(
+                    file,
+                    "$(nodes[nn]) $(cmkType[nn]) $(row) $(col) $(cmkValues[row,col,nn])\n",
+                )
             end
         end
     end
@@ -1203,163 +1369,178 @@ end
 """
 Internal, reads modal file and returns freq, damp, and modeshapes
 """
-function readResultsModalOut(resultsFile,numNodes)
-    data = DelimitedFiles.readdlm(resultsFile,'\t',skipstart = 0)
+function readResultsModalOut(resultsFile, numNodes)
+    data = DelimitedFiles.readdlm(resultsFile, '\t', skipstart = 0)
 
-    nmodes = round(Int,min(length(data[:,1])/(numNodes*2+6),30))
+    nmodes = round(Int, min(length(data[:, 1])/(numNodes*2+6), 30))
 
     freq = zeros(nmodes)
     damp = zeros(nmodes)
-    U_x_0 = zeros(numNodes,nmodes)
-    U_y_0 = zeros(numNodes,nmodes)
-    U_z_0 = zeros(numNodes,nmodes)
-    theta_x_0 = zeros(numNodes,nmodes)
-    theta_y_0 = zeros(numNodes,nmodes)
-    theta_z_0 = zeros(numNodes,nmodes)
-    U_x_90 = zeros(numNodes,nmodes)
-    U_y_90 = zeros(numNodes,nmodes)
-    U_z_90 = zeros(numNodes,nmodes)
-    theta_x_90 = zeros(numNodes,nmodes)
-    theta_y_90 = zeros(numNodes,nmodes)
-    theta_z_90 = zeros(numNodes,nmodes)
+    U_x_0 = zeros(numNodes, nmodes)
+    U_y_0 = zeros(numNodes, nmodes)
+    U_z_0 = zeros(numNodes, nmodes)
+    theta_x_0 = zeros(numNodes, nmodes)
+    theta_y_0 = zeros(numNodes, nmodes)
+    theta_z_0 = zeros(numNodes, nmodes)
+    U_x_90 = zeros(numNodes, nmodes)
+    U_y_90 = zeros(numNodes, nmodes)
+    U_z_90 = zeros(numNodes, nmodes)
+    theta_x_90 = zeros(numNodes, nmodes)
+    theta_y_90 = zeros(numNodes, nmodes)
+    theta_z_90 = zeros(numNodes, nmodes)
 
     for i_mode = 1:nmodes
         i_line = (i_mode-1)*(numNodes*2+7)+1
 
-        freq[i_mode] = parse(Float64,(split(data[i_line+1,1])[2])[1:end-1])
-        damp[i_mode] = parse(Float64,(split(data[i_line+2,1])[2])[1:end-1])
+        freq[i_mode] = parse(Float64, (split(data[i_line+1, 1])[2])[1:(end-1)])
+        damp[i_mode] = parse(Float64, (split(data[i_line+2, 1])[2])[1:(end-1)])
 
         # 0 degree shapes, with the max value scaled to 1
 
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
-        U_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
-        U_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
-        U_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
-        theta_x_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
-        theta_y_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
-        theta_z_0[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 1])
+        U_x_0[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 2])
+        U_y_0[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 3])
+        U_z_0[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 4])
+        theta_x_0[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 5])
+        theta_y_0[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 6])
+        theta_z_0[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
 
         i_line = i_line+numNodes+2 #90 degree shapes, with the max value scaled to 1
 
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,1])
-        U_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,2])
-        U_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,3])
-        U_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,4])
-        theta_x_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,5])
-        theta_y_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
-        temp = Float64.(data[i_line+5:i_line+4+numNodes,6])
-        theta_z_90[:,i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 1])
+        U_x_90[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 2])
+        U_y_90[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 3])
+        U_z_90[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 4])
+        theta_x_90[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 5])
+        theta_y_90[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
+        temp = Float64.(data[(i_line+5):(i_line+4+numNodes), 6])
+        theta_z_90[:, i_mode] = temp#./max(maximum(abs.(temp)),eps())
     end
-    return freq,damp,U_x_0,U_y_0,U_z_0,theta_x_0,theta_y_0,theta_z_0,U_x_90,U_y_90,U_z_90,theta_x_90,theta_y_90,theta_z_90
+    return freq,
+    damp,
+    U_x_0,
+    U_y_0,
+    U_z_0,
+    theta_x_0,
+    theta_y_0,
+    theta_z_0,
+    U_x_90,
+    U_y_90,
+    U_z_90,
+    theta_x_90,
+    theta_y_90,
+    theta_z_90
 end
 
 
-function outputData(;mymesh="not saved",
-    inputs="not saved",
-    t="not saved",
-    aziHist="not saved",
-    OmegaHist="not saved",
-    OmegaDotHist="not saved",
-    gbHist="not saved",
-    gbDotHist="not saved",
-    gbDotDotHist="not saved",
-    FReactionHist="not saved",
-    genTorque="not saved",
-    genPower="not saved",
-    torqueDriveShaft="not saved",
-    uHist="not saved",
-    uHist_prp="not saved",
-    epsilon_x_hist="not saved",
-    epsilon_y_hist="not saved",
-    epsilon_z_hist="not saved",
-    kappa_x_hist="not saved",
-    kappa_y_hist="not saved",
-    kappa_z_hist="not saved",
-    FTwrBsHist="not saved",
-    massOwens="not saved",
-    stress_U="not saved",
-    SF_ult_U="not saved",
-    SF_buck_U="not saved",
-    stress_L="not saved",
-    SF_ult_L="not saved",
-    SF_buck_L="not saved",
-    stress_TU="not saved",
-    SF_ult_TU="not saved",
-    SF_buck_TU="not saved",
-    stress_TL="not saved",
-    SF_ult_TL="not saved",
-    SF_buck_TL="not saved",
-    topstrainout_blade_U="not saved",
-    topstrainout_blade_L="not saved",
-    topstrainout_tower_U="not saved",
-    topstrainout_tower_L="not saved",
-    topDamage_blade_U="not saved",
-    topDamage_blade_L="not saved",
-    topDamage_tower_U="not saved",
-    topDamage_tower_L="not saved",
-    ofastformat=false)
+function outputData(;
+    mymesh = "not saved",
+    inputs = "not saved",
+    t = "not saved",
+    aziHist = "not saved",
+    OmegaHist = "not saved",
+    OmegaDotHist = "not saved",
+    gbHist = "not saved",
+    gbDotHist = "not saved",
+    gbDotDotHist = "not saved",
+    FReactionHist = "not saved",
+    genTorque = "not saved",
+    genPower = "not saved",
+    torqueDriveShaft = "not saved",
+    uHist = "not saved",
+    uHist_prp = "not saved",
+    epsilon_x_hist = "not saved",
+    epsilon_y_hist = "not saved",
+    epsilon_z_hist = "not saved",
+    kappa_x_hist = "not saved",
+    kappa_y_hist = "not saved",
+    kappa_z_hist = "not saved",
+    FTwrBsHist = "not saved",
+    massOwens = "not saved",
+    stress_U = "not saved",
+    SF_ult_U = "not saved",
+    SF_buck_U = "not saved",
+    stress_L = "not saved",
+    SF_ult_L = "not saved",
+    SF_buck_L = "not saved",
+    stress_TU = "not saved",
+    SF_ult_TU = "not saved",
+    SF_buck_TU = "not saved",
+    stress_TL = "not saved",
+    SF_ult_TL = "not saved",
+    SF_buck_TL = "not saved",
+    topstrainout_blade_U = "not saved",
+    topstrainout_blade_L = "not saved",
+    topstrainout_tower_U = "not saved",
+    topstrainout_tower_L = "not saved",
+    topDamage_blade_U = "not saved",
+    topDamage_blade_L = "not saved",
+    topDamage_tower_U = "not saved",
+    topDamage_tower_L = "not saved",
+    ofastformat = false,
+)
 
     #Writefile
     if inputs.dataOutputFilename!="none"
         println("WRITING Output File to $(inputs.dataOutputFilename)")
 
-        filename = string(inputs.dataOutputFilename[1:end-3], "h5")
-    
+        filename = string(inputs.dataOutputFilename[1:(end-3)], "h5")
+
         HDF5.h5open(filename, "w") do file
-            HDF5.write(file,"t",collect(t))
-            HDF5.write(file,"aziHist",aziHist)
-            HDF5.write(file,"OmegaHist",OmegaHist)
-            HDF5.write(file,"OmegaDotHist",OmegaDotHist)
-            HDF5.write(file,"gbHist",gbHist)
-            HDF5.write(file,"gbDotHist",gbDotHist)
-            HDF5.write(file,"gbDotDotHist",gbDotDotHist)
-            HDF5.write(file,"FReactionHist",FReactionHist)
-            HDF5.write(file,"FTwrBsHist",FTwrBsHist) #
-            HDF5.write(file,"genTorque",genTorque)
-            HDF5.write(file,"genPower",genPower)
-            HDF5.write(file,"torqueDriveShaft",torqueDriveShaft)
-            HDF5.write(file,"uHist",uHist)
-            HDF5.write(file,"uHist_prp",uHist_prp)
-            HDF5.write(file,"epsilon_x_hist",epsilon_x_hist)
-            HDF5.write(file,"epsilon_y_hist",epsilon_y_hist)  
-            HDF5.write(file,"epsilon_z_hist",epsilon_z_hist)
-            HDF5.write(file,"kappa_x_hist",kappa_x_hist)
-            HDF5.write(file,"kappa_y_hist",kappa_y_hist)
-            HDF5.write(file,"kappa_z_hist",kappa_z_hist) 
-            HDF5.write(file,"massOwens",massOwens)
-            HDF5.write(file,"stress_U",stress_U)
-            HDF5.write(file,"SF_ult_U",SF_ult_U)
-            HDF5.write(file,"SF_buck_U",SF_buck_U)
-            HDF5.write(file,"stress_L",stress_L)
-            HDF5.write(file,"SF_ult_L",SF_ult_L)
-            HDF5.write(file,"SF_buck_L",SF_buck_L)
-            HDF5.write(file,"stress_TU",stress_TU)
-            HDF5.write(file,"SF_ult_TU",SF_ult_TU)
-            HDF5.write(file,"SF_buck_TU",SF_buck_TU)
-            HDF5.write(file,"stress_TL",stress_TL)
-            HDF5.write(file,"SF_ult_TL",SF_ult_TL)
-            HDF5.write(file,"SF_buck_TL",SF_buck_TL)
-            HDF5.write(file,"topstrainout_blade_U",topstrainout_blade_U)
-            HDF5.write(file,"topstrainout_blade_L",topstrainout_blade_L)
-            HDF5.write(file,"topstrainout_tower_U",topstrainout_tower_U)
-            HDF5.write(file,"topstrainout_tower_L",topstrainout_tower_L)
-            HDF5.write(file,"topDamage_blade_U",topDamage_blade_U)
-            HDF5.write(file,"topDamage_blade_L",topDamage_blade_L)
-            HDF5.write(file,"topDamage_tower_U",topDamage_tower_U)
-            HDF5.write(file,"topDamage_tower_L",topDamage_tower_L)
+            HDF5.write(file, "t", collect(t))
+            HDF5.write(file, "aziHist", aziHist)
+            HDF5.write(file, "OmegaHist", OmegaHist)
+            HDF5.write(file, "OmegaDotHist", OmegaDotHist)
+            HDF5.write(file, "gbHist", gbHist)
+            HDF5.write(file, "gbDotHist", gbDotHist)
+            HDF5.write(file, "gbDotDotHist", gbDotDotHist)
+            HDF5.write(file, "FReactionHist", FReactionHist)
+            HDF5.write(file, "FTwrBsHist", FTwrBsHist) #
+            HDF5.write(file, "genTorque", genTorque)
+            HDF5.write(file, "genPower", genPower)
+            HDF5.write(file, "torqueDriveShaft", torqueDriveShaft)
+            HDF5.write(file, "uHist", uHist)
+            HDF5.write(file, "uHist_prp", uHist_prp)
+            HDF5.write(file, "epsilon_x_hist", epsilon_x_hist)
+            HDF5.write(file, "epsilon_y_hist", epsilon_y_hist)
+            HDF5.write(file, "epsilon_z_hist", epsilon_z_hist)
+            HDF5.write(file, "kappa_x_hist", kappa_x_hist)
+            HDF5.write(file, "kappa_y_hist", kappa_y_hist)
+            HDF5.write(file, "kappa_z_hist", kappa_z_hist)
+            HDF5.write(file, "massOwens", massOwens)
+            HDF5.write(file, "stress_U", stress_U)
+            HDF5.write(file, "SF_ult_U", SF_ult_U)
+            HDF5.write(file, "SF_buck_U", SF_buck_U)
+            HDF5.write(file, "stress_L", stress_L)
+            HDF5.write(file, "SF_ult_L", SF_ult_L)
+            HDF5.write(file, "SF_buck_L", SF_buck_L)
+            HDF5.write(file, "stress_TU", stress_TU)
+            HDF5.write(file, "SF_ult_TU", SF_ult_TU)
+            HDF5.write(file, "SF_buck_TU", SF_buck_TU)
+            HDF5.write(file, "stress_TL", stress_TL)
+            HDF5.write(file, "SF_ult_TL", SF_ult_TL)
+            HDF5.write(file, "SF_buck_TL", SF_buck_TL)
+            HDF5.write(file, "topstrainout_blade_U", topstrainout_blade_U)
+            HDF5.write(file, "topstrainout_blade_L", topstrainout_blade_L)
+            HDF5.write(file, "topstrainout_tower_U", topstrainout_tower_U)
+            HDF5.write(file, "topstrainout_tower_L", topstrainout_tower_L)
+            HDF5.write(file, "topDamage_blade_U", topDamage_blade_U)
+            HDF5.write(file, "topDamage_blade_L", topDamage_blade_L)
+            HDF5.write(file, "topDamage_tower_U", topDamage_tower_U)
+            HDF5.write(file, "topDamage_tower_L", topDamage_tower_L)
         end
 
-        if ofastformat 
-            filename = string(inputs.dataOutputFilename[1:end-3], "out")
+        if ofastformat
+            filename = string(inputs.dataOutputFilename[1:(end-3)], "out")
             DelimitedFiles.open(filename, "w") do io
 
                 header1 = ["t"]# "VinfX_hub" "VinfY_hub" "VinfZ_hub" "Fx1" "Fy1" "Fz1" "Mx1" "My1" "Mz1"]
@@ -1371,8 +1552,9 @@ function outputData(;mymesh="not saved",
 
                 for ibld = 1:length(mymesh.meshSeg)
                     for ibldel = 1:mymesh.meshSeg[ibld]
-                        formattedelNum = lpad(ibldel,3,'0')#mymesh.structuralElNumbers[ibld,ibldel]
-                        header1 = [header1 "B$(ibld)N$(formattedelNum)Fx" "B$(ibld)N$(formattedelNum)Fy" "B$(ibld)N$(formattedelNum)Fz" "B$(ibld)N$(formattedelNum)Mx" "B$(ibld)N$(formattedelNum)My" "B$(ibld)N$(formattedelNum)Mz"]
+                        formattedelNum = lpad(ibldel, 3, '0')#mymesh.structuralElNumbers[ibld,ibldel]
+                        header1 =
+                            [header1 "B$(ibld)N$(formattedelNum)Fx" "B$(ibld)N$(formattedelNum)Fy" "B$(ibld)N$(formattedelNum)Fz" "B$(ibld)N$(formattedelNum)Mx" "B$(ibld)N$(formattedelNum)My" "B$(ibld)N$(formattedelNum)Mz"]
                         header2 = [header2 "(N)" "(N)" "(N)" "(N-m)" "(N-m)" "(N-m)"]
                     end
                 end
@@ -1380,8 +1562,8 @@ function outputData(;mymesh="not saved",
                 DelimitedFiles.writedlm(io, header1, '\t')
                 DelimitedFiles.writedlm(io, header2, '\t')
 
-                for i_t = 1:length(FReactionHist[:,1])
-                    velocity = [1,2,3]#OWENSOpenFASTWrappers.ifwcalcoutput(hub_loc,t[i_t])
+                for i_t = 1:length(FReactionHist[:, 1])
+                    velocity = [1, 2, 3]#OWENSOpenFASTWrappers.ifwcalcoutput(hub_loc,t[i_t])
                     data = [t[i_t]]# velocity[1] velocity[2] velocity[3] FReactionHist[i_t,1] FReactionHist[i_t,2] FReactionHist[i_t,3] FReactionHist[i_t,4] FReactionHist[i_t,5] FReactionHist[i_t,6]]
                     # for i = 2:mymesh.numEl
                     #     data = [data FReactionHist[i_t,((i-1)*6)+1] FReactionHist[i_t,((i-1)*6)+2] FReactionHist[i_t,((i-1)*6)+3] FReactionHist[i_t,((i-1)*6)+4] FReactionHist[i_t,((i-1)*6)+5] FReactionHist[i_t,((i-1)*6)+6]]
@@ -1390,14 +1572,24 @@ function outputData(;mymesh="not saved",
                     for ibld = 1:length(mymesh.meshSeg)
                         for ibldel = 1:mymesh.meshSeg[ibld]
                             if mymesh.structuralElNumbers!=0 #TODO: this is due to cactus run option with legacy files, but should we get rid of it all?
-                                elidx = Int(mymesh.structuralElNumbers[ibld,ibldel])
-                                data = [data FReactionHist[i_t,((elidx-1)*6)+1] FReactionHist[i_t,((elidx-1)*6)+2] FReactionHist[i_t,((elidx-1)*6)+3] FReactionHist[i_t,((elidx-1)*6)+4] FReactionHist[i_t,((elidx-1)*6)+5] FReactionHist[i_t,((elidx-1)*6)+6]]
+                                elidx = Int(mymesh.structuralElNumbers[ibld, ibldel])
+                                data =
+                                    [data FReactionHist[i_t, ((elidx-1)*6)+1] FReactionHist[
+                                        i_t,
+                                        ((elidx-1)*6)+2,
+                                    ] FReactionHist[i_t, ((elidx-1)*6)+3] FReactionHist[
+                                        i_t,
+                                        ((elidx-1)*6)+4,
+                                    ] FReactionHist[i_t, ((elidx-1)*6)+5] FReactionHist[
+                                        i_t,
+                                        ((elidx-1)*6)+6,
+                                    ]]
                             end
                         end
                     end
 
-                    DelimitedFiles.writedlm(io, data, '\t')        
-                end     
+                    DelimitedFiles.writedlm(io, data, '\t')
+                end
             end
         end
 

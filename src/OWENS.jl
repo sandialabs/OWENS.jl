@@ -8,7 +8,7 @@ import OWENSAero
 
 # Github packages
 import Statistics
-import Statistics:mean
+import Statistics: mean
 import DelimitedFiles
 import LinearAlgebra
 import SparseArrays
@@ -46,7 +46,8 @@ export Modal#, Flutter
 # export Steady
 function __init__()
 
-println("\nThis program is running OWENS.jl, the Offshore/Onshore Wind/Water Energy Simulator for turbine type devices
+    println(
+        "\nThis program is running OWENS.jl, the Offshore/Onshore Wind/Water Energy Simulator for turbine type devices
 
 Copyright 2013-2025
 National Technology & Engineering Solutions of Sandia, LLC (NTESS). 
@@ -60,7 +61,8 @@ Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an \"AS IS\" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
-limitations under the License.\n")
+limitations under the License.\n",
+    )
 end
 
 # Core functionality - fundamental data structures and configuration
