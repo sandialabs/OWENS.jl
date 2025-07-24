@@ -22,13 +22,11 @@ jobs:
       - name: Install JuliaFormatter
         run: julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
 
-      - name: Run formatter
-        run: julia -e 'using JuliaFormatter; format("src")'
-
-      - name: Check for unformatted code
+      - name: Check formatting
         run: |
-          if ! git diff --quiet; then
-            echo "::error::Code is not formatted. Please run JuliaFormatter locally.";
-            git diff
-            exit 1
-          fi
+          julia -e '
+            using JuliaFormatter
+            success = format("src", verbose=true)
+            if !success
+              error("Code is not properly formatted. Please run JuliaFormatter locally.")
+            end'
