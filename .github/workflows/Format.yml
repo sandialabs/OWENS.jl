@@ -21,9 +21,8 @@ jobs:
         with:
           version: '1.10'
 
-      - name: Install JuliaFormatter
-        run: julia -e 'using Pkg; Pkg.add(Pkg.PackageSpec(name="JuliaFormatter", version="2.1.2"))'
+      - name: Install JuliaFormatter (latest)
+        run: julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
 
       - name: Check formatting in src/
-        run: |
-          julia -e 'using JuliaFormatter; format("src", verbose=true, check=true)'
+        run: julia -e 'using JuliaFormatter; format("src", verbose=true, check=true)'
