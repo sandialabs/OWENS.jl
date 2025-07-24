@@ -4,14 +4,12 @@ on:
   pull_request:
     paths:
       - 'src/**.jl'
-      - '.github/workflows/format.yml'
   push:
     paths:
       - 'src/**.jl'
-      - '.github/workflows/format.yml'
 
 jobs:
-  format:
+  format-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +20,15 @@ jobs:
           version: '1.10'
 
       - name: Install JuliaFormatter
-        run: julia -e 'using Pkg; Pkg.add(Pkg.PackageSpec(name="JuliaFormatter", version="1.0.62"))'
+        run: julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
 
-      - name: Check formatting in src/
+      - name: Run formatter
+        run: julia -e 'using JuliaFormatter; format("src")'
+
+      - name: Check for unformatted code
         run: |
-          julia -e 'using JuliaFormatter; format("src", verbose=true, check=true)'
+          if ! git diff --quiet; then
+            echo "::error::Code is not formatted. Please run JuliaFormatter locally.";
+            git diff
+            exit 1
+          fi
