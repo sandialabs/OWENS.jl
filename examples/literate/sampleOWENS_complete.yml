@@ -1,6 +1,4 @@
 # Complete OWENS Configuration File
-# This file contains all the data from app/OWENS_APP/src/sampleOWENS.yml
-# mapped to the extended Unified_Options structure
 
 # Main OWENS simulation options
 OWENS_Options:

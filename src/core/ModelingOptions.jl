@@ -9,7 +9,7 @@ export MasterInput,
     OWENSOpenFASTWrappers_Options,
     Mesh_Options,
     Drivetrain_Options,
-    Unified_Options,
+    ModelingOptions,
     ModelingOptions,
     Design_Data
 export MasterInput,
@@ -20,7 +20,7 @@ export MasterInput,
     OWENSOpenFASTWrappers_Options,
     Mesh_Options,
     Drivetrain_Options,
-    Unified_Options,
+    ModelingOptions,
     ModelingOptions,
     Design_Data
 
@@ -966,7 +966,7 @@ end
 
 """
 
-Unified_Options
+ModelingOptions
    
     # Input
     * `OWENS_Options::OWENS_Options`:
@@ -978,9 +978,9 @@ Unified_Options
     * `Drivetrain_Options::Drivetrain_Options`:
 
     # Output
-    * `Unified_Options`: 
+    * `ModelingOptions`: 
 """
-mutable struct Unified_Options
+mutable struct ModelingOptions
     OWENS_Options::OWENS_Options
     DLC_Options::DLC_Options
     OWENSAero_Options::OWENSAero_Options
@@ -999,7 +999,7 @@ ModelingOptions(yamlInputfile)
 
 
     # Output
-    * `Unified_Options::Unified_Options`: Struct of structs containing all of the OWENS Options
+    * `ModelingOptions::ModelingOptions`: Struct of structs containing all of the OWENS Options
 """
 function ModelingOptions(yamlInputfile = nothing; path = "")
 
@@ -1069,7 +1069,7 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
         drivetrain_options = Drivetrain_Options(dummy_dict)
     end
 
-    return Unified_Options(
+    return ModelingOptions(
         owens_options,
         dlc_options,
         owensaero_options,
@@ -1078,7 +1078,7 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
         mesh_options,
         drivetrain_options,
     )
-    return Unified_Options(
+    return ModelingOptions(
         owens_options,
         dlc_options,
         owensaero_options,

@@ -1,4 +1,4 @@
-import .OWENS: SetupOutputs, Unified_Options
+import .OWENS: SetupOutputs, ModelingOptions
 
 """
     TopData
@@ -299,10 +299,10 @@ Executable function for transient analysis. Provides the interface of various
     * `kappa_y_hist`: strain history for gam_xz_y for each dof
     * `kappa_z_hist`: strain history for gam_xy_0 for each dof
     """
-# New interface that takes SetupOutputs and Unified_Options directly
+# New interface that takes SetupOutputs and ModelingOptions directly
 function Unsteady_Land(
     setup_outputs::SetupOutputs,
-    modeling_options::Unified_Options;
+    modeling_options::ModelingOptions;
     returnold::Bool = true,
     getLinearizedMatrices::Bool = false,
     topElStorage = nothing,

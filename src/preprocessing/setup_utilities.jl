@@ -1442,11 +1442,11 @@ end
 """
     preprocess_unified_options_setup(modelopt, path)
 
-Creates and populates a SetupOptions instance from the Unified_Options input.
+Creates and populates a SetupOptions instance from the ModelingOptions input.
 This is a simplified version of preprocess_windio_setup that doesn't require windio data.
 
 # Arguments
-- `modelopt`: The Unified_Options containing all configuration parameters
+- `modelopt`: The ModelingOptions containing all configuration parameters
 - `path`: The base path for file operations
 
 # Returns
