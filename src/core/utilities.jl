@@ -10,13 +10,13 @@ Caclulates generator torque for simple induction generator
 #Output
 * `genTorque::float`      generator torque
 """
-function simpleGenerator(inputs,genSpeed)
+function simpleGenerator(inputs, genSpeed)
 
     #assign generator properties form inputs object
-    ratedTorque        = inputs.ratedTorque;
-    ratedGenSlipPerc   = inputs.ratedGenSlipPerc;
+    ratedTorque = inputs.ratedTorque;
+    ratedGenSlipPerc = inputs.ratedGenSlipPerc;
     zeroTorqueGenSpeed = inputs.zeroTorqueGenSpeed;
-    pulloutRatio       = inputs.pulloutRatio;
+    pulloutRatio = inputs.pulloutRatio;
 
     #calculate rated generator speed
     ratedGenSpeed = zeroTorqueGenSpeed*(1.0 + 0.01*ratedGenSlipPerc);
@@ -25,7 +25,7 @@ function simpleGenerator(inputs,genSpeed)
     midSlope = (ratedTorque/(ratedGenSpeed-zeroTorqueGenSpeed));
 
     #calculate lower and upper torque limits of generator
-    upperTorqueLimit =ratedTorque*pulloutRatio;
+    upperTorqueLimit = ratedTorque*pulloutRatio;
     lowerTorqueLimit = -upperTorqueLimit;
 
     #calculate upper and lower generator speeds at which linear torque vs. speed region begins/ends
@@ -45,8 +45,9 @@ function simpleGenerator(inputs,genSpeed)
 
 end
 
-function safeakima(x,y,xpt;extrapolate=false)
-    if minimum(xpt)<(minimum(x)-(abs(minimum(x))*0.1+1e-4)) || maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
+function safeakima(x, y, xpt; extrapolate = false)
+    if minimum(xpt)<(minimum(x)-(abs(minimum(x))*0.1+1e-4)) ||
+       maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
         msg="Extrapolating on akima spline results in undefined solutions minimum(xpt)<minimum(x) $(minimum(xpt))<$(minimum(x)) or maximum(xpt)>maximum(x) $(maximum(xpt))>$(maximum(x))"
         if !extrapolate
             throw(OverflowError(msg))
@@ -54,7 +55,7 @@ function safeakima(x,y,xpt;extrapolate=false)
             @warn msg
         end
     end
-    return FLOWMath.akima(x,y,xpt)
+    return FLOWMath.akima(x, y, xpt)
 end
 
 """
@@ -80,8 +81,12 @@ function createInitCondArray(initDisps, numNodes, numDOFPerNode)
         initCond = zeros(numNodes*numDOFPerNode, 3)
         for i = 1:length(initDisps)
             if initDisps[i] != 0.0
-                dof_initCond = hcat(collect(1:numNodes), ones(Int,numNodes)*i, ones(numNodes)*initDisps[i])
-                initCond[(i-1)*numNodes+1:i*numNodes,:] = dof_initCond
+                dof_initCond = hcat(
+                    collect(1:numNodes),
+                    ones(Int, numNodes)*i,
+                    ones(numNodes)*initDisps[i],
+                )
+                initCond[((i-1)*numNodes+1):(i*numNodes), :] = dof_initCond
             end
         end
         initCond = initCond[vec(mapslices(col -> any(col .!= 0), initCond, dims = 2)), :] #removes rows of all zeros
@@ -96,13 +101,23 @@ function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNode) #node, dof, bc
     else
         pBC = zeros(Int, numNodes*numDOFPerNode, 3)
         for i = 1:length(fixedNodes)
-            pBC[(i-1)*numDOFPerNode+1:i*numDOFPerNode, :] = hcat(ones(numDOFPerNode)*fixedNodes[i], collect(1:numDOFPerNode), zeros(Int, numDOFPerNode) )
+            pBC[((i-1)*numDOFPerNode+1):(i*numDOFPerNode), :] = hcat(
+                ones(numDOFPerNode)*fixedNodes[i],
+                collect(1:numDOFPerNode),
+                zeros(Int, numDOFPerNode),
+            )
         end
         for i = 1:length(fixedDOFs)
             newNodes = setdiff(1:numNodes, fixedNodes) # this avoids duplicating nodes already counted for by fixedNodes
             numNewNodes = length(newNodes)
-            dofBCs = hcat(newNodes, ones(Int,numNewNodes)*fixedDOFs[i], zeros(Int,numNewNodes))
-            pBC[length(fixedNodes)*numDOFPerNode+(i-1)*numNewNodes+1:length(fixedNodes)*numDOFPerNode+i*numNewNodes, :] = dofBCs
+            dofBCs =
+                hcat(newNodes, ones(Int, numNewNodes)*fixedDOFs[i], zeros(Int, numNewNodes))
+            pBC[
+                (length(fixedNodes)*numDOFPerNode+(i-1)*numNewNodes+1):(length(
+                    fixedNodes,
+                )*numDOFPerNode+i*numNewNodes),
+                :,
+            ] = dofBCs
         end
         pBC = pBC[vec(mapslices(col -> any(col .!= 0), pBC, dims = 2)), :] #removes extra rows (i.e. rows of all zeros)
     end

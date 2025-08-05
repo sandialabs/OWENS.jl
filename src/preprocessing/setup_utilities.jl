@@ -1,7 +1,12 @@
 using OrderedCollections: OrderedDict
 using Infiltrator
 
-export MeshSetupOptions, TowerSetupOptions, BladeSetupOptions, MaterialSetupOptions, AeroSetupOptions, SetupOptions
+export MeshSetupOptions,
+    TowerSetupOptions,
+    BladeSetupOptions,
+    MaterialSetupOptions,
+    AeroSetupOptions,
+    SetupOptions
 
 """
     MeshSetupOptions
@@ -32,11 +37,55 @@ mutable struct MeshSetupOptions
     connectBldTips2Twr::Bool
     AD15_ccw::Bool
 
-    function MeshSetupOptions(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
-        new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
+    function MeshSetupOptions(
+        Nslices,
+        ntheta,
+        ntelem,
+        nbelem,
+        ncelem,
+        nselem,
+        meshtype,
+        custommesh,
+        connectBldTips2Twr,
+        AD15_ccw,
+    )
+        new(
+            Nslices,
+            ntheta,
+            ntelem,
+            nbelem,
+            ncelem,
+            nselem,
+            meshtype,
+            custommesh,
+            connectBldTips2Twr,
+            AD15_ccw,
+        )
     end
-    function MeshSetupOptions(; Nslices::Int, ntheta::Int, ntelem::Int, nbelem::Int, ncelem::Int, nselem::Int, meshtype::String, custommesh::Union{Nothing,Function}=nothing, connectBldTips2Twr::Bool=false, AD15_ccw::Bool=true)
-        new(Nslices, ntheta, ntelem, nbelem, ncelem, nselem, meshtype, custommesh, connectBldTips2Twr, AD15_ccw)
+    function MeshSetupOptions(;
+        Nslices::Int,
+        ntheta::Int,
+        ntelem::Int,
+        nbelem::Int,
+        ncelem::Int,
+        nselem::Int,
+        meshtype::String,
+        custommesh::Union{Nothing,Function} = nothing,
+        connectBldTips2Twr::Bool = false,
+        AD15_ccw::Bool = true,
+    )
+        new(
+            Nslices,
+            ntheta,
+            ntelem,
+            nbelem,
+            ncelem,
+            nselem,
+            meshtype,
+            custommesh,
+            connectBldTips2Twr,
+            AD15_ccw,
+        )
     end
     # Default constructor
     function MeshSetupOptions()
@@ -102,11 +151,63 @@ mutable struct TowerSetupOptions
     NuMad_mat_xlscsv_file_strut::Any
     strut_tower_joint_type::Int
 
-    function TowerSetupOptions(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
-        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
+    function TowerSetupOptions(
+        Htwr_base,
+        Htwr_blds,
+        strut_twr_mountpoint,
+        strut_bld_mountpoint,
+        joint_type,
+        c_mount_ratio,
+        angularOffset,
+        NuMad_geom_xlscsv_file_twr,
+        NuMad_mat_xlscsv_file_twr,
+        NuMad_geom_xlscsv_file_strut,
+        NuMad_mat_xlscsv_file_strut,
+        strut_tower_joint_type,
+    )
+        new(
+            Htwr_base,
+            Htwr_blds,
+            strut_twr_mountpoint,
+            strut_bld_mountpoint,
+            joint_type,
+            c_mount_ratio,
+            angularOffset,
+            NuMad_geom_xlscsv_file_twr,
+            NuMad_mat_xlscsv_file_twr,
+            NuMad_geom_xlscsv_file_strut,
+            NuMad_mat_xlscsv_file_strut,
+            strut_tower_joint_type,
+        )
     end
-    function TowerSetupOptions(; Htwr_base::Float64, Htwr_blds::Float64, strut_twr_mountpoint::Vector{Float64}, strut_bld_mountpoint::Vector{Float64}, joint_type::Int, c_mount_ratio::Float64, angularOffset::Float64, NuMad_geom_xlscsv_file_twr::Any=nothing, NuMad_mat_xlscsv_file_twr::Any=nothing, NuMad_geom_xlscsv_file_strut::Any=nothing, NuMad_mat_xlscsv_file_strut::Any=nothing, strut_tower_joint_type::Int=2)
-        new(Htwr_base, Htwr_blds, strut_twr_mountpoint, strut_bld_mountpoint, joint_type, c_mount_ratio, angularOffset, NuMad_geom_xlscsv_file_twr, NuMad_mat_xlscsv_file_twr, NuMad_geom_xlscsv_file_strut, NuMad_mat_xlscsv_file_strut, strut_tower_joint_type)
+    function TowerSetupOptions(;
+        Htwr_base::Float64,
+        Htwr_blds::Float64,
+        strut_twr_mountpoint::Vector{Float64},
+        strut_bld_mountpoint::Vector{Float64},
+        joint_type::Int,
+        c_mount_ratio::Float64,
+        angularOffset::Float64,
+        NuMad_geom_xlscsv_file_twr::Any = nothing,
+        NuMad_mat_xlscsv_file_twr::Any = nothing,
+        NuMad_geom_xlscsv_file_strut::Any = nothing,
+        NuMad_mat_xlscsv_file_strut::Any = nothing,
+        strut_tower_joint_type::Int = 2,
+    )
+        new(
+            Htwr_base,
+            Htwr_blds,
+            strut_twr_mountpoint,
+            strut_bld_mountpoint,
+            joint_type,
+            c_mount_ratio,
+            angularOffset,
+            NuMad_geom_xlscsv_file_twr,
+            NuMad_mat_xlscsv_file_twr,
+            NuMad_geom_xlscsv_file_strut,
+            NuMad_mat_xlscsv_file_strut,
+            strut_tower_joint_type,
+        )
     end
     # Default constructor
     function TowerSetupOptions()
@@ -122,7 +223,7 @@ mutable struct TowerSetupOptions
             nothing,       # NuMad_mat_xlscsv_file_twr
             nothing,       # NuMad_geom_xlscsv_file_strut
             nothing,       # NuMad_mat_xlscsv_file_strut
-            2              # strut_tower_joint_type
+            2,              # strut_tower_joint_type
         )
     end
     function TowerSetupOptions(dict::OrderedDict{Symbol,Any})
@@ -138,7 +239,7 @@ mutable struct TowerSetupOptions
             get(dict, :NuMad_mat_xlscsv_file_twr, nothing),
             get(dict, :NuMad_geom_xlscsv_file_strut, nothing),
             get(dict, :NuMad_mat_xlscsv_file_strut, nothing),
-            get(dict, :strut_tower_joint_type, 2)
+            get(dict, :strut_tower_joint_type, 2),
         )
     end
 end
@@ -172,11 +273,55 @@ mutable struct BladeSetupOptions
     strut_blade_joint_type::Int
     blade_joint_angle_Degrees::Float64
 
-    function BladeSetupOptions(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
-        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
+    function BladeSetupOptions(
+        B,
+        H,
+        R,
+        shapeZ,
+        shapeX,
+        shapeY,
+        NuMad_geom_xlscsv_file_bld,
+        NuMad_mat_xlscsv_file_bld,
+        strut_blade_joint_type,
+        blade_joint_angle_Degrees,
+    )
+        new(
+            B,
+            H,
+            R,
+            shapeZ,
+            shapeX,
+            shapeY,
+            NuMad_geom_xlscsv_file_bld,
+            NuMad_mat_xlscsv_file_bld,
+            strut_blade_joint_type,
+            blade_joint_angle_Degrees,
+        )
     end
-    function BladeSetupOptions(; B::Int, H::Float64, R::Float64, shapeZ::Vector{Float64}, shapeX::Vector{Float64}, shapeY::Vector{Float64}, NuMad_geom_xlscsv_file_bld::Any=nothing, NuMad_mat_xlscsv_file_bld::Any=nothing, strut_blade_joint_type::Int=0, blade_joint_angle_Degrees::Float64=0.0)
-        new(B, H, R, shapeZ, shapeX, shapeY, NuMad_geom_xlscsv_file_bld, NuMad_mat_xlscsv_file_bld, strut_blade_joint_type, blade_joint_angle_Degrees)
+    function BladeSetupOptions(;
+        B::Int,
+        H::Float64,
+        R::Float64,
+        shapeZ::Vector{Float64},
+        shapeX::Vector{Float64},
+        shapeY::Vector{Float64},
+        NuMad_geom_xlscsv_file_bld::Any = nothing,
+        NuMad_mat_xlscsv_file_bld::Any = nothing,
+        strut_blade_joint_type::Int = 0,
+        blade_joint_angle_Degrees::Float64 = 0.0,
+    )
+        new(
+            B,
+            H,
+            R,
+            shapeZ,
+            shapeX,
+            shapeY,
+            NuMad_geom_xlscsv_file_bld,
+            NuMad_mat_xlscsv_file_bld,
+            strut_blade_joint_type,
+            blade_joint_angle_Degrees,
+        )
     end
     # Default constructor
     function BladeSetupOptions()
@@ -190,7 +335,7 @@ mutable struct BladeSetupOptions
             nothing,  # NuMad_geom_xlscsv_file_bld
             nothing,   # NuMad_mat_xlscsv_file_bld
             0,  # strut_blade_joint_type
-            0.0  # blade_joint_angle_Degrees
+            0.0,  # blade_joint_angle_Degrees
         )
     end
     function BladeSetupOptions(dict::OrderedDict{Symbol,Any})
@@ -199,7 +344,11 @@ mutable struct BladeSetupOptions
             get(dict, :H, 5.0),
             get(dict, :R, 2.5),
             get(dict, :shapeZ, collect(LinRange(0, 5.0, 31))),
-            get(dict, :shapeX, 2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2)),
+            get(
+                dict,
+                :shapeX,
+                2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),
+            ),
             get(dict, :shapeY, zeros(31)),
             get(dict, :NuMad_geom_xlscsv_file_bld, nothing),
             get(dict, :NuMad_mat_xlscsv_file_bld, nothing),
@@ -228,11 +377,35 @@ mutable struct MaterialSetupOptions
     thickness_scale::Vector{Float64}
     AddedMass_Coeff_Ca::Float64
 
-    function MaterialSetupOptions(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
-        new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
+    function MaterialSetupOptions(
+        stack_layers_bld,
+        stack_layers_scale,
+        chord_scale,
+        thickness_scale,
+        AddedMass_Coeff_Ca,
+    )
+        new(
+            stack_layers_bld,
+            stack_layers_scale,
+            chord_scale,
+            thickness_scale,
+            AddedMass_Coeff_Ca,
+        )
     end
-    function MaterialSetupOptions(; stack_layers_bld::Union{Nothing,Matrix{Float64}}=nothing, stack_layers_scale::Vector{Float64}=[1.0, 1.0], chord_scale::Vector{Float64}=[1.0, 1.0], thickness_scale::Vector{Float64}=[1.0, 1.0], AddedMass_Coeff_Ca::Float64=0.0)
-        new(stack_layers_bld, stack_layers_scale, chord_scale, thickness_scale, AddedMass_Coeff_Ca)
+    function MaterialSetupOptions(;
+        stack_layers_bld::Union{Nothing,Matrix{Float64}} = nothing,
+        stack_layers_scale::Vector{Float64} = [1.0, 1.0],
+        chord_scale::Vector{Float64} = [1.0, 1.0],
+        thickness_scale::Vector{Float64} = [1.0, 1.0],
+        AddedMass_Coeff_Ca::Float64 = 0.0,
+    )
+        new(
+            stack_layers_bld,
+            stack_layers_scale,
+            chord_scale,
+            thickness_scale,
+            AddedMass_Coeff_Ca,
+        )
     end
     # Default constructor
     function MaterialSetupOptions()
@@ -241,7 +414,7 @@ mutable struct MaterialSetupOptions
             [1.0, 1.0],   # stack_layers_scale
             [1.0, 1.0],   # chord_scale
             [1.0, 1.0],   # thickness_scale
-            0.0           # AddedMass_Coeff_Ca
+            0.0,           # AddedMass_Coeff_Ca
         )
     end
     function MaterialSetupOptions(dict::OrderedDict{Symbol,Any})
@@ -307,11 +480,102 @@ mutable struct AeroSetupOptions
     centrifugal_force_flag::Bool
     AD15On::Bool
 
-    function AeroSetupOptions(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag)
-        new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, false)
+    function AeroSetupOptions(
+        rho,
+        mu,
+        RPM,
+        Vinf,
+        eta,
+        delta_t,
+        AD15hubR,
+        WindType,
+        AeroModel,
+        DynamicStallModel,
+        numTS,
+        adi_lib,
+        adi_rootname,
+        windINPfilename,
+        ifw_libfile,
+        ifw,
+        RPI,
+        Aero_AddedMass_Active,
+        Aero_RotAccel_Active,
+        Aero_Buoyancy_Active,
+        centrifugal_force_flag,
+    )
+        new(
+            rho,
+            mu,
+            RPM,
+            Vinf,
+            eta,
+            delta_t,
+            AD15hubR,
+            WindType,
+            AeroModel,
+            DynamicStallModel,
+            numTS,
+            adi_lib,
+            adi_rootname,
+            windINPfilename,
+            ifw_libfile,
+            ifw,
+            RPI,
+            Aero_AddedMass_Active,
+            Aero_RotAccel_Active,
+            Aero_Buoyancy_Active,
+            centrifugal_force_flag,
+            false,
+        )
     end
-    function AeroSetupOptions(; rho::Float64=1.225, mu::Float64=1.7894e-5, RPM::Float64=1e-6, Vinf::Float64=25.0, eta::Float64=0.5, delta_t::Float64=0.01, AD15hubR::Float64=0.1, WindType::Int=1, AeroModel::String="DMS", DynamicStallModel::String="BV", numTS::Int=100, adi_lib::Union{Nothing,String}=nothing, adi_rootname::Union{Nothing,String}=nothing, windINPfilename::Union{Nothing,String}=nothing, ifw_libfile::Union{Nothing,String}=nothing, ifw::Bool=false, RPI::Bool=true, Aero_AddedMass_Active::Bool=false, Aero_RotAccel_Active::Bool=false, Aero_Buoyancy_Active::Bool=false, centrifugal_force_flag::Bool=false, AD15On::Bool=false)
-        new(rho, mu, RPM, Vinf, eta, delta_t, AD15hubR, WindType, AeroModel, DynamicStallModel, numTS, adi_lib, adi_rootname, windINPfilename, ifw_libfile, ifw, RPI, Aero_AddedMass_Active, Aero_RotAccel_Active, Aero_Buoyancy_Active, centrifugal_force_flag, AD15On)
+    function AeroSetupOptions(;
+        rho::Float64 = 1.225,
+        mu::Float64 = 1.7894e-5,
+        RPM::Float64 = 1e-6,
+        Vinf::Float64 = 25.0,
+        eta::Float64 = 0.5,
+        delta_t::Float64 = 0.01,
+        AD15hubR::Float64 = 0.1,
+        WindType::Int = 1,
+        AeroModel::String = "DMS",
+        DynamicStallModel::String = "BV",
+        numTS::Int = 100,
+        adi_lib::Union{Nothing,String} = nothing,
+        adi_rootname::Union{Nothing,String} = nothing,
+        windINPfilename::Union{Nothing,String} = nothing,
+        ifw_libfile::Union{Nothing,String} = nothing,
+        ifw::Bool = false,
+        RPI::Bool = true,
+        Aero_AddedMass_Active::Bool = false,
+        Aero_RotAccel_Active::Bool = false,
+        Aero_Buoyancy_Active::Bool = false,
+        centrifugal_force_flag::Bool = false,
+        AD15On::Bool = false,
+    )
+        new(
+            rho,
+            mu,
+            RPM,
+            Vinf,
+            eta,
+            delta_t,
+            AD15hubR,
+            WindType,
+            AeroModel,
+            DynamicStallModel,
+            numTS,
+            adi_lib,
+            adi_rootname,
+            windINPfilename,
+            ifw_libfile,
+            ifw,
+            RPI,
+            Aero_AddedMass_Active,
+            Aero_RotAccel_Active,
+            Aero_Buoyancy_Active,
+            centrifugal_force_flag,
+            AD15On,
+        )
     end
     # Default constructor
     function AeroSetupOptions()
@@ -337,7 +601,7 @@ mutable struct AeroSetupOptions
             false,        # Aero_RotAccel_Active
             false,        # Aero_Buoyancy_Active
             false,        # centrifugal_force_flag
-            false         # AD15On
+            false,         # AD15On
         )
     end
     function AeroSetupOptions(dict::OrderedDict{Symbol,Any})
@@ -387,12 +651,12 @@ mutable struct SetupOptions
     material::MaterialSetupOptions
     aero::AeroSetupOptions
 
-    function SetupOptions(; 
+    function SetupOptions(;
         mesh::MeshSetupOptions = MeshSetupOptions(),
         tower::TowerSetupOptions = TowerSetupOptions(),
         blade::BladeSetupOptions = BladeSetupOptions(),
         material::MaterialSetupOptions = MaterialSetupOptions(),
-        aero::AeroSetupOptions = AeroSetupOptions()
+        aero::AeroSetupOptions = AeroSetupOptions(),
     )
         new(mesh, tower, blade, material, aero)
     end
@@ -404,18 +668,26 @@ mutable struct SetupOptions
             TowerSetupOptions(),
             BladeSetupOptions(),
             MaterialSetupOptions(),
-            AeroSetupOptions()
+            AeroSetupOptions(),
         )
     end
 
     # Constructor that takes a YAML dictionary
     function SetupOptions(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Extract each section from the dictionary, using default constructors if not present
-        mesh = haskey(dict_in, :mesh) ? MeshSetupOptions(dict_in[:mesh]) : MeshSetupOptions()
-        tower = haskey(dict_in, :tower) ? TowerSetupOptions(dict_in[:tower]) : TowerSetupOptions()
-        blade = haskey(dict_in, :blade) ? BladeSetupOptions(dict_in[:blade]) : BladeSetupOptions()
-        material = haskey(dict_in, :material) ? MaterialSetupOptions(dict_in[:material]) : MaterialSetupOptions()
-        aero = haskey(dict_in, :aero) ? AeroSetupOptions(dict_in[:aero]) : AeroSetupOptions()
+        mesh =
+            haskey(dict_in, :mesh) ? MeshSetupOptions(dict_in[:mesh]) : MeshSetupOptions()
+        tower =
+            haskey(dict_in, :tower) ? TowerSetupOptions(dict_in[:tower]) :
+            TowerSetupOptions()
+        blade =
+            haskey(dict_in, :blade) ? BladeSetupOptions(dict_in[:blade]) :
+            BladeSetupOptions()
+        material =
+            haskey(dict_in, :material) ? MaterialSetupOptions(dict_in[:material]) :
+            MaterialSetupOptions()
+        aero =
+            haskey(dict_in, :aero) ? AeroSetupOptions(dict_in[:aero]) : AeroSetupOptions()
 
         new(mesh, tower, blade, material, aero)
     end
@@ -433,7 +705,14 @@ struct MeshProperties
     AD15bldElIdxRng::Matrix{Int}
     custom_mesh_outputs::Any  # Type depends on custom mesh implementation
 
-    function MeshProperties(; mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs)
+    function MeshProperties(;
+        mymesh,
+        myort,
+        myjoint,
+        AD15bldNdIdxRng,
+        AD15bldElIdxRng,
+        custom_mesh_outputs,
+    )
         new(mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs)
     end
 end
@@ -444,7 +723,7 @@ function setup_mesh(
     blade_config::BladeSetupOptions,
     tower_config::TowerSetupOptions,
     aero_config::AeroSetupOptions,
-    verbosity::Int64 = 1
+    verbosity::Int64 = 1,
 )
     mymesh, myort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng, custom_mesh_outputs =
         OWENS.create_mesh_struts(;
@@ -469,7 +748,7 @@ function setup_mesh(
             connectBldTips2Twr = mesh_config.connectBldTips2Twr,
             strut_tower_joint_type = tower_config.strut_tower_joint_type,
             strut_blade_joint_type = blade_config.strut_blade_joint_type,
-            )
+        )
     return MeshProperties(
         mymesh = mymesh,
         myort = myort,
@@ -495,30 +774,36 @@ struct SectionalProperties
     mass_array::Vector{Any}
     rotationalEffects::Vector{Float64}
 
-    function SectionalProperties(sectionPropsArray, stiff_array, mass_array, rotationalEffects)
+    function SectionalProperties(
+        sectionPropsArray,
+        stiff_array,
+        mass_array,
+        rotationalEffects,
+    )
         new(sectionPropsArray, stiff_array, mass_array, rotationalEffects)
     end
 end
 
 function setup_sectional_props(
     mesh_props,
-    material_config, 
-    aero_config, 
-    tower_config, 
-    blade_config, 
-    path, 
-    NuMad_geom_xlscsv_file_intra_blade_cable, 
-    NuMad_mat_xlscsv_file_intra_blade_cable, 
-    NuMad_geom_xlscsv_file_guys, 
-    NuMad_mat_xlscsv_file_guys, 
-    verbosity)
+    material_config,
+    aero_config,
+    tower_config,
+    blade_config,
+    path,
+    NuMad_geom_xlscsv_file_intra_blade_cable,
+    NuMad_mat_xlscsv_file_intra_blade_cable,
+    NuMad_geom_xlscsv_file_guys,
+    NuMad_mat_xlscsv_file_guys,
+    verbosity,
+)
     # Unpack the mesh properties
     mymesh = mesh_props.mymesh
     myort = mesh_props.myort
     myjoint = mesh_props.myjoint
     AD15bldNdIdxRng = mesh_props.AD15bldNdIdxRng
     AD15bldElIdxRng = mesh_props.AD15bldElIdxRng
-    
+
     components,
     s2t_idx,
     intra_blade_cable_startidx_el,
@@ -543,34 +828,35 @@ function setup_sectional_props(
     # Unpack the strut config
     NuMad_geom_xlscsv_file_strut = tower_config.NuMad_geom_xlscsv_file_strut
     NuMad_mat_xlscsv_file_strut = tower_config.NuMad_mat_xlscsv_file_strut
-    
+
     sectionPropsArray = []
     stiff_array = []
     mass_array = []
     rotationalEffects = ones(mymesh.numEl)
 
     for icomponent = 1:size(components)[1]
-        if contains(components[icomponent].name,"tower")
+        if contains(components[icomponent].name, "tower")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_twr
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_twr
-        elseif contains(components[icomponent].name,"blade")
+        elseif contains(components[icomponent].name, "blade")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_bld
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_bld
-        elseif contains(components[icomponent].name,"strut")
-            istrut = parse(Int,components[icomponent].name[end]) #This assumes that you have a numad file for each strut, and that you have 9 or fewer struts
+        elseif contains(components[icomponent].name, "strut")
+            istrut = parse(Int, components[icomponent].name[end]) #This assumes that you have a numad file for each strut, and that you have 9 or fewer struts
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_strut[istrut]
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_strut
-        elseif contains(components[icomponent].name,"intra_cable")
+        elseif contains(components[icomponent].name, "intra_cable")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_intra_blade_cable
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_intra_blade_cable
-        elseif contains(components[icomponent].name,"guy")
+        elseif contains(components[icomponent].name, "guy")
             components[icomponent].input_layup = NuMad_geom_xlscsv_file_guys
             components[icomponent].input_materials = NuMad_mat_xlscsv_file_guys
             rotationalEffects[components[icomponent].elNumbers] .= 0.0 #turn rotational effects off for guy wires
         end
 
         # Skip components with missing layup or materials
-        if isnothing(components[icomponent].input_layup) || isnothing(components[icomponent].input_materials)
+        if isnothing(components[icomponent].input_layup) ||
+           isnothing(components[icomponent].input_materials)
             continue
         end
 
@@ -609,7 +895,8 @@ function setup_sectional_props(
         sectionPropsArray,
         stiff_array,
         mass_array,
-        rotationalEffects)
+        rotationalEffects,
+    )
 end
 
 mutable struct AeroProperties
@@ -683,11 +970,11 @@ function setup_aerodynamic_model(
     Htwr_base = tower_config.Htwr_base
 
     Nstrutperbld = length(tower_config.strut_twr_mountpoint)
-    
+
     # Calculate tsr locally
     omega = aero_config.RPM / 60 * 2 * pi
     tsr = omega * blade_config.R / aero_config.Vinf
-    
+
     # Set up AeroDyn if used
     # Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str
     # Then by initializing AeroDyn and grabbing the backend functionality with a function handle
@@ -708,12 +995,12 @@ function setup_aerodynamic_model(
         bld_airfoil_filenames = fill("nothing", NumADBldNds) #TODO: cable drag?
         for (ispan_numad, span_numad) in
             enumerate(numadIn_bld.span ./ maximum(numadIn_bld.span))
-                for (ispan, span_slices) in enumerate(collect(LinRange(0, 1, NumADBldNds)))
-                    if bld_airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
-                        bld_airfoil_filenames[ispan] = "$(numadIn_bld.airfoil[ispan_numad]).dat"
-                    end
+            for (ispan, span_slices) in enumerate(collect(LinRange(0, 1, NumADBldNds)))
+                if bld_airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
+                    bld_airfoil_filenames[ispan] = "$(numadIn_bld.airfoil[ispan_numad]).dat"
                 end
             end
+        end
 
         if meshtype == "ARCUS"
             blade_filenames = ["$path/blade$i.dat" for i = 1:Nbld]
@@ -747,7 +1034,7 @@ function setup_aerodynamic_model(
                         for (ispan, span_slices) in
                             enumerate(collect(LinRange(0, 1, NumADBldNds)))
                             if strut_airfoil_filenames[ispan]=="nothing" &&
-                            span_slices<=span_numad
+                               span_slices<=span_numad
                                 strut_airfoil_filenames[ispan] = "$(numadIn_strut[istrut].airfoil[ispan_numad]).dat"
                             end
                         end
@@ -1172,25 +1459,25 @@ function preprocess_unified_options_setup(modelopt, path)
     Blade_Height = modelopt.Mesh_Options.Blade_Height
     Blade_Radius = modelopt.Mesh_Options.Blade_Radius
     towerHeight = modelopt.Mesh_Options.towerHeight
-    
+
     # Calculate derived geometry
     Htwr_base = towerHeight
     Htwr_blds = Blade_Height  # This is a simplification, could be refined
-    
+
     # Default strut parameters (can be overridden if needed)
     tower_strut_connection = [0.2, 0.8]
     blade_strut_connection = [0.2, 0.8]
-    
+
     # Extract environment parameters from OWENSAero_Options
     air_density = modelopt.OWENSAero_Options.rho
     air_dyn_viscosity = 1.789e-5  # Default value, could be added to options
-    
+
     # Create default blade geometry (circular arc approximation)
     Nslices = modelopt.OWENSAero_Options.Nslices
     shapeZ = collect(LinRange(0, Blade_Height, Nslices + 1))
-    shapeX = Blade_Radius .* (1.0 .- 4.0 .* (shapeZ ./ Blade_Height .- 0.5).^2)
+    shapeX = Blade_Radius .* (1.0 .- 4.0 .* (shapeZ ./ Blade_Height .- 0.5) .^ 2)
     shapeY = zeros(length(shapeZ))
-    
+
     # Create mesh options
     mesh_opts = MeshSetupOptions(
         Nslices = modelopt.OWENSAero_Options.Nslices,
@@ -1202,9 +1489,9 @@ function preprocess_unified_options_setup(modelopt, path)
         meshtype = modelopt.Mesh_Options.turbineType,
         custommesh = nothing,
         connectBldTips2Twr = modelopt.Mesh_Options.cables_connected_to_blade_base,
-        AD15_ccw = true
+        AD15_ccw = true,
     )
-    
+
     # Create tower options
     tower_opts = TowerSetupOptions(
         Htwr_base = Htwr_base,
@@ -1214,13 +1501,25 @@ function preprocess_unified_options_setup(modelopt, path)
         joint_type = modelopt.Mesh_Options.joint_type,
         c_mount_ratio = modelopt.Mesh_Options.c_mount_ratio,
         angularOffset = modelopt.Mesh_Options.angularOffset,
-        NuMad_geom_xlscsv_file_twr = joinpath(path, modelopt.Mesh_Options.NuMad_geom_xlscsv_file_twr),
-        NuMad_mat_xlscsv_file_twr = joinpath(path, modelopt.Mesh_Options.NuMad_mat_xlscsv_file_twr),
-        NuMad_geom_xlscsv_file_strut = joinpath(path, modelopt.Mesh_Options.NuMad_geom_xlscsv_file_strut),
-        NuMad_mat_xlscsv_file_strut = joinpath(path, modelopt.Mesh_Options.NuMad_mat_xlscsv_file_strut),
-        strut_tower_joint_type = 2
+        NuMad_geom_xlscsv_file_twr = joinpath(
+            path,
+            modelopt.Mesh_Options.NuMad_geom_xlscsv_file_twr,
+        ),
+        NuMad_mat_xlscsv_file_twr = joinpath(
+            path,
+            modelopt.Mesh_Options.NuMad_mat_xlscsv_file_twr,
+        ),
+        NuMad_geom_xlscsv_file_strut = joinpath(
+            path,
+            modelopt.Mesh_Options.NuMad_geom_xlscsv_file_strut,
+        ),
+        NuMad_mat_xlscsv_file_strut = joinpath(
+            path,
+            modelopt.Mesh_Options.NuMad_mat_xlscsv_file_strut,
+        ),
+        strut_tower_joint_type = 2,
     )
-    
+
     # Create blade options
     blade_opts = BladeSetupOptions(
         B = number_of_blades,
@@ -1229,21 +1528,27 @@ function preprocess_unified_options_setup(modelopt, path)
         shapeZ = shapeZ,
         shapeX = shapeX,
         shapeY = shapeY,
-        NuMad_geom_xlscsv_file_bld = joinpath(path, modelopt.Mesh_Options.NuMad_geom_xlscsv_file_bld),
-        NuMad_mat_xlscsv_file_bld = joinpath(path, modelopt.Mesh_Options.NuMad_mat_xlscsv_file_bld),
+        NuMad_geom_xlscsv_file_bld = joinpath(
+            path,
+            modelopt.Mesh_Options.NuMad_geom_xlscsv_file_bld,
+        ),
+        NuMad_mat_xlscsv_file_bld = joinpath(
+            path,
+            modelopt.Mesh_Options.NuMad_mat_xlscsv_file_bld,
+        ),
         strut_blade_joint_type = 0,
-        blade_joint_angle_Degrees = 0.0
+        blade_joint_angle_Degrees = 0.0,
     )
-    
+
     # Create material options
     material_opts = MaterialSetupOptions(
         stack_layers_bld = nothing,
         stack_layers_scale = [1.0, 1.0],
         chord_scale = [1.0, 1.0],
         thickness_scale = [1.0, 1.0],
-        AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca
+        AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca,
     )
-    
+
     # Create aero options
     aero_opts = AeroSetupOptions(
         rho = air_density,
@@ -1267,16 +1572,16 @@ function preprocess_unified_options_setup(modelopt, path)
         Aero_RotAccel_Active = modelopt.OWENSAero_Options.Aero_RotAccel_Active,
         Aero_Buoyancy_Active = modelopt.OWENSAero_Options.Aero_Buoyancy_Active,
         centrifugal_force_flag = false,
-        AD15On = modelopt.OWENS_Options.AeroModel == "AD"
+        AD15On = modelopt.OWENS_Options.AeroModel == "AD",
     )
-    
+
     # Create and return the complete SetupOptions instance
     return SetupOptions(
         mesh = mesh_opts,
         tower = tower_opts,
         blade = blade_opts,
         material = material_opts,
-        aero = aero_opts
+        aero = aero_opts,
     )
 end
 
@@ -1297,27 +1602,27 @@ function preprocess_windio_setup(modelopt, windio, path)
     # Extract basic geometry parameters
     number_of_blades = windio[:assembly][:number_of_blades]
     hub_height = windio[:assembly][:hub_height]
-    
+
     # Extract blade geometry
     blade_x = windio[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values]
     blade_y = windio[:components][:blade][:outer_shape_bem][:reference_axis][:y][:values]
     blade_z = windio[:components][:blade][:outer_shape_bem][:reference_axis][:z][:values]
     tower_z = windio[:components][:tower][:outer_shape_bem][:reference_axis][:z][:values]
-    
+
     # Calculate derived geometry
     Blade_Height = maximum(blade_z)
-    Blade_Radius = maximum(sqrt.(blade_x.^2 .+ blade_y.^2))
+    Blade_Radius = maximum(sqrt.(blade_x .^ 2 .+ blade_y .^ 2))
     Htwr_base = hub_height - Blade_Height/2
     Htwr_blds = maximum(tower_z) - Htwr_base
-    
+
     # Extract strut parameters
     tower_strut_connection = windio[:components][:struts][1][:mountfraction_tower]
     blade_strut_connection = windio[:components][:struts][1][:mountfraction_blade]
-    
+
     # Extract environment parameters
     air_density = windio[:environment][:air_density]
     air_dyn_viscosity = windio[:environment][:air_dyn_viscosity]
-    
+
     # Create mesh options
     mesh_opts = MeshSetupOptions(
         Nslices = modelopt.OWENSAero_Options.Nslices,
@@ -1329,9 +1634,9 @@ function preprocess_windio_setup(modelopt, windio, path)
         meshtype = modelopt.Mesh_Options.turbineType,
         custommesh = nothing,
         connectBldTips2Twr = modelopt.Mesh_Options.cables_connected_to_blade_base,
-        AD15_ccw = true
+        AD15_ccw = true,
     )
-    
+
     # Create tower options
     tower_opts = TowerSetupOptions(
         Htwr_base = Htwr_base,
@@ -1345,9 +1650,9 @@ function preprocess_windio_setup(modelopt, windio, path)
         NuMad_mat_xlscsv_file_twr = windio,
         NuMad_geom_xlscsv_file_strut = windio,
         NuMad_mat_xlscsv_file_strut = windio,
-        strut_tower_joint_type = 2
+        strut_tower_joint_type = 2,
     )
-    
+
     # Create blade options
     blade_opts = BladeSetupOptions(
         B = number_of_blades,
@@ -1359,18 +1664,18 @@ function preprocess_windio_setup(modelopt, windio, path)
         NuMad_geom_xlscsv_file_bld = windio,
         NuMad_mat_xlscsv_file_bld = windio,
         strut_blade_joint_type = 0,
-        blade_joint_angle_Degrees = 0.0
+        blade_joint_angle_Degrees = 0.0,
     )
-    
+
     # Create material options
     material_opts = MaterialSetupOptions(
         stack_layers_bld = nothing,
         stack_layers_scale = [1.0, 1.0],
         chord_scale = [1.0, 1.0],
         thickness_scale = [1.0, 1.0],
-        AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca
+        AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca,
     )
-    
+
     # Create aero options
     aero_opts = AeroSetupOptions(
         rho = air_density,
@@ -1394,15 +1699,15 @@ function preprocess_windio_setup(modelopt, windio, path)
         Aero_RotAccel_Active = modelopt.OWENSAero_Options.Aero_RotAccel_Active,
         Aero_Buoyancy_Active = modelopt.OWENSAero_Options.Aero_Buoyancy_Active,
         centrifugal_force_flag = false,
-        AD15On = modelopt.OWENS_Options.AeroModel == "AD"
+        AD15On = modelopt.OWENS_Options.AeroModel == "AD",
     )
-    
+
     # Create and return the complete SetupOptions instance
     return SetupOptions(
         mesh = mesh_opts,
         tower = tower_opts,
         blade = blade_opts,
         material = material_opts,
-        aero = aero_opts
+        aero = aero_opts,
     )
 end

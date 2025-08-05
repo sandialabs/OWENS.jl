@@ -2,51 +2,51 @@
 Inputs pointing to the file paths of compiled binaries of external libraries
 """
 struct Bin
-    hydrodynLibPath
-    moordynLibPath
+    hydrodynLibPath::Any
+    moordynLibPath::Any
 end
 
 mutable struct Inputs
-    verbosity
-    analysisType
-    turbineStartup
-    usingRotorSpeedFunction
-    tocp
-    tocp_Vinf
-    numTS
-    delta_t
-    Omegaocp
-    Vinfocp
-    driveTrainOn
-    generatorOn
-    aeroLoadsOn
-    AD15On
-    platformActive
-    topsideOn
-    interpOrder
-    hd_input_file
-    md_input_file
-    JgearBox
-    gearRatio
-    gearBoxEfficiency
-    useGeneratorFunction
-    generatorProps
-    ratedTorque
-    zeroTorqueGenSpeed
-    pulloutRatio
-    ratedGenSlipPerc
-    OmegaGenStart
-    omegaControl
-    OmegaInit
-    rigid
-    aeroloadfile
-    owensfile
-    potflowfile
-    dataOutputFilename
-    bladeData
-    driveShaftProps
-    iteration_parameters
-    ss_input_file
+    verbosity::Any
+    analysisType::Any
+    turbineStartup::Any
+    usingRotorSpeedFunction::Any
+    tocp::Any
+    tocp_Vinf::Any
+    numTS::Any
+    delta_t::Any
+    Omegaocp::Any
+    Vinfocp::Any
+    driveTrainOn::Any
+    generatorOn::Any
+    aeroLoadsOn::Any
+    AD15On::Any
+    platformActive::Any
+    topsideOn::Any
+    interpOrder::Any
+    hd_input_file::Any
+    md_input_file::Any
+    JgearBox::Any
+    gearRatio::Any
+    gearBoxEfficiency::Any
+    useGeneratorFunction::Any
+    generatorProps::Any
+    ratedTorque::Any
+    zeroTorqueGenSpeed::Any
+    pulloutRatio::Any
+    ratedGenSlipPerc::Any
+    OmegaGenStart::Any
+    omegaControl::Any
+    OmegaInit::Any
+    rigid::Any
+    aeroloadfile::Any
+    owensfile::Any
+    potflowfile::Any
+    dataOutputFilename::Any
+    bladeData::Any
+    driveShaftProps::Any
+    iteration_parameters::Any
+    ss_input_file::Any
 end
 
 # this way you can use defaults and pass in what is different, and it's mapped
@@ -142,16 +142,17 @@ Model inputs for OWENS coupled analysis, struct
 # Outputs:
 * `OWENS.Inputs`:
 """
-function Inputs(;verbosity=2,
+function Inputs(;
+    verbosity = 2,
     analysisType = "TNB",
     turbineStartup = 0,
     usingRotorSpeedFunction = false,
-    tocp = [0.0,1.1],
-    tocp_Vinf = [0.0,1e6],
+    tocp = [0.0, 1.1],
+    tocp_Vinf = [0.0, 1e6],
     numTS = 50.0,
     delta_t = 2e-3,
-    Omegaocp = [0.12,0.12],
-    Vinfocp = [10.0,10.0],
+    Omegaocp = [0.12, 0.12],
+    Vinfocp = [10.0, 10.0],
     driveTrainOn = false,
     generatorOn = false,
     aeroLoadsOn = false, #this need to get cleaned up in the code
@@ -181,98 +182,135 @@ function Inputs(;verbosity=2,
     numDOFPerNode = 6,
     bladeData = [],
     rigid = false,
-    driveShaftProps = DriveShaftProps(0.0,0.0),
+    driveShaftProps = DriveShaftProps(0.0, 0.0),
     TOL = 1e-4,
     MAXITER = 20,
-    )
+)
 
-    return Inputs(verbosity,analysisType,turbineStartup,usingRotorSpeedFunction,tocp,tocp_Vinf,numTS,delta_t,Omegaocp,Vinfocp,
-    driveTrainOn,generatorOn,aeroLoadsOn,AD15On,platformActive,topsideOn,interpOrder,hd_input_file,md_input_file,
-    JgearBox,gearRatio,gearBoxEfficiency,useGeneratorFunction,generatorProps,ratedTorque,
-    zeroTorqueGenSpeed,pulloutRatio,ratedGenSlipPerc,OmegaGenStart,omegaControl,OmegaInit,rigid,
-    aeroloadfile,owensfile,potflowfile,dataOutputFilename,bladeData,driveShaftProps,Iteration_Parameters(TOL,MAXITER),ss_input_file)
+    return Inputs(
+        verbosity,
+        analysisType,
+        turbineStartup,
+        usingRotorSpeedFunction,
+        tocp,
+        tocp_Vinf,
+        numTS,
+        delta_t,
+        Omegaocp,
+        Vinfocp,
+        driveTrainOn,
+        generatorOn,
+        aeroLoadsOn,
+        AD15On,
+        platformActive,
+        topsideOn,
+        interpOrder,
+        hd_input_file,
+        md_input_file,
+        JgearBox,
+        gearRatio,
+        gearBoxEfficiency,
+        useGeneratorFunction,
+        generatorProps,
+        ratedTorque,
+        zeroTorqueGenSpeed,
+        pulloutRatio,
+        ratedGenSlipPerc,
+        OmegaGenStart,
+        omegaControl,
+        OmegaInit,
+        rigid,
+        aeroloadfile,
+        owensfile,
+        potflowfile,
+        dataOutputFilename,
+        bladeData,
+        driveShaftProps,
+        Iteration_Parameters(TOL, MAXITER),
+        ss_input_file,
+    )
 end
 
 """
 Internal, driveshaft stiffness k and damping c
 """
 mutable struct DriveShaftProps
-    k
-    c
+    k::Any
+    c::Any
 end
 
 """
 Internal, gauss-seidel iteration parameters 
 """
-mutable struct Iteration_Parameters            
-    TOL # = 1e-4  #gauss-seidel iteration tolerance for various modules
-    MAXITER # = 2 #max iteration for various modules
+mutable struct Iteration_Parameters
+    TOL::Any # = 1e-4  #gauss-seidel iteration tolerance for various modules
+    MAXITER::Any # = 2 #max iteration for various modules
 end
 
 """
 Internal, struct containing the CACTUS geometry file data for a blade
 """
 mutable struct Blade
-    NElem
-    FlipN
-    QCx
-    QCy
-    QCz
-    tx
-    ty
-    tz
-    CtoR
-    PEx
-    PEy
-    PEz
-    tEx
-    tEy
-    tEz
-    nEx
-    nEy
-    nEz
-    sEx
-    sEy
-    sEz
-    ECtoR
-    EAreaR
-    iSect
+    NElem::Any
+    FlipN::Any
+    QCx::Any
+    QCy::Any
+    QCz::Any
+    tx::Any
+    ty::Any
+    tz::Any
+    CtoR::Any
+    PEx::Any
+    PEy::Any
+    PEz::Any
+    tEx::Any
+    tEy::Any
+    tEz::Any
+    nEx::Any
+    nEy::Any
+    nEz::Any
+    sEx::Any
+    sEy::Any
+    sEz::Any
+    ECtoR::Any
+    EAreaR::Any
+    iSect::Any
 end
 
 """
 Internal, struct containing the CACTUS geometry file data for a strut
 """
 mutable struct Strut
-    NElem
-    TtoC
-    MCx
-    MCy
-    MCz
-    CtoR
-    PEx
-    PEy
-    PEz
-    sEx
-    sEy
-    sEz
-    ECtoR
-    EAreaR
-    BIndS
-    EIndS
-    BIndE
-    EIndE
+    NElem::Any
+    TtoC::Any
+    MCx::Any
+    MCy::Any
+    MCz::Any
+    CtoR::Any
+    PEx::Any
+    PEy::Any
+    PEz::Any
+    sEx::Any
+    sEy::Any
+    sEz::Any
+    ECtoR::Any
+    EAreaR::Any
+    BIndS::Any
+    EIndS::Any
+    BIndE::Any
+    EIndE::Any
 end
 
 """
 Internal, struct containing blade specific data and location within the mesh
 """
 mutable struct BladeData
-    numBlades
-    bladeNum
-    h
-    nodeNum
-    elementNum
-    remaining
+    numBlades::Any
+    bladeNum::Any
+    h::Any
+    nodeNum::Any
+    elementNum::Any
+    remaining::Any
 end
 
 
@@ -301,26 +339,63 @@ Parameters defining the blade composite layup. See NuMad user guide SAND2012_702
 - `web_dp::Array{Seq,2}`: same format as skin sequence, but this corresponds to the section numbers the web connects to at the top and bottom at both edges. There are always four entries in the CSV list and the order goes as follows: inboard LP, inboard HP, outboard HP, outboard LP.
 """
 mutable struct NuMad
-    n_web
-    n_stack
-    n_segments
-    span
-    airfoil
-    te_type
-    twist_d
-    chord
-    xoffset
-    aerocenter
-    stack_mat_types
-    stack_layers
-    segments
-    DPtypes
-    skin_seq
-    web_seq
-    web_dp
-    segment_names
+    n_web::Any
+    n_stack::Any
+    n_segments::Any
+    span::Any
+    airfoil::Any
+    te_type::Any
+    twist_d::Any
+    chord::Any
+    xoffset::Any
+    aerocenter::Any
+    stack_mat_types::Any
+    stack_layers::Any
+    segments::Any
+    DPtypes::Any
+    skin_seq::Any
+    web_seq::Any
+    web_dp::Any
+    segment_names::Any
 end
-NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp) = NuMad(n_web,n_stack,n_segments,span,airfoil,te_type,twist_d,chord,xoffset,aerocenter,stack_mat_types,stack_layers,segments,DPtypes,skin_seq,web_seq,web_dp,repeat(["unnamed"],n_segments))
+NuMad(
+    n_web,
+    n_stack,
+    n_segments,
+    span,
+    airfoil,
+    te_type,
+    twist_d,
+    chord,
+    xoffset,
+    aerocenter,
+    stack_mat_types,
+    stack_layers,
+    segments,
+    DPtypes,
+    skin_seq,
+    web_seq,
+    web_dp,
+) = NuMad(
+    n_web,
+    n_stack,
+    n_segments,
+    span,
+    airfoil,
+    te_type,
+    twist_d,
+    chord,
+    xoffset,
+    aerocenter,
+    stack_mat_types,
+    stack_layers,
+    segments,
+    DPtypes,
+    skin_seq,
+    web_seq,
+    web_dp,
+    repeat(["unnamed"], n_segments),
+)
 
 """
     plyproperties
@@ -341,20 +416,19 @@ plyproperties(names, plies, costs, SN_stressMpa, Log_SN_cycles2Fail)
 ```
 """
 struct plyproperties
-    names#::Array{String,1}
-    plies#::Array{Composites.Material,1}
-    costs#::Array{Float,1}
-    SN_stressMpa # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
-    Log_SN_cycles2Fail # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
+    names::Any#::Array{String,1}
+    plies::Any#::Array{Composites.Material,1}
+    costs::Any#::Array{Float,1}
+    SN_stressMpa::Any # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
+    Log_SN_cycles2Fail::Any # control points for the SN curve, matrix material x 6 where 6 is the current number of control points in an akima spline
 end
-plyproperties(names,plies) = plyproperties(
+plyproperties(names, plies) = plyproperties(
     names,
     plies,
     zeros(length(names)),
-    collect(cat(fill(collect(LinRange(1e12,0,6)),
-    length(names))[:,:]...,dims=2)'),
-    collect(cat(fill(collect(LinRange(0,7,6)),
-    length(names))[:,:]...,dims=2)')) #Backwards compatible convenience function
+    collect(cat(fill(collect(LinRange(1e12, 0, 6)), length(names))[:, :]..., dims = 2)'),
+    collect(cat(fill(collect(LinRange(0, 7, 6)), length(names))[:, :]..., dims = 2)'),
+) #Backwards compatible convenience function
 
 """
 Struct containing
@@ -365,92 +439,94 @@ Composites.Material structs for each material name - see ?Composites.Material
 """
 function plyproperties()
     #TODO: read in numad xls materials file
-    names = ["highmodulus_uni",
-    "standard_uni",
-    "MR60H",
-    "T3900_uni",
-    "T700_uni",
-    "ELT5500",
-    "UDCarbon",
-    "highmodulus_weave",
-    "standard_weave",
-    "T3900_weave",
-    "T700_weave",
-    "Gelcoat",
-    "Triax",
-    "Saertex",
-    "taylor_foam",
-    "SNL_foam",
-    "aluminum6061",
-    "aluminum6063",
-    "CLA_5500",
-    "CBX_2400",
-    "ETLX_2400",
-    "Airex_C70_55",
-    "EBX_2400_x10",
-    "ETLX_2400_x10",
-    "Airex_C70_55_x10"]
+    names = [
+        "highmodulus_uni",
+        "standard_uni",
+        "MR60H",
+        "T3900_uni",
+        "T700_uni",
+        "ELT5500",
+        "UDCarbon",
+        "highmodulus_weave",
+        "standard_weave",
+        "T3900_weave",
+        "T700_weave",
+        "Gelcoat",
+        "Triax",
+        "Saertex",
+        "taylor_foam",
+        "SNL_foam",
+        "aluminum6061",
+        "aluminum6063",
+        "CLA_5500",
+        "CBX_2400",
+        "ETLX_2400",
+        "Airex_C70_55",
+        "EBX_2400_x10",
+        "ETLX_2400_x10",
+        "Airex_C70_55_x10",
+    ]
 
     n_materials = 25
-    e1  =zeros(n_materials) #pa
-    e2  =zeros(n_materials) #pa
-    g12 =zeros(n_materials) #pa
-    anu =zeros(n_materials) #ratio
-    rho =zeros(n_materials) #kg/m3
-    xt  =zeros(n_materials) #pa
-    xc  =zeros(n_materials) #pa
-    yt  =zeros(n_materials) #pa
-    yc  =zeros(n_materials) #pa
-    s   =zeros(n_materials) #pa
-    plythickness =zeros(n_materials) #meters
+    e1 = zeros(n_materials) #pa
+    e2 = zeros(n_materials) #pa
+    g12 = zeros(n_materials) #pa
+    anu = zeros(n_materials) #ratio
+    rho = zeros(n_materials) #kg/m3
+    xt = zeros(n_materials) #pa
+    xc = zeros(n_materials) #pa
+    yt = zeros(n_materials) #pa
+    yc = zeros(n_materials) #pa
+    s = zeros(n_materials) #pa
+    plythickness = zeros(n_materials) #meters
 
     # "highmodulus_uni"
-    e1[1]  = 175.0e9
-    e2[1]  = 8.0e9
+    e1[1] = 175.0e9
+    e2[1] = 8.0e9
     g12[1] = 5.0e9
     anu[1] = 0.30
     rho[1] = 1600.0
-    xt[1]  = min(1.0,1355.656/1682.011)*1000e6 #mean -> A-basis
-    xc[1]  = min(1.0,1103.943/1396.504)*850e6 #mean -> A-basis
-    yt[1]  = min(1.0,39.226/52.975)*40e6 #mean -> A-basis
-    yc[1]  = min(1.0,235.434/282.439)*200e6 #mean -> A-basis
-    s[1]   = min(1.0,142.411/159.516)*60e6 #mean -> A-basis
+    xt[1] = min(1.0, 1355.656/1682.011)*1000e6 #mean -> A-basis
+    xc[1] = min(1.0, 1103.943/1396.504)*850e6 #mean -> A-basis
+    yt[1] = min(1.0, 39.226/52.975)*40e6 #mean -> A-basis
+    yc[1] = min(1.0, 235.434/282.439)*200e6 #mean -> A-basis
+    s[1] = min(1.0, 142.411/159.516)*60e6 #mean -> A-basis
     plythickness[1] = 0.152e-3
     # "standard_uni"
-    e1[2]  = 135.0e9
-    e2[2]  = 10.0e9
+    e1[2] = 135.0e9
+    e2[2] = 10.0e9
     g12[2] = 5.0e9
     anu[2] = 0.30
     rho[2] = 1600.0
-    xt[2]  = min(1.0,1355.656/1682.011)*1500e6 #mean -> A-basis
-    xc[2]  = min(1.0,1103.943/1396.504)*1200e6 #mean -> A-basis
-    yt[2]  = min(1.0,39.226/52.975)*50e6 #mean -> A-basis
-    yc[2]  = min(1.0,235.434/282.439)*250e6 #mean -> A-basis
-    s[2]   = min(1.0,142.411/159.516)*70e6 #mean -> A-basis
+    xt[2] = min(1.0, 1355.656/1682.011)*1500e6 #mean -> A-basis
+    xc[2] = min(1.0, 1103.943/1396.504)*1200e6 #mean -> A-basis
+    yt[2] = min(1.0, 39.226/52.975)*50e6 #mean -> A-basis
+    yc[2] = min(1.0, 235.434/282.439)*250e6 #mean -> A-basis
+    s[2] = min(1.0, 142.411/159.516)*70e6 #mean -> A-basis
     plythickness[2] = 0.152e-3
     # "MR60H"
-    e1[3]  = (165e9+150e9)/2.0
-    e2[3]  = 8.56e9
+    e1[3] = (165e9+150e9)/2.0
+    e2[3] = 8.56e9
     g12[3] = 4.39e9
     anu[3] = 0.326
     rho[3] = 1810.0
-    xt[3]  = min(1.0,1355.656/1682.011)*3190e6 #mean -> A-basis
-    xc[3]  = min(1.0,1103.943/1396.504)*1440e6 #mean -> A-basis
-    yt[3]  = min(1.0,39.226/52.975)*82.0e6 #mean -> A-basis
-    yc[3]  = min(1.0,235.434/282.439)*200.0e6 #mean -> A-basis
-    s[3]   = min(1.0,142.411/159.516)*141e6 #mean -> A-basis
+    xt[3] = min(1.0, 1355.656/1682.011)*3190e6 #mean -> A-basis
+    xc[3] = min(1.0, 1103.943/1396.504)*1440e6 #mean -> A-basis
+    yt[3] = min(1.0, 39.226/52.975)*82.0e6 #mean -> A-basis
+    yc[3] = min(1.0, 235.434/282.439)*200.0e6 #mean -> A-basis
+    s[3] = min(1.0, 142.411/159.516)*141e6 #mean -> A-basis
     plythickness[3] = 0.152e-3
     # "T3900_uni"
-    e1[4]  = (148e9+131e9)/2.0
-    e2[4]  = (9.7e9+9.7e9)/2.0
+    e1[4] = (148e9+131e9)/2.0
+    e2[4] = (9.7e9+9.7e9)/2.0
     g12[4] = 4.83e9
     anu[4] = 0.33
     rho[4] = 1573.0
-    xt[4]  = min(1.0,1355.656/1682.011)*2830e6 #CTD mean -> A-basis
-    xc[4]  = min(1.0,1103.943/1396.504)*1772e6 #CTD mean -> A-basis
-    yt[4]  = min(1.0,39.226/52.975)*56.9e6 #CTD mean -> A-basis
-    yc[4]  = min(1.0,235.434/282.439)*303e6 #CTD mean -> A-basis
-    s[4]   = min(1.0,142.411/159.516)*89.6e6 #CTD mean -> A-basis
+    xt[4] = min(1.0, 1355.656/1682.011)*2830e6 #CTD mean -> A-basis
+    xc[4] = min(1.0, 1103.943/1396.504)*1772e6 #CTD mean -> A-basis
+    yt[4] = min(1.0, 39.226/52.975)*56.9e6 #CTD mean -> A-basis
+    yc[4] = min(1.0, 235.434/282.439)*303e6 #CTD mean -> A-basis
+    s[4] = min(1.0, 142.411/159.516)*89.6e6 #CTD mean -> A-basis
     plythickness[4] = 0.191e-3
     # "T700_uni"
     e1[5]=120.8e9
@@ -491,40 +567,40 @@ function plyproperties()
 
     # FABRICS
     # "highmodulus_weave"
-    e1[8]  = 85.0e9
-    e2[8]  = 85.0e9
+    e1[8] = 85.0e9
+    e2[8] = 85.0e9
     g12[8] = 5.0e9
     anu[8] = 0.10
     rho[8] = 1600.0
-    xt[8]  = min(1.0,1355.656/1682.011)*350e6 #mean -> A-basis
-    xc[8]  = min(1.0,1103.943/1396.504)*150e6 #mean -> A-basis
-    yt[8]  = min(1.0,39.226/52.975)*350e6 #mean -> A-basis
-    yc[8]  = min(1.0,235.434/282.439)*150e6 #mean -> A-basis
-    s[8]   = min(1.0,142.411/159.516)*35e6 #mean -> A-basis
+    xt[8] = min(1.0, 1355.656/1682.011)*350e6 #mean -> A-basis
+    xc[8] = min(1.0, 1103.943/1396.504)*150e6 #mean -> A-basis
+    yt[8] = min(1.0, 39.226/52.975)*350e6 #mean -> A-basis
+    yc[8] = min(1.0, 235.434/282.439)*150e6 #mean -> A-basis
+    s[8] = min(1.0, 142.411/159.516)*35e6 #mean -> A-basis
     plythickness[8] = 0.218e-3
     # "standard_weave"
-    e1[9]  = 70.0e9
-    e2[9]  = 70.0e9
+    e1[9] = 70.0e9
+    e2[9] = 70.0e9
     g12[9] = 5.0e9
     anu[9] = 0.10
     rho[9] = 1600.0
-    xt[9]  = min(1.0,1355.656/1682.011)*600e6 #mean -> A-basis
-    xc[9]  = min(1.0,1103.943/1396.504)*570e6 #mean -> A-basis
-    yt[9]  = min(1.0,39.226/52.975)*600e6 #mean -> A-basis
-    yc[9]  = min(1.0,235.434/282.439)*570e6 #mean -> A-basis
-    s[9]   = min(1.0,142.411/159.516)*90e6 #mean -> A-basis
+    xt[9] = min(1.0, 1355.656/1682.011)*600e6 #mean -> A-basis
+    xc[9] = min(1.0, 1103.943/1396.504)*570e6 #mean -> A-basis
+    yt[9] = min(1.0, 39.226/52.975)*600e6 #mean -> A-basis
+    yc[9] = min(1.0, 235.434/282.439)*570e6 #mean -> A-basis
+    s[9] = min(1.0, 142.411/159.516)*90e6 #mean -> A-basis
     plythickness[9] = 0.218e-3
     # "T3900_weave"
-    e1[10]  = (70.3e9+71.0e9)/2.0
-    e2[10]  = (68.9e9+67.6e9)/2.0
+    e1[10] = (70.3e9+71.0e9)/2.0
+    e2[10] = (68.9e9+67.6e9)/2.0
     g12[10] = 4.6e9
     anu[10] = 0.032
     rho[10] = 1551.0
-    xt[10]  = min(1.0,701.302/803.236)*1055e6 #CTD mean -> A-basis
-    xc[10]  = min(1.0,549.748/749.955)*676e6 #CTD mean -> A-basis
-    yt[10]  = min(1.0,557.575/722.602)*945e6 #CTD mean -> A-basis
-    yc[10]  = min(1.0,604.067/741.866)*614e6 #CTD mean -> A-basis
-    s[10]   = min(1.0,138.440/154.888)*79.3e6 #CTD mean -> A-basis
+    xt[10] = min(1.0, 701.302/803.236)*1055e6 #CTD mean -> A-basis
+    xc[10] = min(1.0, 549.748/749.955)*676e6 #CTD mean -> A-basis
+    yt[10] = min(1.0, 557.575/722.602)*945e6 #CTD mean -> A-basis
+    yc[10] = min(1.0, 604.067/741.866)*614e6 #CTD mean -> A-basis
+    s[10] = min(1.0, 138.440/154.888)*79.3e6 #CTD mean -> A-basis
     plythickness[10] = 0.218e-3
     # "T700_weave"
     e1[11]=55.82e9
@@ -719,7 +795,10 @@ function plyproperties()
     s[25]=100.0e6 #made up
     plythickness[25]=0.07E-3 #meters
 
-    return plyproperties(names,Composites.Material.(e1,e2,g12,anu,rho,xt,xc,yt,yc,s,plythickness))
+    return plyproperties(
+        names,
+        Composites.Material.(e1, e2, g12, anu, rho, xt, xc, yt, yc, s, plythickness),
+    )
 end
 
 """
@@ -736,5 +815,5 @@ Structure representing a sequence of indices, typically used for layup sequences
 - Second index corresponds to section or web number
 """
 mutable struct Seq
-    seq
+    seq::Any
 end
