@@ -336,26 +336,6 @@ mutable struct OWENS_Options
     Prescribed_RPM_RPM_controlpoints::Any
     Prescribed_Vinf_time_controlpoints::Any
     Prescribed_Vinf_Vinf_controlpoints::Any
-    analysisType::Any
-    AeroModel::Any
-    structuralModel::Any
-    controlStrategy::Any
-    numTS::Any
-    delta_t::Any
-    platformActive::Any
-    topsideOn::Any
-    interpOrder::Any
-    dataOutputFilename::Any
-    rigid::Any
-    TOL::Any
-    MAXITER::Any
-    verbosity::Any
-    VTKsaveName::Any
-    aeroLoadsOn::Any
-    Prescribed_RPM_time_controlpoints::Any
-    Prescribed_RPM_RPM_controlpoints::Any
-    Prescribed_Vinf_time_controlpoints::Any
-    Prescribed_Vinf_Vinf_controlpoints::Any
 
     # Constructor that takes a dictionary
     function OWENS_Options(
