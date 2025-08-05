@@ -124,46 +124,9 @@ mutable struct MasterInput
     NuMad_mat_xlscsv_file_bld::Any
     NuMad_geom_xlscsv_file_strut::Any
     NuMad_mat_xlscsv_file_strut::Any
-    analysisType::Any
-    turbineType::Any
-    eta::Any
-    Nbld::Any #WindIO
-    towerHeight::Any
-    rho::Any
-    Vinf::Any
-    controlStrategy::Any
-    RPM::Any
-    Nslices::Any
-    ntheta::Any
-    structuralModel::Any
-    ntelem::Any
-    nbelem::Any
-    ncelem::Any
-    nselem::Any
-    AeroModel::Any
-    ifw::Any
-    WindType::Any
-    windINPfilename::Any
-    ifw_libfile::Any
-    adi_lib::Any
-    adi_rootname::Any
-    Blade_Height::Any
-    Blade_Radius::Any
-    numTS::Any
-    delta_t::Any
-    NuMad_geom_xlscsv_file_twr::Any
-    NuMad_mat_xlscsv_file_twr::Any
-    NuMad_geom_xlscsv_file_bld::Any
-    NuMad_mat_xlscsv_file_bld::Any
-    NuMad_geom_xlscsv_file_strut::Any
-    NuMad_mat_xlscsv_file_strut::Any
 end
 
 function MasterInput(;
-    analysisType = "unsteady", # unsteady, steady, modal
-    turbineType = "Darrieus", #Darrieus, H-VAWT, ARCUS
-    eta = 0.5, # blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
-    Nbld = 3, # number of blade
     analysisType = "unsteady", # unsteady, steady, modal
     turbineType = "Darrieus", #Darrieus, H-VAWT, ARCUS
     eta = 0.5, # blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
@@ -173,21 +136,11 @@ function MasterInput(;
     towerHeight = 3.0, # m tower extension height below blades
     rho = 1.225, # air density
     Vinf = 17.2, # m/s
-    towerHeight = 3.0, # m tower extension height below blades
-    rho = 1.225, # air density
-    Vinf = 17.2, # m/s
     controlStrategy = "constantRPM", # TODO: incorporate the others
     RPM = 17.2, #RPM
     Nslices = 30, # number of VAWTAero discritizations 
     ntheta = 30, # number of VAWTAero azimuthal discretizations
-    RPM = 17.2, #RPM
-    Nslices = 30, # number of VAWTAero discritizations 
-    ntheta = 30, # number of VAWTAero azimuthal discretizations
     structuralModel = "GX", #GX, TNB, ROM
-    ntelem = 10, #tower elements in each 
-    nbelem = 60, #blade elements in each 
-    ncelem = 10, #central cable elements in each if turbineType is ARCUS
-    nselem = 5, #strut elements in each if turbineType has struts
     ntelem = 10, #tower elements in each 
     nbelem = 60, #blade elements in each 
     ncelem = 10, #central cable elements in each if turbineType is ARCUS
@@ -200,7 +153,6 @@ function MasterInput(;
     adi_rootname = "./Example",
     numTS = 100,
     delta_t = 0.01,
-    windINPfilename = "$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
     windINPfilename = "$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
     NuMad_geom_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv",
     NuMad_mat_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
