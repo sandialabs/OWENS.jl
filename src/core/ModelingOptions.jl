@@ -439,23 +439,6 @@ mutable struct DLC_Options
     simtime_turbsim::Any
     RandSeed1::Any
     DLCParams::Any
-    DLCs::Any
-    Vinf_range::Any
-    IEC_std::Any
-    WindChar::Any
-    WindClass::Any
-    turbsimsavepath::Any
-    pathtoturbsim::Any
-    NumGrid_Z::Any
-    NumGrid_Y::Any
-    Vref::Any
-    Vdesign::Any
-    grid_oversize::Any
-    regenWindFiles::Any
-    delta_t_turbsim::Any
-    simtime_turbsim::Any
-    RandSeed1::Any
-    DLCParams::Any
 
     # Constructor that takes a dictionary
     function DLC_Options(
@@ -596,27 +579,6 @@ mutable struct OWENSFEA_Options
     aeroElasticOn::Any
     spinUpOn::Any
     predef::Any
-    nlOn::Any
-    RayleighAlpha::Any
-    RayleighBeta::Any
-    iterationType::Any
-    guessFreq::Any
-    numModes::Any
-    adaptiveLoadSteppingFlag::Any
-    minLoadStepDelta::Any
-    minLoadStep::Any
-    prescribedLoadStep::Any
-    maxNumLoadSteps::Any
-    tolerance::Any
-    maxIterations::Any
-    elementOrder::Any
-    alpha::Any
-    gamma::Any
-    AddedMass_Coeff_Ca::Any
-    platformTurbineConnectionNodeNumber::Any
-    aeroElasticOn::Any
-    spinUpOn::Any
-    predef::Any
 
     # Constructor that takes a dictionary
     function OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -668,17 +630,6 @@ OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any
     * `OWENSOpenFASTWrappers_Options`: 
 """
 mutable struct OWENSOpenFASTWrappers_Options
-    windINPfilename::Any
-    ifw_libfile::Any
-    hd_lib::Any
-    md_lib::Any
-    adi_lib::Any
-    adi_rootname::Any
-    hd_input_file::Any
-    ss_input_file::Any
-    md_input_file::Any
-    potflowfile::Any
-    WindType::Any
     windINPfilename::Any
     ifw_libfile::Any
     hd_lib::Any
@@ -858,22 +809,6 @@ Drivetrain_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `Drivetrain_Options`: 
 """
 mutable struct Drivetrain_Options
-    turbineStartup::Any
-    usingRotorSpeedFunction::Any
-    driveTrainOn::Any
-    JgearBox::Any
-    gearRatio::Any
-    gearBoxEfficiency::Any
-    generatorOn::Any
-    useGeneratorFunction::Any
-    generatorProps::Any
-    ratedTorque::Any
-    zeroTorqueGenSpeed::Any
-    pulloutRatio::Any
-    ratedGenSlipPerc::Any
-    OmegaGenStart::Any
-    driveShaft_K::Any
-    driveShaft_C::Any
     turbineStartup::Any
     usingRotorSpeedFunction::Any
     driveTrainOn::Any
