@@ -29,8 +29,8 @@ modelingOptions = OWENS.ModelingOptions("$runpath/sampleOWENS_complete.yml", pat
 # and aligns the sectional properties to the mesh elements
 # We can now use the ModelingOptions struct directly with setupOWENS
 
-# Method 1: Using the new preprocess_unified_options_setup function
-setup_options = OWENS.preprocess_unified_options_setup(modelingOptions, path)
+# Run preprocessing function to generate setup_options from modelingOptions
+setup_options = OWENS.preprocess_modeling_options_setup(modelingOptions, path)
 
 # Use the new struct output format
 setup_outputs = OWENS.setupOWENS(

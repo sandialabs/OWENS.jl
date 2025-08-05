@@ -1440,7 +1440,7 @@ function get_material_mass(
 end
 
 """
-    preprocess_unified_options_setup(modelopt, path)
+    preprocess_modeling_options_setup(modelopt, path)
 
 Creates and populates a SetupOptions instance from the ModelingOptions input.
 This is a simplified version of preprocess_windio_setup that doesn't require windio data.
@@ -1452,7 +1452,7 @@ This is a simplified version of preprocess_windio_setup that doesn't require win
 # Returns
 - `SetupOptions`: A populated SetupOptions instance containing all configuration parameters
 """
-function preprocess_unified_options_setup(modelopt, path)
+function preprocess_modeling_options_setup(modelopt, path)
     # Extract basic geometry parameters from Mesh_Options
     number_of_blades = modelopt.Mesh_Options.Nbld
     Blade_Height = modelopt.Mesh_Options.Blade_Height
