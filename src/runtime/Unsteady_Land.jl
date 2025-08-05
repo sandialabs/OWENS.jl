@@ -177,87 +177,6 @@ mutable struct TopData
     torqueDriveShaft_j::Any
     FReactionsm1::Any
     topFReaction_j::Any
-    delta_t::Any
-    numTS::Any
-    numDOFPerNode::Any
-    CN2H::Any
-    t::Any
-    integrator::Any
-    integrator_j::Any
-    topDispOut::Any
-    uHist::Any
-    udotHist::Any
-    uddotHist::Any
-    epsilon_x_hist::Any
-    epsilon_y_hist::Any
-    epsilon_z_hist::Any
-    kappa_x_hist::Any
-    kappa_y_hist::Any
-    kappa_z_hist::Any
-    FReactionHist::Any
-    FTwrBsHist::Any
-    aziHist::Any
-    OmegaHist::Any
-    OmegaDotHist::Any
-    gbHist::Any
-    gbDotHist::Any
-    gbDotDotHist::Any
-    genTorque::Any
-    genPower::Any
-    torqueDriveShaft::Any
-    uHist_prp::Any
-    FPtfmHist::Any
-    FHydroHist::Any
-    FMooringHist::Any
-    rbData::Any
-    rbDataHist::Any
-    u_s::Any
-    udot_s::Any
-    uddot_s::Any
-    u_sm1::Any
-    topDispData1::Any
-    topDispData2::Any
-    topElStrain::Any
-    gb_s::Any
-    gbDot_s::Any
-    gbDotDot_s::Any
-    azi_s::Any
-    Omega_s::Any
-    OmegaDot_s::Any
-    genTorque_s::Any
-    torqueDriveShaft_s::Any
-    topFexternal::Any
-    topFexternal_hist::Any
-    rotorSpeedForGenStart::Any
-    top_rom::Any
-    topJointTransformTrans::Any
-    u_sRed::Any
-    udot_sRed::Any
-    uddot_sRed::Any
-    topBC::Any
-    u_s2::Any
-    udot_s2::Any
-    uddot_s2::Any
-    top_invPhi::Any
-    eta_s::Any
-    etadot_s::Any
-    etaddot_s::Any
-    topsideMass::Any
-    topsideMOI::Any
-    topsideCG::Any
-    u_j::Any
-    udot_j::Any
-    uddot_j::Any
-    azi_j::Any
-    Omega_j::Any
-    OmegaDot_j::Any
-    gb_j::Any
-    gbDot_j::Any
-    gbDotDot_j::Any
-    genTorque_j::Any
-    torqueDriveShaft_j::Any
-    FReactionsm1::Any
-    topFReaction_j::Any
 end
 """
 
@@ -442,7 +361,6 @@ function Unsteady_Land(
     numDOFPerNode = 6
     CN2H = LinearAlgebra.I(3) # hub and inertial frames initialize as copies
     t = range(0, length = numTS, step = delta_t)
-    t = range(0, length = numTS, step = delta_t)
     integrator = 0.0 #for generator control algorithm
     integrator_j = 0.0
     topDispOut = [] #TODO: better way to control scope
@@ -528,6 +446,9 @@ function Unsteady_Land(
     topDispData1.eta_s = eta_s
     topDispData1.etadot_s = etadot_s
     topDispData1.etaddot_s = etaddot_s
+    topDispData2.eta_s = eta_s
+    topDispData2.etadot_s = etadot_s
+    topDispData2.etaddot_s = etaddot_s
 
     topsideMass, topsideMOI, topsideCG = OWENSFEA.calculateStructureMassProps(topElStorage)
 
@@ -1117,9 +1038,6 @@ function Unsteady_Land(
         if inputs.verbosity >= 3
             avePower = mean(topdata.FReactionHist[:, 6] .* topdata.OmegaHist*(2*pi))
             instPower = mean(topdata.FReactionHist[i, 6] .* topdata.OmegaHist[i]*(2*pi))
-        if inputs.verbosity >= 3
-            avePower = mean(topdata.FReactionHist[:, 6] .* topdata.OmegaHist*(2*pi))
-            instPower = mean(topdata.FReactionHist[i, 6] .* topdata.OmegaHist[i]*(2*pi))
             println("Gen Torque: $(topdata.genTorque_j)\n")
             println("Base Torque: $(topdata.FReactionHist[i,6])\n")
             println("RPM: $(topdata.Omega_j*60)\n")
@@ -1237,7 +1155,6 @@ function Unsteady_Land(
             if isfile(dataDumpFilename)
                 rm(dataDumpFilename)
             end
-            mv("$(dataDumpFilename[1:end-4])_temp.jld2", dataDumpFilename)
             mv("$(dataDumpFilename[1:end-4])_temp.jld2", dataDumpFilename)
         end
 
