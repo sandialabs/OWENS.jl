@@ -1552,8 +1552,8 @@ function preprocess_modeling_options_setup(modelopt, path)
     aero_opts = AeroSetupOptions(
         rho = air_density,
         mu = air_dyn_viscosity,
-        RPM = modelopt.OWENSAero_Options.RPM,
-        Vinf = modelopt.OWENSAero_Options.Vinf,
+        RPM = modelopt.OWENS_Options.Prescribed_RPM_RPM_controlpoints[1],
+        Vinf = modelopt.OWENS_Options.Prescribed_Vinf_Vinf_controlpoints[1],
         eta = modelopt.OWENSAero_Options.eta,
         delta_t = modelopt.OWENS_Options.delta_t,
         AD15hubR = modelopt.Mesh_Options.AD15hubR,
