@@ -12,6 +12,17 @@ export MasterInput,
     Unified_Options,
     ModelingOptions,
     Design_Data
+export MasterInput,
+    OWENS_Options,
+    DLC_Options,
+    OWENSAero_Options,
+    OWENSFEA_Options,
+    OWENSOpenFASTWrappers_Options,
+    Mesh_Options,
+    Drivetrain_Options,
+    Unified_Options,
+    ModelingOptions,
+    Design_Data
 
 """
     MasterInput
@@ -124,9 +135,46 @@ mutable struct MasterInput
     NuMad_mat_xlscsv_file_bld::Any
     NuMad_geom_xlscsv_file_strut::Any
     NuMad_mat_xlscsv_file_strut::Any
+    analysisType::Any
+    turbineType::Any
+    eta::Any
+    Nbld::Any #WindIO
+    towerHeight::Any
+    rho::Any
+    Vinf::Any
+    controlStrategy::Any
+    RPM::Any
+    Nslices::Any
+    ntheta::Any
+    structuralModel::Any
+    ntelem::Any
+    nbelem::Any
+    ncelem::Any
+    nselem::Any
+    AeroModel::Any
+    ifw::Any
+    WindType::Any
+    windINPfilename::Any
+    ifw_libfile::Any
+    adi_lib::Any
+    adi_rootname::Any
+    Blade_Height::Any
+    Blade_Radius::Any
+    numTS::Any
+    delta_t::Any
+    NuMad_geom_xlscsv_file_twr::Any
+    NuMad_mat_xlscsv_file_twr::Any
+    NuMad_geom_xlscsv_file_bld::Any
+    NuMad_mat_xlscsv_file_bld::Any
+    NuMad_geom_xlscsv_file_strut::Any
+    NuMad_mat_xlscsv_file_strut::Any
 end
 
 function MasterInput(;
+    analysisType = "unsteady", # unsteady, steady, modal
+    turbineType = "Darrieus", #Darrieus, H-VAWT, ARCUS
+    eta = 0.5, # blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
+    Nbld = 3, # number of blade
     analysisType = "unsteady", # unsteady, steady, modal
     turbineType = "Darrieus", #Darrieus, H-VAWT, ARCUS
     eta = 0.5, # blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
@@ -136,11 +184,21 @@ function MasterInput(;
     towerHeight = 3.0, # m tower extension height below blades
     rho = 1.225, # air density
     Vinf = 17.2, # m/s
+    towerHeight = 3.0, # m tower extension height below blades
+    rho = 1.225, # air density
+    Vinf = 17.2, # m/s
     controlStrategy = "constantRPM", # TODO: incorporate the others
     RPM = 17.2, #RPM
     Nslices = 30, # number of VAWTAero discritizations 
     ntheta = 30, # number of VAWTAero azimuthal discretizations
+    RPM = 17.2, #RPM
+    Nslices = 30, # number of VAWTAero discritizations 
+    ntheta = 30, # number of VAWTAero azimuthal discretizations
     structuralModel = "GX", #GX, TNB, ROM
+    ntelem = 10, #tower elements in each 
+    nbelem = 60, #blade elements in each 
+    ncelem = 10, #central cable elements in each if turbineType is ARCUS
+    nselem = 5, #strut elements in each if turbineType has struts
     ntelem = 10, #tower elements in each 
     nbelem = 60, #blade elements in each 
     ncelem = 10, #central cable elements in each if turbineType is ARCUS
@@ -154,6 +212,7 @@ function MasterInput(;
     numTS = 100,
     delta_t = 0.01,
     windINPfilename = "$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
+    windINPfilename = "$module_path/../test/data/turbsim/115mx115m_30x30_20.0msETM.bts",
     NuMad_geom_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_TaperedTower.csv",
     NuMad_mat_xlscsv_file_twr = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
     NuMad_geom_xlscsv_file_bld = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_D_Carbon_LCDT_ThickFoils_ThinSkin.csv",
@@ -161,7 +220,44 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_Struts.csv",
     NuMad_mat_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
 )
+    NuMad_mat_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
+)
 
+    return MasterInput(
+        analysisType,
+        turbineType,
+        eta,
+        Nbld,
+        towerHeight,
+        rho,
+        Vinf,
+        controlStrategy,
+        RPM,
+        Nslices,
+        ntheta,
+        structuralModel,
+        ntelem,
+        nbelem,
+        ncelem,
+        nselem,
+        AeroModel,
+        ifw,
+        WindType,
+        windINPfilename,
+        ifw_libfile,
+        adi_lib,
+        adi_rootname,
+        Blade_Height,
+        Blade_Radius,
+        numTS,
+        delta_t,
+        NuMad_geom_xlscsv_file_twr,
+        NuMad_mat_xlscsv_file_twr,
+        NuMad_geom_xlscsv_file_bld,
+        NuMad_mat_xlscsv_file_bld,
+        NuMad_geom_xlscsv_file_strut,
+        NuMad_mat_xlscsv_file_strut,
+    )
     return MasterInput(
         analysisType,
         turbineType,
@@ -230,6 +326,26 @@ OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `OWENS_Options`: 
 """
 mutable struct OWENS_Options
+    analysisType::Any
+    AeroModel::Any
+    structuralModel::Any
+    controlStrategy::Any
+    numTS::Any
+    delta_t::Any
+    platformActive::Any
+    topsideOn::Any
+    interpOrder::Any
+    dataOutputFilename::Any
+    rigid::Any
+    TOL::Any
+    MAXITER::Any
+    verbosity::Any
+    VTKsaveName::Any
+    aeroLoadsOn::Any
+    Prescribed_RPM_time_controlpoints::Any
+    Prescribed_RPM_RPM_controlpoints::Any
+    Prescribed_Vinf_time_controlpoints::Any
+    Prescribed_Vinf_Vinf_controlpoints::Any
     analysisType::Any
     AeroModel::Any
     structuralModel::Any
@@ -333,6 +449,23 @@ mutable struct DLC_Options
     simtime_turbsim::Any
     RandSeed1::Any
     DLCParams::Any
+    DLCs::Any
+    Vinf_range::Any
+    IEC_std::Any
+    WindChar::Any
+    WindClass::Any
+    turbsimsavepath::Any
+    pathtoturbsim::Any
+    NumGrid_Z::Any
+    NumGrid_Y::Any
+    Vref::Any
+    Vdesign::Any
+    grid_oversize::Any
+    regenWindFiles::Any
+    delta_t_turbsim::Any
+    simtime_turbsim::Any
+    RandSeed1::Any
+    DLCParams::Any
 
     # Constructor that takes a dictionary
     function DLC_Options(
@@ -364,6 +497,7 @@ mutable struct DLC_Options
         )
     end
 end
+
 
 """
 
@@ -472,10 +606,53 @@ mutable struct OWENSFEA_Options
     aeroElasticOn::Any
     spinUpOn::Any
     predef::Any
+    nlOn::Any
+    RayleighAlpha::Any
+    RayleighBeta::Any
+    iterationType::Any
+    guessFreq::Any
+    numModes::Any
+    adaptiveLoadSteppingFlag::Any
+    minLoadStepDelta::Any
+    minLoadStep::Any
+    prescribedLoadStep::Any
+    maxNumLoadSteps::Any
+    tolerance::Any
+    maxIterations::Any
+    elementOrder::Any
+    alpha::Any
+    gamma::Any
+    AddedMass_Coeff_Ca::Any
+    platformTurbineConnectionNodeNumber::Any
+    aeroElasticOn::Any
+    spinUpOn::Any
+    predef::Any
 
     # Constructor that takes a dictionary
     function OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
+        new(
+            get(dict_in, :nlOn, true), # nonlinear effects
+            get(dict_in, :RayleighAlpha, 0.05), # damping coefficient scalar on the stiffness matrix
+            get(dict_in, :RayleighBeta, 0.05), # damping coefficient scalar on the mass matrix
+            get(dict_in, :iterationType, "DI"), # internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
+            get(dict_in, :guessFreq, 0.0), # for the built in flutter model frequency guessed for the flutter frequency 
+            get(dict_in, :numModes, 20), # ROM model, number of modes used in the analysis type.  Less is faster but less accurate
+            get(dict_in, :adaptiveLoadSteppingFlag, true), # for steady analysis if convergence fails, it will reduce the load and retry then increase the load
+            get(dict_in, :minLoadStepDelta, 0.0500), # minimum change in load step
+            get(dict_in, :minLoadStep, 0.0500), # minimum value of reduced load
+            get(dict_in, :prescribedLoadStep, 0.0), # optional prescribed load fraction
+            get(dict_in, :maxNumLoadSteps, 20), # used in static (steady state) analysis, max load steps for adaptive load stepping
+            get(dict_in, :tolerance, 1.0000e-06), # total mesh unsteady analysis convergence tolerance for a timestep within the structural model
+            get(dict_in, :maxIterations, 50), # total mesh unsteady analysis convergence max iterations for a timestep
+            get(dict_in, :elementOrder, 1), # Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
+            get(dict_in, :alpha, 0.5), # newmark time integration alpha parameter
+            get(dict_in, :gamma, 0.5), # newmark time integration gamma parameter
+            get(dict_in, :AddedMass_Coeff_Ca, 0.0), # added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+            get(dict_in, :platformTurbineConnectionNodeNumber, 1), # TODO: reconnect this
+            get(dict_in, :aeroElasticOn, false), # OWENSFEA for the built in flutter model
+            get(dict_in, :spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
+            get(dict_in, :predef, false), # Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
         new(
             get(dict_in, :nlOn, true), # nonlinear effects
             get(dict_in, :RayleighAlpha, 0.05), # damping coefficient scalar on the stiffness matrix
@@ -523,6 +700,17 @@ OWENSOpenFASTWrappers_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any
     * `OWENSOpenFASTWrappers_Options`: 
 """
 mutable struct OWENSOpenFASTWrappers_Options
+    windINPfilename::Any
+    ifw_libfile::Any
+    hd_lib::Any
+    md_lib::Any
+    adi_lib::Any
+    adi_rootname::Any
+    hd_input_file::Any
+    ss_input_file::Any
+    md_input_file::Any
+    potflowfile::Any
+    WindType::Any
     windINPfilename::Any
     ifw_libfile::Any
     hd_lib::Any
@@ -718,10 +906,43 @@ mutable struct Drivetrain_Options
     OmegaGenStart::Any
     driveShaft_K::Any
     driveShaft_C::Any
+    turbineStartup::Any
+    usingRotorSpeedFunction::Any
+    driveTrainOn::Any
+    JgearBox::Any
+    gearRatio::Any
+    gearBoxEfficiency::Any
+    generatorOn::Any
+    useGeneratorFunction::Any
+    generatorProps::Any
+    ratedTorque::Any
+    zeroTorqueGenSpeed::Any
+    pulloutRatio::Any
+    ratedGenSlipPerc::Any
+    OmegaGenStart::Any
+    driveShaft_K::Any
+    driveShaft_C::Any
 
     # Constructor that takes a dictionary
     function Drivetrain_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
+        new(
+            get(dict_in, :turbineStartup, 0), # TODO: clean up since it should be derived from control strategy
+            get(dict_in, :usingRotorSpeedFunction, false), #TODO: clean up the speed function since the omegaocp RPM gets splined already
+            get(dict_in, :driveTrainOn, false), #flag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
+            get(dict_in, :JgearBox, 0.0), # torsional stiffness of the gearbox TODO: resolve units
+            get(dict_in, :gearRatio, 1.0), # ratio between the turbine driveshaft and generator shaft
+            get(dict_in, :gearBoxEfficiency, 1.0), # efficiency of the gearbox, just decreases the torque that the generator model sees
+            get(dict_in, :generatorOn, false), #TODO: clean up the generator options
+            get(dict_in, :useGeneratorFunction, false), #TODO: clean up the generator options
+            get(dict_in, :generatorProps, 0.0), #TODO: clean up the generator options
+            get(dict_in, :ratedTorque, 0.0), #TODO: clean up the generator options
+            get(dict_in, :zeroTorqueGenSpeed, 0.0), #TODO: clean up the generator options
+            get(dict_in, :pulloutRatio, 0.0), #TODO: clean up the generator options
+            get(dict_in, :ratedGenSlipPerc, 0.0), #TODO: clean up the generator options
+            get(dict_in, :OmegaGenStart, 0.0), #TODO: clean up the generator options
+            get(dict_in, :driveShaftProps_K, 0.0), #TODO: break this out, driveshaft stiffness and damping
+            get(dict_in, :driveShaftProps_C, 0.0), #TODO: break this out, driveshaft stiffness and damping
         new(
             get(dict_in, :turbineStartup, 0), # TODO: clean up since it should be derived from control strategy
             get(dict_in, :usingRotorSpeedFunction, false), #TODO: clean up the speed function since the omegaocp RPM gets splined already
@@ -787,11 +1008,18 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
             yamlInputfile;
             dicttype = OrderedCollections.OrderedDict{Symbol,Any},
         )
+        yamlInput = YAML.load_file(
+            yamlInputfile;
+            dicttype = OrderedCollections.OrderedDict{Symbol,Any},
+        )
     else #just use defaults by supplying a dummy dictionary up front
+        yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
         yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
     end
 
+
     # Unpack YAML
+    dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
     dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
 
     if haskey(yamlInput, :DLC_Options)
@@ -800,6 +1028,7 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
         dlc_options = DLC_Options(dummy_dict)
     end
 
+    if haskey(yamlInput, :OWENSAero_Options)
     if haskey(yamlInput, :OWENSAero_Options)
         owensaero_options = OWENSAero_Options(yamlInput[:OWENSAero_Options])
     else
@@ -811,6 +1040,8 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
     else
         owens_options = OWENS_Options(dummy_dict)
     end
+
+    if haskey(yamlInput, :OWENSFEA_Options)
 
     if haskey(yamlInput, :OWENSFEA_Options)
         owensfea_options = OWENSFEA_Options(yamlInput[:OWENSFEA_Options])
@@ -832,11 +1063,21 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
     end
 
     if haskey(yamlInput, :Drivetrain_Options)
+    if haskey(yamlInput, :Drivetrain_Options)
         drivetrain_options = Drivetrain_Options(yamlInput[:Drivetrain_Options])
     else
         drivetrain_options = Drivetrain_Options(dummy_dict)
     end
 
+    return Unified_Options(
+        owens_options,
+        dlc_options,
+        owensaero_options,
+        owensfea_options,
+        owensopenfastwrappers_options,
+        mesh_options,
+        drivetrain_options,
+    )
     return Unified_Options(
         owens_options,
         dlc_options,
@@ -852,12 +1093,19 @@ function Design_Data(
     file_path = nothing;
     design_defaults_yaml = "$(module_path)/template_files/design_defaults.yml",
 )
+function Design_Data(
+    file_path = nothing;
+    design_defaults_yaml = "$(module_path)/template_files/design_defaults.yml",
+)
     # Load the YAML files
     if !isnothing(file_path)
         windio =
             YAML.load_file(file_path; dicttype = OrderedCollections.OrderedDict{Symbol,Any})
+        windio =
+            YAML.load_file(file_path; dicttype = OrderedCollections.OrderedDict{Symbol,Any})
         println("Running: $(windio[:name])")
     else
+        windio = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
         windio = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
     end
 
@@ -865,8 +1113,13 @@ function Design_Data(
         design_defaults_yaml;
         dicttype = OrderedCollections.OrderedDict{Symbol,Any},
     )
+    defaults = YAML.load_file(
+        design_defaults_yaml;
+        dicttype = OrderedCollections.OrderedDict{Symbol,Any},
+    )
 
     # Create a new dictionary that merges loaded data with defaults
+    Design_Data = OrderedCollections.OrderedDict{Symbol,Any}()
     Design_Data = OrderedCollections.OrderedDict{Symbol,Any}()
 
     # Fill in the Design_Data with defaults and loaded values
@@ -886,8 +1139,15 @@ function MasterInput(yamlInputfile)
     general = yamlInput["general"]
     analysisType = general["analysisType"]
     turbineType = general["turbineType"]
+    analysisType = general["analysisType"]
+    turbineType = general["turbineType"]
 
     designParameters = yamlInput["designParameters"]
+    eta = designParameters["eta"]
+    Nbld = designParameters["Nbld"]
+    Blade_Height = designParameters["Blade_Height"]
+    Blade_Radius = designParameters["Blade_Radius"]
+    towerHeight = designParameters["towerHeight"]
     eta = designParameters["eta"]
     Nbld = designParameters["Nbld"]
     Blade_Height = designParameters["Blade_Height"]
@@ -897,8 +1157,14 @@ function MasterInput(yamlInputfile)
     operationParameters = yamlInput["operationParameters"]
     rho = operationParameters["rho"]
     Vinf = operationParameters["Vinf"]
+    rho = operationParameters["rho"]
+    Vinf = operationParameters["Vinf"]
 
     controlParameters = yamlInput["controlParameters"]
+    controlStrategy = controlParameters["controlStrategy"]
+    RPM = controlParameters["RPM"]
+    numTS = controlParameters["numTS"]
+    delta_t = controlParameters["delta_t"]
     controlStrategy = controlParameters["controlStrategy"]
     RPM = controlParameters["RPM"]
     numTS = controlParameters["numTS"]
@@ -910,8 +1176,17 @@ function MasterInput(yamlInputfile)
     AeroModel = AeroParameters["AeroModel"]
     adi_lib = AeroParameters["adi_lib"]
     adi_rootname = AeroParameters["adi_rootname"]
+    Nslices = AeroParameters["Nslices"]
+    ntheta = AeroParameters["ntheta"]
+    AeroModel = AeroParameters["AeroModel"]
+    adi_lib = AeroParameters["adi_lib"]
+    adi_rootname = AeroParameters["adi_rootname"]
 
     turbulentInflow = yamlInput["turbulentInflow"]
+    ifw = turbulentInflow["ifw"]
+    WindType = turbulentInflow["WindType"]
+    windINPfilename = turbulentInflow["windINPfilename"]
+    ifw_libfile = turbulentInflow["ifw_libfile"]
     ifw = turbulentInflow["ifw"]
     WindType = turbulentInflow["WindType"]
     windINPfilename = turbulentInflow["windINPfilename"]
@@ -929,7 +1204,53 @@ function MasterInput(yamlInputfile)
     NuMad_mat_xlscsv_file_bld = structuralParameters["NuMad_mat_xlscsv_file_bld"]
     NuMad_geom_xlscsv_file_strut = structuralParameters["NuMad_geom_xlscsv_file_strut"]
     NuMad_mat_xlscsv_file_strut = structuralParameters["NuMad_mat_xlscsv_file_strut"]
+    structuralModel = structuralParameters["structuralModel"]
+    ntelem = structuralParameters["ntelem"]
+    nbelem = structuralParameters["nbelem"]
+    ncelem = structuralParameters["ncelem"]
+    nselem = structuralParameters["nselem"]
+    NuMad_geom_xlscsv_file_twr = structuralParameters["NuMad_geom_xlscsv_file_twr"]
+    NuMad_mat_xlscsv_file_twr = structuralParameters["NuMad_mat_xlscsv_file_twr"]
+    NuMad_geom_xlscsv_file_bld = structuralParameters["NuMad_geom_xlscsv_file_bld"]
+    NuMad_mat_xlscsv_file_bld = structuralParameters["NuMad_mat_xlscsv_file_bld"]
+    NuMad_geom_xlscsv_file_strut = structuralParameters["NuMad_geom_xlscsv_file_strut"]
+    NuMad_mat_xlscsv_file_strut = structuralParameters["NuMad_mat_xlscsv_file_strut"]
 
+    return MasterInput(
+        analysisType,
+        turbineType,
+        eta,
+        Nbld,
+        towerHeight,
+        rho,
+        Vinf,
+        controlStrategy,
+        RPM,
+        Nslices,
+        ntheta,
+        structuralModel,
+        ntelem,
+        nbelem,
+        ncelem,
+        nselem,
+        AeroModel,
+        ifw,
+        WindType,
+        windINPfilename,
+        ifw_libfile,
+        adi_lib,
+        adi_rootname,
+        Blade_Height,
+        Blade_Radius,
+        numTS,
+        delta_t,
+        NuMad_geom_xlscsv_file_twr,
+        NuMad_mat_xlscsv_file_twr,
+        NuMad_geom_xlscsv_file_bld,
+        NuMad_mat_xlscsv_file_bld,
+        NuMad_geom_xlscsv_file_strut,
+        NuMad_mat_xlscsv_file_strut,
+    )
     return MasterInput(
         analysisType,
         turbineType,

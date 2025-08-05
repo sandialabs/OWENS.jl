@@ -113,7 +113,9 @@ function setBCs(fixedDOFs, fixedNodes, numNodes, numDOFPerNode) #node, dof, bc
             dofBCs =
                 hcat(newNodes, ones(Int, numNewNodes)*fixedDOFs[i], zeros(Int, numNewNodes))
             pBC[
-                (length(fixedNodes)*numDOFPerNode+(i-1)*numNewNodes+1):(length(
+                (length(
+                    fixedNodes,
+                )*numDOFPerNode+(i-1)*numNewNodes+1):(length(
                     fixedNodes,
                 )*numDOFPerNode+i*numNewNodes),
                 :,

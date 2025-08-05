@@ -102,12 +102,19 @@ function setupOWENS(
     aero_config.AD15On = aero_config.AeroModel == "AD"
 
     aero_config.centrifugal_force_flag = material_config.AddedMass_Coeff_Ca>0.0
+    aero_config.centrifugal_force_flag = material_config.AddedMass_Coeff_Ca>0.0
 
     # Here is where we take the inputs from setupOWENS and break out what is going on behind the function.
     # We do some intermediate calculations on the blade shape and angles
 
     Nstrutperbld = length(tower_config.strut_twr_mountpoint)
 
+    if typeof(tower_config.NuMad_geom_xlscsv_file_strut)==String ||
+       typeof(
+        tower_config.NuMad_geom_xlscsv_file_strut,
+    )==OrderedCollections.OrderedDict{Symbol,Any}
+        tower_config.NuMad_geom_xlscsv_file_strut =
+            fill(tower_config.NuMad_geom_xlscsv_file_strut, Nstrutperbld)
     if typeof(tower_config.NuMad_geom_xlscsv_file_strut)==String ||
        typeof(
         tower_config.NuMad_geom_xlscsv_file_strut,
@@ -189,6 +196,7 @@ function setupOWENS(
         nothing, # NuMad_geom_xlscsv_file_guys
         nothing, # NuMad_mat_xlscsv_file_guys
         verbosity,
+        verbosity,
     )
     sectionPropsArray = sectional_props.sectionPropsArray
     stiff_array = sectional_props.stiff_array
@@ -202,9 +210,18 @@ function setupOWENS(
         println(
             "Total Material Cost: \$$(mapreduce(sum, +, [components[icomponent].mass .* components[icomponent].plyProps.costs for icomponent = 1:size(components)[1]]))",
         )
+        println(
+            "\nTotal Mass: $(mapreduce(sum, +, [components[icomponent].mass for icomponent = 1:size(components)[1]])) kg",
+        )
+        println(
+            "Total Material Cost: \$$(mapreduce(sum, +, [components[icomponent].mass .* components[icomponent].plyProps.costs for icomponent = 1:size(components)[1]]))",
+        )
         if verbosity>2
             for component in components
                 # println("$(component.name) Materials' Masses: $(component.mass)")
+                println(
+                    "$(component.name) cost \$$(sum(component.mass .* component.plyProps.costs))",
+                )
                 println(
                     "$(component.name) cost \$$(sum(component.mass .* component.plyProps.costs))",
                 )
@@ -379,6 +396,7 @@ function setupOWENS(
 
         for component in components
             if contains(component.name, "tower")
+            if contains(component.name, "tower")
                 mass_twr = component.mass_matrix
                 stiff_twr = component.stiff_matrix
                 twr_precompinput = component.preCompInput
@@ -391,6 +409,7 @@ function setupOWENS(
             end
 
             if contains(component.name, "blade1")
+            if contains(component.name, "blade1")
                 mass_bld = component.mass_matrix
                 stiff_bld = component.stiff_matrix
                 bld_precompinput = component.preCompInput
@@ -402,6 +421,7 @@ function setupOWENS(
                 mass_breakout_blds = component.mass
             end
         end
+
 
         if aero_config.AD15On
             return mymesh,
@@ -437,7 +457,73 @@ function setupOWENS(
             custom_mesh_outputs,
             stiff_array,
             mass_array
+            return mymesh,
+            myel,
+            myort,
+            myjoint,
+            sectionPropsArray,
+            mass_twr,
+            mass_bld,
+            stiff_twr,
+            stiff_bld,
+            bld_precompinput,
+            bld_precompoutput,
+            plyprops_bld,
+            numadIn_bld,
+            lam_U_bld,
+            lam_L_bld,
+            twr_precompinput,
+            twr_precompoutput,
+            plyprops_twr,
+            numadIn_twr,
+            lam_U_twr,
+            lam_L_twr,
+            aero_properties.aeroForcesAD,
+            aero_properties.deformAeroAD,
+            mass_breakout_blds,
+            mass_breakout_twr,
+            system,
+            assembly,
+            sections,
+            AD15bldNdIdxRng,
+            AD15bldElIdxRng,
+            custom_mesh_outputs,
+            stiff_array,
+            mass_array
         else
+            return mymesh,
+            myel,
+            myort,
+            myjoint,
+            sectionPropsArray,
+            mass_twr,
+            mass_bld,
+            stiff_twr,
+            stiff_bld,
+            bld_precompinput,
+            bld_precompoutput,
+            plyprops_bld,
+            numadIn_bld,
+            lam_U_bld,
+            lam_L_bld,
+            twr_precompinput,
+            twr_precompoutput,
+            plyprops_twr,
+            numadIn_twr,
+            lam_U_twr,
+            lam_L_twr,
+            aero_properties.aeroForcesACDMS,
+            aero_properties.deformAeroACDMS,
+            mass_breakout_blds,
+            mass_breakout_twr,
+            system,
+            assembly,
+            sections,
+            AD15bldNdIdxRng,
+            AD15bldElIdxRng,
+            custom_mesh_outputs,
+            stiff_array,
+            mass_array
             return mymesh,
             myel,
             myort,
@@ -525,6 +611,7 @@ function setupOWENS(
     strut_tower_joint_type = 2,
     strut_blade_joint_type = 0,
     blade_joint_angle_Degrees = 0.0,
+    blade_joint_angle_Degrees = 0.0,
     joint_type = 2,
     c_mount_ratio = 0.05,
     angularOffset = -pi/2,
@@ -569,6 +656,7 @@ function setupOWENS(
         NuMad_geom_xlscsv_file_strut = NuMad_geom_xlscsv_file_strut,
         NuMad_mat_xlscsv_file_strut = NuMad_mat_xlscsv_file_strut,
         strut_tower_joint_type = strut_tower_joint_type,
+        strut_tower_joint_type = strut_tower_joint_type,
     )
 
     blade_config = BladeSetupOptions(
@@ -581,6 +669,7 @@ function setupOWENS(
         NuMad_geom_xlscsv_file_bld = NuMad_geom_xlscsv_file_bld,
         NuMad_mat_xlscsv_file_bld = NuMad_mat_xlscsv_file_bld,
         strut_blade_joint_type = strut_blade_joint_type,
+        blade_joint_angle_Degrees = blade_joint_angle_Degrees,
         blade_joint_angle_Degrees = blade_joint_angle_Degrees,
     )
 
