@@ -1,4 +1,5 @@
 using OrderedCollections: OrderedDict
+using Infiltrator
 
 export MeshSetupOptions, TowerSetupOptions, BladeSetupOptions, MaterialSetupOptions, AeroSetupOptions, SetupOptions
 
@@ -1374,8 +1375,8 @@ function preprocess_windio_setup(modelopt, windio, path)
     aero_opts = AeroSetupOptions(
         rho = air_density,
         mu = air_dyn_viscosity,
-        RPM = modelopt.OWENS_Options.Prescribed_RPM_RPM_controlpoints[1],
-        Vinf = modelopt.OWENS_Options.Prescribed_Vinf_Vinf_controlpoints[1],
+        RPM = modelopt.OWENSAero_Options.RPM,
+        Vinf = modelopt.OWENSAero_Options.Vinf,
         eta = windio[:components][:blade][:outer_shape_bem][:blade_mountpoint],
         delta_t = modelopt.OWENS_Options.delta_t,
         AD15hubR = modelopt.Mesh_Options.AD15hubR,

@@ -26,7 +26,7 @@ OWENSOpenFASTWrappers_Options:
   windINPfilename: /data/turbsim/115mx115m_30x30_20.0msETM.bts
   ifw_libfile: null
   adi_lib: null
-  adi_rootname: null
+  adi_rootname: ExampleB
   WindType: 1
 
 # Mesh configuration options

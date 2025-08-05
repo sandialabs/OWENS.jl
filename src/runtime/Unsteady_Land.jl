@@ -1,3 +1,5 @@
+import .OWENS: SetupOutputs, Unified_Options
+
 """
     TopData
 
@@ -216,6 +218,97 @@ Executable function for transient analysis. Provides the interface of various
     * `kappa_y_hist`: strain history for gam_xz_y for each dof
     * `kappa_z_hist`: strain history for gam_xy_0 for each dof
     """
+# New interface that takes SetupOutputs and Unified_Options directly
+function Unsteady_Land(setup_outputs::SetupOutputs, modeling_options::Unified_Options;
+    returnold::Bool = true,
+    getLinearizedMatrices::Bool = false,
+    topElStorage = nothing,
+    bottomElStorage = nothing,
+    u_s = nothing,
+    meshcontrolfunction = nothing,
+    userDefinedGenerator = nothing,
+    turbsimfile = nothing,
+    dataDumpFilename = nothing,
+    datadumpfrequency::Int = 1000,
+    restart::Bool = false
+)
+    
+    # Extract components from setup_outputs
+    mymesh = setup_outputs.mymesh
+    myel = setup_outputs.myel
+    myjoint = setup_outputs.myjoint
+    aeroForces = setup_outputs.aeroForces
+    deformAero = setup_outputs.deformAero
+    system = setup_outputs.system
+    assembly = setup_outputs.assembly
+    
+    # Determine if using AD15
+    AD15On = modeling_options.OWENS_Options.AeroModel == "AD"
+    
+    # Create Inputs struct
+    inputs = OWENS.Inputs(;
+        verbosity = modeling_options.OWENS_Options.verbosity,
+        analysisType = modeling_options.OWENS_Options.structuralModel,
+        tocp = [0.0, 100000.1],
+        Omegaocp = [modeling_options.OWENSAero_Options.RPM, modeling_options.OWENSAero_Options.RPM] ./ 60,
+        tocp_Vinf = [0.0, 100000.1],
+        Vinfocp = [modeling_options.OWENSAero_Options.Vinf, modeling_options.OWENSAero_Options.Vinf],
+        numTS = modeling_options.OWENS_Options.numTS,
+        delta_t = modeling_options.OWENS_Options.delta_t,
+        AD15On = AD15On,
+        aeroLoadsOn = modeling_options.OWENS_Options.aeroLoadsOn
+    )
+
+    # Create boundary conditions (tower base fixed)
+    # TODO: this should be turned into an fea_option
+    pBC = [1 1 0
+           1 2 0
+           1 3 0
+           1 4 0
+           1 5 0
+           1 6 0]
+    
+    # Create FEAModel
+    # TODO all of these options should be fea_options
+    fea_options = modeling_options.OWENSFEA_Options
+    feamodel = OWENS.FEAModel(;
+        analysisType = modeling_options.OWENS_Options.structuralModel,
+        dataOutputFilename = "none",
+        joint = myjoint,
+        platformTurbineConnectionNodeNumber = 1,
+        pBC,
+        nlOn = fea_options.nlOn,
+        numNodes = mymesh.numNodes,
+        RayleighAlpha = 0.05,
+        RayleighBeta = 0.05,
+        iterationType = "DI"
+    )
+    
+    # Call the original Unsteady_Land function with extracted parameters
+    return Unsteady_Land(
+        inputs;
+        topModel = feamodel,
+        topMesh = mymesh,
+        topEl = myel,
+        aero = aeroForces,
+        deformAero = deformAero,
+        system = system,
+        assembly = assembly,
+        returnold = returnold,
+        getLinearizedMatrices = getLinearizedMatrices,
+        topElStorage = topElStorage,
+        bottomElStorage = bottomElStorage,
+        u_s = u_s,
+        meshcontrolfunction = meshcontrolfunction,
+        userDefinedGenerator = userDefinedGenerator,
+        turbsimfile = turbsimfile,
+        dataDumpFilename = dataDumpFilename,
+        datadumpfrequency = datadumpfrequency,
+        restart = restart
+    )
+end
+
+# Original interface for backward compatibility
 function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     aeroVals=nothing,aeroDOFs=nothing,aero=nothing,deformAero=nothing,
     bottomModel=nothing,bottomMesh=nothing,bottomEl=nothing,bin=nothing,

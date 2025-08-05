@@ -490,7 +490,7 @@ mutable struct OWENSOpenFASTWrappers_Options
             get(dict_in,:hd_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:md_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in,:adi_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
-            get(dict_in,:adi_rootname, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
+            (file = get(dict_in,:adi_rootname, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             (file = get(dict_in,:hd_input_file, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If platformActive, the hydrodyn file location, like in the unit test
             (file = get(dict_in,:ss_input_file, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If platformActive, the sea state file location, like in the unit test
             (file = get(dict_in,:md_input_file, nothing); isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))), # If platformActive, the moordyn file location, like in the unit test
@@ -738,88 +738,6 @@ function ModelingOptions(yamlInputfile=nothing; path="")
     end
 
     return Unified_Options(owens_options,dlc_options,owensaero_options,owensfea_options,owensopenfastwrappers_options,mesh_options,drivetrain_options)
-end
-
-"""
-    convertMasterInputToUnifiedOptions(masterInput::MasterInput)
-
-Converts a MasterInput struct to Unified_Options by mapping the fields appropriately.
-
-# Arguments
-- `masterInput::MasterInput`: The legacy MasterInput struct
-
-# Returns
-- `Unified_Options`: The new unified options structure
-"""
-function convertMasterInputToUnifiedOptions(masterInput::MasterInput)
-    # Create default option structs
-    dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0,:nothing2=>"string")
-    
-    # Create OWENS_Options with values from MasterInput
-    owens_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
-        :analysisType => masterInput.analysisType,
-        :AeroModel => masterInput.AeroModel,
-        :structuralModel => masterInput.structuralModel,
-        :controlStrategy => masterInput.controlStrategy,
-        :numTS => masterInput.numTS,
-        :delta_t => masterInput.delta_t,
-        :Prescribed_RPM_RPM_controlpoints => [masterInput.RPM],
-        :Prescribed_Vinf_Vinf_controlpoints => [masterInput.Vinf]
-    )
-    owens_options = OWENS_Options(owens_options_dict)
-    
-    # Create OWENSAero_Options with values from MasterInput
-    aero_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
-        :Nslices => masterInput.Nslices,
-        :ntheta => masterInput.ntheta,
-        :ifw => masterInput.ifw,
-        :eta => masterInput.eta,
-        :rho => masterInput.rho,
-        :Vinf => masterInput.Vinf,
-        :RPM => masterInput.RPM
-    )
-    owensaero_options = OWENSAero_Options(aero_options_dict)
-    
-    # Create Mesh_Options with values from MasterInput
-    mesh_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
-        :ntelem => masterInput.ntelem,
-        :nbelem => masterInput.nbelem,
-        :ncelem => masterInput.ncelem,
-        :nselem => masterInput.nselem,
-        :turbineType => masterInput.turbineType,
-        :Nbld => masterInput.Nbld,
-        :Blade_Height => masterInput.Blade_Height,
-        :Blade_Radius => masterInput.Blade_Radius,
-        :towerHeight => masterInput.towerHeight,
-        :NuMad_geom_xlscsv_file_twr => masterInput.NuMad_geom_xlscsv_file_twr,
-        :NuMad_mat_xlscsv_file_twr => masterInput.NuMad_mat_xlscsv_file_twr,
-        :NuMad_geom_xlscsv_file_bld => masterInput.NuMad_geom_xlscsv_file_bld,
-        :NuMad_mat_xlscsv_file_bld => masterInput.NuMad_mat_xlscsv_file_bld,
-        :NuMad_geom_xlscsv_file_strut => masterInput.NuMad_geom_xlscsv_file_strut,
-        :NuMad_mat_xlscsv_file_strut => masterInput.NuMad_mat_xlscsv_file_strut
-    )
-    mesh_options = Mesh_Options(mesh_options_dict)
-    
-    # Create OpenFAST wrapper options
-    openfast_options_dict = OrderedCollections.OrderedDict{Symbol,Any}(
-        :windINPfilename => masterInput.windINPfilename,
-        :ifw_libfile => masterInput.ifw_libfile,
-        :adi_lib => masterInput.adi_lib,
-        :adi_rootname => masterInput.adi_rootname,
-        :WindType => masterInput.WindType
-    )
-    openfast_options = OWENSOpenFASTWrappers_Options(openfast_options_dict)
-    
-    # Create other options with defaults
-    dlc_options = DLC_Options(dummy_dict)
-    fea_options = OWENSFEA_Options(dummy_dict)
-    drivetrain_options = Drivetrain_Options(dummy_dict)
-    
-    # Create and return the unified options
-    unified_options = Unified_Options(owens_options, dlc_options, owensaero_options, 
-                                    fea_options, openfast_options, mesh_options, drivetrain_options)
-    
-    return unified_options
 end
 
 function Design_Data(file_path=nothing; design_defaults_yaml="$(module_path)/template_files/design_defaults.yml")

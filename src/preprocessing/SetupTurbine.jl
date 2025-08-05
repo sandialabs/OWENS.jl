@@ -1,5 +1,37 @@
 import .OWENS: Design_Data, ModelingOptions
 
+
+"""
+    SetupOutputs
+
+Struct containing the outputs of the setupOWENS function when return_componentized=true.
+
+# Fields
+- `mymesh`: Mesh properties
+- `myel`: Element properties
+- `myort`: Orientation properties
+- `myjoint`: Joint properties
+- `components`: Component definitions
+- `aeroForces`: Aerodynamic forces
+- `deformAero`: Aerodynamic deformation
+- `system`: System properties
+- `assembly`: Assembly properties
+- `sections`: Section properties
+"""
+struct SetupOutputs
+    mesh_props
+    mymesh
+    myel
+    myort
+    myjoint
+    components
+    aeroForces
+    deformAero
+    system
+    assembly
+    sections
+end
+
 """
     setupOWENS(path::String; setup_options = SetupOptions(), VTKmeshfilename = nothing, verbosity = 1, return_componentized = false)
 
@@ -20,16 +52,17 @@ parameters and returns the assembled system components for analysis.
 
 # Returns
 When `return_componentized=true`:
-- `mymesh`: Mesh properties
-- `myel`: Element properties
-- `myort`: Orientation properties
-- `myjoint`: Joint properties
-- `components`: Component definitions
-- `aeroForces`: Aerodynamic forces
-- `deformAero`: Aerodynamic deformation
-- `system`: System properties
-- `assembly`: Assembly properties
-- `sections`: Section properties
+- `SetupOutputs`: Struct containing the following fields:
+    - `mymesh`: Mesh properties
+    - `myel`: Element properties
+    - `myort`: Orientation properties
+    - `myjoint`: Joint properties
+    - `components`: Component definitions
+    - `aeroForces`: Aerodynamic forces
+    - `deformAero`: Aerodynamic deformation
+    - `system`: System properties
+    - `assembly`: Assembly properties
+    - `sections`: Section properties
 
 When `return_componentized=false`:
 Returns an extended set of properties including mass matrices, stiffness matrices, and various component-specific properties.
@@ -284,9 +317,9 @@ function setupOWENS(
     # Return values based on componentized flag
     if return_componentized
         if aero_config.AD15On
-            return mymesh,myel,myort,myjoint,components,aero_properties.aeroForcesAD,aero_properties.deformAeroAD,system, assembly, sections
+            return SetupOutputs(mesh_props, mymesh, myel, myort, myjoint, components, aero_properties.aeroForcesAD, aero_properties.deformAeroAD, system, assembly, sections)
         else
-            return mymesh,myel,myort,myjoint,components,aero_properties.aeroForcesACDMS,aero_properties.deformAeroACDMS,system, assembly, sections
+            return SetupOutputs(mesh_props, mymesh, myel, myort, myjoint, components, aero_properties.aeroForcesACDMS, aero_properties.deformAeroACDMS, system, assembly, sections)
         end
     else
         @warn "Not using the componetized model is being depreciated, please consider updating to return_componentized=true"
