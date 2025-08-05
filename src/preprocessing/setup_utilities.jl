@@ -1,5 +1,4 @@
 using OrderedCollections: OrderedDict
-using Infiltrator
 
 export MeshSetupOptions,
     TowerSetupOptions,

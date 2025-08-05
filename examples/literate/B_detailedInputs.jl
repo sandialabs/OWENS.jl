@@ -18,8 +18,6 @@
 import OWENS
 import OWENSAero
 
-using Infiltrator
-
 #### import PyPlot
 runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
 # runpath = path =  splitdir(@__FILE__)[1]
