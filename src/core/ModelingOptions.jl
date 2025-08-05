@@ -12,17 +12,6 @@ export MasterInput,
     ModelingOptions,
     ModelingOptions,
     Design_Data
-export MasterInput,
-    OWENS_Options,
-    DLC_Options,
-    OWENSAero_Options,
-    OWENSFEA_Options,
-    OWENSOpenFASTWrappers_Options,
-    Mesh_Options,
-    Drivetrain_Options,
-    ModelingOptions,
-    ModelingOptions,
-    Design_Data
 
 """
     MasterInput
@@ -220,9 +209,6 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_Struts.csv",
     NuMad_mat_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
 )
-    NuMad_mat_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
-)
-
     return MasterInput(
         analysisType,
         turbineType,
@@ -258,6 +244,59 @@ function MasterInput(;
         NuMad_geom_xlscsv_file_strut,
         NuMad_mat_xlscsv_file_strut,
     )
+end
+
+function MasterInput(yamlInputfile)
+
+    @warn "The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format"
+
+    yamlInput = YAML.load_file(yamlInputfile)
+    # Unpack YAML
+    general = yamlInput["general"]
+    analysisType = general["analysisType"]
+    turbineType = general["turbineType"]
+
+    designParameters = yamlInput["designParameters"]
+    eta = designParameters["eta"]
+    Nbld = designParameters["Nbld"]
+    Blade_Height = designParameters["Blade_Height"]
+    Blade_Radius = designParameters["Blade_Radius"]
+    towerHeight = designParameters["towerHeight"]
+
+    operationParameters = yamlInput["operationParameters"]
+    rho = operationParameters["rho"]
+    Vinf = operationParameters["Vinf"]
+
+    controlParameters = yamlInput["controlParameters"]
+    controlStrategy = controlParameters["controlStrategy"]
+    RPM = controlParameters["RPM"]
+    numTS = controlParameters["numTS"]
+    delta_t = controlParameters["delta_t"]
+
+    AeroParameters = yamlInput["AeroParameters"]
+    Nslices = AeroParameters["Nslices"]
+    ntheta = AeroParameters["ntheta"]
+    AeroModel = AeroParameters["AeroModel"]
+    adi_lib = AeroParameters["adi_lib"]
+    adi_rootname = AeroParameters["adi_rootname"]
+
+    turbulentInflow = yamlInput["turbulentInflow"]
+    ifw = turbulentInflow["ifw"]
+    WindType = turbulentInflow["WindType"]
+    windINPfilename = turbulentInflow["windINPfilename"]
+    ifw_libfile = turbulentInflow["ifw_libfile"]
+
+    structuralParameters = yamlInput["structuralParameters"]
+    structuralModel = structuralParameters["structuralModel"]
+    ncelem = structuralParameters["ncelem"]
+    nselem = structuralParameters["nselem"]
+    NuMad_geom_xlscsv_file_twr = structuralParameters["NuMad_geom_xlscsv_file_twr"]
+    NuMad_mat_xlscsv_file_twr = structuralParameters["NuMad_mat_xlscsv_file_twr"]
+    NuMad_geom_xlscsv_file_bld = structuralParameters["NuMad_geom_xlscsv_file_bld"]
+    NuMad_mat_xlscsv_file_bld = structuralParameters["NuMad_mat_xlscsv_file_bld"]
+    NuMad_geom_xlscsv_file_strut = structuralParameters["NuMad_geom_xlscsv_file_strut"]
+    NuMad_mat_xlscsv_file_strut = structuralParameters["NuMad_mat_xlscsv_file_strut"]
+
     return MasterInput(
         analysisType,
         turbineType,
@@ -296,7 +335,6 @@ function MasterInput(;
 end
 
 """
-
 OWENS_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
    
     # Input
@@ -653,29 +691,7 @@ mutable struct OWENSFEA_Options
             get(dict_in, :aeroElasticOn, false), # OWENSFEA for the built in flutter model
             get(dict_in, :spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
             get(dict_in, :predef, false), # Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
-        new(
-            get(dict_in, :nlOn, true), # nonlinear effects
-            get(dict_in, :RayleighAlpha, 0.05), # damping coefficient scalar on the stiffness matrix
-            get(dict_in, :RayleighBeta, 0.05), # damping coefficient scalar on the mass matrix
-            get(dict_in, :iterationType, "DI"), # internal iteration type DI direct iteration, NR newton rhapson (which is less stable than DI)
-            get(dict_in, :guessFreq, 0.0), # for the built in flutter model frequency guessed for the flutter frequency 
-            get(dict_in, :numModes, 20), # ROM model, number of modes used in the analysis type.  Less is faster but less accurate
-            get(dict_in, :adaptiveLoadSteppingFlag, true), # for steady analysis if convergence fails, it will reduce the load and retry then increase the load
-            get(dict_in, :minLoadStepDelta, 0.0500), # minimum change in load step
-            get(dict_in, :minLoadStep, 0.0500), # minimum value of reduced load
-            get(dict_in, :prescribedLoadStep, 0.0), # optional prescribed load fraction
-            get(dict_in, :maxNumLoadSteps, 20), # used in static (steady state) analysis, max load steps for adaptive load stepping
-            get(dict_in, :tolerance, 1.0000e-06), # total mesh unsteady analysis convergence tolerance for a timestep within the structural model
-            get(dict_in, :maxIterations, 50), # total mesh unsteady analysis convergence max iterations for a timestep
-            get(dict_in, :elementOrder, 1), # Element order, 1st order, 2nd order etc; determines the number of nodes per element (order +1).  Orders above 1 have not been tested in a long time  
-            get(dict_in, :alpha, 0.5), # newmark time integration alpha parameter
-            get(dict_in, :gamma, 0.5), # newmark time integration gamma parameter
-            get(dict_in, :AddedMass_Coeff_Ca, 0.0), # added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
-            get(dict_in, :platformTurbineConnectionNodeNumber, 1), # TODO: reconnect this
-            get(dict_in, :aeroElasticOn, false), # OWENSFEA for the built in flutter model
-            get(dict_in, :spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
-            get(dict_in, :predef, false), # Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
-        )
+            )
     end
 end
 
@@ -943,23 +959,6 @@ mutable struct Drivetrain_Options
             get(dict_in, :OmegaGenStart, 0.0), #TODO: clean up the generator options
             get(dict_in, :driveShaftProps_K, 0.0), #TODO: break this out, driveshaft stiffness and damping
             get(dict_in, :driveShaftProps_C, 0.0), #TODO: break this out, driveshaft stiffness and damping
-        new(
-            get(dict_in, :turbineStartup, 0), # TODO: clean up since it should be derived from control strategy
-            get(dict_in, :usingRotorSpeedFunction, false), #TODO: clean up the speed function since the omegaocp RPM gets splined already
-            get(dict_in, :driveTrainOn, false), #flag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
-            get(dict_in, :JgearBox, 0.0), # torsional stiffness of the gearbox TODO: resolve units
-            get(dict_in, :gearRatio, 1.0), # ratio between the turbine driveshaft and generator shaft
-            get(dict_in, :gearBoxEfficiency, 1.0), # efficiency of the gearbox, just decreases the torque that the generator model sees
-            get(dict_in, :generatorOn, false), #TODO: clean up the generator options
-            get(dict_in, :useGeneratorFunction, false), #TODO: clean up the generator options
-            get(dict_in, :generatorProps, 0.0), #TODO: clean up the generator options
-            get(dict_in, :ratedTorque, 0.0), #TODO: clean up the generator options
-            get(dict_in, :zeroTorqueGenSpeed, 0.0), #TODO: clean up the generator options
-            get(dict_in, :pulloutRatio, 0.0), #TODO: clean up the generator options
-            get(dict_in, :ratedGenSlipPerc, 0.0), #TODO: clean up the generator options
-            get(dict_in, :OmegaGenStart, 0.0), #TODO: clean up the generator options
-            get(dict_in, :driveShaftProps_K, 0.0), #TODO: break this out, driveshaft stiffness and damping
-            get(dict_in, :driveShaftProps_C, 0.0), #TODO: break this out, driveshaft stiffness and damping
         )
     end
 end
@@ -1008,18 +1007,12 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
             yamlInputfile;
             dicttype = OrderedCollections.OrderedDict{Symbol,Any},
         )
-        yamlInput = YAML.load_file(
-            yamlInputfile;
-            dicttype = OrderedCollections.OrderedDict{Symbol,Any},
-        )
     else #just use defaults by supplying a dummy dictionary up front
-        yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
         yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
     end
 
 
     # Unpack YAML
-    dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
     dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
 
     if haskey(yamlInput, :DLC_Options)
@@ -1028,7 +1021,6 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
         dlc_options = DLC_Options(dummy_dict)
     end
 
-    if haskey(yamlInput, :OWENSAero_Options)
     if haskey(yamlInput, :OWENSAero_Options)
         owensaero_options = OWENSAero_Options(yamlInput[:OWENSAero_Options])
     else
@@ -1040,8 +1032,6 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
     else
         owens_options = OWENS_Options(dummy_dict)
     end
-
-    if haskey(yamlInput, :OWENSFEA_Options)
 
     if haskey(yamlInput, :OWENSFEA_Options)
         owensfea_options = OWENSFEA_Options(yamlInput[:OWENSFEA_Options])
@@ -1063,7 +1053,6 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
     end
 
     if haskey(yamlInput, :Drivetrain_Options)
-    if haskey(yamlInput, :Drivetrain_Options)
         drivetrain_options = Drivetrain_Options(yamlInput[:Drivetrain_Options])
     else
         drivetrain_options = Drivetrain_Options(dummy_dict)
@@ -1078,21 +1067,8 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
         mesh_options,
         drivetrain_options,
     )
-    return ModelingOptions(
-        owens_options,
-        dlc_options,
-        owensaero_options,
-        owensfea_options,
-        owensopenfastwrappers_options,
-        mesh_options,
-        drivetrain_options,
-    )
 end
 
-function Design_Data(
-    file_path = nothing;
-    design_defaults_yaml = "$(module_path)/template_files/design_defaults.yml",
-)
 function Design_Data(
     file_path = nothing;
     design_defaults_yaml = "$(module_path)/template_files/design_defaults.yml",
@@ -1101,11 +1077,8 @@ function Design_Data(
     if !isnothing(file_path)
         windio =
             YAML.load_file(file_path; dicttype = OrderedCollections.OrderedDict{Symbol,Any})
-        windio =
-            YAML.load_file(file_path; dicttype = OrderedCollections.OrderedDict{Symbol,Any})
         println("Running: $(windio[:name])")
     else
-        windio = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
         windio = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
     end
 
@@ -1113,13 +1086,8 @@ function Design_Data(
         design_defaults_yaml;
         dicttype = OrderedCollections.OrderedDict{Symbol,Any},
     )
-    defaults = YAML.load_file(
-        design_defaults_yaml;
-        dicttype = OrderedCollections.OrderedDict{Symbol,Any},
-    )
 
     # Create a new dictionary that merges loaded data with defaults
-    Design_Data = OrderedCollections.OrderedDict{Symbol,Any}()
     Design_Data = OrderedCollections.OrderedDict{Symbol,Any}()
 
     # Fill in the Design_Data with defaults and loaded values
@@ -1128,162 +1096,4 @@ function Design_Data(
     end
 
     return Design_Data
-end
-
-function MasterInput(yamlInputfile)
-
-    @warn "The old combined yaml file is being depreciated in favor of the windio yaml and the modelingoptions format"
-
-    yamlInput = YAML.load_file(yamlInputfile)
-    # Unpack YAML
-    general = yamlInput["general"]
-    analysisType = general["analysisType"]
-    turbineType = general["turbineType"]
-    analysisType = general["analysisType"]
-    turbineType = general["turbineType"]
-
-    designParameters = yamlInput["designParameters"]
-    eta = designParameters["eta"]
-    Nbld = designParameters["Nbld"]
-    Blade_Height = designParameters["Blade_Height"]
-    Blade_Radius = designParameters["Blade_Radius"]
-    towerHeight = designParameters["towerHeight"]
-    eta = designParameters["eta"]
-    Nbld = designParameters["Nbld"]
-    Blade_Height = designParameters["Blade_Height"]
-    Blade_Radius = designParameters["Blade_Radius"]
-    towerHeight = designParameters["towerHeight"]
-
-    operationParameters = yamlInput["operationParameters"]
-    rho = operationParameters["rho"]
-    Vinf = operationParameters["Vinf"]
-    rho = operationParameters["rho"]
-    Vinf = operationParameters["Vinf"]
-
-    controlParameters = yamlInput["controlParameters"]
-    controlStrategy = controlParameters["controlStrategy"]
-    RPM = controlParameters["RPM"]
-    numTS = controlParameters["numTS"]
-    delta_t = controlParameters["delta_t"]
-    controlStrategy = controlParameters["controlStrategy"]
-    RPM = controlParameters["RPM"]
-    numTS = controlParameters["numTS"]
-    delta_t = controlParameters["delta_t"]
-
-    AeroParameters = yamlInput["AeroParameters"]
-    Nslices = AeroParameters["Nslices"]
-    ntheta = AeroParameters["ntheta"]
-    AeroModel = AeroParameters["AeroModel"]
-    adi_lib = AeroParameters["adi_lib"]
-    adi_rootname = AeroParameters["adi_rootname"]
-    Nslices = AeroParameters["Nslices"]
-    ntheta = AeroParameters["ntheta"]
-    AeroModel = AeroParameters["AeroModel"]
-    adi_lib = AeroParameters["adi_lib"]
-    adi_rootname = AeroParameters["adi_rootname"]
-
-    turbulentInflow = yamlInput["turbulentInflow"]
-    ifw = turbulentInflow["ifw"]
-    WindType = turbulentInflow["WindType"]
-    windINPfilename = turbulentInflow["windINPfilename"]
-    ifw_libfile = turbulentInflow["ifw_libfile"]
-    ifw = turbulentInflow["ifw"]
-    WindType = turbulentInflow["WindType"]
-    windINPfilename = turbulentInflow["windINPfilename"]
-    ifw_libfile = turbulentInflow["ifw_libfile"]
-
-    structuralParameters = yamlInput["structuralParameters"]
-    structuralModel = structuralParameters["structuralModel"]
-    ntelem = structuralParameters["ntelem"]
-    nbelem = structuralParameters["nbelem"]
-    ncelem = structuralParameters["ncelem"]
-    nselem = structuralParameters["nselem"]
-    NuMad_geom_xlscsv_file_twr = structuralParameters["NuMad_geom_xlscsv_file_twr"]
-    NuMad_mat_xlscsv_file_twr = structuralParameters["NuMad_mat_xlscsv_file_twr"]
-    NuMad_geom_xlscsv_file_bld = structuralParameters["NuMad_geom_xlscsv_file_bld"]
-    NuMad_mat_xlscsv_file_bld = structuralParameters["NuMad_mat_xlscsv_file_bld"]
-    NuMad_geom_xlscsv_file_strut = structuralParameters["NuMad_geom_xlscsv_file_strut"]
-    NuMad_mat_xlscsv_file_strut = structuralParameters["NuMad_mat_xlscsv_file_strut"]
-    structuralModel = structuralParameters["structuralModel"]
-    ntelem = structuralParameters["ntelem"]
-    nbelem = structuralParameters["nbelem"]
-    ncelem = structuralParameters["ncelem"]
-    nselem = structuralParameters["nselem"]
-    NuMad_geom_xlscsv_file_twr = structuralParameters["NuMad_geom_xlscsv_file_twr"]
-    NuMad_mat_xlscsv_file_twr = structuralParameters["NuMad_mat_xlscsv_file_twr"]
-    NuMad_geom_xlscsv_file_bld = structuralParameters["NuMad_geom_xlscsv_file_bld"]
-    NuMad_mat_xlscsv_file_bld = structuralParameters["NuMad_mat_xlscsv_file_bld"]
-    NuMad_geom_xlscsv_file_strut = structuralParameters["NuMad_geom_xlscsv_file_strut"]
-    NuMad_mat_xlscsv_file_strut = structuralParameters["NuMad_mat_xlscsv_file_strut"]
-
-    return MasterInput(
-        analysisType,
-        turbineType,
-        eta,
-        Nbld,
-        towerHeight,
-        rho,
-        Vinf,
-        controlStrategy,
-        RPM,
-        Nslices,
-        ntheta,
-        structuralModel,
-        ntelem,
-        nbelem,
-        ncelem,
-        nselem,
-        AeroModel,
-        ifw,
-        WindType,
-        windINPfilename,
-        ifw_libfile,
-        adi_lib,
-        adi_rootname,
-        Blade_Height,
-        Blade_Radius,
-        numTS,
-        delta_t,
-        NuMad_geom_xlscsv_file_twr,
-        NuMad_mat_xlscsv_file_twr,
-        NuMad_geom_xlscsv_file_bld,
-        NuMad_mat_xlscsv_file_bld,
-        NuMad_geom_xlscsv_file_strut,
-        NuMad_mat_xlscsv_file_strut,
-    )
-    return MasterInput(
-        analysisType,
-        turbineType,
-        eta,
-        Nbld,
-        towerHeight,
-        rho,
-        Vinf,
-        controlStrategy,
-        RPM,
-        Nslices,
-        ntheta,
-        structuralModel,
-        ntelem,
-        nbelem,
-        ncelem,
-        nselem,
-        AeroModel,
-        ifw,
-        WindType,
-        windINPfilename,
-        ifw_libfile,
-        adi_lib,
-        adi_rootname,
-        Blade_Height,
-        Blade_Radius,
-        numTS,
-        delta_t,
-        NuMad_geom_xlscsv_file_twr,
-        NuMad_mat_xlscsv_file_twr,
-        NuMad_geom_xlscsv_file_bld,
-        NuMad_mat_xlscsv_file_bld,
-        NuMad_geom_xlscsv_file_strut,
-        NuMad_mat_xlscsv_file_strut,
-    )
 end
