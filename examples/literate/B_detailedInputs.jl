@@ -40,17 +40,6 @@ setup_outputs = OWENS.setupOWENS(
     return_componentized = true
 )
 
-mymesh      = setup_outputs.mymesh
-myel        = setup_outputs.myel
-myort       = setup_outputs.myort
-myjoint     = setup_outputs.myjoint
-components  = setup_outputs.components
-aeroForces  = setup_outputs.aeroForces
-deformAero  = setup_outputs.deformAero
-system      = setup_outputs.system
-assembly    = setup_outputs.assembly
-sections    = setup_outputs.sections
-
 nothing
 
 # Optionally, we can run the finite element solver with gemetrically exact beam theory via GXBeam.jl
@@ -62,6 +51,7 @@ nothing
 
 # If the sectional properties material files includes cost information, that is combined with the density 
 # to estimate the overall material cost of of materials in the blades
+components  = setup_outputs.components
 
 plyprops_twr = components[1].plyProps
 plyprops_bld = components[2].plyProps
@@ -101,11 +91,6 @@ nothing
 
 # There are inputs for the overall coupled simulation, please see the api reference for specifics on all the options
 
-if modelingOptions.OWENS_Options.AeroModel=="AD"
-    AD15On = true
-else
-    AD15On = false
-end
 
 # inputs = OWENS.Inputs(;
 #     verbosity = modelingOptions.OWENS_Options.verbosity,
@@ -144,14 +129,8 @@ nothing
 # and propogates things in time.
 
 println("Running Unsteady")
-# t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-# FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-# epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-# topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero)
 
-t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(setup_outputs, modelingOptions)
+unsteady_outputs = OWENS.Unsteady_Land(setup_outputs, modelingOptions, returnold=false)
 
 # Clean up AD15 if it was used
 if modelingOptions.OWENS_Options.AeroModel == "AD"
@@ -165,13 +144,12 @@ nothing
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
 println("Saving VTK time domain files")
-OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
+OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue", unsteady_outputs, setup_outputs; scaling=1)
 
 nothing
 
-##########################################
-#### Populate Components with Strain Data #####
-##########################################
+
+#### Populate Components with Strain Data
 
 # Populate the components with strain data from the unsteady simulation
 for icomp in 1:length(setup_outputs.components)
@@ -183,25 +161,26 @@ for icomp in 1:length(setup_outputs.components)
     
     println("Populating strain data for component: $(component.name)")
     println("  Element range: $startE to $stopE")
-    println("  Strain history dimensions: $(size(epsilon_x_hist))")
+    println("  Strain history dimensions: $(size(unsteady_outputs.epsilon_x_hist))")
     
     # Extract strain data for this component's elements
-    # The strain history arrays are organized as [4, element, time_step] where 4 is quadrature points
+    # The strain history arrays are organized as [4, element, time_step] where 14 is quadrature points
     # We extract the first quadrature point for each element: [1, startE:stopE, :] gives [element, time_step]
     # safetyfactor_fatigue expects [element, time_step] format
-    component.e_x = epsilon_x_hist[1, startE:stopE, :]  # [element, time_step]
-    component.e_y = epsilon_y_hist[1, startE:stopE, :]  # [element, time_step] 
-    component.e_z = epsilon_z_hist[1, startE:stopE, :]  # [element, time_step]
-    component.k_x = kappa_x_hist[1, startE:stopE, :]    # [element, time_step]
-    component.k_y = kappa_y_hist[1, startE:stopE, :]    # [element, time_step]
-    component.k_z = kappa_z_hist[1, startE:stopE, :]    # [element, time_step]
+    component.e_x = unsteady_outputs.epsilon_x_hist[1, startE:stopE, :]  # [element, time_step]
+    component.e_y = unsteady_outputs.epsilon_y_hist[1, startE:stopE, :]  # [element, time_step] 
+    component.e_z = unsteady_outputs.epsilon_z_hist[1, startE:stopE, :]  # [element, time_step]
+    component.k_x = unsteady_outputs.kappa_x_hist[1, startE:stopE, :]    # [element, time_step]
+    component.k_y = unsteady_outputs.kappa_y_hist[1, startE:stopE, :]    # [element, time_step]
+    component.k_z = unsteady_outputs.kappa_z_hist[1, startE:stopE, :]    # [element, time_step]
     
     println("  Populated strain data dimensions: $(size(component.e_x))")
 end
 
-##########################################
+nothing
+
 #### Ultimate Failure #####
-##########################################
+
 # Create PostProcessingOptions
 postprocess_options = OWENS.PostProcessOptions(
     verbosity=modelingOptions.OWENS_Options.verbosity,
