@@ -235,15 +235,6 @@ function Unsteady_Land(
     restart::Bool = false,
 )
 
-    # Extract components from setup_outputs
-    mymesh = setup_outputs.mymesh
-    myel = setup_outputs.myel
-    myjoint = setup_outputs.myjoint
-    aeroForces = setup_outputs.aeroForces
-    deformAero = setup_outputs.deformAero
-    system = setup_outputs.system
-    assembly = setup_outputs.assembly
-
     # Determine if using AD15
     AD15On = modeling_options.OWENS_Options.AeroModel == "AD"
 
@@ -284,11 +275,11 @@ function Unsteady_Land(
     feamodel = OWENS.FEAModel(;
         analysisType = modeling_options.OWENS_Options.structuralModel,
         dataOutputFilename = "none",
-        joint = myjoint,
+        joint = setup_outputs.myjoint,
         platformTurbineConnectionNodeNumber = 1,
         pBC,
         nlOn = fea_options.nlOn,
-        numNodes = mymesh.numNodes,
+        numNodes = setup_outputs.mymesh.numNodes,
         RayleighAlpha = 0.05,
         RayleighBeta = 0.05,
         iterationType = "DI",
@@ -298,12 +289,12 @@ function Unsteady_Land(
     return Unsteady_Land(
         inputs;
         topModel = feamodel,
-        topMesh = mymesh,
-        topEl = myel,
-        aero = aeroForces,
-        deformAero = deformAero,
-        system = system,
-        assembly = assembly,
+        topMesh = setup_outputs.mymesh,
+        topEl = setup_outputs.myel,
+        aero = setup_outputs.aeroForces,
+        deformAero = setup_outputs.deformAero,
+        system = setup_outputs.system,
+        assembly = setup_outputs.assembly,
         returnold = returnold,
         getLinearizedMatrices = getLinearizedMatrices,
         topElStorage = topElStorage,
