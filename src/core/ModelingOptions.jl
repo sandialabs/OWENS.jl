@@ -601,7 +601,7 @@ mutable struct OWENSFEA_Options
             get(dict_in, :spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
             get(dict_in, :predef, false), # Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
             pBC, # pBC, optional pBC for the analysis
-            )
+        )
     end
 end
 

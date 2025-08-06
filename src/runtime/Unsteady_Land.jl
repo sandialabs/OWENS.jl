@@ -297,12 +297,12 @@ function Unsteady_Land(
     )
 
     # Populate Components with Strain Data
-    for icomp in 1:length(setup_outputs.components)
+    for icomp = 1:length(setup_outputs.components)
         component = setup_outputs.components[icomp]
-    
+
         startE = component.elNumbers[1]
         stopE = component.elNumbers[end]
-        
+
         component.e_x = unsteady_outputs.epsilon_x_hist[1, startE:stopE, :]
         component.e_y = unsteady_outputs.epsilon_y_hist[1, startE:stopE, :]
         component.e_z = unsteady_outputs.epsilon_z_hist[1, startE:stopE, :]
