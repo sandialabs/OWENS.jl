@@ -274,19 +274,19 @@ function Unsteady_Land(
     fea_options = modeling_options.OWENSFEA_Options
     feamodel = OWENS.FEAModel(;
         analysisType = modeling_options.OWENS_Options.structuralModel,
-        dataOutputFilename = "none",
+        dataOutputFilename = modeling_options.OWENS_Options.dataOutputFilename,
         joint = setup_outputs.myjoint,
-        platformTurbineConnectionNodeNumber = 1,
-        pBC,
+        platformTurbineConnectionNodeNumber = fea_options.platformTurbineConnectionNodeNumber,
+        pBC = fea_options.pBC,
         nlOn = fea_options.nlOn,
         numNodes = setup_outputs.mymesh.numNodes,
-        RayleighAlpha = 0.05,
-        RayleighBeta = 0.05,
-        iterationType = "DI",
+        RayleighAlpha = fea_options.RayleighAlpha,
+        RayleighBeta = fea_options.RayleighBeta,
+        iterationType = fea_options.iterationType,
     )
 
     # Call the original Unsteady_Land function with extracted parameters
-    return Unsteady_Land(
+    unsteady_outputs = Unsteady_Land(
         inputs;
         topModel = feamodel,
         topMesh = setup_outputs.mymesh,
@@ -307,6 +307,23 @@ function Unsteady_Land(
         datadumpfrequency = datadumpfrequency,
         restart = restart,
     )
+
+    # Populate Components with Strain Data
+    for icomp in 1:length(setup_outputs.components)
+        component = setup_outputs.components[icomp]
+    
+        startE = component.elNumbers[1]
+        stopE = component.elNumbers[end]
+        
+        component.e_x = unsteady_outputs.epsilon_x_hist[1, startE:stopE, :]
+        component.e_y = unsteady_outputs.epsilon_y_hist[1, startE:stopE, :]
+        component.e_z = unsteady_outputs.epsilon_z_hist[1, startE:stopE, :]
+        component.k_x = unsteady_outputs.kappa_x_hist[1, startE:stopE, :]
+        component.k_y = unsteady_outputs.kappa_y_hist[1, startE:stopE, :]
+        component.k_z = unsteady_outputs.kappa_z_hist[1, startE:stopE, :]
+    end
+
+    return unsteady_outputs
 end
 
 # Original interface for backward compatibility
