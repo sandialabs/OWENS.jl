@@ -242,12 +242,12 @@ function Unsteady_Land(
     inputs = OWENS.Inputs(;
         verbosity = modeling_options.OWENS_Options.verbosity,
         analysisType = modeling_options.OWENS_Options.structuralModel,
-        tocp = [0.0, 100000.1],
+        tocp = modeling_options.OWENSAero_Options.tocp,
         Omegaocp = [
             modeling_options.OWENSAero_Options.RPM,
             modeling_options.OWENSAero_Options.RPM,
         ] ./ 60,
-        tocp_Vinf = [0.0, 100000.1],
+        tocp_Vinf = modeling_options.OWENSAero_Options.tocp_Vinf,
         Vinfocp = [
             modeling_options.OWENSAero_Options.Vinf,
             modeling_options.OWENSAero_Options.Vinf,
@@ -258,19 +258,7 @@ function Unsteady_Land(
         aeroLoadsOn = modeling_options.OWENS_Options.aeroLoadsOn,
     )
 
-    # Create boundary conditions (tower base fixed)
-    # TODO: this should be turned into an fea_option
-    pBC = [
-        1 1 0
-        1 2 0
-        1 3 0
-        1 4 0
-        1 5 0
-        1 6 0
-    ]
-
     # Create FEAModel
-    # TODO all of these options should be fea_options
     fea_options = modeling_options.OWENSFEA_Options
     feamodel = OWENS.FEAModel(;
         analysisType = modeling_options.OWENS_Options.structuralModel,
