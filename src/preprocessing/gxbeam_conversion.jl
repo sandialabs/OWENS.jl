@@ -527,12 +527,12 @@ function OWENSFEA_VTK(
     tvec = topData.t
     uHist = topData.uHist
     azi = topData.aziHist
-    
+
     # Extract required data from SetupOutputs
     system = setupOutputs.system
     assembly = setupOutputs.assembly
     sections = setupOutputs.sections
-    
+
     # Set default values for delta vectors if not provided
     if delta_x === nothing
         delta_x = zero(tvec)
@@ -543,7 +543,7 @@ function OWENSFEA_VTK(
     if delta_z === nothing
         delta_z = zero(tvec)
     end
-    
+
     # Call the original function with unpacked data
     return OWENSFEA_VTK(
         filename,
