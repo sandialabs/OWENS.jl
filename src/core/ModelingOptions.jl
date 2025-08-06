@@ -469,6 +469,8 @@ OWENSAero_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `rho`: default 1.225, air density in kg/m³
     * `Vinf`: default 17.2, inflow wind speed in m/s
     * `RPM`: default 17.2, rotor speed in RPM
+    * `tocp`: default nothing, control points for the internal spline for the RPM
+    * `tocp_Vinf`: default nothing, control points for the internal spline for the Vinf
 
     # Output
     * `OWENSAero_Options`: 
@@ -486,6 +488,8 @@ mutable struct OWENSAero_Options #TODO: move these downstream to their respectiv
     rho::Any
     Vinf::Any
     RPM::Any
+    tocp::Any
+    tocp_Vinf::Any
 
     # Constructor that takes a dictionary
     function OWENSAero_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
@@ -503,6 +507,8 @@ mutable struct OWENSAero_Options #TODO: move these downstream to their respectiv
             get(dict_in, :rho, 1.225), # air density in kg/m³
             get(dict_in, :Vinf, 17.2), # inflow wind speed in m/s
             get(dict_in, :RPM, 17.2), # rotor speed in RPM
+            get(dict_in, :tocp, nothing),
+            get(dict_in, :tocp_Vinf, nothing),
         )
     end
 end
@@ -533,6 +539,7 @@ OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `aeroElasticOn`: default false, OWENSFEA for the built in flutter model
     * `spinUpOn`: default true, TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
     * `predef`: default false, Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
+    * `pBC`:default nothing, Boundary conditions.
 
     # Output
     * `OWENSFEA_Options`: 
@@ -559,10 +566,18 @@ mutable struct OWENSFEA_Options
     aeroElasticOn::Any
     spinUpOn::Any
     predef::Any
+    pBC::Any
 
     # Constructor that takes a dictionary
     function OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
         # Use get to provide default values for missing fields
+
+        #process pBC into a matrix
+        pBC = get(dict_in, :pBC, nothing)
+        if !isnothing(pBC)
+            pBC = reduce(vcat, (v' for v in pBC))
+        end
+
         new(
             get(dict_in, :nlOn, true), # nonlinear effects
             get(dict_in, :RayleighAlpha, 0.05), # damping coefficient scalar on the stiffness matrix
@@ -585,7 +600,8 @@ mutable struct OWENSFEA_Options
             get(dict_in, :aeroElasticOn, false), # OWENSFEA for the built in flutter model
             get(dict_in, :spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
             get(dict_in, :predef, false), # Predeformation flag for two state analysis where a portion of the blade is deformed and the nonlinear strain stiffening terms are "update"-d, then "use"-d in two different analysis
-        )
+            pBC, # pBC, optional pBC for the analysis
+            )
     end
 end
 
