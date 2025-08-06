@@ -654,7 +654,7 @@ mutable struct OWENSOpenFASTWrappers_Options
             get(dict_in, :md_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             get(dict_in, :adi_lib, nothing),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             (
-                file = get(dict_in, :adi_rootname, nothing);
+                file = get(dict_in, :adi_rootname, "adi");
                 isnothing(file) ? nothing : (isabspath(file) ? file : joinpath(path, file))
             ),# location of the respective OpenFAST library, if nothing it will use the internal OWENS installation
             (
