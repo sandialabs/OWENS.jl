@@ -29,7 +29,11 @@ makedocs(;
     ],
     sitename = "OWENS.jl",
     authors = "Kevin R. Moore <kevmoor@sandia.gov>",
-    remotes = nothing
+    remotes = nothing,
+    format = Documenter.HTML(
+        size_threshold = 5 * 1024 * 1024,  # 5 MiB
+        size_threshold_warn = 1 * 1024 * 1024  # 1 MiB
+    )
 )
 
 deploydocs(
