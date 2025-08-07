@@ -49,17 +49,25 @@ mass_breakout_twr = components[2].mass
 
 println("\nBlades' Mass Breakout")
 for (i,name) in enumerate(plyprops_bld.names)
-    println("$name $(mass_breakout_blds[i]) kg, $(plyprops_bld.costs[i]) \$/kg: \$$(mass_breakout_blds[i]*plyprops_bld.costs[i])")
+    cost_per_kg = plyprops_bld.costs[i]
+    total_cost = mass_breakout_blds[i] * cost_per_kg
+    println("$name $(mass_breakout_blds[i]) kg, $(cost_per_kg) \$/kg: \$$(total_cost)")
 end
 
 println("\nTower Mass Breakout")
 for (i,name) in enumerate(plyprops_twr.names)
-    println("$name $(mass_breakout_twr[i]) kg, $(plyprops_twr.costs[i]) \$/kg: \$$(mass_breakout_twr[i]*plyprops_twr.costs[i])")
+    cost_per_kg = plyprops_twr.costs[i]
+    total_cost = mass_breakout_twr[i] * cost_per_kg
+    println("$name $(mass_breakout_twr[i]) kg, $(cost_per_kg) \$/kg: \$$(total_cost)")
 end
 
-println("Total Material Cost Blades: \$$(sum(mass_breakout_blds.*plyprops_bld.costs))")
-println("Total Material Cost Tower: \$$(sum(mass_breakout_twr.*plyprops_twr.costs))")
-println("Total Material Cost: \$$(sum(mass_breakout_blds.*plyprops_bld.costs)+ sum(mass_breakout_twr.*plyprops_twr.costs))")
+total_blade_cost = sum(mass_breakout_blds .* plyprops_bld.costs)
+total_tower_cost = sum(mass_breakout_twr .* plyprops_twr.costs)
+total_material_cost = total_blade_cost + total_tower_cost
+
+println("Total Material Cost Blades: \$$(total_blade_cost)")
+println("Total Material Cost Tower: \$$(total_tower_cost)")
+println("Total Material Cost: \$$(total_material_cost)")
 
 # Run the unsteady simulation
 
@@ -76,7 +84,9 @@ end
 # deformations.  Additionaly, there is a method to input custom values and have them show up on the vtk surface mesh
 # for example, strain, or reaction force, etc.  This is described in more detail in the api reference for the function and: TODO
 
+# Save VTK time domain files for visualization
 println("Saving VTK time domain files")
+# Note: This generates large output files for visualization in ParaView
 OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue", unsteady_outputs, setup_outputs; scaling=1)
 
 # Create PostProcessingOptions
