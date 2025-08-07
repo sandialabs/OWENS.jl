@@ -240,6 +240,8 @@ function MasterInput(yamlInputfile)
 
     structuralParameters = yamlInput["structuralParameters"]
     structuralModel = structuralParameters["structuralModel"]
+    ntelem = structuralParameters["ntelem"]
+    nbelem = structuralParameters["nbelem"]
     ncelem = structuralParameters["ncelem"]
     nselem = structuralParameters["nselem"]
     NuMad_geom_xlscsv_file_twr = structuralParameters["NuMad_geom_xlscsv_file_twr"]
