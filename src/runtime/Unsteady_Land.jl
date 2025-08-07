@@ -1,3 +1,5 @@
+import .OWENS: SetupOutputs, ModelingOptions
+
 """
     TopData
 
@@ -216,6 +218,103 @@ Executable function for transient analysis. Provides the interface of various
     * `kappa_y_hist`: strain history for gam_xz_y for each dof
     * `kappa_z_hist`: strain history for gam_xy_0 for each dof
     """
+# New interface that takes SetupOutputs and ModelingOptions directly
+function Unsteady_Land(
+    setup_outputs::SetupOutputs,
+    modeling_options::ModelingOptions;
+    returnold::Bool = true,
+    getLinearizedMatrices::Bool = false,
+    topElStorage = nothing,
+    bottomElStorage = nothing,
+    u_s = nothing,
+    meshcontrolfunction = nothing,
+    userDefinedGenerator = nothing,
+    turbsimfile = nothing,
+    dataDumpFilename = nothing,
+    datadumpfrequency::Int = 1000,
+    restart::Bool = false,
+)
+
+    # Determine if using AD15
+    AD15On = modeling_options.OWENS_Options.AeroModel == "AD"
+
+    # Create Inputs struct
+    inputs = OWENS.Inputs(;
+        verbosity = modeling_options.OWENS_Options.verbosity,
+        analysisType = modeling_options.OWENS_Options.structuralModel,
+        tocp = modeling_options.OWENSAero_Options.tocp,
+        Omegaocp = [
+            modeling_options.OWENSAero_Options.RPM,
+            modeling_options.OWENSAero_Options.RPM,
+        ] ./ 60,
+        tocp_Vinf = modeling_options.OWENSAero_Options.tocp_Vinf,
+        Vinfocp = [
+            modeling_options.OWENSAero_Options.Vinf,
+            modeling_options.OWENSAero_Options.Vinf,
+        ],
+        numTS = modeling_options.OWENS_Options.numTS,
+        delta_t = modeling_options.OWENS_Options.delta_t,
+        AD15On = AD15On,
+        aeroLoadsOn = modeling_options.OWENS_Options.aeroLoadsOn,
+    )
+
+    # Create FEAModel
+    fea_options = modeling_options.OWENSFEA_Options
+    feamodel = OWENS.FEAModel(;
+        analysisType = modeling_options.OWENS_Options.structuralModel,
+        dataOutputFilename = modeling_options.OWENS_Options.dataOutputFilename,
+        joint = setup_outputs.myjoint,
+        platformTurbineConnectionNodeNumber = fea_options.platformTurbineConnectionNodeNumber,
+        pBC = fea_options.pBC,
+        nlOn = fea_options.nlOn,
+        numNodes = setup_outputs.mymesh.numNodes,
+        RayleighAlpha = fea_options.RayleighAlpha,
+        RayleighBeta = fea_options.RayleighBeta,
+        iterationType = fea_options.iterationType,
+    )
+
+    # Call the original Unsteady_Land function with extracted parameters
+    unsteady_outputs = Unsteady_Land(
+        inputs;
+        topModel = feamodel,
+        topMesh = setup_outputs.mymesh,
+        topEl = setup_outputs.myel,
+        aero = setup_outputs.aeroForces,
+        deformAero = setup_outputs.deformAero,
+        system = setup_outputs.system,
+        assembly = setup_outputs.assembly,
+        returnold = returnold,
+        getLinearizedMatrices = getLinearizedMatrices,
+        topElStorage = topElStorage,
+        bottomElStorage = bottomElStorage,
+        u_s = u_s,
+        meshcontrolfunction = meshcontrolfunction,
+        userDefinedGenerator = userDefinedGenerator,
+        turbsimfile = turbsimfile,
+        dataDumpFilename = dataDumpFilename,
+        datadumpfrequency = datadumpfrequency,
+        restart = restart,
+    )
+
+    # Populate Components with Strain Data
+    for icomp = 1:length(setup_outputs.components)
+        component = setup_outputs.components[icomp]
+
+        startE = component.elNumbers[1]
+        stopE = component.elNumbers[end]
+
+        component.e_x = unsteady_outputs.epsilon_x_hist[1, startE:stopE, :]
+        component.e_y = unsteady_outputs.epsilon_y_hist[1, startE:stopE, :]
+        component.e_z = unsteady_outputs.epsilon_z_hist[1, startE:stopE, :]
+        component.k_x = unsteady_outputs.kappa_x_hist[1, startE:stopE, :]
+        component.k_y = unsteady_outputs.kappa_y_hist[1, startE:stopE, :]
+        component.k_z = unsteady_outputs.kappa_z_hist[1, startE:stopE, :]
+    end
+
+    return unsteady_outputs
+end
+
+# Original interface for backward compatibility
 function Unsteady_Land(
     inputs;
     topModel = nothing,
@@ -347,7 +446,6 @@ function Unsteady_Land(
     topDispData2.etadot_s = etadot_s
     topDispData2.etaddot_s = etaddot_s
 
-
     topsideMass, topsideMOI, topsideCG = OWENSFEA.calculateStructureMassProps(topElStorage)
 
     # TODO: clean this up
@@ -452,7 +550,6 @@ function Unsteady_Land(
     topModel.jointTransform, topModel.reducedDOFList =
         OWENSFEA.createJointTransform(topModel.joint, topMesh.numNodes, 6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
-
     topdata.uHist[1, :] = topdata.u_s          #store initial condition
     topdata.aziHist[1] = topdata.azi_s
     topdata.OmegaHist[1] = topdata.Omega_s
@@ -496,7 +593,6 @@ function Unsteady_Land(
 
     while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
         i += 1
-
 
         ProgressBars.update(pbar)
 
@@ -620,6 +716,7 @@ function Unsteady_Land(
                 end
             end
 
+
             #-------------------
             # DRIVETRAIN MODULE
             #-------------------
@@ -708,6 +805,7 @@ function Unsteady_Land(
                        numIterations!=1
                         runaero = false
                     end
+
 
                     if runaero
                         if inputs.AD15On
@@ -1059,6 +1157,7 @@ function Unsteady_Land(
     end #end timestep loop
 
     println("Simulation Complete.")
+
 
     if inputs.AD15On
         OWENSOpenFASTWrappers.endTurb()

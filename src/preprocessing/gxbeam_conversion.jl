@@ -1,6 +1,7 @@
 ########################################
 ############ GXBeam Setup ##############
 ########################################
+
 const e1 = SVector(1, 0, 0)
 const e2 = SVector(0, 1, 0)
 const e3 = SVector(0, 0, 1)
@@ -489,6 +490,78 @@ function OWENSFEA_VTK(
     )
 end
 
+"""
+    OWENSFEA_VTK(filename, topData::OWENS.TopData, setupOutputs::OWENS.SetupOutputs; kwargs...)
+
+Wrapper function for OWENSFEA_VTK that takes TopData and SetupOutputs structures directly.
+This function unpacks the required data from the structures and calls the original OWENSFEA_VTK function.
+
+# Arguments
+- `filename`: Output filename for the VTK file
+- `topData::OWENS.TopData`: Structure containing time history data and simulation results
+- `setupOutputs::OWENS.SetupOutputs`: Structure containing system setup and assembly data
+
+# Keyword Arguments
+- `scaling`: Scaling factor for deflections (default: 1)
+- `delta_x`, `delta_y`, `delta_z`: Additional displacement offsets (default: zero vectors)
+- `userPointNames`: Names for user-defined points (default: nothing)
+- `userPointData`: Data for user-defined points (default: nothing)
+- `stress`: Stress data (default: nothing)
+
+# Returns
+Calls the original OWENSFEA_VTK function with unpacked data from the input structures.
+"""
+function OWENSFEA_VTK(
+    filename,
+    topData,
+    setupOutputs;
+    scaling = 1,
+    delta_x = nothing,
+    delta_y = nothing,
+    delta_z = nothing,
+    userPointNames = nothing,
+    userPointData = nothing,
+    stress = nothing,
+)
+    # Extract required data from TopData
+    tvec = topData.t
+    uHist = topData.uHist
+    azi = topData.aziHist
+
+    # Extract required data from SetupOutputs
+    system = setupOutputs.system
+    assembly = setupOutputs.assembly
+    sections = setupOutputs.sections
+
+    # Set default values for delta vectors if not provided
+    if delta_x === nothing
+        delta_x = zero(tvec)
+    end
+    if delta_y === nothing
+        delta_y = zero(tvec)
+    end
+    if delta_z === nothing
+        delta_z = zero(tvec)
+    end
+
+    # Call the original function with unpacked data
+    return OWENSFEA_VTK(
+        filename,
+        tvec,
+        uHist,
+        system,
+        assembly,
+        sections;
+        scaling = scaling,
+        azi = azi,
+        delta_x = delta_x,
+        delta_y = delta_y,
+        delta_z = delta_z,
+        userPointNames = userPointNames,
+        userPointData = userPointData,
+        stress = stress,
+    )
+end
 
 """
     mywrite_vtk(name, assembly::Assembly; kwargs...)
