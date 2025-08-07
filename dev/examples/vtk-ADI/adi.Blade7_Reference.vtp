@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<VTKFile type="PolyData" version="0.1" byte_order="LittleEndian">
+  <PolyData>
+    <Piece NumberOfPoints="     10" NumberOfVerts="  0" NumberOfLines="      9"
+           NumberOfStrips="  0" NumberOfPolys="      0">
+      <Points>
+        <DataArray type="Float32" NumberOfComponents="3" format="ascii">
+                      -0.10000                       0.00000                     101.06279
+                      -2.43898                       0.00000                     101.06279
+                      -4.77796                       0.00000                     101.06279
+                      -7.11693                       0.00000                     101.06279
+                      -9.45591                       0.00000                     101.06279
+                     -11.79489                       0.00000                     101.06279
+                     -14.13387                       0.00000                     101.06279
+                     -16.47284                       0.00000                     101.06279
+                     -18.81182                       0.00000                     101.06279
+                     -21.15080                       0.00000                     101.06279
+        </DataArray>
+      </Points>
+      <PointData>
+        <DataArray type="Float32" Name="RefOrientationX" NumberOfComponents="3" format="ascii">
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+                       0.00000                       0.00000                       1.00000
+        </DataArray>
+        <DataArray type="Float32" Name="RefOrientationY" NumberOfComponents="3" format="ascii">
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+                       0.00000                       1.00000                       0.00000
+        </DataArray>
+        <DataArray type="Float32" Name="RefOrientationZ" NumberOfComponents="3" format="ascii">
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+                      -1.00000                       0.00000                       0.00000
+        </DataArray>
+      </PointData>
+      <Lines>
+        <DataArray type="Int32" Name="connectivity" format="ascii">
+      0      1
+      1      2
+      2      3
+      3      4
+      4      5
+      5      6
+      6      7
+      7      8
+      8      9
+        </DataArray>
+        <DataArray type="Int32" Name="offsets" format="ascii">
+      2
+      4
+      6
+      8
+     10
+     12
+     14
+     16
+     18
+        </DataArray>
+      </Lines>
+    </Piece>
+  </PolyData>
+</VTKFile>
