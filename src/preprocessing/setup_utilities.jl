@@ -36,39 +36,14 @@ mutable struct MeshSetupOptions
     connectBldTips2Twr::Bool
     AD15_ccw::Bool
 
-    function MeshSetupOptions(
-        Nslices,
-        ntheta,
-        ntelem,
-        nbelem,
-        ncelem,
-        nselem,
-        meshtype,
-        custommesh,
-        connectBldTips2Twr,
-        AD15_ccw,
-    )
-        new(
-            Nslices,
-            ntheta,
-            ntelem,
-            nbelem,
-            ncelem,
-            nselem,
-            meshtype,
-            custommesh,
-            connectBldTips2Twr,
-            AD15_ccw,
-        )
-    end
     function MeshSetupOptions(;
-        Nslices::Int,
-        ntheta::Int,
-        ntelem::Int,
-        nbelem::Int,
-        ncelem::Int,
-        nselem::Int,
-        meshtype::String,
+        Nslices::Int = 30,  # Nslices
+        ntheta::Int = 30,  # ntheta
+        ntelem::Int = 10,  # ntelem
+        nbelem::Int = 60,  # nbelem
+        ncelem::Int = 10,  # ncelem
+        nselem::Int = 5,   # nselem
+        meshtype::String = "Darrieus",  # meshtype
         custommesh::Union{Nothing,Function} = nothing,
         connectBldTips2Twr::Bool = false,
         AD15_ccw::Bool = true,
@@ -86,21 +61,7 @@ mutable struct MeshSetupOptions
             AD15_ccw,
         )
     end
-    # Default constructor
-    function MeshSetupOptions()
-        new(
-            30,  # Nslices
-            30,  # ntheta
-            10,  # ntelem
-            60,  # nbelem
-            10,  # ncelem
-            5,   # nselem
-            "Darrieus",  # meshtype
-            nothing,  # custommesh
-            false,  # connectBldTips2Twr
-            true,   # AD15_ccw
-        )
-    end
+
     function MeshSetupOptions(dict::OrderedDict{Symbol,Any})
         new(
             get(dict, :Nslices, 30),
@@ -150,43 +111,14 @@ mutable struct TowerSetupOptions
     NuMad_mat_xlscsv_file_strut::Any
     strut_tower_joint_type::Int
 
-    function TowerSetupOptions(
-        Htwr_base,
-        Htwr_blds,
-        strut_twr_mountpoint,
-        strut_bld_mountpoint,
-        joint_type,
-        c_mount_ratio,
-        angularOffset,
-        NuMad_geom_xlscsv_file_twr,
-        NuMad_mat_xlscsv_file_twr,
-        NuMad_geom_xlscsv_file_strut,
-        NuMad_mat_xlscsv_file_strut,
-        strut_tower_joint_type,
-    )
-        new(
-            Htwr_base,
-            Htwr_blds,
-            strut_twr_mountpoint,
-            strut_bld_mountpoint,
-            joint_type,
-            c_mount_ratio,
-            angularOffset,
-            NuMad_geom_xlscsv_file_twr,
-            NuMad_mat_xlscsv_file_twr,
-            NuMad_geom_xlscsv_file_strut,
-            NuMad_mat_xlscsv_file_strut,
-            strut_tower_joint_type,
-        )
-    end
     function TowerSetupOptions(;
-        Htwr_base::Float64,
-        Htwr_blds::Float64,
-        strut_twr_mountpoint::Vector{Float64},
-        strut_bld_mountpoint::Vector{Float64},
-        joint_type::Int,
-        c_mount_ratio::Float64,
-        angularOffset::Float64,
+        Htwr_base::Float64 = 2.0,           
+        Htwr_blds::Float64 = 5.0,           
+        strut_twr_mountpoint::Vector{Float64} = [0.25, 0.75],  
+        strut_bld_mountpoint::Vector{Float64} = [0.25, 0.75],  
+        joint_type::Int = 2,             
+        c_mount_ratio::Float64 = 0.05,          
+        angularOffset::Float64 = -pi/2,         
         NuMad_geom_xlscsv_file_twr::Any = nothing,
         NuMad_mat_xlscsv_file_twr::Any = nothing,
         NuMad_geom_xlscsv_file_strut::Any = nothing,
@@ -208,23 +140,7 @@ mutable struct TowerSetupOptions
             strut_tower_joint_type,
         )
     end
-    # Default constructor
-    function TowerSetupOptions()
-        new(
-            2.0,           # Htwr_base
-            5.0,           # Htwr_blds
-            [0.25, 0.75],  # strut_twr_mountpoint
-            [0.25, 0.75],  # strut_bld_mountpoint
-            2,             # joint_type
-            0.05,          # c_mount_ratio
-            -pi/2,         # angularOffset
-            nothing,       # NuMad_geom_xlscsv_file_twr
-            nothing,       # NuMad_mat_xlscsv_file_twr
-            nothing,       # NuMad_geom_xlscsv_file_strut
-            nothing,       # NuMad_mat_xlscsv_file_strut
-            2,              # strut_tower_joint_type
-        )
-    end
+
     function TowerSetupOptions(dict::OrderedDict{Symbol,Any})
         new(
             get(dict, :Htwr_base, 2.0),
@@ -272,38 +188,13 @@ mutable struct BladeSetupOptions
     strut_blade_joint_type::Int
     blade_joint_angle_Degrees::Float64
 
-    function BladeSetupOptions(
-        B,
-        H,
-        R,
-        shapeZ,
-        shapeX,
-        shapeY,
-        NuMad_geom_xlscsv_file_bld,
-        NuMad_mat_xlscsv_file_bld,
-        strut_blade_joint_type,
-        blade_joint_angle_Degrees,
-    )
-        new(
-            B,
-            H,
-            R,
-            shapeZ,
-            shapeX,
-            shapeY,
-            NuMad_geom_xlscsv_file_bld,
-            NuMad_mat_xlscsv_file_bld,
-            strut_blade_joint_type,
-            blade_joint_angle_Degrees,
-        )
-    end
     function BladeSetupOptions(;
-        B::Int,
-        H::Float64,
-        R::Float64,
-        shapeZ::Vector{Float64},
-        shapeX::Vector{Float64},
-        shapeY::Vector{Float64},
+        B::Int = 3,  
+        H::Float64 = 5.0,  
+        R::Float64 = 2.5,  
+        shapeZ::Vector{Float64} = collect(LinRange(0, 5.0, 31)),  
+        shapeX::Vector{Float64} = 2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),  
+        shapeY::Vector{Float64} = zeros(31),  
         NuMad_geom_xlscsv_file_bld::Any = nothing,
         NuMad_mat_xlscsv_file_bld::Any = nothing,
         strut_blade_joint_type::Int = 0,
@@ -322,21 +213,7 @@ mutable struct BladeSetupOptions
             blade_joint_angle_Degrees,
         )
     end
-    # Default constructor
-    function BladeSetupOptions()
-        new(
-            3,  # B
-            5.0,  # H
-            2.5,  # R
-            collect(LinRange(0, 5.0, 31)),  # shapeZ
-            2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),  # shapeX
-            zeros(31),  # shapeY
-            nothing,  # NuMad_geom_xlscsv_file_bld
-            nothing,   # NuMad_mat_xlscsv_file_bld
-            0,  # strut_blade_joint_type
-            0.0,  # blade_joint_angle_Degrees
-        )
-    end
+
     function BladeSetupOptions(dict::OrderedDict{Symbol,Any})
         new(
             get(dict, :B, 3),
@@ -376,21 +253,6 @@ mutable struct MaterialSetupOptions
     thickness_scale::Vector{Float64}
     AddedMass_Coeff_Ca::Float64
 
-    function MaterialSetupOptions(
-        stack_layers_bld,
-        stack_layers_scale,
-        chord_scale,
-        thickness_scale,
-        AddedMass_Coeff_Ca,
-    )
-        new(
-            stack_layers_bld,
-            stack_layers_scale,
-            chord_scale,
-            thickness_scale,
-            AddedMass_Coeff_Ca,
-        )
-    end
     function MaterialSetupOptions(;
         stack_layers_bld::Union{Nothing,Matrix{Float64}} = nothing,
         stack_layers_scale::Vector{Float64} = [1.0, 1.0],
@@ -406,16 +268,7 @@ mutable struct MaterialSetupOptions
             AddedMass_Coeff_Ca,
         )
     end
-    # Default constructor
-    function MaterialSetupOptions()
-        new(
-            nothing,      # stack_layers_bld
-            [1.0, 1.0],   # stack_layers_scale
-            [1.0, 1.0],   # chord_scale
-            [1.0, 1.0],   # thickness_scale
-            0.0,           # AddedMass_Coeff_Ca
-        )
-    end
+
     function MaterialSetupOptions(dict::OrderedDict{Symbol,Any})
         new(
             get(dict, :stack_layers_bld, nothing),
@@ -479,54 +332,6 @@ mutable struct AeroSetupOptions
     centrifugal_force_flag::Bool
     AD15On::Bool
 
-    function AeroSetupOptions(
-        rho,
-        mu,
-        RPM,
-        Vinf,
-        eta,
-        delta_t,
-        AD15hubR,
-        WindType,
-        AeroModel,
-        DynamicStallModel,
-        numTS,
-        adi_lib,
-        adi_rootname,
-        windINPfilename,
-        ifw_libfile,
-        ifw,
-        RPI,
-        Aero_AddedMass_Active,
-        Aero_RotAccel_Active,
-        Aero_Buoyancy_Active,
-        centrifugal_force_flag,
-    )
-        new(
-            rho,
-            mu,
-            RPM,
-            Vinf,
-            eta,
-            delta_t,
-            AD15hubR,
-            WindType,
-            AeroModel,
-            DynamicStallModel,
-            numTS,
-            adi_lib,
-            adi_rootname,
-            windINPfilename,
-            ifw_libfile,
-            ifw,
-            RPI,
-            Aero_AddedMass_Active,
-            Aero_RotAccel_Active,
-            Aero_Buoyancy_Active,
-            centrifugal_force_flag,
-            false,
-        )
-    end
     function AeroSetupOptions(;
         rho::Float64 = 1.225,
         mu::Float64 = 1.7894e-5,
@@ -576,33 +381,7 @@ mutable struct AeroSetupOptions
             AD15On,
         )
     end
-    # Default constructor
-    function AeroSetupOptions()
-        new(
-            1.225,        # rho
-            1.7894e-5,    # mu
-            1e-6,         # RPM
-            25.0,         # Vinf
-            0.5,          # eta
-            0.01,         # delta_t
-            0.1,          # AD15hubR
-            1,            # WindType
-            "DMS",        # AeroModel
-            "BV",         # DynamicStallModel
-            100,          # numTS
-            nothing,           # adi_lib
-            nothing,           # adi_rootname
-            nothing,           # windINPfilename
-            nothing,           # ifw_libfile
-            false,        # ifw
-            true,         # RPI
-            false,        # Aero_AddedMass_Active
-            false,        # Aero_RotAccel_Active
-            false,        # Aero_Buoyancy_Active
-            false,        # centrifugal_force_flag
-            false,         # AD15On
-        )
-    end
+  
     function AeroSetupOptions(dict::OrderedDict{Symbol,Any})
         new(
             get(dict, :rho, 1.225),
@@ -658,17 +437,6 @@ mutable struct SetupOptions
         aero::AeroSetupOptions = AeroSetupOptions(),
     )
         new(mesh, tower, blade, material, aero)
-    end
-
-    # Default constructor
-    function SetupOptions()
-        new(
-            MeshSetupOptions(),
-            TowerSetupOptions(),
-            BladeSetupOptions(),
-            MaterialSetupOptions(),
-            AeroSetupOptions(),
-        )
     end
 
     # Constructor that takes a YAML dictionary
