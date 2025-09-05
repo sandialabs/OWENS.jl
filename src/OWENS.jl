@@ -1,4 +1,3 @@
-__precompile__(false)
 module OWENS
 
 # Custom unregistered (julia) packages
