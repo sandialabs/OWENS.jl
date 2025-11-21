@@ -1,7 +1,7 @@
 name = "OWENS"
 uuid = "51d15398-4eaf-40f9-a029-79ae1c4a3867"
-authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
 version = "1.0.3"
+authors = ["Kevin R. Moore <kevmoor@sandia.gov> and contributors"]
 
 [deps]
 Composites = "d0d699f6-c662-11e8-0fb1-1b30104ab829"
@@ -53,7 +53,7 @@ ForwardDiff = "0.10, 1"
 GXBeam = "0.5.1, 1"
 HDF5 = "0.17"
 JLD2 = "0.5.10, 0.6"
-MAT = "0.10"
+MAT = "0.10, 0.11"
 OWENSAero = "1"
 OWENSFEA = "1"
 OWENSOpenFASTWrappers = "1"
