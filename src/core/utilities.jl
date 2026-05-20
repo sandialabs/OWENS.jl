@@ -147,6 +147,26 @@ function _hydrodynPotentialFlowRootExists(potfile_root)
     )
 end
 
+"""
+    completedHistoryRanges(last_saved_index, numTS)
+
+Return the state-history and per-step-history index ranges that have been
+filled by an unsteady run.
+
+State histories include the initial condition and every completed time step.
+Per-step histories, such as strain arrays, have no initial-condition row and
+therefore contain one fewer filled entry.
+"""
+function completedHistoryRanges(last_saved_index::Integer, numTS::Integer)
+    numTS >= 1 || throw(ArgumentError("numTS must be positive"))
+    1 <= last_saved_index <= numTS ||
+        throw(ArgumentError("last_saved_index must be between 1 and numTS"))
+
+    state_range = 1:Int(last_saved_index)
+    step_range = 1:(Int(last_saved_index)-1)
+    return (state = state_range, step = step_range)
+end
+
 function safeakima(x, y, xpt; extrapolate = false)
     if minimum(xpt)<(minimum(x)-(abs(minimum(x))*0.1+1e-4)) ||
        maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
