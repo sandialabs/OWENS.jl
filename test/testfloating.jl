@@ -388,6 +388,13 @@ mooring_forces_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FMooring
 tt_disps_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_tt_disps.csv", ',')
 FReaction_UNIT = DelimitedFiles.readdlm("$path/data/UNIT_TEST_cct2_FReactionHist.csv", ',')
 
+@test size(ptfm_disps) == size(ptfm_disps_UNIT) == (161, 6)
+@test size(ptfm_forces) == size(ptfm_forces_UNIT) == (161, 6)
+@test size(hydro_forces) == size(hydro_forces_UNIT) == (161, 6)
+@test size(mooring_forces) == size(mooring_forces_UNIT) == (161, 6)
+@test size(tt_disps) == size(tt_disps_UNIT) == (161, 6)
+@test size(FReaction) == size(FReaction_UNIT) == (161, 66)
+
 mytol = 1e-4
 pass = 0
 for iel = 1:length(ptfm_disps_UNIT) #note, purposely iterating over multidimensional array with a single for loop
