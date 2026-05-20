@@ -292,7 +292,7 @@ function read_studio_project_generated_script(
 end
 
 """
-    render_studio_workbench_html(project_or_health; health_href=nothing, script_href=nothing)
+    render_studio_workbench_html(project_or_health; health_href=nothing, script_href=nothing, open_href=nothing)
 
 Render a dependency-light OWENS Studio workbench shell as static HTML. This is
 the first GUI slice: a project health view that later Genie routes can serve
@@ -302,6 +302,7 @@ function render_studio_workbench_html(
     project_or_health;
     health_href = nothing,
     script_href = nothing,
+    open_href = nothing,
 )
     health = _studio_health_input(project_or_health)
     title = _html_escape(string(get(health, "name", "OWENS Studio")))
@@ -478,7 +479,7 @@ function render_studio_workbench_html(
       <p>$(_html_escape(string(health["root"])))</p>
       <h3>Project Manifest</h3>
       <p>$(_html_escape(string(get(health, "project_path", nothing))))</p>
-      $(_studio_artifact_links_html(health_href, script_href))
+      $(_studio_artifact_links_html(health_href, script_href, open_href))
       $(_studio_generated_script_html(health))
     </aside>
   </div>
@@ -720,8 +721,11 @@ function _studio_issues_html(issues::AbstractVector)
     )
 end
 
-function _studio_artifact_links_html(health_href, script_href)
+function _studio_artifact_links_html(health_href, script_href, open_href)
     links = String[]
+    if open_href isa AbstractString && !isempty(open_href)
+        push!(links, "<a href=\"$(_html_escape(open_href))\">Open Payload</a>")
+    end
     if health_href isa AbstractString && !isempty(health_href)
         push!(links, "<a href=\"$(_html_escape(health_href))\">Health YAML</a>")
     end

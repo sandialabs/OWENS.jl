@@ -513,7 +513,11 @@ end
         @test isfile(bundle_cli["health_file"])
         @test isfile(bundle_cli["script_file"])
         @test isfile(bundle_cli["open_file"])
+        @test bundle_cli["bytes"]["index_html"] == stat(bundle_cli["index_html"]).size
         @test bundle_cli["bytes"]["open_file"] == stat(bundle_cli["open_file"]).size
+        bundle_index = read(bundle_cli["index_html"], String)
+        @test occursin("Open Payload", bundle_index)
+        @test occursin("open.yml", bundle_index)
         bundle_open = YAML.load_file(
             bundle_cli["open_file"];
             dicttype = OrderedCollections.OrderedDict{String,Any},
@@ -636,7 +640,12 @@ end
         @test isfile(bundle_payload["health_file"])
         @test isfile(bundle_payload["script_file"])
         @test isfile(bundle_payload["open_file"])
+        @test bundle_payload["bytes"]["index_html"] ==
+              stat(bundle_payload["index_html"]).size
         @test bundle_payload["bytes"]["open_file"] == stat(bundle_payload["open_file"]).size
+        bundle_payload_index = read(bundle_payload["index_html"], String)
+        @test occursin("Open Payload", bundle_payload_index)
+        @test occursin("open.yml", bundle_payload_index)
         bundle_open_payload = YAML.load_file(
             bundle_payload["open_file"];
             dicttype = OrderedCollections.OrderedDict{String,Any},

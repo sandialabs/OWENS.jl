@@ -75,8 +75,8 @@ Use `studio_project_generated_script_path(project_or_path)` and
 show or export the exact Julia driver attached to a project.
 Use `write_studio_workbench_bundle(output_dir, project_path)` to create a
 server-free workbench directory with HTML, health YAML, and the generated Julia
-driver. `OWENS_APP.write_studio_project_bundle` also writes the Studio
-open-project bootstrap YAML that the app shell can hydrate from.
+driver. `OWENS_APP.write_studio_project_bundle` also writes and links the
+Studio open-project bootstrap YAML that the app shell can hydrate from.
 
 The public helpers are:
 

@@ -164,8 +164,19 @@ function write_studio_project_bundle(
     bundle = OWENS.write_studio_workbench_bundle(output_dir, project_path; include_script)
     open_file = joinpath(bundle["bundle_dir"], "open.yml")
     YAML.write_file(open_file, open_studio_project(project_path))
+    html = OWENS.render_studio_workbench_html(
+        inspect_studio_project(project_path);
+        health_href = basename(bundle["health_file"]),
+        script_href = isnothing(bundle["script_file"]) ? nothing :
+                      basename(bundle["script_file"]),
+        open_href = basename(open_file),
+    )
+    open(bundle["index_html"], "w") do io
+        write(io, html)
+    end
 
     bundle["open_file"] = open_file
+    bundle["bytes"]["index_html"] = stat(bundle["index_html"]).size
     bundle["bytes"]["open_file"] = stat(open_file).size
     return bundle
 end
