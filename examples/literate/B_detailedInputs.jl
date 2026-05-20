@@ -4,11 +4,6 @@
 # This would be appropriate if you need more customization in the run and design parameters than the
 # input file currently allows, but your design still fits within the setupOWENS helper function etc.
 #-
-#md # !!! tip
-#md #     This example is also available as a Jupyter notebook:
-#md #     [`B_detailedInputs.ipynb`](@__NBVIEWER_ROOT_URL__/examples/B_detailedInputs.ipynb).
-#-
-
 # First we import the packages.  If "using" was employed, then all of the functions of the packages
 # specified would be made available, but "import" requires PackageName.FunctionName to be used unless
 # the function was explicitely exported in the package.  If "include("filepath/filename.jl)" is used, 
@@ -18,8 +13,9 @@
 import OWENS
 import OWENSAero
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-# runpath = path =  splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+output_path = get(ENV, "DOCUMENTER", "") == "true" ? mktempdir() : path
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 # Load options using ModelingOptions with the complete YAML file
 modelingOptions = OWENS.ModelingOptions("$runpath/sampleOWENS_complete.yml", path=path)
@@ -73,10 +69,14 @@ println("Total Material Cost: \$$(total_material_cost)")
 
 println("Running Unsteady Simulation")
 
-unsteady_outputs = OWENS.Unsteady_Land(setup_outputs, modelingOptions, returnold=false)
+unsteady_outputs = if run_full_example
+    OWENS.Unsteady_Land(setup_outputs, modelingOptions, returnold=false)
+else
+    nothing
+end
 
 # Clean up AD15 if it was used
-if modelingOptions.OWENS_Options.AeroModel == "AD"
+if run_full_example && modelingOptions.OWENS_Options.AeroModel == "AD"
     OWENS.OWENSOpenFASTWrappers.endTurb()
 end
 
@@ -87,22 +87,30 @@ end
 # Save VTK time domain files for visualization
 println("Saving VTK time domain files")
 # Note: This generates large output files for visualization in ParaView
-OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue", unsteady_outputs, setup_outputs; scaling=1)
+if run_full_example
+    OWENS.OWENSFEA_VTK(joinpath(output_path, "vtk", "SNLARCUS5MW_timedomain_TNBnltrue"), unsteady_outputs, setup_outputs; scaling=1)
+end
 
 # Create PostProcessingOptions
 
-postprocess_options = OWENS.PostProcessOptions(
-    verbosity=modelingOptions.OWENS_Options.verbosity,
-    usestationBld=0,
-    usestationStrut=0,
-    throwawayTimeSteps=1,
-    calculate_fatigue=true)
+postprocess_options = if run_full_example
+    OWENS.PostProcessOptions(
+        verbosity=modelingOptions.OWENS_Options.verbosity,
+        usestationBld=0,
+        usestationStrut=0,
+        throwawayTimeSteps=1,
+        calculate_fatigue=true)
+else
+    nothing
+end
 
 # This helper function looks through all the loads and picks out the worst case safety factor in each of the stacks of composite lamina
 # it also calculates analytical simply supported buckling safety factors
-components = OWENS.safetyfactor_fatigue(
-    setup_outputs.mymesh,
-    setup_outputs.components,
-    modelingOptions.OWENS_Options.delta_t;
-    options=postprocess_options
-)
+if run_full_example
+    components = OWENS.safetyfactor_fatigue(
+        setup_outputs.mymesh,
+        setup_outputs.components,
+        modelingOptions.OWENS_Options.delta_t;
+        options=postprocess_options
+    )
+end

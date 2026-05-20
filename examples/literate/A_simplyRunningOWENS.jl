@@ -14,20 +14,17 @@
 # ![](../assets/OWENS_Example_Figure_Building_Blocks.png)
 #
 #-
-#md # !!! tip
-#md #     This example is also available as a Jupyter notebook:
-#md #     [`A_simplyRunningOWENS.ipynb`](@__NBVIEWER_ROOT_URL__/examples/A_simplyRunningOWENS.ipynb).
-#-
-
 import OWENS
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-## runpath = path = splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 modelopt = OWENS.ModelingOptions("$(path)/OWENS_Opt.yml")
 designparams = OWENS.Design_Data("$path/WINDIO_example.yaml")
 
-OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
+if run_full_example
+    OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
+end
 
 # Here is an example of using the same model against the automated DLC run script. TODO: issue with CI version of turbsim
 # Note that for a setup cutom to a specific design, you'll want to go to the B level to get all of the detailed inputs correct

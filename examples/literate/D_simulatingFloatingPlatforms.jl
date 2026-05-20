@@ -11,19 +11,15 @@
 # available to users, which is helpful for explaining how the floating platform mesh
 # (or "bottom side") is defined and differs from the topside.
 #-
-#md # !!! tip
-#md #     This example is also available as a Jupyter notebook:
-#md #     [`D_simulatingFloatingPlatforms.ipynb`](@__NBVIEWER_ROOT_URL__/examples/D_simulatingFloatingPlatforms.ipynb).
-#-
-
 ## import PyPlot
 
 import OWENS
 import OWENSFEA
 import OWENSAero
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate"
-##runpath = path = splitdir(@__FILE__)[1] # use to run locally
+runpath = path = @__DIR__
+output_path = get(ENV, "DOCUMENTER", "") == "true" ? mktempdir() : path
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 nothing
 
@@ -68,7 +64,7 @@ adi_lib = Inp.adi_lib
 if adi_lib == "nothing"
     adi_lib = nothing
 end
-adi_rootname = "$(path)$(Inp.adi_rootname)"
+adi_rootname = "$(output_path)$(Inp.adi_rootname)"
 
 B = Nbld
 R = Blade_Radius#177.2022*0.3048 #m
@@ -369,25 +365,27 @@ nothing
 # We can now run our floating simulation in OWENS.
 # Note that we are using `OWENS.Unsteady` now instead of `OWENS.Unsteady_Land`.
 
-println("Running Unsteady")
-t, aziHist, OmegaHist, OmegaDotHist, gbHist, gbDotHist, gbDotDotHist, FReactionHist, FTwrBsHist,
-genTorque, genPower, torqueDriveShaft, uHist, uHist_prp,
-epsilon_x_hist, epsilon_y_hist, epsilon_z_hist, kappa_x_hist, kappa_y_hist, kappa_z_hist,
-FPtfmHist, FHydroHist, FMooringHist = OWENS.Unsteady(inputs,
-    system=topSystem,
-    assembly=topAssembly,
-    topModel=topFEAModel,
-    topMesh=topMesh,
-    topEl=topEl,
-    aero=aeroForces,
-    deformAero=deformAero,
-    bottomModel=bottomFEAModel,
-    bottomMesh=bottomMesh,
-    bottomEl=bottomEl,
-    bin=bin)
+if run_full_example
+    println("Running Unsteady")
+    t, aziHist, OmegaHist, OmegaDotHist, gbHist, gbDotHist, gbDotDotHist, FReactionHist, FTwrBsHist,
+    genTorque, genPower, torqueDriveShaft, uHist, uHist_prp,
+    epsilon_x_hist, epsilon_y_hist, epsilon_z_hist, kappa_x_hist, kappa_y_hist, kappa_z_hist,
+    FPtfmHist, FHydroHist, FMooringHist = OWENS.Unsteady(inputs,
+        system=topSystem,
+        assembly=topAssembly,
+        topModel=topFEAModel,
+        topMesh=topMesh,
+        topEl=topEl,
+        aero=aeroForces,
+        deformAero=deformAero,
+        bottomModel=bottomFEAModel,
+        bottomMesh=bottomMesh,
+        bottomEl=bottomEl,
+        bin=bin)
 
-if AD15On #TODO: move this into the run functions
-    OWENS.OWENSOpenFASTWrappers.endTurb()
+    if AD15On #TODO: move this into the run functions
+        OWENS.OWENSOpenFASTWrappers.endTurb()
+    end
 end
 
 nothing
