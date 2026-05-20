@@ -37,6 +37,10 @@ end
     include("$path/test_run_manifest.jl")
 end
 
+@testset "Output Data Channels" begin
+    include("$path/test_output_data_channels.jl")
+end
+
 @testset "VTK History Output" begin
     include("$path/test_visualization_history.jl")
 end
