@@ -55,6 +55,9 @@ and `render_studio_workbench_html(project_or_health)` as the first OWENS Studio
 service boundary. These helpers collect project-level input files, WindIO files,
 run manifests, file-provenance checks, and output-channel health into a stable
 dictionary schema that the GUI, CLI, or documentation examples can share.
+`create_studio_project_template(target; template="rm2")` creates the first
+file-backed GUI template: an RM2 WindIO project with copied inputs, a generated
+Julia run script, a run manifest, and a Studio project manifest.
 
 The public helpers are:
 
@@ -86,5 +89,7 @@ The public helpers are:
 - `studio_project_health(project_or_path)`
 - `render_studio_workbench_html(project_or_health)`
 - `write_studio_workbench_html(path, project_or_health)`
+- `studio_project_template_names()`
+- `create_studio_project_template(target)`
 
 The generated API listing above includes their full docstrings.

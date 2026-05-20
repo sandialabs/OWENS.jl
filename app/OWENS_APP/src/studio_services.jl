@@ -1,6 +1,7 @@
 export inspect_run_manifest,
     inspect_output_data,
     prepare_windio_run,
+    create_studio_template_project,
     inspect_studio_project,
     write_studio_project_workbench
 
@@ -47,6 +48,25 @@ function prepare_windio_run(
         ),
         "script" => script,
         "manifest" => manifest,
+    )
+end
+
+function create_studio_template_project(
+    target::AbstractString;
+    template::AbstractString = "rm2",
+    overwrite::Bool = false,
+    created_at_utc = nothing,
+)
+    created =
+        OWENS.create_studio_project_template(target; template, overwrite, created_at_utc)
+    health = OWENS.studio_project_health(created["project_file"])
+    return OrderedCollections.OrderedDict{String,Any}(
+        "template" => created["template"],
+        "project_file" => created["project_file"],
+        "run_manifest_file" => created["run_manifest_file"],
+        "script_file" => created["script_file"],
+        "project_status" => health["status"],
+        "project_health" => health,
     )
 end
 

@@ -83,6 +83,7 @@ include("io/run_health.jl")
 
 # GUI and workbench service foundations
 include("gui/studio_project.jl")
+include("gui/studio_templates.jl")
 
 # Preprocessing functionality
 include("preprocessing/gxbeam_conversion.jl")

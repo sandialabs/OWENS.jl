@@ -11,6 +11,7 @@ OWENS_APP Studio service commands:
   manifest-health <run_manifest.yml>
   output-summary <results.h5>
   windio-script <modeling_options.yml> <windio.yml> <run_path>
+  project-template <template> <target_dir>
   project-health <owens_project.yml>
   project-html <owens_project.yml> <output.html>
 """
@@ -42,6 +43,8 @@ function _dispatch_command(args)
         return inspect_output_data(args[2])
     elseif command == "windio-script" && length(args) == 4
         return prepare_windio_run(args[2], args[3], args[4])
+    elseif command == "project-template" && length(args) == 3
+        return create_studio_template_project(args[3]; template = args[2])
     elseif command == "project-health" && length(args) == 2
         return inspect_studio_project(args[2])
     elseif command == "project-html" && length(args) == 3

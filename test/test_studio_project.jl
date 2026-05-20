@@ -8,6 +8,8 @@ include(joinpath(@__DIR__, "..", "app", "OWENS_APP", "src", "OWENS_APP.jl"))
 
 const STUDIO_MODEL_SHA256 = "5fdc1fb3c0b14924ab13cbe75816f20ada7685ccb6ad4ca8a5103251233ddaf0"
 const STUDIO_WINDIO_SHA256 = "8c6ed05c7c0f22c45fc5acea73c206ab9ca0b1b7d62b7fbb6b246cb3f080e496"
+const STUDIO_RM2_MODEL_SHA256 = "df24a053994c15fa83dcab09846d1401b14f892478333875971a320de9d4e94a"
+const STUDIO_RM2_WINDIO_SHA256 = "18fbfb761fe866e18d6fb24ed6f5800c26f7dcca225cf7f0e859729a23e74c3c"
 
 @testset "OWENS Studio project manifest and health" begin
     mktempdir() do dir
@@ -169,6 +171,126 @@ const STUDIO_WINDIO_SHA256 = "8c6ed05c7c0f22c45fc5acea73c206ab9ca0b1b7d62b7fbb6b
     end
 end
 
+@testset "OWENS Studio template projects" begin
+    @test OWENS.studio_project_template_names() == ["blank", "rm2"]
+
+    mktempdir() do dir
+        target = joinpath(dir, "rm2-studio")
+        created = OWENS.create_studio_project_template(
+            target;
+            template = "rm2",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+
+        @test collect(keys(created)) == [
+            "template",
+            "project_file",
+            "project",
+            "run_manifest_file",
+            "run_manifest",
+            "script_file",
+            "script",
+        ]
+        @test created["template"] == "rm2"
+        @test created["project_file"] == abspath(joinpath(target, "owens_project.yml"))
+        @test created["run_manifest_file"] ==
+              abspath(joinpath(target, "runs", "rm2", "run_manifest.yml"))
+        @test created["script_file"] ==
+              abspath(joinpath(target, "runs", "rm2", "run_rm2_windio.jl"))
+        @test isfile(created["project_file"])
+        @test isfile(created["run_manifest_file"])
+        @test isfile(created["script_file"])
+
+        project = created["project"]
+        @test project["schema_version"] == "owens-studio-project/v1"
+        @test project["project_id"] == "rm2"
+        @test project["name"] == "RM2 VAWT Template"
+        @test project["root"] == abspath(target)
+        @test project["metadata"] == OrderedCollections.OrderedDict{String,Any}(
+            "generated_script" => joinpath("runs", "rm2", "run_rm2_windio.jl"),
+            "template" => "rm2",
+            "template_description" => "RM2 VAWT WindIO project",
+        )
+        @test project["files"][1]["path"] ==
+              joinpath("inputs", "modeling_options_OWENS_RM2.yml")
+        @test project["files"][1]["role"] == "modeling_options"
+        @test project["files"][1]["sha256"] == STUDIO_RM2_MODEL_SHA256
+        @test project["files"][2]["path"] == joinpath("inputs", "WINDIO_RM2.yaml")
+        @test project["files"][2]["role"] == "windio"
+        @test project["files"][2]["sha256"] == STUDIO_RM2_WINDIO_SHA256
+        @test project["runs"][1]["path"] == joinpath("runs", "rm2", "run_manifest.yml")
+        @test project["runs"][1]["role"] == "run_manifest"
+
+        manifest = created["run_manifest"]
+        @test manifest["schema_version"] == "owens-run-manifest/v1"
+        @test manifest["run_id"] == "rm2-template"
+        @test manifest["run_name"] == "RM2 Studio Template"
+        @test manifest["solver"] == "runOWENSWINDIO"
+        @test manifest["project_root"] == abspath(joinpath(target, "runs", "rm2"))
+        @test manifest["status"] == "created"
+        @test manifest["metadata"] == OrderedCollections.OrderedDict{String,Any}(
+            "template" => "rm2",
+            "template_description" => "RM2 VAWT WindIO project",
+        )
+        @test manifest["inputs"][1]["path"] ==
+              joinpath("..", "..", "inputs", "modeling_options_OWENS_RM2.yml")
+        @test manifest["inputs"][1]["sha256"] == STUDIO_RM2_MODEL_SHA256
+        @test manifest["inputs"][2]["path"] ==
+              joinpath("..", "..", "inputs", "WINDIO_RM2.yaml")
+        @test manifest["inputs"][2]["sha256"] == STUDIO_RM2_WINDIO_SHA256
+        @test length(manifest["generated"]) == 1
+        @test manifest["generated"][1]["path"] == "run_rm2_windio.jl"
+        @test manifest["generated"][1]["role"] == "generated"
+
+        @test occursin("OWENS.runOWENSWINDIO", created["script"])
+        @test occursin(
+            repr(abspath(joinpath(target, "inputs", "modeling_options_OWENS_RM2.yml"))),
+            created["script"],
+        )
+        @test read(created["script_file"], String) == created["script"]
+
+        health = OWENS.studio_project_health(created["project_file"])
+        @test health["status"] == "ok"
+        @test health["summary"] == OrderedCollections.OrderedDict{String,Any}(
+            "records" => 3,
+            "ok" => 3,
+            "modified" => 0,
+            "missing" => 0,
+            "invalid_record" => 0,
+        )
+        @test health["runs"][1]["run_manifest_health"]["summary"] ==
+              OrderedCollections.OrderedDict{String,Any}(
+            "records" => 3,
+            "ok" => 3,
+            "modified" => 0,
+            "missing" => 0,
+            "invalid_record" => 0,
+        )
+
+        @test_throws ArgumentError OWENS.create_studio_project_template(
+            target;
+            template = "rm2",
+        )
+        @test_throws ArgumentError OWENS.create_studio_project_template(
+            joinpath(dir, "bad-template");
+            template = "missing",
+        )
+
+        blank_target = joinpath(dir, "blank-studio")
+        blank = OWENS.create_studio_project_template(
+            blank_target;
+            template = "blank",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        @test blank["template"] == "blank"
+        @test blank["run_manifest_file"] === nothing
+        @test blank["script_file"] === nothing
+        @test blank["project"]["files"] == OrderedCollections.OrderedDict{String,Any}[]
+        @test blank["project"]["runs"] == OrderedCollections.OrderedDict{String,Any}[]
+        @test OWENS.studio_project_health(blank["project_file"])["status"] == "ok"
+    end
+end
+
 @testset "OWENS Studio app services" begin
     mktempdir() do dir
         model_file = joinpath(dir, "modeling_options.yml")
@@ -248,6 +370,16 @@ end
             io = IOBuffer(),
         )
         @test occursin("OWENS.runOWENSWINDIO", windio_cli["script"])
+        template_cli = OWENS_APP.real_main(
+            ["project-template", "rm2", joinpath(dir, "template-cli")];
+            io = IOBuffer(),
+        )
+        @test template_cli["template"] == "rm2"
+        @test template_cli["project_status"] == "ok"
+        @test template_cli["project_health"]["summary"]["records"] == 3
+        @test isfile(template_cli["project_file"])
+        @test isfile(template_cli["run_manifest_file"])
+        @test isfile(template_cli["script_file"])
         project_cli = OWENS_APP.real_main(["project-health", project_file]; io = IOBuffer())
         @test project_cli["status"] == "ok"
         project_html_cli =
