@@ -180,6 +180,8 @@ Return project-health rows for Studio file references and run manifests. Healthy
 run-manifest references can include nested `run_manifest_health` summaries, so
 the first GUI health panel can display stale project files, stale runs, and
 missing result-channel metadata through one API.
+Relative project roots are resolved against the project manifest file when a
+path is supplied, which keeps committed GUI fixtures relocatable across clones.
 """
 studio_project_health(path::AbstractString; kwargs...) =
     studio_project_health(read_studio_project(path); project_path = path, kwargs...)
@@ -578,14 +580,20 @@ end
 
 function _studio_project_root(project::AbstractDict, project_path, root)
     if !isnothing(root)
-        return abspath(string(root))
+        return _canonical_abs_path(string(root))
     elseif haskey(project, "root") && project["root"] isa AbstractString
-        return abspath(project["root"])
+        project_root = project["root"]
+        if isabspath(project_root) || isnothing(project_path)
+            return _canonical_abs_path(project_root)
+        end
+        return _canonical_abs_path(
+            joinpath(dirname(abspath(string(project_path))), project_root),
+        )
     elseif !isnothing(project_path)
-        return dirname(abspath(string(project_path)))
+        return _canonical_abs_path(dirname(abspath(string(project_path))))
     end
 
-    return pwd()
+    return _canonical_abs_path(pwd())
 end
 
 function _studio_file_rows(

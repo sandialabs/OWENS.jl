@@ -1,0 +1,26 @@
+schema_version: owens-studio-project/v1
+project_id: rm2-gui-fixture
+name: RM2 GUI Fixture
+description: Relocatable RM2 VAWT fixture for OWENS Studio GUI smoke tests.
+created_at_utc: '2026-05-20T00:00:00.000Z'
+updated_at_utc: '2026-05-20T00:00:00.000Z'
+root: .
+files:
+  - path: ../../RM2/modeling_options_OWENS_RM2.yml
+    bytes: 4968
+    sha256: df24a053994c15fa83dcab09846d1401b14f892478333875971a320de9d4e94a
+    role: modeling_options
+  - path: ../../RM2/WINDIO_RM2.yaml
+    bytes: 16163
+    sha256: 18fbfb761fe866e18d6fb24ed6f5800c26f7dcca225cf7f0e859729a23e74c3c
+    role: windio
+runs:
+  - path: runs/rm2/run_manifest.yml
+    bytes: 976
+    sha256: bdd3cada08e15ea6596c6eed370a14d07d65966dc1214b1f624a48e8f8ade28d
+    role: run_manifest
+metadata:
+  template: rm2
+  template_description: RM2 VAWT WindIO project
+  generated_script: runs/rm2/run_rm2_windio.jl
+  fixture: gui

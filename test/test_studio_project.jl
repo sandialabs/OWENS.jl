@@ -360,6 +360,61 @@ end
     end
 end
 
+@testset "OWENS Studio GUI fixtures" begin
+    fixture_project =
+        normpath(joinpath(@__DIR__, "..", "examples", "gui", "rm2", "owens_project.yml"))
+    fixture_root = dirname(fixture_project)
+    fixture_run_manifest = joinpath(fixture_root, "runs", "rm2", "run_manifest.yml")
+    fixture_script = joinpath(fixture_root, "runs", "rm2", "run_rm2_windio.jl")
+
+    @test isfile(fixture_project)
+    @test isfile(fixture_run_manifest)
+    @test isfile(fixture_script)
+    @test OWENS.studio_project_issues(fixture_project) == String[]
+
+    health = OWENS.studio_project_health(fixture_project)
+    @test health["schema_version"] == "owens-studio-workbench/v1"
+    @test health["status"] == "ok"
+    @test health["project_id"] == "rm2-gui-fixture"
+    @test health["root"] == fixture_root
+    @test health["summary"] == OrderedCollections.OrderedDict{String,Any}(
+        "records" => 3,
+        "ok" => 3,
+        "modified" => 0,
+        "missing" => 0,
+        "invalid_record" => 0,
+    )
+    @test [row["path"] for row in health["files"]] == [
+        joinpath("..", "..", "RM2", "modeling_options_OWENS_RM2.yml"),
+        joinpath("..", "..", "RM2", "WINDIO_RM2.yaml"),
+    ]
+    @test health["runs"][1]["resolved_path"] == fixture_run_manifest
+    @test health["runs"][1]["run_manifest_health"]["status"] == "ok"
+    @test health["runs"][1]["run_manifest_health"]["root"] == fixture_root
+    @test health["runs"][1]["run_manifest_health"]["summary"] ==
+          OrderedCollections.OrderedDict{String,Any}(
+        "records" => 3,
+        "ok" => 3,
+        "modified" => 0,
+        "missing" => 0,
+        "invalid_record" => 0,
+    )
+    @test OWENS.studio_project_generated_script_path(fixture_project) == fixture_script
+    @test occursin(
+        "rm2_input_root = normpath(joinpath(@__DIR__",
+        OWENS.read_studio_project_generated_script(fixture_project),
+    )
+
+    open_payload = OWENS_APP.open_studio_project(fixture_project)
+    @test open_payload["schema_version"] == "owens-studio-open/v1"
+    @test open_payload["project_status"] == "ok"
+    @test open_payload["generated_script"]["path"] == fixture_script
+    @test open_payload["generated_script"]["relative_path"] ==
+          joinpath("runs", "rm2", "run_rm2_windio.jl")
+    @test open_payload["generated_script"]["available"] === true
+    @test open_payload["generated_script"]["bytes"] == stat(fixture_script).size
+end
+
 @testset "OWENS Studio app services" begin
     mktempdir() do dir
         model_file = joinpath(dir, "modeling_options.yml")

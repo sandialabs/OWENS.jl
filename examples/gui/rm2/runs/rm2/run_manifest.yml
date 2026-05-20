@@ -1,0 +1,40 @@
+schema_version: owens-run-manifest/v1
+run_id: rm2-gui-fixture
+run_name: RM2 GUI Fixture
+created_at_utc: '2026-05-20T00:00:00.000Z'
+project_root: ../..
+solver: runOWENSWINDIO
+status: created
+julia:
+  version: fixture
+  kernel: fixture
+  machine: fixture
+  threads: 1
+packages: {}
+git:
+  available: false
+  root: ../..
+  branch: null
+  commit: null
+  dirty: null
+parameters: {}
+metadata:
+  template: rm2
+  template_description: RM2 VAWT WindIO project
+  fixture: gui
+inputs:
+  - path: ../../RM2/modeling_options_OWENS_RM2.yml
+    bytes: 4968
+    sha256: df24a053994c15fa83dcab09846d1401b14f892478333875971a320de9d4e94a
+    role: modeling_options
+  - path: ../../RM2/WINDIO_RM2.yaml
+    bytes: 16163
+    sha256: 18fbfb761fe866e18d6fb24ed6f5800c26f7dcca225cf7f0e859729a23e74c3c
+    role: windio
+outputs: []
+generated:
+  - path: runs/rm2/run_rm2_windio.jl
+    bytes: 366
+    sha256: 02017b25aac54c0be4df990cc823be5a21c452e1c8c9c8917755d677ec07fdee
+    role: generated
+warnings: []

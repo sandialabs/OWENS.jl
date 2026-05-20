@@ -77,6 +77,8 @@ Use `write_studio_workbench_bundle(output_dir, project_path)` to create a
 server-free workbench directory with HTML, health YAML, and the generated Julia
 driver. `OWENS_APP.write_studio_project_bundle` also writes and links the
 Studio open-project bootstrap YAML that the app shell can hydrate from.
+The committed `examples/gui/rm2/owens_project.yml` fixture is relocatable and
+opens the RM2 WindIO inputs directly from the repository.
 
 The public helpers are:
 
