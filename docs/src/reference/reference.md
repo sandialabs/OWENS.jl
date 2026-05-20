@@ -28,5 +28,9 @@ The public helpers are:
 - `output_data_channel(name)`
 - `output_data_channel_names()`
 - `annotate_output_data_channels!(file)`
+- `WindIORunSpec`
+- `windio_run_spec(modeling_options_file, windio_file, run_path)`
+- `render_windio_run_script(spec)`
+- `write_windio_run_script(path, spec)`
 
 The generated API listing above includes their full docstrings.
