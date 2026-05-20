@@ -291,6 +291,7 @@ function Unsteady(
                     bottomFexternal,
                     bottomFDOFs,
                     CN2H,
+                    mooringTensions,
                     bottom_rom,
                 )
         else
@@ -311,6 +312,7 @@ function Unsteady(
                     bottomFexternal,
                     bottomFDOFs,
                     CN2H,
+                    mooringTensions,
                 )
         end
 
@@ -864,6 +866,7 @@ function Unsteady(
                     bottomFexternal,
                     bottomFDOFs,
                     CN2H,
+                    mooringTensions,
                     bottom_rom,
                 )
             else
@@ -888,6 +891,7 @@ function Unsteady(
                     bottomFexternal,
                     bottomFDOFs,
                     CN2H,
+                    mooringTensions,
                 )
             end
 
@@ -1745,7 +1749,7 @@ function allocate_bottom(
     FHydro_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
     FMooring_n = zeros(Float32, numDOFPerNode) #Vector{Float32}(undef, numDOFPerNode)
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
-    mooringTensions = Vector{Float32}(undef, numMooringLines*2) # Fairlead + anchor tension for each line
+    mooringTensions = mooringTensionBuffer(numMooringLines)
 
     OWENSOpenFASTWrappers.HD_Init(;
         hdlib_filename = bin.hydrodynLibPath,
@@ -1784,11 +1788,27 @@ function allocate_bottom(
     mooringTensions
 end
 
+function mooringTensionBuffer(numMooringLines::Integer)
+    numMooringLines >= 0 || throw(ArgumentError("numMooringLines must be non-negative"))
+    return Vector{Float32}(undef, 2*numMooringLines)
+end
+
+function validateMooringTensionBuffer(mooringTensions)
+    mooringTensions isa AbstractVector ||
+        throw(ArgumentError("mooringTensions must be a vector"))
+    iseven(length(mooringTensions)) || throw(
+        ArgumentError(
+            "mooringTensions must contain fairlead and anchor tension for each line",
+        ),
+    )
+    return mooringTensions
+end
+
 """
 
-OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs, FPtfm_old, FMooring_new,
-dispIn, topModel, mesh, el, elStorage, Omega, OmegaDot,
-other_Fexternal, other_Fdof, CN2H, u_ptfm_n, udot_ptfm_n, uddot_ptfm_n, rom=0)
+OWENS_HD_Coupled_Solve(time, dt, calcJacobian, jac, numDOFPerNode, ptfm_dofs,
+FPtfm_old, dispIn, topModel, mesh, el, elStorage, other_Fexternal,
+other_Fdof, CN2H, mooringTensions, rom=0)
 
 Internal, performs the input-output solve procedure between OWENS and HydroDyn. This is required
 due to the close interdependency between the rigid body acceleration of the platform (calculated in
@@ -1810,14 +1830,10 @@ ElastoDyn with OWENSFEA.
 * `mesh::Mesh`: see ?OWENSFEA.Mesh
 * `el::El`: see ?OWENSFEA.El,
 * `elStorage::ElStorage`: see ?OWENSFEA.elStorage
-* `Omega::float`: rotor speed (Hz)
-* `OmegaDot::float`: rotor acceleration (Hz/s)
 * `other_Fexternal::Vector{<:float}`: other external loads acting on the structure besides at the platform (typically aero loads) (N)
 * `other_Fdof::Vector{<:float}`: vector of nodes with indices corresponding to the loads given in other_Fexternal
 * `CN2H::Array{<:float}`: rotation matrix defining the transformation from the inertial to the hub reference frames
-* `u_ptfm_n::Vector{<:float}`: the platform position in the inertial reference frame at the current simulation time (m)
-* `udot_ptfm_n::Vector{<:float}`: the platform velocity in the inertial reference frame at the current simulation time (m/s)
-* `uddot_ptfm_n::Vector{<:float}`: the platform acceleration in the inertial reference frame at the current simulation time (m/s/s)
+* `mooringTensions::Vector{<:float}`: MoorDyn fairlead and anchor tension buffer, two entries per line
 * `rom::int/ROM`: see ?OWENSFEA.ROM. Instead defaults to 0 if the reduced order model is not used
 
 # Output
@@ -1845,6 +1861,7 @@ function OWENS_HD_Coupled_Solve(
     other_Fexternal,
     other_Fdof,
     CN2H,
+    mooringTensions,
     rom = 0,
 )
 
@@ -1856,7 +1873,7 @@ function OWENS_HD_Coupled_Solve(
     FMooring_new = Vector{Float32}(undef, numDOFPerNode)
     FHydro_new = Vector{Float32}(undef, numDOFPerNode)
     outVals = Vector{Float32}(undef, numDOFPerNode+1)
-    mooringTensions = Vector{Float32}(undef, 6) # Fairlead + anchor tension for each line TODO: don't hardcode this
+    mooringTensions = validateMooringTensionBuffer(mooringTensions)
     u = Vector{Float64}(undef, numDOFPerNode*2)
 
     FMultiplier = 1e6
