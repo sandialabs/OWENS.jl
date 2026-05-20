@@ -27,3 +27,13 @@ new*
 *.bts
 *.jld*
 *.cov
+
+# Generated test logs
+test/*.log
+
+# Generated XFOIL and airfoil polar workflow outputs
+examples/NACA0018/
+examples/airfoils/NACA_0018_decreasing_aoa.dat
+examples/airfoils/NACA_0018_increasing_aoa.dat
+examples/airfoils/S8038_top_symmetric.csv
+examples/airfoils/S8038_top_symmetric.dat
