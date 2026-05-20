@@ -33,6 +33,10 @@ end
     include("$path/test_openfast_cleanup.jl")
 end
 
+@testset "VTK History Output" begin
+    include("$path/test_visualization_history.jl")
+end
+
 @testset "SNL5MW With CACTUS One-Way Coupling, Preprepared Input Files" begin
     include("$path/SNL5MW_CACT_oneway_unit.jl")
 end

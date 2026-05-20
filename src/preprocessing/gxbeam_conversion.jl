@@ -261,6 +261,7 @@ function OWENSVTK(
 )
 
     println("Saving VTK time domain files")
+    _validate_vtk_save_indices(tsave_idx, length(t))
     userPointNames=[
         "EA",
         "rhoA",
@@ -346,6 +347,8 @@ function OWENSVTK(
 
     azi=aziHist#./aziHist*1e-6
     # VTKsaveName = "$path/vtk/$(windINPfilename[1:end-4])"
+    stress_saved = _saved_vtk_stress_history(stress, tsave_idx, length(t))
+
     OWENS.OWENSFEA_VTK(
         VTKsaveName,
         t[tsave_idx],
@@ -357,9 +360,38 @@ function OWENSVTK(
         azi = azi[tsave_idx],
         userPointNames,
         userPointData,
-        stress,
+        stress = stress_saved,
     )
 
+end
+
+function _saved_vtk_stress_history(stress, tsave_idx, nt)
+    isnothing(stress) && return nothing
+    _validate_vtk_save_indices(tsave_idx, nt)
+    ndims(stress) == 3 ||
+        throw(ArgumentError("stress must have dimensions (time, point, cross_section)"))
+
+    nsave = length(tsave_idx)
+    nstress_time = size(stress, 1)
+    if nstress_time == nt
+        return stress[tsave_idx, :, :]
+    elseif nstress_time == nsave
+        return stress
+    end
+
+    throw(
+        DimensionMismatch(
+            "stress time dimension $nstress_time must match the full time history length $nt or saved time count $nsave",
+        ),
+    )
+end
+
+function _validate_vtk_save_indices(tsave_idx, nt)
+    all(i -> i isa Integer && !(i isa Bool), tsave_idx) ||
+        throw(ArgumentError("tsave_idx entries must be integer time indices"))
+    all(i -> 1 <= i <= nt, tsave_idx) ||
+        throw(ArgumentError("tsave_idx entries must be within the full time history"))
+    return nothing
 end
 
 function OWENSFEA_VTK(
@@ -810,6 +842,21 @@ function mywrite_vtk(
     npoint = length(assembly.points)
     ncross = isnothing(sections) ? 1 : size(sections, 2)
     nelem = length(assembly.elements)
+    _validate_vtk_history_inputs(
+        history,
+        t,
+        assembly,
+        sections;
+        theta_x,
+        theta_y,
+        theta_z,
+        delta_x,
+        delta_y,
+        delta_z,
+        userPointNames,
+        userPointData,
+        stress,
+    )
 
     paraview_collection(name) do pvd
 
@@ -952,6 +999,8 @@ function mywrite_vtk(
                             for ip = 1:npoint
                                 data[:, li[:, ip]] = stress[current_step, ip, :]
                             end
+                        else
+                            continue
                         end
                     else
                         for ip = 1:npoint
@@ -973,6 +1022,82 @@ function mywrite_vtk(
 
             pvd[t[current_step]] = vtkfile
         end
+    end
+
+    return nothing
+end
+
+function _validate_vtk_history_inputs(
+    history,
+    t,
+    assembly,
+    sections;
+    theta_x = zero(t),
+    theta_y = zero(t),
+    theta_z = zero(t),
+    delta_x = zero(t),
+    delta_y = zero(t),
+    delta_z = zero(t),
+    userPointNames = nothing,
+    userPointData = nothing,
+    stress = nothing,
+)
+    ntime = length(t)
+    npoint = length(assembly.points)
+
+    length(history) == ntime ||
+        throw(ArgumentError("VTK history length must match the time vector length"))
+
+    for (name, values) in (
+        (:theta_x, theta_x),
+        (:theta_y, theta_y),
+        (:theta_z, theta_z),
+        (:delta_x, delta_x),
+        (:delta_y, delta_y),
+        (:delta_z, delta_z),
+    )
+        length(values) == ntime ||
+            throw(ArgumentError("VTK $(name) length must match the time vector length"))
+    end
+
+    ncross = 1
+    if !isnothing(sections)
+        size(sections, 1) == 3 ||
+            throw(ArgumentError("VTK sections must have first dimension size 3"))
+        if ndims(sections) > 2
+            size(sections, 3) == npoint ||
+                throw(ArgumentError("VTK section point count must match assembly points"))
+        end
+        ncross = size(sections, 2)
+    end
+
+    if isnothing(userPointData)
+        isnothing(userPointNames) ||
+            throw(ArgumentError("VTK userPointNames require matching userPointData"))
+    else
+        isnothing(userPointNames) &&
+            throw(ArgumentError("VTK userPointData require matching userPointNames"))
+        ndims(userPointData) == 3 || throw(
+            ArgumentError("VTK userPointData must have dimensions (field, time, point)"),
+        )
+        length(userPointNames) == size(userPointData, 1) ||
+            throw(ArgumentError("VTK userPointNames count must match userPointData"))
+        size(userPointData, 2) == ntime ||
+            throw(ArgumentError("VTK userPointData time count must match the time vector"))
+        size(userPointData, 3) == npoint ||
+            throw(ArgumentError("VTK userPointData point count must match assembly points"))
+    end
+
+    if !isnothing(stress)
+        ndims(stress) == 3 || throw(
+            ArgumentError("VTK stress must have dimensions (time, point, cross-section)"),
+        )
+        size(stress, 1) == ntime ||
+            throw(ArgumentError("VTK stress time count must match the time vector"))
+        size(stress, 2) == npoint ||
+            throw(ArgumentError("VTK stress point count must match assembly points"))
+        size(stress, 3) == ncross ||
+            throw(ArgumentError("VTK stress cross-section count must match sections"))
     end
 
     return nothing
