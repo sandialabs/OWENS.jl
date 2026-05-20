@@ -45,6 +45,108 @@ function simpleGenerator(inputs, genSpeed)
 
 end
 
+"""
+    hydrodynInputWithResolvedPotFile(hd_input_file, potflowfile)
+
+Return a HydroDyn input filename whose `PotFile` entry is absolute.
+
+HydroDyn resolves the `PotFile` line relative to the Julia process working
+directory, not necessarily relative to the HydroDyn input file. OWENS examples
+often launch from different directories, so this helper stages a temporary copy
+of the input file with the `PotFile` token replaced by an absolute root. An
+explicit `potflowfile` argument takes precedence. When `potflowfile` is missing,
+the existing HydroDyn `PotFile` value is resolved from the input file itself.
+"""
+function hydrodynInputWithResolvedPotFile(hd_input_file, potflowfile)
+    hd_input_file_string = string(hd_input_file)
+    if isnothing(hd_input_file) ||
+       lowercase(strip(hd_input_file_string)) == "none" ||
+       !isfile(hd_input_file_string)
+        return hd_input_file
+    end
+
+    lines = readlines(hd_input_file_string, keep = true)
+    potfile_line_index = findfirst(
+        line -> occursin(r"\bPotFile\b", line) && !startswith(strip(line), "!"),
+        lines,
+    )
+    isnothing(potfile_line_index) && return hd_input_file
+
+    potfile_line = lines[potfile_line_index]
+    potfile_root =
+        _resolvedHydroDynPotFileRoot(potfile_line, hd_input_file_string, potflowfile)
+    isnothing(potfile_root) && return hd_input_file
+
+    lines[potfile_line_index] = _hydrodynPotFileLineWithRoot(potfile_line, potfile_root)
+
+    staged_file = tempname() * ".dat"
+    open(staged_file, "w") do io
+        foreach(line -> write(io, line), lines)
+    end
+    return staged_file
+end
+
+function _resolvedHydroDynPotFileRoot(potfile_line, hd_input_file_string, potflowfile)
+    potflowfile_string = isnothing(potflowfile) ? "" : strip(string(potflowfile))
+    if !isempty(potflowfile_string) &&
+       !(lowercase(potflowfile_string) in ("none", "nothing"))
+        return abspath(potflowfile_string)
+    end
+
+    potfile_root = _hydrodynPotFileRootFromLine(potfile_line)
+    if isempty(potfile_root) || lowercase(potfile_root) in ("none", "nothing", "unused")
+        return nothing
+    end
+    isabspath(potfile_root) && return abspath(potfile_root)
+
+    hd_input_abspath = abspath(hd_input_file_string)
+    candidates = unique(
+        abspath.([
+            potfile_root,
+            joinpath(dirname(hd_input_abspath), potfile_root),
+            joinpath(dirname(dirname(hd_input_abspath)), potfile_root),
+        ]),
+    )
+    existing_root = findfirst(_hydrodynPotentialFlowRootExists, candidates)
+    !isnothing(existing_root) && return candidates[existing_root]
+
+    return abspath(joinpath(dirname(hd_input_abspath), potfile_root))
+end
+
+function _hydrodynPotFileRootFromLine(potfile_line)
+    line_body = chomp(potfile_line)
+    root_match = match(r"^\s*(?:\"([^\"]*)\"|(\S+))(?=\s+PotFile\b)", line_body)
+    if isnothing(root_match)
+        throw(ArgumentError("could not parse HydroDyn PotFile line: $(strip(line_body))"))
+    end
+    root =
+        isnothing(root_match.captures[1]) ? root_match.captures[2] : root_match.captures[1]
+    return strip(root)
+end
+
+function _hydrodynPotFileLineWithRoot(potfile_line, potfile_root)
+    line_ending =
+        endswith(potfile_line, "\r\n") ? "\r\n" : endswith(potfile_line, "\n") ? "\n" : ""
+    line_body = chomp(potfile_line)
+    line_match = match(r"^(\s*)(?:\"[^\"]*\"|\S+)(\s+PotFile\b.*)$", line_body)
+    if isnothing(line_match)
+        throw(ArgumentError("could not parse HydroDyn PotFile line: $(strip(line_body))"))
+    end
+    return string(
+        line_match.captures[1],
+        "\"$(potfile_root)\"",
+        line_match.captures[2],
+        line_ending,
+    )
+end
+
+function _hydrodynPotentialFlowRootExists(potfile_root)
+    return any(
+        ext -> isfile(string(potfile_root, ext)),
+        (".1", ".3", ".hst", ".12d", ".12s"),
+    )
+end
+
 function safeakima(x, y, xpt; extrapolate = false)
     if minimum(xpt)<(minimum(x)-(abs(minimum(x))*0.1+1e-4)) ||
        maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
