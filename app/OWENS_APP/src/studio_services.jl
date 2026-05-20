@@ -2,6 +2,7 @@ export inspect_run_manifest,
     inspect_output_data,
     prepare_windio_run,
     list_studio_project_templates,
+    list_studio_example_projects,
     create_studio_template_project,
     open_studio_project,
     inspect_studio_project,
@@ -61,6 +62,10 @@ function list_studio_project_templates()
     return OWENS.studio_project_template_catalog()
 end
 
+function list_studio_example_projects()
+    return OWENS.studio_example_project_catalog()
+end
+
 function create_studio_template_project(
     target::AbstractString;
     template::AbstractString = "rm2",
@@ -94,6 +99,7 @@ function open_studio_project(path::AbstractString; summarize_runs::Bool = true)
         "generated_script" => script,
         "actions" => _studio_open_actions(script["available"]),
         "templates" => list_studio_project_templates(),
+        "examples" => list_studio_example_projects(),
         "routes" => studio_route_catalog(),
         "health" => health,
     )

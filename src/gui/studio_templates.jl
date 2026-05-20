@@ -1,7 +1,11 @@
 export studio_project_template_catalog,
-    studio_project_template_names, create_studio_project_template
+    studio_project_template_names,
+    studio_example_project_catalog,
+    studio_example_project_names,
+    create_studio_project_template
 
 const STUDIO_TEMPLATE_CATALOG_SCHEMA_VERSION = "owens-studio-template-catalog/v1"
+const STUDIO_EXAMPLE_CATALOG_SCHEMA_VERSION = "owens-studio-example-catalog/v1"
 const STUDIO_PROJECT_TEMPLATES = OrderedCollections.OrderedDict{String,Any}(
     "blank" => OrderedCollections.OrderedDict{String,Any}(
         "title" => "Blank OWENS Studio Project",
@@ -18,6 +22,16 @@ const STUDIO_PROJECT_TEMPLATES = OrderedCollections.OrderedDict{String,Any}(
         "solver_path" => "runOWENSWINDIO",
         "creates_generated_script" => true,
         "creates_run_manifest" => true,
+    ),
+)
+const STUDIO_EXAMPLE_PROJECTS = OrderedCollections.OrderedDict{String,Any}(
+    "rm2" => OrderedCollections.OrderedDict{String,Any}(
+        "title" => "RM2 GUI Fixture",
+        "description" => "Relocatable RM2 VAWT project for OWENS Studio smoke tests.",
+        "turbine_type" => "VAWT",
+        "template" => "rm2",
+        "project_relative_path" =>
+            joinpath("examples", "gui", "rm2", "owens_project.yml"),
     ),
 )
 
@@ -49,6 +63,44 @@ end
 Return the built-in OWENS Studio project templates in deterministic order.
 """
 studio_project_template_names() = collect(keys(STUDIO_PROJECT_TEMPLATES))
+
+"""
+    studio_example_project_catalog()
+
+Return committed OWENS Studio example projects that the GUI can show in an
+example gallery or open directly for smoke tests.
+"""
+function studio_example_project_catalog()
+    examples = OrderedCollections.OrderedDict{String,Any}[]
+    repo_root = normpath(joinpath(module_path, ".."))
+    for (example, metadata) in STUDIO_EXAMPLE_PROJECTS
+        relative_path = metadata["project_relative_path"]
+        project_file = normpath(joinpath(repo_root, relative_path))
+        row = OrderedCollections.OrderedDict{String,Any}(
+            "example" => example,
+            "project_file" => project_file,
+            "project_relative_path" => relative_path,
+            "available" => isfile(project_file),
+        )
+        for (key, value) in metadata
+            key == "project_relative_path" && continue
+            row[key] = value
+        end
+        push!(examples, row)
+    end
+
+    return OrderedCollections.OrderedDict{String,Any}(
+        "schema_version" => STUDIO_EXAMPLE_CATALOG_SCHEMA_VERSION,
+        "examples" => examples,
+    )
+end
+
+"""
+    studio_example_project_names()
+
+Return committed OWENS Studio example project names in deterministic order.
+"""
+studio_example_project_names() = collect(keys(STUDIO_EXAMPLE_PROJECTS))
 
 """
     create_studio_project_template(target; template="rm2", overwrite=false, created_at_utc=nothing)

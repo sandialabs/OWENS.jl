@@ -201,6 +201,16 @@ end
             "creates_run_manifest" => true,
         ),
     ]
+    @test OWENS.studio_example_project_names() == ["rm2"]
+    example_catalog = OWENS.studio_example_project_catalog()
+    @test collect(keys(example_catalog)) == ["schema_version", "examples"]
+    @test example_catalog["schema_version"] == "owens-studio-example-catalog/v1"
+    @test length(example_catalog["examples"]) == 1
+    @test example_catalog["examples"][1]["example"] == "rm2"
+    @test example_catalog["examples"][1]["project_relative_path"] ==
+          joinpath("examples", "gui", "rm2", "owens_project.yml")
+    @test example_catalog["examples"][1]["available"] === true
+    @test isfile(example_catalog["examples"][1]["project_file"])
 
     mktempdir() do dir
         target = joinpath(dir, "rm2-studio")
@@ -455,11 +465,15 @@ end
         template_catalog = OWENS_APP.list_studio_project_templates()
         @test template_catalog["schema_version"] == "owens-studio-template-catalog/v1"
         @test [row["template"] for row in template_catalog["templates"]] == ["blank", "rm2"]
+        example_catalog = OWENS_APP.list_studio_example_projects()
+        @test example_catalog["schema_version"] == "owens-studio-example-catalog/v1"
+        @test [row["example"] for row in example_catalog["examples"]] == ["rm2"]
         route_catalog = OWENS_APP.studio_route_catalog()
         @test route_catalog["schema_version"] == "owens-studio-route-catalog/v1"
         @test [row["name"] for row in route_catalog["routes"]] == [
             "route_catalog",
             "template_catalog",
+            "example_catalog",
             "project_open",
             "project_health",
             "project_workbench",
@@ -467,11 +481,11 @@ end
             "project_bundle",
             "create_template_project",
         ]
-        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
-        @test route_catalog["routes"][3]["required_params"] == ["project_path"]
-        @test route_catalog["routes"][3]["optional_params"] == ["summarize_runs"]
-        @test route_catalog["routes"][5]["content_type"] == "text/html; charset=utf-8"
-        @test route_catalog["routes"][7]["required_params"] ==
+        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
+        @test route_catalog["routes"][4]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][4]["optional_params"] == ["summarize_runs"]
+        @test route_catalog["routes"][6]["content_type"] == "text/html; charset=utf-8"
+        @test route_catalog["routes"][8]["required_params"] ==
               ["project_path", "output_dir"]
 
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
@@ -512,6 +526,9 @@ end
         templates_cli = OWENS_APP.real_main(["project-templates"]; io = IOBuffer())
         @test templates_cli["schema_version"] == "owens-studio-template-catalog/v1"
         @test templates_cli["templates"][2]["solver_path"] == "runOWENSWINDIO"
+        examples_cli = OWENS_APP.real_main(["project-examples"]; io = IOBuffer())
+        @test examples_cli["schema_version"] == "owens-studio-example-catalog/v1"
+        @test examples_cli["examples"][1]["example"] == "rm2"
         routes_cli = OWENS_APP.real_main(["project-routes"]; io = IOBuffer())
         @test routes_cli["schema_version"] == "owens-studio-route-catalog/v1"
         @test routes_cli["routes"][1]["path"] == "/api/routes"
@@ -546,6 +563,8 @@ end
         @test open_payload["routes"]["schema_version"] == "owens-studio-route-catalog/v1"
         @test open_payload["templates"]["schema_version"] ==
               "owens-studio-template-catalog/v1"
+        @test open_payload["examples"]["schema_version"] ==
+              "owens-studio-example-catalog/v1"
         open_cli = OWENS_APP.real_main(
             ["project-open", template_cli["project_file"]];
             io = IOBuffer(),
@@ -622,6 +641,20 @@ end
         @test templates_payload["templates"][1]["template"] == "blank"
         @test templates_payload["templates"][2]["template"] == "rm2"
 
+        examples_response = OWENS_APP.studio_project_examples_route()
+        @test examples_response.status == 200
+        @test examples_response.content_type == "application/x-yaml; charset=utf-8"
+        examples_payload = YAML.load(
+            examples_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test examples_payload["schema_version"] == "owens-studio-example-catalog/v1"
+        @test examples_payload["examples"][1]["example"] == "rm2"
+        @test examples_payload["examples"][1]["available"] === true
+        dispatch_examples = OWENS_APP.dispatch_studio_route("/api/examples"; method = "GET")
+        @test dispatch_examples.status == 200
+        @test occursin("owens-studio-example-catalog/v1", dispatch_examples.body)
+
         open_response = OWENS_APP.studio_project_open_route(project_file)
         @test open_response.status == 200
         @test open_response.content_type == "application/x-yaml; charset=utf-8"
@@ -647,7 +680,7 @@ end
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
         @test dispatch_open_payload["project_file"] == project_file
-        @test dispatch_open_payload["routes"]["routes"][3]["name"] == "project_open"
+        @test dispatch_open_payload["routes"]["routes"][4]["name"] == "project_open"
 
         health_response = OWENS_APP.studio_project_health_route(project_file)
         @test health_response isa OWENS_APP.StudioRouteResponse

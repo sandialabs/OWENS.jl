@@ -428,7 +428,7 @@ Updated task breakdown:
 | G6 | Wire RM2 as the first end-to-end GUI workflow. | In progress on `codex/gui-project-health-shell` | Template catalog, RM2 creation, health, generated Julia script, and static bundle workflows are pinned in tests. |
 | G7 | Add "export generated Julia script" before adding more UI controls. | In progress on `codex/gui-project-health-shell` | WindIO run specs render scripts; RM2 Studio templates write a script artifact; app services and routes now expose that script directly. |
 | G8 | Convert the static workbench shell into the first Genie route group. | In progress on `codex/gui-project-health-shell` | Dependency-light route handlers, route parameter metadata, a dispatcher, and a pinned route catalog now define project health, workbench, script, bundle, and template endpoints for Genie to wrap. |
-| G9 | Add first GUI fixture project under `examples/gui` or `docs/src/assets/gui`. | Complete on `codex/gui-project-health-shell` | `examples/gui/rm2/owens_project.yml` is a relocatable RM2 fixture with pinned health/open-payload tests. |
+| G9 | Add first GUI fixture project under `examples/gui` or `docs/src/assets/gui`. | Complete on `codex/gui-project-health-shell` | `examples/gui/rm2/owens_project.yml` is a relocatable RM2 fixture with pinned health/open-payload tests and an example-project catalog route. |
 
 Near-term rule: keep Genie and Makie out until G1-G3 are merged. The service boundary must be stable and testable first; the UI framework should call it rather than own solver or file semantics.
 

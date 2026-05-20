@@ -11,6 +11,7 @@ OWENS_APP Studio service commands:
 
   project-routes
   project-templates
+  project-examples
   project-open <owens_project.yml>
   manifest-health <run_manifest.yml>
   output-summary <results.h5>
@@ -47,6 +48,8 @@ function _dispatch_command(args)
         return studio_route_catalog()
     elseif command == "project-templates" && length(args) == 1
         return list_studio_project_templates()
+    elseif command == "project-examples" && length(args) == 1
+        return list_studio_example_projects()
     elseif command == "project-open" && length(args) == 2
         return open_studio_project(args[2])
     elseif command == "manifest-health" && length(args) == 2

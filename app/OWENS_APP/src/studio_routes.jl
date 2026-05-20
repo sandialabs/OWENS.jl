@@ -3,6 +3,7 @@ export studio_route_catalog,
     dispatch_studio_route,
     studio_routes_route,
     studio_project_templates_route,
+    studio_project_examples_route,
     studio_project_open_route,
     studio_project_health_route,
     studio_project_workbench_route,
@@ -42,6 +43,14 @@ function studio_route_catalog()
                 "studio_project_templates_route",
                 "application/x-yaml; charset=utf-8",
                 "List built-in project templates.",
+            ),
+            _studio_route_record(
+                "example_catalog",
+                "GET",
+                "/api/examples",
+                "studio_project_examples_route",
+                "application/x-yaml; charset=utf-8",
+                "List committed Studio example projects.",
             ),
             _studio_route_record(
                 "project_open",
@@ -176,6 +185,17 @@ Return the built-in OWENS Studio project template catalog as a route response.
 function studio_project_templates_route()
     return _studio_yaml_route_response() do
         list_studio_project_templates()
+    end
+end
+
+"""
+    studio_project_examples_route()
+
+Return committed OWENS Studio example projects as a route response.
+"""
+function studio_project_examples_route()
+    return _studio_yaml_route_response() do
+        list_studio_example_projects()
     end
 end
 
@@ -325,6 +345,8 @@ function _dispatch_studio_route_name(name::AbstractString, params::AbstractDict)
         return studio_routes_route()
     elseif name == "template_catalog"
         return studio_project_templates_route()
+    elseif name == "example_catalog"
+        return studio_project_examples_route()
     elseif name == "project_open"
         return studio_project_open_route(
             _studio_route_required(params, "project_path");

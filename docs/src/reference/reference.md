@@ -60,6 +60,7 @@ file-backed GUI template: an RM2 WindIO project with copied inputs, a generated
 Julia run script, a run manifest, and a Studio project manifest.
 Use `studio_project_template_catalog()` to drive GUI "new project" controls
 without duplicating template metadata.
+Use `studio_example_project_catalog()` to drive the GUI example-project gallery.
 The `OWENS_APP` package exposes dependency-light route handlers around the same
 services so a future Genie shell can serve health YAML and workbench HTML
 without duplicating project logic.
@@ -115,6 +116,8 @@ The public helpers are:
 - `write_studio_workbench_bundle(output_dir, project_path)`
 - `studio_project_template_catalog()`
 - `studio_project_template_names()`
+- `studio_example_project_catalog()`
+- `studio_example_project_names()`
 - `create_studio_project_template(target)`
 
 The generated API listing above includes their full docstrings.
