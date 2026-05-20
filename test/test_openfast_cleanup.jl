@@ -52,4 +52,137 @@ import OWENS
     )
     @test calls_with_flags == [:endTurb]
     @test isempty(errors)
+
+    partial_calls = Symbol[]
+    errors = OWENS.endOpenFASTModules(
+        inputs;
+        openfast = (
+            HD_End = () -> push!(partial_calls, :HD_End),
+            MD_End = () -> push!(partial_calls, :MD_End),
+            endTurb = () -> push!(partial_calls, :endTurb),
+        ),
+        hd_initialized = true,
+        md_initialized = false,
+        ad_initialized = false,
+    )
+    @test partial_calls == [:HD_End]
+    @test isempty(errors)
+end
+
+@testset "OpenFAST allocation cleanup" begin
+    mktempdir() do dir
+        md_input_file = joinpath(dir, "MoorDyn_minimal.dat")
+        write(
+            md_input_file,
+            """
+            ---------------------- POINTS --------------------------------
+            ID Attachment X Y Z M V CdA CA
+            1 Fixed 0.0 0.0 -75.0 0 0 0 0
+            2 Vessel 0.0 0.0 -5.0 0 0 0 0
+            ---------------------- LINES ---------------------------------
+            ID LineType AttachA AttachB UnstrLen NumSegs Outputs
+            1 main 1 2 80.0 10 -
+            ---------------------- SOLVER OPTIONS ------------------------
+            """,
+        )
+
+        inputs = (
+            dataOutputFilename = "none",
+            hd_input_file = "none",
+            ss_input_file = "none",
+            md_input_file = md_input_file,
+            potflowfile = nothing,
+            interpOrder = 2,
+            platformActive = true,
+            AD15On = false,
+        )
+        bottom_mesh = (numNodes = 1,)
+        bottom_el = (;)
+        bottom_model = (initCond = zeros(0, 3),)
+        bin = (hydrodynLibPath = "libhydrodyn", moordynLibPath = "libmoordyn")
+        times = range(0.0, length = 2, step = 0.1)
+
+        init_calls = Symbol[]
+        init_kwargs = Dict{Symbol,Any}()
+        openfast = (
+            HD_Init = (; kwargs...) -> begin
+                push!(init_calls, :HD_Init)
+                init_kwargs[:hd_input_file] = kwargs[:hd_input_file]
+                nothing
+            end,
+            MD_Init = (; kwargs...) -> begin
+                push!(init_calls, :MD_Init)
+                init_kwargs[:WtrDpth] = kwargs[:WtrDpth]
+                nothing
+            end,
+            HD_End = () -> push!(init_calls, :HD_End),
+            MD_End = () -> push!(init_calls, :MD_End),
+            endTurb = () -> push!(init_calls, :endTurb),
+        )
+
+        result = OWENS.allocate_bottom(
+            times,
+            2,
+            0.1,
+            inputs,
+            bottom_mesh,
+            bottom_el,
+            bottom_model,
+            bin,
+            6;
+            openfast = openfast,
+        )
+        @test result[1] == 6
+        @test result[12] == 1
+        @test init_calls == [:HD_Init, :MD_Init]
+        @test init_kwargs[:hd_input_file] == "none"
+        @test init_kwargs[:WtrDpth] == 75.0
+
+        partial_calls = Symbol[]
+        md_fails = (
+            HD_Init = (; kwargs...) -> push!(partial_calls, :HD_Init),
+            MD_Init = (; kwargs...) -> begin
+                push!(partial_calls, :MD_Init)
+                error("moordyn init failed")
+            end,
+            HD_End = () -> push!(partial_calls, :HD_End),
+            MD_End = () -> push!(partial_calls, :MD_End),
+            endTurb = () -> push!(partial_calls, :endTurb),
+        )
+        @test_throws ErrorException OWENS.allocate_bottom(
+            times,
+            2,
+            0.1,
+            inputs,
+            bottom_mesh,
+            bottom_el,
+            bottom_model,
+            bin,
+            6;
+            openfast = md_fails,
+        )
+        @test partial_calls == [:HD_Init, :MD_Init, :HD_End]
+
+        hd_calls = Symbol[]
+        hd_fails = (
+            HD_Init = (; kwargs...) -> error("hydrodyn init failed"),
+            MD_Init = (; kwargs...) -> push!(hd_calls, :MD_Init),
+            HD_End = () -> push!(hd_calls, :HD_End),
+            MD_End = () -> push!(hd_calls, :MD_End),
+            endTurb = () -> push!(hd_calls, :endTurb),
+        )
+        @test_throws ErrorException OWENS.allocate_bottom(
+            times,
+            2,
+            0.1,
+            inputs,
+            bottom_mesh,
+            bottom_el,
+            bottom_model,
+            bin,
+            6;
+            openfast = hd_fails,
+        )
+        @test isempty(hd_calls)
+    end
 end
