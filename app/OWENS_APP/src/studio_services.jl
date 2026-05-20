@@ -7,6 +7,7 @@ export inspect_run_manifest,
     open_studio_project,
     inspect_studio_project,
     inspect_studio_project_script,
+    write_studio_home,
     write_studio_project_bundle,
     write_studio_project_workbench
 
@@ -160,6 +161,10 @@ function inspect_studio_project_script(path::AbstractString)
         "script_file" => script_path,
         "script" => script,
     )
+end
+
+function write_studio_home(output_html::AbstractString)
+    return OWENS.write_studio_home_html(output_html)
 end
 
 function write_studio_project_bundle(

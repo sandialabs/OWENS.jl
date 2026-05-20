@@ -2,6 +2,7 @@ export studio_route_catalog,
     StudioRouteResponse,
     dispatch_studio_route,
     studio_routes_route,
+    studio_home_route,
     studio_project_templates_route,
     studio_project_examples_route,
     studio_project_open_route,
@@ -35,6 +36,14 @@ function studio_route_catalog()
                 "studio_routes_route",
                 "application/x-yaml; charset=utf-8",
                 "List OWENS Studio route contracts.",
+            ),
+            _studio_route_record(
+                "studio_home",
+                "GET",
+                "/",
+                "studio_home_route",
+                "text/html; charset=utf-8",
+                "Render the Studio project chooser.",
             ),
             _studio_route_record(
                 "template_catalog",
@@ -160,6 +169,23 @@ Return the route catalog as a route response.
 function studio_routes_route()
     return _studio_yaml_route_response() do
         studio_route_catalog()
+    end
+end
+
+"""
+    studio_home_route()
+
+Return the static OWENS Studio project chooser HTML.
+"""
+function studio_home_route()
+    try
+        return StudioRouteResponse(
+            200,
+            "text/html; charset=utf-8",
+            OWENS.render_studio_home_html(),
+        )
+    catch err
+        return _studio_route_error_response(err)
     end
 end
 
@@ -343,6 +369,8 @@ end
 function _dispatch_studio_route_name(name::AbstractString, params::AbstractDict)
     if name == "route_catalog"
         return studio_routes_route()
+    elseif name == "studio_home"
+        return studio_home_route()
     elseif name == "template_catalog"
         return studio_project_templates_route()
     elseif name == "example_catalog"

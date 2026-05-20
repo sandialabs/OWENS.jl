@@ -10,6 +10,7 @@ const USAGE = """
 OWENS_APP Studio service commands:
 
   project-routes
+  studio-home <output.html>
   project-templates
   project-examples
   project-open <owens_project.yml>
@@ -46,6 +47,12 @@ function _dispatch_command(args)
 
     if command == "project-routes" && length(args) == 1
         return studio_route_catalog()
+    elseif command == "studio-home" && length(args) == 2
+        html = write_studio_home(args[2])
+        return OrderedCollections.OrderedDict{String,Any}(
+            "output_html" => abspath(args[2]),
+            "bytes" => sizeof(html),
+        )
     elseif command == "project-templates" && length(args) == 1
         return list_studio_project_templates()
     elseif command == "project-examples" && length(args) == 1

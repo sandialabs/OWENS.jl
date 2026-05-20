@@ -6,6 +6,8 @@ export build_studio_project,
     studio_project_health,
     studio_project_generated_script_path,
     read_studio_project_generated_script,
+    render_studio_home_html,
+    write_studio_home_html,
     render_studio_workbench_html,
     write_studio_workbench_html,
     write_studio_workbench_bundle
@@ -491,6 +493,171 @@ function render_studio_workbench_html(
 end
 
 """
+    render_studio_home_html(; templates=studio_project_template_catalog(), examples=studio_example_project_catalog())
+
+Render the dependency-light OWENS Studio project chooser. The generated HTML is
+static so the same surface can be written to disk, served by the app route
+layer, or wrapped later by Genie.
+"""
+function render_studio_home_html(;
+    templates = studio_project_template_catalog(),
+    examples = studio_example_project_catalog(),
+)
+    return """
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OWENS Studio</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #5c6670;
+      --line: #d9dee4;
+      --panel: #f6f8fa;
+      --blue: #1f5e99;
+      --green: #116b3a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+    }
+    .studio {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    nav {
+      border-right: 1px solid var(--line);
+      padding: 18px 14px;
+      background: #f9fafb;
+    }
+    nav h1 {
+      font-size: 18px;
+      margin: 0 0 18px;
+    }
+    nav a {
+      display: block;
+      padding: 9px 10px;
+      color: var(--ink);
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    nav a.active {
+      background: #e7f0f8;
+      color: var(--blue);
+      font-weight: 650;
+    }
+    main {
+      padding: 24px 30px;
+      min-width: 0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .toolbar h2 {
+      font-size: 24px;
+      margin: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      min-height: 132px;
+    }
+    .card h4 {
+      font-size: 16px;
+      margin: 0 0 8px;
+    }
+    .card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 0 0 10px;
+      overflow-wrap: anywhere;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--panel);
+    }
+    .pill.ok { color: var(--green); background: #eef8f2; }
+    .empty {
+      color: var(--muted);
+      margin: 0;
+    }
+    @media (max-width: 840px) {
+      .studio { grid-template-columns: 1fr; }
+      nav { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <div class="studio">
+    <nav>
+      <h1>OWENS Studio</h1>
+      $(_studio_nav_html("Home"))
+    </nav>
+    <main>
+      <div class="toolbar">
+        <h2>Project Gallery</h2>
+      </div>
+      <h3>Example Projects</h3>
+      $(_studio_example_cards_html(examples["examples"]))
+      <h3>New Project Templates</h3>
+      $(_studio_template_cards_html(templates["templates"]))
+    </main>
+  </div>
+</body>
+</html>
+"""
+end
+
+"""
+    write_studio_home_html(path; kwargs...)
+
+Write the static OWENS Studio project chooser and return the rendered HTML.
+"""
+function write_studio_home_html(path::AbstractString; kwargs...)
+    parent = dirname(path)
+    if !isempty(parent)
+        mkpath(parent)
+    end
+
+    html = render_studio_home_html(; kwargs...)
+    open(path, "w") do io
+        write(io, html)
+    end
+
+    return html
+end
+
+"""
     write_studio_workbench_html(path, project_or_health)
 
 Write the static OWENS Studio workbench shell and return the rendered HTML.
@@ -661,23 +828,24 @@ function _require_studio_dict!(
     return issues
 end
 
-function _studio_nav_html()
+function _studio_nav_html(active_item::AbstractString = "Project")
     items = [
-        ("Project", true),
-        ("Geometry", false),
-        ("Airfoils", false),
-        ("Structure", false),
-        ("Environment", false),
-        ("Controls", false),
-        ("Simulation", false),
-        ("Validation", false),
-        ("Results", false),
-        ("Reports", false),
+        "Home",
+        "Project",
+        "Geometry",
+        "Airfoils",
+        "Structure",
+        "Environment",
+        "Controls",
+        "Simulation",
+        "Validation",
+        "Results",
+        "Reports",
     ]
     return join(
         [
-            "<a class=\"$(active ? "active" : "")\" href=\"#\">$(_html_escape(label))</a>"
-            for (label, active) in items
+            "<a class=\"$(label == active_item ? "active" : "")\" href=\"#\">$(_html_escape(label))</a>"
+            for label in items
         ],
         "\n      ",
     )
@@ -693,6 +861,62 @@ function _studio_metric_cards_html(summary::AbstractDict)
     return "<section class=\"cards\">\n        " *
            join(cards, "\n        ") *
            "\n      </section>"
+end
+
+function _studio_example_cards_html(rows::AbstractVector)
+    if isempty(rows)
+        return "<p class=\"empty\">No example projects.</p>"
+    end
+
+    cards = [_studio_example_card_html(row) for row in rows]
+    return "<section class=\"grid\">\n        " *
+           join(cards, "\n        ") *
+           "\n      </section>"
+end
+
+function _studio_template_cards_html(rows::AbstractVector)
+    if isempty(rows)
+        return "<p class=\"empty\">No project templates.</p>"
+    end
+
+    cards = [_studio_template_card_html(row) for row in rows]
+    return "<section class=\"grid\">\n        " *
+           join(cards, "\n        ") *
+           "\n      </section>"
+end
+
+function _studio_example_card_html(row::AbstractDict)
+    available = get(row, "available", false) === true
+    project_path = string(get(row, "project_relative_path", get(row, "project_file", "")))
+    status_class = available ? " ok" : ""
+    status_text = available ? "available" : "missing"
+    return """
+<article class="card">
+  <h4>$(_html_escape(string(get(row, "title", get(row, "example", "Example")))))</h4>
+  <p>$(_html_escape(string(get(row, "description", ""))))</p>
+  <p>$(_html_escape(project_path))</p>
+  <div class="meta">
+    <span class="pill$status_class">$(_html_escape(status_text))</span>
+    <span class="pill">$(_html_escape(string(get(row, "turbine_type", ""))))</span>
+    <span class="pill">$(_html_escape(string(get(row, "template", ""))))</span>
+  </div>
+</article>"""
+end
+
+function _studio_template_card_html(row::AbstractDict)
+    generated = get(row, "creates_generated_script", false) === true
+    manifest = get(row, "creates_run_manifest", false) === true
+    return """
+<article class="card">
+  <h4>$(_html_escape(string(get(row, "title", get(row, "template", "Template")))))</h4>
+  <p>$(_html_escape(string(get(row, "description", ""))))</p>
+  <div class="meta">
+    <span class="pill">$(_html_escape(string(get(row, "template", ""))))</span>
+    <span class="pill">$(_html_escape(string(get(row, "turbine_type", ""))))</span>
+    <span class="pill$(generated ? " ok" : "")">$(_html_escape(generated ? "script" : "no script"))</span>
+    <span class="pill$(manifest ? " ok" : "")">$(_html_escape(manifest ? "manifest" : "no manifest"))</span>
+  </div>
+</article>"""
 end
 
 function _studio_records_table_html(rows::AbstractVector)

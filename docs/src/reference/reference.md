@@ -61,6 +61,8 @@ Julia run script, a run manifest, and a Studio project manifest.
 Use `studio_project_template_catalog()` to drive GUI "new project" controls
 without duplicating template metadata.
 Use `studio_example_project_catalog()` to drive the GUI example-project gallery.
+Use `render_studio_home_html()` as the static project chooser served by the
+app home route or written as an offline HTML artifact.
 The `OWENS_APP` package exposes dependency-light route handlers around the same
 services so a future Genie shell can serve health YAML and workbench HTML
 without duplicating project logic.
@@ -111,6 +113,8 @@ The public helpers are:
 - `studio_project_health(project_or_path)`
 - `studio_project_generated_script_path(project_or_path)`
 - `read_studio_project_generated_script(project_or_path)`
+- `render_studio_home_html()`
+- `write_studio_home_html(path)`
 - `render_studio_workbench_html(project_or_health)`
 - `write_studio_workbench_html(path, project_or_health)`
 - `write_studio_workbench_bundle(output_dir, project_path)`

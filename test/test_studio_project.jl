@@ -211,6 +211,15 @@ end
           joinpath("examples", "gui", "rm2", "owens_project.yml")
     @test example_catalog["examples"][1]["available"] === true
     @test isfile(example_catalog["examples"][1]["project_file"])
+    home_html = OWENS.render_studio_home_html()
+    @test occursin("<title>OWENS Studio</title>", home_html)
+    @test occursin("Project Gallery", home_html)
+    @test occursin("Example Projects", home_html)
+    @test occursin("RM2 GUI Fixture", home_html)
+    @test occursin(joinpath("examples", "gui", "rm2", "owens_project.yml"), home_html)
+    @test occursin("New Project Templates", home_html)
+    @test occursin("Blank OWENS Studio Project", home_html)
+    @test occursin("RM2 VAWT Template", home_html)
 
     mktempdir() do dir
         target = joinpath(dir, "rm2-studio")
@@ -472,6 +481,7 @@ end
         @test route_catalog["schema_version"] == "owens-studio-route-catalog/v1"
         @test [row["name"] for row in route_catalog["routes"]] == [
             "route_catalog",
+            "studio_home",
             "template_catalog",
             "example_catalog",
             "project_open",
@@ -481,11 +491,12 @@ end
             "project_bundle",
             "create_template_project",
         ]
-        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
-        @test route_catalog["routes"][4]["required_params"] == ["project_path"]
-        @test route_catalog["routes"][4]["optional_params"] == ["summarize_runs"]
-        @test route_catalog["routes"][6]["content_type"] == "text/html; charset=utf-8"
-        @test route_catalog["routes"][8]["required_params"] ==
+        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
+        @test route_catalog["routes"][2]["path"] == "/"
+        @test route_catalog["routes"][5]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][5]["optional_params"] == ["summarize_runs"]
+        @test route_catalog["routes"][7]["content_type"] == "text/html; charset=utf-8"
+        @test route_catalog["routes"][9]["required_params"] ==
               ["project_path", "output_dir"]
 
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
@@ -523,6 +534,10 @@ end
         manifest_cli =
             OWENS_APP.real_main(["manifest-health", manifest_file]; io = IOBuffer())
         @test manifest_cli["status"] == "ok"
+        home_cli = OWENS_APP.real_main(["studio-home", html_file]; io = IOBuffer())
+        @test home_cli["output_html"] == abspath(html_file)
+        @test home_cli["bytes"] == stat(html_file).size
+        @test occursin("Project Gallery", read(html_file, String))
         templates_cli = OWENS_APP.real_main(["project-templates"]; io = IOBuffer())
         @test templates_cli["schema_version"] == "owens-studio-template-catalog/v1"
         @test templates_cli["templates"][2]["solver_path"] == "runOWENSWINDIO"
@@ -630,6 +645,15 @@ end
         @test routes_payload["routes"][1]["handler"] == "studio_routes_route"
         @test routes_payload["routes"][end]["handler"] == "studio_project_template_route"
 
+        home_response = OWENS_APP.studio_home_route()
+        @test home_response.status == 200
+        @test home_response.content_type == "text/html; charset=utf-8"
+        @test occursin("Project Gallery", home_response.body)
+        @test occursin("RM2 GUI Fixture", home_response.body)
+        dispatch_home = OWENS_APP.dispatch_studio_route("/"; method = "GET")
+        @test dispatch_home.status == 200
+        @test occursin("New Project Templates", dispatch_home.body)
+
         templates_response = OWENS_APP.studio_project_templates_route()
         @test templates_response.status == 200
         @test templates_response.content_type == "application/x-yaml; charset=utf-8"
@@ -680,7 +704,7 @@ end
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
         @test dispatch_open_payload["project_file"] == project_file
-        @test dispatch_open_payload["routes"]["routes"][4]["name"] == "project_open"
+        @test dispatch_open_payload["routes"]["routes"][5]["name"] == "project_open"
 
         health_response = OWENS_APP.studio_project_health_route(project_file)
         @test health_response isa OWENS_APP.StudioRouteResponse
