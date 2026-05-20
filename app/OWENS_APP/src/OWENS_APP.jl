@@ -9,6 +9,7 @@ include("studio_routes.jl")
 const USAGE = """
 OWENS_APP Studio service commands:
 
+  project-routes
   project-templates
   manifest-health <run_manifest.yml>
   output-summary <results.h5>
@@ -41,7 +42,9 @@ function _dispatch_command(args)
     isempty(args) && throw(ArgumentError(USAGE))
     command = args[1]
 
-    if command == "project-templates" && length(args) == 1
+    if command == "project-routes" && length(args) == 1
+        return studio_route_catalog()
+    elseif command == "project-templates" && length(args) == 1
         return list_studio_project_templates()
     elseif command == "manifest-health" && length(args) == 2
         return inspect_run_manifest(args[2])

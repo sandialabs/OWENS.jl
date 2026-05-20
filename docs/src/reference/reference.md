@@ -63,6 +63,8 @@ without duplicating template metadata.
 The `OWENS_APP` package exposes dependency-light route handlers around the same
 services so a future Genie shell can serve health YAML and workbench HTML
 without duplicating project logic.
+Use `studio_route_catalog()` in `OWENS_APP` to keep the future Genie route table
+aligned with the tested service handlers.
 Use `studio_project_generated_script_path(project_or_path)` and
 `read_studio_project_generated_script(project_or_path)` when the GUI needs to
 show or export the exact Julia driver attached to a project.

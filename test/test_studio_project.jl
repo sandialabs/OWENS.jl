@@ -400,6 +400,19 @@ end
         template_catalog = OWENS_APP.list_studio_project_templates()
         @test template_catalog["schema_version"] == "owens-studio-template-catalog/v1"
         @test [row["template"] for row in template_catalog["templates"]] == ["blank", "rm2"]
+        route_catalog = OWENS_APP.studio_route_catalog()
+        @test route_catalog["schema_version"] == "owens-studio-route-catalog/v1"
+        @test [row["name"] for row in route_catalog["routes"]] == [
+            "route_catalog",
+            "template_catalog",
+            "project_health",
+            "project_workbench",
+            "project_script",
+            "project_bundle",
+            "create_template_project",
+        ]
+        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "POST", "POST"]
+        @test route_catalog["routes"][4]["content_type"] == "text/html; charset=utf-8"
 
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
         @test manifest_health["status"] == "ok"
@@ -439,6 +452,9 @@ end
         templates_cli = OWENS_APP.real_main(["project-templates"]; io = IOBuffer())
         @test templates_cli["schema_version"] == "owens-studio-template-catalog/v1"
         @test templates_cli["templates"][2]["solver_path"] == "runOWENSWINDIO"
+        routes_cli = OWENS_APP.real_main(["project-routes"]; io = IOBuffer())
+        @test routes_cli["schema_version"] == "owens-studio-route-catalog/v1"
+        @test routes_cli["routes"][1]["path"] == "/api/routes"
         summary_cli = OWENS_APP.real_main(["output-summary", output_file]; io = IOBuffer())
         @test summary_cli["channels"][1]["name"] == "t"
         windio_cli = OWENS_APP.real_main(
@@ -491,6 +507,17 @@ end
             created_at_utc = "2026-05-20T00:00:00.000Z",
         )
         project_file = created["project_file"]
+
+        routes_response = OWENS_APP.studio_routes_route()
+        @test routes_response.status == 200
+        @test routes_response.content_type == "application/x-yaml; charset=utf-8"
+        routes_payload = YAML.load(
+            routes_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test routes_payload["schema_version"] == "owens-studio-route-catalog/v1"
+        @test routes_payload["routes"][1]["handler"] == "studio_routes_route"
+        @test routes_payload["routes"][end]["handler"] == "studio_project_template_route"
 
         templates_response = OWENS_APP.studio_project_templates_route()
         @test templates_response.status == 200
