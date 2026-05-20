@@ -50,6 +50,12 @@ comparisons only; validation cases that need time alignment, phase correction,
 or whole-revolution windows should preprocess the selected channels before
 report generation.
 
+Use `build_studio_project(root; ...)`, `studio_project_health(project_or_path)`,
+and `render_studio_workbench_html(project_or_health)` as the first OWENS Studio
+service boundary. These helpers collect project-level input files, WindIO files,
+run manifests, file-provenance checks, and output-channel health into a stable
+dictionary schema that the GUI, CLI, or documentation examples can share.
+
 The public helpers are:
 
 - `ResultChannel`
@@ -72,5 +78,13 @@ The public helpers are:
 - `build_output_data_validation_report(reference_path, candidate_path)`
 - `write_output_data_validation_report(path, reference_path, candidate_path)`
 - `read_output_data_validation_report(path)`
+- `build_studio_project(root)`
+- `write_studio_project(path, project_or_root)`
+- `read_studio_project(path)`
+- `studio_project_issues(project_or_path)`
+- `validate_studio_project(project_or_path)`
+- `studio_project_health(project_or_path)`
+- `render_studio_workbench_html(project_or_health)`
+- `write_studio_workbench_html(path, project_or_health)`
 
 The generated API listing above includes their full docstrings.

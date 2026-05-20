@@ -41,6 +41,10 @@ end
     include("$path/test_run_health.jl")
 end
 
+@testset "OWENS Studio Project" begin
+    include("$path/test_studio_project.jl")
+end
+
 @testset "Output Data Channels" begin
     include("$path/test_output_data_channels.jl")
 end
