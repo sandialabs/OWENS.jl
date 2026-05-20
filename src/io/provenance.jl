@@ -4,9 +4,29 @@ export file_sha256,
     collect_package_versions,
     build_run_manifest,
     write_run_manifest,
-    read_run_manifest
+    read_run_manifest,
+    run_manifest_issues,
+    validate_run_manifest
 
 const RUN_MANIFEST_SCHEMA_VERSION = "owens-run-manifest/v1"
+const RUN_MANIFEST_REQUIRED_KEYS = [
+    "schema_version",
+    "run_id",
+    "run_name",
+    "created_at_utc",
+    "project_root",
+    "solver",
+    "status",
+    "julia",
+    "packages",
+    "git",
+    "parameters",
+    "metadata",
+    "inputs",
+    "outputs",
+    "generated",
+    "warnings",
+]
 
 """
     file_sha256(path)
@@ -199,6 +219,69 @@ function read_run_manifest(path::AbstractString)
     return YAML.load_file(path; dicttype = OrderedCollections.OrderedDict{String,Any})
 end
 
+"""
+    run_manifest_issues(manifest_or_path)
+
+Return deterministic schema and type diagnostics for an OWENS run manifest.
+The validator checks the manifest shape and file-record hashes without requiring
+archived files to still exist on disk.
+"""
+run_manifest_issues(path::AbstractString) = run_manifest_issues(read_run_manifest(path))
+
+function run_manifest_issues(manifest::AbstractDict)
+    issues = String[]
+    for key in RUN_MANIFEST_REQUIRED_KEYS
+        _require_manifest_key!(issues, manifest, key)
+    end
+
+    if haskey(manifest, "schema_version") &&
+       manifest["schema_version"] != RUN_MANIFEST_SCHEMA_VERSION
+        push!(issues, "schema_version must equal $RUN_MANIFEST_SCHEMA_VERSION")
+    end
+
+    for key in ("run_id", "run_name", "created_at_utc", "project_root", "solver", "status")
+        _require_manifest_string!(issues, manifest, key)
+    end
+
+    for key in ("julia", "packages", "git", "parameters", "metadata")
+        _require_manifest_dict!(issues, manifest, key)
+    end
+
+    for key in ("inputs", "outputs", "generated", "warnings")
+        _require_manifest_vector!(issues, manifest, key)
+    end
+
+    for section in ("inputs", "outputs", "generated")
+        if haskey(manifest, section) && manifest[section] isa AbstractVector
+            for (index, record) in enumerate(manifest[section])
+                _manifest_file_record_issues!(issues, section, index, record)
+            end
+        end
+    end
+
+    if haskey(manifest, "warnings") && manifest["warnings"] isa AbstractVector
+        for (index, warning) in enumerate(manifest["warnings"])
+            warning isa AbstractString || push!(issues, "warnings[$index] must be a string")
+        end
+    end
+
+    return issues
+end
+
+"""
+    validate_run_manifest(manifest_or_path)
+
+Return a valid manifest, or throw `ArgumentError` with all schema diagnostics.
+"""
+validate_run_manifest(path::AbstractString) = validate_run_manifest(read_run_manifest(path))
+
+function validate_run_manifest(manifest::AbstractDict)
+    issues = run_manifest_issues(manifest)
+    isempty(issues) ||
+        throw(ArgumentError("Invalid OWENS run manifest:\n- " * join(issues, "\n- ")))
+    return manifest
+end
+
 function _push_file_record!(records, path, root::AbstractString, role::AbstractString)
     if !isnothing(path)
         push!(records, file_provenance(string(path); root = root, role = role))
@@ -206,6 +289,82 @@ function _push_file_record!(records, path, root::AbstractString, role::AbstractS
 
     return records
 end
+
+function _require_manifest_key!(issues::Vector{String}, manifest::AbstractDict, key::String)
+    haskey(manifest, key) || push!(issues, "missing required key: $key")
+    return issues
+end
+
+function _require_manifest_string!(
+    issues::Vector{String},
+    manifest::AbstractDict,
+    key::String,
+)
+    haskey(manifest, key) || return issues
+    manifest[key] isa AbstractString || push!(issues, "$key must be a string")
+    return issues
+end
+
+function _require_manifest_dict!(
+    issues::Vector{String},
+    manifest::AbstractDict,
+    key::String,
+)
+    haskey(manifest, key) || return issues
+    manifest[key] isa AbstractDict || push!(issues, "$key must be a dictionary")
+    return issues
+end
+
+function _require_manifest_vector!(
+    issues::Vector{String},
+    manifest::AbstractDict,
+    key::String,
+)
+    haskey(manifest, key) || return issues
+    manifest[key] isa AbstractVector || push!(issues, "$key must be a vector")
+    return issues
+end
+
+function _manifest_file_record_issues!(
+    issues::Vector{String},
+    section::AbstractString,
+    index::Integer,
+    record,
+)
+    prefix = "$section[$index]"
+    if !(record isa AbstractDict)
+        push!(issues, "$prefix must be a dictionary")
+        return issues
+    end
+
+    if !haskey(record, "path")
+        push!(issues, "$prefix.path is required")
+    elseif !(record["path"] isa AbstractString)
+        push!(issues, "$prefix.path must be a string")
+    end
+
+    if !haskey(record, "bytes")
+        push!(issues, "$prefix.bytes is required")
+    elseif !_is_nonnegative_integer(record["bytes"])
+        push!(issues, "$prefix.bytes must be a non-negative integer")
+    end
+
+    if !haskey(record, "sha256")
+        push!(issues, "$prefix.sha256 is required")
+    elseif !_is_sha256_digest(record["sha256"])
+        push!(issues, "$prefix.sha256 must be a lowercase 64-character SHA-256 digest")
+    end
+
+    if haskey(record, "role") && !(record["role"] isa AbstractString)
+        push!(issues, "$prefix.role must be a string when present")
+    end
+
+    return issues
+end
+
+_is_nonnegative_integer(value) = value isa Integer && !(value isa Bool) && value >= 0
+
+_is_sha256_digest(value) = value isa AbstractString && occursin(r"^[0-9a-f]{64}$", value)
 
 function _manifest_value(value)
     if value isa AbstractDict

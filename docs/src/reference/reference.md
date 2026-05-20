@@ -31,6 +31,11 @@ rtol)` to compare selected numeric channels from two result files. It reports
 bias, RMSE, maximum absolute error, mean absolute error, reference RMS, relative
 RMSE, and a pass/fail result using `atol + rtol * max_abs_reference`.
 
+Use `run_manifest_issues(manifest_or_path)` and
+`validate_run_manifest(manifest_or_path)` to check that provenance manifests
+retain the expected schema, file-record shape, byte counts, and SHA-256 digest
+format before a GUI or validation dashboard trusts them.
+
 The public helpers are:
 
 - `ResultChannel`
@@ -46,5 +51,7 @@ The public helpers are:
 - `write_windio_run_script(path, spec)`
 - `build_windio_run_manifest(spec)`
 - `write_windio_run_manifest(path, spec)`
+- `run_manifest_issues(manifest_or_path)`
+- `validate_run_manifest(manifest_or_path)`
 
 The generated API listing above includes their full docstrings.
