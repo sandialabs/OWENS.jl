@@ -2,6 +2,7 @@ export studio_route_catalog,
     StudioRouteResponse,
     studio_routes_route,
     studio_project_templates_route,
+    studio_project_open_route,
     studio_project_health_route,
     studio_project_workbench_route,
     studio_project_script_route,
@@ -40,6 +41,14 @@ function studio_route_catalog()
                 "studio_project_templates_route",
                 "application/x-yaml; charset=utf-8",
                 "List built-in project templates.",
+            ),
+            _studio_route_record(
+                "project_open",
+                "GET",
+                "/api/project/open",
+                "studio_project_open_route",
+                "application/x-yaml; charset=utf-8",
+                "Open a project and return workbench bootstrap data.",
             ),
             _studio_route_record(
                 "project_health",
@@ -93,6 +102,20 @@ Return the route catalog as a route response.
 function studio_routes_route()
     return _studio_yaml_route_response() do
         studio_route_catalog()
+    end
+end
+
+"""
+    studio_project_open_route(project_path; summarize_runs=true)
+
+Return the workbench bootstrap payload for a Studio project.
+"""
+function studio_project_open_route(
+    project_path::AbstractString;
+    summarize_runs::Bool = true,
+)
+    return _studio_yaml_route_response() do
+        open_studio_project(project_path; summarize_runs)
     end
 end
 

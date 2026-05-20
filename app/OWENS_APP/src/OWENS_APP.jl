@@ -11,6 +11,7 @@ OWENS_APP Studio service commands:
 
   project-routes
   project-templates
+  project-open <owens_project.yml>
   manifest-health <run_manifest.yml>
   output-summary <results.h5>
   windio-script <modeling_options.yml> <windio.yml> <run_path>
@@ -46,6 +47,8 @@ function _dispatch_command(args)
         return studio_route_catalog()
     elseif command == "project-templates" && length(args) == 1
         return list_studio_project_templates()
+    elseif command == "project-open" && length(args) == 2
+        return open_studio_project(args[2])
     elseif command == "manifest-health" && length(args) == 2
         return inspect_run_manifest(args[2])
     elseif command == "output-summary" && length(args) == 2

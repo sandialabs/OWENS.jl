@@ -63,6 +63,8 @@ without duplicating template metadata.
 The `OWENS_APP` package exposes dependency-light route handlers around the same
 services so a future Genie shell can serve health YAML and workbench HTML
 without duplicating project logic.
+Use `open_studio_project(project_path)` in `OWENS_APP` as the one-call
+workbench bootstrap payload after a user selects a project.
 Use `studio_route_catalog()` in `OWENS_APP` to keep the future Genie route table
 aligned with the tested service handlers.
 Use `studio_project_generated_script_path(project_or_path)` and

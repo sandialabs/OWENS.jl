@@ -3,10 +3,13 @@ export inspect_run_manifest,
     prepare_windio_run,
     list_studio_project_templates,
     create_studio_template_project,
+    open_studio_project,
     inspect_studio_project,
     inspect_studio_project_script,
     write_studio_project_bundle,
     write_studio_project_workbench
+
+const STUDIO_OPEN_SCHEMA_VERSION = "owens-studio-open/v1"
 
 function inspect_run_manifest(
     path::AbstractString;
@@ -77,12 +80,70 @@ function create_studio_template_project(
     )
 end
 
+function open_studio_project(path::AbstractString; summarize_runs::Bool = true)
+    health = inspect_studio_project(path; summarize_runs)
+    script = _studio_script_artifact(path, health["root"])
+    return OrderedCollections.OrderedDict{String,Any}(
+        "schema_version" => STUDIO_OPEN_SCHEMA_VERSION,
+        "project_file" => abspath(path),
+        "project_status" => health["status"],
+        "project_id" => health["project_id"],
+        "name" => health["name"],
+        "root" => health["root"],
+        "metadata" => health["metadata"],
+        "generated_script" => script,
+        "actions" => _studio_open_actions(script["available"]),
+        "templates" => list_studio_project_templates(),
+        "routes" => studio_route_catalog(),
+        "health" => health,
+    )
+end
+
 function inspect_studio_project(
     path::AbstractString;
     root = nothing,
     summarize_runs::Bool = true,
 )
     return OWENS.studio_project_health(path; root, summarize_runs)
+end
+
+function _studio_script_artifact(project_path::AbstractString, root::AbstractString)
+    script_path = OWENS.studio_project_generated_script_path(project_path)
+    if isnothing(script_path)
+        return OrderedCollections.OrderedDict{String,Any}(
+            "path" => nothing,
+            "relative_path" => nothing,
+            "available" => false,
+            "bytes" => nothing,
+            "sha256" => nothing,
+        )
+    end
+
+    available = isfile(script_path)
+    return OrderedCollections.OrderedDict{String,Any}(
+        "path" => script_path,
+        "relative_path" => relpath(script_path, root),
+        "available" => available,
+        "bytes" => available ? stat(script_path).size : nothing,
+        "sha256" => available ? OWENS.file_sha256(script_path) : nothing,
+    )
+end
+
+function _studio_open_actions(script_available::Bool)
+    return OrderedCollections.OrderedDict{String,Any}[
+        _studio_open_action("project_health", "Inspect project health", true),
+        _studio_open_action("project_workbench", "Render workbench HTML", true),
+        _studio_open_action("project_script", "View generated Julia", script_available),
+        _studio_open_action("project_bundle", "Write static workbench bundle", true),
+    ]
+end
+
+function _studio_open_action(route::AbstractString, label::AbstractString, enabled::Bool)
+    return OrderedCollections.OrderedDict{String,Any}(
+        "route" => string(route),
+        "label" => string(label),
+        "enabled" => enabled,
+    )
 end
 
 function inspect_studio_project_script(path::AbstractString)

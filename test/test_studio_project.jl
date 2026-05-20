@@ -405,14 +405,15 @@ end
         @test [row["name"] for row in route_catalog["routes"]] == [
             "route_catalog",
             "template_catalog",
+            "project_open",
             "project_health",
             "project_workbench",
             "project_script",
             "project_bundle",
             "create_template_project",
         ]
-        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "POST", "POST"]
-        @test route_catalog["routes"][4]["content_type"] == "text/html; charset=utf-8"
+        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
+        @test route_catalog["routes"][5]["content_type"] == "text/html; charset=utf-8"
 
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
         @test manifest_health["status"] == "ok"
@@ -472,6 +473,26 @@ end
         @test isfile(template_cli["project_file"])
         @test isfile(template_cli["run_manifest_file"])
         @test isfile(template_cli["script_file"])
+        open_payload = OWENS_APP.open_studio_project(template_cli["project_file"])
+        @test open_payload["schema_version"] == "owens-studio-open/v1"
+        @test open_payload["project_file"] == template_cli["project_file"]
+        @test open_payload["project_status"] == "ok"
+        @test open_payload["generated_script"]["path"] == template_cli["script_file"]
+        @test open_payload["generated_script"]["relative_path"] ==
+              joinpath("runs", "rm2", "run_rm2_windio.jl")
+        @test open_payload["generated_script"]["available"] === true
+        @test open_payload["generated_script"]["sha256"] ==
+              OWENS.file_sha256(template_cli["script_file"])
+        @test [row["route"] for row in open_payload["actions"]] == ["project_health", "project_workbench", "project_script", "project_bundle"]
+        @test open_payload["routes"]["schema_version"] == "owens-studio-route-catalog/v1"
+        @test open_payload["templates"]["schema_version"] ==
+              "owens-studio-template-catalog/v1"
+        open_cli = OWENS_APP.real_main(
+            ["project-open", template_cli["project_file"]];
+            io = IOBuffer(),
+        )
+        @test open_cli["schema_version"] == "owens-studio-open/v1"
+        @test open_cli["generated_script"]["available"] === true
         script_cli = OWENS_APP.real_main(
             ["project-script", template_cli["project_file"]];
             io = IOBuffer(),
@@ -529,6 +550,19 @@ end
         @test templates_payload["schema_version"] == "owens-studio-template-catalog/v1"
         @test templates_payload["templates"][1]["template"] == "blank"
         @test templates_payload["templates"][2]["template"] == "rm2"
+
+        open_response = OWENS_APP.studio_project_open_route(project_file)
+        @test open_response.status == 200
+        @test open_response.content_type == "application/x-yaml; charset=utf-8"
+        open_payload = YAML.load(
+            open_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test open_payload["schema_version"] == "owens-studio-open/v1"
+        @test open_payload["project_status"] == "ok"
+        @test open_payload["generated_script"]["available"] === true
+        @test open_payload["actions"][3]["route"] == "project_script"
+        @test open_payload["actions"][3]["enabled"] === true
 
         health_response = OWENS_APP.studio_project_health_route(project_file)
         @test health_response isa OWENS_APP.StudioRouteResponse
