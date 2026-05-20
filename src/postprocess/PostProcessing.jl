@@ -144,7 +144,7 @@ function my_getplystrain(
         k = 1:(nlam+1)
     ]
     localstrain[2, :] = [resultantstrain[2]+z[k]*resultantstrain[4] for k = 1:(nlam+1)]
-    # localstrain[3,:] = [resultantstrain[3]+z[k]*resultantstrain[6] for k=1:nlam+1] #TODO: gamma_xy
+    localstrain[3, :] = [resultantstrain[3]+z[k]*resultantstrain[6] for k = 1:(nlam+1)]
 
 
     # rotate to align with material principal axes

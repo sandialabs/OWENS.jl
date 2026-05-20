@@ -304,7 +304,12 @@ Same as Aero-Structure
 Initialization is Direct: Structures provides macro geometry, Composites
 provide sectional properties. Composite Failure is Direct: Structure
 provides strains, composites provides failure. Buckling is also
-calculated.
+calculated. The postprocessing strain vector passed into the laminate
+calculation is ordered as axial strain, transverse normal strain, in-plane
+shear strain, and curvatures about the local x, y, and z axes. The third strain
+component is propagated through the ply-rotation and stress calculation so
+principal, transverse, and shear stress components are available to the
+composite failure workflow.
 
 ## Controllers - Control Elements
 

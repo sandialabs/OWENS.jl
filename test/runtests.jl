@@ -113,6 +113,10 @@ end
     include("$path/testrainflow.jl")
 end
 
+@testset "Postprocessing Check" begin
+    include("$path/test_postprocessing.jl")
+end
+
 @testset "Mesh Check" begin
     include("$path/check_mesh.jl")
 end
