@@ -2,7 +2,13 @@ using OrderedCollections: OrderedDict
 using YAML
 
 export DLC_internal,
-    runDLC, getDLCparams, generateUniformwind, generateTurbsimBTS, getGustVel, simpleGustVel
+    runDLC,
+    getDLCparams,
+    generateUniformwind,
+    generateTurbsimBTS,
+    getGustVel,
+    simpleGustVel,
+    iecExtremeWindSpeeds
 
 """
     DLC_internal
@@ -68,6 +74,29 @@ mutable struct DLC_internal
     LinVertShear::Any
     gustvel::Any
     UpflowAngle::Any
+end
+
+"""
+    iecExtremeWindSpeeds(Vref; ve50_factor=1.4, ve1_factor=0.8)
+
+Return the hub-height extreme-wind speeds used by the DLC generator for IEC
+61400-1 parked and idling cases.
+
+`Vref` is the class/reference wind speed already supplied through
+`DLC_Options.Vref`.  The current DLC generator does not evaluate the full IEC
+vertical profile here; it passes hub-height `URef` values to TurbSim or the
+deterministic wind writer.  The defaults therefore expose the IEC factors used
+by the DLC selector explicitly: `Ve50 = 1.4Vref` and `Ve1 = 0.8Ve50`.
+"""
+function iecExtremeWindSpeeds(Vref; ve50_factor = 1.4, ve1_factor = 0.8)
+    all(isfinite, (Vref, ve50_factor, ve1_factor)) ||
+        throw(ArgumentError("Vref and extreme-wind factors must be finite"))
+    Vref > 0 || throw(ArgumentError("Vref must be positive"))
+    ve50_factor > 0 || throw(ArgumentError("ve50_factor must be positive"))
+    ve1_factor > 0 || throw(ArgumentError("ve1_factor must be positive"))
+
+    Ve50 = Vref * ve50_factor
+    return (Ve50 = Ve50, Ve1 = Ve50 * ve1_factor)
 end
 
 """
@@ -203,8 +232,9 @@ function getDLCparams(
 
     Htwr_base = hub_height-Blade_Height/2
 
-    Ve50 = 50.0 #TODO change by class etc
-    Ve1 = 30.0 #TODO
+    extreme_wind_speeds = iecExtremeWindSpeeds(Vref)
+    Ve50 = extreme_wind_speeds.Ve50
+    Ve1 = extreme_wind_speeds.Ve1
 
     numTS = modelopt.OWENS_Options.numTS
     delta_t = modelopt.OWENS_Options.delta_t
