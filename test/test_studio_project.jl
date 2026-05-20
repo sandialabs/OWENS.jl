@@ -391,3 +391,62 @@ end
         @test_throws ArgumentError OWENS_APP.real_main(["bad-command"]; io = IOBuffer())
     end
 end
+
+@testset "OWENS Studio app route handlers" begin
+    mktempdir() do dir
+        created = OWENS.create_studio_project_template(
+            joinpath(dir, "rm2-route");
+            template = "rm2",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        project_file = created["project_file"]
+
+        health_response = OWENS_APP.studio_project_health_route(project_file)
+        @test health_response isa OWENS_APP.StudioRouteResponse
+        @test health_response.status == 200
+        @test health_response.content_type == "application/x-yaml; charset=utf-8"
+        health_payload = YAML.load(
+            health_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test health_payload["schema_version"] == "owens-studio-workbench/v1"
+        @test health_payload["status"] == "ok"
+        @test health_payload["summary"]["records"] == 3
+        @test health_payload["runs"][1]["run_manifest_health"]["summary"]["ok"] == 3
+
+        html_response = OWENS_APP.studio_project_workbench_route(project_file)
+        @test html_response.status == 200
+        @test html_response.content_type == "text/html; charset=utf-8"
+        @test occursin(
+            "<title>RM2 VAWT Template - OWENS Studio</title>",
+            html_response.body,
+        )
+        @test occursin("run_manifest.yml", html_response.body)
+
+        template_response = OWENS_APP.studio_project_template_route(
+            joinpath(dir, "created-from-route");
+            template = "blank",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        @test template_response.status == 200
+        @test template_response.content_type == "application/x-yaml; charset=utf-8"
+        template_payload = YAML.load(
+            template_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test template_payload["template"] == "blank"
+        @test template_payload["project_status"] == "ok"
+        @test template_payload["run_manifest_file"] === nothing
+        @test isfile(template_payload["project_file"])
+
+        error_response = OWENS_APP.studio_project_health_route(joinpath(dir, "missing.yml"))
+        @test error_response.status == 400
+        @test error_response.content_type == "application/x-yaml; charset=utf-8"
+        error_payload = YAML.load(
+            error_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test error_payload["status"] == "error"
+        @test occursin("Cannot read missing Studio project", error_payload["message"])
+    end
+end

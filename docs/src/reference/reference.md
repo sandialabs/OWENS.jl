@@ -58,6 +58,9 @@ dictionary schema that the GUI, CLI, or documentation examples can share.
 `create_studio_project_template(target; template="rm2")` creates the first
 file-backed GUI template: an RM2 WindIO project with copied inputs, a generated
 Julia run script, a run manifest, and a Studio project manifest.
+The `OWENS_APP` package exposes dependency-light route handlers around the same
+services so a future Genie shell can serve health YAML and workbench HTML
+without duplicating project logic.
 
 The public helpers are:
 

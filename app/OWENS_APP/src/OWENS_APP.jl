@@ -4,6 +4,7 @@ import YAML
 import OrderedCollections
 
 include("studio_services.jl")
+include("studio_routes.jl")
 
 const USAGE = """
 OWENS_APP Studio service commands:

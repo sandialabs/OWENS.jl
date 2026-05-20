@@ -427,7 +427,7 @@ Updated task breakdown:
 | G5 | Add `OWENSViz` Makie recipes for geometry/frames, airfoil/polar curves, and time-history/validation overlays. | Pending | Recipe unit tests on generated plot data; screenshot checks only after layout stabilizes. |
 | G6 | Wire RM2 as the first end-to-end GUI workflow. | In progress on `codex/gui-project-health-shell` | Template opens, health passes, generated Julia script is visible, short run can produce a manifest and result summary. |
 | G7 | Add "export generated Julia script" before adding more UI controls. | In progress on `codex/gui-project-health-shell` | WindIO run specs can already render scripts; RM2 Studio template now writes a checked-in run script artifact. |
-| G8 | Convert the static workbench shell into the first Genie route group. | Pending | Project health JSON and HTML routes call the same service functions tested in G1-G3. |
+| G8 | Convert the static workbench shell into the first Genie route group. | In progress on `codex/gui-project-health-shell` | Dependency-light route handlers now return project health YAML, workbench HTML, and template creation responses; Genie can wrap them after the dependency is added. |
 | G9 | Add first GUI fixture project under `examples/gui` or `docs/src/assets/gui`. | In progress on `codex/gui-project-health-shell` | RM2 template creation is deterministic in tests; a committed fixture can be added once the schema stabilizes. |
 
 Near-term rule: keep Genie and Makie out until G1-G3 are merged. The service boundary must be stable and testable first; the UI framework should call it rather than own solver or file semantics.
