@@ -508,6 +508,14 @@ end
         @test isfile(bundle_cli["index_html"])
         @test isfile(bundle_cli["health_file"])
         @test isfile(bundle_cli["script_file"])
+        @test isfile(bundle_cli["open_file"])
+        @test bundle_cli["bytes"]["open_file"] == stat(bundle_cli["open_file"]).size
+        bundle_open = YAML.load_file(
+            bundle_cli["open_file"];
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test bundle_open["schema_version"] == "owens-studio-open/v1"
+        @test bundle_open["generated_script"]["available"] === true
         project_cli = OWENS_APP.real_main(["project-health", project_file]; io = IOBuffer())
         @test project_cli["status"] == "ok"
         project_html_cli =
@@ -609,6 +617,14 @@ end
         @test isfile(bundle_payload["index_html"])
         @test isfile(bundle_payload["health_file"])
         @test isfile(bundle_payload["script_file"])
+        @test isfile(bundle_payload["open_file"])
+        @test bundle_payload["bytes"]["open_file"] == stat(bundle_payload["open_file"]).size
+        bundle_open_payload = YAML.load_file(
+            bundle_payload["open_file"];
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test bundle_open_payload["project_file"] == project_file
+        @test bundle_open_payload["actions"][4]["route"] == "project_bundle"
 
         template_response = OWENS_APP.studio_project_template_route(
             joinpath(dir, "created-from-route");

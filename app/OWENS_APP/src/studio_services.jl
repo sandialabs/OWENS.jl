@@ -161,7 +161,13 @@ function write_studio_project_bundle(
     project_path::AbstractString;
     include_script::Bool = true,
 )
-    return OWENS.write_studio_workbench_bundle(output_dir, project_path; include_script)
+    bundle = OWENS.write_studio_workbench_bundle(output_dir, project_path; include_script)
+    open_file = joinpath(bundle["bundle_dir"], "open.yml")
+    YAML.write_file(open_file, open_studio_project(project_path))
+
+    bundle["open_file"] = open_file
+    bundle["bytes"]["open_file"] = stat(open_file).size
+    return bundle
 end
 
 function write_studio_project_workbench(output_html::AbstractString, project_or_health;)
