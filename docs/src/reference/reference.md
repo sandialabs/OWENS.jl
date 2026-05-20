@@ -38,5 +38,7 @@ The public helpers are:
 - `windio_run_spec(modeling_options_file, windio_file, run_path)`
 - `render_windio_run_script(spec)`
 - `write_windio_run_script(path, spec)`
+- `build_windio_run_manifest(spec)`
+- `write_windio_run_manifest(path, spec)`
 
 The generated API listing above includes their full docstrings.
