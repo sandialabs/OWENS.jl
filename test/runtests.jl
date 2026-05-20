@@ -37,6 +37,10 @@ end
     include("$path/test_run_manifest.jl")
 end
 
+@testset "Run Manifest Health" begin
+    include("$path/test_run_health.jl")
+end
+
 @testset "Output Data Channels" begin
     include("$path/test_output_data_channels.jl")
 end
