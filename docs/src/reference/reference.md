@@ -36,6 +36,14 @@ Use `run_manifest_issues(manifest_or_path)` and
 retain the expected schema, file-record shape, byte counts, and SHA-256 digest
 format before a GUI or validation dashboard trusts them.
 
+Use `build_output_data_validation_report(reference_path, candidate_path; ...)`
+and `write_output_data_validation_report(path, reference_path, candidate_path;
+...)` to package selected-channel metric rows into a durable YAML artifact for
+regression dashboards. The report intentionally performs elementwise
+comparisons only; validation cases that need time alignment, phase correction,
+or whole-revolution windows should preprocess the selected channels before
+report generation.
+
 The public helpers are:
 
 - `ResultChannel`
@@ -53,5 +61,8 @@ The public helpers are:
 - `write_windio_run_manifest(path, spec)`
 - `run_manifest_issues(manifest_or_path)`
 - `validate_run_manifest(manifest_or_path)`
+- `build_output_data_validation_report(reference_path, candidate_path)`
+- `write_output_data_validation_report(path, reference_path, candidate_path)`
+- `read_output_data_validation_report(path)`
 
 The generated API listing above includes their full docstrings.

@@ -78,6 +78,7 @@ include("io/fileio.jl")
 include("io/windio_run_spec.jl")
 include("io/windio.jl")
 include("io/provenance.jl")
+include("io/validation_reports.jl")
 
 # Preprocessing functionality
 include("preprocessing/gxbeam_conversion.jl")

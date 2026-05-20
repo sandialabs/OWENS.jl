@@ -41,6 +41,10 @@ end
     include("$path/test_output_data_channels.jl")
 end
 
+@testset "Output Data Validation Reports" begin
+    include("$path/test_validation_reports.jl")
+end
+
 @testset "WindIO Run Spec" begin
     include("$path/test_windio_run_spec.jl")
 end
