@@ -3,6 +3,7 @@ export inspect_run_manifest,
     prepare_windio_run,
     create_studio_template_project,
     inspect_studio_project,
+    inspect_studio_project_script,
     write_studio_project_workbench
 
 function inspect_run_manifest(
@@ -76,6 +77,16 @@ function inspect_studio_project(
     summarize_runs::Bool = true,
 )
     return OWENS.studio_project_health(path; root, summarize_runs)
+end
+
+function inspect_studio_project_script(path::AbstractString)
+    script_path = OWENS.studio_project_generated_script_path(path)
+    script = OWENS.read_studio_project_generated_script(path)
+    return OrderedCollections.OrderedDict{String,Any}(
+        "project_file" => abspath(path),
+        "script_file" => script_path,
+        "script" => script,
+    )
 end
 
 function write_studio_project_workbench(output_html::AbstractString, project_or_health;)

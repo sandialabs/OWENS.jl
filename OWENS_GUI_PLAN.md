@@ -426,7 +426,7 @@ Updated task breakdown:
 | G4 | Add a local Genie shell that calls the service layer. | Pending | Route tests for project open, health JSON, and workbench page; no solver execution. |
 | G5 | Add `OWENSViz` Makie recipes for geometry/frames, airfoil/polar curves, and time-history/validation overlays. | Pending | Recipe unit tests on generated plot data; screenshot checks only after layout stabilizes. |
 | G6 | Wire RM2 as the first end-to-end GUI workflow. | In progress on `codex/gui-project-health-shell` | Template opens, health passes, generated Julia script is visible, short run can produce a manifest and result summary. |
-| G7 | Add "export generated Julia script" before adding more UI controls. | In progress on `codex/gui-project-health-shell` | WindIO run specs can already render scripts; RM2 Studio template now writes a checked-in run script artifact. |
+| G7 | Add "export generated Julia script" before adding more UI controls. | In progress on `codex/gui-project-health-shell` | WindIO run specs render scripts; RM2 Studio templates write a script artifact; app services and routes now expose that script directly. |
 | G8 | Convert the static workbench shell into the first Genie route group. | In progress on `codex/gui-project-health-shell` | Dependency-light route handlers now return project health YAML, workbench HTML, and template creation responses; Genie can wrap them after the dependency is added. |
 | G9 | Add first GUI fixture project under `examples/gui` or `docs/src/assets/gui`. | In progress on `codex/gui-project-health-shell` | RM2 template creation is deterministic in tests; a committed fixture can be added once the schema stabilizes. |
 

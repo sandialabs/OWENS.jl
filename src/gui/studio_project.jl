@@ -4,6 +4,8 @@ export build_studio_project,
     studio_project_issues,
     validate_studio_project,
     studio_project_health,
+    studio_project_generated_script_path,
+    read_studio_project_generated_script,
     render_studio_workbench_html,
     write_studio_workbench_html
 
@@ -210,6 +212,9 @@ function studio_project_health(
         "root" => project_root,
         "project_id" => get(project, "project_id", nothing),
         "name" => get(project, "name", nothing),
+        "metadata" => _studio_project_value(
+            get(project, "metadata", OrderedCollections.OrderedDict{String,Any}()),
+        ),
         "project_issues" => project_issues,
         "summary" => OrderedCollections.OrderedDict{String,Any}(
             "records" => length(rows),
@@ -221,6 +226,67 @@ function studio_project_health(
         "files" => file_rows,
         "runs" => run_rows,
     )
+end
+
+"""
+    studio_project_generated_script_path(project_or_path; root=nothing)
+
+Return the generated Julia script path recorded in a Studio project manifest, or
+`nothing` when the project has no generated-script metadata. Relative script
+paths are resolved against the project root.
+"""
+studio_project_generated_script_path(path::AbstractString; kwargs...) =
+    studio_project_generated_script_path(
+        read_studio_project(path);
+        project_path = path,
+        kwargs...,
+    )
+
+function studio_project_generated_script_path(
+    project::AbstractDict;
+    project_path = nothing,
+    root = nothing,
+)
+    project_root = _studio_project_root(project, project_path, root)
+    metadata = get(project, "metadata", OrderedCollections.OrderedDict{String,Any}())
+    metadata isa AbstractDict || return nothing
+    script_ref = get(metadata, "generated_script", nothing)
+    script_ref isa AbstractString || return nothing
+    isempty(script_ref) && return nothing
+
+    return isabspath(script_ref) ? normpath(script_ref) :
+           normpath(joinpath(project_root, script_ref))
+end
+
+"""
+    read_studio_project_generated_script(project_or_path; required=true)
+
+Read the generated Julia script referenced by a Studio project manifest. When
+`required=false`, projects without generated-script metadata return `nothing`
+instead of throwing.
+"""
+read_studio_project_generated_script(path::AbstractString; kwargs...) =
+    read_studio_project_generated_script(
+        read_studio_project(path);
+        project_path = path,
+        kwargs...,
+    )
+
+function read_studio_project_generated_script(
+    project::AbstractDict;
+    project_path = nothing,
+    root = nothing,
+    required::Bool = true,
+)
+    script_path = studio_project_generated_script_path(project; project_path, root)
+    if isnothing(script_path)
+        required || return nothing
+        throw(ArgumentError("Studio project does not define metadata.generated_script"))
+    end
+    isfile(script_path) ||
+        throw(ArgumentError("Generated Studio script does not exist: $script_path"))
+
+    return read(script_path, String)
 end
 
 """
@@ -406,6 +472,7 @@ function render_studio_workbench_html(project_or_health)
       <p>$(_html_escape(string(health["root"])))</p>
       <h3>Project Manifest</h3>
       <p>$(_html_escape(string(get(health, "project_path", nothing))))</p>
+      $(_studio_generated_script_html(health))
     </aside>
   </div>
 </body>
@@ -587,6 +654,16 @@ function _studio_issues_html(issues::AbstractVector)
         ["<p class=\"issue\">$(_html_escape(string(issue)))</p>" for issue in issues],
         "\n",
     )
+end
+
+function _studio_generated_script_html(health::AbstractDict)
+    metadata = get(health, "metadata", OrderedCollections.OrderedDict{String,Any}())
+    metadata isa AbstractDict || return ""
+    script = get(metadata, "generated_script", nothing)
+    script isa AbstractString || return ""
+    isempty(script) && return ""
+
+    return "<h3>Generated Script</h3>\n      <p>$(_html_escape(script))</p>"
 end
 
 function _html_escape(value::AbstractString)

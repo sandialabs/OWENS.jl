@@ -1,6 +1,7 @@
 export StudioRouteResponse,
     studio_project_health_route,
     studio_project_workbench_route,
+    studio_project_script_route,
     studio_project_template_route
 
 struct StudioRouteResponse
@@ -33,6 +34,21 @@ function studio_project_workbench_route(project_path::AbstractString)
     try
         html = OWENS.render_studio_workbench_html(project_path)
         return StudioRouteResponse(200, "text/html; charset=utf-8", html)
+    catch err
+        return _studio_route_error_response(err)
+    end
+end
+
+"""
+    studio_project_script_route(project_path)
+
+Return a route response containing the generated Julia script referenced by a
+Studio project.
+"""
+function studio_project_script_route(project_path::AbstractString)
+    try
+        script = OWENS.read_studio_project_generated_script(project_path)
+        return StudioRouteResponse(200, "text/plain; charset=utf-8", script)
     catch err
         return _studio_route_error_response(err)
     end

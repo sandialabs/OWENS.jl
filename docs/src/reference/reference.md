@@ -61,6 +61,9 @@ Julia run script, a run manifest, and a Studio project manifest.
 The `OWENS_APP` package exposes dependency-light route handlers around the same
 services so a future Genie shell can serve health YAML and workbench HTML
 without duplicating project logic.
+Use `studio_project_generated_script_path(project_or_path)` and
+`read_studio_project_generated_script(project_or_path)` when the GUI needs to
+show or export the exact Julia driver attached to a project.
 
 The public helpers are:
 
@@ -90,6 +93,8 @@ The public helpers are:
 - `studio_project_issues(project_or_path)`
 - `validate_studio_project(project_or_path)`
 - `studio_project_health(project_or_path)`
+- `studio_project_generated_script_path(project_or_path)`
+- `read_studio_project_generated_script(project_or_path)`
 - `render_studio_workbench_html(project_or_health)`
 - `write_studio_workbench_html(path, project_or_health)`
 - `studio_project_template_names()`

@@ -101,6 +101,7 @@ const STUDIO_RM2_WINDIO_SHA256 = "18fbfb761fe866e18d6fb24ed6f5800c26f7dcca225cf7
             "root",
             "project_id",
             "name",
+            "metadata",
             "project_issues",
             "summary",
             "files",
@@ -112,6 +113,10 @@ const STUDIO_RM2_WINDIO_SHA256 = "18fbfb761fe866e18d6fb24ed6f5800c26f7dcca225cf7
         @test health["root"] == abspath(dir)
         @test health["project_id"] == "studio-unit"
         @test health["name"] == "Studio Unit"
+        @test health["metadata"] == OrderedCollections.OrderedDict{String,Any}(
+            "active" => true,
+            "source" => "unit",
+        )
         @test health["project_issues"] == String[]
         @test health["summary"] == OrderedCollections.OrderedDict{String,Any}(
             "records" => 3,
@@ -248,9 +253,15 @@ end
             created["script"],
         )
         @test read(created["script_file"], String) == created["script"]
+        @test OWENS.studio_project_generated_script_path(created["project_file"]) ==
+              created["script_file"]
+        @test OWENS.read_studio_project_generated_script(created["project_file"]) ==
+              created["script"]
 
         health = OWENS.studio_project_health(created["project_file"])
         @test health["status"] == "ok"
+        @test health["metadata"]["generated_script"] ==
+              joinpath("runs", "rm2", "run_rm2_windio.jl")
         @test health["summary"] == OrderedCollections.OrderedDict{String,Any}(
             "records" => 3,
             "ok" => 3,
@@ -288,6 +299,14 @@ end
         @test blank["project"]["files"] == OrderedCollections.OrderedDict{String,Any}[]
         @test blank["project"]["runs"] == OrderedCollections.OrderedDict{String,Any}[]
         @test OWENS.studio_project_health(blank["project_file"])["status"] == "ok"
+        @test OWENS.studio_project_generated_script_path(blank["project_file"]) === nothing
+        @test OWENS.read_studio_project_generated_script(
+            blank["project_file"];
+            required = false,
+        ) === nothing
+        @test_throws ArgumentError OWENS.read_studio_project_generated_script(
+            blank["project_file"],
+        )
     end
 end
 
@@ -380,6 +399,12 @@ end
         @test isfile(template_cli["project_file"])
         @test isfile(template_cli["run_manifest_file"])
         @test isfile(template_cli["script_file"])
+        script_cli = OWENS_APP.real_main(
+            ["project-script", template_cli["project_file"]];
+            io = IOBuffer(),
+        )
+        @test script_cli["script_file"] == template_cli["script_file"]
+        @test occursin("OWENS.runOWENSWINDIO", script_cli["script"])
         project_cli = OWENS_APP.real_main(["project-health", project_file]; io = IOBuffer())
         @test project_cli["status"] == "ok"
         project_html_cli =
@@ -422,6 +447,14 @@ end
             html_response.body,
         )
         @test occursin("run_manifest.yml", html_response.body)
+        @test occursin("Generated Script", html_response.body)
+        @test occursin("run_rm2_windio.jl", html_response.body)
+
+        script_response = OWENS_APP.studio_project_script_route(project_file)
+        @test script_response.status == 200
+        @test script_response.content_type == "text/plain; charset=utf-8"
+        @test script_response.body == created["script"]
+        @test occursin("OWENS.runOWENSWINDIO", script_response.body)
 
         template_response = OWENS_APP.studio_project_template_route(
             joinpath(dir, "created-from-route");
