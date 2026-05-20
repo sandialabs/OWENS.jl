@@ -413,7 +413,11 @@ end
             "create_template_project",
         ]
         @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
+        @test route_catalog["routes"][3]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][3]["optional_params"] == ["summarize_runs"]
         @test route_catalog["routes"][5]["content_type"] == "text/html; charset=utf-8"
+        @test route_catalog["routes"][7]["required_params"] ==
+              ["project_path", "output_dir"]
 
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
         @test manifest_health["status"] == "ok"
@@ -572,6 +576,20 @@ end
         @test open_payload["actions"][3]["route"] == "project_script"
         @test open_payload["actions"][3]["enabled"] === true
 
+        dispatch_open = OWENS_APP.dispatch_studio_route(
+            "/api/project/open";
+            method = "GET",
+            params = (; project_path = project_file),
+        )
+        @test dispatch_open.status == 200
+        @test dispatch_open.content_type == "application/x-yaml; charset=utf-8"
+        dispatch_open_payload = YAML.load(
+            dispatch_open.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test dispatch_open_payload["project_file"] == project_file
+        @test dispatch_open_payload["routes"]["routes"][3]["name"] == "project_open"
+
         health_response = OWENS_APP.studio_project_health_route(project_file)
         @test health_response isa OWENS_APP.StudioRouteResponse
         @test health_response.status == 200
@@ -625,6 +643,37 @@ end
         )
         @test bundle_open_payload["project_file"] == project_file
         @test bundle_open_payload["actions"][4]["route"] == "project_bundle"
+
+        dispatch_bundle = OWENS_APP.dispatch_studio_route(
+            "project_bundle";
+            method = "POST",
+            params = Dict(
+                :project_path => project_file,
+                :output_dir => joinpath(dir, "dispatch-bundle"),
+                :include_script => false,
+            ),
+        )
+        @test dispatch_bundle.status == 200
+        dispatch_bundle_payload = YAML.load(
+            dispatch_bundle.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test isfile(dispatch_bundle_payload["open_file"])
+        @test dispatch_bundle_payload["script_file"] === nothing
+
+        bad_method = OWENS_APP.dispatch_studio_route(
+            "project_open";
+            method = "POST",
+            params = (; project_path = project_file),
+        )
+        @test bad_method.status == 405
+        @test occursin("not allowed", bad_method.body)
+        missing_param = OWENS_APP.dispatch_studio_route("project_open")
+        @test missing_param.status == 400
+        @test occursin("Missing Studio route parameter: project_path", missing_param.body)
+        missing_route = OWENS_APP.dispatch_studio_route("missing_route")
+        @test missing_route.status == 404
+        @test occursin("Unknown Studio route", missing_route.body)
 
         template_response = OWENS_APP.studio_project_template_route(
             joinpath(dir, "created-from-route");

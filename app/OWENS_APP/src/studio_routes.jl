@@ -1,5 +1,6 @@
 export studio_route_catalog,
     StudioRouteResponse,
+    dispatch_studio_route,
     studio_routes_route,
     studio_project_templates_route,
     studio_project_open_route,
@@ -49,6 +50,8 @@ function studio_route_catalog()
                 "studio_project_open_route",
                 "application/x-yaml; charset=utf-8",
                 "Open a project and return workbench bootstrap data.",
+                required_params = ["project_path"],
+                optional_params = ["summarize_runs"],
             ),
             _studio_route_record(
                 "project_health",
@@ -57,6 +60,8 @@ function studio_route_catalog()
                 "studio_project_health_route",
                 "application/x-yaml; charset=utf-8",
                 "Inspect Studio project health.",
+                required_params = ["project_path"],
+                optional_params = ["summarize_runs"],
             ),
             _studio_route_record(
                 "project_workbench",
@@ -65,6 +70,7 @@ function studio_route_catalog()
                 "studio_project_workbench_route",
                 "text/html; charset=utf-8",
                 "Render the Studio workbench HTML.",
+                required_params = ["project_path"],
             ),
             _studio_route_record(
                 "project_script",
@@ -73,6 +79,7 @@ function studio_route_catalog()
                 "studio_project_script_route",
                 "text/plain; charset=utf-8",
                 "Return the generated Julia driver.",
+                required_params = ["project_path"],
             ),
             _studio_route_record(
                 "project_bundle",
@@ -81,6 +88,8 @@ function studio_route_catalog()
                 "studio_project_bundle_route",
                 "application/x-yaml; charset=utf-8",
                 "Write a static workbench bundle.",
+                required_params = ["project_path", "output_dir"],
+                optional_params = ["include_script"],
             ),
             _studio_route_record(
                 "create_template_project",
@@ -89,9 +98,49 @@ function studio_route_catalog()
                 "studio_project_template_route",
                 "application/x-yaml; charset=utf-8",
                 "Create a project from a built-in template.",
+                required_params = ["target"],
+                optional_params = ["template", "overwrite", "created_at_utc"],
             ),
         ],
     )
+end
+
+"""
+    dispatch_studio_route(route; method=nothing, params=Dict())
+
+Resolve a Studio route by catalog name or path and call the matching
+dependency-light route handler. This keeps future Genie/HTTP glue thin: the web
+layer should translate query/body data into `params` and leave OWENS project
+semantics here.
+"""
+function dispatch_studio_route(
+    route::AbstractString;
+    method = nothing,
+    params = OrderedCollections.OrderedDict{String,Any}(),
+)
+    record = _studio_route_record_for(route)
+    if isnothing(record)
+        return _studio_route_error_response(
+            ArgumentError("Unknown Studio route: $route");
+            status = 404,
+        )
+    end
+
+    requested_method = isnothing(method) ? record["method"] : uppercase(string(method))
+    if requested_method != record["method"]
+        return _studio_route_error_response(
+            ArgumentError(
+                "Method $requested_method is not allowed for Studio route $(record["name"])",
+            );
+            status = 405,
+        )
+    end
+
+    try
+        return _dispatch_studio_route_name(record["name"], _studio_route_params(params))
+    catch err
+        return _studio_route_error_response(err)
+    end
 end
 
 """
@@ -219,13 +268,13 @@ function _studio_yaml_route_response(build_payload::Function)
     end
 end
 
-function _studio_route_error_response(err)
+function _studio_route_error_response(err; status::Integer = 400)
     payload = OrderedCollections.OrderedDict{String,Any}(
         "status" => "error",
         "message" => sprint(showerror, err),
     )
     return StudioRouteResponse(
-        400,
+        Int(status),
         "application/x-yaml; charset=utf-8",
         _studio_yaml_body(payload),
     )
@@ -245,6 +294,9 @@ function _studio_route_record(
     handler::AbstractString,
     content_type::AbstractString,
     description::AbstractString,
+    ;
+    required_params = String[],
+    optional_params = String[],
 )
     return OrderedCollections.OrderedDict{String,Any}(
         "name" => string(name),
@@ -253,5 +305,79 @@ function _studio_route_record(
         "handler" => string(handler),
         "content_type" => string(content_type),
         "description" => string(description),
+        "required_params" => string.(required_params),
+        "optional_params" => string.(optional_params),
     )
+end
+
+function _studio_route_record_for(route::AbstractString)
+    route_id = string(route)
+    for record in studio_route_catalog()["routes"]
+        if route_id == record["name"] || route_id == record["path"]
+            return record
+        end
+    end
+    return nothing
+end
+
+function _dispatch_studio_route_name(name::AbstractString, params::AbstractDict)
+    if name == "route_catalog"
+        return studio_routes_route()
+    elseif name == "template_catalog"
+        return studio_project_templates_route()
+    elseif name == "project_open"
+        return studio_project_open_route(
+            _studio_route_required(params, "project_path");
+            summarize_runs = _studio_route_optional(params, "summarize_runs", true),
+        )
+    elseif name == "project_health"
+        return studio_project_health_route(
+            _studio_route_required(params, "project_path");
+            summarize_runs = _studio_route_optional(params, "summarize_runs", true),
+        )
+    elseif name == "project_workbench"
+        return studio_project_workbench_route(
+            _studio_route_required(params, "project_path"),
+        )
+    elseif name == "project_script"
+        return studio_project_script_route(_studio_route_required(params, "project_path"))
+    elseif name == "project_bundle"
+        return studio_project_bundle_route(
+            _studio_route_required(params, "project_path"),
+            _studio_route_required(params, "output_dir");
+            include_script = _studio_route_optional(params, "include_script", true),
+        )
+    elseif name == "create_template_project"
+        return studio_project_template_route(
+            _studio_route_required(params, "target");
+            template = _studio_route_optional(params, "template", "rm2"),
+            overwrite = _studio_route_optional(params, "overwrite", false),
+            created_at_utc = _studio_route_optional(params, "created_at_utc", nothing),
+        )
+    end
+
+    throw(ArgumentError("Unhandled Studio route: $name"))
+end
+
+function _studio_route_params(params)
+    if isnothing(params)
+        return OrderedCollections.OrderedDict{String,Any}()
+    elseif params isa AbstractDict || params isa NamedTuple
+        normalized = OrderedCollections.OrderedDict{String,Any}()
+        for (key, value) in pairs(params)
+            normalized[string(key)] = value
+        end
+        return normalized
+    end
+
+    throw(ArgumentError("Studio route params must be a dictionary or named tuple"))
+end
+
+function _studio_route_required(params::AbstractDict, key::AbstractString)
+    haskey(params, key) || throw(ArgumentError("Missing Studio route parameter: $key"))
+    return params[key]
+end
+
+function _studio_route_optional(params::AbstractDict, key::AbstractString, default)
+    return haskey(params, key) ? params[key] : default
 end

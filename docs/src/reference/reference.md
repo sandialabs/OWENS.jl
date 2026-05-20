@@ -67,6 +67,9 @@ Use `open_studio_project(project_path)` in `OWENS_APP` as the one-call
 workbench bootstrap payload after a user selects a project.
 Use `studio_route_catalog()` in `OWENS_APP` to keep the future Genie route table
 aligned with the tested service handlers.
+Use `dispatch_studio_route(route; method, params)` to resolve those catalog
+entries by name or path without duplicating route dispatch logic in the web
+shell.
 Use `studio_project_generated_script_path(project_or_path)` and
 `read_studio_project_generated_script(project_or_path)` when the GUI needs to
 show or export the exact Julia driver attached to a project.
