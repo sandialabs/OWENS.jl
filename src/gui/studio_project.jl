@@ -7,10 +7,12 @@ export build_studio_project,
     studio_project_generated_script_path,
     read_studio_project_generated_script,
     render_studio_workbench_html,
-    write_studio_workbench_html
+    write_studio_workbench_html,
+    write_studio_workbench_bundle
 
 const STUDIO_PROJECT_SCHEMA_VERSION = "owens-studio-project/v1"
 const STUDIO_WORKBENCH_SCHEMA_VERSION = "owens-studio-workbench/v1"
+const STUDIO_WORKBENCH_BUNDLE_SCHEMA_VERSION = "owens-studio-bundle/v1"
 const STUDIO_PROJECT_REQUIRED_KEYS = [
     "schema_version",
     "project_id",
@@ -290,13 +292,17 @@ function read_studio_project_generated_script(
 end
 
 """
-    render_studio_workbench_html(project_or_health)
+    render_studio_workbench_html(project_or_health; health_href=nothing, script_href=nothing)
 
 Render a dependency-light OWENS Studio workbench shell as static HTML. This is
 the first GUI slice: a project health view that later Genie routes can serve
 without changing the underlying health API.
 """
-function render_studio_workbench_html(project_or_health)
+function render_studio_workbench_html(
+    project_or_health;
+    health_href = nothing,
+    script_href = nothing,
+)
     health = _studio_health_input(project_or_health)
     title = _html_escape(string(get(health, "name", "OWENS Studio")))
     status = _html_escape(string(health["status"]))
@@ -472,6 +478,7 @@ function render_studio_workbench_html(project_or_health)
       <p>$(_html_escape(string(health["root"])))</p>
       <h3>Project Manifest</h3>
       <p>$(_html_escape(string(get(health, "project_path", nothing))))</p>
+      $(_studio_artifact_links_html(health_href, script_href))
       $(_studio_generated_script_html(health))
     </aside>
   </div>
@@ -497,6 +504,63 @@ function write_studio_workbench_html(path::AbstractString, project_or_health)
     end
 
     return html
+end
+
+"""
+    write_studio_workbench_bundle(output_dir, project_path; include_script=true)
+
+Write a static OWENS Studio workbench bundle containing `index.html`,
+`health.yml`, and, when available, `generated_script.jl`. This provides a
+server-free GUI artifact for review and gives the future web shell the exact
+files it should serve.
+"""
+function write_studio_workbench_bundle(
+    output_dir::AbstractString,
+    project_path::AbstractString;
+    include_script::Bool = true,
+)
+    bundle_dir = abspath(output_dir)
+    mkpath(bundle_dir)
+
+    health = studio_project_health(project_path)
+    health_file = joinpath(bundle_dir, "health.yml")
+    YAML.write_file(health_file, health)
+
+    script_file = nothing
+    if include_script
+        script = read_studio_project_generated_script(project_path; required = false)
+        if !isnothing(script)
+            script_file = joinpath(bundle_dir, "generated_script.jl")
+            open(script_file, "w") do io
+                write(io, script)
+            end
+        end
+    end
+
+    index_file = joinpath(bundle_dir, "index.html")
+    html = render_studio_workbench_html(
+        health;
+        health_href = basename(health_file),
+        script_href = isnothing(script_file) ? nothing : basename(script_file),
+    )
+    open(index_file, "w") do io
+        write(io, html)
+    end
+
+    return OrderedCollections.OrderedDict{String,Any}(
+        "schema_version" => STUDIO_WORKBENCH_BUNDLE_SCHEMA_VERSION,
+        "bundle_dir" => bundle_dir,
+        "project_file" => abspath(project_path),
+        "index_html" => index_file,
+        "health_file" => health_file,
+        "script_file" => script_file,
+        "project_status" => health["status"],
+        "bytes" => OrderedCollections.OrderedDict{String,Any}(
+            "index_html" => stat(index_file).size,
+            "health_file" => stat(health_file).size,
+            "script_file" => isnothing(script_file) ? nothing : stat(script_file).size,
+        ),
+    )
 end
 
 function _push_studio_file_record!(
@@ -654,6 +718,19 @@ function _studio_issues_html(issues::AbstractVector)
         ["<p class=\"issue\">$(_html_escape(string(issue)))</p>" for issue in issues],
         "\n",
     )
+end
+
+function _studio_artifact_links_html(health_href, script_href)
+    links = String[]
+    if health_href isa AbstractString && !isempty(health_href)
+        push!(links, "<a href=\"$(_html_escape(health_href))\">Health YAML</a>")
+    end
+    if script_href isa AbstractString && !isempty(script_href)
+        push!(links, "<a href=\"$(_html_escape(script_href))\">Generated Julia</a>")
+    end
+    isempty(links) && return ""
+
+    return "<h3>Artifacts</h3>\n      <p>" * join(links, " &middot; ") * "</p>"
 end
 
 function _studio_generated_script_html(health::AbstractDict)

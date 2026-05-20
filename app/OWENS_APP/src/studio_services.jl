@@ -4,6 +4,7 @@ export inspect_run_manifest,
     create_studio_template_project,
     inspect_studio_project,
     inspect_studio_project_script,
+    write_studio_project_bundle,
     write_studio_project_workbench
 
 function inspect_run_manifest(
@@ -87,6 +88,14 @@ function inspect_studio_project_script(path::AbstractString)
         "script_file" => script_path,
         "script" => script,
     )
+end
+
+function write_studio_project_bundle(
+    output_dir::AbstractString,
+    project_path::AbstractString;
+    include_script::Bool = true,
+)
+    return OWENS.write_studio_workbench_bundle(output_dir, project_path; include_script)
 end
 
 function write_studio_project_workbench(output_html::AbstractString, project_or_health;)

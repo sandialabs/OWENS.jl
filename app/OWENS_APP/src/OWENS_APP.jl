@@ -16,6 +16,7 @@ OWENS_APP Studio service commands:
   project-health <owens_project.yml>
   project-script <owens_project.yml>
   project-html <owens_project.yml> <output.html>
+  project-bundle <owens_project.yml> <output_dir>
 """
 
 function julia_main()::Cint
@@ -59,6 +60,8 @@ function _dispatch_command(args)
             "bytes" => sizeof(html),
             "project_status" => project_health["status"],
         )
+    elseif command == "project-bundle" && length(args) == 3
+        return write_studio_project_bundle(args[3], args[2])
     end
 
     throw(ArgumentError(USAGE))

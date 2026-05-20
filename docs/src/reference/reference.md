@@ -64,6 +64,9 @@ without duplicating project logic.
 Use `studio_project_generated_script_path(project_or_path)` and
 `read_studio_project_generated_script(project_or_path)` when the GUI needs to
 show or export the exact Julia driver attached to a project.
+Use `write_studio_workbench_bundle(output_dir, project_path)` to create a
+server-free workbench directory with HTML, health YAML, and the generated Julia
+driver.
 
 The public helpers are:
 
@@ -97,6 +100,7 @@ The public helpers are:
 - `read_studio_project_generated_script(project_or_path)`
 - `render_studio_workbench_html(project_or_health)`
 - `write_studio_workbench_html(path, project_or_health)`
+- `write_studio_workbench_bundle(output_dir, project_path)`
 - `studio_project_template_names()`
 - `create_studio_project_template(target)`
 

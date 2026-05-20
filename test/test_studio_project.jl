@@ -257,6 +257,33 @@ end
               created["script_file"]
         @test OWENS.read_studio_project_generated_script(created["project_file"]) ==
               created["script"]
+        bundle = OWENS.write_studio_workbench_bundle(
+            joinpath(dir, "rm2-bundle"),
+            created["project_file"],
+        )
+        @test bundle["schema_version"] == "owens-studio-bundle/v1"
+        @test bundle["project_file"] == created["project_file"]
+        @test bundle["project_status"] == "ok"
+        @test isdir(bundle["bundle_dir"])
+        @test isfile(bundle["index_html"])
+        @test isfile(bundle["health_file"])
+        @test isfile(bundle["script_file"])
+        @test bundle["bytes"]["index_html"] == stat(bundle["index_html"]).size
+        @test bundle["bytes"]["health_file"] == stat(bundle["health_file"]).size
+        @test bundle["bytes"]["script_file"] == stat(bundle["script_file"]).size
+        @test read(bundle["script_file"], String) == created["script"]
+        bundle_html = read(bundle["index_html"], String)
+        @test occursin("Health YAML", bundle_html)
+        @test occursin("Generated Julia", bundle_html)
+        @test occursin("health.yml", bundle_html)
+        @test occursin("generated_script.jl", bundle_html)
+        bundle_health = YAML.load_file(
+            bundle["health_file"];
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test bundle_health["status"] == "ok"
+        @test bundle_health["metadata"]["generated_script"] ==
+              joinpath("runs", "rm2", "run_rm2_windio.jl")
 
         health = OWENS.studio_project_health(created["project_file"])
         @test health["status"] == "ok"
@@ -405,6 +432,15 @@ end
         )
         @test script_cli["script_file"] == template_cli["script_file"]
         @test occursin("OWENS.runOWENSWINDIO", script_cli["script"])
+        bundle_cli = OWENS_APP.real_main(
+            ["project-bundle", template_cli["project_file"], joinpath(dir, "bundle-cli")];
+            io = IOBuffer(),
+        )
+        @test bundle_cli["schema_version"] == "owens-studio-bundle/v1"
+        @test bundle_cli["project_status"] == "ok"
+        @test isfile(bundle_cli["index_html"])
+        @test isfile(bundle_cli["health_file"])
+        @test isfile(bundle_cli["script_file"])
         project_cli = OWENS_APP.real_main(["project-health", project_file]; io = IOBuffer())
         @test project_cli["status"] == "ok"
         project_html_cli =
@@ -455,6 +491,22 @@ end
         @test script_response.content_type == "text/plain; charset=utf-8"
         @test script_response.body == created["script"]
         @test occursin("OWENS.runOWENSWINDIO", script_response.body)
+
+        bundle_response = OWENS_APP.studio_project_bundle_route(
+            project_file,
+            joinpath(dir, "route-bundle"),
+        )
+        @test bundle_response.status == 200
+        @test bundle_response.content_type == "application/x-yaml; charset=utf-8"
+        bundle_payload = YAML.load(
+            bundle_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test bundle_payload["schema_version"] == "owens-studio-bundle/v1"
+        @test bundle_payload["project_status"] == "ok"
+        @test isfile(bundle_payload["index_html"])
+        @test isfile(bundle_payload["health_file"])
+        @test isfile(bundle_payload["script_file"])
 
         template_response = OWENS_APP.studio_project_template_route(
             joinpath(dir, "created-from-route");

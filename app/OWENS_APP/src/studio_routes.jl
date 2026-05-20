@@ -2,6 +2,7 @@ export StudioRouteResponse,
     studio_project_health_route,
     studio_project_workbench_route,
     studio_project_script_route,
+    studio_project_bundle_route,
     studio_project_template_route
 
 struct StudioRouteResponse
@@ -51,6 +52,22 @@ function studio_project_script_route(project_path::AbstractString)
         return StudioRouteResponse(200, "text/plain; charset=utf-8", script)
     catch err
         return _studio_route_error_response(err)
+    end
+end
+
+"""
+    studio_project_bundle_route(project_path, output_dir)
+
+Write the static workbench bundle and return its file manifest as a route
+response.
+"""
+function studio_project_bundle_route(
+    project_path::AbstractString,
+    output_dir::AbstractString;
+    include_script::Bool = true,
+)
+    return _studio_yaml_route_response() do
+        write_studio_project_bundle(output_dir, project_path; include_script)
     end
 end
 
