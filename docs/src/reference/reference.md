@@ -21,6 +21,11 @@ with channel metadata. Use `output_data_channels()` when postprocessing tools,
 validation dashboards, or GUI code need stable units and axis labels without
 hard-coding dataset positions.
 
+Use `output_data_summary(path)` to inspect which registered channels are
+present in an HDF5 result file, including shape, element type, units, and
+metadata-attribute mismatches, without reading the full result arrays. This is
+the preferred entry point for GUI channel pickers and validation dashboards.
+
 The public helpers are:
 
 - `ResultChannel`
@@ -28,6 +33,7 @@ The public helpers are:
 - `output_data_channel(name)`
 - `output_data_channel_names()`
 - `annotate_output_data_channels!(file)`
+- `output_data_summary(path)`
 - `WindIORunSpec`
 - `windio_run_spec(modeling_options_file, windio_file, run_path)`
 - `render_windio_run_script(spec)`

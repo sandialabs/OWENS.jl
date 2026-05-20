@@ -2,7 +2,8 @@ export ResultChannel,
     output_data_channels,
     output_data_channel,
     output_data_channel_names,
-    annotate_output_data_channels!
+    annotate_output_data_channels!,
+    output_data_summary
 
 struct ResultChannel
     name::String
@@ -502,4 +503,155 @@ function annotate_output_data_channels!(file)
     end
 
     return file
+end
+
+"""
+    output_data_summary(path; channels=output_data_channel_names(), include_unregistered=false)
+
+Inspect an OWENS `outputData` HDF5 file and return one summary row per
+requested registered channel. Missing registered channels are returned with
+`present=false`; root-level unregistered datasets are appended only when
+`include_unregistered=true`. The helper reads dataset headers and attributes,
+not full dataset contents.
+"""
+function output_data_summary(
+    path::AbstractString;
+    channels = output_data_channel_names(),
+    include_unregistered::Bool = false,
+)
+    isfile(path) || throw(ArgumentError("Cannot summarize missing output file: $path"))
+
+    requested_channels = _output_summary_channels(channels)
+    for name in requested_channels
+        haskey(OUTPUT_DATA_CHANNEL_MAP, name) ||
+            throw(KeyError("No outputData result channel is registered for $name"))
+    end
+
+    HDF5.h5open(path, "r") do file
+        summaries = [_registered_output_summary(file, name) for name in requested_channels]
+        if include_unregistered
+            registered_names = output_data_channel_names()
+            extras = sort(setdiff(_root_dataset_names(file), registered_names))
+            return vcat(
+                summaries,
+                [_unregistered_output_summary(file, name) for name in extras],
+            )
+        end
+
+        return summaries
+    end
+end
+
+_root_dataset_names(file) =
+    String[name for name in keys(file) if file[name] isa HDF5.Dataset]
+
+_output_summary_channels(channels::AbstractString) = [String(channels)]
+_output_summary_channels(channels) = String.(collect(channels))
+
+function _registered_output_summary(file, name::AbstractString)
+    channel = output_data_channel(name)
+    if !haskey(file, name) || !(file[name] isa HDF5.Dataset)
+        return _output_summary_row(
+            channel;
+            present = false,
+            shape = missing,
+            ndims = missing,
+            eltype = missing,
+            has_channel_attrs = false,
+            attr_mismatches = String[],
+        )
+    end
+
+    dataset = file[name]
+    dataset_attrs = HDF5.attrs(dataset)
+    return _output_summary_row(
+        channel;
+        present = true,
+        shape = collect(Int, size(dataset)),
+        ndims = length(size(dataset)),
+        eltype = string(eltype(dataset)),
+        has_channel_attrs = _has_channel_attrs(dataset_attrs),
+        attr_mismatches = _channel_attr_mismatches(dataset_attrs, channel),
+    )
+end
+
+function _unregistered_output_summary(file, name::AbstractString)
+    dataset = file[name]
+    return (
+        name = string(name),
+        present = true,
+        registered = false,
+        shape = collect(Int, size(dataset)),
+        ndims = length(size(dataset)),
+        eltype = string(eltype(dataset)),
+        units = missing,
+        dimensions = missing,
+        frame = missing,
+        association = missing,
+        source = missing,
+        sign_convention = missing,
+        description = missing,
+        has_channel_attrs = false,
+        attr_mismatches = String[],
+    )
+end
+
+function _output_summary_row(
+    channel::ResultChannel;
+    present,
+    shape,
+    ndims,
+    eltype,
+    has_channel_attrs::Bool,
+    attr_mismatches::Vector{String},
+)
+    return (
+        name = channel.name,
+        present,
+        registered = true,
+        shape,
+        ndims,
+        eltype,
+        units = channel.units,
+        dimensions = copy(channel.dimensions),
+        frame = channel.frame,
+        association = channel.association,
+        source = channel.source,
+        sign_convention = channel.sign_convention,
+        description = channel.description,
+        has_channel_attrs,
+        attr_mismatches,
+    )
+end
+
+const OUTPUT_DATA_CHANNEL_ATTRS = OrderedCollections.OrderedDict{String,Function}(
+    "owens_channel_name" => channel -> channel.name,
+    "units" => channel -> channel.units,
+    "dimensions" => channel -> join(channel.dimensions, ","),
+    "frame" => channel -> channel.frame,
+    "association" => channel -> channel.association,
+    "source" => channel -> channel.source,
+    "sign_convention" => channel -> channel.sign_convention,
+    "description" => channel -> channel.description,
+)
+
+function _has_channel_attrs(dataset_attrs)
+    return all(haskey(dataset_attrs, key) for key in keys(OUTPUT_DATA_CHANNEL_ATTRS))
+end
+
+function _channel_attr_mismatches(dataset_attrs, channel::ResultChannel)
+    mismatches = String[]
+    for (key, expected_func) in OUTPUT_DATA_CHANNEL_ATTRS
+        expected = expected_func(channel)
+        if !haskey(dataset_attrs, key)
+            push!(mismatches, "missing:$key")
+        elseif dataset_attrs[key] != expected
+            push!(
+                mismatches,
+                "$key: expected $(repr(expected)), got $(repr(dataset_attrs[key]))",
+            )
+        end
+    end
+
+    return mismatches
 end
