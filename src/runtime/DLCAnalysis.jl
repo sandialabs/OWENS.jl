@@ -6,6 +6,7 @@ export DLC_internal,
     getDLCparams,
     generateUniformwind,
     generateTurbsimBTS,
+    renderTurbsimInputLines,
     getGustVel,
     simpleGustVel,
     iecExtremeWindSpeeds
@@ -74,6 +75,53 @@ mutable struct DLC_internal
     LinVertShear::Any
     gustvel::Any
     UpflowAngle::Any
+end
+
+const TURBSIM_DLC_EXCLUDED_FIELDS = (
+    :Vinf_range_used,
+    :analysis_type,
+    :controlStrategy,
+    :time,
+    :windvel,
+    :winddir,
+    :windvertvel,
+    :horizshear,
+    :pwrLawVertShear,
+    :LinVertShear,
+    :gustvel,
+    :UpflowAngle,
+)
+
+"""
+    renderTurbsimInputLines(lines, DLCParams)
+
+Return a rendered copy of a TurbSim input template using scalar values from
+`DLCParams`.
+
+TurbSim template lines are matched by exact descriptor keys in the second
+whitespace-separated column before the ` - ` comment separator.  Time-series
+and OWENS-only DLC fields are intentionally skipped because they do not map to
+scalar TurbSim input keys.
+"""
+function renderTurbsimInputLines(lines, DLCParams)
+    turbsim_values = Dict{String,Any}()
+    for fieldname in fieldnames(typeof(DLCParams))
+        fieldname in TURBSIM_DLC_EXCLUDED_FIELDS && continue
+        turbsim_values[String(fieldname)] = getfield(DLCParams, fieldname)
+    end
+
+    return map(lines) do line
+        split_line = split(line, " - "; limit = 2)
+        length(split_line) == 2 || return line
+
+        value_and_key = split(strip(split_line[1]))
+        length(value_and_key) >= 2 || return line
+
+        key = value_and_key[2]
+        haskey(turbsim_values, key) || return line
+
+        return "$(turbsim_values[key]) $key - $(split_line[2])"
+    end
 end
 
 """
@@ -715,27 +763,7 @@ function generateTurbsimBTS(
     templatefile = "$module_path/template_files/templateTurbSim.inp",
 )
 
-    lines = readlines(templatefile)
-
-    for fieldname in fieldnames(typeof(DLCParams))
-        turbsimKeyName = String(fieldname)
-        myvalue = getfield(DLCParams, fieldname)
-        if turbsimKeyName != "Vinf_range_used" ||
-           turbsimKeyName != "analysis_type" ||
-           turbsimKeyName != "ControlStrategy"# || other strings
-            for (iline, line) in enumerate(lines)
-                if contains(line, " - ") #TODO: this assumes that the keys aren't in the comments
-                    linenocomments, comments = split(line, " - ")
-                    if contains(linenocomments, turbsimKeyName)
-                        value, descriptor = split(linenocomments)
-                        newline = "$myvalue $turbsimKeyName - $comments"
-                        lines[iline] = newline
-                        break
-                    end
-                end
-            end
-        end
-    end
+    lines = renderTurbsimInputLines(readlines(templatefile), DLCParams)
 
     # Write the new file
     open(windINPfilename, "w") do file
