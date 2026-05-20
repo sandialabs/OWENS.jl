@@ -1,6 +1,7 @@
 export inspect_run_manifest,
     inspect_output_data,
     prepare_windio_run,
+    list_studio_project_templates,
     create_studio_template_project,
     inspect_studio_project,
     inspect_studio_project_script,
@@ -51,6 +52,10 @@ function prepare_windio_run(
         "script" => script,
         "manifest" => manifest,
     )
+end
+
+function list_studio_project_templates()
+    return OWENS.studio_project_template_catalog()
 end
 
 function create_studio_template_project(

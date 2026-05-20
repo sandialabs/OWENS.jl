@@ -1,4 +1,5 @@
 export StudioRouteResponse,
+    studio_project_templates_route,
     studio_project_health_route,
     studio_project_workbench_route,
     studio_project_script_route,
@@ -9,6 +10,17 @@ struct StudioRouteResponse
     status::Int
     content_type::String
     body::String
+end
+
+"""
+    studio_project_templates_route()
+
+Return the built-in OWENS Studio project template catalog as a route response.
+"""
+function studio_project_templates_route()
+    return _studio_yaml_route_response() do
+        list_studio_project_templates()
+    end
 end
 
 """

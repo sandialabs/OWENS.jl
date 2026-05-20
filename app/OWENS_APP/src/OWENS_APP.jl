@@ -9,6 +9,7 @@ include("studio_routes.jl")
 const USAGE = """
 OWENS_APP Studio service commands:
 
+  project-templates
   manifest-health <run_manifest.yml>
   output-summary <results.h5>
   windio-script <modeling_options.yml> <windio.yml> <run_path>
@@ -40,7 +41,9 @@ function _dispatch_command(args)
     isempty(args) && throw(ArgumentError(USAGE))
     command = args[1]
 
-    if command == "manifest-health" && length(args) == 2
+    if command == "project-templates" && length(args) == 1
+        return list_studio_project_templates()
+    elseif command == "manifest-health" && length(args) == 2
         return inspect_run_manifest(args[2])
     elseif command == "output-summary" && length(args) == 2
         return inspect_output_data(args[2])

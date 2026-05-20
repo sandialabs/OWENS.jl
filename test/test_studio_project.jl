@@ -178,6 +178,29 @@ end
 
 @testset "OWENS Studio template projects" begin
     @test OWENS.studio_project_template_names() == ["blank", "rm2"]
+    catalog = OWENS.studio_project_template_catalog()
+    @test collect(keys(catalog)) == ["schema_version", "templates"]
+    @test catalog["schema_version"] == "owens-studio-template-catalog/v1"
+    @test catalog["templates"] == OrderedCollections.OrderedDict{String,Any}[
+        OrderedCollections.OrderedDict{String,Any}(
+            "template" => "blank",
+            "title" => "Blank OWENS Studio Project",
+            "description" => "Blank OWENS Studio project",
+            "turbine_type" => "custom",
+            "solver_path" => nothing,
+            "creates_generated_script" => false,
+            "creates_run_manifest" => false,
+        ),
+        OrderedCollections.OrderedDict{String,Any}(
+            "template" => "rm2",
+            "title" => "RM2 VAWT Template",
+            "description" => "RM2 VAWT WindIO project",
+            "turbine_type" => "VAWT",
+            "solver_path" => "runOWENSWINDIO",
+            "creates_generated_script" => true,
+            "creates_run_manifest" => true,
+        ),
+    ]
 
     mktempdir() do dir
         target = joinpath(dir, "rm2-studio")
@@ -374,6 +397,10 @@ end
             created_at_utc = "2026-05-20T00:00:00.000Z",
         )
 
+        template_catalog = OWENS_APP.list_studio_project_templates()
+        @test template_catalog["schema_version"] == "owens-studio-template-catalog/v1"
+        @test [row["template"] for row in template_catalog["templates"]] == ["blank", "rm2"]
+
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
         @test manifest_health["status"] == "ok"
         @test manifest_health["summary"]["records"] == 3
@@ -409,6 +436,9 @@ end
         manifest_cli =
             OWENS_APP.real_main(["manifest-health", manifest_file]; io = IOBuffer())
         @test manifest_cli["status"] == "ok"
+        templates_cli = OWENS_APP.real_main(["project-templates"]; io = IOBuffer())
+        @test templates_cli["schema_version"] == "owens-studio-template-catalog/v1"
+        @test templates_cli["templates"][2]["solver_path"] == "runOWENSWINDIO"
         summary_cli = OWENS_APP.real_main(["output-summary", output_file]; io = IOBuffer())
         @test summary_cli["channels"][1]["name"] == "t"
         windio_cli = OWENS_APP.real_main(
@@ -461,6 +491,17 @@ end
             created_at_utc = "2026-05-20T00:00:00.000Z",
         )
         project_file = created["project_file"]
+
+        templates_response = OWENS_APP.studio_project_templates_route()
+        @test templates_response.status == 200
+        @test templates_response.content_type == "application/x-yaml; charset=utf-8"
+        templates_payload = YAML.load(
+            templates_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test templates_payload["schema_version"] == "owens-studio-template-catalog/v1"
+        @test templates_payload["templates"][1]["template"] == "blank"
+        @test templates_payload["templates"][2]["template"] == "rm2"
 
         health_response = OWENS_APP.studio_project_health_route(project_file)
         @test health_response isa OWENS_APP.StudioRouteResponse

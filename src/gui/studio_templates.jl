@@ -1,9 +1,47 @@
-export studio_project_template_names, create_studio_project_template
+export studio_project_template_catalog,
+    studio_project_template_names, create_studio_project_template
 
-const STUDIO_PROJECT_TEMPLATES = OrderedCollections.OrderedDict{String,String}(
-    "blank" => "Blank OWENS Studio project",
-    "rm2" => "RM2 VAWT WindIO project",
+const STUDIO_TEMPLATE_CATALOG_SCHEMA_VERSION = "owens-studio-template-catalog/v1"
+const STUDIO_PROJECT_TEMPLATES = OrderedCollections.OrderedDict{String,Any}(
+    "blank" => OrderedCollections.OrderedDict{String,Any}(
+        "title" => "Blank OWENS Studio Project",
+        "description" => "Blank OWENS Studio project",
+        "turbine_type" => "custom",
+        "solver_path" => nothing,
+        "creates_generated_script" => false,
+        "creates_run_manifest" => false,
+    ),
+    "rm2" => OrderedCollections.OrderedDict{String,Any}(
+        "title" => "RM2 VAWT Template",
+        "description" => "RM2 VAWT WindIO project",
+        "turbine_type" => "VAWT",
+        "solver_path" => "runOWENSWINDIO",
+        "creates_generated_script" => true,
+        "creates_run_manifest" => true,
+    ),
 )
+
+"""
+    studio_project_template_catalog()
+
+Return a stable catalog of built-in OWENS Studio templates for GUI project
+creation controls.
+"""
+function studio_project_template_catalog()
+    templates = OrderedCollections.OrderedDict{String,Any}[]
+    for (template, metadata) in STUDIO_PROJECT_TEMPLATES
+        row = OrderedCollections.OrderedDict{String,Any}("template" => template)
+        for (key, value) in metadata
+            row[key] = value
+        end
+        push!(templates, row)
+    end
+
+    return OrderedCollections.OrderedDict{String,Any}(
+        "schema_version" => STUDIO_TEMPLATE_CATALOG_SCHEMA_VERSION,
+        "templates" => templates,
+    )
+end
 
 """
     studio_project_template_names()
@@ -53,7 +91,7 @@ function _create_blank_studio_project_template(project_root; created_at_utc)
         description = "Blank project scaffold for building a new OWENS model.",
         metadata = OrderedCollections.OrderedDict{String,Any}(
             "template" => "blank",
-            "template_description" => STUDIO_PROJECT_TEMPLATES["blank"],
+            "template_description" => _studio_template_description("blank"),
         ),
         created_at_utc,
     )
@@ -100,7 +138,7 @@ function _create_rm2_studio_project_template(project_root; overwrite, created_at
         generated_files = [script_file],
         metadata = OrderedCollections.OrderedDict{String,Any}(
             "template" => "rm2",
-            "template_description" => STUDIO_PROJECT_TEMPLATES["rm2"],
+            "template_description" => _studio_template_description("rm2"),
         ),
         status = "created",
         created_at_utc,
@@ -118,7 +156,7 @@ function _create_rm2_studio_project_template(project_root; overwrite, created_at
         run_manifests = [manifest_file],
         metadata = OrderedCollections.OrderedDict{String,Any}(
             "template" => "rm2",
-            "template_description" => STUDIO_PROJECT_TEMPLATES["rm2"],
+            "template_description" => _studio_template_description("rm2"),
             "generated_script" => relpath(script_file, project_root),
         ),
         created_at_utc,
@@ -134,6 +172,9 @@ function _create_rm2_studio_project_template(project_root; overwrite, created_at
         "script" => script,
     )
 end
+
+_studio_template_description(template::AbstractString) =
+    string(STUDIO_PROJECT_TEMPLATES[string(template)]["description"])
 
 function _prepare_studio_template_root(project_root::AbstractString, overwrite::Bool)
     if isdir(project_root)
