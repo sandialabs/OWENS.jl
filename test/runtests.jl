@@ -41,6 +41,10 @@ end
     include("$path/test_output_data_channels.jl")
 end
 
+@testset "WindIO Run Spec" begin
+    include("$path/test_windio_run_spec.jl")
+end
+
 @testset "VTK History Output" begin
     include("$path/test_visualization_history.jl")
 end
