@@ -101,9 +101,11 @@ vars = MAT.matread(file)
 told = vars["t"]
 FReactionHistold = vars["FReactionHist"]
 
+maxFReaction_idx = size(FReactionHistold,1)
+@test length(t) == size(FReactionHist,1)
+@test maxFReaction_idx == length(t) - 1
 
-
-for i_t = round(Int,length(t)/20):length(t)
+for i_t = round(Int,maxFReaction_idx/20):maxFReaction_idx
     # println(i_t)
     digits = 1e-4 
     @test isapprox(FReactionHistold[i_t,1],FReactionHist[i_t,1];atol= max(abs(FReactionHistold[i_t,1] * digits),digits))

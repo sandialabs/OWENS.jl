@@ -353,8 +353,9 @@ function Unsteady(
     timeconverged = false
 
     pbar = ProgressBars.ProgressBar(total = numTS-1)
+    last_saved_index = 1
 
-    while (i<numTS-1) && timeconverged == false # we compute for the next time step, so the last step of our desired time series is computed in the second to last numTS value
+    while (i<numTS-1) && timeconverged == false
         i += 1
 
         ProgressBars.update(pbar)
@@ -1245,6 +1246,7 @@ function Unsteady(
             recent_FPtfm = hcat(recent_FPtfm[:, 2:end], FPtfm_n)
             recent_times = vcat(recent_times[2:end], t[i+1])
         end
+        last_saved_index = i + 1
 
     end #end timestep loop
 
@@ -1260,31 +1262,35 @@ function Unsteady(
         OWENSOpenFASTWrappers.endTurb()
     end
 
-    return t[1:i],
-    aziHist[1:i],
-    OmegaHist[1:i],
-    OmegaDotHist[1:i],
-    gbHist[1:i],
-    gbDotHist[1:i],
-    gbDotDotHist[1:i],
-    FReactionHist[1:i, :],
-    FTwrBsHist[1:i, :],
-    genTorque[1:i],
-    genPower[1:i],
-    torqueDriveShaft[1:i],
-    uHist[1:i, :],
-    uHist_prp[1:i, :],
-    epsilon_x_hist[:, :, 1:i],
-    epsilon_y_hist[:, :, 1:i],
-    epsilon_z_hist[:, :, 1:i],
-    kappa_x_hist[:, :, 1:i],
-    kappa_y_hist[:, :, 1:i],
-    kappa_z_hist[:, :, 1:i],
-    FPtfmHist[1:i, :],
-    FHydroHist[1:i, :],
-    FMooringHist[1:i, :],
-    topFexternal_hist[1:i, :],
-    rbDataHist[1:i, :]
+    history_ranges = completedHistoryRanges(last_saved_index, numTS)
+    state_range = history_ranges.state
+    step_range = history_ranges.step
+
+    return t[state_range],
+    aziHist[state_range],
+    OmegaHist[state_range],
+    OmegaDotHist[state_range],
+    gbHist[state_range],
+    gbDotHist[state_range],
+    gbDotDotHist[state_range],
+    FReactionHist[state_range, :],
+    FTwrBsHist[state_range, :],
+    genTorque[state_range],
+    genPower[state_range],
+    torqueDriveShaft[state_range],
+    uHist[state_range, :],
+    uHist_prp[state_range, :],
+    epsilon_x_hist[:, :, step_range],
+    epsilon_y_hist[:, :, step_range],
+    epsilon_z_hist[:, :, step_range],
+    kappa_x_hist[:, :, step_range],
+    kappa_y_hist[:, :, step_range],
+    kappa_z_hist[:, :, step_range],
+    FPtfmHist[state_range, :],
+    FHydroHist[state_range, :],
+    FMooringHist[state_range, :],
+    topFexternal_hist[state_range, :],
+    rbDataHist[state_range, :]
 end
 
 function structuralDynamicsTransientGX(
