@@ -36,6 +36,12 @@ Use `run_manifest_issues(manifest_or_path)` and
 retain the expected schema, file-record shape, byte counts, and SHA-256 digest
 format before a GUI or validation dashboard trusts them.
 
+Use `verify_file_provenance(record; root)` and
+`run_manifest_health(manifest_or_path)` to detect missing, modified, or
+malformed run artifacts from a manifest. `run_manifest_health` can also attach
+`output_data_summary` rows for healthy HDF5 outputs so a GUI can surface stale
+files and missing channel metadata in one pass.
+
 Use `build_output_data_validation_report(reference_path, candidate_path; ...)`
 and `write_output_data_validation_report(path, reference_path, candidate_path;
 ...)` to package selected-channel metric rows into a durable YAML artifact for
@@ -61,6 +67,8 @@ The public helpers are:
 - `write_windio_run_manifest(path, spec)`
 - `run_manifest_issues(manifest_or_path)`
 - `validate_run_manifest(manifest_or_path)`
+- `verify_file_provenance(record)`
+- `run_manifest_health(manifest_or_path)`
 - `build_output_data_validation_report(reference_path, candidate_path)`
 - `write_output_data_validation_report(path, reference_path, candidate_path)`
 - `read_output_data_validation_report(path)`
