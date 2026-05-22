@@ -26,6 +26,11 @@ present in an HDF5 result file, including shape, element type, units, and
 metadata-attribute mismatches, without reading the full result arrays. This is
 the preferred entry point for GUI channel pickers and validation dashboards.
 
+Use `output_data_channel_metrics(reference_path, candidate_path; channels, atol,
+rtol)` to compare selected numeric channels from two result files. It reports
+bias, RMSE, maximum absolute error, mean absolute error, reference RMS, relative
+RMSE, and a pass/fail result using `atol + rtol * max_abs_reference`.
+
 The public helpers are:
 
 - `ResultChannel`
@@ -34,6 +39,7 @@ The public helpers are:
 - `output_data_channel_names()`
 - `annotate_output_data_channels!(file)`
 - `output_data_summary(path)`
+- `output_data_channel_metrics(reference_path, candidate_path)`
 - `WindIORunSpec`
 - `windio_run_spec(modeling_options_file, windio_file, run_path)`
 - `render_windio_run_script(spec)`

@@ -3,7 +3,8 @@ export ResultChannel,
     output_data_channel,
     output_data_channel_names,
     annotate_output_data_channels!,
-    output_data_summary
+    output_data_summary,
+    output_data_channel_metrics
 
 struct ResultChannel
     name::String
@@ -654,4 +655,184 @@ function _channel_attr_mismatches(dataset_attrs, channel::ResultChannel)
     end
 
     return mismatches
+end
+
+"""
+    output_data_channel_metrics(reference_path, candidate_path; channels, atol=0.0, rtol=1e-6)
+
+Compare selected numeric channels from two OWENS `outputData` HDF5 files. The
+function reads only the requested datasets and returns per-channel bias, RMSE,
+maximum absolute error, mean absolute error, reference RMS, and relative RMSE.
+Missing, shape-mismatched, or non-numeric channels are returned as
+`comparable=false` rows with an explanatory `status`.
+
+A comparable channel passes when `max_abs_error <= atol + rtol * max_abs_reference`.
+"""
+function output_data_channel_metrics(
+    reference_path::AbstractString,
+    candidate_path::AbstractString;
+    channels = output_data_channel_names(),
+    atol::Real = 0.0,
+    rtol::Real = 1e-6,
+)
+    isfile(reference_path) ||
+        throw(ArgumentError("Cannot compare missing reference file: $reference_path"))
+    isfile(candidate_path) ||
+        throw(ArgumentError("Cannot compare missing candidate file: $candidate_path"))
+    atol >= 0 || throw(ArgumentError("atol must be non-negative, got $atol"))
+    rtol >= 0 || throw(ArgumentError("rtol must be non-negative, got $rtol"))
+
+    requested_channels = _output_summary_channels(channels)
+    for name in requested_channels
+        haskey(OUTPUT_DATA_CHANNEL_MAP, name) ||
+            throw(KeyError("No outputData result channel is registered for $name"))
+    end
+
+    HDF5.h5open(reference_path, "r") do reference_file
+        HDF5.h5open(candidate_path, "r") do candidate_file
+            return [
+                _output_channel_metric(reference_file, candidate_file, name, atol, rtol) for
+                name in requested_channels
+            ]
+        end
+    end
+end
+
+function _output_channel_metric(
+    reference_file,
+    candidate_file,
+    name::AbstractString,
+    atol::Real,
+    rtol::Real,
+)
+    channel = output_data_channel(name)
+    reference_present =
+        haskey(reference_file, name) && reference_file[name] isa HDF5.Dataset
+    candidate_present =
+        haskey(candidate_file, name) && candidate_file[name] isa HDF5.Dataset
+
+    if !reference_present && !candidate_present
+        return _noncomparable_metric_row(channel, "missing_reference_and_candidate")
+    elseif !reference_present
+        return _noncomparable_metric_row(
+            channel,
+            "missing_reference";
+            candidate_shape = collect(Int, size(candidate_file[name])),
+        )
+    elseif !candidate_present
+        return _noncomparable_metric_row(
+            channel,
+            "missing_candidate";
+            reference_shape = collect(Int, size(reference_file[name])),
+        )
+    end
+
+    reference_shape = collect(Int, size(reference_file[name]))
+    candidate_shape = collect(Int, size(candidate_file[name]))
+    if reference_shape != candidate_shape
+        return _noncomparable_metric_row(
+            channel,
+            "shape_mismatch";
+            reference_shape,
+            candidate_shape,
+        )
+    end
+
+    reference_data = HDF5.read(reference_file[name])
+    candidate_data = HDF5.read(candidate_file[name])
+    if !_is_real_output_data(reference_data) || !_is_real_output_data(candidate_data)
+        return _noncomparable_metric_row(
+            channel,
+            "non_numeric";
+            reference_shape,
+            candidate_shape,
+        )
+    end
+
+    reference_values = _real_output_values(reference_data)
+    candidate_values = _real_output_values(candidate_data)
+    if isempty(reference_values)
+        return _noncomparable_metric_row(channel, "empty"; reference_shape, candidate_shape)
+    end
+
+    if !all(isfinite, reference_values) || !all(isfinite, candidate_values)
+        return _noncomparable_metric_row(
+            channel,
+            "non_finite";
+            reference_shape,
+            candidate_shape,
+        )
+    end
+
+    difference = candidate_values .- reference_values
+    abs_difference = abs.(difference)
+    n = length(difference)
+    bias = sum(difference) / n
+    rmse = sqrt(sum(abs2, difference) / n)
+    max_abs_error = maximum(abs_difference)
+    mean_abs_error = sum(abs_difference) / n
+    reference_rms = sqrt(sum(abs2, reference_values) / n)
+    max_abs_reference = maximum(abs.(reference_values))
+    relative_rmse = _relative_error(rmse, reference_rms)
+    tolerance = Float64(atol) + Float64(rtol) * max_abs_reference
+    passed = max_abs_error <= tolerance
+
+    return (
+        name = channel.name,
+        comparable = true,
+        passed,
+        status = passed ? "pass" : "fail",
+        units = channel.units,
+        dimensions = copy(channel.dimensions),
+        reference_shape,
+        candidate_shape,
+        n,
+        bias,
+        rmse,
+        max_abs_error,
+        mean_abs_error,
+        reference_rms,
+        max_abs_reference,
+        relative_rmse,
+        tolerance,
+    )
+end
+
+function _noncomparable_metric_row(
+    channel::ResultChannel,
+    status::AbstractString;
+    reference_shape = missing,
+    candidate_shape = missing,
+)
+    return (
+        name = channel.name,
+        comparable = false,
+        passed = false,
+        status = string(status),
+        units = channel.units,
+        dimensions = copy(channel.dimensions),
+        reference_shape,
+        candidate_shape,
+        n = 0,
+        bias = missing,
+        rmse = missing,
+        max_abs_error = missing,
+        mean_abs_error = missing,
+        reference_rms = missing,
+        max_abs_reference = missing,
+        relative_rmse = missing,
+        tolerance = missing,
+    )
+end
+
+_is_real_output_data(value) = value isa Real || value isa AbstractArray{<:Real}
+_real_output_values(value::Real) = [Float64(value)]
+_real_output_values(value::AbstractArray{<:Real}) = Float64.(vec(value))
+
+function _relative_error(error::Real, scale::Real)
+    if scale == 0
+        return error == 0 ? 0.0 : Inf
+    end
+
+    return error / scale
 end
