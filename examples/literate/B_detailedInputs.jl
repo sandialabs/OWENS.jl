@@ -76,7 +76,7 @@ else
 end
 
 # Clean up AD15 if it was used
-if run_full_example && modelingOptions.OWENS_Options.AeroModel == "AD"
+if modelingOptions.OWENS_Options.AeroModel == "AD"
     OWENS.OWENSOpenFASTWrappers.endTurb()
 end
 
