@@ -33,6 +33,10 @@ end
     include("$path/test_openfast_cleanup.jl")
 end
 
+@testset "Run Manifest Provenance" begin
+    include("$path/test_run_manifest.jl")
+end
+
 @testset "VTK History Output" begin
     include("$path/test_visualization_history.jl")
 end
