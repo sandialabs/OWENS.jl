@@ -5,6 +5,10 @@ using Test
     include("$path/test_dlc.jl")
 end
 
+@testset "TurbSim Template Rendering" begin
+    include("$path/test_turbsim_template.jl")
+end
+
 @testset "SNL5MW With CACTUS One-Way Coupling, Preprepared Input Files" begin
     include("$path/SNL5MW_CACT_oneway_unit.jl")
 end
