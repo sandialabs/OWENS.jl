@@ -10,11 +10,6 @@
 #
 # ![](../assets/RM2_wake.png)
 #-
-#md # !!! tip
-#md #     This example is also available as a Jupyter notebook:
-#md #     [`E_RM2_Medium.ipynb`](@__NBVIEWER_ROOT_URL__/examples/E_RM2_Medium.ipynb).
-#-
-
 # Load in all of the modules that we'll be using, and prettify the plotting options
 import OWENS
 import OWENSAero
@@ -36,8 +31,9 @@ import HDF5
 # PyPlot.rc("figure",max_open_warning=500)
 # plot_cycle=["#348ABD", "#A60628", "#009E73", "#7A68A6", "#D55E00", "#CC79A7"]
 
-## path = runpath = splitdir(@__FILE__)[1]
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+output_path = get(ENV, "DOCUMENTER", "") == "true" ? mktempdir() : path
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 nothing
 
@@ -63,8 +59,8 @@ ifw = false # use inflow wind, if DMS or AC aero model
 numTS = 21#321 # number of simulation time steps
 delta_t = 0.01 # simulation time step spacing
 adi_lib = nothing#"$path/../../../../openfast/build/modules/aerodyn/libaerodyn_inflow_c_binding" 
-adi_rootname = "$path/RM2" # path and name that all the aerodyn files are saved with
-VTKsaveName = "$path/vtk/RM2_medium" # path and name that all OWENS VTK files are saved with
+adi_rootname = joinpath(output_path, "RM2") # path and name that all the aerodyn files are saved with
+VTKsaveName = joinpath(output_path, "vtk", "RM2_medium") # path and name that all OWENS VTK files are saved with
 tsave_idx = 1:1:numTS-1 #you don't have to save every timestep in VTK 
 ifw_libfile = nothing#"$path/../../../openfast/build/modules/inflowwind/libifw_c_binding"
 fluid_density = 1000.0
@@ -100,7 +96,7 @@ nothing
 WindType = 1
 windINPfilename = "$path/data_RM2/3mx3m1pt2msNTM.bts"
 # windINPfilename = "$path/data_RM2/steady1pt2.inp"
-# run(`$(OWENS.OWENSOpenFASTWrappers.turbsim()) $(windINPfilename[1:end-3])inp`)
+# run(`\$(OWENS.OWENSOpenFASTWrappers.turbsim()) \$(windINPfilename[1:end-3])inp`)
 
 nothing
 # Here we would set up to run multiple different inflow conditions, and we can
@@ -252,7 +248,7 @@ iTSR = 1
 
     inputs = OWENS.Inputs(;verbosity,analysisType = structuralModel,
     tocp,
-    dataOutputFilename = "./InitialDataOutputs_scripting.out",
+    dataOutputFilename = joinpath(output_path, "InitialDataOutputs_scripting.out"),
     Omegaocp,
     tocp_Vinf,
     Vinfocp,
@@ -267,7 +263,7 @@ iTSR = 1
     # Then there are inputs for the finite element models, also, please see the api reference for specifics on the options
 
     FEAinputs = OWENS.FEAModel(;analysisType = structuralModel,
-    dataOutputFilename = "./InitialDataOutputs_scripting.out",
+    dataOutputFilename = joinpath(output_path, "InitialDataOutputs_scripting.out"),
     joint = myjoint,
     platformTurbineConnectionNodeNumber = 1,
     pBC,
@@ -285,23 +281,25 @@ iTSR = 1
     # Here is where we actually call the unsteady simulation and where owens pulls the aero and structural solutions together
     # and propogates things in time. Note that for the sake of quickly deployable docs, a shortened simulation is conducted and the CP will not be correct
 
-    println("Running Unsteady")
-    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
-    topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
-    topModel=FEAinputs,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,turbsimfile = windINPfilename)
+    if run_full_example
+        println("Running Unsteady")
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+        topFexternal_hist,rbDataHist = OWENS.Unsteady_Land(inputs;system,assembly,
+        topModel=FEAinputs,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,turbsimfile = windINPfilename)
 
-    area = Blade_Height*2*Blade_Radius
-    full_rev_N_timesteps = round(Int,RPM/60/delta_t)*2
-    if full_rev_N_timesteps>numTS
-        idx_start = 1
-    else
-        idx_start = numTS-full_rev_N_timesteps
+        area = Blade_Height*2*Blade_Radius
+        full_rev_N_timesteps = round(Int,RPM/60/delta_t)*2
+        if full_rev_N_timesteps>numTS
+            idx_start = 1
+        else
+            idx_start = numTS-full_rev_N_timesteps
+        end
+        CP[iTSR] = mean(FReactionHist[idx_start:end,6].*OmegaHist[idx_start:end]*2*pi)/(0.5*fluid_density*mean(Vinfocp)^3*area)
+        TSR = mean(OmegaHist*2*pi*Blade_Radius/mean(Vinfocp))
+        ReD = fluid_density*mean(Vinfocp)*Blade_Radius*2/fluid_dyn_viscosity
     end
-    CP[iTSR] = mean(FReactionHist[idx_start:end,6].*OmegaHist[idx_start:end]*2*pi)/(0.5*fluid_density*mean(Vinfocp)^3*area)
-    TSR = mean(OmegaHist*2*pi*Blade_Radius/mean(Vinfocp))
-    ReD = fluid_density*mean(Vinfocp)*Blade_Radius*2/fluid_dyn_viscosity
 
     nothing
 
@@ -315,18 +313,20 @@ iTSR = 1
     #### Ultimate Failure #####
     ##########################################
 
-    massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-    SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-    topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
-    topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
-    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-    mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-    kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor 
-    Twr_LE_U_idx=1,Twr_LE_L_idx=1,delta_t,
-    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing)
+    if run_full_example
+        massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+        SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+        topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
+        topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
+        bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+        twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+        mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+        kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor
+        Twr_LE_U_idx=1,Twr_LE_L_idx=1,delta_t,
+        AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing)
 
-    OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
+        OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
+    end
         
     ## OWENS.OWENSVTK(VTKsaveName,t,uHist,system,assembly,sections,aziHist,mymesh,myel,
     ##     epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
@@ -343,14 +343,16 @@ iTSR = 1
 ## PyPlot.xlabel("TSR")
 ## PyPlot.ylabel("Cp")
 
-Qinst = -FReactionHist[idx_start:end,6]
-Qinst2 = topFexternal_hist[idx_start:end,6]
+if run_full_example
+    Qinst = -FReactionHist[idx_start:end,6]
+    Qinst2 = topFexternal_hist[idx_start:end,6]
 
-drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
-drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+    drag = FReactionHist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
+    drag2 = topFexternal_hist[idx_start:end,1] #./ (0.5*fluid_density*mean(Vinfocp)^2*area)
 
-dat_strt = round(Int,160800/80*11.0)
-dat_end = round(Int,160800/80*14.0)
+    dat_strt = round(Int,160800/80*11.0)
+    dat_end = round(Int,160800/80*14.0)
+end
 
 ## # Open the HDF5 file in read mode
 ## carriage_pos = nothing
@@ -407,27 +409,29 @@ dat_end = round(Int,160800/80*14.0)
 
 rotSpdArrayRPM = [0.0, 42.64]
 
-FEAinputs = OWENS.FEAModel(;analysisType = "GX",
-dataOutputFilename = "none",
-joint = myjoint,
-platformTurbineConnectionNodeNumber = 1,
-pBC,
-nlOn = false,
-gravityOn = [0,0,9.81], #positive since the turbine is upside down
-numNodes = mymesh.numNodes,
-RayleighAlpha = 0.05,
-RayleighBeta = 0.05,
-AddedMass_Coeff_Ca,
-iterationType = "DI")
+if run_full_example
+    FEAinputs = OWENS.FEAModel(;analysisType = "GX",
+    dataOutputFilename = "none",
+    joint = myjoint,
+    platformTurbineConnectionNodeNumber = 1,
+    pBC,
+    nlOn = false,
+    gravityOn = [0,0,9.81], #positive since the turbine is upside down
+    numNodes = mymesh.numNodes,
+    RayleighAlpha = 0.05,
+    RayleighBeta = 0.05,
+    AddedMass_Coeff_Ca,
+    iterationType = "DI")
 
-freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
-    rotSpdArrayRPM,
-    VTKsavename=VTKsaveName,
-    saveModes = [1,3,5], #must be int
-    saveRPM = [2], #must be int
-    mode_scaling = 500.0,
-    )
-freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+    freq2 = OWENS.AutoCampbellDiagram(FEAinputs,mymesh,myel,system,assembly,sections;
+        rotSpdArrayRPM,
+        VTKsavename=VTKsaveName,
+        saveModes = [1,3,5], #must be int
+        saveRPM = [2], #must be int
+        mode_scaling = 500.0,
+        )
+    freqGX = [freq2[:,i] for i=1:2:FEAinputs.numModes-6-2]
+end
 
 nothing
 

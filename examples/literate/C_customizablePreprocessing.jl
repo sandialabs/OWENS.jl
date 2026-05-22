@@ -6,11 +6,6 @@
 # unique mesh generation function, change how sectional properties are input, or adapt for a unique design
 # an properly map the sectional properties to each element and apply unique boundary conditions, etc.
 #-
-#md # !!! tip
-#md #     This example is also available as a Jupyter notebook:
-#md #     [`C_customizablePreprocessing.ipynb`](@__NBVIEWER_ROOT_URL__/examples/C_customizablePreprocessing.ipynb).
-#-
-
 # This example is the same as example B except that the setupOWENS function is broken out and each step defined
 
 import OWENS
@@ -23,8 +18,9 @@ import FLOWMath
 import OWENSOpenFASTWrappers
  
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-## runpath = path = splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+output_path = get(ENV, "DOCUMENTER", "") == "true" ? mktempdir() : path
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 Inp = OWENS.MasterInput("$runpath/sampleOWENS.yml")
 
@@ -72,7 +68,7 @@ adi_lib = Inp.adi_lib
 if adi_lib == "nothing"
     adi_lib = nothing
 end
-adi_rootname = "$(path)$(Inp.adi_rootname)"
+adi_rootname = "$(output_path)$(Inp.adi_rootname)"
 
 println("Set up Turbine")
 
@@ -221,7 +217,7 @@ nothing
 #     idx1 = Int(myjoint[ijoint,3])
 #     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],"r.-")
 #     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,"$idx1",color="r",ha="center",va="center")
-#     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"$idx2",color="r",ha="center",va="center")
+#     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,"\$idx2",color="r",ha="center",va="center")
 #     #### sleep(0.1)
 # end
 # PyPlot.xlabel("x")
@@ -533,7 +529,7 @@ nothing
 # Set up AeroDyn if used
 # Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str
 # Then by initializing AeroDyn and grabbing the backend functionality with a function handle
-if AD15On
+if AD15On && run_full_example
     ad_input_file = "$path/ADInputFile_SingleTurbine2.dat"
     ifw_input_file = "$path/IW2.dat"
     OLAF_filename = "$path/OLAF2.dat"
@@ -743,48 +739,54 @@ RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
 iterationType = "DI")
 
-println("Running Unsteady")
-if AD15On
-    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesAD,deformAero=deformAeroAD)
-else
-    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesACDMS,deformAero=deformAeroACDMS)
+if run_full_example
+    println("Running Unsteady")
+    if AD15On
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesAD,deformAero=deformAeroAD)
+    else
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesACDMS,deformAero=deformAeroACDMS)
+    end
+
+    if AD15On #TODO: move this into the run functions
+        OWENSOpenFASTWrappers.endTurb()
+    end
 end
 
-if AD15On #TODO: move this into the run functions
-    OWENSOpenFASTWrappers.endTurb()
+if run_full_example
+    println("Saving VTK time domain files")
+    OWENS.OWENSFEA_VTK(joinpath(output_path, "vtk", "SNLARCUS5MW_timedomain_TNBnltrue"),t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 end
-
-println("Saving VTK time domain files")
-OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue",t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 
 
 ##########################################
 #### Ultimate Failure #####
 ##########################################
 
-massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
-topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
-bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-composite_station_idx_U_strut = [1,6,3,2,5],
-composite_station_name_U_strut = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
-composite_station_idx_L_strut = [1,6,3,2,5],
-composite_station_name_L_strut = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
-composite_station_idx_U_bld = [1,6,3,2,5],
-composite_station_name_U_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
-composite_station_idx_L_bld = [1,6,3,2,5],
-composite_station_name_L_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
-Twr_LE_U_idx=1,Twr_LE_L_idx=1,
-AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
+if run_full_example
+    massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+    SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+    topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
+    topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
+    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+    mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+    kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+    composite_station_idx_U_strut = [1,6,3,2,5],
+    composite_station_name_U_strut = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    composite_station_idx_L_strut = [1,6,3,2,5],
+    composite_station_name_L_strut = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    composite_station_idx_U_bld = [1,6,3,2,5],
+    composite_station_name_U_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    composite_station_idx_L_bld = [1,6,3,2,5],
+    composite_station_name_L_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
+end
 
 nothing

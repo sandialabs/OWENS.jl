@@ -7,6 +7,15 @@ EXAMPLEDIR = joinpath(@__DIR__, "../examples", "literate")
 GENERATEDDIR = joinpath(@__DIR__, "src", "examples")
 mkpath(GENERATEDDIR)
 
+# Stage example assets before executing generated notebooks. Literate executes
+# notebooks from GENERATEDDIR, so @__DIR__ in examples resolves there in CI.
+for myfile in readdir(EXAMPLEDIR)
+    if !endswith(myfile, ".jl") && myfile != "vtk"
+        @warn "ignoring literate conversion of $myfile, but copying to $GENERATEDDIR"
+        cp(joinpath(EXAMPLEDIR, myfile), joinpath(GENERATEDDIR, myfile); force=true)
+    end
+end
+
 # Run Literate on all examples
 for myfile in readdir(EXAMPLEDIR)
     if endswith(myfile, ".jl")
@@ -24,9 +33,6 @@ for myfile in readdir(EXAMPLEDIR)
 
         Literate.markdown(input, GENERATEDDIR, postprocess = mdpost)
         Literate.notebook(input, GENERATEDDIR, execute = is_ci) # Don't execute locally
-    elseif myfile != "vtk"
-        @warn "ignoring literate conversion of $myfile, but copying to $GENERATEDDIR"
-        cp("$EXAMPLEDIR/$myfile","$GENERATEDDIR/$myfile";force=true)
     end
 end
 
