@@ -17,6 +17,10 @@ end
     include("$path/test_initial_conditions.jl")
 end
 
+@testset "MoorDyn Buffer Helpers" begin
+    include("$path/test_moordyn_buffers.jl")
+end
+
 @testset "SNL5MW With CACTUS One-Way Coupling, Preprepared Input Files" begin
     include("$path/SNL5MW_CACT_oneway_unit.jl")
 end
