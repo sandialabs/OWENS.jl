@@ -1,0 +1,5 @@
+# Keep committed Studio fixtures byte-stable across platforms because their
+# SHA-256 provenance is validated in tests and example project manifests.
+examples/RM2/modeling_options_OWENS_RM2.yml text eol=lf
+examples/RM2/WINDIO_RM2.yaml text eol=lf
+examples/gui/** text eol=lf

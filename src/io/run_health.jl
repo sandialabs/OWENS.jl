@@ -70,6 +70,8 @@ end
 Return a run health summary for a run manifest, including manifest schema
 diagnostics, current file-provenance status for inputs/outputs/generated files,
 and optional `outputData` channel summaries for healthy HDF5 outputs.
+Relative `project_root` values are resolved against the manifest file location
+when a manifest path is supplied.
 """
 run_manifest_health(path::AbstractString; kwargs...) =
     run_manifest_health(read_run_manifest(path); manifest_path = path, kwargs...)
@@ -121,14 +123,20 @@ end
 
 function _manifest_health_root(manifest::AbstractDict, manifest_path, root)
     if !isnothing(root)
-        return abspath(string(root))
+        return _canonical_abs_path(string(root))
     elseif haskey(manifest, "project_root") && manifest["project_root"] isa AbstractString
-        return abspath(manifest["project_root"])
+        project_root = manifest["project_root"]
+        if isabspath(project_root) || isnothing(manifest_path)
+            return _canonical_abs_path(project_root)
+        end
+        return _canonical_abs_path(
+            joinpath(dirname(abspath(string(manifest_path))), project_root),
+        )
     elseif !isnothing(manifest_path)
-        return dirname(abspath(string(manifest_path)))
+        return _canonical_abs_path(dirname(abspath(string(manifest_path))))
     end
 
-    return pwd()
+    return _canonical_abs_path(pwd())
 end
 
 function _manifest_section_health(
@@ -198,6 +206,10 @@ end
 
 function _resolve_manifest_file_path(path::AbstractString, root::AbstractString)
     return isabspath(path) ? normpath(path) : normpath(joinpath(root, path))
+end
+
+function _canonical_abs_path(path::AbstractString)
+    return joinpath(splitpath(normpath(abspath(path)))...)
 end
 
 function _record_get_string(record, key::AbstractString)

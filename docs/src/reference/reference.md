@@ -50,6 +50,39 @@ comparisons only; validation cases that need time alignment, phase correction,
 or whole-revolution windows should preprocess the selected channels before
 report generation.
 
+Use `build_studio_project(root; ...)`, `studio_project_health(project_or_path)`,
+and `render_studio_workbench_html(project_or_health)` as the first OWENS Studio
+service boundary. These helpers collect project-level input files, WindIO files,
+run manifests, file-provenance checks, and output-channel health into a stable
+dictionary schema that the GUI, CLI, or documentation examples can share.
+`create_studio_project_template(target; template="rm2")` creates the first
+file-backed GUI template: an RM2 WindIO project with copied inputs, a generated
+Julia run script, a run manifest, and a Studio project manifest.
+Use `studio_project_template_catalog()` to drive GUI "new project" controls
+without duplicating template metadata.
+Use `studio_example_project_catalog()` to drive the GUI example-project gallery.
+Use `render_studio_home_html()` as the static project chooser served by the
+app home route or written as an offline HTML artifact.
+The `OWENS_APP` package exposes dependency-light route handlers around the same
+services so a future Genie shell can serve health YAML and workbench HTML
+without duplicating project logic.
+Use `open_studio_project(project_path)` in `OWENS_APP` as the one-call
+workbench bootstrap payload after a user selects a project.
+Use `studio_route_catalog()` in `OWENS_APP` to keep the future Genie route table
+aligned with the tested service handlers.
+Use `dispatch_studio_route(route; method, params)` to resolve those catalog
+entries by name or path without duplicating route dispatch logic in the web
+shell.
+Use `studio_project_generated_script_path(project_or_path)` and
+`read_studio_project_generated_script(project_or_path)` when the GUI needs to
+show or export the exact Julia driver attached to a project.
+Use `write_studio_workbench_bundle(output_dir, project_path)` to create a
+server-free workbench directory with HTML, health YAML, and the generated Julia
+driver. `OWENS_APP.write_studio_project_bundle` also writes and links the
+Studio open-project bootstrap YAML that the app shell can hydrate from.
+The committed `examples/gui/rm2/owens_project.yml` fixture is relocatable and
+opens the RM2 WindIO inputs directly from the repository.
+
 The public helpers are:
 
 - `ResultChannel`
@@ -72,5 +105,23 @@ The public helpers are:
 - `build_output_data_validation_report(reference_path, candidate_path)`
 - `write_output_data_validation_report(path, reference_path, candidate_path)`
 - `read_output_data_validation_report(path)`
+- `build_studio_project(root)`
+- `write_studio_project(path, project_or_root)`
+- `read_studio_project(path)`
+- `studio_project_issues(project_or_path)`
+- `validate_studio_project(project_or_path)`
+- `studio_project_health(project_or_path)`
+- `studio_project_generated_script_path(project_or_path)`
+- `read_studio_project_generated_script(project_or_path)`
+- `render_studio_home_html()`
+- `write_studio_home_html(path)`
+- `render_studio_workbench_html(project_or_health)`
+- `write_studio_workbench_html(path, project_or_health)`
+- `write_studio_workbench_bundle(output_dir, project_path)`
+- `studio_project_template_catalog()`
+- `studio_project_template_names()`
+- `studio_example_project_catalog()`
+- `studio_example_project_names()`
+- `create_studio_project_template(target)`
 
 The generated API listing above includes their full docstrings.
