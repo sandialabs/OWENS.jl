@@ -105,164 +105,181 @@ function Unsteady(
     rbData,
     rbDataHist = allocate_general(inputs, topModel, topMesh, numDOFPerNode, numTS, assembly)
 
-    if inputs.topsideOn
-        # Allocate memory for topside
-        u_s,
-        udot_s,
-        uddot_s,
-        u_sm1,
-        topDispData1,
-        topDispData2,
-        topElStrain,
-        gb_s,
-        gbDot_s,
-        gbDotDot_s,
-        azi_s,
-        Omega_s,
-        OmegaDot_s,
-        genTorque_s,
-        torqueDriveShaft_s,
-        topFexternal,
-        topFexternal_hist =
-            allocate_topside(inputs, topMesh, topEl, topModel, numDOFPerNode, u_s, assembly)
-    end
-    ## Hydrodynamics/mooring module initialization and coupling variables
-    if inputs.platformActive
-        bottom_totalNumDOF,
-        u_s_ptfm_n,
-        udot_s_ptfm_n,
-        uddot_s_ptfm_n,
-        u_sm1_ptfm_n,
-        bottomDispData,
-        prpDOFs,
-        u_s_prp_n,
-        udot_s_prp_n,
-        uddot_s_prp_n,
-        jac,
-        numMooringLines,
-        FHydro_n,
-        FMooring_n,
-        outVals,
-        mooringTensions = allocate_bottom(
-            t,
-            numTS,
-            delta_t,
-            inputs,
-            bottomMesh,
-            bottomEl,
-            bottomModel,
-            bin,
-            numDOFPerNode,
-        )
-    end
-
-    ## Rotor mode initialization
-    rotorSpeedForGenStart = initialize_generator!(inputs)
-
-    ## Structural dynamics initialization
-    if isnothing(topElStorage) && inputs.topsideOn
-        topElStorage = OWENSFEA.initialElementCalculations(topModel, topEl, topMesh) #perform initial element calculations for conventional structural dynamics analysis
-    end
-    if isnothing(bottomElStorage) && inputs.platformActive
-        bottomElStorage =
-            OWENSFEA.initialElementCalculations(bottomModel, bottomEl, bottomMesh) #perform initial element calculations for conventional structural dynamics analysis
-    end
-    if inputs.analysisType=="ROM"
-        if inputs.topsideOn
-            top_rom,
-            topJointTransformTrans,
-            u_sRed,
-            udot_sRed,
-            uddot_sRed,
-            topBC,
-            u_s2,
-            udot_s2,
-            uddot_s2,
-            top_invPhi,
-            eta_s,
-            etadot_s,
-            etaddot_s =
-                initialize_ROM(topElStorage, topModel, topMesh, topEl, u_s, udot_s, uddot_s)
-
-            topDispData1.eta_s = eta_s
-            topDispData1.etadot_s = etadot_s
-            topDispData1.etaddot_s = etaddot_s
-            topDispData2.eta_s = eta_s
-            topDispData2.etadot_s = etadot_s
-            topDispData2.etaddot_s = etaddot_s
-        end
-
-        if inputs.platformActive
-
-            bottom_rom,
-            bottomJointTransformTrans,
-            u_sRed_ptfm_n,
-            udot_sRed_ptfm_n,
-            uddot_sRed_ptfm_n,
-            bottomBC,
-            u_s2_ptfm_n,
-            udot_s2_ptfm_n,
-            uddot_s2_ptfm_n,
-            bottom_invPhi,
-            eta_s_ptfm_n,
-            etadot_s_ptfm_n,
-            etaddot_s_ptfm_n = initialize_ROM(
-                bottomElStorage,
-                bottomModel,
-                bottomMesh,
-                bottomEl,
-                u_s_ptfm_n,
-                udot_s_ptfm_n,
-                uddot_s_ptfm_n,
-            )
-
-            bottomDispData.eta_s = eta_s_ptfm_n
-            bottomDispData.etadot_s = etadot_s_ptfm_n
-            bottomDispData.etaddot_s = etaddot_s_ptfm_n
-        end
-    end
-
-    if inputs.topsideOn
-        topsideMass, topsideMOI, topsideCG =
-            OWENSFEA.calculateStructureMassProps(topElStorage)
-        topModel.jointTransform, topModel.reducedDOFList =
-            OWENSFEA.createJointTransform(topModel.joint, topMesh.numNodes, 6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
-
-        if inputs.platformActive
-            hydro_topside_nodal_coupling!(
-                bottomModel,
-                bottomMesh,
-                topsideMass,
-                topModel,
-                topsideCG,
-                topsideMOI,
-                numDOFPerNode,
-            )
-        end # if inputs.platformActive
-    end # if inputs.topsideOn
-
-    if inputs.topsideOn
-        uHist[1, :] = u_s          #store initial condition
-        aziHist[1] = azi_s
-        OmegaHist[1] = Omega_s
-        OmegaDotHist[1] = OmegaDot_s
-        FReactionsm1 = zeros(topMesh.numNodes*6)
-        FReactionHist[1, :] = FReactionsm1
-        topFReaction_j = FReactionsm1
-        # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used
-        gbHist[1] = gb_s
-        gbDotHist[1] = gbDot_s
-        gbDotDotHist[1] = gbDotDot_s
-        rbDataHist[1, :] = zeros(9)
-        genTorque[1] = genTorque_s
-        torqueDriveShaft[1] = torqueDriveShaft_s
-    end
-
-    if inputs.platformActive
-        uHist_prp[1, :] = u_s_prp_n
-    end
+    openfast_platform_initialized = false
 
     try
+        if inputs.topsideOn
+            # Allocate memory for topside
+            u_s,
+            udot_s,
+            uddot_s,
+            u_sm1,
+            topDispData1,
+            topDispData2,
+            topElStrain,
+            gb_s,
+            gbDot_s,
+            gbDotDot_s,
+            azi_s,
+            Omega_s,
+            OmegaDot_s,
+            genTorque_s,
+            torqueDriveShaft_s,
+            topFexternal,
+            topFexternal_hist = allocate_topside(
+                inputs,
+                topMesh,
+                topEl,
+                topModel,
+                numDOFPerNode,
+                u_s,
+                assembly,
+            )
+        end
+        ## Hydrodynamics/mooring module initialization and coupling variables
+        if inputs.platformActive
+            bottom_totalNumDOF,
+            u_s_ptfm_n,
+            udot_s_ptfm_n,
+            uddot_s_ptfm_n,
+            u_sm1_ptfm_n,
+            bottomDispData,
+            prpDOFs,
+            u_s_prp_n,
+            udot_s_prp_n,
+            uddot_s_prp_n,
+            jac,
+            numMooringLines,
+            FHydro_n,
+            FMooring_n,
+            outVals,
+            mooringTensions = allocate_bottom(
+                t,
+                numTS,
+                delta_t,
+                inputs,
+                bottomMesh,
+                bottomEl,
+                bottomModel,
+                bin,
+                numDOFPerNode,
+            )
+            openfast_platform_initialized = true
+        end
+
+        ## Rotor mode initialization
+        rotorSpeedForGenStart = initialize_generator!(inputs)
+
+        ## Structural dynamics initialization
+        if isnothing(topElStorage) && inputs.topsideOn
+            topElStorage = OWENSFEA.initialElementCalculations(topModel, topEl, topMesh) #perform initial element calculations for conventional structural dynamics analysis
+        end
+        if isnothing(bottomElStorage) && inputs.platformActive
+            bottomElStorage =
+                OWENSFEA.initialElementCalculations(bottomModel, bottomEl, bottomMesh) #perform initial element calculations for conventional structural dynamics analysis
+        end
+        if inputs.analysisType=="ROM"
+            if inputs.topsideOn
+                top_rom,
+                topJointTransformTrans,
+                u_sRed,
+                udot_sRed,
+                uddot_sRed,
+                topBC,
+                u_s2,
+                udot_s2,
+                uddot_s2,
+                top_invPhi,
+                eta_s,
+                etadot_s,
+                etaddot_s = initialize_ROM(
+                    topElStorage,
+                    topModel,
+                    topMesh,
+                    topEl,
+                    u_s,
+                    udot_s,
+                    uddot_s,
+                )
+
+                topDispData1.eta_s = eta_s
+                topDispData1.etadot_s = etadot_s
+                topDispData1.etaddot_s = etaddot_s
+                topDispData2.eta_s = eta_s
+                topDispData2.etadot_s = etadot_s
+                topDispData2.etaddot_s = etaddot_s
+            end
+
+            if inputs.platformActive
+
+                bottom_rom,
+                bottomJointTransformTrans,
+                u_sRed_ptfm_n,
+                udot_sRed_ptfm_n,
+                uddot_sRed_ptfm_n,
+                bottomBC,
+                u_s2_ptfm_n,
+                udot_s2_ptfm_n,
+                uddot_s2_ptfm_n,
+                bottom_invPhi,
+                eta_s_ptfm_n,
+                etadot_s_ptfm_n,
+                etaddot_s_ptfm_n = initialize_ROM(
+                    bottomElStorage,
+                    bottomModel,
+                    bottomMesh,
+                    bottomEl,
+                    u_s_ptfm_n,
+                    udot_s_ptfm_n,
+                    uddot_s_ptfm_n,
+                )
+
+                bottomDispData.eta_s = eta_s_ptfm_n
+                bottomDispData.etadot_s = etadot_s_ptfm_n
+                bottomDispData.etaddot_s = etaddot_s_ptfm_n
+            end
+        end
+
+        if inputs.topsideOn
+            topsideMass, topsideMOI, topsideCG =
+                OWENSFEA.calculateStructureMassProps(topElStorage)
+            topModel.jointTransform, topModel.reducedDOFList =
+                OWENSFEA.createJointTransform(topModel.joint, topMesh.numNodes, 6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
+
+            if inputs.platformActive
+                hydro_topside_nodal_coupling!(
+                    bottomModel,
+                    bottomMesh,
+                    topsideMass,
+                    topModel,
+                    topsideCG,
+                    topsideMOI,
+                    numDOFPerNode,
+                )
+            end # if inputs.platformActive
+        end # if inputs.topsideOn
+
+        if inputs.topsideOn
+            uHist[1, :] = u_s          #store initial condition
+            aziHist[1] = azi_s
+            OmegaHist[1] = Omega_s
+            OmegaDotHist[1] = OmegaDot_s
+            FReactionsm1 = zeros(topMesh.numNodes*6)
+            FReactionHist[1, :] = FReactionsm1
+            topFReaction_j = FReactionsm1
+            # topWeight = [0.0, 0.0, topsideMass*-9.80665, 0.0, 0.0, 0.0] #TODO: propogate gravity, or remove since this isn't used
+            gbHist[1] = gb_s
+            gbDotHist[1] = gbDot_s
+            gbDotDotHist[1] = gbDotDot_s
+            rbDataHist[1, :] = zeros(9)
+            genTorque[1] = genTorque_s
+            torqueDriveShaft[1] = torqueDriveShaft_s
+        end
+
+        if inputs.platformActive
+            uHist_prp[1, :] = u_s_prp_n
+        end
+
         #..................................................................
         #                          INITIAL SOLVE
         #..................................................................
@@ -1310,7 +1327,7 @@ function Unsteady(
         topFexternal_hist[state_range, :],
         rbDataHist[state_range, :]
     finally
-        endOpenFASTModules(inputs)
+        endOpenFASTModules(inputs; platform_initialized = openfast_platform_initialized)
     end
 end
 
@@ -1738,6 +1755,8 @@ function allocate_bottom(
     bottomModel,
     bin,
     numDOFPerNode,
+    ;
+    openfast = OWENSOpenFASTWrappers,
 )
     if isnothing(bottomModel)
         error("bottomMesh must be specified if OWENS.Inputs.platformActive")
@@ -1779,27 +1798,43 @@ function allocate_bottom(
     outVals = Vector{Float32}(undef, numDOFPerNode+1) # Rigid body displacement in 6DOF + wave elevation
     mooringTensions = mooringTensionBuffer(numMooringLines)
 
-    OWENSOpenFASTWrappers.HD_Init(;
-        hdlib_filename = bin.hydrodynLibPath,
-        output_root_name = hd_dataOutputFilename,
-        hd_input_file = hydrodynInputWithResolvedPotFile(
-            inputs.hd_input_file,
-            inputs.potflowfile,
-        ),
-        ss_input_file = inputs.ss_input_file,
-        PotFile = inputs.potflowfile,
-        t_initial = t[1],
-        dt = delta_t,
-        t_max = t[1]+(numTS-1)*delta_t,
-        interp_order = inputs.interpOrder,
-    )
-    OWENSOpenFASTWrappers.MD_Init(;
-        mdlib_filename = bin.moordynLibPath,
-        md_input_file = inputs.md_input_file,
-        init_ptfm_pos = u_s_prp_n,
-        interp_order = inputs.interpOrder,
-        WtrDpth = moordyn_summary.waterDepth,
-    )
+    hd_initialized = false
+    md_initialized = false
+    try
+        openfast.HD_Init(;
+            hdlib_filename = bin.hydrodynLibPath,
+            output_root_name = hd_dataOutputFilename,
+            hd_input_file = hydrodynInputWithResolvedPotFile(
+                inputs.hd_input_file,
+                inputs.potflowfile,
+            ),
+            ss_input_file = inputs.ss_input_file,
+            PotFile = inputs.potflowfile,
+            t_initial = t[1],
+            dt = delta_t,
+            t_max = t[1]+(numTS-1)*delta_t,
+            interp_order = inputs.interpOrder,
+        )
+        hd_initialized = true
+
+        openfast.MD_Init(;
+            mdlib_filename = bin.moordynLibPath,
+            md_input_file = inputs.md_input_file,
+            init_ptfm_pos = u_s_prp_n,
+            interp_order = inputs.interpOrder,
+            WtrDpth = moordyn_summary.waterDepth,
+        )
+        md_initialized = true
+    catch
+        endOpenFASTModules(
+            inputs;
+            openfast = openfast,
+            hd_initialized = hd_initialized,
+            md_initialized = md_initialized,
+            ad_initialized = false,
+        )
+        rethrow()
+    end
 
     return bottom_totalNumDOF,
     u_s_ptfm_n,

@@ -168,7 +168,7 @@ function completedHistoryRanges(last_saved_index::Integer, numTS::Integer)
 end
 
 """
-    endOpenFASTModules(inputs; openfast=OWENSOpenFASTWrappers, platform_initialized=inputs.platformActive, ad_initialized=inputs.AD15On)
+    endOpenFASTModules(inputs; openfast=OWENSOpenFASTWrappers, platform_initialized=inputs.platformActive, hd_initialized=platform_initialized, md_initialized=platform_initialized, ad_initialized=inputs.AD15On)
 
 End initialized OpenFAST native modules without masking an upstream simulation
 error.
@@ -181,6 +181,8 @@ function endOpenFASTModules(
     inputs;
     openfast = OWENSOpenFASTWrappers,
     platform_initialized = inputs.platformActive,
+    hd_initialized = platform_initialized,
+    md_initialized = platform_initialized,
     ad_initialized = inputs.AD15On,
     warn_on_error = true,
 )
@@ -198,8 +200,10 @@ function endOpenFASTModules(
         end
     end
 
-    if platform_initialized
+    if hd_initialized
         cleanup("HydroDyn", openfast.HD_End)
+    end
+    if md_initialized
         cleanup("MoorDyn", openfast.MD_End)
     end
     if ad_initialized
