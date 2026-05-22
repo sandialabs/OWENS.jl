@@ -1,4 +1,9 @@
-export WindIORunSpec, windio_run_spec, render_windio_run_script, write_windio_run_script
+export WindIORunSpec,
+    windio_run_spec,
+    render_windio_run_script,
+    write_windio_run_script,
+    build_windio_run_manifest,
+    write_windio_run_manifest
 
 struct WindIORunSpec
     modeling_options_file::String
@@ -79,6 +84,53 @@ function write_windio_run_script(path::AbstractString, spec::WindIORunSpec)
     end
 
     return script
+end
+
+"""
+    build_windio_run_manifest(spec; kwargs...)
+
+Build a run manifest for a `WindIORunSpec`, hashing the modeling-options and
+WindIO input files plus any existing output/generated files passed through
+`output_files` or `generated_files`.
+"""
+function build_windio_run_manifest(
+    spec::WindIORunSpec;
+    run_id = nothing,
+    run_name::AbstractString = "windio-run",
+    output_files = String[],
+    generated_files = String[],
+    parameters = OrderedCollections.OrderedDict{String,Any}(),
+    metadata = OrderedCollections.OrderedDict{String,Any}(),
+    warnings = String[],
+    status::AbstractString = "created",
+    created_at_utc = nothing,
+)
+    return build_run_manifest(;
+        run_id,
+        run_name,
+        project_root = spec.run_path,
+        solver = "runOWENSWINDIO",
+        modeling_options_file = spec.modeling_options_file,
+        windio_file = spec.windio_file,
+        output_files,
+        generated_files,
+        parameters,
+        metadata,
+        warnings,
+        status,
+        created_at_utc,
+    )
+end
+
+"""
+    write_windio_run_manifest(path, spec; kwargs...)
+
+Build and write a WindIO run manifest. Returns the manifest that was written.
+"""
+function write_windio_run_manifest(path::AbstractString, spec::WindIORunSpec; kwargs...)
+    manifest = build_windio_run_manifest(spec; kwargs...)
+    write_run_manifest(path, manifest)
+    return manifest
 end
 
 _julia_string_literal(value::AbstractString) = repr(String(value))
