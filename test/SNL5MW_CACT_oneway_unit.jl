@@ -841,12 +841,20 @@ if test_transient
     @test isapprox(old_genPower[1:maxT_idx],genPower,atol = tol)
     @test isapprox(old_torqueDriveShaft[1:maxT_idx],torqueDriveShaft,atol = tol)
     @test isapprox(old_uHist[:,1:maxT_idx],collect(uHist'),atol = 1e-4)
-    @test isapprox(old_eps_xx_0_hist[:,:,1:maxT_idx],eps_xx_0_hist,atol = tol)
-    @test isapprox(old_eps_xx_z_hist[:,:,1:maxT_idx],eps_xx_z_hist,atol = tol)
-    @test isapprox(old_eps_xx_y_hist[:,:,1:maxT_idx],eps_xx_y_hist,atol = tol)
-    @test isapprox(old_gam_xz_0_hist[:,:,1:maxT_idx],gam_xz_0_hist,atol = tol)
-    @test isapprox(old_gam_xz_y_hist[:,:,1:maxT_idx],gam_xz_y_hist,atol = tol)
-    @test isapprox(old_gam_xy_0_hist[:,:,1:maxT_idx],gam_xy_0_hist,atol = tol)
+
+    maxStrain_idx = size(eps_xx_0_hist,3)
+    @test maxStrain_idx == maxT_idx - 1
+    @test size(eps_xx_z_hist,3) == maxStrain_idx
+    @test size(eps_xx_y_hist,3) == maxStrain_idx
+    @test size(gam_xz_0_hist,3) == maxStrain_idx
+    @test size(gam_xz_y_hist,3) == maxStrain_idx
+    @test size(gam_xy_0_hist,3) == maxStrain_idx
+    @test isapprox(old_eps_xx_0_hist[:,:,1:maxStrain_idx],eps_xx_0_hist,atol = tol)
+    @test isapprox(old_eps_xx_z_hist[:,:,1:maxStrain_idx],eps_xx_z_hist,atol = tol)
+    @test isapprox(old_eps_xx_y_hist[:,:,1:maxStrain_idx],eps_xx_y_hist,atol = tol)
+    @test isapprox(old_gam_xz_0_hist[:,:,1:maxStrain_idx],gam_xz_0_hist,atol = tol)
+    @test isapprox(old_gam_xz_y_hist[:,:,1:maxStrain_idx],gam_xz_y_hist,atol = tol)
+    @test isapprox(old_gam_xy_0_hist[:,:,1:maxStrain_idx],gam_xy_0_hist,atol = tol)
 end
 
 # *********************************************************************
