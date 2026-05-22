@@ -1,7 +1,9 @@
 import OWENS
 import OWENSAero
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+output_path = get(ENV, "DOCUMENTER", "") == "true" ? mktempdir() : path
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 modelingOptions = OWENS.ModelingOptions("$runpath/sampleOWENS_complete.yml", path=path)
 
@@ -46,7 +48,11 @@ println("Total Material Cost: \$$(total_material_cost)")
 
 println("Running Unsteady Simulation")
 
-unsteady_outputs = OWENS.Unsteady_Land(setup_outputs, modelingOptions, returnold=false)
+unsteady_outputs = if run_full_example
+    OWENS.Unsteady_Land(setup_outputs, modelingOptions, returnold=false)
+else
+    nothing
+end
 
 if modelingOptions.OWENS_Options.AeroModel == "AD"
     OWENS.OWENSOpenFASTWrappers.endTurb()
@@ -54,20 +60,28 @@ end
 
 println("Saving VTK time domain files")
 
-OWENS.OWENSFEA_VTK("$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue", unsteady_outputs, setup_outputs; scaling=1)
+if run_full_example
+    OWENS.OWENSFEA_VTK(joinpath(output_path, "vtk", "SNLARCUS5MW_timedomain_TNBnltrue"), unsteady_outputs, setup_outputs; scaling=1)
+end
 
-postprocess_options = OWENS.PostProcessOptions(
-    verbosity=modelingOptions.OWENS_Options.verbosity,
-    usestationBld=0,
-    usestationStrut=0,
-    throwawayTimeSteps=1,
-    calculate_fatigue=true)
+postprocess_options = if run_full_example
+    OWENS.PostProcessOptions(
+        verbosity=modelingOptions.OWENS_Options.verbosity,
+        usestationBld=0,
+        usestationStrut=0,
+        throwawayTimeSteps=1,
+        calculate_fatigue=true)
+else
+    nothing
+end
 
-components = OWENS.safetyfactor_fatigue(
-    setup_outputs.mymesh,
-    setup_outputs.components,
-    modelingOptions.OWENS_Options.delta_t;
-    options=postprocess_options
-)
+if run_full_example
+    components = OWENS.safetyfactor_fatigue(
+        setup_outputs.mymesh,
+        setup_outputs.components,
+        modelingOptions.OWENS_Options.delta_t;
+        options=postprocess_options
+    )
+end
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

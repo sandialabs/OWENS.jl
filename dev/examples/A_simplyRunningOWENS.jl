@@ -1,12 +1,14 @@
 import OWENS
 
-runpath = path = "/home/runner/work/OWENS.jl/OWENS.jl/examples/literate" # to run locally, change to splitdir(@__FILE__)[1]
-# runpath = path = splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+run_full_example = get(ENV, "OWENS_RUN_DOC_EXAMPLES", "false") == "true"
 
 modelopt = OWENS.ModelingOptions("$(path)/OWENS_Opt.yml")
 designparams = OWENS.Design_Data("$path/WINDIO_example.yaml")
 
-OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
+if run_full_example
+    OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
+end
 
 nothing
 

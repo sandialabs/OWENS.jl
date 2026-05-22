@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Customizable Preprocessing · OWENS.jl</title><meta name="title" content="Customizable Preprocessing · OWENS.jl"/><meta property="og:title" content="Customizable Preprocessing · OWENS.jl"/><meta property="twitter:title" content="Customizable Preprocessing · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li class="is-active"><a class="tocitem" href>Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li><a class="tocitem" href="../E_RM2_Medium/">Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Customizable Preprocessing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Customizable Preprocessing</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="simple3"><a class="docs-heading-anchor" href="#simple3">Customizable Preprocessing</a><a id="simple3-1"></a><a class="docs-heading-anchor-permalink" href="#simple3" title="Permalink"></a></h1><p>In this example, we show the third level of what is going on behind the precompiled binary This includes all of the second, but also breaks out the setupOWENS function. This would be a good starting point if you need to make modifications to use a unique mesh generation function, change how sectional properties are input, or adapt for a unique design an properly map the sectional properties to each element and apply unique boundary conditions, etc.</p><div class="admonition is-success" id="Tip-cb249adfaf855937"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-cb249adfaf855937" title="Permalink"></a></header><div class="admonition-body"><p>This example is also available as a Jupyter notebook: <a href="https://nbviewer.jupyter.org/github/sandialabs/OWENS.jl/blob/gh-pages/dev/examples/C_customizablePreprocessing.ipynb"><code>C_customizablePreprocessing.ipynb</code></a>.</p></div></div><p>This example is the same as example B except that the setupOWENS function is broken out and each step defined</p><pre><code class="language-julia hljs">import OWENS
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Customizable Preprocessing · OWENS.jl</title><meta name="title" content="Customizable Preprocessing · OWENS.jl"/><meta property="og:title" content="Customizable Preprocessing · OWENS.jl"/><meta property="twitter:title" content="Customizable Preprocessing · OWENS.jl"/><meta name="description" content="Documentation for OWENS.jl."/><meta property="og:description" content="Documentation for OWENS.jl."/><meta property="twitter:description" content="Documentation for OWENS.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OWENS.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../indepth_installation/">Installation</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../A_simplyRunningOWENS/">Simply Running OWENS</a></li><li><a class="tocitem" href="../B_detailedInputs/">Detailed Inputs</a></li><li class="is-active"><a class="tocitem" href>Customizable Preprocessing</a></li><li><a class="tocitem" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms</a></li><li><a class="tocitem" href="../E_RM2_Medium/">Marine Hydrokinetic RM2</a></li></ul></li><li><a class="tocitem" href="../../OWENS_Dev_Guide/">Developer Guide</a></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../reference/reference/">OWENS</a></li><li><a class="tocitem" href="../../reference/referenceAero/">OWENSAero</a></li><li><a class="tocitem" href="../../reference/referenceFEA/">OWENSFEA</a></li><li><a class="tocitem" href="../../reference/referenceOpenFASTWrappers/">OWENSOpenFASTWrappers</a></li><li><a class="tocitem" href="../../reference/referencePreComp/">OWENSPreComp</a></li></ul></li><li><a class="tocitem" href="../../legacyUserGuide/">Legacy User Guide</a></li><li><a class="tocitem" href="../../VAWTGenUserGuide/">Legacy VAWTGen Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Customizable Preprocessing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Customizable Preprocessing</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="simple3"><a class="docs-heading-anchor" href="#simple3">Customizable Preprocessing</a><a id="simple3-1"></a><a class="docs-heading-anchor-permalink" href="#simple3" title="Permalink"></a></h1><p>In this example, we show the third level of what is going on behind the precompiled binary This includes all of the second, but also breaks out the setupOWENS function. This would be a good starting point if you need to make modifications to use a unique mesh generation function, change how sectional properties are input, or adapt for a unique design an properly map the sectional properties to each element and apply unique boundary conditions, etc.</p><p>This example is the same as example B except that the setupOWENS function is broken out and each step defined</p><pre><code class="language-julia hljs">import OWENS
 import OWENSFEA
 import OWENSAero
 import QuadGK
@@ -9,8 +9,9 @@ import FLOWMath
 import OWENSOpenFASTWrappers
 
 
-runpath = path = &quot;/home/runner/work/OWENS.jl/OWENS.jl/examples/literate&quot; # to run locally, change to splitdir(@__FILE__)[1]
-# runpath = path = splitdir(@__FILE__)[1]
+runpath = path = @__DIR__
+output_path = get(ENV, &quot;DOCUMENTER&quot;, &quot;&quot;) == &quot;true&quot; ? mktempdir() : path
+run_full_example = get(ENV, &quot;OWENS_RUN_DOC_EXAMPLES&quot;, &quot;false&quot;) == &quot;true&quot;
 
 Inp = OWENS.MasterInput(&quot;$runpath/sampleOWENS.yml&quot;)
 
@@ -55,7 +56,7 @@ adi_lib = Inp.adi_lib
 if adi_lib == &quot;nothing&quot;
     adi_lib = nothing
 end
-adi_rootname = &quot;$(path)$(Inp.adi_rootname)&quot;
+adi_rootname = &quot;$(output_path)$(Inp.adi_rootname)&quot;
 
 println(&quot;Set up Turbine&quot;)
 
@@ -178,9 +179,9 @@ catch
 end
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Assignment to `nTwrElem` in soft scope is ambiguous because a global variable by the same name exists: `nTwrElem` will be treated as a new local. Disambiguate by using `local nTwrElem` to suppress this warning or `global nTwrElem` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:212
+└ @ C_customizablePreprocessing.md:209
 ┌ Warning: Assignment to `nTwrElem` in soft scope is ambiguous because a global variable by the same name exists: `nTwrElem` will be treated as a new local. Disambiguate by using `local nTwrElem` to suppress this warning or `global nTwrElem` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:215</code></pre><p>Here is a way that you can visualize the nodal numbers of the mesh PyPlot.figure() for icon = 1:length(mymesh.conn[:,1])     idx1 = mymesh.conn[icon,1]     idx2 = mymesh.conn[icon,2]     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],&quot;k.-&quot;)     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,&quot;<span>$idx1&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)     #### sleep(0.1) end for ijoint = 1:length(myjoint[:,1])     idx2 = Int(myjoint[ijoint,2])     idx1 = Int(myjoint[ijoint,3])     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],&quot;r.-&quot;)     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,&quot;$</span>idx1&quot;,color=&quot;r&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,&quot;idx2&quot;,color=&quot;r&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)     #### sleep(0.1) end PyPlot.xlabel(&quot;x&quot;) PyPlot.ylabel(&quot;y&quot;) PyPlot.zlabel(&quot;z&quot;)</p><p>This is where the sectional properties for the tower are either read in from the file, or are directly input and could be manuplated here in the script</p><pre><code class="language-julia hljs">#########################################
+└ @ C_customizablePreprocessing.md:212</code></pre><p>Here is a way that you can visualize the nodal numbers of the mesh PyPlot.figure() for icon = 1:length(mymesh.conn[:,1])     idx1 = mymesh.conn[icon,1]     idx2 = mymesh.conn[icon,2]     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],&quot;k.-&quot;)     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,&quot;<span>$idx1&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)     #### sleep(0.1) end for ijoint = 1:length(myjoint[:,1])     idx2 = Int(myjoint[ijoint,2])     idx1 = Int(myjoint[ijoint,3])     PyPlot.plot3D([mymesh.x[idx1],mymesh.x[idx2]],[mymesh.y[idx1],mymesh.y[idx2]],[mymesh.z[idx1],mymesh.z[idx2]],&quot;r.-&quot;)     PyPlot.text3D(mymesh.x[idx1].+rand()/30,mymesh.y[idx1].+rand()/30,mymesh.z[idx1].+rand()/30,&quot;$</span>idx1&quot;,color=&quot;r&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)     PyPlot.text3D(mymesh.x[idx2].+rand()/30,mymesh.y[idx2].+rand()/30,mymesh.z[idx2].+rand()/30,&quot;<span>$</span>idx2&quot;,color=&quot;r&quot;,ha=&quot;center&quot;,va=&quot;center&quot;)     #### sleep(0.1) end PyPlot.xlabel(&quot;x&quot;) PyPlot.ylabel(&quot;y&quot;) PyPlot.zlabel(&quot;z&quot;)</p><p>This is where the sectional properties for the tower are either read in from the file, or are directly input and could be manuplated here in the script</p><pre><code class="language-julia hljs">#########################################
 ### Set up Sectional Properties
 #########################################
 
@@ -362,9 +363,9 @@ for istrut = 1:Nstrutperbld
 end
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Assignment to `spanpos` in soft scope is ambiguous because a global variable by the same name exists: `spanpos` will be treated as a new local. Disambiguate by using `local spanpos` to suppress this warning or `global spanpos` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:436
+└ @ C_customizablePreprocessing.md:433
 ┌ Warning: Assignment to `yscale` in soft scope is ambiguous because a global variable by the same name exists: `yscale` will be treated as a new local. Disambiguate by using `local yscale` to suppress this warning or `global yscale` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:439
+└ @ C_customizablePreprocessing.md:436
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
 └ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/io/fileio.jl:747
 ┌ Warning: Data for SN curve control points not found in material file columns 23:28 for stress in Mpa, 29:33 for cycles in log10
@@ -417,11 +418,11 @@ myel = OWENSFEA.El(sectionPropsArray,myort.Length,myort.Psi_d,myort.Theta_d,myor
 system, assembly, sections = OWENS.owens_to_gx(mymesh,myort,myjoint,sectionPropsArray,stiff_array,mass_array)
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Assignment to `sectionPropsArray` in soft scope is ambiguous because a global variable by the same name exists: `sectionPropsArray` will be treated as a new local. Disambiguate by using `local sectionPropsArray` to suppress this warning or `global sectionPropsArray` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:468
+└ @ C_customizablePreprocessing.md:465
 ┌ Warning: Assignment to `stiff_array` in soft scope is ambiguous because a global variable by the same name exists: `stiff_array` will be treated as a new local. Disambiguate by using `local stiff_array` to suppress this warning or `global stiff_array` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:469
+└ @ C_customizablePreprocessing.md:466
 ┌ Warning: Assignment to `mass_array` in soft scope is ambiguous because a global variable by the same name exists: `mass_array` will be treated as a new local. Disambiguate by using `local mass_array` to suppress this warning or `global mass_array` to assign to the existing global variable.
-└ @ C_customizablePreprocessing.md:470</code></pre><p>Set up the OWENSAero aerodynamics if used</p><pre><code class="language-julia hljs">if !AD15On
+└ @ C_customizablePreprocessing.md:467</code></pre><p>Set up the OWENSAero aerodynamics if used</p><pre><code class="language-julia hljs">if !AD15On
     #########################################
     ### Set up aero forces
     #########################################
@@ -470,7 +471,7 @@ nothing</code></pre><pre class="documenter-example-output"><code class="nohighli
     aeroForcesACDMS(t,azi) = OWENS.mapACDMS(t,azi,mymesh,myel,OWENSAero.AdvanceTurbineInterpolate;alwaysrecalc=true)
     deformAeroACDMS = OWENSAero.deformTurb
 end
-nothing</code></pre><p>Set up AeroDyn if used Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str Then by initializing AeroDyn and grabbing the backend functionality with a function handle</p><pre><code class="language-julia hljs">if AD15On
+nothing</code></pre><p>Set up AeroDyn if used Here we create AeroDyn the files, first by specifying the names, then by creating the files, TODO: hook up the direct sectionPropsArray_str Then by initializing AeroDyn and grabbing the backend functionality with a function handle</p><pre><code class="language-julia hljs">if AD15On &amp;&amp; run_full_example
     ad_input_file = &quot;$path/ADInputFile_SingleTurbine2.dat&quot;
     ifw_input_file = &quot;$path/IW2.dat&quot;
     OLAF_filename = &quot;$path/OLAF2.dat&quot;
@@ -620,42 +621,7 @@ nothing</code></pre><p>Set up AeroDyn if used Here we create AeroDyn the files, 
     deformAeroAD=OWENSOpenFASTWrappers.deformAD15
 end
 
-nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Opening AeroDyn-Inflow library at: /home/runner/.julia/artifacts/40e731aa229ee668f59fa694053de285aeb6d77f/lib/libaerodyn_inflow_c_binding.so
-
- **************************************************************************************************
- AeroDyn-Inflow library
-
- Copyright (C) 2024 National Renewable Energy Laboratory
- Copyright (C) 2024 Envision Energy USA LTD
-
- This program is licensed under Apache License Version 2.0 and comes with ABSOLUTELY NO WARRANTY.
- See the &quot;LICENSE&quot; file distributed with this software for details.
- **************************************************************************************************
-
- AeroDyn-Inflow library-v2.5.0-3490-g24c05a74
- Compile Info:
-  - Compiler: GCC version 8.1.0
-  - Architecture: 64 bit
-  - Precision: double
-  - OpenMP: No
-  - Date: Nov  5 2024
-  - Time: 02:19:23
- Execution Info:
-  - Date: 11/21/2025
-  - Time: 15:06:31+0000
-
- Running ADI.
- Running AeroDyn.
- Running OLAF.
-  - Directory:         /home/runner/work/OWENS.jl/OWENS.jl/docs/build/examples
-  - RootName:          /home/runner/work/OWENS.jl/OWENS.jl/examples/literate/ExampleB.
-  - Reading advanced options for OLAF:
- [WARN] Line ignored: &quot;VERT2&quot;   DEFAULT      -10       30.   400     5.      5.     1     5.136    15.136  100
-  - OLAF regularization parameters (for wing 1):
-    WingReg (min/max) :  12.2425 25.2472
-    WakeReg (min/max) :  12.2425 25.2472
-    k = alpha delta nu:   0.0368
- Running InflowWind.</code></pre><p>Calculate mass breakout of each material</p><pre><code class="language-julia hljs">mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
+nothing</code></pre><p>Calculate mass breakout of each material</p><pre><code class="language-julia hljs">mass_breakout_bld = OWENS.get_material_mass(plyprops_bld,numadIn_bld)
 mass_breakout_blds = mass_breakout_bld.*length(mymesh.structuralNodeNumbers[:,1])
 mass_breakout_twr = OWENS.get_material_mass(plyprops_twr,numadIn_twr;int_start=0.0,int_stop=Htwr_base)
 
@@ -709,49 +675,55 @@ RayleighAlpha = 0.05,
 RayleighBeta = 0.05,
 iterationType = &quot;DI&quot;)
 
-println(&quot;Running Unsteady&quot;)
-if AD15On
-    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesAD,deformAero=deformAeroAD)
-else
-    t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
-    FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-    epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
-    topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesACDMS,deformAero=deformAeroACDMS)
+if run_full_example
+    println(&quot;Running Unsteady&quot;)
+    if AD15On
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesAD,deformAero=deformAeroAD)
+    else
+        t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
+        FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.Unsteady_Land(inputs;system,assembly,
+        topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesACDMS,deformAero=deformAeroACDMS)
+    end
+
+    if AD15On #TODO: move this into the run functions
+        OWENSOpenFASTWrappers.endTurb()
+    end
 end
 
-if AD15On #TODO: move this into the run functions
-    OWENSOpenFASTWrappers.endTurb()
+if run_full_example
+    println(&quot;Saving VTK time domain files&quot;)
+    OWENS.OWENSFEA_VTK(joinpath(output_path, &quot;vtk&quot;, &quot;SNLARCUS5MW_timedomain_TNBnltrue&quot;),t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 end
-
-println(&quot;Saving VTK time domain files&quot;)
-OWENS.OWENSFEA_VTK(&quot;$path/vtk/SNLARCUS5MW_timedomain_TNBnltrue&quot;,t,uHist,system,assembly,sections;scaling=1,azi=aziHist)
 
 
 ##########################################
 #### Ultimate Failure #####
 ##########################################
 
-massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
-SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
-topstrainout_tower_U,topstrainout_tower_LtopDamage_blade_U,
-topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
-bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
-twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
-mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
-kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
-composite_station_idx_U_strut = [1,6,3,2,5],
-composite_station_name_U_strut = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
-composite_station_idx_L_strut = [1,6,3,2,5],
-composite_station_name_L_strut = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
-composite_station_idx_U_bld = [1,6,3,2,5],
-composite_station_name_U_bld = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
-composite_station_idx_L_bld = [1,6,3,2,5],
-composite_station_name_L_bld = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
-Twr_LE_U_idx=1,Twr_LE_L_idx=1,
-AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
+if run_full_example
+    massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,
+    SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,
+    topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,
+    topDamage_blade_L,topDamage_tower_U,topDamage_tower_L = OWENS.extractSF(bld_precompinput,
+    bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
+    twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,
+    mymesh,myel,myort,Nbld,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
+    kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor # epsilon_x_hist_1,kappa_y_hist_1,kappa_z_hist_1,epsilon_z_hist_1,kappa_x_hist_1,epsilon_y_hist_1,
+    composite_station_idx_U_strut = [1,6,3,2,5],
+    composite_station_name_U_strut = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+    composite_station_idx_L_strut = [1,6,3,2,5],
+    composite_station_name_L_strut = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+    composite_station_idx_U_bld = [1,6,3,2,5],
+    composite_station_name_U_bld = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+    composite_station_idx_L_bld = [1,6,3,2,5],
+    composite_station_name_L_bld = [&quot;Leading Edge&quot;,&quot;Trailing Edge&quot;,&quot;Spar Cap&quot;,&quot;Front Panel&quot;,&quot;Rear Panel&quot;],
+    Twr_LE_U_idx=1,Twr_LE_L_idx=1,
+    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
+end
 
 nothing</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
 Blades&#39; Mass Breakout
@@ -773,64 +745,4 @@ ETLX_2400_x10 0.0 kg, 2.1 $/kg: $0.0
 Airex_C70_55_x10 0.0 kg, 7.23 $/kg: $0.0
 Total Material Cost Blades: $68723.47780193196
 Total Material Cost Tower: $12842.409271681678
-Total Material Cost: $81565.88707361365
-Running Unsteady
-Running in specified rotor speed mode
-
-5.3%┣██▎                                        ┫ 1/19 [00:00&lt;Inf:Inf, InfGs/it]
- [INFO] FVW: Update States: reevaluation at the same starting time.  This will not print on
- subsequent occurences.
-10.5%┣█████                                          ┫ 2/19 [00:02&lt;00:35, 2s/it]
-15.8%┣███████▍                                       ┫ 3/19 [00:03&lt;00:27, 2s/it]
-21.1%┣██████████                                     ┫ 4/19 [00:05&lt;00:23, 2s/it]
-26.3%┣████████████▍                                  ┫ 5/19 [00:06&lt;00:21, 1s/it]
-31.6%┣██████████████▉                                ┫ 6/19 [00:07&lt;00:18, 1s/it]
-36.8%┣█████████████████▎                             ┫ 7/19 [00:08&lt;00:17, 1s/it]
-42.1%┣███████████████████▉                           ┫ 8/19 [00:09&lt;00:15, 1s/it]
-47.4%┣██████████████████████▎                        ┫ 9/19 [00:10&lt;00:13, 1s/it]
-52.6%┣████████████████████████▏                     ┫ 10/19 [00:12&lt;00:12, 1s/it]
-57.9%┣██████████████████████████▋                   ┫ 11/19 [00:13&lt;00:10, 1s/it]
-63.2%┣█████████████████████████████                 ┫ 12/19 [00:13&lt;00:08, 1s/it]
-68.4%┣███████████████████████████████▌              ┫ 13/19 [00:14&lt;00:07, 1s/it]
-73.7%┣██████████████████████████████████            ┫ 14/19 [00:15&lt;00:06, 1s/it]
-78.9%┣████████████████████████████████████▎         ┫ 15/19 [00:15&lt;00:04, 1s/it]
-84.2%┣██████████████████████████████████████▊       ┫ 16/19 [00:16&lt;00:03, 1s/it]
-89.5%┣█████████████████████████████████████████▏    ┫ 17/19 [00:17&lt;00:02, 1s/it]
-94.7%┣███████████████████████████████████████████▋  ┫ 18/19 [00:17&lt;00:01, 1s/it]
-100.0%┣█████████████████████████████████████████████┫ 19/19 [00:18&lt;00:00, 1s/it]
-Simulation Complete.
- &gt;&gt;&gt; FINAL WRITE
-Saving VTK time domain files
-┌ Warning: extractSF is being depreciated in favor of safetyfactor_fatigue, which uses the componetized workflow
-└ @ OWENS ~/work/OWENS.jl/OWENS.jl/src/postprocess/PostProcessing.jl:929
-Composite Ultimate and Buckling Safety Factors
-
-
-UPPER BLADE SURFACE
-Minimum Safety Factor on Surface: 0.4630856805950829
-At time 0.019s at composite station 6 of 21 at lam 6 of 6
-Maximum Damage per hr: 19745.152354634465
-At composite station 14 of 21 at lam 3 of 6
-
-
-LOWER BLADE SURFACE
-Minimum Safety Factor on Surface: 0.4627996113061744
-At time 0.019s at composite station 6 of 21 at lam 6 of 6
-Maximum Damage per hr: 19745.15235464109
-At composite station 9 of 21 at lam 4 of 6
-
-
-UPPER TOWER
-
-Minimum Safety Factor on tower Surface: 5.653052227040634
-At time 0.019s at composite station 21 of 21 at lam 1 of 1
-Maximum Damage per hr: 7180.055402290522
-At composite station 4 of 21 at lam 1 of 1
-
-
-Lower TOWER
-
-Minimum Safety Factor on tower Surface: 5.634428542931604
-At time 0.019s at composite station 1 of 21 at lam 1 of 1
-Maximum Damage per hr: 5385.041551516965
-At composite station 1 of 21 at lam 1 of 1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../B_detailedInputs/">« Detailed Inputs</a><a class="docs-footer-nextpage" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Friday 21 November 2025 15:08">Friday 21 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Total Material Cost: $81565.88707361365</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../B_detailedInputs/">« Detailed Inputs</a><a class="docs-footer-nextpage" href="../D_simulatingFloatingPlatforms/">Simulating Floating Platforms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 22 May 2026 04:14">Friday 22 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
