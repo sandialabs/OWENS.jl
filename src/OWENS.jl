@@ -73,6 +73,7 @@ include("core/utilities.jl")
 
 
 # Input/Output functionality
+include("io/result_channels.jl")
 include("io/fileio.jl")
 include("io/windio.jl")
 include("io/provenance.jl")

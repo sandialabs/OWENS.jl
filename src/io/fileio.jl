@@ -1537,6 +1537,7 @@ function outputData(;
             HDF5.write(file, "topDamage_blade_L", topDamage_blade_L)
             HDF5.write(file, "topDamage_tower_U", topDamage_tower_U)
             HDF5.write(file, "topDamage_tower_L", topDamage_tower_L)
+            annotate_output_data_channels!(file)
         end
 
         if ofastformat
