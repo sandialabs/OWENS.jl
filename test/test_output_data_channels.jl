@@ -162,3 +162,138 @@ end
         end
     end
 end
+
+@testset "outputData summary" begin
+    mktempdir() do dir
+        data_output = joinpath(dir, "unit.out")
+        inputs = (; dataOutputFilename = data_output)
+
+        vector = [1.0, 2.0, 3.0]
+        dof_history = reshape(collect(1.0:18.0), 3, 6)
+        strain_history = reshape(collect(1.0:24.0), 4, 2, 3)
+        stress_history = reshape(collect(1.0:72.0), 3, 2, 4, 3)
+        safety_factor = reshape(collect(1.0:24.0), 3, 2, 4)
+        topstrain = reshape(collect(1.0:216.0), 3, 2, 4, 9)
+        damage = reshape(collect(1.0:8.0), 2, 4)
+
+        OWENS.outputData(;
+            inputs,
+            t=vector,
+            aziHist=vector .+ 0.1,
+            OmegaHist=vector .+ 0.2,
+            OmegaDotHist=vector .+ 0.3,
+            gbHist=vector .+ 0.4,
+            gbDotHist=vector .+ 0.5,
+            gbDotDotHist=vector .+ 0.6,
+            FReactionHist=dof_history,
+            FTwrBsHist=dof_history .+ 10.0,
+            genTorque=vector .+ 0.7,
+            genPower=vector .+ 0.8,
+            torqueDriveShaft=vector .+ 0.9,
+            uHist=dof_history .+ 20.0,
+            uHist_prp=dof_history .+ 30.0,
+            epsilon_x_hist=strain_history .+ 1.0,
+            epsilon_y_hist=strain_history .+ 2.0,
+            epsilon_z_hist=strain_history .+ 3.0,
+            kappa_x_hist=strain_history .+ 4.0,
+            kappa_y_hist=strain_history .+ 5.0,
+            kappa_z_hist=strain_history .+ 6.0,
+            massOwens=12.5,
+            stress_U=stress_history .+ 1.0,
+            SF_ult_U=safety_factor .+ 1.0,
+            SF_buck_U=safety_factor .+ 2.0,
+            stress_L=stress_history .+ 2.0,
+            SF_ult_L=safety_factor .+ 3.0,
+            SF_buck_L=safety_factor .+ 4.0,
+            stress_TU=stress_history .+ 3.0,
+            SF_ult_TU=safety_factor .+ 5.0,
+            SF_buck_TU=safety_factor .+ 6.0,
+            stress_TL=stress_history .+ 4.0,
+            SF_ult_TL=safety_factor .+ 7.0,
+            SF_buck_TL=safety_factor .+ 8.0,
+            topstrainout_blade_U=topstrain .+ 1.0,
+            topstrainout_blade_L=topstrain .+ 2.0,
+            topstrainout_tower_U=topstrain .+ 3.0,
+            topstrainout_tower_L=topstrain .+ 4.0,
+            topDamage_blade_U=damage .+ 1.0,
+            topDamage_blade_L=damage .+ 2.0,
+            topDamage_tower_U=damage .+ 3.0,
+            topDamage_tower_L=damage .+ 4.0,
+        )
+
+        h5_file = joinpath(dir, "unit.h5")
+        summary = OWENS.output_data_summary(h5_file)
+        @test length(summary) == 41
+        @test [row.name for row in summary] == OUTPUT_DATASET_NAMES
+        @test all(row.present for row in summary)
+        @test all(row.registered for row in summary)
+        @test all(row.has_channel_attrs for row in summary)
+        @test all(isempty(row.attr_mismatches) for row in summary)
+        @test summary[1].name == "t"
+        @test summary[1].shape == [3]
+        @test summary[1].ndims == 1
+        @test summary[1].eltype == "Float64"
+        @test summary[1].units == "s"
+        @test summary[1].dimensions == ["time"]
+        @test summary[8].name == "FReactionHist"
+        @test summary[8].shape == [3, 6]
+        @test summary[8].units == "N or N*m by DOF"
+        @test summary[21].name == "massOwens"
+        @test summary[21].shape == Int[]
+        @test summary[21].ndims == 0
+        @test summary[22].name == "stress_U"
+        @test summary[22].shape == [3, 2, 4, 3]
+
+        partial_file = joinpath(dir, "partial.h5")
+        HDF5.h5open(partial_file, "w") do file
+            HDF5.write(file, "t", vector)
+            HDF5.write(file, "custom_channel", [4.0, 5.0])
+        end
+
+        partial_summary = OWENS.output_data_summary(partial_file)
+        @test length(partial_summary) == 41
+        @test partial_summary[1].name == "t"
+        @test partial_summary[1].present === true
+        @test partial_summary[1].shape == [3]
+        @test partial_summary[1].has_channel_attrs === false
+        @test partial_summary[1].attr_mismatches == [
+            "missing:owens_channel_name",
+            "missing:units",
+            "missing:dimensions",
+            "missing:frame",
+            "missing:association",
+            "missing:source",
+            "missing:sign_convention",
+            "missing:description",
+        ]
+        @test partial_summary[2].name == "aziHist"
+        @test partial_summary[2].present === false
+        @test ismissing(partial_summary[2].shape)
+        @test ismissing(partial_summary[2].ndims)
+        @test ismissing(partial_summary[2].eltype)
+        @test partial_summary[2].units == "rad"
+        @test partial_summary[2].dimensions == ["time"]
+
+        with_extra = OWENS.output_data_summary(partial_file; include_unregistered = true)
+        @test length(with_extra) == 42
+        @test with_extra[end].name == "custom_channel"
+        @test with_extra[end].present === true
+        @test with_extra[end].registered === false
+        @test with_extra[end].shape == [2]
+        @test with_extra[end].eltype == "Float64"
+        @test ismissing(with_extra[end].units)
+        @test ismissing(with_extra[end].dimensions)
+
+        t_only = OWENS.output_data_summary(partial_file; channels = ["t"])
+        @test length(t_only) == 1
+        @test t_only[1].name == "t"
+        @test t_only[1].present === true
+        @test OWENS.output_data_summary(partial_file; channels = "t") == t_only
+
+        @test_throws KeyError OWENS.output_data_summary(
+            partial_file;
+            channels = ["not_a_channel"],
+        )
+        @test_throws ArgumentError OWENS.output_data_summary(joinpath(dir, "missing.h5"))
+    end
+end
