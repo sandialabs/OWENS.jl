@@ -11,6 +11,9 @@ const STUDIO_WINDIO_SHA256 = "8c6ed05c7c0f22c45fc5acea73c206ab9ca0b1b7d62b7fbb6b
 const STUDIO_RM2_MODEL_SHA256 = "df24a053994c15fa83dcab09846d1401b14f892478333875971a320de9d4e94a"
 const STUDIO_RM2_WINDIO_SHA256 = "18fbfb761fe866e18d6fb24ed6f5800c26f7dcca225cf7f0e859729a23e74c3c"
 
+_portable_path(path::AbstractString) = replace(path, '\\' => '/')
+_portable_paths(paths) = [_portable_path(path) for path in paths]
+
 @testset "OWENS Studio project manifest and health" begin
     mktempdir() do dir
         model_file = joinpath(dir, "modeling_options.yml")
@@ -403,9 +406,9 @@ end
         "missing" => 0,
         "invalid_record" => 0,
     )
-    @test [row["path"] for row in health["files"]] == [
-        joinpath("..", "..", "RM2", "modeling_options_OWENS_RM2.yml"),
-        joinpath("..", "..", "RM2", "WINDIO_RM2.yaml"),
+    @test _portable_paths([row["path"] for row in health["files"]]) == [
+        "../../RM2/modeling_options_OWENS_RM2.yml",
+        "../../RM2/WINDIO_RM2.yaml",
     ]
     @test health["runs"][1]["resolved_path"] == fixture_run_manifest
     @test health["runs"][1]["run_manifest_health"]["status"] == "ok"
