@@ -112,13 +112,13 @@ mutable struct TowerSetupOptions
     strut_tower_joint_type::Int
 
     function TowerSetupOptions(;
-        Htwr_base::Float64 = 2.0,           
-        Htwr_blds::Float64 = 5.0,           
-        strut_twr_mountpoint::Vector{Float64} = [0.25, 0.75],  
-        strut_bld_mountpoint::Vector{Float64} = [0.25, 0.75],  
-        joint_type::Int = 2,             
-        c_mount_ratio::Float64 = 0.05,          
-        angularOffset::Float64 = -pi/2,         
+        Htwr_base::Float64 = 2.0,
+        Htwr_blds::Float64 = 5.0,
+        strut_twr_mountpoint::Vector{Float64} = [0.25, 0.75],
+        strut_bld_mountpoint::Vector{Float64} = [0.25, 0.75],
+        joint_type::Int = 2,
+        c_mount_ratio::Float64 = 0.05,
+        angularOffset::Float64 = -pi/2,
         NuMad_geom_xlscsv_file_twr::Any = nothing,
         NuMad_mat_xlscsv_file_twr::Any = nothing,
         NuMad_geom_xlscsv_file_strut::Any = nothing,
@@ -189,12 +189,14 @@ mutable struct BladeSetupOptions
     blade_joint_angle_Degrees::Float64
 
     function BladeSetupOptions(;
-        B::Int = 3,  
-        H::Float64 = 5.0,  
-        R::Float64 = 2.5,  
-        shapeZ::Vector{Float64} = collect(LinRange(0, 5.0, 31)),  
-        shapeX::Vector{Float64} = 2.5 .* (1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2),  
-        shapeY::Vector{Float64} = zeros(31),  
+        B::Int = 3,
+        H::Float64 = 5.0,
+        R::Float64 = 2.5,
+        shapeZ::Vector{Float64} = collect(LinRange(0, 5.0, 31)),
+        shapeX::Vector{Float64} = 2.5 .* (
+            1.0 .- 4.0 .* (collect(LinRange(0, 5.0, 31))/5.0 .- 0.5) .^ 2
+        ),
+        shapeY::Vector{Float64} = zeros(31),
         NuMad_geom_xlscsv_file_bld::Any = nothing,
         NuMad_mat_xlscsv_file_bld::Any = nothing,
         strut_blade_joint_type::Int = 0,
@@ -381,7 +383,7 @@ mutable struct AeroSetupOptions
             AD15On,
         )
     end
-  
+
     function AeroSetupOptions(dict::OrderedDict{Symbol,Any})
         new(
             get(dict, :rho, 1.225),
