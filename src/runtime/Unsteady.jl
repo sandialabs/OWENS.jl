@@ -1738,7 +1738,8 @@ function allocate_bottom(
     uddot_s_prp_n = Vector(uddot_s_ptfm_n[prpDOFs])
 
     jac = Array{Float32}(undef, numDOFPerNode*2, numDOFPerNode*2)
-    numMooringLines = 3
+    moordyn_summary = moorDynInputSummary(inputs.md_input_file)
+    numMooringLines = moordyn_summary.numMooringLines
 
     if inputs.dataOutputFilename == "none"
         hd_dataOutputFilename = "hydrodyn_temp.out"
@@ -1767,7 +1768,7 @@ function allocate_bottom(
         md_input_file = inputs.md_input_file,
         init_ptfm_pos = u_s_prp_n,
         interp_order = inputs.interpOrder,
-        WtrDpth = 200,
+        WtrDpth = moordyn_summary.waterDepth,
     )
 
     return bottom_totalNumDOF,
@@ -1802,6 +1803,64 @@ function validateMooringTensionBuffer(mooringTensions)
         ),
     )
     return mooringTensions
+end
+
+function moorDynSectionRows(lines, sectionName)
+    sectionName = uppercase(sectionName)
+    sectionStart = findfirst(lines) do line
+        stripped = uppercase(strip(line))
+        startswith(stripped, "-") && occursin(sectionName, stripped)
+    end
+    isnothing(sectionStart) &&
+        throw(ArgumentError("MoorDyn input is missing the $sectionName section"))
+
+    sectionEnd = findnext(lines, sectionStart+1) do line
+        startswith(strip(line), "-")
+    end
+    if isnothing(sectionEnd)
+        sectionEnd = length(lines)+1
+    end
+
+    return lines[(sectionStart+1):(sectionEnd-1)]
+end
+
+"""
+    moorDynInputSummary(md_input_file)
+
+Parse the MoorDyn input file fields needed by OWENS' floating initialization:
+the number of mooring lines and the water depth implied by fixed-point depths.
+"""
+function moorDynInputSummary(md_input_file)
+    isnothing(md_input_file) && throw(ArgumentError("md_input_file is required"))
+    lines = readlines(md_input_file)
+
+    fixedDepths = Float64[]
+    for row in moorDynSectionRows(lines, "POINTS")
+        fields = split(strip(row))
+        length(fields) >= 5 || continue
+        isnothing(tryparse(Int, fields[1])) && continue
+        if lowercase(fields[2]) == "fixed"
+            z = tryparse(Float64, fields[5])
+            isnothing(z) && continue
+            z <= 0.0 ||
+                throw(ArgumentError("Fixed MoorDyn point depth must be non-positive"))
+            push!(fixedDepths, -z)
+        end
+    end
+    isempty(fixedDepths) &&
+        throw(ArgumentError("MoorDyn input has no fixed points with parsable depth"))
+
+    numMooringLines = 0
+    for row in moorDynSectionRows(lines, "LINES")
+        fields = split(strip(row))
+        length(fields) >= 4 || continue
+        isnothing(tryparse(Int, fields[1])) && continue
+        numMooringLines += 1
+    end
+    numMooringLines > 0 ||
+        throw(ArgumentError("MoorDyn input has no parsable mooring lines"))
+
+    return (numMooringLines = numMooringLines, waterDepth = maximum(fixedDepths))
 end
 
 """
