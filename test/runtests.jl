@@ -29,6 +29,10 @@ end
     include("$path/test_unsteady_history_ranges.jl")
 end
 
+@testset "OpenFAST Module Cleanup" begin
+    include("$path/test_openfast_cleanup.jl")
+end
+
 @testset "SNL5MW With CACTUS One-Way Coupling, Preprepared Input Files" begin
     include("$path/SNL5MW_CACT_oneway_unit.jl")
 end

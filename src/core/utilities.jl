@@ -167,6 +167,47 @@ function completedHistoryRanges(last_saved_index::Integer, numTS::Integer)
     return (state = state_range, step = step_range)
 end
 
+"""
+    endOpenFASTModules(inputs; openfast=OWENSOpenFASTWrappers, platform_initialized=inputs.platformActive, ad_initialized=inputs.AD15On)
+
+End initialized OpenFAST native modules without masking an upstream simulation
+error.
+
+Cleanup is attempted independently for HydroDyn, MoorDyn, and AeroDyn. Any
+cleanup exceptions are returned as named tuples and, by default, also emitted as
+warnings so a `finally` block can preserve the original failure.
+"""
+function endOpenFASTModules(
+    inputs;
+    openfast = OWENSOpenFASTWrappers,
+    platform_initialized = inputs.platformActive,
+    ad_initialized = inputs.AD15On,
+    warn_on_error = true,
+)
+    cleanup_errors = NamedTuple{(:label, :exception),Tuple{String,Any}}[]
+
+    function cleanup(label, close_function)
+        try
+            close_function()
+        catch err
+            push!(cleanup_errors, (label = label, exception = err))
+            if warn_on_error
+                @warn "OpenFAST module cleanup failed" cleanup_module = label exception =
+                    (err, catch_backtrace())
+            end
+        end
+    end
+
+    if platform_initialized
+        cleanup("HydroDyn", openfast.HD_End)
+        cleanup("MoorDyn", openfast.MD_End)
+    end
+    if ad_initialized
+        cleanup("AeroDyn", openfast.endTurb)
+    end
+    return cleanup_errors
+end
+
 function safeakima(x, y, xpt; extrapolate = false)
     if minimum(xpt)<(minimum(x)-(abs(minimum(x))*0.1+1e-4)) ||
        maximum(xpt)>(maximum(x)+abs(maximum(x))*0.1)
