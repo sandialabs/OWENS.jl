@@ -59,13 +59,17 @@ function safeakima(x, y, xpt; extrapolate = false)
 end
 
 """
-    setInitConditions(initDisps, numNodes, numDOFPerNode)
+    createInitCondArray(initDisps, numNodes, numDOFPerNode)
+    createInitCondArray(initDisps, nodeNumbers[, numDOFPerNode])
 
 Creates the formatted initial conditions array needed by OWENSFEA
 
 #Input
 * `initDisps`: an array of length numDOFPerNode specifying the initial displacement of each DOF
-* `numNodes`: the number of nodes in the given mesh
+* `numNodes`: the number of nodes in the given mesh. This preserves the legacy
+  `1:numNodes` node numbering behavior.
+* `nodeNumbers`: explicit mesh node numbers. Use this form when the mesh node IDs
+  are not contiguous or do not start at 1.
 * `numDOFPerNode`: the number of unconstrained degrees of freedom calculated in each node
 
 #Output
@@ -74,22 +78,40 @@ Creates the formatted initial conditions array needed by OWENSFEA
     initCond(i,2) local DOF number for init cond i.
     initCond(i,3) value for init cond i.
 """
-function createInitCondArray(initDisps, numNodes, numDOFPerNode)
-    if initDisps == zeros(length(initDisps))
-        initCond = []
-    else
-        initCond = zeros(numNodes*numDOFPerNode, 3)
-        for i = 1:length(initDisps)
-            if initDisps[i] != 0.0
-                dof_initCond = hcat(
-                    collect(1:numNodes),
-                    ones(Int, numNodes)*i,
-                    ones(numNodes)*initDisps[i],
-                )
-                initCond[((i-1)*numNodes+1):(i*numNodes), :] = dof_initCond
-            end
+function createInitCondArray(
+    initDisps,
+    numNodes::Integer,
+    numDOFPerNode::Integer = length(initDisps),
+)
+    numNodes >= 0 || throw(ArgumentError("numNodes must be non-negative"))
+    return createInitCondArray(initDisps, collect(1:numNodes), numDOFPerNode)
+end
+
+function createInitCondArray(
+    initDisps,
+    nodeNumbers::AbstractVector,
+    numDOFPerNode::Integer = length(initDisps),
+)
+    numDOFPerNode > 0 || throw(ArgumentError("numDOFPerNode must be positive"))
+    length(initDisps) <= numDOFPerNode ||
+        throw(ArgumentError("initDisps length cannot exceed numDOFPerNode"))
+
+    for nodeNumber in nodeNumbers
+        nodeNumber isa Integer || throw(ArgumentError("nodeNumbers must contain integers"))
+    end
+
+    if all(iszero, initDisps)
+        return []
+    end
+
+    activeDOFs = findall(!iszero, initDisps)
+    initCond = zeros(length(activeDOFs)*length(nodeNumbers), 3)
+    irow = 1
+    for idof in activeDOFs
+        for nodeNumber in nodeNumbers
+            initCond[irow, :] = [nodeNumber, idof, initDisps[idof]]
+            irow += 1
         end
-        initCond = initCond[vec(mapslices(col -> any(col .!= 0), initCond, dims = 2)), :] #removes rows of all zeros
     end
 
     return initCond
