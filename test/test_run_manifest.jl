@@ -15,7 +15,7 @@ const GENERATED_SHA256 = "90e6df81ce3177ae762f91b5d27efa667cc2efcdc9c7e7310a45fb
         input_file = joinpath(dir, "input.txt")
         write(input_file, "alpha\n")
 
-        record = OWENS.file_provenance(input_file; root=dir, role=:airfoil)
+        record = OWENS.file_provenance(input_file; root = dir, role = :airfoil)
         @test record isa OrderedCollections.OrderedDict{String,Any}
         @test collect(keys(record)) == ["path", "bytes", "sha256", "role"]
         @test record["path"] == "input.txt"
@@ -29,7 +29,7 @@ const GENERATED_SHA256 = "90e6df81ce3177ae762f91b5d27efa667cc2efcdc9c7e7310a45fb
 
         missing_file = joinpath(dir, "missing.txt")
         @test_throws ArgumentError OWENS.file_sha256(missing_file)
-        @test_throws ArgumentError OWENS.file_provenance(missing_file; root=dir)
+        @test_throws ArgumentError OWENS.file_provenance(missing_file; root = dir)
     end
 end
 
@@ -54,19 +54,19 @@ end
         metadata = Dict(:case => "unit", :active => true)
 
         manifest = OWENS.build_run_manifest(;
-            run_id="run-unit-001",
-            run_name="manifest unit test",
-            project_root=dir,
-            solver="unit-solver",
-            project_file=project_file,
-            input_files=[input_file],
-            output_files=[output_file],
-            generated_files=[generated_file],
+            run_id = "run-unit-001",
+            run_name = "manifest unit test",
+            project_root = dir,
+            solver = "unit-solver",
+            project_file = project_file,
+            input_files = [input_file],
+            output_files = [output_file],
+            generated_files = [generated_file],
             parameters,
             metadata,
-            warnings=["low residual warning"],
-            status="complete",
-            created_at_utc="2026-05-20T00:00:00.000Z",
+            warnings = ["low residual warning"],
+            status = "complete",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
         )
 
         @test manifest isa OrderedCollections.OrderedDict{String,Any}
@@ -132,6 +132,8 @@ end
         @test collect(keys(manifest["metadata"])) == ["active", "case"]
         @test manifest["metadata"]["active"] === true
         @test manifest["metadata"]["case"] == "unit"
+        @test OWENS.run_manifest_issues(manifest) == String[]
+        @test OWENS.validate_run_manifest(manifest) === manifest
 
         written = OWENS.write_run_manifest(manifest_file, manifest)
         loaded = OWENS.read_run_manifest(manifest_file)
@@ -143,6 +145,8 @@ end
         @test loaded["outputs"][1]["sha256"] == OUTPUT_SHA256
         @test loaded["generated"][1]["sha256"] == GENERATED_SHA256
         @test loaded["parameters"]["flags"] == ["tip_loss", "dynamic_stall"]
+        @test OWENS.run_manifest_issues(manifest_file) == String[]
+        @test OWENS.validate_run_manifest(manifest_file)["run_id"] == "run-unit-001"
 
         @test_throws ArgumentError OWENS.read_run_manifest(joinpath(dir, "missing.yml"))
     end
@@ -175,6 +179,93 @@ end
     @test OWENS._manifest_value(v"2.0.1") == "2.0.1"
     @test OWENS._manifest_value(Dates.Date(2026, 5, 22)) == "2026-05-22"
     @test OWENS._manifest_value((:alpha, v"1.0.0")) == ["alpha", "1.0.0"]
+end
+
+@testset "Run manifest validation diagnostics" begin
+    mktempdir() do dir
+        input_file = joinpath(dir, "input.yml")
+        output_file = joinpath(dir, "output.h5")
+        write(input_file, "input: unit\n")
+        write(output_file, "output: unit\n")
+
+        manifest = OWENS.build_run_manifest(;
+            run_id = "validation-unit",
+            run_name = "validation unit",
+            project_root = dir,
+            solver = "unit-solver",
+            input_files = [input_file],
+            output_files = [output_file],
+            warnings = ["unit warning"],
+            status = "complete",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        @test OWENS.run_manifest_issues(manifest) == String[]
+
+        missing_schema = deepcopy(manifest)
+        delete!(missing_schema, "schema_version")
+        @test OWENS.run_manifest_issues(missing_schema) ==
+              ["missing required key: schema_version"]
+
+        old_schema = deepcopy(manifest)
+        old_schema["schema_version"] = "owens-run-manifest/v0"
+        @test OWENS.run_manifest_issues(old_schema) ==
+              ["schema_version must equal owens-run-manifest/v1"]
+
+        malformed = deepcopy(manifest)
+        malformed["run_id"] = 42
+        malformed["created_at_utc"] = false
+        malformed["julia"] = "Julia 1.12"
+        malformed["parameters"] = ["rpm"]
+        malformed["inputs"] = [
+            Dict(
+                "path" => 42,
+                "bytes" => true,
+                "sha256" => uppercase(INPUT_SHA256),
+                "role" => 7,
+            ),
+            "not a record",
+        ]
+        malformed["outputs"] =
+            [Dict("path" => "output.h5", "bytes" => -1, "sha256" => "abc")]
+        malformed["generated"] = [Dict("path" => "generated.vtp", "bytes" => 1)]
+        malformed["warnings"] = [3]
+        @test OWENS.run_manifest_issues(malformed) == [
+            "run_id must be a string",
+            "created_at_utc must be a string",
+            "julia must be a dictionary",
+            "parameters must be a dictionary",
+            "inputs[1].path must be a string",
+            "inputs[1].bytes must be a non-negative integer",
+            "inputs[1].sha256 must be a lowercase 64-character SHA-256 digest",
+            "inputs[1].role must be a string when present",
+            "inputs[2] must be a dictionary",
+            "outputs[1].bytes must be a non-negative integer",
+            "outputs[1].sha256 must be a lowercase 64-character SHA-256 digest",
+            "generated[1].sha256 is required",
+            "warnings[1] must be a string",
+        ]
+        @test_throws ArgumentError OWENS.validate_run_manifest(malformed)
+
+        missing_keys = OrderedCollections.OrderedDict{String,Any}()
+        @test OWENS.run_manifest_issues(missing_keys) == [
+            "missing required key: schema_version",
+            "missing required key: run_id",
+            "missing required key: run_name",
+            "missing required key: created_at_utc",
+            "missing required key: project_root",
+            "missing required key: solver",
+            "missing required key: status",
+            "missing required key: julia",
+            "missing required key: packages",
+            "missing required key: git",
+            "missing required key: parameters",
+            "missing required key: metadata",
+            "missing required key: inputs",
+            "missing required key: outputs",
+            "missing required key: generated",
+            "missing required key: warnings",
+        ]
+    end
 end
 
 @testset "Git state outside repository" begin
