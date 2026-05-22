@@ -1755,7 +1755,10 @@ function allocate_bottom(
     OWENSOpenFASTWrappers.HD_Init(;
         hdlib_filename = bin.hydrodynLibPath,
         output_root_name = hd_dataOutputFilename,
-        hd_input_file = inputs.hd_input_file,
+        hd_input_file = hydrodynInputWithResolvedPotFile(
+            inputs.hd_input_file,
+            inputs.potflowfile,
+        ),
         ss_input_file = inputs.ss_input_file,
         PotFile = inputs.potflowfile,
         t_initial = t[1],

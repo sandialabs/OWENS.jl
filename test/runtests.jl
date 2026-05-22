@@ -21,6 +21,10 @@ end
     include("$path/test_moordyn_buffers.jl")
 end
 
+@testset "HydroDyn PotFile Resolver" begin
+    include("$path/test_hydrodyn_potfile.jl")
+end
+
 @testset "SNL5MW With CACTUS One-Way Coupling, Preprepared Input Files" begin
     include("$path/SNL5MW_CACT_oneway_unit.jl")
 end
