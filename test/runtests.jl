@@ -9,6 +9,10 @@ end
     include("$path/test_turbsim_template.jl")
 end
 
+@testset "Uniform Wind Rendering" begin
+    include("$path/test_uniform_wind.jl")
+end
+
 @testset "SNL5MW With CACTUS One-Way Coupling, Preprepared Input Files" begin
     include("$path/SNL5MW_CACT_oneway_unit.jl")
 end

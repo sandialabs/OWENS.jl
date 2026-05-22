@@ -7,6 +7,7 @@ export DLC_internal,
     generateUniformwind,
     generateTurbsimBTS,
     renderTurbsimInputLines,
+    renderUniformWindLines,
     getGustVel,
     simpleGustVel,
     iecExtremeWindSpeeds
@@ -145,6 +146,85 @@ function iecExtremeWindSpeeds(Vref; ve50_factor = 1.4, ve1_factor = 0.8)
 
     Ve50 = Vref * ve50_factor
     return (Ve50 = Ve50, Ve1 = Ve50 * ve1_factor)
+end
+
+const UNIFORM_WIND_HEADER_LINES = [
+    "! OpenFAST Deterministic Wind File",
+    "#",
+    "# Comment lines begin with \"!\" or \"#\" or \"%\", then the data lines must contain the following columns:",
+    "#",
+    "# If there are only 8 columns, upflow is assumed to be 0.",
+    "#",
+    "# Parameters are interpolated linearly between time steps; using nearest neighbor before the first time ",
+    "# listed in this file and after the last time listed in the file. ",
+    "#",
+    "! Time     Wind    Wind    Vertical    Horiz.      Pwr.Law     Lin.Vert.   Gust     Upflow",
+    "!          Speed   Dir     Speed       Shear       Vert.Shr    Shear       Speed    Angle ",
+    "! (sec)    (m/s)   (Deg)   (m/s)                                            (m/s)   (deg)",
+]
+
+function validateUniformWindSeries(name, values, ntime)
+    isnothing(values) && throw(ArgumentError("DLCParams.$name is required"))
+
+    try
+        length(values) == ntime ||
+            throw(ArgumentError("DLCParams.$name length must match DLCParams.time"))
+    catch err
+        err isa MethodError || rethrow()
+        throw(ArgumentError("DLCParams.$name must be an indexable time series"))
+    end
+
+    for value in values
+        value isa Real || throw(ArgumentError("DLCParams.$name values must be real"))
+        isfinite(value) || throw(ArgumentError("DLCParams.$name values must be finite"))
+    end
+
+    return values
+end
+
+"""
+    renderUniformWindLines(DLCParams)
+
+Return the OpenFAST deterministic wind-file lines for `DLCParams`.
+
+The deterministic writer uses `DLCParams.URef` as the uniform wind speed and
+requires each time-varying wind column to have the same length as
+`DLCParams.time`.  Invalid or incomplete DLC parameter sets fail before any
+file is written.
+"""
+function renderUniformWindLines(DLCParams)
+    isnothing(DLCParams.time) && throw(ArgumentError("DLCParams.time is required"))
+    ntime = try
+        length(DLCParams.time)
+    catch err
+        err isa MethodError || rethrow()
+        throw(ArgumentError("DLCParams.time must be an indexable time series"))
+    end
+    ntime > 0 || throw(ArgumentError("DLCParams.time must contain at least one step"))
+    time = validateUniformWindSeries(:time, DLCParams.time, ntime)
+
+    DLCParams.URef isa Real || throw(ArgumentError("DLCParams.URef must be real"))
+    isfinite(DLCParams.URef) || throw(ArgumentError("DLCParams.URef must be finite"))
+
+    windvel = fill(DLCParams.URef, ntime)
+    winddir = validateUniformWindSeries(:winddir, DLCParams.winddir, ntime)
+    windvertvel = validateUniformWindSeries(:windvertvel, DLCParams.windvertvel, ntime)
+    horizShear = validateUniformWindSeries(:horizshear, DLCParams.horizshear, ntime)
+    pwrLawVertShear =
+        validateUniformWindSeries(:pwrLawVertShear, DLCParams.pwrLawVertShear, ntime)
+    LinVertShear = validateUniformWindSeries(:LinVertShear, DLCParams.LinVertShear, ntime)
+    gustvel = validateUniformWindSeries(:gustvel, DLCParams.gustvel, ntime)
+    UpflowAngle = validateUniformWindSeries(:UpflowAngle, DLCParams.UpflowAngle, ntime)
+
+    lines = copy(UNIFORM_WIND_HEADER_LINES)
+    for itime = 1:ntime
+        push!(
+            lines,
+            "$(time[itime]) $(windvel[itime]) $(winddir[itime]) $(windvertvel[itime]) $(horizShear[itime]) $(pwrLawVertShear[itime]) $(LinVertShear[itime]) $(gustvel[itime]) $(UpflowAngle[itime])",
+        )
+    end
+
+    return lines
 end
 
 """
@@ -714,38 +794,7 @@ function getDLCparams(
 end
 
 function generateUniformwind(DLCParams, windINPfilename)
-
-    time = DLCParams.time
-    windvel = ones(length(DLCParams.time)) .* DLCParams.URef
-    winddir = DLCParams.winddir
-    windvertvel = DLCParams.windvertvel
-    horizShear = DLCParams.horizshear
-    pwrLawVertShear = DLCParams.pwrLawVertShear
-    LinVertShear = DLCParams.LinVertShear
-    gustvel = DLCParams.gustvel
-    UpflowAngle = DLCParams.UpflowAngle
-
-    lines = [
-        "! OpenFAST Deterministic Wind File",
-        "#",
-        "# Comment lines begin with \"!\" or \"#\" or \"%\", then the data lines must contain the following columns:",
-        "#",
-        "# If there are only 8 columns, upflow is assumed to be 0.",
-        "#",
-        "# Parameters are interpolated linearly between time steps; using nearest neighbor before the first time ",
-        "# listed in this file and after the last time listed in the file. ",
-        "#",
-        "! Time     Wind    Wind    Vertical    Horiz.      Pwr.Law     Lin.Vert.   Gust     Upflow",
-        "!          Speed   Dir     Speed       Shear       Vert.Shr    Shear       Speed    Angle ",
-        "! (sec)    (m/s)   (Deg)   (m/s)                                            (m/s)   (deg)",
-    ]
-
-    for itime = 1:length(time)
-        lines = [
-            lines;
-            "$(time[itime]) $(windvel[itime]) $(winddir[itime]) $(windvertvel[itime]) $(horizShear[itime]) $(pwrLawVertShear[itime]) $(LinVertShear[itime]) $(gustvel[itime]) $(UpflowAngle[itime])"
-        ]
-    end
+    lines = renderUniformWindLines(DLCParams)
 
     # Write the new file
     open(windINPfilename, "w") do file
