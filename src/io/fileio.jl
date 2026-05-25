@@ -1133,6 +1133,11 @@ object.
 
 #Output
 * `el::OWENSFEA.El`:       see OWENSFEA.El    element data object
+
+The legacy `.el` format stores flapwise and edgewise elastic-axis offsets in
+columns 16 and 17. `readElementData` currently uses column 17 as
+`SectionPropsArray.a`, then converts it to a semichord fraction after the chord
+is read from blade data. Column 16 is not represented in `SectionPropsArray`.
 """
 function readElementData(numElements, elfile, ortfile, bladeData_struct)
 
