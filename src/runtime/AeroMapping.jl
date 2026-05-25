@@ -97,6 +97,7 @@ function mapACDMS(
     outputfile = nothing,
     offsetmomentarm = 0.0,
 )
+    aero_result = advanceTurb(t; azi = azi_j, alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
     CP,
     Rp,
     Tp,
@@ -124,7 +125,8 @@ function mapACDMS(
     M_addedmass_Np,
     M_addedmass_Tp,
     F_addedmass_Np,
-    F_addedmass_Tp = advanceTurb(t; azi = azi_j, alwaysrecalc) #add 3pi/2 to align aero with structural azimuth
+    F_addedmass_Tp = aero_result
+    aero_M25 = length(aero_result) > 28 ? aero_result[end] : nothing
 
     NBlade = length(Rp[:, 1, 1])
     Nslices = length(Rp[1, :, 1])
@@ -149,7 +151,11 @@ function mapACDMS(
             for islice = 1:Nslices
                 N[jbld, iTS, islice] = Rp[jbld, islice, t_idx] #Normal force on the structure is inward, OWENSAero normal is inward positive #we multiply by cos(delta) to go from force per height to force per span, and then divide by cos(delta) to go from radial to normal, so they cancel
                 T[jbld, iTS, islice] = -Tp[jbld, islice, t_idx]*cos(delta[jbld, islice]) ##Tangential force on the structure is against turbine rotation, OWENSAero tangential is with rotation positive # multiply by delta to convert from force per height to force per span
-                M25[jbld, iTS, islice] = Rp[jbld, islice, t_idx]*offsetmomentarm #0.0#M25perSpan[index]
+                M25[jbld, iTS, islice] =
+                    (
+                        aero_M25 === nothing ? zero(Rp[jbld, islice, t_idx]) :
+                        aero_M25[jbld, islice, t_idx]
+                    ) + Rp[jbld, islice, t_idx]*offsetmomentarm
                 X[jbld, iTS, islice] = Xp[jbld, islice, t_idx]#*cos(-azi_j) + Yp[jbld,islice,t_idx]*sin(-azi_j) #*cos(delta[jbld,islice]) 
                 Y[jbld, iTS, islice] = Yp[jbld, islice, t_idx]#*sin(-azi_j) + Yp[jbld,islice,t_idx]*cos(-azi_j)#*cos(delta[jbld,islice]) 
                 Z[jbld, iTS, islice] = Zp[jbld, islice, t_idx]#*cos(delta[jbld,islice])
