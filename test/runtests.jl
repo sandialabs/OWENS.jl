@@ -53,6 +53,10 @@ end
     include("$path/test_validation_reports.jl")
 end
 
+@testset "Aero Mapping" begin
+    include("$path/test_aero_mapping.jl")
+end
+
 @testset "WindIO Run Spec" begin
     include("$path/test_windio_run_spec.jl")
 end
