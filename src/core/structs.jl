@@ -98,7 +98,7 @@ Model inputs for OWENS coupled analysis, struct
 
 # Inputs
 * `verbosity::int`: output verbosity where 0 is nothing, 1 is warnings, 2 is summary outputs, 3 is detailed outputs, and 4 is everything
-* `analysisType::string`: Newmark Beta time stepping "TNB", Dean time stepping "TD", modal "M"
+* `analysisType::string`: Newmark Beta time stepping "TNB", reduced-order model "ROM", GXBeam "GX", or modal "M"
 * `turbineStartup::int`: 1 forced start-up using generator as motor, 2 self-starting mode, 0 specified rotor speed mode")
 * `usingRotorSpeedFunction::bool`: use user specified rotor speed profile function
 * `tocp::Array{<:float}`: = time points for rotor speed profile (s)
@@ -186,6 +186,7 @@ function Inputs(;
     TOL = 1e-4,
     MAXITER = 20,
 )
+    analysisType = _reject_time_dean_option(analysisType, "analysisType")
 
     return Inputs(
         verbosity,

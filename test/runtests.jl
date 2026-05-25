@@ -17,6 +17,10 @@ end
     include("$path/test_initial_conditions.jl")
 end
 
+@testset "Time Dean Option" begin
+    include("$path/test_time_dean_option.jl")
+end
+
 @testset "MoorDyn Buffer Helpers" begin
     include("$path/test_moordyn_buffers.jl")
 end
