@@ -61,6 +61,10 @@ end
     include("$path/test_aero_mapping.jl")
 end
 
+@testset "Section Property Reader" begin
+    include("$path/test_section_property_reader.jl")
+end
+
 @testset "WindIO Run Spec" begin
     include("$path/test_windio_run_spec.jl")
 end
