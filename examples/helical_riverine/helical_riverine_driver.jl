@@ -83,7 +83,9 @@ mymesh,myel,myort,myjoint,sectionPropsArray,mass_twr, mass_bld,
 stiff_twr, stiff_bld,bld_precompinput,
 bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
 twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng, AD15bldElIdxRng  = OWENS.setupOWENS(OWENSAero,path;
+mass_breakout_blds,mass_breakout_twr,system, assembly, sections,AD15bldNdIdxRng, AD15bldElIdxRng,
+custom_mesh_outputs, stiff_array, mass_array, strut_precompinput, strut_precompoutput,
+plyprops_strut, numadIn_strut, lam_U_strut, lam_L_strut  = OWENS.setupOWENS(OWENSAero,path;
     rho, #windio
     Nslices, #modeling options
     ntheta, #modeling options
@@ -289,7 +291,8 @@ composite_station_idx_U_bld = [1,6,3,2,5],
 composite_station_name_U_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
 composite_station_idx_L_bld = [1,6,3,2,5],
 composite_station_name_L_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
-Twr_LE_U_idx=1,Twr_LE_L_idx=1,AD15bldNdIdxRng,AD15bldElIdxRng) #TODO: add in ability to have material safety factors and load safety factors
+Twr_LE_U_idx=1,Twr_LE_L_idx=1,AD15bldNdIdxRng,AD15bldElIdxRng,
+strut_precompoutput, strut_precompinput, plyprops_strut, numadIn_strut, lam_U_strut, lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
 
 nothing
 

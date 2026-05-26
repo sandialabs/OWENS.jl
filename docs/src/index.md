@@ -11,7 +11,7 @@ This package is for experienced researchers and analyists with both software and
 OWENS is an ontology, or way of coupling modular aerodynamic, structural, hydrodynamic, and controls packages.  It was originally based on the structural dynamics solver by Brian Owens (see dissertation: http://hdl.handle.net/1969.1/151813). However, it has been rewritten into the Julia programming language, modularized, and many of the issues related to aerodynamic coupling and floating dynamics solved, with extensive expansion into other areas and features to provide a seamless and automated process that takes in high level design details and does all of the preprocessing, running, and post processing that is normally done under different roofs or by different manual processes.  This was done with the intent of enabling fast, parametric design.  We have many of the modules propogating automatic gradients, however this is still a future challenge to solve well. 
 
 ## Installation
-For Julia 1.11+.  For new Julia users, developer install, and those wishing to use Julia 1.10 and below, see the In-Depth Installation page.
+For Julia 1.11+. If dependency resolution reports that `OWENSOpenFASTWrappers` has no known versions, use the URL-dependency fallback on the In-Depth Installation page.
 
 ```julia
 using Pkg

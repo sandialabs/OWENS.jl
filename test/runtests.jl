@@ -57,6 +57,10 @@ end
     include("$path/test_validation_reports.jl")
 end
 
+@testset "Strut Postprocessing" begin
+    include("$path/test_postprocess_struts.jl")
+end
+
 @testset "Aero Mapping" begin
     include("$path/test_aero_mapping.jl")
 end

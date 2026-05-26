@@ -20,7 +20,7 @@ OWENS is primarily developed with the support of the U.S. Department of Energy a
 
 
 ## Installation
-For Julia 1.11+.  For new Julia users, developer install, and those wishing to use Julia 1.10 and below, see the In-Depth Installation page in the docs.
+For Julia 1.11+. If dependency resolution reports that `OWENSOpenFASTWrappers` has no known versions, use the URL-dependency fallback on the In-Depth Installation page.
 
 ```julia
 using Pkg
