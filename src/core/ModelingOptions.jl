@@ -1,6 +1,18 @@
 using OrderedCollections: OrderedDict
 using YAML
 
+function _reject_time_dean_option(value, field_name)
+    if value isa AbstractString &&
+       uppercase(replace(strip(value), r"[\s_-]"=>"")) in ("TD", "TIMEDEAN", "DEAN")
+        throw(
+            ArgumentError(
+                "Dean time stepping (`TD`) is no longer supported through OWENS `$field_name`; use `TNB`, `ROM`, or `GX` instead.",
+            ),
+        )
+    end
+    return value
+end
+
 export MasterInput,
     OWENS_Options,
     DLC_Options,
@@ -161,6 +173,8 @@ function MasterInput(;
     NuMad_geom_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Geom_SNL_5MW_Struts.csv",
     NuMad_mat_xlscsv_file_strut = "$module_path/../test/examples/data/NuMAD_Materials_SNL_5MW.csv",
 )
+    structuralModel = _reject_time_dean_option(structuralModel, "structuralModel")
+
     return MasterInput(
         analysisType,
         turbineType,
@@ -240,6 +254,7 @@ function MasterInput(yamlInputfile)
 
     structuralParameters = yamlInput["structuralParameters"]
     structuralModel = structuralParameters["structuralModel"]
+    structuralModel = _reject_time_dean_option(structuralModel, "structuralModel")
     ntelem = structuralParameters["ntelem"]
     nbelem = structuralParameters["nbelem"]
     ncelem = structuralParameters["ncelem"]
@@ -348,7 +363,10 @@ mutable struct OWENS_Options
         new(
             get(dict_in, :analysisType, "Unsteady"), # Unsteady, DLC, Campbell, todo: steady, flutter may be re-activated in the future.
             get(dict_in, :AeroModel, "DMS"), # OWENSAero model "DMS" for double multiple streamtube or "AC" for actuator cylinder, or "AD" for aerodyn
-            get(dict_in, :structuralModel, "TNB"), # Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
+            _reject_time_dean_option(
+                get(dict_in, :structuralModel, "TNB"),
+                "structuralModel",
+            ), # Structural models available: TNB full timoshenko beam elements with time newmark beta time stepping, ROM reduced order modal model of the timoshenko elements, GX with GXBeam's methods for geometrically exact beam theory and more efficient methods and time stepping
             get(dict_in, :controlStrategy, "normal"), # should be in WindIO?- yes, 
             get(dict_in, :numTS, 10), # number of time steps TODO: change to sim time and make this derived
             get(dict_in, :delta_t, 0.05), # time step in seconds
