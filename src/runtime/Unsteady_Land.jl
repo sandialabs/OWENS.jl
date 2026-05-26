@@ -178,6 +178,668 @@ mutable struct TopData
     FReactionsm1::Any
     topFReaction_j::Any
 end
+
+const _UNSTEADY_LAND_RESTART_FORMAT = "OWENS.Unsteady_Land.restart"
+const _UNSTEADY_LAND_RESTART_VERSION = 1
+
+const _RESTART_CURRENT_FIELDS = (
+    :CN2H,
+    :integrator,
+    :integrator_j,
+    :topDispOut,
+    :u_s,
+    :udot_s,
+    :uddot_s,
+    :u_sm1,
+    :topDispData1,
+    :topDispData2,
+    :topElStrain,
+    :gb_s,
+    :gbDot_s,
+    :gbDotDot_s,
+    :azi_s,
+    :Omega_s,
+    :OmegaDot_s,
+    :genTorque_s,
+    :torqueDriveShaft_s,
+    :topFexternal,
+    :rbData,
+    :u_sRed,
+    :udot_sRed,
+    :uddot_sRed,
+    :u_s2,
+    :udot_s2,
+    :uddot_s2,
+    :eta_s,
+    :etadot_s,
+    :etaddot_s,
+    :u_j,
+    :udot_j,
+    :uddot_j,
+    :azi_j,
+    :Omega_j,
+    :OmegaDot_j,
+    :gb_j,
+    :gbDot_j,
+    :gbDotDot_j,
+    :genTorque_j,
+    :torqueDriveShaft_j,
+    :FReactionsm1,
+    :topFReaction_j,
+)
+
+const _RESTART_STATE_HISTORY_FIELDS = (
+    :uHist,
+    :udotHist,
+    :uddotHist,
+    :FReactionHist,
+    :FTwrBsHist,
+    :aziHist,
+    :OmegaHist,
+    :OmegaDotHist,
+    :gbHist,
+    :gbDotHist,
+    :gbDotDotHist,
+    :genTorque,
+    :genPower,
+    :torqueDriveShaft,
+    :uHist_prp,
+    :FPtfmHist,
+    :FHydroHist,
+    :FMooringHist,
+    :rbDataHist,
+    :topFexternal_hist,
+)
+
+const _RESTART_STEP_HISTORY_FIELDS = (
+    :epsilon_x_hist,
+    :epsilon_y_hist,
+    :epsilon_z_hist,
+    :kappa_x_hist,
+    :kappa_y_hist,
+    :kappa_z_hist,
+)
+
+const _RESTART_INPUT_RUNTIME_FIELDS = (:generatorOn, :omegaControl)
+
+const _OWENSAERO_TURBINE_RESTART_FIELDS =
+    (:r, :z, :twist, :delta, :omega, :centerX, :centerY, :rhoA)
+
+const _OWENSAERO_ENVIRONMENT_RESTART_FIELDS = (
+    :V_x,
+    :V_y,
+    :V_z,
+    :V_twist,
+    :aw_warm,
+    :steplast,
+    :idx_RPI,
+    :V_wake_old,
+    :BV_DynamicFlagL,
+    :BV_DynamicFlagD,
+    :alpha_last,
+    :accel_flap,
+    :accel_edge,
+    :gravity,
+)
+
+const _OWENSAERO_LB_STATE_RESTART_FIELDS = (
+    :cl_ref_le_last,
+    :cl_ref_last,
+    :fstat_last,
+    :cv_last,
+    :dp,
+    :df,
+    :dcnv,
+    :le_separation_state,
+    :s_lev,
+)
+
+const _OWENSAERO_CACHE_RESTART_GLOBALS = (
+    :dt,
+    :last_step1,
+    :last_azi,
+    :last_stepL,
+    :last_stepU,
+    :timelast,
+    :z3D,
+    :z3Dnorm,
+    :delta,
+    :aziL_save,
+    :aziU_save,
+    :startingtwist,
+    :CPL,
+    :CPU,
+    :RpL,
+    :RpU,
+    :TpL,
+    :TpU,
+    :ZpL,
+    :ZpU,
+    :XpL,
+    :YpL,
+    :XpU,
+    :YpU,
+    :M_addedmass_Np_L,
+    :M_addedmass_Np_U,
+    :M_addedmass_Tp_L,
+    :M_addedmass_Tp_U,
+    :F_addedmass_Np_L,
+    :F_addedmass_Np_U,
+    :F_addedmass_Tp_L,
+    :F_addedmass_Tp_U,
+    :F_buoy_L,
+    :F_buoy_U,
+    :alphaL,
+    :alphaU,
+    :clL,
+    :clU,
+    :cd_afL,
+    :cd_afU,
+    :cm_afL,
+    :cm_afU,
+    :M25L,
+    :M25U,
+    :VlocL,
+    :VlocU,
+    :ReL,
+    :ReU,
+    :thetavecL,
+    :thetavecU,
+    :deltaL,
+    :deltaU,
+    :Fx_baseL,
+    :Fx_baseU,
+    :Fy_baseL,
+    :Fy_baseU,
+    :Fz_baseL,
+    :Fz_baseU,
+    :Mx_baseL,
+    :Mx_baseU,
+    :My_baseL,
+    :My_baseU,
+    :Mz_baseL,
+    :Mz_baseU,
+    :power2L,
+    :power2U,
+    :powerL,
+    :powerU,
+)
+
+function _dict_get(dict, key::String, default = nothing)
+    if haskey(dict, key)
+        return dict[key]
+    end
+    symbol_key = Symbol(key)
+    if haskey(dict, symbol_key)
+        return dict[symbol_key]
+    end
+    return default
+end
+
+function _field_dict(source, field_names)
+    fields = Dict{String,Any}()
+    for field_name in field_names
+        if hasfield(typeof(source), field_name)
+            fields[string(field_name)] = deepcopy(getfield(source, field_name))
+        end
+    end
+    return fields
+end
+
+function _restart_history_prefix(
+    value,
+    filled_length::Integer,
+    field_name::Symbol,
+    axis::Integer,
+)
+    value === nothing && return nothing
+    ndims(value) >= axis ||
+        throw(DimensionMismatch("restart history $field_name does not have axis $axis"))
+    0 <= filled_length <= size(value, axis) || throw(
+        ArgumentError(
+            "restart history $field_name has invalid filled length $filled_length",
+        ),
+    )
+    indices = ntuple(dim -> dim == axis ? (1:filled_length) : Colon(), ndims(value))
+    return copy(value[indices...])
+end
+
+function _history_dict(topdata, field_names, filled_length::Integer, axis::Integer)
+    histories = Dict{String,Any}()
+    for field_name in field_names
+        if hasfield(typeof(topdata), field_name)
+            histories[string(field_name)] = _restart_history_prefix(
+                getfield(topdata, field_name),
+                filled_length,
+                field_name,
+                axis,
+            )
+        end
+    end
+    return histories
+end
+
+function _copy_restart_value!(target, field_name::Symbol, saved_value)
+    current_value = getfield(target, field_name)
+    if current_value isa AbstractArray && saved_value isa AbstractArray
+        size(current_value) == size(saved_value) || throw(
+            DimensionMismatch(
+                "restart field $field_name has size $(size(saved_value)); current model expects $(size(current_value))",
+            ),
+        )
+    end
+    setfield!(target, field_name, deepcopy(saved_value))
+    return nothing
+end
+
+function _copy_restart_history_prefix!(
+    topdata,
+    field_name::Symbol,
+    saved_value,
+    filled_length::Integer,
+    axis::Integer,
+)
+    saved_value === nothing && return nothing
+    target_value = getfield(topdata, field_name)
+    ndims(target_value) == ndims(saved_value) || throw(
+        DimensionMismatch(
+            "restart history $field_name has $(ndims(saved_value)) dimensions; current model expects $(ndims(target_value))",
+        ),
+    )
+    size(saved_value, axis) == filled_length || throw(
+        DimensionMismatch(
+            "restart history $field_name has saved length $(size(saved_value, axis)); expected $filled_length",
+        ),
+    )
+    size(target_value, axis) >= filled_length || throw(
+        DimensionMismatch(
+            "restart history $field_name needs $filled_length entries; current model has $(size(target_value, axis))",
+        ),
+    )
+
+    for dim = 1:ndims(target_value)
+        if dim != axis && size(target_value, dim) != size(saved_value, dim)
+            throw(
+                DimensionMismatch(
+                    "restart history $field_name has size $(size(saved_value)); current model expects compatible size $(size(target_value))",
+                ),
+            )
+        end
+    end
+
+    if filled_length > 0
+        indices =
+            ntuple(dim -> dim == axis ? (1:filled_length) : Colon(), ndims(target_value))
+        target_value[indices...] .= saved_value
+    end
+    return nothing
+end
+
+function _copy_array_fields(source, field_names)
+    fields = Dict{String,Any}()
+    for field_name in field_names
+        if hasfield(typeof(source), field_name)
+            value = getfield(source, field_name)
+            fields[string(field_name)] = deepcopy(value)
+        end
+    end
+    return fields
+end
+
+function _copy_lb_state(lb_state)
+    lb_state === nothing && return nothing
+    return _copy_array_fields(lb_state, _OWENSAERO_LB_STATE_RESTART_FIELDS)
+end
+
+function _restore_array_field!(target, field_name::Symbol, saved_value)
+    hasfield(typeof(target), field_name) || return nothing
+    current_value = getfield(target, field_name)
+    if current_value isa AbstractArray && saved_value isa AbstractArray
+        size(current_value) == size(saved_value) || throw(
+            DimensionMismatch(
+                "OWENSAero restart field $field_name has size $(size(saved_value)); current model expects $(size(current_value))",
+            ),
+        )
+        current_value .= saved_value
+    elseif current_value != saved_value
+        throw(
+            ArgumentError(
+                "OWENSAero restart field $field_name cannot be restored into the current model",
+            ),
+        )
+    end
+    return nothing
+end
+
+function _restore_lb_state!(lb_state, saved_state)
+    (lb_state === nothing || saved_state === nothing) && return nothing
+    for field_name in _OWENSAERO_LB_STATE_RESTART_FIELDS
+        saved_value = _dict_get(saved_state, string(field_name), nothing)
+        saved_value === nothing && continue
+        _restore_array_field!(lb_state, field_name, saved_value)
+    end
+    return nothing
+end
+
+function _capture_owensaero_restart_state()
+    if !(isdefined(OWENSAero, :turbslices) && isdefined(OWENSAero, :envslices))
+        return nothing
+    end
+
+    turbine_states = [
+        _copy_array_fields(turbine, _OWENSAERO_TURBINE_RESTART_FIELDS) for
+        turbine in getfield(OWENSAero, :turbslices)
+    ]
+    environment_states = Dict{String,Any}[]
+    for environment in getfield(OWENSAero, :envslices)
+        environment_state =
+            _copy_array_fields(environment, _OWENSAERO_ENVIRONMENT_RESTART_FIELDS)
+        if hasfield(typeof(environment), :lb_state)
+            environment_state["lb_state"] = _copy_lb_state(getfield(environment, :lb_state))
+        end
+        push!(environment_states, environment_state)
+    end
+
+    cache_state = Dict{String,Any}()
+    for global_name in _OWENSAERO_CACHE_RESTART_GLOBALS
+        if isdefined(OWENSAero, global_name)
+            cache_state[string(global_name)] = deepcopy(getfield(OWENSAero, global_name))
+        end
+    end
+
+    return Dict{String,Any}(
+        "turbines" => turbine_states,
+        "environments" => environment_states,
+        "cache" => cache_state,
+    )
+end
+
+function _set_module_global!(module_ref, global_name::Symbol, value)
+    Core.eval(module_ref, Expr(:(=), global_name, value))
+    return nothing
+end
+
+function _restore_owensaero_restart_state!(state)
+    state === nothing && return nothing
+    if !(isdefined(OWENSAero, :turbslices) && isdefined(OWENSAero, :envslices))
+        throw(
+            ArgumentError(
+                "OWENSAero restart state was saved, but OWENSAero is not initialized in the current run",
+            ),
+        )
+    end
+
+    turbines = getfield(OWENSAero, :turbslices)
+    environments = getfield(OWENSAero, :envslices)
+    saved_turbines = _dict_get(state, "turbines", [])
+    saved_environments = _dict_get(state, "environments", [])
+
+    length(turbines) == length(saved_turbines) || throw(
+        DimensionMismatch(
+            "OWENSAero restart has $(length(saved_turbines)) turbine slices; current model has $(length(turbines))",
+        ),
+    )
+    length(environments) == length(saved_environments) || throw(
+        DimensionMismatch(
+            "OWENSAero restart has $(length(saved_environments)) environment slices; current model has $(length(environments))",
+        ),
+    )
+
+    for (turbine, saved_turbine) in zip(turbines, saved_turbines)
+        for field_name in _OWENSAERO_TURBINE_RESTART_FIELDS
+            saved_value = _dict_get(saved_turbine, string(field_name), nothing)
+            saved_value === nothing && continue
+            _restore_array_field!(turbine, field_name, saved_value)
+        end
+    end
+
+    for (environment, saved_environment) in zip(environments, saved_environments)
+        for field_name in _OWENSAERO_ENVIRONMENT_RESTART_FIELDS
+            saved_value = _dict_get(saved_environment, string(field_name), nothing)
+            saved_value === nothing && continue
+            _restore_array_field!(environment, field_name, saved_value)
+        end
+        if hasfield(typeof(environment), :lb_state)
+            _restore_lb_state!(
+                getfield(environment, :lb_state),
+                _dict_get(saved_environment, "lb_state", nothing),
+            )
+        end
+    end
+
+    cache_state = _dict_get(state, "cache", Dict{String,Any}())
+    for (global_name_string, value) in cache_state
+        _set_module_global!(OWENSAero, Symbol(global_name_string), deepcopy(value))
+    end
+    return nothing
+end
+
+function _capture_restart_backend_states(; capture_owensaero = false)
+    backend_states = Dict{String,Any}()
+    if capture_owensaero
+        owensaero_state = _capture_owensaero_restart_state()
+        if !isnothing(owensaero_state)
+            backend_states["OWENSAero"] = owensaero_state
+        end
+    end
+    return backend_states
+end
+
+function _restore_restart_backend_states!(backend_states)
+    backend_states === nothing && return nothing
+    owensaero_state = _dict_get(backend_states, "OWENSAero", nothing)
+    _restore_owensaero_restart_state!(owensaero_state)
+    return nothing
+end
+
+function _restart_input_runtime_state(inputs)
+    inputs === nothing && return Dict{String,Any}()
+    return _field_dict(inputs, _RESTART_INPUT_RUNTIME_FIELDS)
+end
+
+function _restore_restart_input_runtime_state!(inputs, input_state)
+    (inputs === nothing || input_state === nothing) && return nothing
+    for field_name in _RESTART_INPUT_RUNTIME_FIELDS
+        saved_value = _dict_get(input_state, string(field_name), nothing)
+        saved_value === nothing && continue
+        hasfield(typeof(inputs), field_name) &&
+            setfield!(inputs, field_name, deepcopy(saved_value))
+    end
+    return nothing
+end
+
+function _infer_legacy_restart_history_index(topdata)
+    latest_index = 1
+    for field_name in _RESTART_STATE_HISTORY_FIELDS
+        hasfield(typeof(topdata), field_name) || continue
+        history = getfield(topdata, field_name)
+        history isa AbstractArray || continue
+        ndims(history) >= 1 || continue
+        for index = size(history, 1):-1:1
+            row =
+                ndims(history) == 1 ? history[index] :
+                view(history, index, ntuple(_ -> Colon(), ndims(history)-1)...)
+            row_has_data = ndims(history) == 1 ? !iszero(row) : any(!iszero, row)
+            if row_has_data
+                latest_index = max(latest_index, index)
+                break
+            end
+        end
+    end
+    return latest_index
+end
+
+function _restart_state_from_topdata(
+    topdata;
+    completed_step = nothing,
+    inputs = nothing,
+    system = nothing,
+    capture_backend_state = false,
+)
+    if isnothing(completed_step)
+        history_index = _infer_legacy_restart_history_index(topdata)
+        completed_step = history_index - 1
+    else
+        history_index = Int(completed_step) + 1
+    end
+
+    0 <= completed_step <= topdata.numTS - 1 || throw(
+        ArgumentError(
+            "restart completed step $completed_step is outside 0:$(topdata.numTS - 1)",
+        ),
+    )
+    history_index == completed_step + 1 ||
+        throw(ArgumentError("restart history index must be completed_step + 1"))
+
+    return Dict{String,Any}(
+        "format" => _UNSTEADY_LAND_RESTART_FORMAT,
+        "version" => _UNSTEADY_LAND_RESTART_VERSION,
+        "completed_step" => Int(completed_step),
+        "history_index" => Int(history_index),
+        "delta_t" => topdata.delta_t,
+        "numTS_at_write" => topdata.numTS,
+        "time_at_write" => topdata.t[history_index],
+        "current_fields" => _field_dict(topdata, _RESTART_CURRENT_FIELDS),
+        "state_histories" =>
+            _history_dict(topdata, _RESTART_STATE_HISTORY_FIELDS, history_index, 1),
+        "step_histories" =>
+            _history_dict(topdata, _RESTART_STEP_HISTORY_FIELDS, completed_step, 3),
+        "input_runtime_state" => _restart_input_runtime_state(inputs),
+        "system" => deepcopy(system),
+        "backend_states" =>
+            _capture_restart_backend_states(capture_owensaero = capture_backend_state),
+    )
+end
+
+function _write_restart_state(
+    filename,
+    topdata,
+    completed_step::Integer;
+    inputs = nothing,
+    system = nothing,
+    capture_backend_state = false,
+)
+    restart_state = _restart_state_from_topdata(
+        topdata;
+        completed_step = completed_step,
+        inputs = inputs,
+        system = system,
+        capture_backend_state = capture_backend_state,
+    )
+    directory = dirname(abspath(filename))
+    isdir(directory) || mkpath(directory)
+    temporary_filename = tempname(directory) * ".jld2"
+    try
+        JLD2.jldsave(temporary_filename; restart_state)
+        mv(temporary_filename, filename; force = true)
+    catch
+        isfile(temporary_filename) && rm(temporary_filename; force = true)
+        rethrow()
+    end
+    return restart_state
+end
+
+function _load_restart_state(filename)
+    isfile(filename) || throw(ArgumentError("restart file does not exist: $filename"))
+    data = JLD2.load(filename)
+    if haskey(data, "restart_state")
+        restart_state = data["restart_state"]
+    elseif haskey(data, "topdata")
+        restart_state = _restart_state_from_topdata(data["topdata"])
+    else
+        throw(
+            ArgumentError("restart file $filename does not contain an OWENS restart state"),
+        )
+    end
+    _dict_get(restart_state, "format", _UNSTEADY_LAND_RESTART_FORMAT) ==
+    _UNSTEADY_LAND_RESTART_FORMAT ||
+        throw(ArgumentError("restart file $filename has an unsupported format"))
+    version = _dict_get(restart_state, "version", 0)
+    version <= _UNSTEADY_LAND_RESTART_VERSION || throw(
+        ArgumentError(
+            "restart file $filename version $version is newer than this OWENS version supports",
+        ),
+    )
+    return restart_state
+end
+
+function _restore_restart!(topdata, restart_state; inputs = nothing, system = nothing)
+    completed_step = Int(_dict_get(restart_state, "completed_step", -1))
+    history_index = Int(_dict_get(restart_state, "history_index", completed_step + 1))
+    completed_step >= 0 ||
+        throw(ArgumentError("restart completed step must be nonnegative"))
+    history_index == completed_step + 1 ||
+        throw(ArgumentError("restart history index must be completed_step + 1"))
+    history_index <= topdata.numTS || throw(
+        ArgumentError(
+            "restart history index $history_index exceeds current numTS $(topdata.numTS)",
+        ),
+    )
+    completed_step <= topdata.numTS - 1 || throw(
+        ArgumentError(
+            "restart completed step $completed_step exceeds current final step $(topdata.numTS - 1)",
+        ),
+    )
+
+    saved_delta_t = _dict_get(restart_state, "delta_t", topdata.delta_t)
+    isapprox(
+        saved_delta_t,
+        topdata.delta_t;
+        rtol = 0,
+        atol = eps(Float64) * max(1, abs(topdata.delta_t)),
+    ) || throw(
+        ArgumentError(
+            "restart delta_t $saved_delta_t does not match current delta_t $(topdata.delta_t)",
+        ),
+    )
+
+    current_fields = _dict_get(restart_state, "current_fields", Dict{String,Any}())
+    for field_name in _RESTART_CURRENT_FIELDS
+        saved_value = _dict_get(current_fields, string(field_name), nothing)
+        saved_value === nothing && continue
+        hasfield(typeof(topdata), field_name) &&
+            _copy_restart_value!(topdata, field_name, saved_value)
+    end
+
+    state_histories = _dict_get(restart_state, "state_histories", Dict{String,Any}())
+    for field_name in _RESTART_STATE_HISTORY_FIELDS
+        saved_value = _dict_get(state_histories, string(field_name), nothing)
+        saved_value === nothing && continue
+        hasfield(typeof(topdata), field_name) && _copy_restart_history_prefix!(
+            topdata,
+            field_name,
+            saved_value,
+            history_index,
+            1,
+        )
+    end
+
+    step_histories = _dict_get(restart_state, "step_histories", Dict{String,Any}())
+    for field_name in _RESTART_STEP_HISTORY_FIELDS
+        saved_value = _dict_get(step_histories, string(field_name), nothing)
+        saved_value === nothing && continue
+        hasfield(typeof(topdata), field_name) && _copy_restart_history_prefix!(
+            topdata,
+            field_name,
+            saved_value,
+            completed_step,
+            3,
+        )
+    end
+
+    _restore_restart_input_runtime_state!(
+        inputs,
+        _dict_get(restart_state, "input_runtime_state", nothing),
+    )
+    _restore_restart_backend_states!(_dict_get(restart_state, "backend_states", nothing))
+
+    restored_system = _dict_get(restart_state, "system", system)
+    return (
+        completed_step = completed_step,
+        history_index = history_index,
+        system = restored_system,
+    )
+end
 """
 
 Unsteady(model,topModel,mesh,el,aero;getLinearizedMatrices=false)
@@ -349,6 +1011,21 @@ function Unsteady_Land(
 
     if (!inputs.topsideOn) && (!inputs.platformActive)
         error("No structure is being simulated!")
+    end
+    if restart && isnothing(dataDumpFilename)
+        throw(
+            ArgumentError(
+                "restart=true requires dataDumpFilename to point to a restart file",
+            ),
+        )
+    end
+    if !isnothing(dataDumpFilename)
+        datadumpfrequency = Int(datadumpfrequency)
+        datadumpfrequency > 0 || throw(
+            ArgumentError(
+                "datadumpfrequency must be positive when dataDumpFilename is set",
+            ),
+        )
     end
 
     ## General
@@ -575,16 +1252,17 @@ function Unsteady_Land(
     timeconverged = false
     pbar = ProgressBars.ProgressBar(total = numTS-1)
 
-    if !isnothing(dataDumpFilename) && restart
+    if restart
         println(
-            "\n Restarting from intermediate results from the following file, progress bar estimates may be skewed $dataDumpFilename \n",
+            "\n Restarting from intermediate results from the following file: $dataDumpFilename \n",
         )
-        # JLD2.jldsave(dataDumpFilename;topdata)
-        data = JLD2.load(dataDumpFilename)
-        topdata = data["topdata"]
-        i = count(x -> x != 0.0, topdata.OmegaHist)-1 #TODO: restart back tracking by 1 revolution to allow states not in restart to converge?
-        if i<1
-            @error "Restart file doesn't seem to have more than 1 timestep, consider starting a new simulation"
+        restart_state = _load_restart_state(dataDumpFilename)
+        restart_restore =
+            _restore_restart!(topdata, restart_state; inputs = inputs, system = system)
+        i = restart_restore.completed_step
+        system = restart_restore.system
+        if inputs.AD15On && inputs.aeroLoadsOn > 0
+            @warn "AeroDyn/OpenFAST native module state is not included in OWENS restart files; AD15 restarts may need backend-specific support for bitwise-continuous aerodynamic transients."
         end
         for ii = 1:i
             ProgressBars.update(pbar)
@@ -1144,14 +1822,18 @@ function Unsteady_Land(
             inputs.generatorOn = false
         end
 
-        if !isnothing(dataDumpFilename) && (i-1)%datadumpfrequency==0
+        if !isnothing(dataDumpFilename) && ((i-1)%datadumpfrequency==0 || i == numTS-1)
             println("\n Saving intermediate results to $dataDumpFilename \n")
-            JLD2.jldsave("$(dataDumpFilename[1:end-4])_temp.jld2"; topdata)
-            # only if this is successful by getting this far do we now get rid of the old one, otherwise there is the chance the file gets corrupted on write, like if the machine runs out of memory...
-            if isfile(dataDumpFilename)
-                rm(dataDumpFilename)
-            end
-            mv("$(dataDumpFilename[1:end-4])_temp.jld2", dataDumpFilename)
+            _write_restart_state(
+                dataDumpFilename,
+                topdata,
+                i;
+                inputs = inputs,
+                system = system,
+                capture_backend_state = !inputs.AD15On &&
+                                        inputs.aeroLoadsOn > 0 &&
+                                        !isnothing(aero),
+            )
         end
 
     end #end timestep loop

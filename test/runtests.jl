@@ -33,6 +33,10 @@ end
     include("$path/test_unsteady_history_ranges.jl")
 end
 
+@testset "Unsteady Land Restart" begin
+    include("$path/test_unsteady_land_restart.jl")
+end
+
 @testset "OpenFAST Module Cleanup" begin
     include("$path/test_openfast_cleanup.jl")
 end

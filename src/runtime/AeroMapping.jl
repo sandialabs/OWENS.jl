@@ -126,7 +126,7 @@ function mapACDMS(
     M_addedmass_Tp,
     F_addedmass_Np,
     F_addedmass_Tp = aero_result
-    aero_M25 = length(aero_result) > 28 ? aero_result[end] : nothing
+    aero_M25 = _optional_acdms_m25(aero_result, size(Rp))
 
     NBlade = length(Rp[:, 1, 1])
     Nslices = length(Rp[1, :, 1])
@@ -388,6 +388,18 @@ function mapACDMS(
     ForceDof,
     ForceValHist[:, 1:numAeroTS],
     z3Dnorm
+end
+
+function _optional_acdms_m25(aero_result, reference_size)
+    for index = length(aero_result):-1:29
+        candidate = aero_result[index]
+        if candidate isa AbstractArray &&
+           ndims(candidate) == 3 &&
+           size(candidate) == reference_size
+            return candidate
+        end
+    end
+    return nothing
 end
 
 # """

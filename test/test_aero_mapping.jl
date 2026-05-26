@@ -79,4 +79,11 @@ import OWENSFEA
     @test dofs == collect(1:12)
     @test forces[1:3, 1] == zeros(3)
     @test forces[10, 1] ≈ 6.0 atol = 1e-12
+
+    buoyancy_only_result = (ntuple(_ -> nothing, 28)..., zeros(1, 3, 1, 3))
+    @test OWENS._optional_acdms_m25(buoyancy_only_result, (1, 3, 1)) === nothing
+
+    m25 = reshape(collect(1.0:3.0), 1, 3, 1)
+    with_m25_result = (ntuple(_ -> nothing, 30)..., m25)
+    @test OWENS._optional_acdms_m25(with_m25_result, size(m25)) === m25
 end
