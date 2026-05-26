@@ -326,6 +326,8 @@ Structure storing critical information for preprocessing and postprocessing of s
 * `nuMadIn::Array`: NuMad input data for composite analysis
 * `stiff_matrix::Array{Float64}`: Component stiffness matrix (N/m)
 * `mass_matrix::Array{Float64}`: Component mass matrix (kg)
+* `gxBeamSectionalProperties::Array`: GXBeam sectional meshes/caches for element-level strain recovery when the GXBeam sectional backend is used
+* `gxBeamSectionalRecovery::Array`: Recovered GXBeam section-mesh beam/ply strain and stress for each element and time step
 * `sectionProps::Array`: Section properties including area, moments of inertia, etc.
 * `stress_U::Array{Float64}`: Upper surface stress (Pa)
 * `stress_L::Array{Float64}`: Lower surface stress (Pa)
@@ -368,6 +370,8 @@ mutable struct Component
     nuMadIn::Any
     stiff_matrix::Any
     mass_matrix::Any
+    gxBeamSectionalProperties::Any
+    gxBeamSectionalRecovery::Any
     sectionProps::Any
     stress_U::Any
     stress_L::Any
@@ -406,6 +410,8 @@ component = Component(;
     nuMadIn=nothing,
     stiff_matrix=nothing,
     mass_matrix=nothing,
+    gxBeamSectionalProperties=nothing,
+    gxBeamSectionalRecovery=nothing,
     sectionProps=nothing,
     stress_U=nothing,
     stress_L=nothing,
@@ -443,6 +449,8 @@ This function stores the critical information associated with preprocessing and 
 * `nuMadIn::`: 
 * `stiff_matrix::`:
 * `mass_matrix::`:
+* `gxBeamSectionalProperties::`:
+* `gxBeamSectionalRecovery::`:
 * `sectionProps::`:
 * `stress_U::`:
 * `stress_L::`:
@@ -482,6 +490,8 @@ function Component(;
     nuMadIn = nothing,
     stiff_matrix = nothing,
     mass_matrix = nothing,
+    gxBeamSectionalProperties = nothing,
+    gxBeamSectionalRecovery = nothing,
     sectionProps = nothing,
     stress_U = nothing,
     stress_L = nothing,
@@ -518,6 +528,8 @@ function Component(;
         nuMadIn,
         stiff_matrix,
         mass_matrix,
+        gxBeamSectionalProperties,
+        gxBeamSectionalRecovery,
         sectionProps,
         stress_U,
         stress_L,
@@ -2426,6 +2438,8 @@ Arranges the precomp output into the sectional properties required by OWENSFEA
 * `fluid_density::Float64`: fluid density, used if added mass is on (AddedMass_Coeff_Ca>0.0)
 * `AddedMass_Coeff_Ca::Float64`: if >0.0, then added mass is calculated off of the airfoil geometry and included in the structures
 * `N_airfoil_coord::Int`: Number of upper/lower common airfoil x points to spline to to enable VTK output of airfoil surface
+* `sectional_property_source`: `:precomp` keeps the legacy scalar PreComp stiffness/mass path; `:gxbeam` builds GXBeam sectional meshes from the PreComp inputs for GX stiffness and mass matrices.
+* `return_sectional_mesh::Bool`: when `GX=true` and `sectional_property_source=:gxbeam`, return element-aligned GXBeam sectional meshes for strain recovery.
 
 #Outputs
 * `sectionPropsArray::SectionPropsArray`: see ?OWENSFEA.SectionPropsArray, if !GX bool
@@ -2443,6 +2457,9 @@ function getSectPropsFromOWENSPreComp(
     fluid_density = 0.0,
     AddedMass_Coeff_Ca = 1.0,
     N_airfoil_coord = 100,
+    sectional_property_source = :precomp,
+    return_sectional_mesh = false,
+    gxbeam_section_kwargs = (;),
 )
     NT = eltype(usedUnitSpan)
     # usedUnitSpan is node positions, as is numadIn.span, and the precomp calculations
@@ -2635,11 +2652,13 @@ function getSectPropsFromOWENSPreComp(
         end
 
         # Added mass mass calculation
-        for i_z = 1:length(myzaf)
-            Vol_flap = pi*((maximum(myxaf[i_z, :])-minimum(myxaf[i_z, :]))/2)^2 #pi*(chord/2)^2
-            Vol_edge = pi*((maximum(myyaf[i_z, :])-minimum(myyaf[i_z, :]))/2)^2 #pi*(thickness/2)^2
-            added_M33[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_flap
-            added_M22[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_edge
+        if !iszero(fluid_density) && !iszero(AddedMass_Coeff_Ca)
+            for i_z = 1:length(myzaf)
+                Vol_flap = pi*((maximum(myxaf[i_z, :])-minimum(myxaf[i_z, :]))/2)^2 #pi*(chord/2)^2
+                Vol_edge = pi*((maximum(myyaf[i_z, :])-minimum(myyaf[i_z, :]))/2)^2 #pi*(thickness/2)^2
+                added_M33[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_flap
+                added_M22[i_z] = fluid_density * AddedMass_Coeff_Ca * Vol_edge
+            end
         end
     else
         myxaf = nothing
@@ -2676,6 +2695,43 @@ function getSectPropsFromOWENSPreComp(
         sectionPropsArray[i].added_M33 = [added_M33[i], added_M33[i+1]]
     end
     if GX #TODO: unify with one call since we always calculate this in preprocessing
+        sectional_property_source = _section_source_symbol(sectional_property_source)
+
+        if sectional_property_source == :gxbeam
+            isnothing(precompinputs) && throw(
+                ArgumentError(
+                    "sectional_property_source=:gxbeam requires precompinputs so OWENS can build GXBeam sectional meshes",
+                ),
+            )
+
+            gx_sections = [
+                gxbeam_sectional_properties_from_precomp(
+                    pc_input;
+                    gxbeam_section_kwargs...,
+                ) for pc_input in precompinputs
+            ]
+            stiff, mass = _interpolate_gxbeam_section_matrices(
+                origUnitSpan,
+                usedUnitSpan,
+                gx_sections,
+                added_M22,
+                added_M33,
+            )
+
+            if return_sectional_mesh
+                element_sections =
+                    _nearest_gxbeam_sections(origUnitSpan, usedUnitSpan, gx_sections)
+                return stiff, mass, element_sections
+            end
+
+            return stiff, mass
+        elseif sectional_property_source != :precomp
+            throw(
+                ArgumentError(
+                    "Unsupported sectional_property_source=$(sectional_property_source); expected :precomp or :gxbeam",
+                ),
+            )
+        end
 
         stiff = map(1:(length(usedUnitSpan)-1)) do i
             GA = ea_used[i] / 2.6 * 5 / 6
@@ -2700,6 +2756,10 @@ function getSectPropsFromOWENSPreComp(
                 ux3 0.0 0.0 0.0 flap_iner_used[i] -tw_iner_d_used[i]
                 -ux2 0.0 0.0 0.0 -tw_iner_d_used[i] lag_iner_used[i]
             ]
+        end
+
+        if return_sectional_mesh
+            return stiff, mass, nothing
         end
 
         return stiff, mass

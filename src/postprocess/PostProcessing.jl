@@ -1771,6 +1771,11 @@ function safetyfactor_fatigue(mymesh, components, delta_t; options = PostProcess
         k_y = components[icomp].k_y
         k_z = components[icomp].k_z
 
+        if !isnothing(components[icomp].gxBeamSectionalProperties) &&
+           isnothing(components[icomp].gxBeamSectionalRecovery)
+            OWENS.populate_gxbeam_sectional_recovery!(components[icomp])
+        end
+
         total_t = length(e_x[1, throwawayTimeSteps:end])*delta_t # for damage rate
 
         ###############################

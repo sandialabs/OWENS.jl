@@ -87,6 +87,7 @@ include("gui/studio_templates.jl")
 
 # Preprocessing functionality
 include("preprocessing/gxbeam_conversion.jl")
+include("preprocessing/gxbeam_sectional_properties.jl")
 include("preprocessing/meshing_utilities.jl")
 include("preprocessing/setup_utilities.jl")
 include("preprocessing/SetupTurbine.jl")
