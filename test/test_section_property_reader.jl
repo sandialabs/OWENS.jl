@@ -34,6 +34,8 @@ import OWENS
         props = el.props[1]
         @test props.zcm == [0.11, 0.21]
         @test props.ycm == [0.12, 0.22]
+        @test props.flapwiseEAOffset == [9.0, 11.0]
+        @test props.edgewiseEAOffset == [0.25, 0.50]
         @test props.b == [2.0, 3.0]
         @test props.a0 == [5.0, 7.0]
         @test props.ac ≈ [0.2, -0.2]

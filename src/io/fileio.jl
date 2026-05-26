@@ -1137,7 +1137,8 @@ object.
 The legacy `.el` format stores flapwise and edgewise elastic-axis offsets in
 columns 16 and 17. `readElementData` currently uses column 17 as
 `SectionPropsArray.a`, then converts it to a semichord fraction after the chord
-is read from blade data. Column 16 is not represented in `SectionPropsArray`.
+is read from blade data. The raw columns are also passed through as
+`SectionPropsArray.flapwiseEAOffset` and `SectionPropsArray.edgewiseEAOffset`.
 """
 function readElementData(numElements, elfile, ortfile, bladeData_struct)
 
@@ -1195,6 +1196,8 @@ function readElementData(numElements, elfile, ortfile, bladeData_struct)
         zcm = [data1[14], data2[14]]
         ycm = [data1[15], data2[15]]
         a = [data1[17], data2[17]]
+        flapwiseEAOffset = [data1[16], data2[16]]
+        edgewiseEAOffset = [data1[17], data2[17]]
 
         #coupling factors
         EIyz = [0.0, 0.0]
@@ -1234,6 +1237,8 @@ function readElementData(numElements, elfile, ortfile, bladeData_struct)
             a0,
             aeroCenterOffset,
         )
+        sectionPropsArray[i].flapwiseEAOffset = flapwiseEAOffset
+        sectionPropsArray[i].edgewiseEAOffset = edgewiseEAOffset
 
     end
     close(fid) #close element file
