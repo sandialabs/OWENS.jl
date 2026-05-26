@@ -642,6 +642,13 @@ function fatigue_damage(
     wohler_exp = 3,
     equiv_cycles = 1,
 )
+    if !all(isfinite, stress) ||
+       !all(isfinite, sn_stress) ||
+       !all(isfinite, sn_log_cycles) ||
+       !isfinite(ultimate_strength)
+        return NaN
+    end
+
     # default values
     isnothing(nbins_mean) && (nbins_mean = (mean_correction ? 10 : 1))
 
@@ -871,6 +878,121 @@ function printsf_twr(
     end
 end
 
+_has_strut_postprocess_data(value) =
+    !isnothing(value) && !(value isa AbstractVector && isempty(value))
+
+function _first_strut_dataset(value::AbstractVector)
+    isempty(value) && return value
+    first_value = first(value)
+    return first_value isa AbstractVector ? first_value : value
+end
+_first_strut_dataset(value) = value
+
+function _first_strut_laminate(value::AbstractVector)
+    isempty(value) && return value
+    first_value = first(value)
+    return first_value isa AbstractArray ? first_value : value
+end
+_first_strut_laminate(value) = value
+
+function _first_strut_object(value::AbstractVector)
+    isempty(value) && return value
+    return first(value)
+end
+_first_strut_object(value) = value
+
+function _interpolate_strut_strain_histories(
+    mymesh,
+    AD15bldNdIdxRng,
+    AD15bldElIdxRng,
+    Nbld,
+    N_ts,
+    strut_precompinput,
+    numadIn_strut,
+    epsilon_x_hist,
+    meanepsilon_z_hist,
+    meanepsilon_y_hist,
+    kappa_x_hist,
+    kappa_y_hist,
+    kappa_z_hist,
+)
+    strut_body_indices = (Nbld+1):size(AD15bldNdIdxRng, 1)
+    n_strut_bodies = length(strut_body_indices)
+    strut_len = length(strut_precompinput)
+
+    eps_x_strut = zeros(eltype(epsilon_x_hist), n_strut_bodies, N_ts, strut_len)
+    eps_z_strut = zeros(eltype(meanepsilon_z_hist), n_strut_bodies, N_ts, strut_len)
+    eps_y_strut = zeros(eltype(meanepsilon_y_hist), n_strut_bodies, N_ts, strut_len)
+    kappa_x_strut = zeros(eltype(kappa_x_hist), n_strut_bodies, N_ts, strut_len)
+    kappa_y_strut = zeros(eltype(kappa_y_hist), n_strut_bodies, N_ts, strut_len)
+    kappa_z_strut = zeros(eltype(kappa_z_hist), n_strut_bodies, N_ts, strut_len)
+
+    for (istrut, ibld) in enumerate(strut_body_indices)
+        startN = Int(AD15bldNdIdxRng[ibld, 1])
+        stopN = Int(AD15bldNdIdxRng[ibld, 2])
+        if stopN < startN
+            startN, stopN = stopN, startN
+        end
+
+        startE = Int(AD15bldElIdxRng[ibld, 1])
+        stopE = Int(AD15bldElIdxRng[ibld, 2])
+        if stopE < startE
+            startE, stopE = stopE, startE
+        end
+
+        mesh_span_strut = abs.(mymesh.z[startN:stopN] .- mymesh.z[startN])
+        mesh_span_strut_el = safeakima(
+            LinRange(0, 1, length(mesh_span_strut)),
+            mesh_span_strut,
+            LinRange(0, 1, stopE-startE+1),
+        )
+        composites_span_strut =
+            numadIn_strut.span/maximum(numadIn_strut.span)*maximum(mesh_span_strut_el)
+
+        for its = 1:N_ts
+            eps_x_strut[istrut, its, :] = safeakima(
+                mesh_span_strut_el,
+                epsilon_x_hist[1, startE:stopE, its],
+                composites_span_strut,
+            )
+            eps_z_strut[istrut, its, :] = safeakima(
+                mesh_span_strut_el,
+                meanepsilon_z_hist[1, startE:stopE, its],
+                composites_span_strut,
+            )
+            eps_y_strut[istrut, its, :] = safeakima(
+                mesh_span_strut_el,
+                meanepsilon_y_hist[1, startE:stopE, its],
+                composites_span_strut,
+            )
+            kappa_x_strut[istrut, its, :] = safeakima(
+                mesh_span_strut_el,
+                kappa_x_hist[1, startE:stopE, its],
+                composites_span_strut,
+            )
+            kappa_y_strut[istrut, its, :] = safeakima(
+                mesh_span_strut_el,
+                kappa_y_hist[1, startE:stopE, its],
+                composites_span_strut,
+            )
+            kappa_z_strut[istrut, its, :] = safeakima(
+                mesh_span_strut_el,
+                kappa_z_hist[1, startE:stopE, its],
+                composites_span_strut,
+            )
+        end
+    end
+
+    return (
+        eps_x = eps_x_strut,
+        eps_z = eps_z_strut,
+        eps_y = eps_y_strut,
+        kappa_x = kappa_x_strut,
+        kappa_y = kappa_y_strut,
+        kappa_z = kappa_z_strut,
+    )
+end
+
 function extractSF(
     bld_precompinput,
     bld_precompoutput,
@@ -1052,80 +1174,44 @@ function extractSF(
         end
     end
 
-    if !isnothing(strut_precompoutput)
+    strut_data_available = _has_strut_postprocess_data(strut_precompoutput)
+    if strut_data_available
+        strut_precompoutput = _first_strut_dataset(strut_precompoutput)
+        strut_precompinput = _first_strut_dataset(strut_precompinput)
+        plyprops_strut = _first_strut_object(plyprops_strut)
+        numadIn_strut = _first_strut_object(numadIn_strut)
+        lam_U_strut = _first_strut_laminate(lam_U_strut)
+        lam_L_strut = _first_strut_laminate(lam_L_strut)
+
         ####################################################
         #### Get strain values at the struts ########
         ####################################################
 
-        eps_x_strut = zeros(Nbld*2, N_ts, length(strut_precompinput))
-        eps_z_strut = zeros(Nbld*2, N_ts, length(strut_precompinput))
-        eps_y_strut = zeros(Nbld*2, N_ts, length(strut_precompinput))
-        kappa_x_strut = zeros(Nbld*2, N_ts, length(strut_precompinput))
-        kappa_y_strut = zeros(Nbld*2, N_ts, length(strut_precompinput))
-        kappa_z_strut = zeros(Nbld*2, N_ts, length(strut_precompinput))
+        strut_histories = _interpolate_strut_strain_histories(
+            mymesh,
+            AD15bldNdIdxRng,
+            AD15bldElIdxRng,
+            Nbld,
+            N_ts,
+            strut_precompinput,
+            numadIn_strut,
+            epsilon_x_hist,
+            meanepsilon_z_hist,
+            meanepsilon_y_hist,
+            kappa_x_hist,
+            kappa_y_hist,
+            kappa_z_hist,
+        )
+        eps_x_strut = strut_histories.eps_x
+        eps_z_strut = strut_histories.eps_z
+        eps_y_strut = strut_histories.eps_y
+        kappa_x_strut = strut_histories.kappa_x
+        kappa_y_strut = strut_histories.kappa_y
+        kappa_z_strut = strut_histories.kappa_z
 
-        istrut = 0
-        for ibld = (Nbld+1):length(AD15bldNdIdxRng[:, 1])
-            istrut += 1
-
-            startN = Int(AD15bldNdIdxRng[ibld, 1])
-            stopN = Int(AD15bldNdIdxRng[ibld, 2])
-            if stopN < startN
-                temp = stopN
-                stopN = startN
-                startN = temp
-            end
-
-            startE = Int(AD15bldElIdxRng[ibld, 1])
-            stopE = Int(AD15bldElIdxRng[ibld, 2])
-            if stopE < startE
-                temp = stopE
-                stopE = startE
-                startE = temp
-            end
-
-            mesh_span_strut = abs.(mymesh.z[startN:stopN] .- mymesh.z[startN])
-            mesh_span_strut_el = safeakima(
-                LinRange(0, 1, length(mesh_span_strut)),
-                mesh_span_strut,
-                LinRange(0, 1, stopE-startE+1),
-            )
-            composites_span_strut =
-                numadIn_strut.span/maximum(numadIn_strut.span)*maximum(mesh_span_strut_el) #TODO: this assumes struts and blades are straight, should be mapped for all potential cases, also need to input hub offset
-
-            for its = 1:N_ts
-                # Interpolate to the composite inputs #TODO: verify node vs el in strain
-                eps_x_strut[istrut, its, :] = safeakima(
-                    mesh_span_strut_el,
-                    epsilon_x_hist[1, startE:stopE, its],
-                    composites_span_strut,
-                )
-                eps_z_strut[istrut, its, :] = safeakima(
-                    mesh_span_strut_el,
-                    meanepsilon_z_hist[1, startE:stopE, its],
-                    composites_span_strut,
-                )
-                eps_y_strut[istrut, its, :] = safeakima(
-                    mesh_span_strut_el,
-                    meanepsilon_y_hist[1, startE:stopE, its],
-                    composites_span_strut,
-                )
-                kappa_x_strut[istrut, its, :] = safeakima(
-                    mesh_span_strut_el,
-                    kappa_x_hist[1, startE:stopE, its],
-                    composites_span_strut,
-                )
-                kappa_y_strut[istrut, its, :] = safeakima(
-                    mesh_span_strut_el,
-                    kappa_y_hist[1, startE:stopE, its],
-                    composites_span_strut,
-                )
-                kappa_z_strut[istrut, its, :] = safeakima(
-                    mesh_span_strut_el,
-                    kappa_z_hist[1, startE:stopE, its],
-                    composites_span_strut,
-                )
-            end
+        if size(eps_x_strut, 1) == 0
+            @warn "Strut PreComp data was provided, but no strut element ranges were found. Skipping strut safety factor post-processing."
+            strut_data_available = false
         end
     end
 
@@ -1280,116 +1366,157 @@ function extractSF(
         useStation = usestationBld,
     )
 
-    if !isnothing(strut_precompoutput)
+    if strut_data_available
         ##########################################
         #### Calculate Stress At the Struts
         ##########################################
 
-        stress_U_strut =
-            zeros(N_ts, length(strut_precompinput), length(lam_U_strut[1, :]), 3)
-        SF_ult_U_strut = zeros(N_ts, length(strut_precompinput), length(lam_U_strut[1, :]))
-        SF_buck_U_strut = zeros(N_ts, length(strut_precompinput), length(lam_U_strut[1, :]))
-
-        topstrainout_strut_U, topDamage_strut_U = calcSF(
-            total_t,
-            stress_U_strut,
-            SF_ult_U_strut,
-            SF_buck_U_strut,
+        n_strut_bodies = size(eps_x_strut, 1)
+        stress_U_strut = zeros(
+            NT,
+            n_strut_bodies,
+            N_ts,
             length(strut_precompinput),
-            plyprops_strut,
-            strut_precompinput,
-            strut_precompoutput,
-            lam_U_strut,
-            eps_x_strut[1, :, :],
-            eps_z_strut[1, :, :],
-            eps_y_strut[1, :, :],
-            kappa_x_strut[1, :, :],
-            kappa_y_strut[1, :, :],
-            kappa_z_strut[1, :, :],
-            numadIn_strut;
-            failmethod = "maxstress",
-            upper = true,
-            calculate_fatigue,
+            length(lam_U_strut[1, :]),
+            3,
         )
-
-        if verbosity>0
-            println("Composite Ultimate and Buckling Safety Factors")
-            println("\n\nUPPER STRUT SURFACE")
-        end
-
-        if usestationStrut != 0
-            println(
-                "maximum strut stress: $(maximum(stress_U_strut[:,usestationStrut,8,1]))",
-            )
-            println(
-                "minimum strut stress: $(minimum(stress_U_strut[:,usestationStrut,8,1]))",
-            )
-        end
-        printSF(
-            verbosity,
-            SF_ult_U_strut,
-            SF_buck_U_strut,
-            composite_station_idx_U_strut,
-            composite_station_name_U_strut,
+        SF_ult_U_strut = zeros(
+            NT,
+            n_strut_bodies,
+            N_ts,
             length(strut_precompinput),
-            lam_U_strut,
-            topDamage_strut_U,
-            delta_t,
-            total_t;
-            useStation = usestationStrut,
+            size(lam_U_strut, 2),
         )
-
-        stress_L_strut =
-            zeros(NT, N_ts, length(strut_precompinput), size(lam_U_strut, 2), 3)
-        SF_ult_L_strut = zeros(NT, N_ts, length(strut_precompinput), size(lam_L_strut, 2))
-        SF_buck_L_strut = zeros(NT, N_ts, length(strut_precompinput), size(lam_L_strut, 2))
-
-        topstrainout_strut_L, topDamage_strut_L = calcSF(
-            total_t,
-            stress_L_strut,
-            SF_ult_L_strut,
-            SF_buck_L_strut,
+        SF_buck_U_strut = zeros(
+            NT,
+            n_strut_bodies,
+            N_ts,
             length(strut_precompinput),
-            plyprops_strut,
-            strut_precompinput,
-            strut_precompoutput,
-            lam_L_strut,
-            eps_x_strut[1, :, :],
-            eps_z_strut[1, :, :],
-            eps_y_strut[1, :, :],
-            kappa_x_strut[1, :, :],
-            kappa_y_strut[1, :, :],
-            kappa_z_strut[1, :, :],
-            numadIn_strut;
-            failmethod = "maxstress",
-            upper = false,
-            calculate_fatigue,
+            size(lam_U_strut, 2),
         )
+        topDamage_strut_U = Vector{Any}(undef, n_strut_bodies)
 
-        if verbosity>0
-            println("\n\nLOWER STRUT SURFACE")
-        end
-        if usestationStrut != 0
-            println(
-                "maximum strut stress: $(maximum(stress_L_strut[:,usestationStrut,8,1]))",
-            )
-            println(
-                "minimum strut stress: $(minimum(stress_L_strut[:,usestationStrut,8,1]))",
-            )
-        end
-        printSF(
-            verbosity,
-            SF_ult_L_strut,
-            SF_buck_L_strut,
-            composite_station_idx_L_strut,
-            composite_station_name_L_strut,
+        stress_L_strut = zeros(
+            NT,
+            n_strut_bodies,
+            N_ts,
             length(strut_precompinput),
-            lam_L_strut,
-            topDamage_strut_L,
-            delta_t,
-            total_t;
-            useStation = usestationStrut,
+            size(lam_L_strut, 2),
+            3,
         )
+        SF_ult_L_strut = zeros(
+            NT,
+            n_strut_bodies,
+            N_ts,
+            length(strut_precompinput),
+            size(lam_L_strut, 2),
+        )
+        SF_buck_L_strut = zeros(
+            NT,
+            n_strut_bodies,
+            N_ts,
+            length(strut_precompinput),
+            size(lam_L_strut, 2),
+        )
+        topDamage_strut_L = Vector{Any}(undef, n_strut_bodies)
+
+        for istrut = 1:n_strut_bodies
+            _, topDamage_strut_U[istrut] = calcSF(
+                total_t,
+                @view(stress_U_strut[istrut, :, :, :, :]),
+                @view(SF_ult_U_strut[istrut, :, :, :]),
+                @view(SF_buck_U_strut[istrut, :, :, :]),
+                length(strut_precompinput),
+                plyprops_strut,
+                strut_precompinput,
+                strut_precompoutput,
+                lam_U_strut,
+                eps_x_strut[istrut, :, :],
+                eps_z_strut[istrut, :, :],
+                eps_y_strut[istrut, :, :],
+                kappa_x_strut[istrut, :, :],
+                kappa_y_strut[istrut, :, :],
+                kappa_z_strut[istrut, :, :],
+                numadIn_strut;
+                failmethod = "maxstress",
+                upper = true,
+                calculate_fatigue,
+            )
+
+            if verbosity>0
+                println("Composite Ultimate and Buckling Safety Factors")
+                println("\n\nUPPER STRUT SURFACE $istrut")
+            end
+
+            if usestationStrut != 0
+                println(
+                    "maximum strut stress: $(maximum(stress_U_strut[istrut,:,usestationStrut,8,1]))",
+                )
+                println(
+                    "minimum strut stress: $(minimum(stress_U_strut[istrut,:,usestationStrut,8,1]))",
+                )
+            end
+            printSF(
+                verbosity,
+                @view(SF_ult_U_strut[istrut, :, :, :]),
+                @view(SF_buck_U_strut[istrut, :, :, :]),
+                composite_station_idx_U_strut,
+                composite_station_name_U_strut,
+                length(strut_precompinput),
+                lam_U_strut,
+                topDamage_strut_U[istrut],
+                delta_t,
+                total_t;
+                useStation = usestationStrut,
+            )
+
+            _, topDamage_strut_L[istrut] = calcSF(
+                total_t,
+                @view(stress_L_strut[istrut, :, :, :, :]),
+                @view(SF_ult_L_strut[istrut, :, :, :]),
+                @view(SF_buck_L_strut[istrut, :, :, :]),
+                length(strut_precompinput),
+                plyprops_strut,
+                strut_precompinput,
+                strut_precompoutput,
+                lam_L_strut,
+                eps_x_strut[istrut, :, :],
+                eps_z_strut[istrut, :, :],
+                eps_y_strut[istrut, :, :],
+                kappa_x_strut[istrut, :, :],
+                kappa_y_strut[istrut, :, :],
+                kappa_z_strut[istrut, :, :],
+                numadIn_strut;
+                failmethod = "maxstress",
+                upper = false,
+                calculate_fatigue,
+            )
+
+            if verbosity>0
+                println("\n\nLOWER STRUT SURFACE $istrut")
+            end
+            if usestationStrut != 0
+                println(
+                    "maximum strut stress: $(maximum(stress_L_strut[istrut,:,usestationStrut,8,1]))",
+                )
+                println(
+                    "minimum strut stress: $(minimum(stress_L_strut[istrut,:,usestationStrut,8,1]))",
+                )
+            end
+            printSF(
+                verbosity,
+                @view(SF_ult_L_strut[istrut, :, :, :]),
+                @view(SF_buck_L_strut[istrut, :, :, :]),
+                composite_station_idx_L_strut,
+                composite_station_name_L_strut,
+                length(strut_precompinput),
+                lam_L_strut,
+                topDamage_strut_L[istrut],
+                delta_t,
+                total_t;
+                useStation = usestationStrut,
+            )
+        end
     else
         topDamage_strut_U = nothing
         topDamage_strut_L = nothing

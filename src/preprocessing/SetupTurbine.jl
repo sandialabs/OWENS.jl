@@ -375,6 +375,13 @@ function setupOWENS(
         lam_U_bld = []
         lam_L_bld = []
         mass_breakout_blds = []
+        strut_precompinput = []
+        strut_precompoutput = []
+        plyprops_strut = []
+        numadIn_strut = []
+        lam_U_strut = []
+        lam_L_strut = []
+        seen_strut_numbers = Set{String}()
 
         for component in components
             if contains(component.name, "tower")
@@ -399,6 +406,17 @@ function setupOWENS(
                 lam_U_bld = component.lam_U
                 lam_L_bld = component.lam_L
                 mass_breakout_blds = component.mass
+            end
+
+            strut_match = match(r"_strut(\d+)$", String(component.name))
+            if !isnothing(strut_match) && !(strut_match.captures[1] in seen_strut_numbers)
+                push!(seen_strut_numbers, strut_match.captures[1])
+                push!(strut_precompinput, component.preCompInput)
+                push!(strut_precompoutput, component.preCompOutput)
+                push!(plyprops_strut, component.plyProps)
+                push!(numadIn_strut, component.nuMadIn)
+                push!(lam_U_strut, component.lam_U)
+                push!(lam_L_strut, component.lam_L)
             end
         end
 
@@ -436,7 +454,13 @@ function setupOWENS(
             AD15bldElIdxRng,
             custom_mesh_outputs,
             stiff_array,
-            mass_array
+            mass_array,
+            strut_precompinput,
+            strut_precompoutput,
+            plyprops_strut,
+            numadIn_strut,
+            lam_U_strut,
+            lam_L_strut
         else
             return mymesh,
             myel,
@@ -470,7 +494,13 @@ function setupOWENS(
             AD15bldElIdxRng,
             custom_mesh_outputs,
             stiff_array,
-            mass_array
+            mass_array,
+            strut_precompinput,
+            strut_precompoutput,
+            plyprops_strut,
+            numadIn_strut,
+            lam_U_strut,
+            lam_L_strut
         end
     end
 end

@@ -1496,6 +1496,12 @@ function outputData(;
     topDamage_blade_L = "not saved",
     topDamage_tower_U = "not saved",
     topDamage_tower_L = "not saved",
+    stress_U_strut = nothing,
+    SF_ult_U_strut = nothing,
+    SF_buck_U_strut = nothing,
+    stress_L_strut = nothing,
+    SF_ult_L_strut = nothing,
+    SF_buck_L_strut = nothing,
     ofastformat = false,
 )
 
@@ -1547,6 +1553,18 @@ function outputData(;
             HDF5.write(file, "topDamage_blade_L", topDamage_blade_L)
             HDF5.write(file, "topDamage_tower_U", topDamage_tower_U)
             HDF5.write(file, "topDamage_tower_L", topDamage_tower_L)
+            for (name, value) in (
+                ("stress_U_strut", stress_U_strut),
+                ("SF_ult_U_strut", SF_ult_U_strut),
+                ("SF_buck_U_strut", SF_buck_U_strut),
+                ("stress_L_strut", stress_L_strut),
+                ("SF_ult_L_strut", SF_ult_L_strut),
+                ("SF_buck_L_strut", SF_buck_L_strut),
+            )
+                if !isnothing(value)
+                    HDF5.write(file, name, value)
+                end
+            end
             annotate_output_data_channels!(file)
         end
 

@@ -125,7 +125,16 @@ function runOWENSWINDIO(modelopt, windio, path)
     assembly,
     sections,
     AD15bldNdIdxRng,
-    AD15bldElIdxRng = OWENS.setupOWENS(path; setup_options = setup_opts)
+    AD15bldElIdxRng,
+    custom_mesh_outputs,
+    stiff_array,
+    mass_array,
+    strut_precompinput,
+    strut_precompoutput,
+    plyprops_strut,
+    numadIn_strut,
+    lam_U_strut,
+    lam_L_strut = OWENS.setupOWENS(path; setup_options = setup_opts)
 
     # Apply boundary conditions
     pBC = [
@@ -256,7 +265,15 @@ function runOWENSWINDIO(modelopt, windio, path)
     topDamage_blade_U,
     topDamage_blade_L,
     topDamage_tower_U,
-    topDamage_tower_L = OWENS.extractSF(
+    topDamage_tower_L,
+    topDamage_strut_U,
+    topDamage_strut_L,
+    stress_U_strut,
+    SF_ult_U_strut,
+    SF_buck_U_strut,
+    stress_L_strut,
+    SF_ult_L_strut,
+    SF_buck_L_strut = OWENS.extractSF(
         bld_precompinput,
         bld_precompoutput,
         plyprops_bld,
@@ -285,7 +302,12 @@ function runOWENSWINDIO(modelopt, windio, path)
         delta_t = modelopt.OWENS_Options.delta_t,
         AD15bldNdIdxRng,
         AD15bldElIdxRng,
-        strut_precompoutput = nothing,
+        strut_precompoutput,
+        strut_precompinput,
+        plyprops_strut,
+        numadIn_strut,
+        lam_U_strut,
+        lam_L_strut,
     )
 
     # Output data
@@ -333,6 +355,12 @@ function runOWENSWINDIO(modelopt, windio, path)
         topDamage_blade_L,
         topDamage_tower_U,
         topDamage_tower_L,
+        stress_U_strut,
+        SF_ult_U_strut,
+        SF_buck_U_strut,
+        stress_L_strut,
+        SF_ult_L_strut,
+        SF_buck_L_strut,
     )
 end
 

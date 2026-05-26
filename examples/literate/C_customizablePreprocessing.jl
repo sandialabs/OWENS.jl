@@ -786,7 +786,7 @@ if run_full_example
     composite_station_idx_L_bld = [1,6,3,2,5],
     composite_station_name_L_bld = ["Leading Edge","Trailing Edge","Spar Cap","Front Panel","Rear Panel"],
     Twr_LE_U_idx=1,Twr_LE_L_idx=1,
-    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
+    AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput,strut_precompinput,plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut) #TODO: add in ability to have material safety factors and load safety factors
 end
 
 nothing

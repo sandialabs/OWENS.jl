@@ -225,10 +225,14 @@ rm("delim_file.txt") # julia's function that does the same thing
 
 ## OWENS Installation for Julia 1.11+
 
+This one-line install works when the dependency chain can be resolved from the registry and package sources:
+
 ```julia
 using Pkg
 Pkg.add(PackageSpec(url="https://github.com/sandialabs/OWENS.jl.git"))
 ```
+
+If resolution fails with `OWENSOpenFASTWrappers has no known versions`, use the URL-dependency fallback below. That error means the OpenFAST wrapper dependency chain is not fully available from the registry being used by the Julia package manager.
 
 Note that there are many packages used in the examples.  While they are installed within the OWENS.jl environment, if you want to additionally install them in your 1.11+ environment where you will likely be running from:
 ```julia
@@ -247,8 +251,8 @@ Pkg.add("PyPlot") #Note, this will take a while (maybe 10 min depending on your 
 # Pkg.add("PyPlot")
 ```
 
-## OWENS Installation for Julia 1.10 and older (down to 1.6)
-These steps require a secure download, such as through the SSH keys detailed above, to avoid man-in-the-middle attacks. 
+## OWENS URL-Dependency Fallback for Julia 1.6+
+Use this fallback for Julia 1.10 and older, or for Julia 1.11+ environments where the one-line URL install cannot resolve the unregistered OWENS OpenFAST dependencies. These steps require a secure download, such as through the SSH keys detailed above, to avoid man-in-the-middle attacks.
 ```julia
 
 using Pkg
