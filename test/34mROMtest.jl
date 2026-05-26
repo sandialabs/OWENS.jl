@@ -4,6 +4,7 @@ import OWENS
 import MAT
 
 path = splitdir(@__FILE__)[1]
+include("$path/owensfea_sectional_cg_spin_fix.jl")
 
 ##############################################
 # Setup
@@ -92,7 +93,11 @@ topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForcesDMS,deformAero=deform
 #### Plot
 ##########################################
 
-file = "$(path)/data/newmesh_34mout34m_ROMtransient.mat"
+file = if _owensfea_sectional_cg_steady_spin_fixed()
+    "$(path)/data/newmesh_34mout34m_ROMtransient_cgfix.mat"
+else
+    "$(path)/data/newmesh_34mout34m_ROMtransient.mat"
+end
 # mfile = MAT.matopen(file, "w")
 # MAT.write(mfile, "t", collect(t))
 # MAT.write(mfile, "FReactionHist", FReactionHist)
