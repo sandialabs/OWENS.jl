@@ -97,7 +97,9 @@ iTSR = 1
     stiff_twr, stiff_bld,bld_precompinput,
     bld_precompoutput,plyprops_bld,numadIn_bld,lam_U_bld,lam_L_bld,
     twr_precompinput,twr_precompoutput,plyprops_twr,numadIn_twr,lam_U_twr,lam_L_twr,aeroForces,deformAero,
-    mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng = OWENS.setupOWENS(OWENSAero,path;
+    mass_breakout_blds,mass_breakout_twr,system,assembly,sections,AD15bldNdIdxRng, AD15bldElIdxRng,
+    custom_mesh_outputs, stiff_array, mass_array, strut_precompinput, strut_precompoutput,
+    plyprops_strut, numadIn_strut, lam_U_strut, lam_L_strut = OWENS.setupOWENS(OWENSAero,path;
         rho=fluid_density,
         mu=fluid_dyn_viscosity,
         Nslices,
@@ -260,7 +262,8 @@ iTSR = 1
         mymesh,myel,myort,number_of_blades,epsilon_x_hist,kappa_y_hist,kappa_z_hist,epsilon_z_hist,
         kappa_x_hist,epsilon_y_hist;verbosity, #Verbosity 0:no printing, 1: summary, 2: summary and spanwise worst safety factor
         Twr_LE_U_idx=1,Twr_LE_L_idx=1,delta_t,
-        AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput=nothing)
+        AD15bldNdIdxRng,AD15bldElIdxRng,strut_precompoutput,strut_precompinput,
+        plyprops_strut,numadIn_strut,lam_U_strut,lam_L_strut)
 
         OWENS.outputData(;mymesh,inputs,t,aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FTwrBsHist,massOwens,stress_U,SF_ult_U,SF_buck_U,stress_L,SF_ult_L,SF_buck_L,stress_TU,SF_ult_TU,SF_buck_TU,stress_TL,SF_ult_TL,SF_buck_TL,topstrainout_blade_U,topstrainout_blade_L,topstrainout_tower_U,topstrainout_tower_L,topDamage_blade_U,topDamage_blade_L,topDamage_tower_U,topDamage_tower_L)
     end
