@@ -247,6 +247,7 @@ Contains the material properties for the blades, struts, and tower.
 - `chord_scale::Vector{Float64}`: The scale factors for the chord.
 - `thickness_scale::Vector{Float64}`: The scale factors for the thickness.
 - `AddedMass_Coeff_Ca::Float64`: The added mass coefficient.
+- `sectional_property_source::Symbol`: `:precomp` for legacy PreComp-derived GX matrices or `:gxbeam` for GXBeam/BECAS sectional meshes.
 """
 mutable struct MaterialSetupOptions
     stack_layers_bld::Union{Nothing,Matrix{Float64}}
@@ -254,6 +255,7 @@ mutable struct MaterialSetupOptions
     chord_scale::Vector{Float64}
     thickness_scale::Vector{Float64}
     AddedMass_Coeff_Ca::Float64
+    sectional_property_source::Symbol
 
     function MaterialSetupOptions(;
         stack_layers_bld::Union{Nothing,Matrix{Float64}} = nothing,
@@ -261,6 +263,7 @@ mutable struct MaterialSetupOptions
         chord_scale::Vector{Float64} = [1.0, 1.0],
         thickness_scale::Vector{Float64} = [1.0, 1.0],
         AddedMass_Coeff_Ca::Float64 = 0.0,
+        sectional_property_source = :precomp,
     )
         new(
             stack_layers_bld,
@@ -268,6 +271,7 @@ mutable struct MaterialSetupOptions
             chord_scale,
             thickness_scale,
             AddedMass_Coeff_Ca,
+            _section_source_symbol(sectional_property_source),
         )
     end
 
@@ -278,6 +282,7 @@ mutable struct MaterialSetupOptions
             get(dict, :chord_scale, [1.0, 1.0]),
             get(dict, :thickness_scale, [1.0, 1.0]),
             get(dict, :AddedMass_Coeff_Ca, 0.0),
+            _section_source_symbol(get(dict, :sectional_property_source, :precomp)),
         )
     end
 end
@@ -585,6 +590,7 @@ function setup_sectional_props(
 
     # Unpack the material config
     AddedMass_Coeff_Ca = material_config.AddedMass_Coeff_Ca
+    sectional_property_source = material_config.sectional_property_source
 
     # Unpack the tower config
     NuMad_geom_xlscsv_file_twr = tower_config.NuMad_geom_xlscsv_file_twr
@@ -649,6 +655,7 @@ function setup_sectional_props(
                 rho,
                 AddedMass_Coeff_Ca;
                 name = nothing,
+                sectional_property_source,
             )
 
         components[icomponent].mass = OWENS.get_material_mass(
@@ -1076,6 +1083,7 @@ function addSectionalPropertiesComponent!(
     rho,
     AddedMass_Coeff_Ca;
     name = nothing,
+    sectional_property_source = :precomp,
 )
 
     input_layup = component.input_layup
@@ -1134,7 +1142,7 @@ function addSectionalPropertiesComponent!(
         fluid_density = rho,
         AddedMass_Coeff_Ca,
     )
-    stiff, mass = OWENS.getSectPropsFromOWENSPreComp(
+    gx_result = OWENS.getSectPropsFromOWENSPreComp(
         LinRange(0, 1, nElem),
         numadIn,
         precompoutput;
@@ -1142,7 +1150,17 @@ function addSectionalPropertiesComponent!(
         precompinputs = precompinput,
         fluid_density = rho,
         AddedMass_Coeff_Ca,
+        sectional_property_source,
+        return_sectional_mesh = _section_source_symbol(sectional_property_source) ==
+                                :gxbeam,
     )
+
+    if _section_source_symbol(sectional_property_source) == :gxbeam
+        stiff, mass, gxbeam_sectional_properties = gx_result
+    else
+        stiff, mass = gx_result
+        gxbeam_sectional_properties = nothing
+    end
 
     sectionPropsArray = [sectionPropsArray; sectionPropsArray_component]
     stiff_array = [stiff_array; stiff]
@@ -1159,6 +1177,7 @@ function addSectionalPropertiesComponent!(
     component.sectionProps = sectionPropsArray_component
     component.stiff_matrix = stiff
     component.mass_matrix = mass
+    component.gxBeamSectionalProperties = gxbeam_sectional_properties
 
     return sectionPropsArray, stiff_array, mass_array, component
 end
@@ -1316,6 +1335,7 @@ function preprocess_modeling_options_setup(modelopt, path)
         chord_scale = [1.0, 1.0],
         thickness_scale = [1.0, 1.0],
         AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca,
+        sectional_property_source = modelopt.OWENSFEA_Options.sectional_property_source,
     )
 
     # Create aero options
@@ -1443,6 +1463,7 @@ function preprocess_windio_setup(modelopt, windio, path)
         chord_scale = [1.0, 1.0],
         thickness_scale = [1.0, 1.0],
         AddedMass_Coeff_Ca = modelopt.OWENSFEA_Options.AddedMass_Coeff_Ca,
+        sectional_property_source = modelopt.OWENSFEA_Options.sectional_property_source,
     )
 
     # Create aero options

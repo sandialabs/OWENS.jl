@@ -971,6 +971,7 @@ function Unsteady_Land(
         component.k_x = unsteady_outputs.kappa_x_hist[1, startE:stopE, :]
         component.k_y = unsteady_outputs.kappa_y_hist[1, startE:stopE, :]
         component.k_z = unsteady_outputs.kappa_z_hist[1, startE:stopE, :]
+        OWENS.populate_gxbeam_sectional_recovery!(component)
     end
 
     return unsteady_outputs

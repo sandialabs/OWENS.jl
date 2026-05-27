@@ -555,6 +555,7 @@ OWENSFEA_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
     * `alpha`: default 0.5, newmark time integration alpha parameter
     * `gamma`: default 0.5, newmark time integration gamma parameter
     * `AddedMass_Coeff_Ca`: default 0.0, added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+    * `sectional_property_source`: default `precomp`, use `gxbeam` to compute GXBeam/BECAS sectional stiffness and mass matrices from PreComp inputs
     * `platformTurbineConnectionNodeNumber`: default 1, TODO: reconnect this
     * `aeroElasticOn`: default false, OWENSFEA for the built in flutter model
     * `spinUpOn`: default true, TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis
@@ -582,6 +583,7 @@ mutable struct OWENSFEA_Options
     alpha::Any
     gamma::Any
     AddedMass_Coeff_Ca::Any
+    sectional_property_source::Any
     platformTurbineConnectionNodeNumber::Any
     aeroElasticOn::Any
     spinUpOn::Any
@@ -616,6 +618,7 @@ mutable struct OWENSFEA_Options
             get(dict_in, :alpha, 0.5), # newmark time integration alpha parameter
             get(dict_in, :gamma, 0.5), # newmark time integration gamma parameter
             get(dict_in, :AddedMass_Coeff_Ca, 0.0), # added mass coefficient, scaling factor (typically 0-1) on the cones of water mass applied to each structural element in the 22 and 33 diagonal terms. 0 turns this off
+            _section_source_symbol(get(dict_in, :sectional_property_source, :precomp)), # sectional property backend for GXBeam matrices
             get(dict_in, :platformTurbineConnectionNodeNumber, 1), # TODO: reconnect this
             get(dict_in, :aeroElasticOn, false), # OWENSFEA for the built in flutter model
             get(dict_in, :spinUpOn, true), # TODO: remove this since it should always be true since that is how its used. To turn it off, just set RPM and gravity to 0.  OWENSFEA modal analysis, calculates steady centrifugal strain stiffening and then passes that model to the modal analysis

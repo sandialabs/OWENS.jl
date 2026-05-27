@@ -73,6 +73,10 @@ end
     include("$path/test_section_property_reader.jl")
 end
 
+@testset "GXBeam Sectional Properties" begin
+    include("$path/test_gxbeam_sectional_properties.jl")
+end
+
 @testset "WindIO Run Spec" begin
     include("$path/test_windio_run_spec.jl")
 end
