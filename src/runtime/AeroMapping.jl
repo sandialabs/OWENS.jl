@@ -1,3 +1,371 @@
+function _hawt_axis_index(rotor_axis)
+    if rotor_axis == :x || rotor_axis == 1
+        return 1
+    elseif rotor_axis == :y || rotor_axis == 2
+        return 2
+    elseif rotor_axis == :z || rotor_axis == 3
+        return 3
+    end
+    throw(ArgumentError("rotor_axis must be :x, :y, :z, 1, 2, or 3"))
+end
+
+function _hawt_radial_indices(rotor_axis)
+    axis_index = _hawt_axis_index(rotor_axis)
+    return Tuple(i for i = 1:3 if i != axis_index)
+end
+
+function _hawt_axis_unit(rotor_axis)
+    axis_unit = zeros(Float64, 3)
+    axis_unit[_hawt_axis_index(rotor_axis)] = 1.0
+    return axis_unit
+end
+
+function _hawt_displacement_vector(displacements, mesh)
+    isnothing(displacements) && return nothing
+    length(displacements) == mesh.numNodes * 6 ||
+        throw(ArgumentError("displacements must have length mesh.numNodes * 6"))
+    return displacements
+end
+
+function _hawt_node_position(mesh, node_number, displacements)
+    position = [mesh.x[node_number], mesh.y[node_number], mesh.z[node_number]]
+    if !isnothing(displacements)
+        dof0 = 6 * (node_number - 1)
+        position .+= displacements[(dof0+1):(dof0+3)]
+    end
+    return position
+end
+
+function _hawt_default_hub_position(mesh, displacements)
+    root_nodes = Int.(mesh.structuralNodeNumbers[:, 1])
+    hub_position = zeros(Float64, 3)
+    for node_number in root_nodes
+        hub_position .+= _hawt_node_position(mesh, node_number, displacements)
+    end
+    return hub_position ./ length(root_nodes)
+end
+
+function _hawt_hub_position(mesh, displacements, hub_position)
+    isnothing(hub_position) && return _hawt_default_hub_position(mesh, displacements)
+    length(hub_position) == 3 || throw(ArgumentError("hub_position must have length 3"))
+    all(isfinite, hub_position) || throw(ArgumentError("hub_position must be finite"))
+    return Float64.(collect(hub_position))
+end
+
+"""
+    hawtStructuralRadialStations(mesh; displacements=nothing, hub_position=nothing,
+                                 rotor_axis=:x)
+
+Return the HAWT blade-node radial stations implied by an OWENS structural mesh.
+The default convention uses the hub `x` axis as the shaft axis, so radial
+distance is measured in the `y-z` rotor plane. Legacy meshes that place the
+rotor in another plane can pass `rotor_axis=:y` or `rotor_axis=:z`.
+Translational structural displacements may be supplied as a full OWENSFEA
+`6 * mesh.numNodes` vector.
+"""
+function hawtStructuralRadialStations(
+    mesh;
+    displacements = nothing,
+    hub_position = nothing,
+    rotor_axis = :x,
+)
+    radial_indices = _hawt_radial_indices(rotor_axis)
+    displacements = _hawt_displacement_vector(displacements, mesh)
+    hub_position = _hawt_hub_position(mesh, displacements, hub_position)
+
+    nblade, nnodes_per_blade = size(mesh.structuralNodeNumbers)
+    radial_stations = zeros(Float64, nblade, nnodes_per_blade)
+    for iblade = 1:nblade
+        for inode = 1:nnodes_per_blade
+            node_number = Int(mesh.structuralNodeNumbers[iblade, inode])
+            position = _hawt_node_position(mesh, node_number, displacements)
+            radial_stations[iblade, inode] = hypot(
+                position[radial_indices[1]] - hub_position[radial_indices[1]],
+                position[radial_indices[2]] - hub_position[radial_indices[2]],
+            )
+        end
+    end
+    return radial_stations
+end
+
+function _validate_hawt_station_loads(
+    radial_positions,
+    normal_loads,
+    tangential_loads,
+    nblade,
+)
+    radial_positions isa AbstractVector ||
+        throw(ArgumentError("radial_positions must be a vector"))
+    isempty(radial_positions) && throw(ArgumentError("radial_positions must not be empty"))
+    r = Float64.(collect(radial_positions))
+    all(isfinite, r) || throw(ArgumentError("radial_positions must be finite"))
+    minimum(r) >= 0.0 || throw(ArgumentError("radial_positions must be nonnegative"))
+    all(diff(r) .> 0.0) ||
+        throw(ArgumentError("radial_positions must be strictly increasing"))
+
+    normal = _hawt_load_matrix(normal_loads, nblade, length(r), "normal_loads")
+    tangential = _hawt_load_matrix(tangential_loads, nblade, length(r), "tangential_loads")
+    return r, normal, tangential
+end
+
+function _hawt_load_matrix(loads, nblade, nstations, name)
+    all(isfinite, loads) || throw(ArgumentError("$name must be finite"))
+    if loads isa AbstractVector
+        length(loads) == nstations ||
+            throw(ArgumentError("$name must have one value per radial station"))
+        return repeat(reshape(Float64.(collect(loads)), 1, nstations), nblade, 1)
+    elseif loads isa AbstractMatrix
+        size(loads) == (nblade, nstations) || throw(
+            ArgumentError("$name must have size (number of blades, number of stations)"),
+        )
+        return Float64.(loads)
+    else
+        throw(ArgumentError("$name must be a vector or matrix"))
+    end
+end
+
+function _hawt_support_points(radial_positions, loads, hub_radius, tip_radius)
+    hub_radius >= 0.0 || throw(ArgumentError("hub_radius must be nonnegative"))
+    tip_radius >= last(radial_positions) ||
+        throw(ArgumentError("tip_radius must be at least the last radial station"))
+    first(radial_positions) >= hub_radius ||
+        throw(ArgumentError("radial_positions must not be inside hub_radius"))
+
+    support_r = Float64[]
+    support_loads = Float64[]
+    if hub_radius > 0.0
+        push!(support_r, 0.0)
+        push!(support_loads, 0.0)
+        if hub_radius < first(radial_positions)
+            push!(support_r, hub_radius)
+            push!(support_loads, 0.0)
+        end
+    elseif first(radial_positions) > 0.0
+        push!(support_r, 0.0)
+        push!(support_loads, 0.0)
+    end
+
+    append!(support_r, radial_positions)
+    append!(support_loads, loads)
+
+    if tip_radius > last(radial_positions)
+        push!(support_r, tip_radius)
+        push!(support_loads, 0.0)
+    end
+    return support_r, support_loads
+end
+
+function _hawt_linear_interpolate(x, y, targets, name)
+    all(diff(x) .> 0.0) || throw(
+        ArgumentError("$name interpolation support points must be strictly increasing"),
+    )
+    values = zeros(Float64, length(targets))
+    tolerance = 100 * eps(Float64) * max(1.0, maximum(abs.(x)))
+    for (itarget, target) in enumerate(targets)
+        if target < first(x) - tolerance || target > last(x) + tolerance
+            throw(
+                ArgumentError(
+                    "$name interpolation target $target is outside $(first(x)) to $(last(x))",
+                ),
+            )
+        elseif target <= first(x) + tolerance
+            values[itarget] = first(y)
+        elseif target >= last(x) - tolerance
+            values[itarget] = last(y)
+        else
+            ilower = searchsortedlast(x, target)
+            if x[ilower] == target
+                values[itarget] = y[ilower]
+            else
+                fraction = (target - x[ilower]) / (x[ilower+1] - x[ilower])
+                values[itarget] = y[ilower] + fraction * (y[ilower+1] - y[ilower])
+            end
+        end
+    end
+    return values
+end
+
+function _hawt_node_unit_vectors(node_positions, hub_position, rotor_axis)
+    nnodes = size(node_positions, 2)
+    axis_index = _hawt_axis_index(rotor_axis)
+    axis_unit = _hawt_axis_unit(rotor_axis)
+    radial_indices = _hawt_radial_indices(rotor_axis)
+    radial_units = zeros(Float64, 3, nnodes)
+    tangential_units = zeros(Float64, 3, nnodes)
+
+    fallback = nothing
+    for inode = 1:nnodes
+        radial_components = [
+            node_positions[radial_indices[1], inode] - hub_position[radial_indices[1]],
+            node_positions[radial_indices[2], inode] - hub_position[radial_indices[2]],
+        ]
+        radius = hypot(radial_components[1], radial_components[2])
+        if radius > 100 * eps(Float64)
+            fallback = zeros(Float64, 3)
+            fallback[radial_indices[1]] = radial_components[1] / radius
+            fallback[radial_indices[2]] = radial_components[2] / radius
+            break
+        end
+    end
+    if isnothing(fallback)
+        fallback = zeros(Float64, 3)
+        fallback[radial_indices[1]] = 1.0
+    end
+
+    for inode = 1:nnodes
+        radial_components = [
+            node_positions[radial_indices[1], inode] - hub_position[radial_indices[1]],
+            node_positions[radial_indices[2], inode] - hub_position[radial_indices[2]],
+        ]
+        radius = hypot(radial_components[1], radial_components[2])
+        radial_unit = copy(fallback)
+        if radius > 100 * eps(Float64)
+            radial_unit .= 0.0
+            radial_unit[radial_indices[1]] = radial_components[1] / radius
+            radial_unit[radial_indices[2]] = radial_components[2] / radius
+        end
+        radial_unit[axis_index] = 0.0
+        radial_units[:, inode] .= radial_unit
+        tangential_units[:, inode] .= LinearAlgebra.cross(axis_unit, radial_unit)
+    end
+    return radial_units, tangential_units
+end
+
+"""
+    mapHAWTCCBladeLoads(mesh, radial_positions, normal_loads, tangential_loads;
+                        hub_radius=0.0, tip_radius=maximum(radial_positions),
+                        displacements=nothing, hub_position=nothing,
+                        rotor_axis=:x)
+
+Map CCBlade-style HAWT blade distributed loads onto OWENSFEA nodal degrees of
+freedom. `normal_loads` are force per span along the positive shaft axis.
+`tangential_loads` are force per span in the positive rotor-rotation direction
+about that axis. Loads may be one vector shared by all blades or a
+`nblade x nstation` matrix.
+
+The return value is `(ForceValHist, ForceDof)`, matching the existing OWENS
+aero-load mapping convention. `ForceValHist` is a full `6 * mesh.numNodes`
+vector so it can be passed directly to OWENSFEA transient/static solves.
+The default `rotor_axis=:x` matches the intended HAWT hub convention; legacy
+HAWT meshes generated in the `x-y` plane should pass `rotor_axis=:z`.
+"""
+function mapHAWTCCBladeLoads(
+    mesh,
+    radial_positions,
+    normal_loads,
+    tangential_loads;
+    hub_radius = 0.0,
+    tip_radius = maximum(radial_positions),
+    displacements = nothing,
+    hub_position = nothing,
+    rotor_axis = :x,
+)
+    _hawt_axis_index(rotor_axis)
+    displacements = _hawt_displacement_vector(displacements, mesh)
+    hub_position = _hawt_hub_position(mesh, displacements, hub_position)
+
+    nblade, nnodes_per_blade = size(mesh.structuralNodeNumbers)
+    r, normal, tangential = _validate_hawt_station_loads(
+        radial_positions,
+        normal_loads,
+        tangential_loads,
+        nblade,
+    )
+
+    ForceValHist = zeros(Float64, mesh.numNodes * 6)
+    ForceDof = collect(1:(mesh.numNodes*6))
+    axial_unit = _hawt_axis_unit(rotor_axis)
+
+    for iblade = 1:nblade
+        node_numbers = Int.(mesh.structuralNodeNumbers[iblade, :])
+        node_positions = zeros(Float64, 3, nnodes_per_blade)
+        for (inode, node_number) in enumerate(node_numbers)
+            node_positions[:, inode] .=
+                _hawt_node_position(mesh, node_number, displacements)
+        end
+
+        node_radii = vec(
+            hawtStructuralRadialStations(mesh; displacements, hub_position, rotor_axis)[
+                iblade,
+                :,
+            ],
+        )
+        normal_r, normal_support =
+            _hawt_support_points(r, normal[iblade, :], hub_radius, tip_radius)
+        tangential_r, tangential_support =
+            _hawt_support_points(r, tangential[iblade, :], hub_radius, tip_radius)
+        normal_at_nodes =
+            _hawt_linear_interpolate(normal_r, normal_support, node_radii, "normal_loads")
+        tangential_at_nodes = _hawt_linear_interpolate(
+            tangential_r,
+            tangential_support,
+            node_radii,
+            "tangential_loads",
+        )
+        _, tangential_units =
+            _hawt_node_unit_vectors(node_positions, hub_position, rotor_axis)
+
+        for isegment = 1:(nnodes_per_blade-1)
+            node1 = node_numbers[isegment]
+            node2 = node_numbers[isegment+1]
+            segment_vector = node_positions[:, isegment+1] - node_positions[:, isegment]
+            segment_length = LinearAlgebra.norm(segment_vector)
+            segment_length > 0.0 ||
+                throw(ArgumentError("HAWT blade segment length must be positive"))
+
+            q1 =
+                normal_at_nodes[isegment] .* axial_unit .+
+                tangential_at_nodes[isegment] .* tangential_units[:, isegment]
+            q2 =
+                normal_at_nodes[isegment+1] .* axial_unit .+
+                tangential_at_nodes[isegment+1] .* tangential_units[:, isegment+1]
+
+            f1 = segment_length .* (2.0 .* q1 .+ q2) ./ 6.0
+            f2 = segment_length .* (q1 .+ 2.0 .* q2) ./ 6.0
+
+            dof1 = 6 * (node1 - 1)
+            dof2 = 6 * (node2 - 1)
+            ForceValHist[(dof1+1):(dof1+3)] .+= f1
+            ForceValHist[(dof2+1):(dof2+3)] .+= f2
+        end
+    end
+
+    return ForceValHist, ForceDof
+end
+
+"""
+    hawtNodalLoadResultants(mesh, force_values; displacements=nothing,
+                            hub_position=nothing, rotor_axis=:x)
+
+Return total force and moment about the HAWT hub for a full OWENS nodal load
+vector. This is intended for coupling verification and sign-convention checks.
+"""
+function hawtNodalLoadResultants(
+    mesh,
+    force_values;
+    displacements = nothing,
+    hub_position = nothing,
+    rotor_axis = :x,
+)
+    _hawt_axis_index(rotor_axis)
+    length(force_values) == mesh.numNodes * 6 ||
+        throw(ArgumentError("force_values must have length mesh.numNodes * 6"))
+    displacements = _hawt_displacement_vector(displacements, mesh)
+    hub_position = _hawt_hub_position(mesh, displacements, hub_position)
+
+    total_force = zeros(Float64, 3)
+    total_moment = zeros(Float64, 3)
+    for node_number = 1:mesh.numNodes
+        dof0 = 6 * (node_number - 1)
+        force = Float64.(collect(force_values[(dof0+1):(dof0+3)]))
+        moment = Float64.(collect(force_values[(dof0+4):(dof0+6)]))
+        position = _hawt_node_position(mesh, node_number, displacements)
+        total_force .+= force
+        total_moment .+= moment .+ LinearAlgebra.cross(position .- hub_position, force)
+    end
+    return (force = total_force, moment = total_moment)
+end
+
 """
     mapAD15(t,mesh)
 
