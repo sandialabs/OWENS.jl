@@ -12,6 +12,8 @@ Aerodyn if CCW, root is at top and z is down, y is trailing edge, for struts, z 
 
 Hub is rotated such that the axis of rotation is x. So for a VAWT hub-x points up, and hawt hub-x point in x.
 
+The HAWT CCBlade load mapper in `runtime/AeroMapping.jl` defaults to this shaft-x convention: positive normal load acts along the positive shaft axis and positive tangential load follows the right-hand positive rotation direction about that axis. The legacy `create_hawt_mesh` helper currently generates blades in the global `x-y` plane, so verification tests pass `rotor_axis=:z` explicitly until the HAWT mesh/setup path is migrated to the shaft-x CCBlade/OpenFAST convention.
+
 ![](figs/image1.png){width="4.917280183727034in"
 height="4.585993000874891in"}![](figs/image2.png){width="5.469136045494313in"
 height="5.071805555555556in"}Meet porcupine the OWENS element

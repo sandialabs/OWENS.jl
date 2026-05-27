@@ -61,6 +61,10 @@ end
     include("$path/test_validation_reports.jl")
 end
 
+@testset "HAWT CCBlade Coupling" begin
+    include("$path/test_hawt_ccblade_coupling.jl")
+end
+
 @testset "Strut Postprocessing" begin
     include("$path/test_postprocess_struts.jl")
 end
