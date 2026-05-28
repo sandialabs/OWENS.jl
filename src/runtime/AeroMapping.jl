@@ -355,7 +355,7 @@ function hawtNodalLoadResultants(
 
     total_force = zeros(Float64, 3)
     total_moment = zeros(Float64, 3)
-    for node_number = 1:mesh.numNodes
+    for node_number = 1:(mesh.numNodes)
         dof0 = 6 * (node_number - 1)
         force = Float64.(collect(force_values[(dof0+1):(dof0+3)]))
         moment = Float64.(collect(force_values[(dof0+4):(dof0+6)]))
@@ -403,7 +403,7 @@ function mapAD15(
     T = Float64 # TODO: This is a placeholer, likely needs to be something else for full AD support.
     ForceValHist = [zeros(T, Int(mesh[iturb].numNodes*6), numAeroTS) for iturb = 1:Nturb]
     # DOFs are sequential through all nodes
-    ForceDof=[collect(1:1:(mesh[iturb].numNodes*6)) for iturb = 1:Nturb]
+    ForceDof = [collect(1:1:(mesh[iturb].numNodes*6)) for iturb = 1:Nturb]
 
     for iturb = 1:Nturb
         # Map loads over from advanceTurb
@@ -411,7 +411,7 @@ function mapAD15(
         Fy_base = zeros(T, numAeroTS)
         Fz_base = zeros(T, numAeroTS)
         Mz_base = zeros(T, numAeroTS)
-        for i = 1:mesh[iturb].numNodes
+        for i = 1:(mesh[iturb].numNodes)
             ForceValHist[iturb][(i-1)*6+1, :] = Fx[iturb][i, 1:numAeroTS]
             ForceValHist[iturb][(i-1)*6+2, :] = Fy[iturb][i, 1:numAeroTS]
             ForceValHist[iturb][(i-1)*6+3, :] = Fz[iturb][i, 1:numAeroTS]

@@ -1249,7 +1249,7 @@ function Unsteady_Land(
     #..........................................................................
 
     ### Iterate for a solution at t+dt
-    i=0
+    i = 0
     timeconverged = false
     pbar = ProgressBars.ProgressBar(total = numTS-1)
 
@@ -1973,7 +1973,7 @@ function run34m(
 
         feamodel.analysisType = "S"
 
-        displ=zeros(mymesh.numNodes*6)
+        displ = zeros(mymesh.numNodes*6)
         elStorage = OWENS.OWENSFEA.initialElementCalculations(feamodel, myel, mymesh)
         displ, elStrain, staticAnalysisSuccessful, FReaction =
             OWENS.OWENSFEA.staticAnalysis(

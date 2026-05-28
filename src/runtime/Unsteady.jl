@@ -367,7 +367,7 @@ function Unsteady(
         #..........................................................................
 
         ### Iterate for a solution at t+dt
-        i=0
+        i = 0
         timeconverged = false
 
         pbar = ProgressBars.ProgressBar(total = numTS-1)
@@ -400,9 +400,9 @@ function Unsteady(
                 end
 
                 ## Initialize "j" Gauss-Seidel iteration variables
-                u_j=u_s
-                udot_j=udot_s
-                uddot_j=uddot_s
+                u_j = u_s
+                udot_j = udot_s
+                uddot_j = uddot_s
 
                 azi_j = azi_s
                 Omega_j = Omega_s

@@ -43,9 +43,9 @@ function owens_to_gx(
     for ielem = 1:length(start)
 
         nodeNum = start[ielem] # Get node number
-        elNum = findfirst(x->x==nodeNum, mymesh.conn[:, 1]) # Get element number
+        elNum = findfirst(x -> x==nodeNum, mymesh.conn[:, 1]) # Get element number
         if isnothing(elNum) || elNum>length(sectionPropsArray)
-            elNum = findfirst(x->x==nodeNum, mymesh.conn[:, 2]) # Get element number
+            elNum = findfirst(x -> x==nodeNum, mymesh.conn[:, 2]) # Get element number
         end
         yaw = (myort.Psi_d[elNum]) * pi/180 #deg to rad
         pitch = (myort.Theta_d[elNum]) * pi/180 #deg to rad
@@ -116,9 +116,9 @@ function owens_to_gx(
 
     for ipt = 1:length(assembly.points)
 
-        elNum = findfirst(x->x==ipt, mymesh.conn[:, 1]) # Get element number
+        elNum = findfirst(x -> x==ipt, mymesh.conn[:, 1]) # Get element number
         if isnothing(elNum)
-            elNum = findfirst(x->x==ipt, mymesh.conn[:, 2]) # Get element number
+            elNum = findfirst(x -> x==ipt, mymesh.conn[:, 2]) # Get element number
         end
 
         yaw = (myort.Psi_d[elNum]) * pi/180 #deg to rad
@@ -161,7 +161,7 @@ function owens_to_gx(
 
     if !isnothing(VTKmeshfilename)
         try #this should error if someone on windows uses backslash '\'
-            lastforwardslash = findlast(x->x=='/', VTKmeshfilename)
+            lastforwardslash = findlast(x -> x=='/', VTKmeshfilename)
             filepath = VTKmeshfilename[1:(lastforwardslash-1)]
             if !isdir(filepath)
                 mkdir(filepath)
@@ -262,7 +262,7 @@ function OWENSVTK(
 
     println("Saving VTK time domain files")
     _validate_vtk_save_indices(tsave_idx, length(t))
-    userPointNames=[
+    userPointNames = [
         "EA",
         "rhoA",
         "EIyy",
@@ -345,7 +345,7 @@ function OWENSVTK(
         userPointData[22, it_save, :] .= topFexternal_hist[it, 6:6:end]
     end
 
-    azi=aziHist#./aziHist*1e-6
+    azi = aziHist#./aziHist*1e-6
     # VTKsaveName = "$path/vtk/$(windINPfilename[1:end-4])"
     stress_saved = _saved_vtk_stress_history(stress, tsave_idx, length(t))
 
@@ -496,7 +496,7 @@ function OWENSFEA_VTK(
     end
 
     try #this should error if someone on windows uses backslash '\'
-        lastforwardslash = findlast(x->x=='/', filename)
+        lastforwardslash = findlast(x -> x=='/', filename)
         filepath = filename[1:(lastforwardslash-1)]
         if !isdir(filepath)
             mkdir(filepath)
@@ -1145,7 +1145,7 @@ function mywrite_vtk(
         stop = period*cycles
     end
 
-    time=range(start, stop, length = steps)
+    time = range(start, stop, length = steps)
 
     paraview_collection(name) do pvd
 

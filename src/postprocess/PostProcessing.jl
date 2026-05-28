@@ -345,11 +345,11 @@ function sum_cycles(
     range_i = collect(range_in)
     #ensure the cycles are in the intervals by adding a small error to the end values of the interal.
     error_m = (bounds.max_mean-bounds.min_mean)*1e-14
-    mean_i[end]+=error_m
-    mean_i[1]-=error_m
+    mean_i[end] += error_m
+    mean_i[1] -= error_m
     error_r = bounds.max_range*1e-14
-    range_i[end]+=error_r
-    range_i[1]-=error_r
+    range_i[end] += error_r
+    range_i[1] -= error_r
     #show(mean_intervals)
     for cycle in cycles
         i = find_range(range_i, cycle.range)

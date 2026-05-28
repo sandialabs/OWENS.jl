@@ -3,7 +3,7 @@ using YAML
 
 function _reject_time_dean_option(value, field_name)
     if value isa AbstractString &&
-       uppercase(replace(strip(value), r"[\s_-]"=>"")) in ("TD", "TIMEDEAN", "DEAN")
+       uppercase(replace(strip(value), r"[\s_-]" => "")) in ("TD", "TIMEDEAN", "DEAN")
         throw(
             ArgumentError(
                 "Dean time stepping (`TD`) is no longer supported through OWENS `$field_name`; use `TNB`, `ROM`, or `GX` instead.",
@@ -914,12 +914,12 @@ function ModelingOptions(yamlInputfile = nothing; path = "")
             dicttype = OrderedCollections.OrderedDict{Symbol,Any},
         )
     else #just use defaults by supplying a dummy dictionary up front
-        yamlInput = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
+        yamlInput = OrderedCollections.OrderedDict(:nothing => 0.0, :nothing2 => "string")
     end
 
 
     # Unpack YAML
-    dummy_dict = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
+    dummy_dict = OrderedCollections.OrderedDict(:nothing => 0.0, :nothing2 => "string")
 
     if haskey(yamlInput, :DLC_Options)
         dlc_options = DLC_Options(yamlInput[:DLC_Options], path)
@@ -985,7 +985,7 @@ function Design_Data(
             YAML.load_file(file_path; dicttype = OrderedCollections.OrderedDict{Symbol,Any})
         println("Running: $(windio[:name])")
     else
-        windio = OrderedCollections.OrderedDict(:nothing=>0.0, :nothing2=>"string")
+        windio = OrderedCollections.OrderedDict(:nothing => 0.0, :nothing2 => "string")
     end
 
     defaults = YAML.load_file(
