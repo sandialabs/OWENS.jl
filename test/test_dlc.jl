@@ -117,6 +117,29 @@ end
     @test dlc_1_1.IEC_WindType == "\"1NTM\""
 end
 
+@testset "DLC TurbSim override parameters" begin
+    params = OWENS.getDLCparams(
+        "1_1",
+        minimal_dlc_model_options(),
+        minimal_dlc_design_parameters(),
+        [5.0],
+        11.0,
+        42.0,
+        "\"A\"",
+        1,
+        "\"1-ED3\"";
+        simtime_turbsim = 123.0,
+        delta_t_turbsim = 0.25,
+        NumGrid_Z = 11,
+        NumGrid_Y = 7,
+    )
+
+    @test params.AnalysisTime == 123.0
+    @test params.TimeStep == 0.25
+    @test params.NumGrid_Z == 11
+    @test params.NumGrid_Y == 7
+end
+
 @testset "IEC 61400-1 DLC branch table" begin
     expected_cases = [
         ("1_2", "normal", [5.0, 10.0, 15.0], "UF", "\"1NTM\""),

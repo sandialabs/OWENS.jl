@@ -10,6 +10,11 @@ struct GXSectionNumadStub
     chord
 end
 
+struct GXSectionAirfoilStub
+    xnode
+    ynode
+end
+
 function synthetic_precomp_input()
     x_upper = collect(range(0.0, 1.0; length = 21))
     y_upper = 0.06 .* sin.(pi .* x_upper)
@@ -142,5 +147,70 @@ end
     @test !isapprox(
         component.gxBeamSectionalRecovery[1, 2].beam_stress,
         component.gxBeamSectionalRecovery[1, 1].beam_stress,
+    )
+end
+
+@testset "GXBeam sectional property input validation" begin
+    lower_surface_first = GXSectionAirfoilStub(
+        [1.0, 0.7, 0.2, 0.4, 1.0],
+        [0.0, -0.04, -0.02, 0.05, 0.0],
+    )
+    xaf, yaf = OWENS._precomp_airfoil_to_gxbeam(lower_surface_first)
+    @test xaf == reverse(lower_surface_first.xnode)
+    @test yaf == reverse(lower_surface_first.ynode)
+    @test xaf[1] == 1.0
+    @test xaf[end] == 1.0
+    @test yaf[2] > 0.0
+
+    upper_surface_first = GXSectionAirfoilStub(
+        [1.0, 0.6, 0.2, 0.5, 1.0],
+        [0.0, 0.05, 0.02, -0.04, 0.0],
+    )
+    xaf, yaf = OWENS._precomp_airfoil_to_gxbeam(upper_surface_first)
+    @test xaf == upper_surface_first.xnode
+    @test yaf == upper_surface_first.ynode
+
+    missing_upper_surface = GXSectionAirfoilStub([1.0, 0.6, 0.0], [0.0, -0.04, 0.0])
+    @test_throws ArgumentError OWENS._precomp_airfoil_to_gxbeam(missing_upper_surface)
+
+    pc_input = synthetic_precomp_input()
+    section = OWENS.gxbeam_sectional_properties_from_precomp(pc_input; wns = 2)
+    strain_history = zeros(1, 2)
+
+    missing_histories = OWENS.Component(;
+        name = "missing-gxbeam-histories",
+        gxBeamSectionalProperties = [section],
+        e_x = strain_history,
+    )
+    @test_throws ArgumentError OWENS.recover_gxbeam_component_sectional_strain(
+        missing_histories,
+    )
+
+    mismatched_histories = OWENS.Component(;
+        name = "mismatched-gxbeam-histories",
+        gxBeamSectionalProperties = [section],
+        e_x = strain_history,
+        e_y = zeros(2, 2),
+        e_z = strain_history,
+        k_x = strain_history,
+        k_y = strain_history,
+        k_z = strain_history,
+    )
+    @test_throws DimensionMismatch OWENS.recover_gxbeam_component_sectional_strain(
+        mismatched_histories,
+    )
+
+    mismatched_sections = OWENS.Component(;
+        name = "mismatched-gxbeam-sections",
+        gxBeamSectionalProperties = [section, section],
+        e_x = strain_history,
+        e_y = strain_history,
+        e_z = strain_history,
+        k_x = strain_history,
+        k_y = strain_history,
+        k_z = strain_history,
+    )
+    @test_throws DimensionMismatch OWENS.recover_gxbeam_component_sectional_strain(
+        mismatched_sections,
     )
 end

@@ -17,6 +17,10 @@ end
     include("$path/test_initial_conditions.jl")
 end
 
+@testset "Runtime Utility Physics" begin
+    include("$path/test_runtime_utilities.jl")
+end
+
 @testset "Time Dean Option" begin
     include("$path/test_time_dean_option.jl")
 end

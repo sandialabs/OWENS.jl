@@ -1,6 +1,8 @@
 using Test
 import OWENS
 
+struct NonIndexableSeries end
+
 function sample_uniform_wind_dlc()
     return OWENS.DLC_internal(
         [12.5],
@@ -86,5 +88,13 @@ end
 
     params = sample_uniform_wind_dlc()
     params.URef = Inf
+    @test_throws ArgumentError OWENS.renderUniformWindLines(params)
+
+    params = sample_uniform_wind_dlc()
+    params.time = NonIndexableSeries()
+    @test_throws ArgumentError OWENS.renderUniformWindLines(params)
+
+    params = sample_uniform_wind_dlc()
+    params.winddir = NonIndexableSeries()
     @test_throws ArgumentError OWENS.renderUniformWindLines(params)
 end
