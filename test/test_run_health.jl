@@ -67,6 +67,15 @@ import OrderedCollections
         @test isnothing(invalid["resolved_path"])
         @test invalid["expected_bytes"] === true
         @test invalid["expected_sha256"] == "bad"
+
+        missing_fields = OWENS.verify_file_provenance(Dict{String,Any}(); root = dir)
+        @test missing_fields["status"] == "invalid_record"
+        @test missing_fields["issues"] ==
+              ["path is required", "bytes is required", "sha256 is required"]
+
+        non_dictionary = OWENS.verify_file_provenance("not a manifest record"; root = dir)
+        @test non_dictionary["status"] == "invalid_record"
+        @test non_dictionary["issues"] == ["record must be a dictionary"]
     end
 end
 
@@ -146,6 +155,22 @@ end
         @test loaded_health["status"] == "ok"
         @test loaded_health["manifest_path"] == abspath(manifest_file)
         @test loaded_health["summary"] == health["summary"]
+
+        no_project_root_manifest = deepcopy(manifest)
+        delete!(no_project_root_manifest, "project_root")
+        path_root_health = OWENS.run_manifest_health(
+            no_project_root_manifest;
+            manifest_path = manifest_file,
+        )
+        @test path_root_health["root"] == abspath(dir)
+
+        cwd_root_health = cd(dir) do
+            OWENS.run_manifest_health(no_project_root_manifest)
+        end
+        cwd_root_expected = cd(dir) do
+            OWENS._canonical_abs_path(pwd())
+        end
+        @test cwd_root_health["root"] == cwd_root_expected
 
         no_output_summary = OWENS.run_manifest_health(manifest; summarize_outputs = false)
         @test no_output_summary["outputs"][1]["status"] == "ok"

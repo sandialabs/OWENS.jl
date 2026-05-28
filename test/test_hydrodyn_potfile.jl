@@ -57,6 +57,18 @@ end
             malformed_potfile_input,
             nothing,
         )
+
+        unresolved_relative =
+            OWENS._resolvedHydroDynPotFileRoot(
+                "missing_case    PotFile\n",
+                no_potfile_input,
+                nothing,
+            )
+        @test unresolved_relative == abspath(joinpath(dir, "missing_case"))
+        @test_throws ArgumentError OWENS._hydrodynPotFileLineWithRoot(
+            "      PotFile       - missing potential-flow root\n",
+            "unused",
+        )
     end
 
     @test OWENS.hydrodynInputWithResolvedPotFile("none", nothing) == "none"

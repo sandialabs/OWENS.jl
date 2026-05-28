@@ -231,3 +231,20 @@ end
     @test aero.aeroForcesACDMS === :acdms_forces
     @test aero.deformAeroACDMS === :acdms_deform
 end
+
+@testset "Modeling option and design defaults" begin
+    modeling = OWENS.ModelingOptions()
+    @test modeling.OWENS_Options.analysisType == "Unsteady"
+    @test modeling.OWENS_Options.numTS == 10
+    @test modeling.DLC_Options.Vdesign == 11.0
+    @test modeling.OWENSAero_Options.Nslices == 20
+    @test modeling.OWENSFEA_Options.sectional_property_source == :precomp
+    @test modeling.OWENSOpenFASTWrappers_Options.WindType == 3
+    @test modeling.Mesh_Options.Nbld == 3
+    @test modeling.Drivetrain_Options.gearRatio == 1.0
+
+    defaults = OWENS.Design_Data()
+    @test defaults isa OrderedDict{Symbol,Any}
+    @test defaults[:name] == "WINDIO Example"
+    @test defaults[:assembly][:number_of_blades] == 3
+end
