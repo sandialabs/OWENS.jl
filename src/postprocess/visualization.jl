@@ -118,22 +118,22 @@ NONE
 function plotMesh(mesh, colorstring, meshSeg, ax1, ax2, ax3, ax4)
 
     conn = mesh.conn #assign mesh connectivity and coordinates
-    x = mesh.x
-    y = mesh.y
-    z = mesh.z
+    x=mesh.x
+    y=mesh.y
+    z=mesh.z
 
-    index = 0
+    index=0
     for i = 1:length(meshSeg) #loop over mesh segments
         p1 = zeros(meshSeg[i]*2)
         p2 = zeros(meshSeg[i]*2)
         p3 = zeros(meshSeg[i]*2)
         for j = 1:meshSeg[i] #loop over elements in mesh segment i
-            index = index+1
+            index=index+1
             if index>length(conn[:, 1])
                 break
             end
-            n1 = Int(conn[index, 1]) #get node numbers for element j in mesh segment i
-            n2 = Int(conn[index, 2])
+            n1=Int(conn[index, 1]) #get node numbers for element j in mesh segment i
+            n2=Int(conn[index, 2])
 
             #get nodal coordinates for element j in mesh segment i
             p1[(j-1)*2+1] = x[n1]

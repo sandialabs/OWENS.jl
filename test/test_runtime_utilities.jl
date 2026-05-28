@@ -12,6 +12,19 @@ mutable struct RestartArrayState
     mode
 end
 
+mutable struct RestartTopData
+    numTS
+    delta_t
+    t
+    u_s
+    Omega_s
+    topFexternal
+    uHist
+    OmegaHist
+    topFexternal_hist
+    epsilon_x_hist
+end
+
 @testset "Generator and drivetrain utilities" begin
     inputs = (
         ratedTorque = 100.0,
@@ -183,6 +196,15 @@ end
     @test isfinite(no_mean_correction)
     @test no_mean_correction > 0.0
     @test isnan(OWENS.fatigue_damage([NaN], sn_stress, sn_log_cycles, ultimate_strength))
+end
+
+@testset "Postprocessing scalar helper branches" begin
+    @test OWENS.my_getz([0.1, 0.2], [1, 2]) ≈ [-0.25, -0.15, 0.25]
+    @test OWENS.my_getz([0.1, 0.2], [1, 2], 0.7) ≈ [0.2, 0.3, 0.7]
+
+    @test OWENS.find_range([0.0, 1.0, 2.0], 1.0) == 1
+    @test OWENS.find_range([0.0, 1.0, 1.0 + 1e-9, 2.0], 1.5) == 2
+    @test_throws ErrorException OWENS.find_range([0.0, 1.0], 2.0)
 end
 
 @testset "Topside allocation guardrails" begin
@@ -371,4 +393,99 @@ end
     @test_throws ArgumentError OWENS._restore_owensaero_restart_state!(
         Dict("turbines" => [], "environments" => [], "cache" => Dict{String,Any}()),
     )
+end
+
+@testset "Restart state snapshots and restore" begin
+    topdata = RestartTopData(
+        4,
+        0.1,
+        [0.0, 0.1, 0.2, 0.3],
+        [1.0, 2.0],
+        0.25,
+        [3.0, 4.0],
+        [0.0 0.0; 10.0 20.0; 30.0 40.0; 0.0 0.0],
+        [0.0, 0.25, 0.50, 0.0],
+        [1.0 5.0; 2.0 6.0; 3.0 7.0; 0.0 0.0],
+        reshape(101.0:112.0, 2, 2, 3),
+    )
+    inputs = OWENS.Inputs(; generatorOn = true, omegaControl = false)
+
+    @test OWENS._field_dict(topdata, (:u_s, :missing)) == Dict("u_s" => [1.0, 2.0])
+    @test OWENS._history_dict(topdata, (:uHist, :missing), 2, 1)["uHist"] ==
+          topdata.uHist[1:2, :]
+    @test OWENS._copy_array_fields(topdata, (:OmegaHist, :missing)) ==
+          Dict("OmegaHist" => topdata.OmegaHist)
+    @test OWENS._copy_lb_state(nothing) === nothing
+    @test OWENS._capture_restart_backend_states() == Dict{String,Any}()
+    @test OWENS._restore_restart_backend_states!(nothing) === nothing
+    @test OWENS._restart_input_runtime_state(nothing) == Dict{String,Any}()
+
+    inferred = OWENS._restart_state_from_topdata(topdata; inputs, system = (:state, 7))
+    @test inferred["completed_step"] == 2
+    @test inferred["history_index"] == 3
+    @test inferred["time_at_write"] == 0.2
+    @test inferred["current_fields"]["u_s"] == [1.0, 2.0]
+    @test inferred["state_histories"]["uHist"] == topdata.uHist[1:3, :]
+    @test inferred["step_histories"]["epsilon_x_hist"] == topdata.epsilon_x_hist[:, :, 1:2]
+    @test inferred["input_runtime_state"] == Dict("generatorOn" => true, "omegaControl" => false)
+    @test inferred["system"] == (:state, 7)
+
+    explicit =
+        OWENS._restart_state_from_topdata(topdata; completed_step = 1, inputs = inputs)
+    @test explicit["history_index"] == 2
+    @test explicit["state_histories"]["OmegaHist"] == [0.0, 0.25]
+    @test explicit["step_histories"]["epsilon_x_hist"] == topdata.epsilon_x_hist[:, :, 1:1]
+
+    restored = RestartTopData(
+        4,
+        0.1,
+        copy(topdata.t),
+        zeros(2),
+        0.0,
+        zeros(2),
+        zeros(4, 2),
+        zeros(4),
+        zeros(4, 2),
+        zeros(2, 2, 3),
+    )
+    restored_inputs = OWENS.Inputs(; generatorOn = false, omegaControl = true)
+    result = OWENS._restore_restart!(
+        restored,
+        inferred;
+        inputs = restored_inputs,
+        system = :fallback,
+    )
+    @test result == (completed_step = 2, history_index = 3, system = (:state, 7))
+    @test restored.u_s == topdata.u_s
+    @test restored.Omega_s == topdata.Omega_s
+    @test restored.uHist[1:3, :] == topdata.uHist[1:3, :]
+    @test restored.uHist[4, :] == zeros(2)
+    @test restored.topFexternal_hist[1:3, :] == topdata.topFexternal_hist[1:3, :]
+    @test restored.topFexternal_hist[4, :] == zeros(2)
+    @test restored.epsilon_x_hist[:, :, 1:2] == topdata.epsilon_x_hist[:, :, 1:2]
+    @test restored_inputs.generatorOn === true
+    @test restored_inputs.omegaControl === false
+
+    mktempdir() do directory
+        filename = joinpath(directory, "restart_state.jld2")
+        written = OWENS._write_restart_state(filename, topdata, 1; inputs = inputs)
+        @test isfile(filename)
+        @test written["completed_step"] == 1
+        loaded = OWENS._load_restart_state(filename)
+        @test loaded["completed_step"] == 1
+        @test loaded["history_index"] == 2
+        @test loaded["current_fields"]["Omega_s"] == topdata.Omega_s
+    end
+
+    @test_throws ArgumentError OWENS._restart_state_from_topdata(
+        topdata;
+        completed_step = 4,
+    )
+    bad_history_index = copy(inferred)
+    bad_history_index["history_index"] = 7
+    @test_throws ArgumentError OWENS._restore_restart!(restored, bad_history_index)
+    bad_delta_t = copy(inferred)
+    bad_delta_t["delta_t"] = 0.2
+    @test_throws ArgumentError OWENS._restore_restart!(restored, bad_delta_t)
+    @test_throws ArgumentError OWENS._load_restart_state(joinpath(tempdir(), "missing.jld2"))
 end

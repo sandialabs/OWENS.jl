@@ -231,7 +231,7 @@ function readNuMadGeomCSV(
 
         # Fill in the material types, which are in order based on the material names inputs
         stack_mat_types[istack] =
-            findfirst(x -> x==layer_Dict[:material], input_material_names)
+            findfirst(x->x==layer_Dict[:material], input_material_names)
 
         # get the number of plies
         n_plies_grid = layer_Dict[:n_plies][:grid]
@@ -324,9 +324,9 @@ function readNuMadGeomCSV(
 
 
             web_lp_idx_windio =
-                findfirst(x -> isapprox(start_nd_arc[ispan], x), segments_windio[ispan, :])
+                findfirst(x->isapprox(start_nd_arc[ispan], x), segments_windio[ispan, :])
             web_hp_idx_windio =
-                findfirst(x -> isapprox(end_nd_arc[ispan], x), segments_windio[ispan, :])
+                findfirst(x->isapprox(end_nd_arc[ispan], x), segments_windio[ispan, :])
             # now to from windio chordwise station to numad chordwise station by reversing the numbering
             # 1 2 3 4 5 6 7 8
             # 8 7 6 5 4 3 2 1
@@ -801,7 +801,7 @@ function saveOWENSfiles(filename, mymesh, myort, myjoint, myEl, pBC, numadIn_bld
     # Save El
 
     DelimitedFiles.open("$filename.el", "w") do io
-        for ii = 1:(mymesh.numEl)
+        for ii = 1:mymesh.numEl
             DelimitedFiles.writedlm(
                 io,
                 [mymesh.z[ii]/maximum(mymesh.z) -(myEl.props[ii].ac[1] .+ 0.5) ./ 2 myEl.props[ii].twist[1] myEl.props[ii].rhoA[1] myEl.props[ii].EIyy[1] myEl.props[ii].EIzz[1] myEl.props[ii].GJ[1] myEl.props[ii].EA[1] myEl.props[ii].alpha1[1] myEl.props[ii].rhoIyy[1] myEl.props[ii].rhoIzz[1] 0.0 0.0 myEl.props[ii].zcm[1] myEl.props[ii].ycm[1] 0.0 myEl.props[ii].a[1]],
@@ -1083,7 +1083,7 @@ function readBladeData(filename)
         #         numNodesPerStrut = strutEntries/numStruts
         #         numElPerStrut = numNodesPerStrut - 1
     else
-        temp = size(a)
+        temp=size(a)
 
         strutStartIndex = temp[1] + 1
     end
@@ -1174,12 +1174,12 @@ function readElementData(numElements, elfile, ortfile, bladeData_struct)
     data1 = zeros(1, 17)
     data2 = zeros(1, 17)
     for i = 1:numElements
-        data1 = parse.(Float64, split(readline(fid))) #read element data
-        data2 = parse.(Float64, split(readline(fid)))
+        data1=parse.(Float64, split(readline(fid))) #read element data
+        data2=parse.(Float64, split(readline(fid)))
 
         #structural properties
         ac = -([data1[2], data2[2]] .- 0.5) #TODO: why are we doing it this way???
-        twist = [data1[3], data2[3]]
+        twist=[data1[3], data2[3]]
         rhoA = [data1[4], data2[4]]
         EIyy = [data1[5], data2[5]]
         EIzz = [data1[6], data2[6]]
@@ -1286,10 +1286,10 @@ function readElementData(numElements, elfile, ortfile, bladeData_struct)
     fid = open(ortfile, "r")
     for i = 1:numElements
         temp = parse.(Float64, split(readline(fid)))
-        elLen[i] = temp[5]
-        psi[i] = temp[2]
-        theta[i] = temp[3]
-        roll[i] = temp[4]
+        elLen[i]=temp[5]
+        psi[i]=temp[2]
+        theta[i]=temp[3]
+        roll[i]=temp[4]
     end
     close(fid) #close ort file
 
@@ -1361,7 +1361,7 @@ function writeOwensNDL(fileRoot, nodes, cmkType, cmkValues)
         # write out the boundary conditions into the file
         for nn = 1:length(nodes)
             # [row, col, val] = find(cmkValues[nn])
-            indices = findall(x -> x!=0, cmkValues[:, :, nn])
+            indices = findall(x->x!=0, cmkValues[:, :, nn])
             # println(indices)
             for ii = 1:length(indices)
                 row = indices[ii][1]

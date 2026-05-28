@@ -704,7 +704,7 @@ function setup_aerodynamic_model(
     strut_component_index = findall(s -> contains(s.name, "strut"), components) #This assumes 9 or fewer blades, not including struts
     numadIn_strut = [
         components[strut_component_index1].nuMadIn for
-        strut_component_index1 in strut_component_index[1:(blade_config.B):end]
+        strut_component_index1 in strut_component_index[1:blade_config.B:end]
     ]
     # Initialize aerodynamic variables to nothing
     # TODO: Add types to the variables for proper allocation
@@ -862,8 +862,8 @@ function setup_aerodynamic_model(
 
             if iADBody<=Nbld #&& !bladefileissaved#Note that the blades can be curved and are assumed to be oriented vertically
                 # bladefileissaved = true
-                BlSpn0 = ADshapeZ
-                BlCrvAC0 = ADshapeXspl
+                BlSpn0=ADshapeZ
+                BlCrvAC0=ADshapeXspl
 
                 bladeangle = (iADBody-1)*2.0*pi/Nbld + tower_config.angularOffset #TODO: pitch offset and twist offset that isn't from the helical
 
@@ -901,18 +901,18 @@ function setup_aerodynamic_model(
                 BlTwist =
                     safeakima(LinRange(0, H, length(BlTwistinput)), BlTwistinput, ADshapeZ)
 
-                BlChord = blade_chords[iADBody]
+                BlChord=blade_chords[iADBody]
 
-                BlAFID = collect(((iADBody-1)*NumADBldNds+1):(iADBody*NumADBldNds))
+                BlAFID=collect(((iADBody-1)*NumADBldNds+1):(iADBody*NumADBldNds))
 
             elseif iADBody>Nbld # while the arms/struts are assumed to be straight and are oriented by the mesh angle
-                BlSpn = collect(LinRange(0, bld_len[iADBody], blade_Nnodes[iADBody]))
-                BlCrvAC = zeros(blade_Nnodes[iADBody])
-                BlSwpAC = zeros(blade_Nnodes[iADBody])
-                BlCrvAng = zeros(blade_Nnodes[iADBody])
-                BlTwist = zeros(blade_Nnodes[iADBody])
-                BlChord = blade_chords[iADBody]
-                BlAFID = collect(((iADBody-1)*NumADStrutNds+1):(iADBody*NumADStrutNds))
+                BlSpn=collect(LinRange(0, bld_len[iADBody], blade_Nnodes[iADBody]))
+                BlCrvAC=zeros(blade_Nnodes[iADBody])
+                BlSwpAC=zeros(blade_Nnodes[iADBody])
+                BlCrvAng=zeros(blade_Nnodes[iADBody])
+                BlTwist=zeros(blade_Nnodes[iADBody])
+                BlChord=blade_chords[iADBody]
+                BlAFID=collect(((iADBody-1)*NumADStrutNds+1):(iADBody*NumADStrutNds))
             end
             OWENSOpenFASTWrappers.writeADbladeFile(
                 filename;
@@ -968,7 +968,7 @@ function setup_aerodynamic_model(
             alwaysrecalc = true,
             verbosity,
         )
-        deformAeroAD = OWENSOpenFASTWrappers.deformAD15
+        deformAeroAD=OWENSOpenFASTWrappers.deformAD15
 
     else
         #########################################
@@ -1095,11 +1095,11 @@ function addSectionalPropertiesComponent!(
     subsection = nothing
     if !isnothing(input_layup)
         if contains(component.name, "tower")
-            section = :tower
+            section=:tower
         elseif contains(component.name, "blade")
-            section = :blade
+            section=:blade
         elseif contains(component.name, "strut")
-            section = :struts
+            section=:struts
             if typeof(input_layup) == OrderedCollections.OrderedDict{Symbol,Any}
                 if length(input_layup[:components][:struts])==1
                     subsection = 1
@@ -1110,9 +1110,9 @@ function addSectionalPropertiesComponent!(
                 subsection = nothing
             end
         elseif contains(component.name, "intra_cable")
-            section = :intra_cable
+            section=:intra_cable
         elseif contains(component.name, "guy")
-            section = :guy
+            section=:guy
         end
         numadIn = OWENS.readNuMadGeomCSV(input_layup; section, subsection) #note that this function will run either the numad input or the windio input depending on the input type
     else
