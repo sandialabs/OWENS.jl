@@ -111,6 +111,16 @@ notation Wind propagation angle is zero when aligned with the positive
 X-axis and clockwise positive, in the direction of the negative negative
 Y-axis.](./figs/inflow_wind.pdf){#fig:ac_velocities width="50%"}
 
+# AeroDyn/OpenFAST Generated Inputs
+
+When `AeroModel == "AD"`, OWENS writes generated AeroDyn blade files,
+the OLAF file, and the InflowWind file to the run directory so they can
+be inspected after a run. The primary AeroDyn and InflowWind inputs are
+then passed to `OWENSOpenFASTWrappers.setupTurb` as direct text, which
+keeps the OWENS-side configuration in memory while preserving the same
+referenced-file semantics for generated blades, airfoils, OLAF, and wind
+field paths.
+
 # Airfoils
 
 Airfoil geometry is typically defined starting at the trailing edge (1,0), looping around the bottom/pressure side to the leading edge (0,0), and then back along the top/suction side to the trailing edge (1,0) again.  There are several automatic corrections to handle files that slightly ill formatted, with output warnings, but this is limited and should not be relied on.

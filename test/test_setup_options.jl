@@ -207,6 +207,28 @@ import OWENS
     @test setup_dict.aero.Vinf == 9.5
 end
 
+@testset "OpenFAST direct input path normalization" begin
+    mktempdir() do tmpdir
+        @test OWENS._openfast_input_path(tmpdir, nothing) === nothing
+        @test OWENS._openfast_input_path(tmpdir, "unused") == "unused"
+        @test OWENS._openfast_input_path(tmpdir, "nothing") == "nothing"
+        @test OWENS._openfast_input_path(tmpdir, "") == ""
+        @test OWENS._openfast_input_path(tmpdir, "wind/steady.wnd") ==
+              joinpath(tmpdir, "wind", "steady.wnd")
+
+        absolute_wind = joinpath(tmpdir, "wind", "field.bts")
+        @test OWENS._openfast_input_path(tmpdir, absolute_wind) == absolute_wind
+
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, "airfoils/NACA_0018") ==
+              joinpath(tmpdir, "airfoils", "NACA_0018.dat")
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, "airfoils/NACA_0021.dat") ==
+              joinpath(tmpdir, "airfoils", "NACA_0021.dat")
+
+        absolute_airfoil = joinpath(tmpdir, "airfoils", "SNL_0018_50.dat")
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, absolute_airfoil) == absolute_airfoil
+    end
+end
+
 @testset "Setup aggregate containers" begin
     mesh_props = OWENS.MeshProperties(
         mymesh = :mesh,
