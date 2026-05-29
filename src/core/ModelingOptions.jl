@@ -847,26 +847,100 @@ mutable struct Drivetrain_Options
 
     # Constructor that takes a dictionary
     function Drivetrain_Options(dict_in::OrderedCollections.OrderedDict{Symbol,Any})
+        usingRotorSpeedFunction = _drivetrain_bool(dict_in, :usingRotorSpeedFunction, false)
+        driveTrainOn = _drivetrain_bool(dict_in, :driveTrainOn, false)
+        JgearBox = _drivetrain_nonnegative_real(dict_in, :JgearBox, 0.0)
+        gearRatio = _drivetrain_positive_real(dict_in, :gearRatio, 1.0)
+        gearBoxEfficiency = _drivetrain_unit_interval_real(dict_in, :gearBoxEfficiency, 1.0)
+        generatorOn = _drivetrain_bool(dict_in, :generatorOn, false)
+        useGeneratorFunction = _drivetrain_bool(dict_in, :useGeneratorFunction, false)
+        driveShaft_K = _drivetrain_nonnegative_real(dict_in, :driveShaftProps_K, 0.0)
+        driveShaft_C = _drivetrain_nonnegative_real(dict_in, :driveShaftProps_C, 0.0)
+
+        ratedTorque = get(dict_in, :ratedTorque, 0.0)
+        zeroTorqueGenSpeed = get(dict_in, :zeroTorqueGenSpeed, 0.0)
+        pulloutRatio = get(dict_in, :pulloutRatio, 0.0)
+        ratedGenSlipPerc = get(dict_in, :ratedGenSlipPerc, 0.0)
+
+        if generatorOn && !useGeneratorFunction
+            ratedTorque = _drivetrain_positive_real(ratedTorque, :ratedTorque)
+            zeroTorqueGenSpeed =
+                _drivetrain_positive_real(zeroTorqueGenSpeed, :zeroTorqueGenSpeed)
+            pulloutRatio = _drivetrain_positive_real(pulloutRatio, :pulloutRatio)
+            ratedGenSlipPerc =
+                _drivetrain_positive_real(ratedGenSlipPerc, :ratedGenSlipPerc)
+        end
+
         # Use get to provide default values for missing fields
         new(
             get(dict_in, :turbineStartup, 0), # TODO: clean up since it should be derived from control strategy
-            get(dict_in, :usingRotorSpeedFunction, false), #TODO: clean up the speed function since the omegaocp RPM gets splined already
-            get(dict_in, :driveTrainOn, false), #flag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
-            get(dict_in, :JgearBox, 0.0), # torsional stiffness of the gearbox TODO: resolve units
-            get(dict_in, :gearRatio, 1.0), # ratio between the turbine driveshaft and generator shaft
-            get(dict_in, :gearBoxEfficiency, 1.0), # efficiency of the gearbox, just decreases the torque that the generator model sees
-            get(dict_in, :generatorOn, false), #TODO: clean up the generator options
-            get(dict_in, :useGeneratorFunction, false), #TODO: clean up the generator options
+            usingRotorSpeedFunction, #TODO: clean up the speed function since the omegaocp RPM gets splined already
+            driveTrainOn, #flag to turn on the drivetrain model #TODO: clean this up to make it always use the drivetrain model, with default 100% efficiency and ratio of 1 so it outputs the values
+            JgearBox, # torsional stiffness of the gearbox TODO: resolve units
+            gearRatio, # ratio between the turbine driveshaft and generator shaft
+            gearBoxEfficiency, # efficiency of the gearbox, just decreases the torque that the generator model sees
+            generatorOn, #TODO: clean up the generator options
+            useGeneratorFunction, #TODO: clean up the generator options
             get(dict_in, :generatorProps, 0.0), #TODO: clean up the generator options
-            get(dict_in, :ratedTorque, 0.0), #TODO: clean up the generator options
-            get(dict_in, :zeroTorqueGenSpeed, 0.0), #TODO: clean up the generator options
-            get(dict_in, :pulloutRatio, 0.0), #TODO: clean up the generator options
-            get(dict_in, :ratedGenSlipPerc, 0.0), #TODO: clean up the generator options
+            ratedTorque, #TODO: clean up the generator options
+            zeroTorqueGenSpeed, #TODO: clean up the generator options
+            pulloutRatio, #TODO: clean up the generator options
+            ratedGenSlipPerc, #TODO: clean up the generator options
             get(dict_in, :OmegaGenStart, 0.0), #TODO: clean up the generator options
-            get(dict_in, :driveShaftProps_K, 0.0), #TODO: break this out, driveshaft stiffness and damping
-            get(dict_in, :driveShaftProps_C, 0.0), #TODO: break this out, driveshaft stiffness and damping
+            driveShaft_K, #TODO: break this out, driveshaft stiffness and damping
+            driveShaft_C, #TODO: break this out, driveshaft stiffness and damping
         )
     end
+end
+
+function _drivetrain_bool(dict_in, key, default)
+    value = get(dict_in, key, default)
+    value isa Bool ||
+        throw(ArgumentError("Drivetrain_Options.$(key) must be Bool; got $(repr(value))"))
+    return value
+end
+
+function _drivetrain_finite_real(value, key)
+    value isa Real && !(value isa Bool) || throw(
+        ArgumentError(
+            "Drivetrain_Options.$(key) must be a finite real number; got $(repr(value))",
+        ),
+    )
+    isfinite(value) ||
+        throw(ArgumentError("Drivetrain_Options.$(key) must be finite; got $(repr(value))"))
+    return value
+end
+
+function _drivetrain_positive_real(dict_in, key, default)
+    return _drivetrain_positive_real(get(dict_in, key, default), key)
+end
+
+function _drivetrain_positive_real(value, key)
+    value = _drivetrain_finite_real(value, key)
+    value > 0 || throw(
+        ArgumentError(
+            "Drivetrain_Options.$(key) must be greater than zero; got $(repr(value))",
+        ),
+    )
+    return value
+end
+
+function _drivetrain_nonnegative_real(dict_in, key, default)
+    value = _drivetrain_finite_real(get(dict_in, key, default), key)
+    value >= 0 || throw(
+        ArgumentError("Drivetrain_Options.$(key) must be nonnegative; got $(repr(value))"),
+    )
+    return value
+end
+
+function _drivetrain_unit_interval_real(dict_in, key, default)
+    value = _drivetrain_finite_real(get(dict_in, key, default), key)
+    0 <= value <= 1 || throw(
+        ArgumentError(
+            "Drivetrain_Options.$(key) must be between 0 and 1; got $(repr(value))",
+        ),
+    )
+    return value
 end
 
 """

@@ -78,6 +78,7 @@ The majority of the WindIO standard can be used for the structural and aerodynam
   - Start and end nd_arc values are the only input supported.  Otherwise, there are as many as 12 different ways to specify this input.
   - Grids must be defined from end to end, set number of plies to 1e-6 at unused spanwise sections.
   - The blade object is reused for the tower, struts, cables, etc. since these elements can be modeled at the same fidelity as the blade and can be simplified via simpler inputs, but the other WindIO definitions don't allow for the more complex inputs.
+  - Drivetrain booleans must be true booleans, not integer or string stand-ins. Gear ratio must be positive, gearbox efficiency must be between 0 and 1, shaft inertia/stiffness/damping must be nonnegative, and the built-in simple-generator constants must be positive when `generatorOn=true` and `useGeneratorFunction=false`.
 
 # Global Frame of Reference
 
