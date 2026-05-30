@@ -1,10 +1,25 @@
 import OWENS
+import OWENSFEA
 using HDF5
 using Test
 using YAML
 using OrderedCollections
 
 runpath = splitdir(@__FILE__)[1]
+
+function uses_joint_lookup_fix()
+    conn = [1 2; 3 4; 5 6]
+    joint = [
+        1.0 2.0 3.0 0.0 0.0 0.0 0.0 0.0
+        2.0 6.0 5.0 0.0 0.0 0.0 0.0 0.0
+    ]
+    try
+        elList, localNode = OWENSFEA.findElementsAssociatedWithNodeNumber(3, conn, joint)
+        return elList == [2, 1] && localNode == [1, 2]
+    catch
+        return false
+    end
+end
 
 OWENS_Options = "$runpath/OWENS_Opt.yml"
 
@@ -14,7 +29,10 @@ OWENS.runOWENSWINDIO(OWENS_Options,WINDIO_filename,runpath)
 
 # Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
 
-file = "$runpath/InitialDataOutputs_UNIT.h5"
+# OWENSFEA joint reaction assembly changed after the original WindIO baseline.
+# Keep both strict baselines so downstream tests pass before and after that fix.
+unit_fixture = uses_joint_lookup_fix() ? "InitialDataOutputs_UNIT_joint_lookup.h5" : "InitialDataOutputs_UNIT.h5"
+file = joinpath(runpath, unit_fixture)
 t_UNIT = HDF5.h5read(file,"t")
 aziHist_UNIT = HDF5.h5read(file,"aziHist")
 OmegaHist_UNIT = HDF5.h5read(file,"OmegaHist")
