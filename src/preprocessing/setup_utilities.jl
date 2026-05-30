@@ -7,6 +7,77 @@ export MeshSetupOptions,
     AeroSetupOptions,
     SetupOptions
 
+function _openfast_input_path(base_path::AbstractString, filename)
+    isnothing(filename) && return nothing
+
+    input_filename = String(filename)
+    lowercase(input_filename) in ("unused", "nothing") && return input_filename
+    isempty(input_filename) && return input_filename
+
+    if isabspath(input_filename)
+        return input_filename
+    end
+
+    relative_parts = split(input_filename, r"[\\/]+"; keepempty = false)
+    return joinpath(base_path, relative_parts...)
+end
+
+function _aerodyn_airfoil_filename(base_path::AbstractString, airfoil)
+    airfoil_filename = String(airfoil)
+    if !endswith(lowercase(airfoil_filename), ".dat")
+        airfoil_filename = "$airfoil_filename.dat"
+    end
+
+    return _openfast_input_path(base_path, airfoil_filename)
+end
+
+"""
+    _aerodyn_blade_geometry_from_mesh(xmesh, ymesh, H, num_nodes, bladeangle)
+
+Return the current OWENS-to-AeroDyn blade-file geometry arrays for one VAWT
+blade body. `xmesh` and `ymesh` are the global mesh coordinates along the
+structural blade span, `H` is the blade height, and `bladeangle` is the nominal
+azimuthal placement of the blade root.
+"""
+function _aerodyn_blade_geometry_from_mesh(
+    xmesh::AbstractVector,
+    ymesh::AbstractVector,
+    H,
+    num_nodes::Integer,
+    bladeangle,
+)
+    length(xmesh) == length(ymesh) ||
+        throw(ArgumentError("xmesh and ymesh must have the same length"))
+    length(xmesh) >= 2 || throw(ArgumentError("at least two mesh points are required"))
+    num_nodes >= 2 || throw(ArgumentError("num_nodes must be at least two"))
+    H isa Real && isfinite(H) && H > 0 ||
+        throw(ArgumentError("H must be a finite positive real value"))
+    bladeangle isa Real && isfinite(bladeangle) ||
+        throw(ArgumentError("bladeangle must be a finite real value"))
+    all(x -> x isa Real && isfinite(x), xmesh) ||
+        throw(ArgumentError("xmesh must contain only finite real values"))
+    all(y -> y isa Real && isfinite(y), ymesh) ||
+        throw(ArgumentError("ymesh must contain only finite real values"))
+
+    span_grid = LinRange(0, H, num_nodes)
+    mesh_grid = LinRange(0, H, length(xmesh))
+
+    blade_twist = atan.(xmesh, ymesh) .- bladeangle
+    curve_input = -ymesh .* sin(bladeangle) .+ xmesh .* cos(bladeangle)
+    curve_input = curve_input .- curve_input[1]
+    sweep_input = xmesh .* sin(bladeangle) .+ ymesh .* cos(bladeangle)
+    sweep_input = sweep_input .- sweep_input[1]
+    twist_input = (blade_twist .- blade_twist[2]) .* 180 / pi
+
+    return (
+        BlSpn = collect(span_grid),
+        BlCrvAC = safeakima(mesh_grid, sweep_input, span_grid),
+        BlSwpAC = -safeakima(mesh_grid, curve_input, span_grid),
+        BlCrvAng = zeros(num_nodes),
+        BlTwist = safeakima(mesh_grid, twist_input, span_grid),
+    )
+end
+
 """
     MeshSetupOptions
 
@@ -773,7 +844,8 @@ function setup_aerodynamic_model(
             enumerate(numadIn_bld.span ./ maximum(numadIn_bld.span))
             for (ispan, span_slices) in enumerate(collect(LinRange(0, 1, NumADBldNds)))
                 if bld_airfoil_filenames[ispan]=="nothing" && span_slices<=span_numad
-                    bld_airfoil_filenames[ispan] = "$(numadIn_bld.airfoil[ispan_numad]).dat"
+                    bld_airfoil_filenames[ispan] =
+                        _aerodyn_airfoil_filename(path, numadIn_bld.airfoil[ispan_numad])
                 end
             end
         end
@@ -811,7 +883,10 @@ function setup_aerodynamic_model(
                             enumerate(collect(LinRange(0, 1, NumADBldNds)))
                             if strut_airfoil_filenames[ispan]=="nothing" &&
                                span_slices<=span_numad
-                                strut_airfoil_filenames[ispan] = "$(numadIn_strut[istrut].airfoil[ispan_numad]).dat"
+                                strut_airfoil_filenames[ispan] = _aerodyn_airfoil_filename(
+                                    path,
+                                    numadIn_strut[istrut].airfoil[ispan_numad],
+                                )
                             end
                         end
                     end
@@ -822,7 +897,7 @@ function setup_aerodynamic_model(
             end
         end
 
-        OWENSOpenFASTWrappers.writeADinputFile(
+        ad_input_text = OWENSOpenFASTWrappers.writeADinputFile(
             ad_input_file,
             blade_filenames,
             airfoil_filenames,
@@ -867,39 +942,18 @@ function setup_aerodynamic_model(
 
                 bladeangle = (iADBody-1)*2.0*pi/Nbld + tower_config.angularOffset #TODO: pitch offset and twist offset that isn't from the helical
 
-                BlSpn = ADshapeZ
-                blade_twist = atan.(xmesh, ymesh) .- bladeangle
-
-                #TODO: reevalueate these equations and make sure they are robust against varying designs
-                # BlCrvACinput = xmesh.*cos(bladeangle) .+ ymesh.*sin(bladeangle)
-                # BlCrvACinput = BlCrvACinput .- BlCrvACinput[1]
-                # BlCrvAC = OWENS.safeakima(LinRange(0,H,length(BlCrvACinput)),BlCrvACinput,ADshapeZ)
-
-                # BlSwpACinput = -ymesh.*cos(bladeangle) .+ xmesh.*sin(bladeangle)
-                # BlSwpACinput = BlSwpACinput .- BlSwpACinput[1]
-                # BlSwpAC = OWENS.safeakima(LinRange(0,H,length(BlSwpACinput)),BlSwpACinput,ADshapeZ)
-
-                # BlCrvAng = zeros(blade_Nnodes[iADBody])
-
-                # BlTwistinput =(blade_twist.-blade_twist[1])*180/pi
-                # BlTwist = OWENS.safeakima(LinRange(0,H,length(BlTwistinput)),BlTwistinput,ADshapeZ)
-
-
-                BlCrvACinput = -ymesh .* sin(bladeangle) .+ xmesh .* cos(bladeangle)
-                BlCrvACinput = BlCrvACinput .- BlCrvACinput[1]
-                BlSwpAC =
-                    -safeakima(LinRange(0, H, length(BlCrvACinput)), BlCrvACinput, ADshapeZ)
-
-                BlSwpACinput = xmesh .* sin(bladeangle) .+ ymesh .* cos(bladeangle)
-                BlSwpACinput = BlSwpACinput .- BlSwpACinput[1]
-                BlCrvAC =
-                    safeakima(LinRange(0, H, length(BlSwpACinput)), BlSwpACinput, ADshapeZ)
-
-                BlCrvAng = zeros(blade_Nnodes[iADBody])
-
-                BlTwistinput = (blade_twist .- blade_twist[2])*180/pi
-                BlTwist =
-                    safeakima(LinRange(0, H, length(BlTwistinput)), BlTwistinput, ADshapeZ)
+                blade_geometry = _aerodyn_blade_geometry_from_mesh(
+                    xmesh,
+                    ymesh,
+                    H,
+                    blade_Nnodes[iADBody],
+                    bladeangle,
+                )
+                BlSpn = blade_geometry.BlSpn
+                BlCrvAC = blade_geometry.BlCrvAC
+                BlSwpAC = blade_geometry.BlSwpAC
+                BlCrvAng = blade_geometry.BlCrvAng
+                BlTwist = blade_geometry.BlTwist
 
                 BlChord=blade_chords[iADBody]
 
@@ -929,12 +983,18 @@ function setup_aerodynamic_model(
 
         OWENSOpenFASTWrappers.writeOLAFfile(OLAF_filename; nNWPanel = 200, nFWPanels = 10)
 
-        OWENSOpenFASTWrappers.writeIWfile(Vinf, ifw_input_file; WindType, windINPfilename)
+        wind_input_filename = _openfast_input_path(path, windINPfilename)
+        ifw_input_text = OWENSOpenFASTWrappers.writeIWfile(
+            Vinf,
+            ifw_input_file;
+            WindType,
+            windINPfilename = wind_input_filename,
+        )
 
         OWENSOpenFASTWrappers.setupTurb(
             aero_config.adi_lib,
-            ad_input_file,
-            ifw_input_file,
+            ad_input_text,
+            ifw_input_text,
             aero_config.adi_rootname,
             [shapeX],
             [shapeZ],
@@ -956,6 +1016,10 @@ function setup_aerodynamic_model(
             hubAngle = [[0, 0, 0]],
             nacPos = [[0, 0, 0]],
             adi_nstrut = [Nstrutperbld],
+            ad_input_file_passed = 1,
+            ad_input_source = :text,
+            ifw_input_file_passed = 1,
+            ifw_input_source = :text,
             adi_debug = 0,
             isHAWT = false,     # true for HAWT, false for crossflow or VAWT
         )

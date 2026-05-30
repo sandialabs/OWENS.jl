@@ -78,6 +78,7 @@ The majority of the WindIO standard can be used for the structural and aerodynam
   - Start and end nd_arc values are the only input supported.  Otherwise, there are as many as 12 different ways to specify this input.
   - Grids must be defined from end to end, set number of plies to 1e-6 at unused spanwise sections.
   - The blade object is reused for the tower, struts, cables, etc. since these elements can be modeled at the same fidelity as the blade and can be simplified via simpler inputs, but the other WindIO definitions don't allow for the more complex inputs.
+  - Drivetrain booleans must be true booleans, not integer or string stand-ins. Gear ratio must be positive, gearbox efficiency must be between 0 and 1, shaft inertia/stiffness/damping must be nonnegative, and the built-in simple-generator constants must be positive when `generatorOn=true` and `useGeneratorFunction=false`.
 
 # Global Frame of Reference
 
@@ -109,6 +110,16 @@ follows TurbSim and [InflowWind](https://github.com/old-NWTC/InflowWind)
 notation Wind propagation angle is zero when aligned with the positive
 X-axis and clockwise positive, in the direction of the negative negative
 Y-axis.](./figs/inflow_wind.pdf){#fig:ac_velocities width="50%"}
+
+# AeroDyn/OpenFAST Generated Inputs
+
+When `AeroModel == "AD"`, OWENS writes generated AeroDyn blade files,
+the OLAF file, and the InflowWind file to the run directory so they can
+be inspected after a run. The primary AeroDyn and InflowWind inputs are
+then passed to `OWENSOpenFASTWrappers.setupTurb` as direct text, which
+keeps the OWENS-side configuration in memory while preserving the same
+referenced-file semantics for generated blades, airfoils, OLAF, and wind
+field paths.
 
 # Airfoils
 
@@ -304,7 +315,12 @@ Same as Aero-Structure
 Initialization is Direct: Structures provides macro geometry, Composites
 provide sectional properties. Composite Failure is Direct: Structure
 provides strains, composites provides failure. Buckling is also
-calculated.
+calculated. The postprocessing strain vector passed into the laminate
+calculation is ordered as axial strain, transverse normal strain, in-plane
+shear strain, and curvatures about the local x, y, and z axes. The third strain
+component is propagated through the ply-rotation and stress calculation so
+principal, transverse, and shear stress components are available to the
+composite failure workflow.
 
 ## Controllers - Control Elements
 

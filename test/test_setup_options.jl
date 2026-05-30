@@ -121,7 +121,10 @@ import OWENS
     @test material.sectional_property_source == :gxbeam
 
     material_dict = OWENS.MaterialSetupOptions(
-        OrderedDict{Symbol,Any}(:AddedMass_Coeff_Ca => 1.1, :sectional_property_source => "precomp"),
+        OrderedDict{Symbol,Any}(
+            :AddedMass_Coeff_Ca => 1.1,
+            :sectional_property_source => "precomp",
+        ),
     )
     @test material_dict.stack_layers_bld === nothing
     @test material_dict.AddedMass_Coeff_Ca == 1.1
@@ -192,7 +195,8 @@ import OWENS
     setup_dict = OWENS.SetupOptions(
         OrderedDict{Symbol,Any}(
             :mesh => OrderedDict{Symbol,Any}(:Nslices => 5),
-            :material => OrderedDict{Symbol,Any}(:sectional_property_source => "gxbeam"),
+            :material =>
+                OrderedDict{Symbol,Any}(:sectional_property_source => "gxbeam"),
             :aero => OrderedDict{Symbol,Any}(:Vinf => 9.5),
         ),
     )
@@ -201,6 +205,32 @@ import OWENS
     @test setup_dict.blade.B == 3
     @test setup_dict.material.sectional_property_source == :gxbeam
     @test setup_dict.aero.Vinf == 9.5
+end
+
+@testset "OpenFAST direct input path normalization" begin
+    mktempdir() do tmpdir
+        @test OWENS._openfast_input_path(tmpdir, nothing) === nothing
+        @test OWENS._openfast_input_path(tmpdir, "unused") == "unused"
+        @test OWENS._openfast_input_path(tmpdir, "nothing") == "nothing"
+        @test OWENS._openfast_input_path(tmpdir, "") == ""
+        @test OWENS._openfast_input_path(tmpdir, "wind/steady.wnd") ==
+              joinpath(tmpdir, "wind", "steady.wnd")
+        @test OWENS._openfast_input_path(tmpdir, raw"wind\steady.wnd") ==
+              joinpath(tmpdir, "wind", "steady.wnd")
+
+        absolute_wind = joinpath(tmpdir, "wind", "field.bts")
+        @test OWENS._openfast_input_path(tmpdir, absolute_wind) == absolute_wind
+
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, "airfoils/NACA_0018") ==
+              joinpath(tmpdir, "airfoils", "NACA_0018.dat")
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, "airfoils/NACA_0021.dat") ==
+              joinpath(tmpdir, "airfoils", "NACA_0021.dat")
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, raw"airfoils\NACA_0024.dat") ==
+              joinpath(tmpdir, "airfoils", "NACA_0024.dat")
+
+        absolute_airfoil = joinpath(tmpdir, "airfoils", "SNL_0018_50.dat")
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, absolute_airfoil) == absolute_airfoil
+    end
 end
 
 @testset "Setup aggregate containers" begin
@@ -247,4 +277,84 @@ end
     @test defaults isa OrderedDict{Symbol,Any}
     @test defaults[:name] == "WINDIO Example"
     @test defaults[:assembly][:number_of_blades] == 3
+end
+
+@testset "Drivetrain option input validation" begin
+    function drivetrain_dict(; kwargs...)
+        dict = OrderedDict{Symbol,Any}(
+            :usingRotorSpeedFunction => false,
+            :driveTrainOn => true,
+            :JgearBox => 0.5,
+            :gearRatio => 2.0,
+            :gearBoxEfficiency => 0.95,
+            :generatorOn => true,
+            :useGeneratorFunction => false,
+            :ratedTorque => 120.0,
+            :zeroTorqueGenSpeed => 4.0,
+            :pulloutRatio => 2.5,
+            :ratedGenSlipPerc => 0.02,
+            :driveShaftProps_K => 10.0,
+            :driveShaftProps_C => 0.25,
+        )
+        for (key, value) in kwargs
+            dict[key] = value
+        end
+        return dict
+    end
+
+    defaults = OWENS.Drivetrain_Options(OrderedDict{Symbol,Any}())
+    @test defaults.usingRotorSpeedFunction === false
+    @test defaults.driveTrainOn === false
+    @test defaults.gearRatio == 1.0
+    @test defaults.gearBoxEfficiency == 1.0
+    @test defaults.generatorOn === false
+    @test defaults.useGeneratorFunction === false
+
+    valid = OWENS.Drivetrain_Options(drivetrain_dict())
+    @test valid.driveTrainOn === true
+    @test valid.gearRatio == 2.0
+    @test valid.gearBoxEfficiency == 0.95
+    @test valid.JgearBox == 0.5
+    @test valid.driveShaft_K == 10.0
+    @test valid.driveShaft_C == 0.25
+    @test valid.generatorOn === true
+    @test valid.useGeneratorFunction === false
+    @test valid.ratedTorque == 120.0
+    @test valid.zeroTorqueGenSpeed == 4.0
+    @test valid.pulloutRatio == 2.5
+    @test valid.ratedGenSlipPerc == 0.02
+
+    function drivetrain_error(; kwargs...)
+        err = try
+            OWENS.Drivetrain_Options(drivetrain_dict(; kwargs...))
+            nothing
+        catch caught
+            caught
+        end
+        @test err isa ArgumentError
+        return sprint(showerror, err)
+    end
+
+    @test occursin("generatorOn", drivetrain_error(generatorOn = "true"))
+    @test occursin("usingRotorSpeedFunction", drivetrain_error(usingRotorSpeedFunction = 1))
+    @test occursin("gearRatio", drivetrain_error(gearRatio = 0.0))
+    @test occursin("gearRatio", drivetrain_error(gearRatio = Inf))
+    @test occursin("gearBoxEfficiency", drivetrain_error(gearBoxEfficiency = 1.2))
+    @test occursin("gearBoxEfficiency", drivetrain_error(gearBoxEfficiency = -0.1))
+    @test occursin("JgearBox", drivetrain_error(JgearBox = -0.1))
+    @test occursin("driveShaftProps_K", drivetrain_error(driveShaftProps_K = NaN))
+
+    @test_throws ArgumentError OWENS.Drivetrain_Options(
+        OrderedDict{Symbol,Any}(:generatorOn => true, :useGeneratorFunction => false),
+    )
+    @test occursin("zeroTorqueGenSpeed", drivetrain_error(zeroTorqueGenSpeed = 0.0))
+    @test occursin("ratedGenSlipPerc", drivetrain_error(ratedGenSlipPerc = 0.0))
+
+    custom_generator = OWENS.Drivetrain_Options(
+        OrderedDict{Symbol,Any}(:generatorOn => true, :useGeneratorFunction => true),
+    )
+    @test custom_generator.generatorOn === true
+    @test custom_generator.useGeneratorFunction === true
+    @test custom_generator.ratedTorque == 0.0
+    @test custom_generator.zeroTorqueGenSpeed == 0.0
 end

@@ -113,8 +113,16 @@ end
     include("$path/testrainflow.jl")
 end
 
+@testset "Postprocessing Check" begin
+    include("$path/test_postprocessing.jl")
+end
+
 @testset "Mesh Check" begin
     include("$path/check_mesh.jl")
+end
+
+@testset "Native AeroDyn Helical VAWT Initialization" begin
+    include("$path/helical_aerodyn_native_init.jl")
 end
 
 @testset "Floating Platform Check" begin

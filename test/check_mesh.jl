@@ -47,6 +47,86 @@ for i = 1:length(mesh.conn[:,1])
     @test isapprox(mesh.conn[i,:],mymesh.conn[i,:];atol=tol)
 end
 
+@testset "helical blade x/y mesh and AeroDyn geometry mapping" begin
+    shape_z = collect(0.0:0.25:1.0)
+    shape_x = ones(length(shape_z))
+    shape_y = [0.0, 0.5, 1.0, 0.5, 0.0]
+
+    helical_mesh, _, helical_joint, ad_nodes, ad_elements = OWENS.create_mesh_struts(;
+        Htwr_base = 0.0,
+        Htwr_blds = 1.0,
+        Hbld = 1.0,
+        R = 2.0,
+        AD15hubR = 0.0,
+        nblade = 2,
+        ntelem = 1,
+        nbelem = 4,
+        nselem = 1,
+        strut_twr_mountpoint = Float64[],
+        strut_bld_mountpoint = Float64[],
+        bshapex = shape_x,
+        bshapez = shape_z,
+        bshapey = shape_y,
+        angularOffset = 0.0,
+        connectBldTips2Twr = false,
+        verbosity = 0,
+    )
+
+    blade_1_nodes = 4:8
+    blade_2_nodes = 9:13
+    @test size(helical_joint) == (0, 8)
+    @test ad_nodes == [4 8; 9 13]
+    @test ad_elements == [3 6; 7 10]
+    @test helical_mesh.z[blade_1_nodes] == shape_z
+    @test helical_mesh.z[blade_2_nodes] == shape_z
+    @test helical_mesh.x[blade_1_nodes] ≈ shape_y atol=eps()
+    @test helical_mesh.y[blade_1_nodes] == fill(2.0, length(shape_z))
+    @test helical_mesh.x[blade_2_nodes] ≈ -shape_y atol=1e-15
+    @test helical_mesh.y[blade_2_nodes] ≈ fill(-2.0, length(shape_z)) atol=1e-15
+
+    offset_mesh, _, _, _, _ = OWENS.create_mesh_struts(;
+        Htwr_base = 0.0,
+        Htwr_blds = 1.0,
+        Hbld = 1.0,
+        R = 2.0,
+        AD15hubR = 0.0,
+        nblade = 2,
+        ntelem = 1,
+        nbelem = 4,
+        nselem = 1,
+        strut_twr_mountpoint = Float64[],
+        strut_bld_mountpoint = Float64[],
+        bshapex = shape_x,
+        bshapez = shape_z,
+        bshapey = shape_y,
+        angularOffset = pi / 2,
+        connectBldTips2Twr = false,
+        verbosity = 0,
+    )
+    @test offset_mesh.x[blade_1_nodes] ≈ fill(2.0, length(shape_z)) atol=1e-15
+    @test offset_mesh.y[blade_1_nodes] ≈ -shape_y atol=1e-15
+
+    blade_geometry = OWENS._aerodyn_blade_geometry_from_mesh(
+        helical_mesh.x[blade_1_nodes],
+        helical_mesh.y[blade_1_nodes],
+        1.0,
+        length(shape_z),
+        0.0,
+    )
+    expected_twist =
+        (atan.(shape_y, fill(2.0, length(shape_y))) .- atan(shape_y[2], 2.0)) .* 180 ./ pi
+    @test blade_geometry.BlSpn == shape_z
+    @test blade_geometry.BlCrvAC ≈ zeros(length(shape_z)) atol=eps()
+    @test blade_geometry.BlSwpAC ≈ -shape_y atol=eps()
+    @test blade_geometry.BlCrvAng == zeros(length(shape_z))
+    @test blade_geometry.BlTwist ≈ expected_twist atol=1e-12
+
+    @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0], [0.0, 1.0], 1.0, 2, 0.0)
+    @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0], [0.0], 1.0, 2, 0.0)
+    @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0, 1.0], [0.0, 0.0], 0.0, 2, 0.0)
+    @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0, 1.0], [0.0, 0.0], 1.0, 1, 0.0)
+end
+
 # # Joints TODO: redo test since joints have been rewritten
 # jointminormismatch = 0
 # for i = 1:length(joint[:,1])
