@@ -215,6 +215,8 @@ end
         @test OWENS._openfast_input_path(tmpdir, "") == ""
         @test OWENS._openfast_input_path(tmpdir, "wind/steady.wnd") ==
               joinpath(tmpdir, "wind", "steady.wnd")
+        @test OWENS._openfast_input_path(tmpdir, raw"wind\steady.wnd") ==
+              joinpath(tmpdir, "wind", "steady.wnd")
 
         absolute_wind = joinpath(tmpdir, "wind", "field.bts")
         @test OWENS._openfast_input_path(tmpdir, absolute_wind) == absolute_wind
@@ -223,6 +225,8 @@ end
               joinpath(tmpdir, "airfoils", "NACA_0018.dat")
         @test OWENS._aerodyn_airfoil_filename(tmpdir, "airfoils/NACA_0021.dat") ==
               joinpath(tmpdir, "airfoils", "NACA_0021.dat")
+        @test OWENS._aerodyn_airfoil_filename(tmpdir, raw"airfoils\NACA_0024.dat") ==
+              joinpath(tmpdir, "airfoils", "NACA_0024.dat")
 
         absolute_airfoil = joinpath(tmpdir, "airfoils", "SNL_0018_50.dat")
         @test OWENS._aerodyn_airfoil_filename(tmpdir, absolute_airfoil) == absolute_airfoil

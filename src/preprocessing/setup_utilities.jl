@@ -14,7 +14,12 @@ function _openfast_input_path(base_path::AbstractString, filename)
     lowercase(input_filename) in ("unused", "nothing") && return input_filename
     isempty(input_filename) && return input_filename
 
-    return isabspath(input_filename) ? input_filename : joinpath(base_path, input_filename)
+    if isabspath(input_filename)
+        return input_filename
+    end
+
+    relative_parts = split(input_filename, r"[\\/]+"; keepempty = false)
+    return joinpath(base_path, relative_parts...)
 end
 
 function _aerodyn_airfoil_filename(base_path::AbstractString, airfoil)
