@@ -164,6 +164,83 @@ end
     end
 end
 
+@testset "outputData writes OpenFAST-style text channels" begin
+    mktempdir() do dir
+        data_output = joinpath(dir, "unit.out")
+        inputs = (; dataOutputFilename = data_output)
+        mymesh = (; meshSeg = [2], structuralElNumbers = [1 2])
+
+        vector = [0.0, 0.1]
+        dof_history = reshape(collect(1.0:24.0), 2, 12)
+        scalar_history = copy(vector)
+        strain_history = reshape(collect(1.0:8.0), 2, 2, 2)
+        stress_history = reshape(collect(1.0:16.0), 2, 2, 2, 2)
+        safety_factor = reshape(collect(1.0:8.0), 2, 2, 2)
+        topstrain = reshape(collect(1.0:72.0), 2, 2, 2, 9)
+        damage = reshape(collect(1.0:4.0), 2, 2)
+
+        OWENS.outputData(;
+            mymesh,
+            inputs,
+            t = vector,
+            aziHist = scalar_history,
+            OmegaHist = scalar_history,
+            OmegaDotHist = scalar_history,
+            gbHist = scalar_history,
+            gbDotHist = scalar_history,
+            gbDotDotHist = scalar_history,
+            FReactionHist = dof_history,
+            FTwrBsHist = dof_history,
+            genTorque = scalar_history,
+            genPower = scalar_history,
+            torqueDriveShaft = scalar_history,
+            uHist = dof_history,
+            uHist_prp = dof_history,
+            epsilon_x_hist = strain_history,
+            epsilon_y_hist = strain_history,
+            epsilon_z_hist = strain_history,
+            kappa_x_hist = strain_history,
+            kappa_y_hist = strain_history,
+            kappa_z_hist = strain_history,
+            massOwens = 1.0,
+            stress_U = stress_history,
+            SF_ult_U = safety_factor,
+            SF_buck_U = safety_factor,
+            stress_L = stress_history,
+            SF_ult_L = safety_factor,
+            SF_buck_L = safety_factor,
+            stress_TU = stress_history,
+            SF_ult_TU = safety_factor,
+            SF_buck_TU = safety_factor,
+            stress_TL = stress_history,
+            SF_ult_TL = safety_factor,
+            SF_buck_TL = safety_factor,
+            topstrainout_blade_U = topstrain,
+            topstrainout_blade_L = topstrain,
+            topstrainout_tower_U = topstrain,
+            topstrainout_tower_L = topstrain,
+            topDamage_blade_U = damage,
+            topDamage_blade_L = damage,
+            topDamage_tower_U = damage,
+            topDamage_tower_L = damage,
+            ofastformat = true,
+        )
+
+        out_file = joinpath(dir, "unit.out")
+        @test isfile(out_file)
+        lines = readlines(out_file)
+        header = split(lines[1], '\t')
+        units = split(lines[2], '\t')
+        first_row = parse.(Float64, split(lines[3], '\t'))
+
+        @test header[1] == "t"
+        @test header[2:7] == ["B1N001Fx", "B1N001Fy", "B1N001Fz", "B1N001Mx", "B1N001My", "B1N001Mz"]
+        @test header[8:13] == ["B1N002Fx", "B1N002Fy", "B1N002Fz", "B1N002Mx", "B1N002My", "B1N002Mz"]
+        @test units == ["(s)"; fill("(N)", 3); fill("(N-m)", 3); fill("(N)", 3); fill("(N-m)", 3)]
+        @test first_row == [0.0; dof_history[1, 1:12]]
+    end
+end
+
 @testset "outputData summary" begin
     mktempdir() do dir
         data_output = joinpath(dir, "unit.out")

@@ -262,6 +262,43 @@ end
     @test aero.deformAeroACDMS === :acdms_deform
 end
 
+@testset "Sectional property setup skips optional cable-only components" begin
+    mymesh, myort, myjoint = OWENS.mesh_beam(; L1 = 1.0, L2 = 1.0, Nelem1 = 1, Nelem2 = 1)
+    components = [
+        OWENS.Component(; name = "intra_cable1", elNumbers = [1]),
+        OWENS.Component(; name = "guy1", elNumbers = [2]),
+    ]
+    mesh_props = OWENS.MeshProperties(
+        mymesh = mymesh,
+        myort = myort,
+        myjoint = myjoint,
+        AD15bldNdIdxRng = zeros(Int, 0, 2),
+        AD15bldElIdxRng = zeros(Int, 0, 2),
+        custom_mesh_outputs = (components, Int[], nothing, nothing, nothing, nothing),
+    )
+
+    sectional = OWENS.setup_sectional_props(
+        mesh_props,
+        OWENS.MaterialSetupOptions(),
+        OWENS.AeroSetupOptions(; rho = 1.225),
+        OWENS.TowerSetupOptions(),
+        OWENS.BladeSetupOptions(),
+        pwd(),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        0,
+    )
+
+    @test isempty(sectional.sectionPropsArray)
+    @test isempty(sectional.stiff_array)
+    @test isempty(sectional.mass_array)
+    @test sectional.rotationalEffects == [1.0, 0.0]
+    @test all(isnothing, getfield.(components, :input_layup))
+    @test all(isnothing, getfield.(components, :input_materials))
+end
+
 @testset "Modeling option and design defaults" begin
     modeling = OWENS.ModelingOptions()
     @test modeling.OWENS_Options.analysisType == "Unsteady"
