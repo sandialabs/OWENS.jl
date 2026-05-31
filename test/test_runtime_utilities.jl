@@ -122,6 +122,11 @@ end
     z90 = OWENS.createSingleRotationDCM(90.0, 3)
     @test z90 * [1.0, 0.0, 0.0] ≈ [0.0, -1.0, 0.0] atol = 1e-12
     @test OWENS.createGeneralTransformationMatrix([90.0], [3]) ≈ z90
+    x90 = OWENS.createSingleRotationDCM(90.0, 1)
+    y90 = OWENS.createSingleRotationDCM(90.0, 2)
+    @test x90 * [0.0, 1.0, 0.0] ≈ [0.0, 0.0, -1.0] atol = 1e-12
+    @test y90 * [0.0, 0.0, 1.0] ≈ [-1.0, 0.0, 0.0] atol = 1e-12
+    @test OWENS.createGeneralTransformationMatrix([90.0, 90.0], [1, 2]) ≈ y90 * x90
     @test_throws ErrorException OWENS.createSingleRotationDCM(10.0, 4)
 
     values = [1.0, 0.0, 0.0, 0.0, 2.0, 0.0]
