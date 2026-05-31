@@ -91,7 +91,6 @@ include("preprocessing/gxbeam_sectional_properties.jl")
 include("preprocessing/meshing_utilities.jl")
 include("preprocessing/setup_utilities.jl")
 include("preprocessing/SetupTurbine.jl")
-# include("preprocessing/SetupTurbineHAWT.jl")  # Temporarily disabled
 
 # Runtime functionality
 include("runtime/Steady.jl")
@@ -101,7 +100,6 @@ include("runtime/Unsteady_utilities.jl")
 include("runtime/DLCAnalysis.jl")
 include("runtime/AeroMapping.jl")
 
-``
 # Postprocessing functionality
 include("postprocess/PostProcessing.jl")
 include("postprocess/visualization.jl")

@@ -2826,6 +2826,15 @@ function create_hawt_mesh(;
     angularOffset = 0.0,
     AD15_ccw = false,
 )
+    nblade > 0 || throw(ArgumentError("nblade must be positive"))
+    ntelem > 0 || throw(ArgumentError("ntelem must be positive"))
+    nbelem > 0 || throw(ArgumentError("nbelem must be positive"))
+    length(bshapex) == nbelem + 1 ||
+        throw(DimensionMismatch("bshapex must have nbelem + 1 entries"))
+    length(bshapez) == nbelem + 1 ||
+        throw(DimensionMismatch("bshapez must have nbelem + 1 entries"))
+    maximum(bshapex) > 0.0 ||
+        throw(ArgumentError("bshapex must contain a positive span coordinate"))
 
     ##################################
     #            
@@ -2845,7 +2854,7 @@ function create_hawt_mesh(;
     t_topidx = length(mesh_z)
 
     # intra-tower connectivity
-    conn = zeros(length(mesh_z)-1, 2)
+    conn = zeros(Int, length(mesh_z)-1, 2)
     conn[:, 1] = collect(1:(length(mesh_z)-1))
     conn[:, 2] = collect(2:length(mesh_z))
 
@@ -2866,15 +2875,15 @@ function create_hawt_mesh(;
 
     bld_Z .+= hub_depth
 
-    b_Z = []
-    b_X = []
-    b_Y = []
+    b_Z = Float64[]
+    b_X = Float64[]
+    b_Y = Float64[]
     AD15bldNdIdxRng = zeros(Int64, 0, 2)
     # Now using standard VAWT convention, blade 1 is zero degrees at top dead center, or North/Y+
     # and they are offset counter clockwise
     b_topidx = zeros(Int, nblade)
     b_botidx = zeros(Int, nblade) .+ length(mesh_z)
-    conn_b = zeros(length(bld_Z)-1, 2)
+    conn_b = zeros(Int, length(bld_Z)-1, 2)
     for ibld = 1:nblade
         myangle = (ibld-1)*2.0*pi/nblade + angularOffset
 
@@ -2942,14 +2951,14 @@ function create_hawt_mesh(;
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1, numNodes, numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:, 1])
-    elNum = collect(LinRange(1, numEl, numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
     meshtype = zeros(Int, numEl)
-    meshtype[1:t_topidx] .= 1 #Tower
+    meshtype[1:ntelem] .= 1 #Tower
     # meshtype[idx_bot_lbld_tower:idx_top_rbld_tower] .= 0 #Blades
 
     #########################
@@ -2957,15 +2966,15 @@ function create_hawt_mesh(;
     #########################
 
     # For a single blade
-    meshSeg = zeros(1+nblade) #tower, blades, and cables
+    meshSeg = zeros(Int, 1+nblade) #tower and blades
 
     meshSeg[1] = ntelem
     meshSeg[2:(nblade+1)] .= nbelem
 
     # For each blade
     structuralSpanLocNorm = zeros(nblade, length(bld_Z))
-    structuralNodeNumbers = zeros(nblade, length(bld_Z))
-    structuralElNumbers = zeros(nblade, length(bld_Z))
+    structuralNodeNumbers = zeros(Int, nblade, length(bld_Z))
+    structuralElNumbers = zeros(Int, nblade, length(bld_Z))
 
     for iblade = 1:nblade
 

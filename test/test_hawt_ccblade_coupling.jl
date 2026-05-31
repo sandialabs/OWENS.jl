@@ -28,6 +28,56 @@ function _shaft_x_hawt_test_mesh()
     return mesh
 end
 
+@testset "HAWT mesh topology uses integer indices and correct element types" begin
+    mesh, _, joints, blade_node_ranges, blade_element_ranges = OWENS.create_hawt_mesh(;
+        hub_depth = 10.0,
+        tip_precone = 0.0,
+        R = 5.0,
+        AD15hubR = 0.0,
+        nblade = 2,
+        ntelem = 2,
+        nbelem = 3,
+        bshapex = LinRange(0.0, 1.0, 4),
+        bshapez = zeros(4),
+    )
+
+    @test mesh.numNodes == 11
+    @test mesh.numEl == 8
+    @test mesh.nodeNum == collect(1:mesh.numNodes)
+    @test mesh.elNum == collect(1:mesh.numEl)
+    @test eltype(mesh.x) == Float64
+    @test eltype(mesh.y) == Float64
+    @test eltype(mesh.z) == Float64
+    @test mesh.meshSeg == [2, 3, 3]
+    @test mesh.type == [1, 1, 0, 0, 0, 0, 0, 0]
+    @test mesh.conn == [1 2; 2 3; 4 5; 5 6; 6 7; 8 9; 9 10; 10 11]
+    @test Int.(joints[:, 2]) == [3, 3]
+    @test Int.(joints[:, 3]) == [4, 8]
+    @test blade_node_ranges == [7 4; 11 8]
+    @test blade_element_ranges == [5 3; 8 6]
+end
+
+@testset "HAWT mesh input validation" begin
+    @test_throws ArgumentError OWENS.create_hawt_mesh(; nblade = 0)
+    @test_throws ArgumentError OWENS.create_hawt_mesh(; ntelem = 0)
+    @test_throws ArgumentError OWENS.create_hawt_mesh(; nbelem = 0)
+    @test_throws DimensionMismatch OWENS.create_hawt_mesh(;
+        nbelem = 3,
+        bshapex = LinRange(0.0, 1.0, 3),
+        bshapez = zeros(4),
+    )
+    @test_throws DimensionMismatch OWENS.create_hawt_mesh(;
+        nbelem = 3,
+        bshapex = LinRange(0.0, 1.0, 4),
+        bshapez = zeros(3),
+    )
+    @test_throws ArgumentError OWENS.create_hawt_mesh(;
+        nbelem = 3,
+        bshapex = zeros(4),
+        bshapez = zeros(4),
+    )
+end
+
 @testset "HAWT CCBlade load mapping defaults to shaft-x" begin
     mesh = _shaft_x_hawt_test_mesh()
     radial_positions = collect(LinRange(0.0, 5.0, 5))
