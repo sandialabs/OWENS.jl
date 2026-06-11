@@ -182,7 +182,11 @@ function _safe_output_data_summary(path::AbstractString)
     end
 end
 
-function _run_artifact_remediation(row::AbstractDict, section::AbstractString, index::Integer)
+function _run_artifact_remediation(
+    row::AbstractDict,
+    section::AbstractString,
+    index::Integer,
+)
     status = string(get(row, "status", "attention"))
     role = _record_get_string(row, "role")
     artifact = isnothing(role) || isempty(role) ? _run_artifact_label(section) : role
@@ -209,8 +213,7 @@ function _run_artifact_remediation(row::AbstractDict, section::AbstractString, i
             _run_artifact_physical_implication(section, status, artifact),
         "suggested_fix" => _run_artifact_suggested_fix(section, status, artifact),
         "documentation" => RUN_ARTIFACT_REMEDIATION_DOC,
-        "remediation_action" =>
-            "$(status)_$(replace(string(section), r"[^A-Za-z0-9]+" => "_"))_artifact",
+        "remediation_action" => "$(status)_$(replace(string(section), r"[^A-Za-z0-9]+" => "_"))_artifact",
         "provenance" => OrderedCollections.OrderedDict{String,Any}(
             "expected_bytes" => get(row, "expected_bytes", nothing),
             "actual_bytes" => get(row, "actual_bytes", nothing),

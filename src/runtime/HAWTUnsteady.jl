@@ -1,7 +1,5 @@
 export HAWTOyeState,
-    initializeHAWTOyeState,
-    runHAWTCCBladeOyeStep,
-    runHAWTUnsteadyAeroelastic
+    initializeHAWTOyeState, runHAWTCCBladeOyeStep, runHAWTUnsteadyAeroelastic
 
 """
     HAWTOyeState
@@ -42,8 +40,9 @@ end
 function _hawt_checked_state(state::HAWTOyeState, nstations)
     for field in (:axial_reduced, :axial_dynamic, :tangential_reduced, :tangential_dynamic)
         values = getfield(state, field)
-        length(values) == nstations ||
-            throw(ArgumentError("HAWTOyeState.$field must have one value per radial station"))
+        length(values) == nstations || throw(
+            ArgumentError("HAWTOyeState.$field must have one value per radial station"),
+        )
         all(isfinite, values) ||
             throw(ArgumentError("HAWTOyeState.$field must contain only finite values"))
     end
@@ -133,17 +132,10 @@ function _hawt_deformed_station_positions(
     hub_position,
     rotor_axis,
 )
-    nominal_node_radii = vec(
-        mean(hawtStructuralRadialStations(mesh; rotor_axis), dims = 1),
-    )
+    nominal_node_radii = vec(mean(hawtStructuralRadialStations(mesh; rotor_axis), dims = 1))
     current_node_radii = vec(
         mean(
-            hawtStructuralRadialStations(
-                mesh;
-                displacements,
-                hub_position,
-                rotor_axis,
-            ),
+            hawtStructuralRadialStations(mesh; displacements, hub_position, rotor_axis),
             dims = 1,
         ),
     )
@@ -161,10 +153,8 @@ function _hawt_relative_speed_load_scale(result, dynamic_axial, dynamic_tangenti
     vx = [Float64(op.Vx) for op in result.operating_points]
     vy = [Float64(op.Vy) for op in result.operating_points]
 
-    quasi_speed2 =
-        @. ((1.0 - quasi_axial) * vx)^2 + ((1.0 + quasi_tangential) * vy)^2
-    dynamic_speed2 =
-        @. ((1.0 - dynamic_axial) * vx)^2 + ((1.0 + dynamic_tangential) * vy)^2
+    quasi_speed2 = @. ((1.0 - quasi_axial) * vx)^2 + ((1.0 + quasi_tangential) * vy)^2
+    dynamic_speed2 = @. ((1.0 - dynamic_axial) * vx)^2 + ((1.0 + dynamic_tangential) * vy)^2
 
     return dynamic_speed2 ./ max.(quasi_speed2, eps(Float64))
 end
@@ -212,26 +202,14 @@ function runHAWTCCBladeOyeStep(
     dt isa Real && isfinite(dt) && dt >= 0.0 ||
         throw(ArgumentError("dt must be a finite nonnegative real value"))
 
-    station_positions = _hawt_deformed_station_positions(
-        mesh,
-        r;
-        displacements,
-        hub_position,
-        rotor_axis,
-    )
+    station_positions =
+        _hawt_deformed_station_positions(mesh, r; displacements, hub_position, rotor_axis)
     all(station_positions .> 0.0) ||
         throw(ArgumentError("deformed radial positions must remain positive"))
-    all(diff(station_positions) .> 0.0) || throw(
-        ArgumentError("deformed radial positions must remain strictly increasing"),
-    )
-    current_tip_radius = maximum(
-        hawtStructuralRadialStations(
-            mesh;
-            displacements,
-            hub_position,
-            rotor_axis,
-        ),
-    )
+    all(diff(station_positions) .> 0.0) ||
+        throw(ArgumentError("deformed radial positions must remain strictly increasing"))
+    current_tip_radius =
+        maximum(hawtStructuralRadialStations(mesh; displacements, hub_position, rotor_axis))
     effective_tip_radius = max(tip_radius, last(station_positions), current_tip_radius)
 
     steady = OWENSAero.ccbladeHAWTSolve(
@@ -268,17 +246,19 @@ function runHAWTCCBladeOyeStep(
             tau1,
             tau2,
         )
-        state.tangential_reduced, state.tangential_dynamic =
-            OWENSAero.oyeDynamicInflowStep(
-                state.tangential_reduced,
-                state.tangential_dynamic,
-                steady.ap,
-                dt,
-                tau1,
-                tau2,
-            )
-        load_scale =
-            _hawt_relative_speed_load_scale(steady, state.axial_dynamic, state.tangential_dynamic)
+        state.tangential_reduced, state.tangential_dynamic = OWENSAero.oyeDynamicInflowStep(
+            state.tangential_reduced,
+            state.tangential_dynamic,
+            steady.ap,
+            dt,
+            tau1,
+            tau2,
+        )
+        load_scale = _hawt_relative_speed_load_scale(
+            steady,
+            state.axial_dynamic,
+            state.tangential_dynamic,
+        )
     else
         tau1, tau2 = NaN, fill(NaN, length(r))
         state.axial_reduced .= steady.a
@@ -301,13 +281,8 @@ function runHAWTCCBladeOyeStep(
         hub_position,
         rotor_axis,
     )
-    resultants = hawtNodalLoadResultants(
-        mesh,
-        force_values;
-        displacements,
-        hub_position,
-        rotor_axis,
-    )
+    resultants =
+        hawtNodalLoadResultants(mesh, force_values; displacements, hub_position, rotor_axis)
 
     return (
         steady = steady,
@@ -377,21 +352,18 @@ function runHAWTUnsteadyAeroelastic(
     structural_relaxation isa Real && 0.0 < structural_relaxation <= 1.0 ||
         throw(ArgumentError("structural_relaxation must be in (0, 1]"))
 
-    state = isnothing(initial_state) ?
-        initializeHAWTOyeState(r) :
+    state =
+        isnothing(initial_state) ? initializeHAWTOyeState(r) :
         _copy_hawt_oye_state(_hawt_checked_state(initial_state, length(r)))
 
     total_dof = mesh.numNodes * 6
-    displacements = _hawt_dof_vector(
-        initial_displacements,
-        total_dof,
-        "initial_displacements",
-    )
+    displacements =
+        _hawt_dof_vector(initial_displacements, total_dof, "initial_displacements")
     velocities = _hawt_dof_vector(initial_velocities, total_dof, "initial_velocities")
     accelerations =
         _hawt_dof_vector(initial_accelerations, total_dof, "initial_accelerations")
-    previous_displacements = isnothing(initial_previous_displacements) ?
-        copy(displacements) :
+    previous_displacements =
+        isnothing(initial_previous_displacements) ? copy(displacements) :
         _hawt_dof_vector(
             initial_previous_displacements,
             total_dof,
@@ -492,17 +464,16 @@ function runHAWTUnsteadyAeroelastic(
             velocities .= 0.0
             accelerations .= 0.0
         elseif structural_coupling == :transient && itime > 1
-            previous_omega = _hawt_value_at(
-                rotor_speed,
-                itime - 1,
-                t[itime-1],
-                ntimes,
-                "rotor_speed",
-            )
+            previous_omega =
+                _hawt_value_at(rotor_speed, itime - 1, t[itime-1], ntimes, "rotor_speed")
             omega_hz = omega / (2.0 * pi)
             omega_dot_hz = (omega - previous_omega) / (2.0 * pi * dt)
-            disp_data =
-                OWENSFEA.DispData(displacements, velocities, accelerations, previous_displacements)
+            disp_data = OWENSFEA.DispData(
+                displacements,
+                velocities,
+                accelerations,
+                previous_displacements,
+            )
             el_strain, disp_out, reaction = redirect_stdout(devnull) do
                 OWENSFEA.structuralDynamicsTransient(
                     feamodel,

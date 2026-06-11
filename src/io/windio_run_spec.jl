@@ -146,18 +146,18 @@ function _windio_run_capability_gates(windio_file::AbstractString; root::Abstrac
         return OrderedCollections.OrderedDict{String,Any}[]
     end
 
-    return OrderedCollections.OrderedDict{String,Any}[
-        OrderedCollections.OrderedDict{String,Any}(
-            "capability" => "hawt_aeroelastic_workflow",
-            "status" => "experimental",
-            "severity" => "warning",
-            "source_role" => "windio",
-            "source_path" => relpath(abspath(windio_file), abspath(root)),
-            "detected_value" => detected,
-            "message" =>
-                "WindIO declares a HAWT/axial-flow turbine. OWENS HAWT setup is experimental and validation-gated; unsupported production workflows should not run without explicit checks.",
-        ),
-    ]
+    return OrderedCollections.OrderedDict{String,Any}[OrderedCollections.OrderedDict{
+        String,
+        Any,
+    }(
+        "capability" => "hawt_aeroelastic_workflow",
+        "status" => "experimental",
+        "severity" => "warning",
+        "source_role" => "windio",
+        "source_path" => relpath(abspath(windio_file), abspath(root)),
+        "detected_value" => detected,
+        "message" => "WindIO declares a HAWT/axial-flow turbine. OWENS HAWT setup is experimental and validation-gated; unsupported production workflows should not run without explicit checks.",
+    ),]
 end
 
 function _windio_run_turbine_kind(path::AbstractString)

@@ -377,14 +377,9 @@ function runOWENSWINDIO(modelopt, windio, path; allow_experimental_hawt::Bool = 
     )
 end
 
-function _guard_experimental_hawt_runtime!(
-    windio;
-    allow_experimental_hawt::Bool = false,
-)
+function _guard_experimental_hawt_runtime!(windio; allow_experimental_hawt::Bool = false)
     detected = _windio_runtime_turbine_kind(windio)
-    if !allow_experimental_hawt &&
-       !isnothing(detected) &&
-       _windio_run_hawt_kind(detected)
+    if !allow_experimental_hawt && !isnothing(detected) && _windio_run_hawt_kind(detected)
         throw(
             ArgumentError(
                 "WindIO declares a HAWT/axial-flow turbine ($detected). " *

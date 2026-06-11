@@ -1,7 +1,5 @@
 export studio_gui_capability_catalog,
-    studio_gui_capability_ids,
-    studio_gui_quality_gate_catalog,
-    studio_gui_quality_gate_ids
+    studio_gui_capability_ids, studio_gui_quality_gate_catalog, studio_gui_quality_gate_ids
 
 const STUDIO_GUI_CAPABILITY_SCHEMA_VERSION = "owens-studio-capability-catalog/v1"
 const STUDIO_GUI_QUALITY_GATE_SCHEMA_VERSION = "owens-studio-quality-gates/v1"
@@ -133,11 +131,8 @@ const STUDIO_GUI_QUALITY_GATES = OrderedCollections.OrderedDict{String,Any}(
         "status" => "implemented",
         "required_for_done" => true,
         "description" => "Every Studio feature exposes a versioned service or route payload and has Julia-level tests for success and failure cases.",
-        "evidence_required" => [
-            "schema version",
-            "request/response tests",
-            "structured error tests",
-        ],
+        "evidence_required" =>
+            ["schema version", "request/response tests", "structured error tests"],
         "current_evidence" => [
             "owens-studio-route-catalog/v1",
             "OWENS Studio app service tests",
@@ -192,11 +187,8 @@ const STUDIO_GUI_QUALITY_GATES = OrderedCollections.OrderedDict{String,Any}(
         "status" => "planned",
         "required_for_done" => true,
         "description" => "Interactive Studio workflows must be tested in a browser or equivalent UI harness, including form submission and state transitions.",
-        "evidence_required" => [
-            "browser launch",
-            "form submission",
-            "state transition checks",
-        ],
+        "evidence_required" =>
+            ["browser launch", "form submission", "state transition checks"],
         "current_evidence" => String[],
     ),
     "visual_regression" => OrderedCollections.OrderedDict{String,Any}(
@@ -216,11 +208,8 @@ const STUDIO_GUI_QUALITY_GATES = OrderedCollections.OrderedDict{String,Any}(
         "status" => "partial",
         "required_for_done" => true,
         "description" => "Controls must have labels, focus states, keyboard paths, ARIA where appropriate, and color-independent status cues.",
-        "evidence_required" => [
-            "label/ARIA tests",
-            "keyboard navigation tests",
-            "contrast checks",
-        ],
+        "evidence_required" =>
+            ["label/ARIA tests", "keyboard navigation tests", "contrast checks"],
         "current_evidence" => [
             "editor labels",
             "aria-describedby/aria-invalid tests",
@@ -232,11 +221,8 @@ const STUDIO_GUI_QUALITY_GATES = OrderedCollections.OrderedDict{String,Any}(
         "status" => "partial",
         "required_for_done" => true,
         "description" => "Every user-facing Studio feature must document launch/use steps, limitations, troubleshooting, and capability status.",
-        "evidence_required" => [
-            "quick start",
-            "capability status",
-            "known limitations",
-        ],
+        "evidence_required" =>
+            ["quick start", "capability status", "known limitations"],
         "current_evidence" => [
             "Studio diagnostics quick start",
             "capability catalog",
@@ -248,14 +234,9 @@ const STUDIO_GUI_QUALITY_GATES = OrderedCollections.OrderedDict{String,Any}(
         "status" => "partial",
         "required_for_done" => true,
         "description" => "Large project inputs, result files, and many-run manifests need explicit size limits, lazy loading, and performance tests.",
-        "evidence_required" => [
-            "size limit",
-            "large fixture",
-            "pagination or lazy loading",
-        ],
-        "current_evidence" => [
-            "max_text_bytes parse and validation guard",
-        ],
+        "evidence_required" =>
+            ["size limit", "large fixture", "pagination or lazy loading"],
+        "current_evidence" => ["max_text_bytes parse and validation guard"],
     ),
 )
 
@@ -312,7 +293,8 @@ function studio_gui_quality_gate_catalog()
             "implemented" => count(row -> row["status"] == "implemented", rows),
             "partial" => count(row -> row["status"] == "partial", rows),
             "planned" => count(row -> row["status"] == "planned", rows),
-            "required_for_done" => count(row -> row["required_for_done"] === true, rows),
+            "required_for_done" =>
+                count(row -> row["required_for_done"] === true, rows),
         ),
         "gates" => rows,
     )

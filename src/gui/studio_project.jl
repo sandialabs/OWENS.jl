@@ -25,8 +25,7 @@ const STUDIO_WORKBENCH_BUNDLE_SCHEMA_VERSION = "owens-studio-bundle/v1"
 const STUDIO_INPUT_SUMMARY_SCHEMA_VERSION = "owens-studio-input-summary/v1"
 const STUDIO_SESSION_SCHEMA_VERSION = "owens-studio-session/v1"
 const STUDIO_INPUT_VALIDATION_SCHEMA_VERSION = "owens-studio-input-validation/v1"
-const STUDIO_INPUT_VALIDATION_ISSUE_SCHEMA_VERSION =
-    "owens-studio-validation-issue/v1"
+const STUDIO_INPUT_VALIDATION_ISSUE_SCHEMA_VERSION = "owens-studio-validation-issue/v1"
 const STUDIO_INPUT_VALIDATION_DOC = "docs/src/getting_started.md"
 const STUDIO_INPUT_VALIDATION_SEVERITIES = (
     "parse_error",
@@ -291,17 +290,16 @@ function studio_project_health(
 
     rows = vcat(file_rows, run_rows)
     nested_runs_ok =
-        !summarize_runs ||
-        all(
+        !summarize_runs || all(
             row ->
                 !haskey(row, "run_manifest_health") ||
-                    row["run_manifest_health"]["status"] == "ok",
+                row["run_manifest_health"]["status"] == "ok",
             run_rows,
         )
     status =
-        isempty(project_issues) && all(row["status"] == "ok" for row in rows) &&
-        nested_runs_ok ? "ok" :
-        "attention"
+        isempty(project_issues) &&
+        all(row["status"] == "ok" for row in rows) &&
+        nested_runs_ok ? "ok" : "attention"
 
     return OrderedCollections.OrderedDict{String,Any}(
         "schema_version" => STUDIO_WORKBENCH_SCHEMA_VERSION,
@@ -444,7 +442,11 @@ external-change conflicts so the GUI can decide whether it is safe to save,
 reload, or launch without relying on hidden frontend state.
 """
 studio_project_session_summary(path::AbstractString; kwargs...) =
-    studio_project_session_summary(read_studio_project(path); project_path = path, kwargs...)
+    studio_project_session_summary(
+        read_studio_project(path);
+        project_path = path,
+        kwargs...,
+    )
 
 function studio_project_session_summary(
     project::AbstractDict;
@@ -472,8 +474,7 @@ function studio_project_session_summary(
     reload_required =
         !isempty(external_changes) || !isempty(parse_errors) || !isempty(unavailable)
     session_state =
-        reload_required ? "needs_reload" :
-        health["status"] == "ok" ? "clean" : "attention"
+        reload_required ? "needs_reload" : health["status"] == "ok" ? "clean" : "attention"
 
     return OrderedCollections.OrderedDict{String,Any}(
         "schema_version" => STUDIO_SESSION_SCHEMA_VERSION,
@@ -1310,7 +1311,8 @@ function _backup_studio_input_file(
     mkpath(history_dir)
     safe_timestamp = _studio_safe_filename_label(timestamp)
     safe_role = _studio_safe_filename_label(role)
-    backup_base = joinpath(history_dir, "$safe_timestamp-$safe_role-$(basename(input_path))")
+    backup_base =
+        joinpath(history_dir, "$safe_timestamp-$safe_role-$(basename(input_path))")
     backup_path = _unique_studio_backup_path(backup_base)
     cp(input_path, backup_path; force = false)
     return backup_path
@@ -1517,15 +1519,9 @@ function _studio_shell_mobile_css(; include_aside::Bool = true, max_width::Integ
     }"""
 end
 
-function _studio_nav_html(
-    active_item::AbstractString = "Project";
-    project_path = nothing,
-)
+function _studio_nav_html(active_item::AbstractString = "Project"; project_path = nothing)
     return join(
-        [
-            _studio_nav_item_html(row, active_item; project_path) for
-            row in STUDIO_NAV_ITEMS
-        ],
+        [_studio_nav_item_html(row, active_item; project_path) for row in STUDIO_NAV_ITEMS],
         "\n      ",
     )
 end
@@ -1549,9 +1545,10 @@ function _studio_nav_item_html(
         return "<a class=\"$class\" href=\"$(_html_escape(href))\" data-capability=\"$capability_html\" data-status=\"$(_html_escape(status))\"$aria_current>$label_html</a>"
     end
 
-    title = status == "planned" ?
-            "$label workflow is planned and not available in this Studio shell yet." :
-            "$label workflow is unavailable in this context."
+    title =
+        status == "planned" ?
+        "$label workflow is planned and not available in this Studio shell yet." :
+        "$label workflow is unavailable in this context."
     return "<span class=\"$class disabled\" aria-disabled=\"true\" title=\"$(_html_escape(title))\" data-capability=\"$capability_html\" data-status=\"$(_html_escape(status))\">$label_html<span class=\"nav-status\">$(_html_escape(status))</span></span>"
 end
 
@@ -1764,8 +1761,13 @@ function _studio_input_file_summary(
         format in ("yaml", "text") &&
         _studio_path_within_root(resolved_path, project_root)
     parse = _studio_input_parse_summary(resolved_path, format, available, max_text_bytes)
-    validation =
-        _studio_input_validation_summary(role, resolved_path, format, available, max_text_bytes)
+    validation = _studio_input_validation_summary(
+        role,
+        resolved_path,
+        format,
+        available,
+        max_text_bytes,
+    )
 
     summary = OrderedCollections.OrderedDict{String,Any}(
         "role" => role,
@@ -1853,8 +1855,7 @@ function _studio_project_capability_gates(input_rows::AbstractVector)
                 "source_role" => "windio",
                 "source_path" => get(row, "path", nothing),
                 "detected_value" => detected,
-                "message" =>
-                    "WindIO declares a HAWT/axial-flow turbine. OWENS HAWT setup is experimental and validation-gated; unsupported production workflows should not run without explicit checks.",
+                "message" => "WindIO declares a HAWT/axial-flow turbine. OWENS HAWT setup is experimental and validation-gated; unsupported production workflows should not run without explicit checks.",
             ),
         )
     end
@@ -1883,10 +1884,8 @@ function _studio_windio_turbine_kind_record(parsed::AbstractDict)
     )
         value = _studio_nested_value(parsed, key_path)
         value isa AbstractString || continue
-        isempty(strip(value)) || return (
-            value = String(value),
-            yaml_path = join(string.(key_path), "."),
-        )
+        isempty(strip(value)) ||
+            return (value = String(value), yaml_path = join(string.(key_path), "."))
     end
     return nothing
 end
@@ -2010,9 +2009,8 @@ _studio_optional_string(value) = isnothing(value) ? nothing : string(value)
 function _studio_validation_message(validation::AbstractDict)
     issues = get(validation, "issues", OrderedCollections.OrderedDict{String,Any}[])
     blocking = [
-        string(get(issue, "message", "invalid input"))
-        for issue in issues
-        if get(issue, "blocking", false) === true
+        string(get(issue, "message", "invalid input")) for
+        issue in issues if get(issue, "blocking", false) === true
     ]
     return isempty(blocking) ? "validation failed" : join(blocking, "; ")
 end
@@ -2086,8 +2084,7 @@ function _studio_input_parse_summary(
     elseif path isa AbstractString && stat(path).size > max_text_bytes
         return OrderedCollections.OrderedDict{String,Any}(
             "status" => "skipped_size_limit",
-            "message" =>
-                "YAML parse skipped because file exceeds max_text_bytes=$(max_text_bytes).",
+            "message" => "YAML parse skipped because file exceeds max_text_bytes=$(max_text_bytes).",
             "top_level_keys" => String[],
         )
     end
@@ -2320,9 +2317,8 @@ function _studio_validation_issue_html(issue)
     blocking = get(issue, "blocking", false) === true
     field = get(issue, "field", nothing)
     title = "$(severity)$(blocking ? " (blocking)" : "")"
-    details = String[
-        "<p class=\"issue-title\">$(_html_escape(title)): $(_html_escape(string(get(issue, "message", ""))))</p>",
-    ]
+    details =
+        String["<p class=\"issue-title\">$(_html_escape(title)): $(_html_escape(string(get(issue, "message", ""))))</p>",]
     for (label, key) in (
         ("Field", "field"),
         ("YAML path", "yaml_path"),
@@ -2333,10 +2329,7 @@ function _studio_validation_issue_html(issue)
     )
         value = get(issue, key, nothing)
         value isa AbstractString && !isempty(value) || continue
-        push!(
-            details,
-            "<p><strong>$label:</strong> $(_html_escape(value))</p>",
-        )
+        push!(details, "<p><strong>$label:</strong> $(_html_escape(value))</p>")
     end
     class = "validation-issue$(blocking ? " blocking" : "")"
     return """
