@@ -68,14 +68,35 @@ function _aerodyn_blade_geometry_from_mesh(
     sweep_input = xmesh .* sin(bladeangle) .+ ymesh .* cos(bladeangle)
     sweep_input = sweep_input .- sweep_input[1]
     twist_input = (blade_twist .- blade_twist[2]) .* 180 / pi
+    curve_ac = safeakima(mesh_grid, sweep_input, span_grid)
+    sweep_ac = -safeakima(mesh_grid, curve_input, span_grid)
 
     return (
         BlSpn = collect(span_grid),
-        BlCrvAC = safeakima(mesh_grid, sweep_input, span_grid),
-        BlSwpAC = -safeakima(mesh_grid, curve_input, span_grid),
-        BlCrvAng = zeros(num_nodes),
+        BlCrvAC = curve_ac,
+        BlSwpAC = sweep_ac,
+        BlCrvAng = _aerodyn_curve_angles(span_grid, curve_ac),
         BlTwist = safeakima(mesh_grid, twist_input, span_grid),
     )
+end
+
+function _aerodyn_curve_angles(span::AbstractVector, curve_ac::AbstractVector)
+    length(span) == length(curve_ac) ||
+        throw(ArgumentError("span and curve_ac must have the same length"))
+    length(span) >= 2 || throw(ArgumentError("at least two blade stations are required"))
+    for i = 2:length(span)
+        span[i] > span[i-1] ||
+            throw(ArgumentError("span stations must be strictly increasing"))
+    end
+
+    slope = Vector{Float64}(undef, length(curve_ac))
+    slope[1] = (curve_ac[2] - curve_ac[1]) / (span[2] - span[1])
+    for i = 2:(length(span)-1)
+        slope[i] = (curve_ac[i+1] - curve_ac[i-1]) / (span[i+1] - span[i-1])
+    end
+    slope[end] = (curve_ac[end] - curve_ac[end-1]) / (span[end] - span[end-1])
+
+    return atan.(slope) .* 180 ./ pi
 end
 
 """

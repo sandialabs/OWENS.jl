@@ -121,6 +121,32 @@ end
     @test blade_geometry.BlCrvAng == zeros(length(shape_z))
     @test blade_geometry.BlTwist ≈ expected_twist atol=1e-12
 
+    curved_shape_z = collect(0.0:0.25:1.0)
+    curved_xmesh = zeros(length(curved_shape_z))
+    positive_curve = 0.3 .* curved_shape_z
+    curved_geometry = OWENS._aerodyn_blade_geometry_from_mesh(
+        curved_xmesh,
+        positive_curve,
+        1.0,
+        length(curved_shape_z),
+        0.0,
+    )
+    @test curved_geometry.BlSpn == curved_shape_z
+    @test curved_geometry.BlCrvAC ≈ positive_curve atol=1e-14
+    @test curved_geometry.BlSwpAC ≈ zeros(length(curved_shape_z)) atol=1e-14
+    @test curved_geometry.BlCrvAng ≈ fill(atand(0.3), length(curved_shape_z)) atol=1e-12
+
+    negative_curve = -0.2 .* curved_shape_z
+    negative_geometry = OWENS._aerodyn_blade_geometry_from_mesh(
+        curved_xmesh,
+        negative_curve,
+        1.0,
+        length(curved_shape_z),
+        0.0,
+    )
+    @test negative_geometry.BlCrvAC ≈ negative_curve atol=1e-14
+    @test negative_geometry.BlCrvAng ≈ fill(atand(-0.2), length(curved_shape_z)) atol=1e-12
+
     @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0], [0.0, 1.0], 1.0, 2, 0.0)
     @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0], [0.0], 1.0, 2, 0.0)
     @test_throws ArgumentError OWENS._aerodyn_blade_geometry_from_mesh([0.0, 1.0], [0.0, 0.0], 0.0, 2, 0.0)
