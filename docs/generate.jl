@@ -11,7 +11,7 @@ mkpath(GENERATEDDIR)
 # notebooks from GENERATEDDIR, so @__DIR__ in examples resolves there in CI.
 for myfile in readdir(EXAMPLEDIR)
     if !endswith(myfile, ".jl") && myfile != "vtk"
-        @warn "ignoring literate conversion of $myfile, but copying to $GENERATEDDIR"
+        @info "copying non-literate example asset $myfile to $GENERATEDDIR"
         cp(joinpath(EXAMPLEDIR, myfile), joinpath(GENERATEDDIR, myfile); force=true)
     end
 end

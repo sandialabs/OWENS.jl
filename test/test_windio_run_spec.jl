@@ -83,6 +83,7 @@ end
         @test manifest["parameters"]["case"] == "manifest"
         @test manifest["metadata"]["source"] == "test"
         @test manifest["warnings"] == ["unit warning"]
+        @test !haskey(manifest, "capability_gates")
 
         @test length(manifest["inputs"]) == 2
         @test manifest["inputs"][1]["path"] ==
@@ -112,6 +113,93 @@ end
         @test loaded["inputs"][1]["sha256"] == WINDIO_SPEC_MODEL_SHA256
         @test loaded["inputs"][2]["sha256"] == WINDIO_SPEC_DESIGN_SHA256
         @test loaded["outputs"][1]["sha256"] == WINDIO_SPEC_OUTPUT_SHA256
+    end
+end
+
+@testset "WindIO HAWT run manifest capability gates" begin
+    mktempdir() do dir
+        model_file = joinpath(dir, "modeling_options.yml")
+        windio_file = joinpath(dir, "hawt_design.yml")
+        run_path = joinpath(dir, "run")
+        manifest_file = joinpath(run_path, "run_manifest.yml")
+        write(model_file, "OWENS_Options:\n  numTS: 2\n")
+        write(windio_file, "name: hawt unit\nassembly:\n  turbine_class: axial-flow HAWT\n")
+        mkdir(run_path)
+
+        spec = OWENS.windio_run_spec(model_file, windio_file, run_path)
+        manifest = OWENS.build_windio_run_manifest(
+            spec;
+            run_id = "hawt-windio-unit",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+
+        @test haskey(manifest, "capability_gates")
+        @test length(manifest["capability_gates"]) == 1
+        gate = manifest["capability_gates"][1]
+        @test gate["capability"] == "hawt_aeroelastic_workflow"
+        @test gate["status"] == "experimental"
+        @test gate["severity"] == "warning"
+        @test gate["source_role"] == "windio"
+        @test gate["source_path"] == relpath(abspath(windio_file), abspath(run_path))
+        @test gate["detected_value"] == "axial-flow HAWT"
+        @test occursin("validation-gated", gate["message"])
+        @test OWENS.run_manifest_issues(manifest) == String[]
+
+        written = OWENS.write_windio_run_manifest(
+            manifest_file,
+            spec;
+            run_id = "hawt-windio-unit-written",
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        loaded = OWENS.read_run_manifest(manifest_file)
+        health = OWENS.run_manifest_health(manifest_file)
+
+        @test written["capability_gates"][1]["capability"] ==
+              "hawt_aeroelastic_workflow"
+        @test loaded["capability_gates"] == written["capability_gates"]
+        @test health["status"] == "ok"
+        @test health["capability_gates"] == written["capability_gates"]
+    end
+end
+
+@testset "WindIO runtime HAWT capability gate" begin
+    mktempdir() do dir
+        hawt = Dict(:assembly => Dict(:turbine_class => "HAWT"))
+        @test OWENS._windio_runtime_turbine_kind(hawt) == "HAWT"
+
+        err = try
+            OWENS.runOWENSWINDIO(nothing, hawt, dir)
+            nothing
+        catch caught
+            caught
+        end
+        @test err isa ArgumentError
+        @test occursin("validation-gated", sprint(showerror, err))
+        @test occursin("allow_experimental_hawt=true", sprint(showerror, err))
+
+        @test OWENS._guard_experimental_hawt_runtime!(
+            hawt;
+            allow_experimental_hawt = true,
+        ) == "HAWT"
+
+        hawt_file = joinpath(dir, "hawt_design.yml")
+        write(hawt_file, "name: hawt runtime unit\nassembly:\n  turbine_type: axial\n")
+        err = try
+            OWENS.runOWENSWINDIO(
+                joinpath(dir, "missing_modeling_options.yml"),
+                hawt_file,
+                dir,
+            )
+            nothing
+        catch caught
+            caught
+        end
+        @test err isa ArgumentError
+        @test occursin("axial", sprint(showerror, err))
+
+        vawt = Dict("assembly" => Dict("turbine_type" => "cross-flow VAWT"))
+        @test OWENS._guard_experimental_hawt_runtime!(vawt) == "cross-flow VAWT"
+        @test OWENS._guard_experimental_hawt_runtime!(Dict(:name => "unit")) === nothing
     end
 end
 

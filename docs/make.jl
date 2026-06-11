@@ -31,14 +31,20 @@ makedocs(;
     authors = "Kevin R. Moore <kevmoor@sandia.gov>",
     remotes = nothing,
     format = Documenter.HTML(
+        repolink = "https://github.com/sandialabs/OWENS.jl",
+        edit_link = "master",
         size_threshold = 5 * 1024 * 1024,  # 5 MiB
-        size_threshold_warn = 1 * 1024 * 1024  # 1 MiB
+        size_threshold_warn = 2 * 1024 * 1024,  # 2 MiB
+        search_size_threshold_warn = 1024 * 1024,  # 1 MiB
     )
 )
 
-deploydocs(
-    repo = "github.com/sandialabs/OWENS.jl.git",
-)
+if get(ENV, "CI", "false") == "true" || get(ENV, "GITHUB_ACTIONS", "false") == "true"
+    deploydocs(
+        repo = "github.com/sandialabs/OWENS.jl.git",
+        devbranch = "master",
+    )
+end
 
 # ## Documentation
 # Until public hosting of the documentation is set up, a readthedocs style webpage can be built via:

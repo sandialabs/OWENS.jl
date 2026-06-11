@@ -12,7 +12,12 @@ Aerodyn if CCW, root is at top and z is down, y is trailing edge, for struts, z 
 
 Hub is rotated such that the axis of rotation is x. So for a VAWT hub-x points up, and hawt hub-x point in x.
 
-The HAWT CCBlade load mapper in `runtime/AeroMapping.jl` defaults to this shaft-x convention: positive normal load acts along the positive shaft axis and positive tangential load follows the right-hand positive rotation direction about that axis. The legacy `create_hawt_mesh` helper currently generates blades in the global `x-y` plane, so verification tests pass `rotor_axis=:z` explicitly until the HAWT mesh/setup path is migrated to the shaft-x CCBlade/OpenFAST convention.
+!!! warning "Experimental HAWT support"
+    HAWT/axial-flow workflows in OWENS are experimental and validation-gated. The native load-mapping helpers below are tested for simple shaft-axis sign conventions, but the public `setupOWENS` HAWT path, backend parity, controls, and full frame transform chain are not yet complete enough for production design-load or certification use.
+
+The HAWT CCBlade load mapper in `runtime/AeroMapping.jl` defaults to this shaft-x convention: positive normal load acts along the positive shaft axis and positive tangential load follows the right-hand positive rotation direction about that axis. The mapper also accepts `rotor_axis=:y` and `rotor_axis=:z` for transitional or legacy meshes; regression tests verify that normal force and tangential torque resultants keep the same sign convention for all three axes. The legacy `create_hawt_mesh` helper currently generates blades in the global `x-y` plane, so verification tests pass `rotor_axis=:z` explicitly until the HAWT mesh/setup path is migrated to the shaft-x CCBlade/OpenFAST convention.
+
+The native HAWT mapper currently uses the sign of the tangential distributed load to distinguish positive and negative shaft torque. A public HAWT setup path still needs an explicit rotation-direction option so clockwise/counter-clockwise inputs, CCBlade conventions, AeroDyn conventions, and structural reaction signs are all tied to one source of truth.
 
 ![](figs/image1.png){width="4.917280183727034in"
 height="4.585993000874891in"}![](figs/image2.png){width="5.469136045494313in"

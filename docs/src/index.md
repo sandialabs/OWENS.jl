@@ -44,7 +44,7 @@ Then here is an example of a helical design.  Note that arbitrary numbers of str
 </p>
 ```
 
-The generalized meshing was modified to include HAWT concepts, like this bi-wing concept.  OWENS is capable of axial flow turbines/HAWTs, but it is not a mature feature, and no where near as developed as OpenFAST (i.e. for regular HAWTs it is recommended to use that software).
+The generalized meshing includes early HAWT concepts, like this bi-wing concept. HAWT/axial-flow workflows in OWENS are experimental and validation-gated: the public `setupOWENS` HAWT path, backend parity, controls, and load mapping still need dedicated validation before use for design-load or certification work. For production HAWT analysis, use a validated tool such as OpenFAST until those OWENS gates are closed.
 
 ```@raw html
 <p align="center">

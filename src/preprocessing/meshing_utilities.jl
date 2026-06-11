@@ -2772,43 +2772,27 @@ end
 
 
 """
-create_hawt_mesh(;Ht = 15.0,
-    Hb = 147.148-15.0, #blade height
-    R = 54.014, # m bade radius
-    nblade = 3,
-    ntelem = 30, #tower elements
-    nbelem = 30, #blade elements
-    ncelem = 4,
-    strut_mountpoint = 0.01, # This puts struts at top and bottom
-    bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    bshapez = zeros(nbelem+1),
-    joint_type = 0,
-    cables_connected_to_blade_base = true,
-    angularOffset = 0.0)
+    create_hawt_mesh(; hub_depth=15.0, tip_precone=1.0, R=54.014,
+                     AD15hubR=7.0, nblade=3, ntelem=4, nbelem=30,
+                     bshapex=LinRange(0.0, 1.0, nbelem+1),
+                     bshapez=zeros(nbelem+1), joint_type=0,
+                     angularOffset=0.0, AD15_ccw=false)
 
+Create the legacy OWENS HAWT tower-and-blade mesh helper. The generated tower is
+aligned with global `z`, the blade roots attach at `z = hub_depth`, and the
+blades are distributed in the global `x-y` plane. This is not the production
+shaft-x HAWT setup path; callers that use the newer HAWT load mappers should
+pass the matching `rotor_axis` or migrate the mesh into the documented shaft-x
+convention.
 
-ARCUS mesh configuration: no tower between blades, no struts, but cables from top center attaching to specified blade mount point at base
+`bshapex` gives the blade radial support coordinates before scaling to `R`.
+`bshapez` gives the optional precone/curve shape and is scaled to
+`tip_precone` when nonzero. `AD15hubR` selects the blade node nearest the
+AeroDyn hub radius and moves it exactly onto that radius for the returned
+AD15 node/element index ranges. Set `AD15_ccw=true` to reverse the returned
+AD15 blade root/tip index ordering.
 
-#Inputs
-* `Ht::float`: height of tower before blades attach (m)
-* `Hb::float`: blade height (m)
-* `R::float`: bade radius (m)
-* `nblade::int`: number of blades
-* `ntelem::int`: number of tower elements
-* `nbelem::int`: number of blade elements
-* `ncelem::int`: number of strut elements
-* `c_mount_ratio::float`: factor of blade height where the struts attach on both top and bottom
-* `bshapex::Array{<:float}`: Blade shape, magnitude is irrelevant, scaled based on height and radius above
-* `bshapez::Array{<:float}`: Blade shape, magnitude is irrelevant, scaled based on height and radius above
-* `joint_type::int`: 0 is fixed, 1 is about x-axis, 2 is y-axis, etc
-* `cables_connected_to_blade_base::bool`: = true,
-* `angularOffset::float`: (rad) angular offset of mesh generation, typically used to match CACTUS input.  Value of 0 puts blade 1 at the "north" position and the others populate counterclockwise when looking down
-
-#Outputs
-* `mymesh::OWENSFEA.Mesh`: see ?OWENSFEA.Mesh
-* `ort::OWENSFEA.Ort`: see ?OWENSFEA.Ort
-* `myjoint:Array{<:float}`: see ?OWENSFEA.FEAModel.joint
-
+Returns `(mymesh, ort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng)`.
 """
 function create_hawt_mesh(;
     hub_depth = 15.0, #Hub Beam Depth
@@ -2907,14 +2891,9 @@ function create_hawt_mesh(;
                 end
             end
             R_temp = minR2
-            println("Hub crossing at idx $hubIdx at $R_temp with hub radius of $AD15hubR")
-            print(
-                "Moving strut point from [$(bld_X[hubIdx]),$(bld_Y[hubIdx]),$(bld_Z[hubIdx])] to ",
-            )
             bld_X[hubIdx] = bld_X[hubIdx] + R_temp/lenXY*(b_xend-b_xstart)
             bld_Y[hubIdx] = bld_Y[hubIdx] + R_temp/lenXY*(b_yend-b_ystart)
             bld_Z[hubIdx] = bld_Z[hubIdx] + R_temp/lenXY*(b_zend-b_zstart)
-            print("[$(bld_X[hubIdx]),$(bld_Y[hubIdx]),$(bld_Z[hubIdx])]\n")
         end
         # set index of where this point is in the mesh
 

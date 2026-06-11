@@ -84,6 +84,7 @@ include("io/run_health.jl")
 # GUI and workbench service foundations
 include("gui/studio_project.jl")
 include("gui/studio_templates.jl")
+include("gui/studio_capabilities.jl")
 
 # Preprocessing functionality
 include("preprocessing/gxbeam_conversion.jl")
@@ -99,6 +100,7 @@ include("runtime/Unsteady_Land.jl")
 include("runtime/Unsteady_utilities.jl")
 include("runtime/DLCAnalysis.jl")
 include("runtime/AeroMapping.jl")
+include("runtime/HAWTUnsteady.jl")
 
 # Postprocessing functionality
 include("postprocess/PostProcessing.jl")

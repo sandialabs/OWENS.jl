@@ -53,6 +53,10 @@ end
     include("$path/test_run_health.jl")
 end
 
+@testset "Example Consistency" begin
+    include("$path/test_example_consistency.jl")
+end
+
 @testset "OWENS Studio Project" begin
     include("$path/test_studio_project.jl")
 end

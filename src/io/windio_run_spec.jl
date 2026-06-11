@@ -105,7 +105,7 @@ function build_windio_run_manifest(
     status::AbstractString = "created",
     created_at_utc = nothing,
 )
-    return build_run_manifest(;
+    manifest = build_run_manifest(;
         run_id,
         run_name,
         project_root = spec.run_path,
@@ -120,6 +120,11 @@ function build_windio_run_manifest(
         status,
         created_at_utc,
     )
+    capability_gates = _windio_run_capability_gates(spec.windio_file; root = spec.run_path)
+    if !isempty(capability_gates)
+        manifest["capability_gates"] = capability_gates
+    end
+    return manifest
 end
 
 """
@@ -134,3 +139,63 @@ function write_windio_run_manifest(path::AbstractString, spec::WindIORunSpec; kw
 end
 
 _julia_string_literal(value::AbstractString) = repr(String(value))
+
+function _windio_run_capability_gates(windio_file::AbstractString; root::AbstractString)
+    detected = _windio_run_turbine_kind(windio_file)
+    if isnothing(detected) || !_windio_run_hawt_kind(detected)
+        return OrderedCollections.OrderedDict{String,Any}[]
+    end
+
+    return OrderedCollections.OrderedDict{String,Any}[
+        OrderedCollections.OrderedDict{String,Any}(
+            "capability" => "hawt_aeroelastic_workflow",
+            "status" => "experimental",
+            "severity" => "warning",
+            "source_role" => "windio",
+            "source_path" => relpath(abspath(windio_file), abspath(root)),
+            "detected_value" => detected,
+            "message" =>
+                "WindIO declares a HAWT/axial-flow turbine. OWENS HAWT setup is experimental and validation-gated; unsupported production workflows should not run without explicit checks.",
+        ),
+    ]
+end
+
+function _windio_run_turbine_kind(path::AbstractString)
+    parsed = YAML.load_file(path; dicttype = OrderedCollections.OrderedDict{String,Any})
+    parsed isa AbstractDict || return nothing
+    for key_path in (
+        ("assembly", "turbine_class"),
+        ("assembly", "turbine_type"),
+        ("turbine", "turbine_class"),
+        ("turbine", "turbine_type"),
+        ("turbine_class",),
+        ("turbine_type",),
+    )
+        value = _windio_run_nested_value(parsed, key_path)
+        value isa AbstractString || continue
+        isempty(strip(value)) || return String(value)
+    end
+    return nothing
+end
+
+function _windio_run_nested_value(data, key_path)
+    value = data
+    for key in key_path
+        value isa AbstractDict || return nothing
+        if haskey(value, key)
+            value = value[key]
+        elseif haskey(value, Symbol(key))
+            value = value[Symbol(key)]
+        else
+            return nothing
+        end
+    end
+    return value
+end
+
+function _windio_run_hawt_kind(value::AbstractString)
+    normalized = uppercase(replace(value, r"[^A-Za-z0-9]+" => ""))
+    return occursin("HAWT", normalized) ||
+           occursin("AXIALFLOW", normalized) ||
+           normalized == "AXIAL"
+end

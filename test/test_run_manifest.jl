@@ -148,6 +148,33 @@ end
         @test OWENS.run_manifest_issues(manifest_file) == String[]
         @test OWENS.validate_run_manifest(manifest_file)["run_id"] == "run-unit-001"
 
+        health = OWENS.run_manifest_health(manifest_file)
+        @test health["status"] == "ok"
+        @test !haskey(health["outputs"][1], "remediation")
+
+        rm(output_file)
+        missing_output_health = OWENS.run_manifest_health(manifest_file)
+        @test missing_output_health["status"] == "attention"
+        @test missing_output_health["summary"]["missing"] == 1
+        missing_output = missing_output_health["outputs"][1]
+        @test missing_output["status"] == "missing"
+        @test missing_output["issues"] == ["missing file"]
+        remediation = missing_output["remediation"]
+        @test remediation["schema_version"] == "owens-run-artifact-remediation/v1"
+        @test remediation["code"] == "missing_run_artifact"
+        @test remediation["severity"] == "error"
+        @test remediation["section"] == "outputs"
+        @test remediation["field"] == "outputs[1].path"
+        @test remediation["path"] == "output.h5"
+        @test remediation["resolved_path"] == output_file
+        @test remediation["status"] == "missing"
+        @test remediation["remediation_action"] == "missing_outputs_artifact"
+        @test remediation["documentation"] == "docs/src/getting_started.md"
+        @test occursin("postprocessing", remediation["physical_implication"])
+        @test occursin("Re-run the case", remediation["suggested_fix"])
+        @test remediation["provenance"]["expected_sha256"] == OUTPUT_SHA256
+        @test remediation["provenance"]["actual_sha256"] === nothing
+
         @test_throws ArgumentError OWENS.read_run_manifest(joinpath(dir, "missing.yml"))
     end
 end

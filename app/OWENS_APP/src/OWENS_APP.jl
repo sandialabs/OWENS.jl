@@ -10,10 +10,17 @@ const USAGE = """
 OWENS_APP Studio service commands:
 
   project-routes
+  studio-doctor [output_dir]
   studio-home <output.html>
+  project-capabilities
+  project-quality-gates
   project-templates
   project-examples
   project-open <owens_project.yml>
+  project-inputs <owens_project.yml> [include_text] [max_text_bytes]
+  project-session <owens_project.yml> [include_text] [max_text_bytes]
+  project-editor-html <owens_project.yml> <output.html>
+  project-save-input <owens_project.yml> <role> <text_file>
   manifest-health <run_manifest.yml>
   output-summary <results.h5>
   windio-script <modeling_options.yml> <windio.yml> <run_path>
@@ -47,18 +54,41 @@ function _dispatch_command(args)
 
     if command == "project-routes" && length(args) == 1
         return studio_route_catalog()
+    elseif command == "studio-doctor" && length(args) in (1, 2)
+        output_dir = length(args) == 2 ? args[2] : pwd()
+        return studio_doctor(; output_dir)
     elseif command == "studio-home" && length(args) == 2
         html = write_studio_home(args[2])
         return OrderedCollections.OrderedDict{String,Any}(
             "output_html" => abspath(args[2]),
             "bytes" => sizeof(html),
         )
+    elseif command == "project-capabilities" && length(args) == 1
+        return list_studio_gui_capabilities()
+    elseif command == "project-quality-gates" && length(args) == 1
+        return list_studio_quality_gates()
     elseif command == "project-templates" && length(args) == 1
         return list_studio_project_templates()
     elseif command == "project-examples" && length(args) == 1
         return list_studio_example_projects()
     elseif command == "project-open" && length(args) == 2
         return open_studio_project(args[2])
+    elseif command == "project-inputs" && length(args) in 2:4
+        include_text = length(args) >= 3 ? _cli_bool(args[3]) : false
+        max_text_bytes = length(args) == 4 ? parse(Int, args[4]) : 200_000
+        return inspect_studio_project_inputs(args[2]; include_text, max_text_bytes)
+    elseif command == "project-session" && length(args) in 2:4
+        include_text = length(args) >= 3 ? _cli_bool(args[3]) : false
+        max_text_bytes = length(args) == 4 ? parse(Int, args[4]) : 200_000
+        return inspect_studio_project_session(args[2]; include_text, max_text_bytes)
+    elseif command == "project-editor-html" && length(args) == 3
+        html = write_studio_project_editor(args[3], args[2])
+        return OrderedCollections.OrderedDict{String,Any}(
+            "output_html" => abspath(args[3]),
+            "bytes" => sizeof(html),
+        )
+    elseif command == "project-save-input" && length(args) == 4
+        return save_studio_project_input(args[2], args[3], read(args[4], String))
     elseif command == "manifest-health" && length(args) == 2
         return inspect_run_manifest(args[2])
     elseif command == "output-summary" && length(args) == 2
@@ -84,6 +114,13 @@ function _dispatch_command(args)
     end
 
     throw(ArgumentError(USAGE))
+end
+
+function _cli_bool(value)
+    normalized = lowercase(strip(string(value)))
+    normalized in ("true", "1", "yes", "y") && return true
+    normalized in ("false", "0", "no", "n") && return false
+    throw(ArgumentError("Expected boolean CLI value, got: $value"))
 end
 
 end #module

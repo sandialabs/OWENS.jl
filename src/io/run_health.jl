@@ -1,6 +1,8 @@
 export verify_file_provenance, run_manifest_health
 
 const RUN_MANIFEST_HEALTH_SCHEMA_VERSION = "owens-run-health/v1"
+const RUN_ARTIFACT_REMEDIATION_SCHEMA_VERSION = "owens-run-artifact-remediation/v1"
+const RUN_ARTIFACT_REMEDIATION_DOC = "docs/src/getting_started.md"
 
 """
     verify_file_provenance(record; root=pwd())
@@ -100,7 +102,7 @@ function run_manifest_health(
         isempty(manifest_issues) && all(row["status"] == "ok" for row in all_rows) ? "ok" :
         "attention"
 
-    return OrderedCollections.OrderedDict{String,Any}(
+    health = OrderedCollections.OrderedDict{String,Any}(
         "schema_version" => RUN_MANIFEST_HEALTH_SCHEMA_VERSION,
         "status" => health_status,
         "manifest_path" =>
@@ -119,6 +121,10 @@ function run_manifest_health(
         "outputs" => output_rows,
         "generated" => generated_rows,
     )
+    if haskey(manifest, "capability_gates")
+        health["capability_gates"] = _manifest_value(manifest["capability_gates"])
+    end
+    return health
 end
 
 function _manifest_health_root(manifest::AbstractDict, manifest_path, root)
@@ -149,8 +155,11 @@ function _manifest_section_health(
     records isa AbstractVector || return OrderedCollections.OrderedDict{String,Any}[]
 
     rows = OrderedCollections.OrderedDict{String,Any}[]
-    for record in records
+    for (index, record) in enumerate(records)
         row = verify_file_provenance(record; root)
+        if row["status"] != "ok"
+            row["remediation"] = _run_artifact_remediation(row, section, index)
+        end
         if summarize &&
            row["status"] == "ok" &&
            endswith(lowercase(row["resolved_path"]), ".h5")
@@ -171,6 +180,93 @@ function _safe_output_data_summary(path::AbstractString)
             "message" => sprint(showerror, err),
         )
     end
+end
+
+function _run_artifact_remediation(row::AbstractDict, section::AbstractString, index::Integer)
+    status = string(get(row, "status", "attention"))
+    role = _record_get_string(row, "role")
+    artifact = isnothing(role) || isempty(role) ? _run_artifact_label(section) : role
+    code =
+        status == "missing" ? "missing_run_artifact" :
+        status == "modified" ? "modified_run_artifact" :
+        status == "invalid_record" ? "invalid_run_artifact_record" :
+        "run_artifact_attention"
+    severity = status == "modified" ? "warning" : "error"
+
+    return OrderedCollections.OrderedDict{String,Any}(
+        "schema_version" => RUN_ARTIFACT_REMEDIATION_SCHEMA_VERSION,
+        "code" => code,
+        "severity" => severity,
+        "section" => string(section),
+        "index" => Int(index),
+        "field" => "$(section)[$index].path",
+        "role" => role,
+        "path" => _record_get_string(row, "path"),
+        "resolved_path" => _record_get_string(row, "resolved_path"),
+        "status" => status,
+        "issues" => String.(get(row, "issues", String[])),
+        "physical_implication" =>
+            _run_artifact_physical_implication(section, status, artifact),
+        "suggested_fix" => _run_artifact_suggested_fix(section, status, artifact),
+        "documentation" => RUN_ARTIFACT_REMEDIATION_DOC,
+        "remediation_action" =>
+            "$(status)_$(replace(string(section), r"[^A-Za-z0-9]+" => "_"))_artifact",
+        "provenance" => OrderedCollections.OrderedDict{String,Any}(
+            "expected_bytes" => get(row, "expected_bytes", nothing),
+            "actual_bytes" => get(row, "actual_bytes", nothing),
+            "expected_sha256" => get(row, "expected_sha256", nothing),
+            "actual_sha256" => get(row, "actual_sha256", nothing),
+        ),
+    )
+end
+
+function _run_artifact_label(section::AbstractString)
+    return section == "inputs" ? "input" :
+           section == "outputs" ? "output" :
+           section == "generated" ? "generated artifact" : "artifact"
+end
+
+function _run_artifact_physical_implication(
+    section::AbstractString,
+    status::AbstractString,
+    artifact::AbstractString,
+)
+    if section == "outputs"
+        return status == "missing" ?
+               "Result browsers, validation reports, and postprocessing cannot load the recorded output artifact." :
+               "The recorded output artifact no longer matches the run manifest, so comparisons and validation may not describe the original run."
+    elseif section == "inputs"
+        return status == "missing" ?
+               "The run manifest cannot prove which input deck produced the recorded results." :
+               "The recorded input artifact changed after the run, so the run is no longer reproducible from this manifest alone."
+    elseif section == "generated"
+        return status == "missing" ?
+               "The generated script or derived artifact needed to audit the run is missing." :
+               "The generated script or derived artifact changed after the run, so provenance is stale."
+    end
+    return "The $artifact provenance record is not healthy, so the run manifest needs attention before it is trusted."
+end
+
+function _run_artifact_suggested_fix(
+    section::AbstractString,
+    status::AbstractString,
+    artifact::AbstractString,
+)
+    if status == "missing"
+        if section == "outputs"
+            return "Re-run the case or restore the missing output artifact at the recorded path, then refresh the run manifest provenance."
+        elseif section == "inputs"
+            return "Restore the missing input artifact or rebuild the run from available inputs, then refresh the run manifest provenance."
+        elseif section == "generated"
+            return "Regenerate or restore the missing generated artifact, then refresh the run manifest provenance."
+        end
+        return "Restore the missing $artifact and refresh the run manifest provenance."
+    elseif status == "modified"
+        return "Restore the original $artifact or explicitly refresh the run manifest only after confirming the change is intentional."
+    elseif status == "invalid_record"
+        return "Fix the malformed $artifact provenance record in the run manifest before using this run for validation or reporting."
+    end
+    return "Inspect the $artifact artifact and refresh the run manifest after the issue is resolved."
 end
 
 function _file_provenance_record_issues(record)
