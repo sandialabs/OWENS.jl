@@ -2772,43 +2772,27 @@ end
 
 
 """
-create_hawt_mesh(;Ht = 15.0,
-    Hb = 147.148-15.0, #blade height
-    R = 54.014, # m bade radius
-    nblade = 3,
-    ntelem = 30, #tower elements
-    nbelem = 30, #blade elements
-    ncelem = 4,
-    strut_mountpoint = 0.01, # This puts struts at top and bottom
-    bshapex = zeros(nbelem+1), #Blade shape, magnitude is irrelevant, scaled based on height and radius above
-    bshapez = zeros(nbelem+1),
-    joint_type = 0,
-    cables_connected_to_blade_base = true,
-    angularOffset = 0.0)
+    create_hawt_mesh(; hub_depth=15.0, tip_precone=1.0, R=54.014,
+                     AD15hubR=7.0, nblade=3, ntelem=4, nbelem=30,
+                     bshapex=LinRange(0.0, 1.0, nbelem+1),
+                     bshapez=zeros(nbelem+1), joint_type=0,
+                     angularOffset=0.0, AD15_ccw=false)
 
+Create the legacy OWENS HAWT tower-and-blade mesh helper. The generated tower is
+aligned with global `z`, the blade roots attach at `z = hub_depth`, and the
+blades are distributed in the global `x-y` plane. This is not the production
+shaft-x HAWT setup path; callers that use the newer HAWT load mappers should
+pass the matching `rotor_axis` or migrate the mesh into the documented shaft-x
+convention.
 
-ARCUS mesh configuration: no tower between blades, no struts, but cables from top center attaching to specified blade mount point at base
+`bshapex` gives the blade radial support coordinates before scaling to `R`.
+`bshapez` gives the optional precone/curve shape and is scaled to
+`tip_precone` when nonzero. `AD15hubR` selects the blade node nearest the
+AeroDyn hub radius and moves it exactly onto that radius for the returned
+AD15 node/element index ranges. Set `AD15_ccw=true` to reverse the returned
+AD15 blade root/tip index ordering.
 
-#Inputs
-* `Ht::float`: height of tower before blades attach (m)
-* `Hb::float`: blade height (m)
-* `R::float`: bade radius (m)
-* `nblade::int`: number of blades
-* `ntelem::int`: number of tower elements
-* `nbelem::int`: number of blade elements
-* `ncelem::int`: number of strut elements
-* `c_mount_ratio::float`: factor of blade height where the struts attach on both top and bottom
-* `bshapex::Array{<:float}`: Blade shape, magnitude is irrelevant, scaled based on height and radius above
-* `bshapez::Array{<:float}`: Blade shape, magnitude is irrelevant, scaled based on height and radius above
-* `joint_type::int`: 0 is fixed, 1 is about x-axis, 2 is y-axis, etc
-* `cables_connected_to_blade_base::bool`: = true,
-* `angularOffset::float`: (rad) angular offset of mesh generation, typically used to match CACTUS input.  Value of 0 puts blade 1 at the "north" position and the others populate counterclockwise when looking down
-
-#Outputs
-* `mymesh::OWENSFEA.Mesh`: see ?OWENSFEA.Mesh
-* `ort::OWENSFEA.Ort`: see ?OWENSFEA.Ort
-* `myjoint:Array{<:float}`: see ?OWENSFEA.FEAModel.joint
-
+Returns `(mymesh, ort, myjoint, AD15bldNdIdxRng, AD15bldElIdxRng)`.
 """
 function create_hawt_mesh(;
     hub_depth = 15.0, #Hub Beam Depth
@@ -2826,6 +2810,15 @@ function create_hawt_mesh(;
     angularOffset = 0.0,
     AD15_ccw = false,
 )
+    nblade > 0 || throw(ArgumentError("nblade must be positive"))
+    ntelem > 0 || throw(ArgumentError("ntelem must be positive"))
+    nbelem > 0 || throw(ArgumentError("nbelem must be positive"))
+    length(bshapex) == nbelem + 1 ||
+        throw(DimensionMismatch("bshapex must have nbelem + 1 entries"))
+    length(bshapez) == nbelem + 1 ||
+        throw(DimensionMismatch("bshapez must have nbelem + 1 entries"))
+    maximum(bshapex) > 0.0 ||
+        throw(ArgumentError("bshapex must contain a positive span coordinate"))
 
     ##################################
     #            
@@ -2845,7 +2838,7 @@ function create_hawt_mesh(;
     t_topidx = length(mesh_z)
 
     # intra-tower connectivity
-    conn = zeros(length(mesh_z)-1, 2)
+    conn = zeros(Int, length(mesh_z)-1, 2)
     conn[:, 1] = collect(1:(length(mesh_z)-1))
     conn[:, 2] = collect(2:length(mesh_z))
 
@@ -2866,15 +2859,15 @@ function create_hawt_mesh(;
 
     bld_Z .+= hub_depth
 
-    b_Z = []
-    b_X = []
-    b_Y = []
+    b_Z = Float64[]
+    b_X = Float64[]
+    b_Y = Float64[]
     AD15bldNdIdxRng = zeros(Int64, 0, 2)
     # Now using standard VAWT convention, blade 1 is zero degrees at top dead center, or North/Y+
     # and they are offset counter clockwise
     b_topidx = zeros(Int, nblade)
     b_botidx = zeros(Int, nblade) .+ length(mesh_z)
-    conn_b = zeros(length(bld_Z)-1, 2)
+    conn_b = zeros(Int, length(bld_Z)-1, 2)
     for ibld = 1:nblade
         myangle = (ibld-1)*2.0*pi/nblade + angularOffset
 
@@ -2898,14 +2891,9 @@ function create_hawt_mesh(;
                 end
             end
             R_temp = minR2
-            println("Hub crossing at idx $hubIdx at $R_temp with hub radius of $AD15hubR")
-            print(
-                "Moving strut point from [$(bld_X[hubIdx]),$(bld_Y[hubIdx]),$(bld_Z[hubIdx])] to ",
-            )
             bld_X[hubIdx] = bld_X[hubIdx] + R_temp/lenXY*(b_xend-b_xstart)
             bld_Y[hubIdx] = bld_Y[hubIdx] + R_temp/lenXY*(b_yend-b_ystart)
             bld_Z[hubIdx] = bld_Z[hubIdx] + R_temp/lenXY*(b_zend-b_zstart)
-            print("[$(bld_X[hubIdx]),$(bld_Y[hubIdx]),$(bld_Z[hubIdx])]\n")
         end
         # set index of where this point is in the mesh
 
@@ -2942,14 +2930,14 @@ function create_hawt_mesh(;
     #######################################
 
     numNodes = length(mesh_z)
-    nodeNum = collect(LinRange(1, numNodes, numNodes))
+    nodeNum = collect(1:numNodes)
     numEl = length(conn[:, 1])
-    elNum = collect(LinRange(1, numEl, numEl))
+    elNum = collect(1:numEl)
 
     # Define Mesh Types
     # Mesh Type: 0-blade 1-tower 2-strut
     meshtype = zeros(Int, numEl)
-    meshtype[1:t_topidx] .= 1 #Tower
+    meshtype[1:ntelem] .= 1 #Tower
     # meshtype[idx_bot_lbld_tower:idx_top_rbld_tower] .= 0 #Blades
 
     #########################
@@ -2957,15 +2945,15 @@ function create_hawt_mesh(;
     #########################
 
     # For a single blade
-    meshSeg = zeros(1+nblade) #tower, blades, and cables
+    meshSeg = zeros(Int, 1+nblade) #tower and blades
 
     meshSeg[1] = ntelem
     meshSeg[2:(nblade+1)] .= nbelem
 
     # For each blade
     structuralSpanLocNorm = zeros(nblade, length(bld_Z))
-    structuralNodeNumbers = zeros(nblade, length(bld_Z))
-    structuralElNumbers = zeros(nblade, length(bld_Z))
+    structuralNodeNumbers = zeros(Int, nblade, length(bld_Z))
+    structuralElNumbers = zeros(Int, nblade, length(bld_Z))
 
     for iblade = 1:nblade
 

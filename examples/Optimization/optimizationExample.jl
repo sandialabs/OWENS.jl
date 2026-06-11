@@ -95,7 +95,7 @@ function messyoptfun!(constraints,Vars)
     windio[:components][:blade][:outer_shape_bem][:reference_axis][:x][:values] = x_values 
 
     # Run with the WindIO standard, which as mentioned before, is in progress to include all of the design components.
-    OWENS.runOWENSWINDIO(windio,OWENS_Options,runpath)
+    OWENS.runOWENSWINDIO(OWENS_Options,windio,runpath)
 
     # Read in all of the current OWENS outputs from the run. This is a portion of what is calculated internally.
     file = "$runpath/InitialDataOutputs.h5"
@@ -189,4 +189,4 @@ println("constraints: $constraints")
 # println("fstar = ", fopt)
 # println("info = ", info)
 
-# Formatting for 
+# Formatting for

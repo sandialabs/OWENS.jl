@@ -27,7 +27,10 @@ WINDIO_filename = "$runpath/WINDIO_example.yaml"
 
 OWENS.runOWENSWINDIO(OWENS_Options,WINDIO_filename,runpath)
 
-# Alternatively OWENS.runOWENSWINDIO(WINDIO_filename,OWENS_Options,runpath)
+# Alternatively, load both inputs first and call:
+# modelopt = OWENS.ModelingOptions(OWENS_Options)
+# designparams = OWENS.Design_Data(WINDIO_filename)
+# OWENS.runOWENSWINDIO(modelopt,designparams,runpath)
 
 # OWENSFEA joint reaction assembly changed after the original WindIO baseline.
 # Keep both strict baselines so downstream tests pass before and after that fix.

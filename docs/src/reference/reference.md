@@ -68,6 +68,17 @@ services so a future Genie shell can serve health YAML and workbench HTML
 without duplicating project logic.
 Use `open_studio_project(project_path)` in `OWENS_APP` as the one-call
 workbench bootstrap payload after a user selects a project.
+Use `studio_gui_capability_catalog()` to show which OWENS Studio capabilities
+are implemented, planned, or gated behind solver work.
+Use `studio_project_input_summary(project_or_path)` to drive editor panes with
+input-file provenance, YAML top-level keys, parse status, and optional bounded
+file text.
+Use `save_studio_project_input_text(project_path, role, text)` to save an
+editable input role, refresh the project manifest hashes, and enforce an
+optional SHA-256 optimistic-lock check.
+Use `render_studio_project_editor_html(project_or_inputs)` to render the
+dependency-light project editor page that posts editable input text back to the
+tested save route.
 Use `studio_route_catalog()` in `OWENS_APP` to keep the future Genie route table
 aligned with the tested service handlers.
 Use `dispatch_studio_route(route; method, params)` to resolve those catalog
@@ -123,5 +134,12 @@ The public helpers are:
 - `studio_example_project_catalog()`
 - `studio_example_project_names()`
 - `create_studio_project_template(target)`
+- `studio_gui_capability_catalog()`
+- `studio_gui_capability_ids()`
+- `studio_project_input_summary(project_or_path)`
+- `refresh_studio_project(path)`
+- `save_studio_project_input_text(project_path, role, text)`
+- `render_studio_project_editor_html(project_or_inputs)`
+- `write_studio_project_editor_html(path, project_or_inputs)`
 
 The generated API listing above includes their full docstrings.

@@ -84,6 +84,7 @@ include("io/run_health.jl")
 # GUI and workbench service foundations
 include("gui/studio_project.jl")
 include("gui/studio_templates.jl")
+include("gui/studio_capabilities.jl")
 
 # Preprocessing functionality
 include("preprocessing/gxbeam_conversion.jl")
@@ -91,7 +92,6 @@ include("preprocessing/gxbeam_sectional_properties.jl")
 include("preprocessing/meshing_utilities.jl")
 include("preprocessing/setup_utilities.jl")
 include("preprocessing/SetupTurbine.jl")
-# include("preprocessing/SetupTurbineHAWT.jl")  # Temporarily disabled
 
 # Runtime functionality
 include("runtime/Steady.jl")
@@ -100,8 +100,8 @@ include("runtime/Unsteady_Land.jl")
 include("runtime/Unsteady_utilities.jl")
 include("runtime/DLCAnalysis.jl")
 include("runtime/AeroMapping.jl")
+include("runtime/HAWTUnsteady.jl")
 
-``
 # Postprocessing functionality
 include("postprocess/PostProcessing.jl")
 include("postprocess/visualization.jl")

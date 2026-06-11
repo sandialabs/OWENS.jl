@@ -142,11 +142,20 @@ _portable_paths(paths) = [_portable_path(path) for path in paths]
 
         html = OWENS.render_studio_workbench_html(health)
         @test occursin("<title>Studio Unit - OWENS Studio</title>", html)
+        @test occursin(
+            "meta name=\"owens-studio-style\" content=\"owens-studio-shared-style/v1\"",
+            html,
+        )
+        @test occursin("--ink: #17202a;", html)
         @test occursin("<span class=\"status ok\">ok</span>", html)
         @test occursin("<h3>Project Files</h3>", html)
         @test occursin("modeling_options.yml", html)
         @test occursin("run_manifest.yml", html)
         @test occursin("No schema issues.", html)
+        @test !occursin("href=\"#\"", html)
+        @test occursin("href=\"/workbench?project_path=", html)
+        @test occursin("data-capability=\"geometry_editor\"", html)
+        @test occursin("aria-disabled=\"true\"", html)
         written_html = OWENS.write_studio_workbench_html(html_file, project_file)
         @test written_html == read(html_file, String)
         @test occursin("OWENS Studio", written_html)
@@ -165,6 +174,22 @@ _portable_paths(paths) = [_portable_path(path) for path in paths]
         override_health = OWENS.studio_project_health(stale_project; root = dir)
         @test override_health["status"] == "ok"
         @test override_health["summary"] == health["summary"]
+
+        rm(output_file)
+        missing_output_health = OWENS.studio_project_health(project)
+        @test missing_output_health["status"] == "attention"
+        @test missing_output_health["runs"][1]["status"] == "ok"
+        @test missing_output_health["runs"][1]["run_manifest_health"]["status"] ==
+              "attention"
+        missing_output_remediation = missing_output_health["runs"][1]["run_manifest_health"]["outputs"][1]["remediation"]
+        @test missing_output_remediation["schema_version"] ==
+              "owens-run-artifact-remediation/v1"
+        @test missing_output_remediation["code"] == "missing_run_artifact"
+        @test missing_output_remediation["field"] == "outputs[1].path"
+        missing_output_html = OWENS.render_studio_workbench_html(missing_output_health)
+        @test occursin("missing_run_artifact", missing_output_html)
+        @test occursin("outputs[1].path", missing_output_html)
+        @test occursin("Re-run the case", missing_output_html)
 
         malformed = deepcopy(project)
         malformed["schema_version"] = "owens-studio-project/v0"
@@ -216,6 +241,11 @@ end
     @test isfile(example_catalog["examples"][1]["project_file"])
     home_html = OWENS.render_studio_home_html()
     @test occursin("<title>OWENS Studio</title>", home_html)
+    @test occursin(
+        "meta name=\"owens-studio-style\" content=\"owens-studio-shared-style/v1\"",
+        home_html,
+    )
+    @test occursin("grid-template-columns: 220px minmax(0, 1fr);", home_html)
     @test occursin("Project Gallery", home_html)
     @test occursin("Example Projects", home_html)
     @test occursin("RM2 GUI Fixture", home_html)
@@ -223,6 +253,10 @@ end
     @test occursin("New Project Templates", home_html)
     @test occursin("Blank OWENS Studio Project", home_html)
     @test occursin("RM2 VAWT Template", home_html)
+    @test !occursin("href=\"#\"", home_html)
+    @test occursin("href=\"/\"", home_html)
+    @test occursin("data-capability=\"project_workbench\"", home_html)
+    @test occursin("Project workflow is unavailable in this context.", home_html)
 
     mktempdir() do dir
         target = joinpath(dir, "rm2-studio")
@@ -382,6 +416,309 @@ end
     end
 end
 
+@testset "OWENS Studio capability and input summaries" begin
+    @test OWENS.studio_gui_capability_ids()[1:5] == [
+        "project_manifest_health",
+        "template_catalog",
+        "generated_script_export",
+        "input_file_summary",
+        "route_contracts",
+    ]
+    capabilities = OWENS.studio_gui_capability_catalog()
+    @test capabilities["schema_version"] == "owens-studio-capability-catalog/v1"
+    @test capabilities["capabilities"][4]["id"] == "input_file_summary"
+    @test capabilities["capabilities"][4]["status"] == "implemented"
+    @test "OWENS_APP" in capabilities["capabilities"][4]["surfaces"]
+    hawt_capability_index =
+        findfirst(
+            row -> row["id"] == "hawt_aeroelastic_workflow",
+            capabilities["capabilities"],
+        )
+    @test hawt_capability_index !== nothing
+    hawt_capability = capabilities["capabilities"][hawt_capability_index]
+    @test hawt_capability["status"] == "experimental"
+    @test occursin("validation-gated", hawt_capability["description"])
+    @test "OWENSOpenFASTWrappers" in hawt_capability["surfaces"]
+    @test OWENS.studio_gui_quality_gate_ids()[1:4] == [
+        "service_contract_tests",
+        "file_provenance",
+        "generated_script_equivalence",
+        "physical_validation",
+    ]
+    quality_gates = OWENS.studio_gui_quality_gate_catalog()
+    @test quality_gates["schema_version"] == "owens-studio-quality-gates/v1"
+    @test quality_gates["summary"]["gates"] == length(quality_gates["gates"])
+    @test quality_gates["summary"]["required_for_done"] == length(quality_gates["gates"])
+    @test quality_gates["gates"][1]["status"] == "implemented"
+    @test "structured error tests" in quality_gates["gates"][1]["evidence_required"]
+    browser_gate_index =
+        findfirst(row -> row["id"] == "browser_interaction_tests", quality_gates["gates"])
+    @test browser_gate_index !== nothing
+    @test quality_gates["gates"][browser_gate_index]["status"] == "planned"
+
+    mktempdir() do dir
+        model_file = joinpath(dir, "modeling_options.yml")
+        windio_file = joinpath(dir, "design.yml")
+        project_file = joinpath(dir, "owens_project.yml")
+        write(model_file, "OWENS_Options:\n  numTS: 2\n  delta_t: 0.1\n")
+        write(windio_file, "name: editor-unit\nassembly:\n  turbine_class: VAWT\n")
+        OWENS.write_studio_project(
+            project_file,
+            dir;
+            project_id = "editor-unit",
+            name = "Editor Unit",
+            modeling_options_file = model_file,
+            windio_file,
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+
+        summary = OWENS.studio_project_input_summary(project_file; include_text = true)
+        @test summary["schema_version"] == "owens-studio-input-summary/v1"
+        @test summary["project_id"] == "editor-unit"
+        @test summary["capability_gates"] == OrderedCollections.OrderedDict{String,Any}[]
+        @test summary["summary"] == OrderedCollections.OrderedDict{String,Any}(
+            "files" => 2,
+            "editable" => 2,
+            "parse_errors" => 0,
+            "text_included" => 2,
+        )
+        @test [row["role"] for row in summary["files"]] == ["modeling_options", "windio"]
+        @test [row["format"] for row in summary["files"]] == ["yaml", "yaml"]
+        @test all(row["editable"] === true for row in summary["files"])
+        @test summary["files"][1]["top_level_keys"] == ["OWENS_Options"]
+        @test summary["files"][2]["top_level_keys"] == ["name", "assembly"]
+        @test summary["files"][1]["validation_status"] == "ok"
+        @test summary["files"][1]["validation_blocking"] === false
+        @test isempty(summary["files"][1]["validation_issues"])
+        @test occursin("numTS: 2", summary["files"][1]["text"])
+        session = OWENS.studio_project_session_summary(project_file)
+        @test session["schema_version"] == "owens-studio-session/v1"
+        @test session["session_state"] == "clean"
+        @test session["dirty"] === false
+        @test session["reload_required"] === false
+        @test session["summary"]["save_conflicts"] == 0
+        @test length(session["file_states"]) == 2
+        @test all(row["needs_reload"] === false for row in session["file_states"])
+
+        conflict_model_file = joinpath(dir, "conflict_modeling_options.yml")
+        conflict_windio_file = joinpath(dir, "conflict_windio.yml")
+        conflict_project_file = joinpath(dir, "conflict_project.yml")
+        write(conflict_model_file, "OWENS_Options:\n  numTS: 2\n")
+        write(conflict_windio_file, "name: conflict\nassembly:\n  turbine_class: VAWT\n")
+        OWENS.write_studio_project(
+            conflict_project_file,
+            dir;
+            project_id = "conflict-unit",
+            name = "Conflict Unit",
+            modeling_options_file = conflict_model_file,
+            windio_file = conflict_windio_file,
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        conflict_clean = OWENS.studio_project_session_summary(conflict_project_file)
+        @test conflict_clean["session_state"] == "clean"
+        write(conflict_model_file, "OWENS_Options:\n  numTS: 99\n")
+        conflict_dirty = OWENS.studio_project_session_summary(conflict_project_file)
+        @test conflict_dirty["session_state"] == "needs_reload"
+        @test conflict_dirty["dirty"] === true
+        @test conflict_dirty["reload_required"] === true
+        @test conflict_dirty["summary"]["external_changes"] == 1
+        @test conflict_dirty["summary"]["save_conflicts"] == 1
+        @test conflict_dirty["save_conflicts"][1]["role"] == "modeling_options"
+        @test conflict_dirty["save_conflicts"][1]["needs_reload"] === true
+        editor_html = OWENS.render_studio_project_editor_html(summary)
+        @test occursin("<title>Editor Unit - OWENS Studio Editor</title>", editor_html)
+        @test occursin(
+            "meta name=\"owens-studio-style\" content=\"owens-studio-shared-style/v1\"",
+            editor_html,
+        )
+        @test occursin(
+            "grid-template-columns: 220px minmax(0, 1fr) 320px;",
+            editor_html,
+        )
+        @test occursin("name=\"expected_sha256\"", editor_html)
+        @test occursin(
+            "<label for=\"studio-input-modeling_options\">modeling_options input text</label>",
+            editor_html,
+        )
+        @test occursin("id=\"studio-input-modeling_options-help\"", editor_html)
+        @test occursin(
+            "aria-describedby=\"studio-input-modeling_options-help\"",
+            editor_html,
+        )
+        @test occursin("aria-invalid=\"false\"", editor_html)
+        @test occursin("textarea:focus", editor_html)
+        @test occursin("name=\"text\"", editor_html)
+        @test occursin("OWENS_Options", editor_html)
+        @test !occursin("href=\"#\"", editor_html)
+        @test occursin("href=\"/workbench?project_path=", editor_html)
+        @test occursin("data-capability=\"run_workflow\"", editor_html)
+        @test occursin("Simulation<span class=\"nav-status\">planned</span>", editor_html)
+        editor_file = joinpath(dir, "editor.html")
+        written_editor = OWENS.write_studio_project_editor_html(editor_file, summary)
+        @test written_editor == read(editor_file, String)
+        @test occursin("action=\"/api/project/input\"", written_editor)
+
+        truncated = OWENS.studio_project_input_summary(
+            project_file;
+            include_text = true,
+            max_text_bytes = 1,
+        )
+        @test truncated["summary"]["text_included"] == 0
+        @test all(row["text_truncated"] === true for row in truncated["files"])
+        @test all(row["parse_status"] == "skipped_size_limit" for row in truncated["files"])
+        @test all(row["validation_status"] == "not_validated" for row in truncated["files"])
+        @test all(row["validation_blocking"] === false for row in truncated["files"])
+        @test all(length(row["validation_issues"]) == 1 for row in truncated["files"])
+        @test truncated["files"][1]["validation_issues"][1]["remediation_action"] ==
+              "increase_max_text_bytes_or_validate_externally"
+        @test occursin(
+            "max_text_bytes=1",
+            truncated["files"][1]["validation_issues"][1]["message"],
+        )
+        saved_project = OWENS.save_studio_project_input_text(
+            project_file,
+            "modeling_options",
+            "OWENS_Options:\n  numTS: 4\n  delta_t: 0.05\n";
+            expected_sha256 = summary["files"][1]["actual_sha256"],
+            updated_at_utc = "2026-05-21T00:00:00.000Z",
+        )
+        @test saved_project["updated_at_utc"] == "2026-05-21T00:00:00.000Z"
+        @test saved_project["files"][1]["sha256"] == OWENS.file_sha256(model_file)
+        @test saved_project["files"][1]["sha256"] != summary["files"][1]["actual_sha256"]
+        @test saved_project["last_input_save"]["schema_version"] ==
+              "owens-studio-input-save-provenance/v1"
+        save_info = saved_project["last_input_save"]
+        @test save_info["role"] == "modeling_options"
+        @test save_info["atomic_write"] === true
+        @test save_info["validation"]["schema_version"] ==
+              "owens-studio-input-validation/v1"
+        @test save_info["validation"]["status"] == "ok"
+        @test save_info["validation"]["blocking"] === false
+        @test isempty(save_info["validation"]["issues"])
+        @test save_info["before"]["sha256"] == summary["files"][1]["actual_sha256"]
+        @test save_info["after"]["sha256"] == OWENS.file_sha256(model_file)
+        @test save_info["backup"]["sha256"] == summary["files"][1]["actual_sha256"]
+        @test occursin(".owens-studio-history", save_info["backup"]["path"])
+        backup_path = joinpath(dir, save_info["backup"]["path"])
+        @test isfile(backup_path)
+        @test occursin("numTS: 2", read(backup_path, String))
+        saved_summary =
+            OWENS.studio_project_input_summary(project_file; include_text = true)
+        @test saved_summary["summary"]["parse_errors"] == 0
+        @test occursin("numTS: 4", saved_summary["files"][1]["text"])
+        history_dir = joinpath(dir, ".owens-studio-history")
+        history_count = length(readdir(history_dir))
+        current_sha = OWENS.file_sha256(model_file)
+        @test_throws ArgumentError OWENS.save_studio_project_input_text(
+            project_file,
+            "modeling_options",
+            "OWENS_Options:\n  bad: [\n";
+            expected_sha256 = current_sha,
+        )
+        @test OWENS.file_sha256(model_file) == current_sha
+        @test length(readdir(history_dir)) == history_count
+        parse_validation = OWENS.validate_studio_project_input_text(
+            "modeling_options",
+            model_file,
+            "OWENS_Options:\n  bad: [\n",
+        )
+        @test parse_validation["status"] == "error"
+        @test parse_validation["blocking"] === true
+        parse_issue = parse_validation["issues"][1]
+        @test parse_issue["schema_version"] == "owens-studio-validation-issue/v1"
+        @test parse_issue["severity"] == "parse_error"
+        @test parse_issue["role"] == "modeling_options"
+        @test parse_issue["path"] == model_file
+        @test parse_issue["field"] == "document"
+        @test parse_issue["yaml_path"] == "document"
+        @test parse_issue["remediation_action"] == "fix_yaml_syntax"
+        @test occursin("Fix the YAML syntax", parse_issue["suggested_fix"])
+        schema_validation = OWENS.validate_studio_project_input_text(
+            "modeling_options",
+            model_file,
+            "Not_OWENS_Options:\n  numTS: 5\n",
+        )
+        @test schema_validation["status"] == "error"
+        @test schema_validation["blocking"] === true
+        schema_issue = schema_validation["issues"][1]
+        @test schema_issue["schema_version"] == "owens-studio-validation-issue/v1"
+        @test schema_issue["severity"] == "schema_error"
+        @test schema_issue["role"] == "modeling_options"
+        @test schema_issue["field"] == "OWENS_Options"
+        @test schema_issue["yaml_path"] == "OWENS_Options"
+        @test schema_issue["documentation"] == "docs/src/getting_started.md"
+        @test schema_issue["remediation_action"] == "add_owens_options_mapping"
+        @test occursin("Add a top-level OWENS_Options", schema_issue["suggested_fix"])
+        @test occursin("time stepping", schema_issue["physical_implication"])
+        @test_throws ArgumentError OWENS.save_studio_project_input_text(
+            project_file,
+            "modeling_options",
+            "OWENS_Options:\n  numTS: 5\n";
+            expected_sha256 = summary["files"][1]["actual_sha256"],
+        )
+        @test_throws ArgumentError OWENS.studio_project_input_summary(
+            project_file;
+            max_text_bytes = -1,
+        )
+
+        hawt_windio_file = joinpath(dir, "hawt_design.yml")
+        hawt_project_file = joinpath(dir, "hawt_project.yml")
+        write(hawt_windio_file, "name: hawt-editor-unit\nassembly:\n  turbine_class: HAWT\n")
+        OWENS.write_studio_project(
+            hawt_project_file,
+            dir;
+            project_id = "hawt-editor-unit",
+            name = "HAWT Editor Unit",
+            modeling_options_file = model_file,
+            windio_file = hawt_windio_file,
+            created_at_utc = "2026-05-20T00:00:00.000Z",
+        )
+        hawt_summary =
+            OWENS.studio_project_input_summary(hawt_project_file; include_text = true)
+        @test length(hawt_summary["capability_gates"]) == 1
+        @test hawt_summary["files"][2]["validation_status"] == "warning"
+        @test hawt_summary["files"][2]["validation_blocking"] === false
+        @test length(hawt_summary["files"][2]["validation_issues"]) == 1
+        @test hawt_summary["files"][2]["validation_issues"][1]["yaml_path"] ==
+              "assembly.turbine_class"
+        hawt_gate = hawt_summary["capability_gates"][1]
+        @test hawt_gate["capability"] == "hawt_aeroelastic_workflow"
+        @test hawt_gate["status"] == "experimental"
+        @test hawt_gate["severity"] == "warning"
+        @test hawt_gate["source_role"] == "windio"
+        @test hawt_gate["detected_value"] == "HAWT"
+        @test occursin("validation-gated", hawt_gate["message"])
+        hawt_validation = OWENS.validate_studio_project_input_text(
+            "windio",
+            hawt_windio_file,
+            read(hawt_windio_file, String),
+        )
+        @test hawt_validation["status"] == "warning"
+        @test hawt_validation["blocking"] === false
+        hawt_issue = hawt_validation["issues"][1]
+        @test hawt_issue["schema_version"] == "owens-studio-validation-issue/v1"
+        @test hawt_issue["severity"] == "unsupported_feature"
+        @test hawt_issue["role"] == "windio"
+        @test hawt_issue["field"] == "assembly.turbine_class"
+        @test hawt_issue["yaml_path"] == "assembly.turbine_class"
+        @test hawt_issue["remediation_action"] == "acknowledge_experimental_hawt"
+        @test occursin("validation workflow", hawt_issue["suggested_fix"])
+        hawt_editor_html = OWENS.render_studio_project_editor_html(hawt_summary)
+        @test occursin("warning validation", hawt_editor_html)
+        @test occursin("data-validation-severity=\"unsupported_feature\"", hawt_editor_html)
+        @test occursin("data-validation-field=\"assembly.turbine_class\"", hawt_editor_html)
+        @test occursin("id=\"studio-input-windio-issues\"", hawt_editor_html)
+        @test occursin(
+            "aria-describedby=\"studio-input-windio-help studio-input-windio-issues\"",
+            hawt_editor_html,
+        )
+        @test occursin("Suggested fix", hawt_editor_html)
+        hawt_open_payload = OWENS_APP.open_studio_project(hawt_project_file)
+        @test hawt_open_payload["inputs"]["capability_gates"] ==
+              hawt_summary["capability_gates"]
+    end
+end
+
 @testset "OWENS Studio GUI fixtures" begin
     fixture_project =
         normpath(joinpath(@__DIR__, "..", "examples", "gui", "rm2", "owens_project.yml"))
@@ -406,10 +743,7 @@ end
         "missing" => 0,
         "invalid_record" => 0,
     )
-    @test _portable_paths([row["path"] for row in health["files"]]) == [
-        "../../RM2/modeling_options_OWENS_RM2.yml",
-        "../../RM2/WINDIO_RM2.yaml",
-    ]
+    @test _portable_paths([row["path"] for row in health["files"]]) == ["../../RM2/modeling_options_OWENS_RM2.yml", "../../RM2/WINDIO_RM2.yaml"]
     @test health["runs"][1]["resolved_path"] == fixture_run_manifest
     @test health["runs"][1]["run_manifest_health"]["status"] == "ok"
     @test health["runs"][1]["run_manifest_health"]["root"] == fixture_root
@@ -477,6 +811,27 @@ end
         template_catalog = OWENS_APP.list_studio_project_templates()
         @test template_catalog["schema_version"] == "owens-studio-template-catalog/v1"
         @test [row["template"] for row in template_catalog["templates"]] == ["blank", "rm2"]
+        capability_catalog = OWENS_APP.list_studio_gui_capabilities()
+        @test capability_catalog["schema_version"] == "owens-studio-capability-catalog/v1"
+        @test capability_catalog["capabilities"][1]["id"] == "project_manifest_health"
+        @test capability_catalog["capabilities"][4]["id"] == "input_file_summary"
+        quality_gate_catalog = OWENS_APP.list_studio_quality_gates()
+        @test quality_gate_catalog["schema_version"] == "owens-studio-quality-gates/v1"
+        @test quality_gate_catalog["summary"]["partial"] >= 1
+        @test quality_gate_catalog["gates"][2]["id"] == "file_provenance"
+        doctor = OWENS_APP.studio_doctor(; output_dir = dir)
+        @test doctor["schema_version"] == "owens-studio-doctor/v1"
+        @test doctor["status"] == "ok"
+        @test doctor["output_dir"] == abspath(dir)
+        @test doctor["summary"]["checks"] == length(doctor["checks"])
+        @test doctor["summary"]["failed"] == 0
+        @test doctor["summary"]["routes"] > 0
+        @test doctor["quality_gates"]["schema_version"] == "owens-studio-quality-gates/v1"
+        @test any(
+            row -> row["name"] == "output_dir_writable" && row["passed"] === true,
+            doctor["checks"],
+        )
+        @test occursin("studio-home", doctor["commands"]["home_html"])
         example_catalog = OWENS_APP.list_studio_example_projects()
         @test example_catalog["schema_version"] == "owens-studio-example-catalog/v1"
         @test [row["example"] for row in example_catalog["examples"]] == ["rm2"]
@@ -485,22 +840,122 @@ end
         @test [row["name"] for row in route_catalog["routes"]] == [
             "route_catalog",
             "studio_home",
+            "capability_catalog",
+            "quality_gate_catalog",
             "template_catalog",
             "example_catalog",
             "project_open",
+            "project_inputs",
+            "project_editor",
+            "project_input_save",
+            "project_session",
             "project_health",
             "project_workbench",
             "project_script",
             "project_bundle",
             "create_template_project",
+            "studio_doctor",
         ]
-        @test [row["method"] for row in route_catalog["routes"]] == ["GET", "GET", "GET", "GET", "GET", "GET", "GET", "GET", "POST", "POST"]
+        @test [row["method"] for row in route_catalog["routes"]] == [
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "POST",
+            "GET",
+            "GET",
+            "GET",
+            "GET",
+            "POST",
+            "POST",
+            "GET",
+        ]
         @test route_catalog["routes"][2]["path"] == "/"
-        @test route_catalog["routes"][5]["required_params"] == ["project_path"]
-        @test route_catalog["routes"][5]["optional_params"] == ["summarize_runs"]
-        @test route_catalog["routes"][7]["content_type"] == "text/html; charset=utf-8"
-        @test route_catalog["routes"][9]["required_params"] ==
+        @test route_catalog["contract"]["schema_version"] ==
+              "owens-studio-route-contract/v1"
+        @test route_catalog["contract"]["request_schema_version"] ==
+              "owens-studio-route-request/v1"
+        @test route_catalog["contract"]["response_schema_version"] ==
+              "owens-studio-route-response/v1"
+        @test route_catalog["contract"]["error_schema_version"] == "owens-studio-error/v1"
+        @test route_catalog["contract"]["json_supported"] === false
+        @test occursin("YAML-first", route_catalog["contract"]["json_status_reason"])
+        @test route_catalog["contract"]["compatibility"]["route_order_is_not_contractual"] ===
+              true
+        @test route_catalog["contract"]["security"]["workspace_root_param"] ==
+              "workspace_root"
+        @test route_catalog["contract"]["security"]["workspace_root_enforced_path_params"] ==
+              ["project_path", "output_dir", "target"]
+        @test route_catalog["contract"]["security"]["workspace_root_rejects_allow_external"] ===
+              true
+        @test route_catalog["contract"]["security"]["local_only_server_binding_required_when_http_is_added"] ===
+              true
+        @test route_catalog["contract"]["security"]["csrf_or_non_browser_token_required_when_http_is_added"] ===
+              true
+        @test all(
+            row["request_schema"]["schema_version"] == "owens-studio-route-request/v1" for
+            row in route_catalog["routes"]
+        )
+        @test all(
+            row["response_schema"]["schema_version"] == "owens-studio-route-response/v1" for
+            row in route_catalog["routes"]
+        )
+        @test all(
+            row["response_schema"]["error_schema_version"] == "owens-studio-error/v1" for
+            row in route_catalog["routes"]
+        )
+        route_by_name = OrderedCollections.OrderedDict(
+            row["name"] => row for row in route_catalog["routes"]
+        )
+        @test route_catalog["routes"][7]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][7]["optional_params"] == ["summarize_runs"]
+        @test route_by_name["project_open"]["request_schema"]["params"]["required"][1] ==
+              OrderedCollections.OrderedDict{String,Any}(
+                  "name" => "project_path",
+                  "type" => "string",
+                  "required" => true,
+                  "description" => "Path to an OWENS Studio project manifest.",
+              )
+        @test route_catalog["routes"][8]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][8]["optional_params"] ==
+              ["include_text", "max_text_bytes"]
+        @test route_by_name["project_inputs"]["request_schema"]["params"]["optional"][1]["name"] ==
+              "include_text"
+        @test route_by_name["project_inputs"]["request_schema"]["params"]["optional"][1]["type"] ==
+              "boolean"
+        @test route_catalog["routes"][9]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][9]["content_type"] == "text/html; charset=utf-8"
+        @test route_catalog["routes"][10]["required_params"] ==
+              ["project_path", "role", "text"]
+        @test route_catalog["routes"][10]["optional_params"] ==
+              ["expected_sha256", "allow_external", "updated_at_utc"]
+        @test route_catalog["routes"][11]["required_params"] == ["project_path"]
+        @test route_catalog["routes"][11]["optional_params"] ==
+              ["include_text", "max_text_bytes"]
+        @test route_catalog["routes"][13]["content_type"] == "text/html; charset=utf-8"
+        @test route_catalog["routes"][15]["required_params"] ==
               ["project_path", "output_dir"]
+        @test route_by_name["quality_gate_catalog"]["response_schema"]["payload_schema_version"] ==
+              "owens-studio-quality-gates/v1"
+        @test route_by_name["project_inputs"]["response_schema"]["payload_schema_version"] ==
+              "owens-studio-input-summary/v1"
+        @test route_by_name["project_session"]["response_schema"]["payload_schema_version"] ==
+              "owens-studio-session/v1"
+        @test route_by_name["project_workbench"]["response_schema"]["body_kind"] ==
+              "html_document"
+        @test route_by_name["project_workbench"]["response_schema"]["payload_schema_version"] ===
+              nothing
+        @test route_by_name["project_script"]["response_schema"]["body_kind"] == "plain_text"
+        @test route_by_name["create_template_project"]["response_schema"]["payload_schema_version"] ==
+              "owens-studio-template-create/v1"
+        @test route_by_name["studio_doctor"]["optional_params"] == ["output_dir"]
+        @test route_by_name["studio_doctor"]["response_schema"]["payload_schema_version"] ==
+              "owens-studio-doctor/v1"
 
         manifest_health = OWENS_APP.inspect_run_manifest(manifest_file)
         @test manifest_health["status"] == "ok"
@@ -530,6 +985,16 @@ end
         project_health = OWENS_APP.inspect_studio_project(project_file)
         @test project_health["status"] == "ok"
         @test project_health["name"] == "Studio App"
+        project_inputs =
+            OWENS_APP.inspect_studio_project_inputs(project_file; include_text = true)
+        @test project_inputs["schema_version"] == "owens-studio-input-summary/v1"
+        @test project_inputs["summary"]["editable"] == 2
+        @test project_inputs["files"][1]["top_level_keys"] == ["OWENS_Options"]
+        @test occursin("numTS: 2", project_inputs["files"][1]["text"])
+        project_session = OWENS_APP.inspect_studio_project_session(project_file)
+        @test project_session["schema_version"] == "owens-studio-session/v1"
+        @test project_session["session_state"] == "clean"
+        @test project_session["summary"]["save_conflicts"] == 0
         html = OWENS_APP.write_studio_project_workbench(html_file, project_health)
         @test html == read(html_file, String)
         @test occursin("Studio App", html)
@@ -537,10 +1002,43 @@ end
         manifest_cli =
             OWENS_APP.real_main(["manifest-health", manifest_file]; io = IOBuffer())
         @test manifest_cli["status"] == "ok"
+        saved_input = OWENS_APP.save_studio_project_input(
+            project_file,
+            "modeling_options",
+            "OWENS_Options:\n  numTS: 3\n";
+            expected_sha256 = project_inputs["files"][1]["actual_sha256"],
+            updated_at_utc = "2026-05-21T00:00:00.000Z",
+        )
+        @test saved_input["schema_version"] == "owens-studio-input-save/v1"
+        @test saved_input["project_status"] == "attention"
+        @test saved_input["project"]["updated_at_utc"] == "2026-05-21T00:00:00.000Z"
+        @test saved_input["project"]["files"][1]["sha256"] == OWENS.file_sha256(model_file)
+        @test saved_input["save"]["atomic_write"] === true
+        @test saved_input["save"]["before"]["sha256"] ==
+              project_inputs["files"][1]["actual_sha256"]
+        @test saved_input["save"]["after"]["sha256"] == OWENS.file_sha256(model_file)
+        @test saved_input["save"]["backup"]["sha256"] ==
+              project_inputs["files"][1]["actual_sha256"]
+        @test saved_input["save"]["validation"]["status"] == "ok"
+        @test saved_input["health"]["runs"][1]["run_manifest_health"]["status"] ==
+              "attention"
+        @test saved_input["health"]["runs"][1]["run_manifest_health"]["inputs"][1]["remediation"]["code"] ==
+              "modified_run_artifact"
+        @test occursin("numTS: 3", saved_input["inputs"]["files"][1]["text"])
         home_cli = OWENS_APP.real_main(["studio-home", html_file]; io = IOBuffer())
         @test home_cli["output_html"] == abspath(html_file)
         @test home_cli["bytes"] == stat(html_file).size
         @test occursin("Project Gallery", read(html_file, String))
+        doctor_cli = OWENS_APP.real_main(["studio-doctor", dir]; io = IOBuffer())
+        @test doctor_cli["schema_version"] == "owens-studio-doctor/v1"
+        @test doctor_cli["status"] == "ok"
+        @test doctor_cli["output_dir"] == abspath(dir)
+        capabilities_cli = OWENS_APP.real_main(["project-capabilities"]; io = IOBuffer())
+        @test capabilities_cli["schema_version"] == "owens-studio-capability-catalog/v1"
+        quality_gates_cli =
+            OWENS_APP.real_main(["project-quality-gates"]; io = IOBuffer())
+        @test quality_gates_cli["schema_version"] == "owens-studio-quality-gates/v1"
+        @test quality_gates_cli["summary"]["gates"] == length(quality_gates_cli["gates"])
         templates_cli = OWENS_APP.real_main(["project-templates"]; io = IOBuffer())
         @test templates_cli["schema_version"] == "owens-studio-template-catalog/v1"
         @test templates_cli["templates"][2]["solver_path"] == "runOWENSWINDIO"
@@ -561,6 +1059,7 @@ end
             ["project-template", "rm2", joinpath(dir, "template-cli")];
             io = IOBuffer(),
         )
+        @test template_cli["schema_version"] == "owens-studio-template-create/v1"
         @test template_cli["template"] == "rm2"
         @test template_cli["project_status"] == "ok"
         @test template_cli["project_health"]["summary"]["records"] == 3
@@ -577,7 +1076,20 @@ end
         @test open_payload["generated_script"]["available"] === true
         @test open_payload["generated_script"]["sha256"] ==
               OWENS.file_sha256(template_cli["script_file"])
-        @test [row["route"] for row in open_payload["actions"]] == ["project_health", "project_workbench", "project_script", "project_bundle"]
+        @test [row["route"] for row in open_payload["actions"]] == [
+            "project_health",
+            "project_inputs",
+            "project_editor",
+            "project_input_save",
+            "project_workbench",
+            "project_script",
+            "project_bundle",
+            "capability_catalog",
+        ]
+        @test open_payload["capabilities"]["schema_version"] ==
+              "owens-studio-capability-catalog/v1"
+        @test open_payload["inputs"]["schema_version"] == "owens-studio-input-summary/v1"
+        @test open_payload["inputs"]["summary"]["editable"] == 2
         @test open_payload["routes"]["schema_version"] == "owens-studio-route-catalog/v1"
         @test open_payload["templates"]["schema_version"] ==
               "owens-studio-template-catalog/v1"
@@ -589,6 +1101,66 @@ end
         )
         @test open_cli["schema_version"] == "owens-studio-open/v1"
         @test open_cli["generated_script"]["available"] === true
+        inputs_cli = OWENS_APP.real_main(
+            ["project-inputs", template_cli["project_file"]];
+            io = IOBuffer(),
+        )
+        @test inputs_cli["schema_version"] == "owens-studio-input-summary/v1"
+        @test inputs_cli["summary"]["editable"] == 2
+        limited_inputs_cli = OWENS_APP.real_main(
+            ["project-inputs", template_cli["project_file"], "true", "1"];
+            io = IOBuffer(),
+        )
+        @test limited_inputs_cli["summary"]["text_included"] == 0
+        @test all(
+            row["parse_status"] == "skipped_size_limit" for
+            row in limited_inputs_cli["files"]
+        )
+        @test limited_inputs_cli["files"][1]["validation_issues"][1]["remediation_action"] ==
+              "increase_max_text_bytes_or_validate_externally"
+        session_cli = OWENS_APP.real_main(
+            ["project-session", template_cli["project_file"]];
+            io = IOBuffer(),
+        )
+        @test session_cli["schema_version"] == "owens-studio-session/v1"
+        @test session_cli["session_state"] == "clean"
+        @test session_cli["summary"]["save_conflicts"] == 0
+        limited_session_cli = OWENS_APP.real_main(
+            ["project-session", template_cli["project_file"], "true", "1"];
+            io = IOBuffer(),
+        )
+        @test limited_session_cli["inputs"]["summary"]["text_included"] == 0
+        @test all(
+            row["parse_status"] == "skipped_size_limit" for
+            row in limited_session_cli["inputs"]["files"]
+        )
+        editor_cli = OWENS_APP.real_main(
+            [
+                "project-editor-html",
+                template_cli["project_file"],
+                joinpath(dir, "template-editor.html"),
+            ];
+            io = IOBuffer(),
+        )
+        @test editor_cli["output_html"] == abspath(joinpath(dir, "template-editor.html"))
+        @test editor_cli["bytes"] == stat(editor_cli["output_html"]).size
+        @test occursin("OWENS Studio Editor", read(editor_cli["output_html"], String))
+        save_text_file = joinpath(dir, "updated_modeling_options.yml")
+        write(save_text_file, "OWENS_Options:\n  numTS: 6\n")
+        save_cli = OWENS_APP.real_main(
+            [
+                "project-save-input",
+                template_cli["project_file"],
+                "modeling_options",
+                save_text_file,
+            ];
+            io = IOBuffer(),
+        )
+        @test save_cli["schema_version"] == "owens-studio-input-save/v1"
+        @test save_cli["project_status"] == "attention"
+        @test save_cli["health"]["runs"][1]["run_manifest_health"]["inputs"][1]["remediation"]["code"] ==
+              "modified_run_artifact"
+        @test occursin("numTS: 6", save_cli["inputs"]["files"][1]["text"])
         script_cli = OWENS_APP.real_main(
             ["project-script", template_cli["project_file"]];
             io = IOBuffer(),
@@ -600,16 +1172,24 @@ end
             io = IOBuffer(),
         )
         @test bundle_cli["schema_version"] == "owens-studio-bundle/v1"
-        @test bundle_cli["project_status"] == "ok"
+        @test bundle_cli["project_status"] == "attention"
         @test isfile(bundle_cli["index_html"])
+        @test isfile(bundle_cli["editor_html"])
         @test isfile(bundle_cli["health_file"])
+        @test isfile(bundle_cli["inputs_file"])
         @test isfile(bundle_cli["script_file"])
         @test isfile(bundle_cli["open_file"])
         @test bundle_cli["bytes"]["index_html"] == stat(bundle_cli["index_html"]).size
+        @test bundle_cli["bytes"]["editor_html"] == stat(bundle_cli["editor_html"]).size
+        @test bundle_cli["bytes"]["inputs_file"] == stat(bundle_cli["inputs_file"]).size
         @test bundle_cli["bytes"]["open_file"] == stat(bundle_cli["open_file"]).size
         bundle_index = read(bundle_cli["index_html"], String)
         @test occursin("Open Payload", bundle_index)
+        @test occursin("Editor", bundle_index)
         @test occursin("open.yml", bundle_index)
+        bundle_editor = read(bundle_cli["editor_html"], String)
+        @test occursin("OWENS Studio Editor", bundle_editor)
+        @test occursin("project_path", bundle_editor)
         bundle_open = YAML.load_file(
             bundle_cli["open_file"];
             dicttype = OrderedCollections.OrderedDict{String,Any},
@@ -617,11 +1197,11 @@ end
         @test bundle_open["schema_version"] == "owens-studio-open/v1"
         @test bundle_open["generated_script"]["available"] === true
         project_cli = OWENS_APP.real_main(["project-health", project_file]; io = IOBuffer())
-        @test project_cli["status"] == "ok"
+        @test project_cli["status"] == "attention"
         project_html_cli =
             OWENS_APP.real_main(["project-html", project_file, html_file]; io = IOBuffer())
         @test project_html_cli["output_html"] == abspath(html_file)
-        @test project_html_cli["project_status"] == "ok"
+        @test project_html_cli["project_status"] == "attention"
 
         @test_throws ArgumentError OWENS_APP.real_main(String[]; io = IOBuffer())
         @test_throws ArgumentError OWENS_APP.real_main(["bad-command"]; io = IOBuffer())
@@ -646,7 +1226,9 @@ end
         )
         @test routes_payload["schema_version"] == "owens-studio-route-catalog/v1"
         @test routes_payload["routes"][1]["handler"] == "studio_routes_route"
-        @test routes_payload["routes"][end]["handler"] == "studio_project_template_route"
+        @test routes_payload["routes"][end - 1]["handler"] ==
+              "studio_project_template_route"
+        @test routes_payload["routes"][end]["handler"] == "studio_doctor_route"
 
         home_response = OWENS_APP.studio_home_route()
         @test home_response.status == 200
@@ -656,6 +1238,53 @@ end
         dispatch_home = OWENS_APP.dispatch_studio_route("/"; method = "GET")
         @test dispatch_home.status == 200
         @test occursin("New Project Templates", dispatch_home.body)
+
+        doctor_response = OWENS_APP.studio_doctor_route(output_dir = dir)
+        @test doctor_response.status == 200
+        @test doctor_response.content_type == "application/x-yaml; charset=utf-8"
+        doctor_payload = YAML.load(
+            doctor_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test doctor_payload["schema_version"] == "owens-studio-doctor/v1"
+        @test doctor_payload["status"] == "ok"
+        @test doctor_payload["output_dir"] == abspath(dir)
+        dispatch_doctor = OWENS_APP.dispatch_studio_route(
+            "/api/doctor";
+            method = "GET",
+            params = Dict("output_dir" => dir, "workspace_root" => dir),
+        )
+        @test dispatch_doctor.status == 200
+        @test occursin("owens-studio-doctor/v1", dispatch_doctor.body)
+
+        capabilities_response = OWENS_APP.studio_gui_capabilities_route()
+        @test capabilities_response.status == 200
+        @test capabilities_response.content_type == "application/x-yaml; charset=utf-8"
+        capabilities_payload = YAML.load(
+            capabilities_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test capabilities_payload["schema_version"] == "owens-studio-capability-catalog/v1"
+        @test capabilities_payload["capabilities"][4]["id"] == "input_file_summary"
+        dispatch_capabilities =
+            OWENS_APP.dispatch_studio_route("/api/capabilities"; method = "GET")
+        @test dispatch_capabilities.status == 200
+        @test occursin("owens-studio-capability-catalog/v1", dispatch_capabilities.body)
+
+        quality_gates_response = OWENS_APP.studio_quality_gates_route()
+        @test quality_gates_response.status == 200
+        @test quality_gates_response.content_type == "application/x-yaml; charset=utf-8"
+        quality_gates_payload = YAML.load(
+            quality_gates_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test quality_gates_payload["schema_version"] == "owens-studio-quality-gates/v1"
+        @test quality_gates_payload["summary"]["gates"] ==
+              length(quality_gates_payload["gates"])
+        dispatch_quality_gates =
+            OWENS_APP.dispatch_studio_route("/api/quality-gates"; method = "GET")
+        @test dispatch_quality_gates.status == 200
+        @test occursin("owens-studio-quality-gates/v1", dispatch_quality_gates.body)
 
         templates_response = OWENS_APP.studio_project_templates_route()
         @test templates_response.status == 200
@@ -692,8 +1321,11 @@ end
         @test open_payload["schema_version"] == "owens-studio-open/v1"
         @test open_payload["project_status"] == "ok"
         @test open_payload["generated_script"]["available"] === true
-        @test open_payload["actions"][3]["route"] == "project_script"
-        @test open_payload["actions"][3]["enabled"] === true
+        @test open_payload["actions"][6]["route"] == "project_script"
+        @test open_payload["actions"][6]["enabled"] === true
+        @test open_payload["inputs"]["summary"]["editable"] == 2
+        @test open_payload["session"]["schema_version"] == "owens-studio-session/v1"
+        @test open_payload["session"]["session_state"] == "clean"
 
         dispatch_open = OWENS_APP.dispatch_studio_route(
             "/api/project/open";
@@ -707,7 +1339,79 @@ end
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
         @test dispatch_open_payload["project_file"] == project_file
-        @test dispatch_open_payload["routes"]["routes"][5]["name"] == "project_open"
+        @test dispatch_open_payload["routes"]["routes"][7]["name"] == "project_open"
+        sandboxed_open = OWENS_APP.dispatch_studio_route(
+            "project_open";
+            method = "GET",
+            params = Dict("project_path" => project_file, "workspace_root" => dir),
+        )
+        @test sandboxed_open.status == 200
+        sandboxed_open_payload = YAML.load(
+            sandboxed_open.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test sandboxed_open_payload["project_file"] == project_file
+        @test sandboxed_open_payload["project_status"] == "ok"
+
+        inputs_response =
+            OWENS_APP.studio_project_inputs_route(project_file; include_text = true)
+        @test inputs_response.status == 200
+        @test inputs_response.content_type == "application/x-yaml; charset=utf-8"
+        inputs_payload = YAML.load(
+            inputs_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test inputs_payload["schema_version"] == "owens-studio-input-summary/v1"
+        @test inputs_payload["summary"]["editable"] == 2
+        @test inputs_payload["summary"]["text_included"] == 2
+        @test !occursin("runOWENSWINDIO", inputs_payload["files"][1]["text"])
+        route_model_file = inputs_payload["files"][1]["resolved_path"]
+        session_response =
+            OWENS_APP.studio_project_session_route(project_file; include_text = true)
+        @test session_response.status == 200
+        @test session_response.content_type == "application/x-yaml; charset=utf-8"
+        session_payload = YAML.load(
+            session_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test session_payload["schema_version"] == "owens-studio-session/v1"
+        @test session_payload["session_state"] == "clean"
+        @test session_payload["summary"]["save_conflicts"] == 0
+        @test session_payload["inputs"]["summary"]["text_included"] == 2
+
+        dispatch_session = OWENS_APP.dispatch_studio_route(
+            "/api/project/session";
+            method = "GET",
+            params = Dict("project_path" => project_file, "workspace_root" => dir),
+        )
+        @test dispatch_session.status == 200
+        @test occursin("owens-studio-session/v1", dispatch_session.body)
+
+        dispatch_inputs = OWENS_APP.dispatch_studio_route(
+            "project_inputs";
+            method = "GET",
+            params = Dict(
+                "project_path" => project_file,
+                "include_text" => true,
+                "max_text_bytes" => 1,
+            ),
+        )
+        @test dispatch_inputs.status == 200
+        @test occursin("text_truncated: true", dispatch_inputs.body)
+
+        editor_response = OWENS_APP.studio_project_editor_route(project_file)
+        @test editor_response.status == 200
+        @test editor_response.content_type == "text/html; charset=utf-8"
+        @test occursin("OWENS Studio Editor", editor_response.body)
+        @test occursin("name=\"expected_sha256\"", editor_response.body)
+        @test occursin("modeling_options", editor_response.body)
+        dispatch_editor = OWENS_APP.dispatch_studio_route(
+            "/project/edit";
+            method = "GET",
+            params = Dict("project_path" => project_file),
+        )
+        @test dispatch_editor.status == 200
+        @test occursin("name=\"text\"", dispatch_editor.body)
 
         health_response = OWENS_APP.studio_project_health_route(project_file)
         @test health_response isa OWENS_APP.StudioRouteResponse
@@ -721,6 +1425,81 @@ end
         @test health_payload["status"] == "ok"
         @test health_payload["summary"]["records"] == 3
         @test health_payload["runs"][1]["run_manifest_health"]["summary"]["ok"] == 3
+
+        save_response = OWENS_APP.studio_project_input_save_route(
+            project_file,
+            "modeling_options",
+            "OWENS_Options:\n  numTS: 7\n";
+            expected_sha256 = inputs_payload["files"][1]["actual_sha256"],
+            updated_at_utc = "2026-05-21T00:00:00.000Z",
+        )
+        @test save_response.status == 200
+        @test save_response.content_type == "application/x-yaml; charset=utf-8"
+        save_payload = YAML.load(
+            save_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test save_payload["schema_version"] == "owens-studio-input-save/v1"
+        @test save_payload["project_status"] == "attention"
+        @test save_payload["project"]["updated_at_utc"] == "2026-05-21T00:00:00.000Z"
+        @test save_payload["save"]["atomic_write"] === true
+        @test save_payload["save"]["before"]["sha256"] ==
+              inputs_payload["files"][1]["actual_sha256"]
+        @test save_payload["save"]["after"]["sha256"] == OWENS.file_sha256(
+            joinpath(dirname(project_file), save_payload["save"]["after"]["path"]),
+        )
+        @test save_payload["save"]["validation"]["status"] == "ok"
+        @test save_payload["health"]["runs"][1]["run_manifest_health"]["inputs"][1]["remediation"]["code"] ==
+              "modified_run_artifact"
+        @test occursin("numTS: 7", save_payload["inputs"]["files"][1]["text"])
+
+        stale_save = OWENS_APP.dispatch_studio_route(
+            "project_input_save";
+            method = "POST",
+            params = Dict(
+                "project_path" => project_file,
+                "role" => "modeling_options",
+                "text" => "OWENS_Options:\n  numTS: 8\n",
+                "expected_sha256" => inputs_payload["files"][1]["actual_sha256"],
+            ),
+        )
+        @test stale_save.status == 400
+        @test occursin("Refusing to overwrite modified Studio input", stale_save.body)
+        current_route_sha = OWENS.file_sha256(route_model_file)
+        invalid_save = OWENS_APP.dispatch_studio_route(
+            "project_input_save";
+            method = "POST",
+            params = Dict(
+                "project_path" => project_file,
+                "role" => "modeling_options",
+                "text" => "OWENS_Options:\n  bad: [\n",
+                "expected_sha256" => current_route_sha,
+            ),
+        )
+        @test invalid_save.status == 400
+        @test occursin("Refusing to save invalid Studio input", invalid_save.body)
+        @test OWENS.file_sha256(route_model_file) == current_route_sha
+        sandbox_external_save = OWENS_APP.dispatch_studio_route(
+            "project_input_save";
+            method = "POST",
+            params = Dict(
+                "project_path" => project_file,
+                "role" => "modeling_options",
+                "text" => "OWENS_Options:\n  numTS: 9\n",
+                "expected_sha256" => current_route_sha,
+                "allow_external" => true,
+                "workspace_root" => dir,
+            ),
+        )
+        @test sandbox_external_save.status == 403
+        sandbox_external_payload = YAML.load(
+            sandbox_external_save.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test sandbox_external_payload["schema_version"] == "owens-studio-error/v1"
+        @test sandbox_external_payload["code"] == "workspace_boundary_violation"
+        @test sandbox_external_payload["route"] == "project_input_save"
+        @test occursin("allow_external=true", sandbox_external_payload["message"])
 
         html_response = OWENS_APP.studio_project_workbench_route(project_file)
         @test html_response.status == 200
@@ -750,23 +1529,29 @@ end
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
         @test bundle_payload["schema_version"] == "owens-studio-bundle/v1"
-        @test bundle_payload["project_status"] == "ok"
+        @test bundle_payload["project_status"] == "attention"
         @test isfile(bundle_payload["index_html"])
+        @test isfile(bundle_payload["editor_html"])
         @test isfile(bundle_payload["health_file"])
+        @test isfile(bundle_payload["inputs_file"])
         @test isfile(bundle_payload["script_file"])
         @test isfile(bundle_payload["open_file"])
         @test bundle_payload["bytes"]["index_html"] ==
               stat(bundle_payload["index_html"]).size
+        @test bundle_payload["bytes"]["editor_html"] ==
+              stat(bundle_payload["editor_html"]).size
         @test bundle_payload["bytes"]["open_file"] == stat(bundle_payload["open_file"]).size
         bundle_payload_index = read(bundle_payload["index_html"], String)
         @test occursin("Open Payload", bundle_payload_index)
+        @test occursin("editor.html", bundle_payload_index)
         @test occursin("open.yml", bundle_payload_index)
+        @test occursin("name=\"role\"", read(bundle_payload["editor_html"], String))
         bundle_open_payload = YAML.load_file(
             bundle_payload["open_file"];
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
         @test bundle_open_payload["project_file"] == project_file
-        @test bundle_open_payload["actions"][4]["route"] == "project_bundle"
+        @test bundle_open_payload["actions"][7]["route"] == "project_bundle"
 
         dispatch_bundle = OWENS_APP.dispatch_studio_route(
             "project_bundle";
@@ -810,10 +1595,53 @@ end
             template_response.body;
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
+        @test template_payload["schema_version"] == "owens-studio-template-create/v1"
         @test template_payload["template"] == "blank"
         @test template_payload["project_status"] == "ok"
         @test template_payload["run_manifest_file"] === nothing
         @test isfile(template_payload["project_file"])
+        mktempdir(dirname(dir)) do outside_dir
+            outside_project = OWENS.create_studio_project_template(
+                joinpath(outside_dir, "outside-rm2");
+                template = "rm2",
+                created_at_utc = "2026-05-20T00:00:00.000Z",
+            )
+            outside_open = OWENS_APP.dispatch_studio_route(
+                "project_open";
+                method = "GET",
+                params = Dict(
+                    "project_path" => outside_project["project_file"],
+                    "workspace_root" => dir,
+                ),
+            )
+            @test outside_open.status == 403
+            outside_open_payload = YAML.load(
+                outside_open.body;
+                dicttype = OrderedCollections.OrderedDict{String,Any},
+            )
+            @test outside_open_payload["schema_version"] == "owens-studio-error/v1"
+            @test outside_open_payload["code"] == "workspace_boundary_violation"
+            @test outside_open_payload["route"] == "project_open"
+            @test occursin("project_path", outside_open_payload["message"])
+
+            outside_template = OWENS_APP.dispatch_studio_route(
+                "create_template_project";
+                method = "POST",
+                params = Dict(
+                    "target" => joinpath(outside_dir, "blocked-template"),
+                    "template" => "blank",
+                    "workspace_root" => dir,
+                ),
+            )
+            @test outside_template.status == 403
+            outside_template_payload = YAML.load(
+                outside_template.body;
+                dicttype = OrderedCollections.OrderedDict{String,Any},
+            )
+            @test outside_template_payload["code"] == "workspace_boundary_violation"
+            @test outside_template_payload["route"] == "create_template_project"
+            @test occursin("target", outside_template_payload["message"])
+        end
 
         error_response = OWENS_APP.studio_project_health_route(joinpath(dir, "missing.yml"))
         @test error_response.status == 400
@@ -823,6 +1651,55 @@ end
             dicttype = OrderedCollections.OrderedDict{String,Any},
         )
         @test error_payload["status"] == "error"
+        @test error_payload["schema_version"] == "owens-studio-error/v1"
+        @test error_payload["code"] == "invalid_request"
+        @test error_payload["severity"] == "error"
+        @test error_payload["exception_type"] == "ArgumentError"
+        @test error_payload["route"] === nothing
+        @test occursin("project path", error_payload["suggested_fix"])
+        @test error_payload["developer_detail"] == error_payload["message"]
         @test occursin("Cannot read missing Studio project", error_payload["message"])
+        editor_error =
+            OWENS_APP.studio_project_editor_route(joinpath(dir, "missing-editor.yml"))
+        @test editor_error.status == 400
+        @test editor_error.content_type == "text/html; charset=utf-8"
+        @test occursin("OWENS Studio Error", editor_error.body)
+        @test occursin("Suggested fix", editor_error.body)
+        @test occursin("Developer detail", editor_error.body)
+        @test occursin("data-error-schema=\"owens-studio-error/v1\"", editor_error.body)
+        @test occursin("data-error-code=\"invalid_request\"", editor_error.body)
+        @test occursin("data-error-route=\"project_editor\"", editor_error.body)
+        @test occursin("Cannot read missing Studio project", editor_error.body)
+        workbench_error = OWENS_APP.dispatch_studio_route(
+            "/workbench";
+            method = "GET",
+            params = Dict("project_path" => joinpath(dir, "missing-workbench.yml")),
+        )
+        @test workbench_error.status == 400
+        @test workbench_error.content_type == "text/html; charset=utf-8"
+        @test occursin("data-error-route=\"project_workbench\"", workbench_error.body)
+        @test occursin("Suggested fix", workbench_error.body)
+        missing_route_response =
+            OWENS_APP.dispatch_studio_route("/api/not-a-route"; method = "GET")
+        @test missing_route_response.status == 404
+        missing_route_payload = YAML.load(
+            missing_route_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test missing_route_payload["schema_version"] == "owens-studio-error/v1"
+        @test missing_route_payload["code"] == "route_not_found"
+        @test missing_route_payload["route"] == "/api/not-a-route"
+        @test occursin("/api/routes", missing_route_payload["suggested_fix"])
+        wrong_method_response =
+            OWENS_APP.dispatch_studio_route("project_open"; method = "POST")
+        @test wrong_method_response.status == 405
+        wrong_method_payload = YAML.load(
+            wrong_method_response.body;
+            dicttype = OrderedCollections.OrderedDict{String,Any},
+        )
+        @test wrong_method_payload["schema_version"] == "owens-studio-error/v1"
+        @test wrong_method_payload["code"] == "method_not_allowed"
+        @test wrong_method_payload["route"] == "project_open"
+        @test occursin("Use GET", wrong_method_payload["suggested_fix"])
     end
 end

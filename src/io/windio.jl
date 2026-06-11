@@ -1,7 +1,20 @@
-function runOWENSWINDIO(modelopt, windio, path)
+"""
+    runOWENSWINDIO(modelopt, windio, path; allow_experimental_hawt=false)
+
+Run an OWENS WindIO project from modeling options, WindIO design data, and a
+run directory. `modelopt` and `windio` may be loaded objects or file paths.
+
+HAWT/axial-flow WindIO projects are rejected by default because the public
+HAWT setup path is still experimental and validation-gated. Pass
+`allow_experimental_hawt=true` only for research or validation cases that have
+explicitly checked frames, backend selection, and load mapping assumptions.
+"""
+function runOWENSWINDIO(modelopt, windio, path; allow_experimental_hawt::Bool = false)
     if isa(windio, String)
         windio = Design_Data(windio)
     end
+
+    _guard_experimental_hawt_runtime!(windio; allow_experimental_hawt)
 
     if isa(modelopt, String)
         modelopt = ModelingOptions(modelopt)
@@ -362,6 +375,41 @@ function runOWENSWINDIO(modelopt, windio, path)
         SF_ult_L_strut,
         SF_buck_L_strut,
     )
+end
+
+function _guard_experimental_hawt_runtime!(windio; allow_experimental_hawt::Bool = false)
+    detected = _windio_runtime_turbine_kind(windio)
+    if !allow_experimental_hawt && !isnothing(detected) && _windio_run_hawt_kind(detected)
+        throw(
+            ArgumentError(
+                "WindIO declares a HAWT/axial-flow turbine ($detected). " *
+                "OWENS HAWT setup is experimental and validation-gated; " *
+                "runOWENSWINDIO refuses it by default. Pass " *
+                "allow_experimental_hawt=true only for research/validation " *
+                "workflows after checking frames, backend selection, and load " *
+                "mapping assumptions.",
+            ),
+        )
+    end
+    return detected
+end
+
+function _windio_runtime_turbine_kind(windio)
+    windio isa AbstractDict || return nothing
+    for key_path in (
+        ("assembly", "turbine_class"),
+        ("assembly", "turbine_type"),
+        ("turbine", "turbine_class"),
+        ("turbine", "turbine_type"),
+        ("turbine_class",),
+        ("turbine_type",),
+    )
+        value = _windio_run_nested_value(windio, key_path)
+        value isa AbstractString || continue
+        detected = strip(value)
+        isempty(detected) || return String(detected)
+    end
+    return nothing
 end
 
 """
